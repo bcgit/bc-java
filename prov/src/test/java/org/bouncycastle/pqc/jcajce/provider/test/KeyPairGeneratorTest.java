@@ -1,5 +1,11 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -34,12 +40,29 @@ public abstract class KeyPairGeneratorTest
 
             assertEquals(pubKey, decPubKey);
             assertEquals(privKey, decPrivKey);
+
+            checkSerialisation(pubKey);
+            checkSerialisation(privKey);
         }
         catch (Exception e)
         {
             e.printStackTrace();
             fail(e);
         }
+    }
+
+    private void checkSerialisation(Key key)
+        throws IOException, ClassNotFoundException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ObjectOutputStream oOut = new ObjectOutputStream(bOut);
+
+        oOut.writeObject(key);
+        oOut.close();
+
+        ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
+
+        assertEquals(key, oIn.readObject());
     }
 
 }

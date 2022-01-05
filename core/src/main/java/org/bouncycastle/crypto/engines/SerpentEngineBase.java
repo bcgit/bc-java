@@ -4,10 +4,11 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public abstract class SerpentEngineBase
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     protected static final int BLOCK_SIZE = 16;
 
@@ -16,8 +17,6 @@ public abstract class SerpentEngineBase
 
     protected boolean encrypting;
     protected int[] wKey;
-
-    protected int X0, X1, X2, X3;    // registers
 
     SerpentEngineBase()
     {
@@ -146,111 +145,111 @@ public abstract class SerpentEngineBase
     /**
      * S0 - { 3, 8,15, 1,10, 6, 5,11,14,13, 4, 2, 7, 0, 9,12 } - 15 terms.
      */
-    protected final void sb0(int a, int b, int c, int d)
+    protected final void sb0(int[] X, int a, int b, int c, int d)
     {
         int    t1 = a ^ d;
         int    t3 = c ^ t1;
         int    t4 = b ^ t3;
-        X3 = (a & d) ^ t4;
+        X[3] = (a & d) ^ t4;
         int    t7 = a ^ (b & t1);
-        X2 = t4 ^ (c | t7);
-        int    t12 = X3 & (t3 ^ t7);
-        X1 = (~t3) ^ t12;
-        X0 = t12 ^ (~t7);
+        X[2] = t4 ^ (c | t7);
+        int    t12 = X[3] & (t3 ^ t7);
+        X[1] = (~t3) ^ t12;
+        X[0] = t12 ^ (~t7);
     }
 
     /**
      * InvSO - {13, 3,11, 0,10, 6, 5,12, 1,14, 4, 7,15, 9, 8, 2 } - 15 terms.
      */
-    protected final void ib0(int a, int b, int c, int d)
+    protected final void ib0(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~a;
         int    t2 = a ^ b;
         int    t4 = d ^ (t1 | t2);
         int    t5 = c ^ t4;
-        X2 = t2 ^ t5;
+        X[2] = t2 ^ t5;
         int    t8 = t1 ^ (d & t2);
-        X1 = t4 ^ (X2 & t8);
-        X3 = (a & t4) ^ (t5 | X1);
-        X0 = X3 ^ (t5 ^ t8);
+        X[1] = t4 ^ (X[2] & t8);
+        X[3] = (a & t4) ^ (t5 | X[1]);
+        X[0] = X[3] ^ (t5 ^ t8);
     }
 
     /**
      * S1 - {15,12, 2, 7, 9, 0, 5,10, 1,11,14, 8, 6,13, 3, 4 } - 14 terms.
      */
-    protected final void sb1(int a, int b, int c, int d)
+    protected final void sb1(int[] X, int a, int b, int c, int d)
     {
         int    t2 = b ^ (~a);
         int    t5 = c ^ (a | t2);
-        X2 = d ^ t5;
+        X[2] = d ^ t5;
         int    t7 = b ^ (d | t2);
-        int    t8 = t2 ^ X2;
-        X3 = t8 ^ (t5 & t7);
+        int    t8 = t2 ^ X[2];
+        X[3] = t8 ^ (t5 & t7);
         int    t11 = t5 ^ t7;
-        X1 = X3 ^ t11;
-        X0 = t5 ^ (t8 & t11);
+        X[1] = X[3] ^ t11;
+        X[0] = t5 ^ (t8 & t11);
     }
 
     /**
      * InvS1 - { 5, 8, 2,14,15, 6,12, 3,11, 4, 7, 9, 1,13,10, 0 } - 14 steps.
      */
-    protected final void ib1(int a, int b, int c, int d)
+    protected final void ib1(int[] X, int a, int b, int c, int d)
     {
         int    t1 = b ^ d;
         int    t3 = a ^ (b & t1);
         int    t4 = t1 ^ t3;
-        X3 = c ^ t4;
+        X[3] = c ^ t4;
         int    t7 = b ^ (t1 & t3);
-        int    t8 = X3 | t7;
-        X1 = t3 ^ t8;
-        int    t10 = ~X1;
-        int    t11 = X3 ^ t7;
-        X0 = t10 ^ t11;
-        X2 = t4 ^ (t10 | t11);
+        int    t8 = X[3] | t7;
+        X[1] = t3 ^ t8;
+        int    t10 = ~X[1];
+        int    t11 = X[3] ^ t7;
+        X[0] = t10 ^ t11;
+        X[2] = t4 ^ (t10 | t11);
     }
 
     /**
      * S2 - { 8, 6, 7, 9, 3,12,10,15,13, 1,14, 4, 0,11, 5, 2 } - 16 terms.
      */
-    protected final void sb2(int a, int b, int c, int d)
+    protected final void sb2(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~a;
         int    t2 = b ^ d;
         int    t3 = c & t1;
-        X0 = t2 ^ t3;
+        X[0] = t2 ^ t3;
         int    t5 = c ^ t1;
-        int    t6 = c ^ X0;
+        int    t6 = c ^ X[0];
         int    t7 = b & t6;
-        X3 = t5 ^ t7;
-        X2 = a ^ ((d | t7) & (X0 | t5));
-        X1 = (t2 ^ X3) ^ (X2 ^ (d | t1));
+        X[3] = t5 ^ t7;
+        X[2] = a ^ ((d | t7) & (X[0] | t5));
+        X[1] = (t2 ^ X[3]) ^ (X[2] ^ (d | t1));
     }
 
     /**
      * InvS2 - {12, 9,15, 4,11,14, 1, 2, 0, 3, 6,13, 5, 8,10, 7 } - 16 steps.
      */
-    protected final void ib2(int a, int b, int c, int d)
+    protected final void ib2(int[] X, int a, int b, int c, int d)
     {
         int    t1 = b ^ d;
         int    t2 = ~t1;
         int    t3 = a ^ c;
         int    t4 = c ^ t1;
         int    t5 = b & t4;
-        X0 = t3 ^ t5;
+        X[0] = t3 ^ t5;
         int    t7 = a | t2;
         int    t8 = d ^ t7;
         int    t9 = t3 | t8;
-        X3 = t1 ^ t9;
+        X[3] = t1 ^ t9;
         int    t11 = ~t4;
-        int    t12 = X0 | X3;
-        X1 = t11 ^ t12;
-        X2 = (d & t11) ^ (t3 ^ t12);
+        int    t12 = X[0] | X[3];
+        X[1] = t11 ^ t12;
+        X[2] = (d & t11) ^ (t3 ^ t12);
     }
 
     /**
      * S3 - { 0,15,11, 8,12, 9, 6, 3,13, 1, 2, 4,10, 7, 5,14 } - 16 terms.
      */
-    protected final void sb3(int a, int b, int c, int d)
+    protected final void sb3(int[] X, int a, int b, int c, int d)
     {
         int    t1 = a ^ b;
         int    t2 = a & c;
@@ -258,20 +257,20 @@ public abstract class SerpentEngineBase
         int    t4 = c ^ d;
         int    t5 = t1 & t3;
         int    t6 = t2 | t5;
-        X2 = t4 ^ t6;
+        X[2] = t4 ^ t6;
         int    t8 = b ^ t3;
         int    t9 = t6 ^ t8;
         int    t10 = t4 & t9;
-        X0 = t1 ^ t10;
-        int    t12 = X2 & X0;
-        X1 = t9 ^ t12;
-        X3 = (b | d) ^ (t4 ^ t12);
+        X[0] = t1 ^ t10;
+        int    t12 = X[2] & X[0];
+        X[1] = t9 ^ t12;
+        X[3] = (b | d) ^ (t4 ^ t12);
     }
 
     /**
      * InvS3 - { 0, 9,10, 7,11,14, 6,13, 3, 5,12, 2, 4, 8,15, 1 } - 15 terms
      */
-    protected final void ib3(int a, int b, int c, int d)
+    protected final void ib3(int[] X, int a, int b, int c, int d)
     {
         int    t1 = a | b;
         int    t2 = b ^ c;
@@ -279,141 +278,141 @@ public abstract class SerpentEngineBase
         int    t4 = a ^ t3;
         int    t5 = c ^ t4;
         int    t6 = d | t4;
-        X0 = t2 ^ t6;
+        X[0] = t2 ^ t6;
         int    t8 = t2 | t6;
         int    t9 = d ^ t8;
-        X2 = t5 ^ t9;
+        X[2] = t5 ^ t9;
         int    t11 = t1 ^ t9;
-        int    t12 = X0 & t11;
-        X3 = t4 ^ t12;
-        X1 = X3 ^ (X0 ^ t11);
+        int    t12 = X[0] & t11;
+        X[3] = t4 ^ t12;
+        X[1] = X[3] ^ (X[0] ^ t11);
     }
 
     /**
      * S4 - { 1,15, 8, 3,12, 0,11, 6, 2, 5, 4,10, 9,14, 7,13 } - 15 terms.
      */
-    protected final void sb4(int a, int b, int c, int d)
+    protected final void sb4(int[] X, int a, int b, int c, int d)
     {
         int    t1 = a ^ d;
         int    t2 = d & t1;
         int    t3 = c ^ t2;
         int    t4 = b | t3;
-        X3 = t1 ^ t4;
+        X[3] = t1 ^ t4;
         int    t6 = ~b;
         int    t7 = t1 | t6;
-        X0 = t3 ^ t7;
-        int    t9 = a & X0;
+        X[0] = t3 ^ t7;
+        int    t9 = a & X[0];
         int    t10 = t1 ^ t6;
         int    t11 = t4 & t10;
-        X2 = t9 ^ t11;
-        X1 = (a ^ t3) ^ (t10 & X2);
+        X[2] = t9 ^ t11;
+        X[1] = (a ^ t3) ^ (t10 & X[2]);
     }
 
     /**
      * InvS4 - { 5, 0, 8, 3,10, 9, 7,14, 2,12,11, 6, 4,15,13, 1 } - 15 terms.
      */
-    protected final void ib4(int a, int b, int c, int d)
+    protected final void ib4(int[] X, int a, int b, int c, int d)
     {
         int    t1 = c | d;
         int    t2 = a & t1;
         int    t3 = b ^ t2;
         int    t4 = a & t3;
         int    t5 = c ^ t4;
-        X1 = d ^ t5;
+        X[1] = d ^ t5;
         int    t7 = ~a;
-        int    t8 = t5 & X1;
-        X3 = t3 ^ t8;
-        int    t10 = X1 | t7;
+        int    t8 = t5 & X[1];
+        X[3] = t3 ^ t8;
+        int    t10 = X[1] | t7;
         int    t11 = d ^ t10;
-        X0 = X3 ^ t11;
-        X2 = (t3 & t11) ^ (X1 ^ t7);
+        X[0] = X[3] ^ t11;
+        X[2] = (t3 & t11) ^ (X[1] ^ t7);
     }
 
     /**
      * S5 - {15, 5, 2,11, 4,10, 9,12, 0, 3,14, 8,13, 6, 7, 1 } - 16 terms.
      */
-    protected final void sb5(int a, int b, int c, int d)
+    protected final void sb5(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~a;
         int    t2 = a ^ b;
         int    t3 = a ^ d;
         int    t4 = c ^ t1;
         int    t5 = t2 | t3;
-        X0 = t4 ^ t5;
-        int    t7 = d & X0;
-        int    t8 = t2 ^ X0;
-        X1 = t7 ^ t8;
-        int    t10 = t1 | X0;
+        X[0] = t4 ^ t5;
+        int    t7 = d & X[0];
+        int    t8 = t2 ^ X[0];
+        X[1] = t7 ^ t8;
+        int    t10 = t1 | X[0];
         int    t11 = t2 | t7;
         int    t12 = t3 ^ t10;
-        X2 = t11 ^ t12;
-        X3 = (b ^ t7) ^ (X1 & t12);
+        X[2] = t11 ^ t12;
+        X[3] = (b ^ t7) ^ (X[1] & t12);
     }
 
     /**
      * InvS5 - { 8,15, 2, 9, 4, 1,13,14,11, 6, 5, 3, 7,12,10, 0 } - 16 terms.
      */
-    protected final void ib5(int a, int b, int c, int d)
+    protected final void ib5(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~c;
         int    t2 = b & t1;
         int    t3 = d ^ t2;
         int    t4 = a & t3;
         int    t5 = b ^ t1;
-        X3 = t4 ^ t5;
-        int    t7 = b | X3;
+        X[3] = t4 ^ t5;
+        int    t7 = b | X[3];
         int    t8 = a & t7;
-        X1 = t3 ^ t8;
+        X[1] = t3 ^ t8;
         int    t10 = a | d;
         int    t11 = t1 ^ t7;
-        X0 = t10 ^ t11;
-        X2 = (b & t10) ^ (t4 | (a ^ c));
+        X[0] = t10 ^ t11;
+        X[2] = (b & t10) ^ (t4 | (a ^ c));
     }
 
     /**
      * S6 - { 7, 2,12, 5, 8, 4, 6,11,14, 9, 1,15,13, 3,10, 0 } - 15 terms.
      */
-    protected final void sb6(int a, int b, int c, int d)
+    protected final void sb6(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~a;
         int    t2 = a ^ d;
         int    t3 = b ^ t2;
         int    t4 = t1 | t2;
         int    t5 = c ^ t4;
-        X1 = b ^ t5;
-        int    t7 = t2 | X1;
+        X[1] = b ^ t5;
+        int    t7 = t2 | X[1];
         int    t8 = d ^ t7;
         int    t9 = t5 & t8;
-        X2 = t3 ^ t9;
+        X[2] = t3 ^ t9;
         int    t11 = t5 ^ t8;
-        X0 = X2 ^ t11;
-        X3 = (~t5) ^ (t3 & t11);
+        X[0] = X[2] ^ t11;
+        X[3] = (~t5) ^ (t3 & t11);
     }
 
     /**
      * InvS6 - {15,10, 1,13, 5, 3, 6, 0, 4, 9,14, 7, 2,12, 8,11 } - 15 terms.
      */
-    protected final void ib6(int a, int b, int c, int d)
+    protected final void ib6(int[] X, int a, int b, int c, int d)
     {
         int    t1 = ~a;
         int    t2 = a ^ b;
         int    t3 = c ^ t2;
         int    t4 = c | t1;
         int    t5 = d ^ t4;
-        X1 = t3 ^ t5;
+        X[1] = t3 ^ t5;
         int    t7 = t3 & t5;
         int    t8 = t2 ^ t7;
         int    t9 = b | t8;
-        X3 = t5 ^ t9;
-        int    t11 = b | X3;
-        X0 = t8 ^ t11;
-        X2 = (d & t1) ^ (t3 ^ t11);
+        X[3] = t5 ^ t9;
+        int    t11 = b | X[3];
+        X[0] = t8 ^ t11;
+        X[2] = (d & t1) ^ (t3 ^ t11);
     }
 
     /**
      * S7 - { 1,13,15, 0,14, 8, 2,11, 7, 4,12,10, 9, 3, 5, 6 } - 16 terms.
      */
-    protected final void sb7(int a, int b, int c, int d)
+    protected final void sb7(int[] X, int a, int b, int c, int d)
     {
         int    t1 = b ^ c;
         int    t2 = c & t1;
@@ -421,61 +420,61 @@ public abstract class SerpentEngineBase
         int    t4 = a ^ t3;
         int    t5 = d | t1;
         int    t6 = t4 & t5;
-        X1 = b ^ t6;
-        int    t8 = t3 | X1;
+        X[1] = b ^ t6;
+        int    t8 = t3 | X[1];
         int    t9 = a & t4;
-        X3 = t1 ^ t9;
+        X[3] = t1 ^ t9;
         int    t11 = t4 ^ t8;
-        int    t12 = X3 & t11;
-        X2 = t3 ^ t12;
-        X0 = (~t11) ^ (X3 & X2);
+        int    t12 = X[3] & t11;
+        X[2] = t3 ^ t12;
+        X[0] = (~t11) ^ (X[3] & X[2]);
     }
 
     /**
      * InvS7 - { 3, 0, 6,13, 9,14,15, 8, 5,12,11, 7,10, 1, 4, 2 } - 17 terms.
      */
-    protected final void ib7(int a, int b, int c, int d)
+    protected final void ib7(int[] X, int a, int b, int c, int d)
     {
         int t3 = c | (a & b);
         int    t4 = d & (a | b);
-        X3 = t3 ^ t4;
+        X[3] = t3 ^ t4;
         int    t6 = ~d;
         int    t7 = b ^ t4;
-        int    t9 = t7 | (X3 ^ t6);
-        X1 = a ^ t9;
-        X0 = (c ^ t7) ^ (d | X1);
-        X2 = (t3 ^ X1) ^ (X0 ^ (a & X3));
+        int    t9 = t7 | (X[3] ^ t6);
+        X[1] = a ^ t9;
+        X[0] = (c ^ t7) ^ (d | X[1]);
+        X[2] = (t3 ^ X[1]) ^ (X[0] ^ (a & X[3]));
     }
 
     /**
      * Apply the linear transformation to the register set.
      */
-    protected final void LT()
+    protected final void LT(int[] X)
     {
-        int x0  = rotateLeft(X0, 13);
-        int x2  = rotateLeft(X2, 3);
-        int x1  = X1 ^ x0 ^ x2 ;
-        int x3  = X3 ^ x2 ^ x0 << 3;
+        int x0  = rotateLeft(X[0], 13);
+        int x2  = rotateLeft(X[2], 3);
+        int x1  = X[1] ^ x0 ^ x2 ;
+        int x3  = X[3] ^ x2 ^ x0 << 3;
 
-        X1  = rotateLeft(x1, 1);
-        X3  = rotateLeft(x3, 7);
-        X0  = rotateLeft(x0 ^ X1 ^ X3, 5);
-        X2  = rotateLeft(x2 ^ X3 ^ (X1 << 7), 22);
+        X[1]  = rotateLeft(x1, 1);
+        X[3]  = rotateLeft(x3, 7);
+        X[0]  = rotateLeft(x0 ^ X[1] ^ X[3], 5);
+        X[2]  = rotateLeft(x2 ^ X[3] ^ (X[1] << 7), 22);
     }
 
     /**
      * Apply the inverse of the linear transformation to the register set.
      */
-    protected final void inverseLT()
+    protected final void inverseLT(int[] X)
     {
-        int x2 = rotateRight(X2, 22) ^ X3 ^ (X1 << 7);
-        int x0 = rotateRight(X0, 5) ^ X1 ^ X3;
-        int x3 = rotateRight(X3, 7);
-        int x1 = rotateRight(X1, 1);
-        X3 = x3 ^ x2 ^ x0 << 3;
-        X1 = x1 ^ x0 ^ x2;
-        X2 = rotateRight(x2, 3);
-        X0 = rotateRight(x0, 13);
+        int x2 = rotateRight(X[2], 22) ^ X[3] ^ (X[1] << 7);
+        int x0 = rotateRight(X[0], 5) ^ X[1] ^ X[3];
+        int x3 = rotateRight(X[3], 7);
+        int x1 = rotateRight(X[1], 1);
+        X[3] = x3 ^ x2 ^ x0 << 3;
+        X[1] = x1 ^ x0 ^ x2;
+        X[2] = rotateRight(x2, 3);
+        X[0] = rotateRight(x0, 13);
     }
 
     protected abstract int[] makeWorkingKey(byte[] key);
