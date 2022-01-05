@@ -124,8 +124,8 @@ import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.QTESLAParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Encodable;
@@ -1359,7 +1359,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -1388,7 +1388,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -1417,7 +1417,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -1449,7 +1449,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -1480,7 +1480,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -1529,7 +1529,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
     }
 
@@ -1809,7 +1809,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail("error setting up keys - " + e.toString());
+            fail("error setting up keys - " + e);
             return;
         }
 
@@ -1904,7 +1904,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail("error setting up keys - " + e.toString());
+            fail("error setting up keys - " + e);
             return;
         }
 
@@ -2010,7 +2010,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail("error setting up keys - " + e.toString());
+            fail("error setting up keys - " + e);
             return;
         }
 
@@ -2082,7 +2082,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail("error setting generating cert - " + e.toString());
+            fail("error setting generating cert - " + e);
         }
 
         X509Principal pr = new X509Principal("O=\"The Bouncy Castle, The Legion of\",E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU");
@@ -2213,7 +2213,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": " + id + " failed - exception " + e, e);
         }
 
     }
@@ -2240,7 +2240,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail("error setting up keys - " + e.toString());
+            fail("error setting up keys - " + e);
             return;
         }
 
@@ -3472,15 +3472,15 @@ public class CertTest
     /*
      * we generate a self signed certificate for the sake of testing - qTESLA
      */
-    public void checkCreationQTESLA()
+    public void checkCreationSPHINCSPlus()
         throws Exception
     {
         //
         // set up the keys
         //
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("qTESLA", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(new QTESLAParameterSpec(QTESLAParameterSpec.PROVABLY_SECURE_I), new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha256_256f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -4362,7 +4362,7 @@ public class CertTest
         }
         catch (Exception e)
         {
-            fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e.toString(), e);
+            fail(dump + Strings.lineSeparator() + getName() + ": testNullDerNull failed - exception " + e, e);
         }
         finally
         {
@@ -4789,7 +4789,7 @@ public class CertTest
 
         checkCreationEd448();
 
-        checkCreationQTESLA();
+        checkCreationSPHINCSPlus();
         checkCreationDSA();
         checkCreationECDSA();
         checkCreationRSA();
