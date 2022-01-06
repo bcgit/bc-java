@@ -12,6 +12,8 @@ public class FrodoKeyPairGenerator
     private  FrodoKeyGenerationParameters frodoParams;
 
     private int n;
+    private int D;
+    private int B;
 
     private boolean isAES128;
 
@@ -24,7 +26,8 @@ public class FrodoKeyPairGenerator
         this.random = param.getRandom();
 
         this.n = this.frodoParams.getParameters().getN();
-        this.isAES128 = this.frodoParams.getParameters().isAES128();
+        this.D = this.frodoParams.getParameters().getD();
+        this.B = this.frodoParams.getParameters().getB();
     }
 
     private AsymmetricCipherKeyPair genKeyPair()
