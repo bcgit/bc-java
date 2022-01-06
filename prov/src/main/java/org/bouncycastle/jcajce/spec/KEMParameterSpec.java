@@ -5,15 +5,37 @@ import java.security.spec.AlgorithmParameterSpec;
 public class KEMParameterSpec
     implements AlgorithmParameterSpec
 {
-    private final String wrappingKeyAlgorithmName;
+    private final String keyAlgorithmName;
+    private final int keySizeInBits;
 
-    public KEMParameterSpec(String wrappingKeyAlgorithmName)
+    public KEMParameterSpec(String keyAlgorithmName)
     {
-        this.wrappingKeyAlgorithmName = wrappingKeyAlgorithmName;
+        this(keyAlgorithmName, -1);
     }
 
-    public String getWrappingKeyAlgorithmName()
+    public KEMParameterSpec(String keyAlgorithmName, int keySizeInBits)
     {
-        return wrappingKeyAlgorithmName;
+        this.keyAlgorithmName = keyAlgorithmName;
+        this.keySizeInBits = keySizeInBits;
+    }
+
+    /**
+     * Return the name of the symmetric key algorithm for the key returned by this KEM.
+     *
+     * @return key algorithm name.
+     */
+    public String getKeyAlgorithmName()
+    {
+        return keyAlgorithmName;
+    }
+
+    /**
+     * Return the key size in bits if specified, -1 indicates no preference.
+     *
+     * @return key size, or -1.
+     */
+    public int getKeySizeInBits()
+    {
+        return keySizeInBits;
     }
 }

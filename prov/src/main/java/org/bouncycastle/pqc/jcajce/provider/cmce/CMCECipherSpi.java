@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
+import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -250,7 +251,7 @@ class CMCECipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getWrappingKeyAlgorithmName());
+            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
 
@@ -295,7 +296,7 @@ class CMCECipherSpi
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getInputSize()));
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getWrappingKeyAlgorithmName());
+            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secret);
 
@@ -329,13 +330,17 @@ class CMCECipherSpi
         {
             kWrap = new RFC3394WrapEngine(new AESEngine());
         }
+        else if (keyAlgorithmName.equalsIgnoreCase("ARIA"))
+        {
+            kWrap = new RFC3394WrapEngine(new ARIAEngine());
+        }
         else if (keyAlgorithmName.equalsIgnoreCase("Camellia"))
         {
             kWrap = new RFC3394WrapEngine(new CamelliaEngine());
         }
-        else if (keyAlgorithmName.equalsIgnoreCase("ARIA"))
+        else if (keyAlgorithmName.equalsIgnoreCase("SEED"))
         {
-            kWrap = new RFC3394WrapEngine(new ARIAEngine());
+            kWrap = new RFC3394WrapEngine(new SEEDEngine());
         }
         else if (keyAlgorithmName.equalsIgnoreCase("AES-KWP"))
         {

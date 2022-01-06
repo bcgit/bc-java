@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 public class CMCEPrivateKeyParameters
     extends CMCEKeyParameters
@@ -22,6 +21,6 @@ public class CMCEPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(Pack.longToBigEndian(CMCEParameters.getID(getParameters())), privateKey);
+        return Arrays.clone(privateKey);
     }
 }

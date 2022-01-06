@@ -26,6 +26,7 @@ class CMCEEngine
     private int GFMASK;    // = (1 << GFBITS) - 1;
 
     private int[] poly; // only needed for key pair gen
+    private final int defaultKeySize;
 
     private GF gf;
     private BENES benes;
@@ -64,13 +65,14 @@ class CMCEEngine
         return SYND_BYTES + 32;
     }
 
-    public CMCEEngine(int m, int n, int t, int[] p, boolean usePivots)
+    public CMCEEngine(int m, int n, int t, int[] p, boolean usePivots, int defaultKeySize)
     {
         this.usePivots = usePivots;
         this.SYS_N = n;
         this.SYS_T = t;
         this.GFBITS = m;
         this.poly = p;
+        this.defaultKeySize = defaultKeySize;
 
         IRR_BYTES = SYS_T * 2; // t * ceil(m/8)
         COND_BYTES = (1 << (GFBITS - 4)) * (2 * GFBITS - 1);
@@ -114,7 +116,7 @@ class CMCEEngine
         byte[] seed_a = {64}, seed_b = ByteUtils.subArray(sk, 0, 32);
         byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
         byte[] hash = new byte[(SYS_N / 8) + ((1 << GFBITS) * 4) + IRR_BYTES + 32];
-        ;
+
         int hash_idx = 0;
         Xof digest;
         digest = new SHAKEDigest(256);
@@ -183,11 +185,9 @@ class CMCEEngine
             System.arraycopy(out, 0, reg_sk, IRR_BYTES + 40, out.length);
         }
 
-
         // reg s
         System.arraycopy(hash, 0, reg_sk, getPrivateKeySize() - SYS_N / 8, SYS_N / 8);
         return reg_sk;
-
     }
 
     public void kem_keypair(byte[] pk, byte[] sk, SecureRandom random)
@@ -552,7 +552,7 @@ class CMCEEngine
         // K = Hash((0x1 || e || C), 32)
         digest = new SHAKEDigest(256);
         digest.update(one_ec, 0, one_ec.length); // input
-        digest.doFinal(key, 0, 32);     // output
+        digest.doFinal(key, 0, key.length);     // output
 
 
         if (usePadding) //TODO use padding: make sure it works
@@ -655,7 +655,7 @@ class CMCEEngine
         //  = SHAKE256(preimage, 32)
         digest = new SHAKEDigest(256);
         digest.update(preimage, 0, preimage.length); // input
-        digest.doFinal(key, 0, 32);     // output
+        digest.doFinal(key, 0, key.length);     // output
 
 
         // clear outputs (set to all 1's) if padding bits are not all zero
@@ -663,7 +663,7 @@ class CMCEEngine
         {
             mask = (byte)padding_ok;
 
-            for (i = 0; i < 32; i++)
+            for (i = 0; i < key.length; i++)
             {
                 key[i] |= mask;
             }
@@ -1772,5 +1772,10 @@ class CMCEEngine
         ret = b;
 
         return ret - 1;
+    }
+
+    public int getDefaultSessionKeySize()
+    {
+        return defaultKeySize;
     }
 }

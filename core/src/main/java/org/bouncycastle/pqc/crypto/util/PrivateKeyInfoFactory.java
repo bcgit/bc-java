@@ -132,7 +132,8 @@ public class PrivateKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(BCObjectIdentifiers.classicMcEliece);
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
+
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)
