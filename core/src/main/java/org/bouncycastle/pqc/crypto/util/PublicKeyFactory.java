@@ -37,7 +37,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -61,7 +60,16 @@ public class PublicKeyFactory
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2Converter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.classicMcEliece, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece460896f_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece6688128_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece6688128f_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece6960119_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece6960119f_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece8192128_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.mceliece8192128f_r3, new CMCEConverter());
     }
 
     /**
@@ -269,9 +277,9 @@ public class PublicKeyFactory
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            CMCEParameters spParams = CMCEParameters.getParams(Longs.valueOf(Pack.bigEndianToLong(keyEnc, 0)));
+            CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new CMCEPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 8, keyEnc.length));
+            return new CMCEPublicKeyParameters(spParams, keyEnc);
         }
     }
 

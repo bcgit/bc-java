@@ -103,7 +103,8 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(BCObjectIdentifiers.classicMcEliece);
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
+
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof XMSSPublicKeyParameters)

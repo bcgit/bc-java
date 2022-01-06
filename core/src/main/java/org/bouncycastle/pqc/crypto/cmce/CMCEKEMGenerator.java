@@ -25,8 +25,16 @@ public class CMCEKEMGenerator
     {
         CMCEPublicKeyParameters key = (CMCEPublicKeyParameters)recipientKey;
         CMCEEngine engine = key.getParameters().getEngine();
+
+        return generateEncapsulated(recipientKey, engine.getDefaultSessionKeySize());
+    }
+
+    public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey, int sessionKeySizeInBits)
+    {
+        CMCEPublicKeyParameters key = (CMCEPublicKeyParameters)recipientKey;
+        CMCEEngine engine = key.getParameters().getEngine();
         byte[] cipher_text = new byte[engine.getCipherTextSize()];
-        byte[] sessionKey = new byte[32];     // l/8  - Section 2.5.2
+        byte[] sessionKey = new byte[sessionKeySizeInBits / 8];     // document as 32 - l/8  - Section 2.5.2
         engine.kem_enc(cipher_text, sessionKey, key.getPublicKey(), sr);
         return new SecretWithEncapsulationImpl(sessionKey, cipher_text);
     }

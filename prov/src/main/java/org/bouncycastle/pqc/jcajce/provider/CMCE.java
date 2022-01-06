@@ -22,13 +22,15 @@ public class CMCE
             provider.addAlgorithm("KeyFactory.CMCE", PREFIX + "CMCEKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.CMCE", PREFIX + "CMCEKeyPairGeneratorSpi");
 
+            provider.addAlgorithm("KeyGenerator.CMCE", PREFIX + "CMCEKeyGeneratorSpi");
+
             AsymmetricKeyInfoConverter keyFact = new CMCEKeyFactorySpi();
 
             provider.addAlgorithm("Cipher.CMCE", PREFIX + "CMCECipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.classicMcEliece, "CMCE");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_mceliece, "CMCE");
 
-            registerOid(provider, BCObjectIdentifiers.classicMcEliece, "CMCE", keyFact);
-            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.classicMcEliece, "CMCE");
+            registerOid(provider, BCObjectIdentifiers.pqc_kem_mceliece, "CMCE", keyFact);
+            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.pqc_kem_mceliece, "CMCE");
         }
     }
 }
