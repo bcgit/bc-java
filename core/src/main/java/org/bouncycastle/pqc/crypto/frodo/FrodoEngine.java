@@ -1,55 +1,52 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Pack;
-
-import javax.crypto.*;
-import java.io.IOException;
 import java.security.*;
 
 class FrodoEngine
 {
     // constant parameters
-    private static int nbar = 8;
-    private static int mbar = 8;
-    private static int len_seedA = 128;
-    private static int len_z = 128;
-    private static int len_chi = 16;
+    private static final int nbar = 8;
+    private static final int mbar = 8;
+    private static final int len_seedA = 128;
+    private static final int len_z = 128;
+    private static final int len_chi = 16;
 
-    private static int len_seedA_bytes = len_seedA / 8;
-    private static int len_z_bytes = len_z / 8;
-    private static int len_chi_bytes = len_chi / 8;
+    private static final int len_seedA_bytes = len_seedA / 8;
+    private static final int len_z_bytes = len_z / 8;
+    private static final int len_chi_bytes = len_chi / 8;
 
     // parameters for Frodo{n}
-    private static int D;
-    private static int q;
-    private static int n;
-    private static int B;
+    private final int D;
+    private final int q;
+    private final int n;
+    private final int B;
 
-    private static int len_sk_bytes;
-    private static int len_pk_bytes;
-    private static int len_ct_bytes;
+    private final int len_sk_bytes;
+    private final int len_pk_bytes;
+    private final int len_ct_bytes;
 
-    private static short[] T_chi;
+    private final short[] T_chi;
+
     // all same size
-    private static int len_mu;
-    private static int len_seedSE;
-    private static int len_s;
-    private static int len_k;
-    private static int len_pkh;
-    private static int len_ss;
+    private final int len_mu;
+    private final int len_seedSE;
+    private final int len_s;
+    private final int len_k;
+    private final int len_pkh;
+    private final int len_ss;
 
-    private static int len_mu_bytes;
-    private static int len_seedSE_bytes;
-    private static int len_s_bytes;
-    private static int len_k_bytes;
-    private static int len_pkh_bytes;
-    private static int len_ss_bytes;
+    private final int len_mu_bytes;
+    private final int len_seedSE_bytes;
+    private final int len_s_bytes;
+    private final int len_k_bytes;
+    private final int len_pkh_bytes;
+    private final int len_ss_bytes;
     //
-    private static Xof digest;
-    private static FrodoMatrixGenerator gen;
+    private final Xof digest;
+    private final FrodoMatrixGenerator gen;
 
     public int getCipherTextSize()
     {
@@ -60,149 +57,48 @@ class FrodoEngine
     {
         return len_ss_bytes;
     }
+
     public int getPrivateKeySize()
     {
         return len_sk_bytes;
     }
+    
     public int getPublicKeySize()
     {
         return len_pk_bytes;
     }
 
-    public FrodoEngine(int n, boolean isAES128)
+    public FrodoEngine(int n, int D, int B, short[] cdf_table, Xof digest, FrodoMatrixGenerator mGen)
     {
-        switch (n)
-        {
-            case 640: initFrodoKEM640Parameters();
-                break;
-            case 976: initFrodoKEM976Parameters();
-                break;
-            case 1344: initFrodoKEM1344Parameters();
-                break;
-        }
-        if (isAES128)
-            gen = new FrodoMatrixGenerator.Aes128MatrixGenerator(n, q);
-        else
-            gen = new FrodoMatrixGenerator.Shake128MatrixGenerator(n, q);
+        this.n = n;
+        this.D = D;
+        this.q = (1 << D);
+        this.B = B;
 
+        this.len_mu = (B*nbar*nbar);
+        this.len_seedSE = len_mu;
+        this.len_s = len_mu;
+        this.len_k = len_mu;
+        this.len_pkh = len_mu;
+        this.len_ss = len_mu;
+
+        this.len_mu_bytes = len_mu/8;
+        this.len_seedSE_bytes = len_seedSE/8;
+        this.len_s_bytes = len_s/8;
+        this.len_k_bytes = len_k/8;
+        this.len_pkh_bytes = len_pkh/8;
+        this.len_ss_bytes = len_ss/8;
+
+        this.len_ct_bytes = (D*n*nbar)/8 + (D*nbar*nbar)/8;
+        this.len_pk_bytes = len_seedA_bytes + (D*n*nbar)/8;
+        this.len_sk_bytes = len_s_bytes + len_pk_bytes + (2*n*nbar + len_pkh_bytes);
+
+        this.T_chi = cdf_table;
+        this.digest = digest;
+        this.gen = mGen;
     }
 
-    private static void initFrodoKEM640Parameters()
-    {
-        digest = new SHAKEDigest(128);
-
-        D = 15;
-        q = 32768;
-        n = 640;
-        B = 2;
-
-        len_sk_bytes = 19888;
-        len_pk_bytes = 9616;
-        len_ct_bytes = 9720;
-
-        short[] error_distribution = {9288, 8720, 7216, 5264, 3384, 1918, 958, 422, 164, 56, 17, 4, 1};
-        // setting T_chi
-        cdf_zero_centred_symmetric(error_distribution);
-
-
-        // all same size
-        len_mu = 128;
-        len_seedSE = 128;
-        len_s = 128;
-        len_k = 128;
-        len_pkh = 128;
-        len_ss = 128;
-
-        len_mu_bytes = len_mu / 8;
-        len_seedSE_bytes = len_seedSE / 8;
-        len_s_bytes = len_s / 8;
-        len_k_bytes = len_k / 8;
-        len_pkh_bytes = len_pkh / 8;
-        len_ss_bytes = len_ss / 8;
-    }
-
-    private static void initFrodoKEM976Parameters()
-    {
-        digest = new SHAKEDigest(256);
-
-        D = 16;
-        q = 65536;
-        n = 976;
-        B = 3;
-
-        len_sk_bytes = 31296;
-        len_pk_bytes = 15632;
-        len_ct_bytes = 15744;
-
-        short[] error_distribution = {11278, 10277, 7774, 4882, 2545, 1101, 396, 118, 29, 6, 1};
-        // setting T_chi
-        cdf_zero_centred_symmetric(error_distribution);
-
-        // all same size
-        len_mu = 192;
-        len_seedSE = 192;
-        len_s = 192;
-        len_k = 192;
-        len_pkh = 192;
-        len_ss = 192;
-
-        len_mu_bytes = len_mu / 8;
-        len_seedSE_bytes = len_seedSE / 8;
-        len_s_bytes = len_s / 8;
-        len_k_bytes = len_k / 8;
-        len_pkh_bytes = len_pkh / 8;
-        len_ss_bytes = len_ss / 8;
-    }
-
-    private static void initFrodoKEM1344Parameters()
-    {
-        digest = new SHAKEDigest(256);
-
-        D = 16;
-        q = 65536;
-        n = 1344;
-        B = 4;
-
-        len_sk_bytes = 43088;
-        len_pk_bytes = 21520;
-        len_ct_bytes = 21632;
-
-        short[] error_distribution = {18286, 14320, 6876, 2023, 364, 40, 2};
-        // setting T_chi
-        cdf_zero_centred_symmetric(error_distribution);
-
-        // all same size
-        len_mu = 256;
-        len_seedSE = 256;
-        len_s = 256;
-        len_k = 256;
-        len_pkh = 256;
-        len_ss = 256;
-
-        len_mu_bytes = len_mu / 8;
-        len_seedSE_bytes = len_seedSE / 8;
-        len_s_bytes = len_s / 8;
-        len_k_bytes = len_k / 8;
-        len_pkh_bytes = len_pkh / 8;
-        len_ss_bytes = len_ss / 8;
-    }
-
-    private static void cdf_zero_centred_symmetric(short[] chi)
-    {
-        T_chi = new short[chi.length];
-        T_chi[0] = (short) ((chi[0] / 2) - 1);
-        short sum;
-        int i, z;
-        for (z = 1; z < chi.length; z++)
-        {
-            sum = 0;
-            for (i = 1; i < z + 1; i++)
-                sum += chi[i];
-            T_chi[z] = (short) (T_chi[0] + sum);
-        }
-    }
-
-    private static short sample(short r)
+    private short sample(short r)
     {
         short t, e;
         // 1. t = sum_{i=1}^{len_x - 1} r_i * 2^{i-1}
@@ -221,16 +117,16 @@ class FrodoEngine
         return e;
     }
 
-    private static short[] sample_matrix(short[] r, int offset, int n1, int n2)
+    private short[] sample_matrix(short[] r, int offset, int n1, int n2)
     {
         short[] E = new short[n1 * n2];
         for (int i = 0; i < n1; i++)
             for (int j = 0; j < n2; j++)
-                E[i*n2+j] = (short) (sample(r[i * n2 + j + offset]));
+                E[i*n2+j] = sample(r[i * n2 + j + offset]);
         return E;
     }
 
-    private static short[] matrix_transpose(short[] X, int n1, int n2)
+    private short[] matrix_transpose(short[] X, int n1, int n2)
     {
         short[] res = new short[n1 * n2];
 
@@ -240,7 +136,7 @@ class FrodoEngine
         return res;
     }
 
-    private static short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Yrow, int Ycol)
+    private short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Yrow, int Ycol)
     {
         short[] res = new short[Xrow * Ycol];
         for (int i = 0; i < Xrow; i++)
@@ -253,7 +149,7 @@ class FrodoEngine
         return res;
     }
 
-    private static short[] matrix_add(short[] X, short[] Y, int n1, int m1)
+    private short[] matrix_add(short[] X, short[] Y, int n1, int m1)
     {
         short[] res = new short[n1*m1];
         for (int i = 0; i < n1; i++)
@@ -263,8 +159,8 @@ class FrodoEngine
         return res;
     }
 
-    // Packs a short array into a byte array using only the D amount of least significant bits;
-    private static byte[] pack(short[] C)
+    // Packs a short array into a byte array using only the D amount of least significant bits
+    private byte[] pack(short[] C)
     {
         int n = C.length;
         byte[] out = new byte[D * n / 8];
@@ -370,7 +266,7 @@ class FrodoEngine
         System.arraycopy(pkh, 0, sk, len_sk_bytes - len_pkh_bytes, len_pkh_bytes);
     }
 
-    private static short[] unpack(byte[] in, int n1, int n2)
+    private short[] unpack(byte[] in, int n1, int n2)
     {
         short[] out = new short[n1 * n2];
 
@@ -414,7 +310,7 @@ class FrodoEngine
         return out;
     }
 
-    private static short[] encode(byte[] k)
+    private short[] encode(byte[] k)
     {
         int l, byte_index = 0;
         byte mask = 1;
@@ -521,7 +417,7 @@ class FrodoEngine
         digest.doFinal(ss, 0, len_s_bytes);
     }
 
-    private static short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
+    private short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
     {
         short[] res = new short[n1*n2];
         for (int i = 0; i < n1; i++)
@@ -531,7 +427,7 @@ class FrodoEngine
         return res;
     }
 
-    private static byte[] decode(short[] in)
+    private byte[] decode(short[] in)
     {
         int i, j, index = 0, npieces_word = 8;
         int nwords = (nbar * nbar) / 8;
@@ -557,7 +453,7 @@ class FrodoEngine
     }
 
 
-    private static short ctverify(short[] a1, short[] a2, short[] b1, short[] b2)
+    private short ctverify(short[] a1, short[] a2, short[] b1, short[] b2)
     {
         // Compare two arrays in constant time.
         // Returns 0 if the byte arrays are equal, -1 otherwise.
@@ -575,7 +471,7 @@ class FrodoEngine
         return -1;
     }
 
-    private static byte[] ctselect(byte[] a, byte[] b, short selector)
+    private byte[] ctselect(byte[] a, byte[] b, short selector)
     {
         // Select one of the two input arrays to be moved to r
         // If (selector == 0) then load r with a, else if (selector == -1) load r with b
