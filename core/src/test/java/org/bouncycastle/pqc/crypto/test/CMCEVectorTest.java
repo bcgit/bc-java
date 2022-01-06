@@ -29,29 +29,30 @@ public class CMCEVectorTest
         throws Exception
     {
         CMCEParameters[] params = new CMCEParameters[] {
-            CMCEParameters.mceliece348864,
-            CMCEParameters.mceliece348864f,
-            CMCEParameters.mceliece460896,
-            CMCEParameters.mceliece460896f,
-            CMCEParameters.mceliece6688128,
-            CMCEParameters.mceliece6688128f,
-            CMCEParameters.mceliece6960119,
-            CMCEParameters.mceliece6960119f,
-            CMCEParameters.mceliece8192128,
-            CMCEParameters.mceliece8192128f
+            CMCEParameters.mceliece348864r3,
+            CMCEParameters.mceliece348864fr3,
+            CMCEParameters.mceliece460896r3,
+            CMCEParameters.mceliece460896fr3,
+            CMCEParameters.mceliece6688128r3,
+            CMCEParameters.mceliece6688128fr3,
+            CMCEParameters.mceliece6960119r3,
+            CMCEParameters.mceliece6960119fr3,
+            CMCEParameters.mceliece8192128r3,
+            CMCEParameters.mceliece8192128fr3
         };
 
-        for (int i = 0; i != params.length; i++)
-        {
-            long l = CMCEParameters.getID(params[i]).longValue();
-            
-            assertEquals(params[i].getM(), (l >> 40) & 0xff);
-            assertEquals(params[i].getN(), (l >> 24) & 0xffff);
-            assertEquals(params[i].getT(), (l >> 16) & 0xff);
-            assertEquals(params[i].getMu(), (l >> 8) & 0xff);
-            assertEquals(params[i].getNu(), l & 0xff);
-        }
+        assertEquals(128, CMCEParameters.mceliece348864r3.getDefaultKeySize());
+        assertEquals(128, CMCEParameters.mceliece348864fr3.getDefaultKeySize());
+        assertEquals(192, CMCEParameters.mceliece460896r3.getDefaultKeySize());
+        assertEquals(192, CMCEParameters.mceliece460896fr3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece6688128r3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece6688128fr3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece6960119r3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece6960119fr3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece8192128r3.getDefaultKeySize());
+        assertEquals(256, CMCEParameters.mceliece8192128fr3.getDefaultKeySize());
     }
+    
     public void testVectors()
         throws Exception
     {
@@ -69,16 +70,16 @@ public class CMCEVectorTest
         };
 
         CMCEParameters[] params = new CMCEParameters[] {
-            CMCEParameters.mceliece348864,
-            CMCEParameters.mceliece348864f,
-            CMCEParameters.mceliece460896,
-            CMCEParameters.mceliece460896f,
-            CMCEParameters.mceliece6688128,
-            CMCEParameters.mceliece6688128f,
-            CMCEParameters.mceliece6960119,
-            CMCEParameters.mceliece6960119f,
-            CMCEParameters.mceliece8192128,
-            CMCEParameters.mceliece8192128f
+            CMCEParameters.mceliece348864r3,
+            CMCEParameters.mceliece348864fr3,
+            CMCEParameters.mceliece460896r3,
+            CMCEParameters.mceliece460896fr3,
+            CMCEParameters.mceliece6688128r3,
+            CMCEParameters.mceliece6688128fr3,
+            CMCEParameters.mceliece6960119r3,
+            CMCEParameters.mceliece6960119fr3,
+            CMCEParameters.mceliece8192128r3,
+            CMCEParameters.mceliece8192128fr3
         };
 
 //        files = "6960-119-cmce.rsp";// 8192-128-cmce.rsp";
@@ -133,18 +134,19 @@ public class CMCEVectorTest
                         
                         // KEM Enc
                         CMCEKEMGenerator cmceEncCipher = new CMCEKEMGenerator(random);
-                        SecretWithEncapsulation secWenc = cmceEncCipher.generateEncapsulated(pubParams);
+                        SecretWithEncapsulation secWenc = cmceEncCipher.generateEncapsulated(pubParams, 256);
                         byte[] generated_cipher_text = secWenc.getEncapsulation();
                         assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
-                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, secWenc.getSecret()));
+                        byte[] secret = secWenc.getSecret();
+                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, secret));
 
                         // KEM Dec
                         CMCEKEMExtractor cmceDecCipher = new CMCEKEMExtractor(privParams);
 
-                        byte[] dec_key = cmceDecCipher.extractSecret(generated_cipher_text);
+                        byte[] dec_key = cmceDecCipher.extractSecret(generated_cipher_text, 256);
 
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
-                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secWenc.getSecret()));
+                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                     }
                     buf.clear();
 

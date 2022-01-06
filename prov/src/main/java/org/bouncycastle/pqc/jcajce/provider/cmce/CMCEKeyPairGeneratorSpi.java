@@ -24,16 +24,16 @@ public class CMCEKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(CMCEParameterSpec.mceliece348864.getName(), CMCEParameters.mceliece348864);
-        parameters.put(CMCEParameterSpec.mceliece348864f.getName(), CMCEParameters.mceliece348864f);
-        parameters.put(CMCEParameterSpec.mceliece460896.getName(), CMCEParameters.mceliece460896);
-        parameters.put(CMCEParameterSpec.mceliece460896f.getName(), CMCEParameters.mceliece460896f);
-        parameters.put(CMCEParameterSpec.mceliece6688128.getName(), CMCEParameters.mceliece6688128);
-        parameters.put(CMCEParameterSpec.mceliece6688128f.getName(), CMCEParameters.mceliece6688128f);
-        parameters.put(CMCEParameterSpec.mceliece6960119.getName(), CMCEParameters.mceliece6960119);
-        parameters.put(CMCEParameterSpec.mceliece6960119f.getName(), CMCEParameters.mceliece6960119f);
-        parameters.put(CMCEParameterSpec.mceliece8192128.getName(), CMCEParameters.mceliece8192128);
-        parameters.put(CMCEParameterSpec.mceliece8192128f.getName(), CMCEParameters.mceliece8192128f);
+        parameters.put(CMCEParameterSpec.mceliece348864.getName(), CMCEParameters.mceliece348864r3);
+        parameters.put(CMCEParameterSpec.mceliece348864f.getName(), CMCEParameters.mceliece348864fr3);
+        parameters.put(CMCEParameterSpec.mceliece460896.getName(), CMCEParameters.mceliece460896r3);
+        parameters.put(CMCEParameterSpec.mceliece460896f.getName(), CMCEParameters.mceliece460896fr3);
+        parameters.put(CMCEParameterSpec.mceliece6688128.getName(), CMCEParameters.mceliece6688128r3);
+        parameters.put(CMCEParameterSpec.mceliece6688128f.getName(), CMCEParameters.mceliece6688128fr3);
+        parameters.put(CMCEParameterSpec.mceliece6960119.getName(), CMCEParameters.mceliece6960119r3);
+        parameters.put(CMCEParameterSpec.mceliece6960119f.getName(), CMCEParameters.mceliece6960119fr3);
+        parameters.put(CMCEParameterSpec.mceliece8192128.getName(), CMCEParameters.mceliece8192128r3);
+        parameters.put(CMCEParameterSpec.mceliece8192128f.getName(), CMCEParameters.mceliece8192128fr3);
     }
     
     CMCEKeyGenerationParameters param;
@@ -88,7 +88,7 @@ public class CMCEKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new CMCEKeyGenerationParameters(random, CMCEParameters.mceliece8192128f);
+            param = new CMCEKeyGenerationParameters(random, CMCEParameters.mceliece8192128fr3);
 
             engine.init(param);
             initialised = true;

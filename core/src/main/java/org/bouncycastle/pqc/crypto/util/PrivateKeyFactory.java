@@ -39,7 +39,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -132,12 +131,12 @@ public class PrivateKeyFactory
 
             return new SPHINCSPlusPrivateKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
         }
-        else if (algOID.equals(BCObjectIdentifiers.classicMcEliece))
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            CMCEParameters spParams = CMCEParameters.getParams(Longs.valueOf(Pack.bigEndianToLong(keyEnc, 0)));
+            CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new CMCEPrivateKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 8, keyEnc.length));
+            return new CMCEPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {
