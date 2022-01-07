@@ -67,14 +67,14 @@ public class CMCEKeyFactorySpi
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
         throws InvalidKeySpecException
     {
-        if (key instanceof org.bouncycastle.pqc.jcajce.provider.sphincsplus.BCSPHINCSPlusPrivateKey)
+        if (key instanceof org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
         }
-        else if (key instanceof org.bouncycastle.pqc.jcajce.provider.sphincsplus.BCSPHINCSPlusPublicKey)
+        else if (key instanceof org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
