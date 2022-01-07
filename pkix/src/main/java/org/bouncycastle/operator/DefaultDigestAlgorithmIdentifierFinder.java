@@ -104,6 +104,10 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(BCObjectIdentifiers.sphincs256_with_SHA3_512, NISTObjectIdentifiers.id_sha3_512);
         digestOids.put(BCObjectIdentifiers.sphincs256_with_SHA512, NISTObjectIdentifiers.id_sha512);
 
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha_256, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha_512, NISTObjectIdentifiers.id_sha512);
+
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha224, NISTObjectIdentifiers.id_sha224);
@@ -229,6 +233,10 @@ public class DefaultDigestAlgorithmIdentifierFinder
         else if (sigAlgOid.equals(EdECObjectIdentifiers.id_Ed25519))
         {
             digAlgOid = NISTObjectIdentifiers.id_sha512;
+        }
+        else if (sigAlgOid.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
+        {
+            digAlgOid = NISTObjectIdentifiers.id_sha256;
         }
         else
         {

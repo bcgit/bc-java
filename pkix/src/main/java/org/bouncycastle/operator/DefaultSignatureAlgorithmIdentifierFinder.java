@@ -248,6 +248,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         // SPHINCS-PLUS
         //
         noParams.add(BCObjectIdentifiers.sphincsPlus);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha_256);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha_512);
 
         //
         // XMSS
@@ -381,6 +384,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001, CryptoProObjectIdentifiers.gostR3411);
         digestOids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
         digestOids.put(RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
+
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha_256, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha_512, NISTObjectIdentifiers.id_sha512);
 
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
