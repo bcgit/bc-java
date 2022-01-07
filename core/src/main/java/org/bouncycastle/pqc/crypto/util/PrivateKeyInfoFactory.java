@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -123,7 +122,7 @@ public class PrivateKeyInfoFactory
             byte[] encoding = params.getEncoded();
             byte[] pubEncoding = params.getEncodedPublicKey();
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(BCObjectIdentifiers.sphincsPlus);
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof CMCEPrivateKeyParameters)

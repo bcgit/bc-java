@@ -258,6 +258,9 @@ public final class BouncyCastleProvider extends Provider
     private void loadPQCKeys()
     {
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_256, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha_256, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha_512, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.sphincs256, new Sphincs256KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.newHope, new NHKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss, new XMSSKeyFactorySpi());

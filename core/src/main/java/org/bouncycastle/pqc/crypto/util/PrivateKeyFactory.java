@@ -124,7 +124,7 @@ public class PrivateKeyFactory
                 return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
-        else if (algOID.equals(BCObjectIdentifiers.sphincsPlus))
+        else if (algOID.on(BCObjectIdentifiers.sphincsPlus))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             SPHINCSPlusParameters spParams = SPHINCSPlusParameters.getParams(Integers.valueOf(Pack.bigEndianToInt(keyEnc, 0)));
