@@ -16,10 +16,10 @@ public class PKRecipientInfo
     extends ASN1Object
 {
 
-    private final HashedId recipientId;
+    private final HashedId8 recipientId;
     private final EncryptedDataEncryptionKey encKey;
 
-    public PKRecipientInfo(HashedId recipientId, EncryptedDataEncryptionKey encKey)
+    public PKRecipientInfo(HashedId8 recipientId, EncryptedDataEncryptionKey encKey)
     {
         this.recipientId = recipientId;
         this.encKey = encKey;
@@ -35,7 +35,7 @@ public class PKRecipientInfo
         ASN1Sequence seq = ASN1Sequence.getInstance(object);
 
         return new PKRecipientInfo(
-            HashedId.getInstance(seq.getObjectAt(0)),
+            HashedId8.getInstance(seq.getObjectAt(0)),
             EncryptedDataEncryptionKey.getInstance(seq.getObjectAt(0)));
     }
 
@@ -57,10 +57,10 @@ public class PKRecipientInfo
     public static class Builder
     {
 
-        private HashedId recipientId;
+        private HashedId8 recipientId;
         private EncryptedDataEncryptionKey encKey;
 
-        public Builder setRecipientId(HashedId recipientId)
+        public Builder setRecipientId(HashedId8 recipientId)
         {
             this.recipientId = recipientId;
             return this;

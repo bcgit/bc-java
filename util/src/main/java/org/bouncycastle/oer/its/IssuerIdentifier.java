@@ -52,13 +52,13 @@ public class IssuerIdentifier
             switch (item)
             {
             case sha256AndDigest: // sha256AndDigest HashId8
-                return new IssuerIdentifier(sha256AndDigest, HashedId.HashedId8.getInstance(taggedObject.getObject()));
+                return new IssuerIdentifier(sha256AndDigest, HashedId8.getInstance(taggedObject.getObject()));
             case self: // self HashAlgorithm
                 return new IssuerIdentifier(self, HashAlgorithm.getInstance(taggedObject.getObject()));
             case extension: // sha384AndDigest  HashedId8
                 return new IssuerIdentifier(extension, DEROctetString.getInstance(taggedObject.getObject()));
             case sha384AndDigest: // sha384AndDigest  HashedId8
-                return new IssuerIdentifier(sha384AndDigest, HashedId.HashedId8.getInstance(taggedObject.getObject()));
+                return new IssuerIdentifier(sha384AndDigest, HashedId8.getInstance(taggedObject.getObject()));
             default:
                 throw new IllegalArgumentException("unable to decode into known choice" + item);
             }
@@ -108,7 +108,7 @@ public class IssuerIdentifier
             return this;
         }
 
-        public Builder sha256AndDigest(HashedId id)
+        public Builder sha256AndDigest(HashedId8 id)
         {
             this.choice = sha256AndDigest;
             this.value = id;
@@ -129,7 +129,7 @@ public class IssuerIdentifier
             return this;
         }
 
-        public Builder sha384AndDigest(HashedId id)
+        public Builder sha384AndDigest(HashedId8 id)
         {
             this.choice = sha384AndDigest;
             this.value = id;

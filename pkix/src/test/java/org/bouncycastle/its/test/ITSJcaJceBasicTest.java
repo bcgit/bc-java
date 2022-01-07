@@ -34,7 +34,7 @@ import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CrlSeries;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
 import org.bouncycastle.oer.its.EndEntityType;
-import org.bouncycastle.oer.its.HashedId;
+import org.bouncycastle.oer.its.HashedId8;
 import org.bouncycastle.oer.its.Hostname;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.Psid;
@@ -80,7 +80,7 @@ public class ITSJcaJceBasicTest
 //                debugOutput = new PrintWriter(System.out);
 //            }
 //        };
-        ASN1Object obj = oi.parse(IEEE1609dot2.certificate);
+        ASN1Object obj = oi.parse(IEEE1609dot2.Certificate.build());
         ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
         fin.close();
         return certificate;
@@ -180,7 +180,7 @@ public class ITSJcaJceBasicTest
 
         IssuerIdentifier caIssuerIdentifier = IssuerIdentifier
             .builder()
-            .sha256AndDigest(new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
+            .sha256AndDigest(new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
             .createIssuerIdentifier();
 
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));

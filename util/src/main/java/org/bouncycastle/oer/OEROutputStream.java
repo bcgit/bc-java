@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -25,27 +26,14 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
-public class OEROutputStream
+public class OEROutputStream extends OutputStream
 {
     private final OutputStream out;
 
-    /**
-     * Creates an output stream filter built on top of the specified
-     * underlying output stream.
-     *
-     * @param out the underlying output stream to be assigned to
-     *            the field <tt>this.out</tt> for later use, or
-     *            <code>null</code> if this instance is to be
-     *            created without an underlying stream.
-     */
-    public static OEROutputStream create(OutputStream out)
-    {
-        return new OEROutputStream(out);
-    }
 
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
 
-    OEROutputStream(OutputStream out)
+    public OEROutputStream(OutputStream out)
     {
         this.out = out;
     }
@@ -283,7 +271,7 @@ public class OEROutputStream
                 ordinal = ASN1Enumerated.getInstance(encodable).getValue();
             }
 
-            for (Iterator it = oerElement.children.iterator(); it.hasNext();)
+            for (Iterator it = oerElement.children.iterator(); it.hasNext(); )
             {
                 OERDefinition.Element child = (OERDefinition.Element)it.next();
                 //
@@ -408,6 +396,34 @@ public class OEROutputStream
             out.flush();
             break;
         }
+        case IA5String:
+        {
+            ASN1IA5String iaf = ASN1IA5String.getInstance(encodable);
+            byte[] encoded = iaf.getOctets();
+
+            //
+            // IA5Strings can be fixed length because they have a fixed multiplier.
+            //
+            if (oerElement.isFixedLength() && oerElement.upperBound.intValue() != encoded.length)
+            {
+                throw new IOException("IA5String string length does not equal declared fixed length "
+                    + encoded.length + " " + oerElement.upperBound);
+            }
+
+            if (oerElement.isFixedLength())
+            {
+                out.write(encoded);
+            }
+            else
+            {
+                encodeLength(encoded.length);
+                out.write(encoded);
+            }
+            debugPrint(oerElement.appendLabel(""));
+            out.flush();
+            break;
+        }
+
         case UTF8_STRING:
         {
             ASN1UTF8String utf8 = ASN1UTF8String.getInstance(encodable);
@@ -549,5 +565,13 @@ public class OEROutputStream
         }
         return j;
     }
+
+    public void write(int b)
+        throws IOException
+    {
+        out.write(b);
+    }
+
+
 
 }

@@ -12,7 +12,7 @@ import org.bouncycastle.oer.its.CertificateBase;
 import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
-import org.bouncycastle.oer.its.HashedId;
+import org.bouncycastle.oer.its.HashedId8;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.PublicEncryptionKey;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
@@ -57,7 +57,7 @@ public class ITSImplicitCertificateBuilder
         byte[] parentDigest = calculator.getDigest();
 
         IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
-        HashedId.HashedId8 hashedID = new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
+        HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
         if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
         {
             issuerIdentifierBuilder.sha256AndDigest(hashedID);

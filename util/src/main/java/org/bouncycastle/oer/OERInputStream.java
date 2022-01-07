@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -65,7 +66,7 @@ public class OERInputStream
     private int countOptionalChildTypes(OERDefinition.Element element)
     {
         int optionalElements = 0;
-        for (Iterator it = element.children.iterator(); it.hasNext();)
+        for (Iterator it = element.children.iterator(); it.hasNext(); )
         {
             OERDefinition.Element e = (OERDefinition.Element)it.next();
 
@@ -307,6 +308,33 @@ public class OERInputStream
 
             return new DEROctetString(data);
         }
+        case IA5String:
+        {
+            byte[] data;
+
+            if (element.isFixedLength())
+            {
+                data = allocateArray(element.upperBound.intValue());
+            }
+            else
+            {
+                // 27.3 and 27.4 a length determinant followed by a number of octets.
+                data = allocateArray(readLength().intLength());
+            }
+
+            if (Streams.readFully(this, data) != data.length)
+            {
+                throw new IOException("could not read all of IA5 string");
+            }
+            String content = Strings.fromByteArray(data);
+            if (debugOutput != null)
+            {
+                debugPrint(element.appendLabel("IA5 String (" + data.length + ") = " + content));
+            }
+            return new DERIA5String(content);
+
+        }
+
         case UTF8_STRING:
         {
             // 27.3 and 27.4 a length determinant followed by a number of octets.
