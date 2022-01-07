@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.util.Integers;
 
@@ -38,6 +39,9 @@ class Utils
 
     static final Map mcElieceOids = new HashMap();
     static final Map mcElieceParams = new HashMap();
+
+    static final Map sphincsPlusOids = new HashMap();
+    static final Map sphincsPlusParams = new HashMap();
 
     static
     {
@@ -215,6 +219,23 @@ class Utils
         }
 
         throw new IllegalArgumentException("unrecognised digest algorithm: " + digestOid);
+    }
+
+    static ASN1ObjectIdentifier sphincsPlusOidLookup(SPHINCSPlusParameters params)
+    {
+        int pId = SPHINCSPlusParameters.getID(params);
+
+        if ((pId & 0x020000) == 0x020000)
+        {
+            return BCObjectIdentifiers.sphincsPlus_shake_256;
+        }
+
+        if ((pId & 0x05) == 0x05 || (pId & 0x06) == 0x06)
+        {
+            return BCObjectIdentifiers.sphincsPlus_sha_512;
+        }
+
+        return BCObjectIdentifiers.sphincsPlus_sha_256;
     }
 
     static ASN1ObjectIdentifier mcElieceOidLookup(CMCEParameters params)

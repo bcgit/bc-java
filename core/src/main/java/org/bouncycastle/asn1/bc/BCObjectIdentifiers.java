@@ -160,6 +160,9 @@ public interface BCObjectIdentifiers
      * SPHINCS+
      */
     public static final ASN1ObjectIdentifier sphincsPlus = bc_sig.branch("5");
+    public static final ASN1ObjectIdentifier sphincsPlus_shake_256 = sphincsPlus.branch("1");
+    public static final ASN1ObjectIdentifier sphincsPlus_sha_256 = sphincsPlus.branch("2");
+    public static final ASN1ObjectIdentifier sphincsPlus_sha_512 = sphincsPlus.branch("3");
 
     /**
      * key_exchange(3) algorithms
