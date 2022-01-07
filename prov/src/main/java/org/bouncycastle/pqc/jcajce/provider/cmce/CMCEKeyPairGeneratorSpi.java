@@ -44,7 +44,7 @@ public class CMCEKeyPairGeneratorSpi
 
     public CMCEKeyPairGeneratorSpi()
     {
-        super("SPHINCS+");
+        super("CMCE");
     }
 
     public void initialize(
