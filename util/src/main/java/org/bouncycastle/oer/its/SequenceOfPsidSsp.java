@@ -55,7 +55,7 @@ public class SequenceOfPsidSsp
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (Iterator it = items.iterator(); it.hasNext();)
+        for (Iterator it = items.iterator(); it.hasNext(); )
         {
             avec.add((ASN1Encodable)it.next());
         }

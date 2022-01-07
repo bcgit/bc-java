@@ -52,7 +52,7 @@ public class SignerIdentifier
         switch (to.getTagNo())
         {
         case digest:
-            return new SignerIdentifier(to.getTagNo(), HashedId.HashedId8.getInstance(to.getObject()));
+            return new SignerIdentifier(to.getTagNo(), HashedId8.getInstance(to.getObject()));
 
         case certificate:
             return new SignerIdentifier(to.getTagNo(), SequenceOfCertificate.getInstance(to.getObject()));
@@ -101,7 +101,7 @@ public class SignerIdentifier
             return this;
         }
 
-        public Builder digest(HashedId.HashedId8 digest)
+        public Builder digest(HashedId8 digest)
         {
             this.choice = SignerIdentifier.digest;
             this.encodable = digest;

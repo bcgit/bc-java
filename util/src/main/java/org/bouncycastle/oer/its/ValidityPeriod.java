@@ -18,11 +18,11 @@ import org.bouncycastle.asn1.DERSequence;
 public class ValidityPeriod
     extends ASN1Object
 {
-    private final ASN1Integer time32;
+    private final Time32 time32;
     private final Duration duration;
 
 
-    public ValidityPeriod(ASN1Integer time32, Duration duration)
+    public ValidityPeriod(Time32 time32, Duration duration)
     {
         this.time32 = time32;
         this.duration = duration;
@@ -47,7 +47,7 @@ public class ValidityPeriod
         return new Builder();
     }
 
-    public ASN1Integer getTime32()
+    public Time32 getTime32()
     {
         return time32;
     }
@@ -65,10 +65,16 @@ public class ValidityPeriod
     public static class Builder
     {
 
-        private ASN1Integer time32;
+        private Time32 time32;
         private Duration duration;
 
         public Builder setTime32(ASN1Integer time32)
+        {
+            this.time32 = new Time32(time32.getValue());
+            return this;
+        }
+
+        public Builder setTime32(Time32 time32)
         {
             this.time32 = time32;
             return this;

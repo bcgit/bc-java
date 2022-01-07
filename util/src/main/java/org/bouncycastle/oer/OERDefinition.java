@@ -88,7 +88,7 @@ public class OERDefinition
                 if (optionalChildrenInOrder == null)
                 {
                     ArrayList<Element> optList = new ArrayList<Element>();
-                    for (Iterator it = children.iterator(); it.hasNext();)
+                    for (Iterator it = children.iterator(); it.hasNext(); )
                     {
                         Element e = (Element)it.next();
                         if (!e.explicit || e.getDefaultValue() != null)
@@ -170,7 +170,7 @@ public class OERDefinition
 
         public boolean hasPopulatedExtension()
         {
-            for (Iterator it = children.iterator(); it.hasNext();)
+            for (Iterator it = children.iterator(); it.hasNext(); )
             {
                 Element child = (Element)it.next();
                 if (child.baseType == BaseType.EXTENSION)
@@ -183,7 +183,7 @@ public class OERDefinition
 
         public boolean hasDefaultChildren()
         {
-            for (Iterator it = children.iterator(); it.hasNext();)
+            for (Iterator it = children.iterator(); it.hasNext(); )
             {
                 Element child = (Element)it.next();
                 if (child.defaultValue != null)
@@ -305,11 +305,15 @@ public class OERDefinition
         return new Builder(BaseType.OCTET_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
     }
 
+    public static Builder ia5String()
+    {
+        return new Builder(BaseType.IA5String);
+    }
+
     public static Builder utf8String()
     {
         return new Builder(BaseType.UTF8_STRING);
     }
-
     public static Builder utf8String(int size)
     {
         return new Builder(BaseType.UTF8_STRING).rangeToMAXFrom(size);
@@ -347,15 +351,24 @@ public class OERDefinition
         protected BigInteger enumValue;
         protected ASN1Encodable defaultValue;
         protected Builder placeholderValue;
+        protected Boolean inScope;
 
+        private final ItemProvider defaultItemProvider = new ItemProvider()
+        {
+            public Builder exitingChild(int index, Builder existingChild)
+            {
+                return existingChild.copy(defaultItemProvider);
+            }
+        };
 
-        public Builder copy()
+        private Builder copy(ItemProvider provider)
         {
             Builder b = new Builder(baseType);
-            for (Iterator it = children.iterator(); it.hasNext();)
+            int t = 0;
+            for (Iterator it = children.iterator(); it.hasNext(); )
             {
                 Builder child = (Builder)it.next();
-                b.children.add(child.copy());
+                b.children.add(provider.exitingChild(t++, child));
             }
             b.explicit = explicit;
             b.label = label;
@@ -363,6 +376,38 @@ public class OERDefinition
             b.lowerBound = lowerBound;
             b.defaultValue = defaultValue;
             b.enumValue = enumValue;
+            b.inScope = inScope;
+            return b;
+        }
+
+        public Builder copy()
+        {
+            return copy(defaultItemProvider);
+        }
+
+
+        public Builder inScope(boolean scope)
+        {
+            Builder b = this.copy();
+            b.inScope = scope;
+            return b;
+        }
+
+        public Builder limitScopeTo(String... label)
+        {
+            Builder b = this.copy();
+            HashSet<String> labels = new HashSet<String>();
+            labels.addAll(Arrays.asList(label));
+
+            ArrayList<Builder> scopeLimited = new ArrayList<Builder>();
+
+            for (Iterator it = children.iterator(); it.hasNext(); )
+            {
+                Builder child = (Builder)it.next();
+                scopeLimited.add(child.copy().inScope(labels.contains(child.label)));
+            }
+            b.children = scopeLimited;
+
             return b;
         }
 
@@ -426,7 +471,7 @@ public class OERDefinition
                 Object item = items[i];
                 if (item instanceof OptionalList)
                 {
-                    for (Iterator it = ((List)item).iterator(); it.hasNext();)
+                    for (Iterator it = ((List)item).iterator(); it.hasNext(); )
                     {
                         b.children.add(wrap(false, it.next()));
                     }
@@ -492,7 +537,7 @@ public class OERDefinition
                 }
             }
 
-            for (Iterator it = this.children.iterator(); it.hasNext();)
+            for (Iterator it = this.children.iterator(); it.hasNext(); )
             {
                 Builder b = (Builder)it.next();
 
@@ -578,6 +623,18 @@ public class OERDefinition
             this.enumValue = value;
             return b;
         }
+
+        public Builder replaceChild(final int index, final Builder newItem)
+        {
+            return this.copy(new ItemProvider()
+            {
+                public Builder exitingChild(int _index, Builder existingChild)
+                {
+                    return index == _index ? newItem : existingChild;
+                }
+            });
+        }
+
     }
 
 
@@ -608,8 +665,6 @@ public class OERDefinition
 
             frozen = true;
         }
-
-
     }
 
 
@@ -621,6 +676,11 @@ public class OERDefinition
         {
             addAll(asList);
         }
+    }
+
+    public interface ItemProvider
+    {
+        Builder exitingChild(int index, Builder existingChild);
     }
 
 }

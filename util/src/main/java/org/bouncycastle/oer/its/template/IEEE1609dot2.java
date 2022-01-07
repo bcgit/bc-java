@@ -328,8 +328,6 @@ public class IEEE1609dot2
             Ieee1609Dot2BaseTypes.PublicEncryptionKey.labelPrefix("encryptionKey")),
         VerificationKeyIndicator.labelPrefix("verifyKeyIndicator"), OERDefinition.extension()
     ).label("ToBeSignedCertificate");
-
-
     /**
      * IssuerIdentifier ::= CHOICE  {
      * sha256AndDigest         HashedId8,
@@ -339,7 +337,6 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder IssuerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8, Ieee1609Dot2BaseTypes.HashAlgorithm, OERDefinition.extension(), Ieee1609Dot2BaseTypes.HashedId8).label("IssuerIdentifier");
-
     /**
      * CertificateType  ::= ENUMERATED  {
      * explicit,
@@ -348,7 +345,6 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder CertificateType = OERDefinition.enumeration(OERDefinition.enumItem("explicit"), OERDefinition.enumItem("implicit"), OERDefinition.extension()).label("CertificateType");
-
     /**
      * CertificateBase represents both of these, but with different values
      * depending on the type.
@@ -382,19 +378,23 @@ public class IEEE1609dot2
 
     public static final OERDefinition.Builder CertificateBase = OERDefinition.seq(Ieee1609Dot2BaseTypes.UINT8, CertificateType, IssuerIdentifier, ToBeSignedCertificate, OERDefinition.optional(Ieee1609Dot2BaseTypes.Signature))
         .label("CertificateBase");
-
     /**
      * Certificate ::= CertificateBase (ImplicitCertificate | ExplicitCertificate)
      */
     public static final OERDefinition.Builder Certificate = CertificateBase.copy().label("Certificate(CertificateBase)");
-
-
     /**
      * SequenceOfCertificate ::= SEQUENCE OF Certificate
      */
     public static final OERDefinition.Builder SequenceOfCertificate = OERDefinition.seqof(Certificate);
-
-
+    /**
+     * SignerIdentifier ::= CHOICE {
+     * digest       HashedId8,
+     * certificate  SequenceOfCertificate,
+     * self         NULL,
+     * ...
+     * }
+     */
+    public static final OERDefinition.Builder SignerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8.label("digest"), SequenceOfCertificate, OERDefinition.nullValue().label("self"), OERDefinition.extension());
     /**
      * HeaderInfo ::= SEQUENCE {
      * psid                  Psid,
@@ -429,21 +429,7 @@ public class IEEE1609dot2
 
         )
     );
-
-
-    /**
-     * SignerIdentifier ::= CHOICE {
-     * digest       HashedId8,
-     * certificate  SequenceOfCertificate,
-     * self         NULL,
-     * ...
-     * }
-     */
-    public static final OERDefinition.Builder SignerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8.label("digest"), SequenceOfCertificate, OERDefinition.nullValue().label("self"), OERDefinition.extension());
-
     public static final OERDefinition.Builder ToBeSignedData = new OERDefinition.MutableBuilder(OERDefinition.BaseType.SEQ);
-
-
     /**
      * SignedData ::= SEQUENCE {
      * hashId     HashAlgorithm,
@@ -457,7 +443,6 @@ public class IEEE1609dot2
         ToBeSignedData.label("tbsData"),
         SignerIdentifier.label("signer"),
         Ieee1609Dot2BaseTypes.Signature.label("signature"));
-
     /**
      * Ieee1609Dot2Content ::=  CHOICE {
      * unsecuredData             Opaque,
@@ -475,12 +460,10 @@ public class IEEE1609dot2
         OERDefinition.opaque().label("signedCertificateRequest"),
         OERDefinition.extension());
 
-
     public static final OERDefinition.Builder Countersignature = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.UINT8.label("protocolVersion"),
         Ieee1609Dot2Content.label("content")
     );
-
     /**
      * Ieee1609Dot2Data ::= SEQUENCE {
      * protocolVersion  Uint8(3),
@@ -490,7 +473,6 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder Ieee1609Dot2Data = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.UINT8.label("protocolVersion"),
         Ieee1609Dot2Content.label("content"));
-
     /**
      * SignedDataPayload ::= SEQUENCE {
      * data         Ieee1609Dot2Data OPTIONAL,
@@ -503,28 +485,6 @@ public class IEEE1609dot2
         OERDefinition.optional(Ieee1609Dot2Data.label("data"),
             HashedData.label("extDataHash")),
         OERDefinition.extension());
-
-
-    /**
-     * ToBeSignedData ::= SEQUENCE {
-     * payload     SignedDataPayload,
-     * headerInfo  HeaderInfo
-     * }
-     */
-//    public static final OERDefinition.Builder ToBeSignedData = seq(
-//        SignedDataPayload.label("payload"),
-//        HeaderInfo.label("headerInfo"));
-
-
-    /**
-     * Prebuilt certificate definition
-     */
-    public static final OERDefinition.Element certificate = Certificate.build();
-
-    /**
-     * Prebuilt TBS certificate definition
-     */
-    public static final OERDefinition.Element tbsCertificate = ToBeSignedCertificate.build();
 
     static
     {

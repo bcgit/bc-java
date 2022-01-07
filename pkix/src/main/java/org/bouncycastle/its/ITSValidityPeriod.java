@@ -48,7 +48,7 @@ public class ITSValidityPeriod
 
     public static Builder from(Date startDate)
     {
-         return new Builder(startDate);
+        return new Builder(startDate);
     }
 
     private final long startDate;
@@ -57,7 +57,7 @@ public class ITSValidityPeriod
 
     public ITSValidityPeriod(ValidityPeriod validityPeriod)
     {
-        this.startDate = validityPeriod.getTime32().longValueExact();
+        this.startDate = validityPeriod.getTime32().getValue();
         Duration duration = validityPeriod.getDuration();
         this.duration = duration.getValue();
         this.timeUnit = Unit.values()[duration.getTag()];
@@ -74,11 +74,11 @@ public class ITSValidityPeriod
     {
         return new Date(startDate);
     }
-    
+
     public ValidityPeriod toASN1Structure()
     {
         return ValidityPeriod.builder()
-                    .setTime32(new ASN1Integer(startDate / 1000))
-                    .setDuration(new Duration(duration, timeUnit.unitTag)).createValidityPeriod();
+            .setTime32(new ASN1Integer(startDate / 1000))
+            .setDuration(new Duration(duration, timeUnit.unitTag)).createValidityPeriod();
     }
 }
