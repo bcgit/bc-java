@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -278,7 +279,8 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            byte[] keyEnc = ASN1OctetString.getInstance(
+                ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
 
             CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
