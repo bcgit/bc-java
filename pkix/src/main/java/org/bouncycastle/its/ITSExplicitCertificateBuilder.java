@@ -15,7 +15,7 @@ import org.bouncycastle.oer.its.CertificateBase;
 import org.bouncycastle.oer.its.CertificateId;
 import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.HashAlgorithm;
-import org.bouncycastle.oer.its.HashedId;
+import org.bouncycastle.oer.its.HashedId8;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.Signature;
@@ -80,7 +80,7 @@ public class ITSExplicitCertificateBuilder
 
         try
         {
-            sOut.write(OEREncoder.toByteArray(tbsCertificate, IEEE1609dot2.tbsCertificate));
+            sOut.write(OEREncoder.toByteArray(tbsCertificate, IEEE1609dot2.ToBeSignedCertificate.build()));
 
             sOut.close();
         }
@@ -129,7 +129,7 @@ public class ITSExplicitCertificateBuilder
         else
         {
             byte[] parentDigest = signer.getAssociatedCertificateDigest();
-            HashedId.HashedId8 hashedID = new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
+            HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
             if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
             {
                 issuerIdentifierBuilder.sha256AndDigest(hashedID);

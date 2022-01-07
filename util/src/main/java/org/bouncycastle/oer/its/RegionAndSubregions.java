@@ -41,7 +41,7 @@ public class RegionAndSubregions
             Builder builder = new Builder();
             builder.setRegion(Region.getInstance(seq.getObjectAt(0)));
             ASN1Sequence subRegionsSeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
-            for (Iterator it = subRegionsSeq.iterator(); it.hasNext();)
+            for (Iterator it = subRegionsSeq.iterator(); it.hasNext(); )
             {
                 builder.setSubRegion(Uint16.getInstance(it.next()));
             }

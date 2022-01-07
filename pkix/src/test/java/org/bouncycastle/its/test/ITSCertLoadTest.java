@@ -141,10 +141,10 @@ public class ITSCertLoadTest
             {
                 byte[] encodedCert = Streams.readAll(src);
                 OERInputStream oerIn = new OERInputStream(new ByteArrayInputStream(encodedCert));
-                ASN1Object obj = oerIn.parse(IEEE1609dot2.certificate);
+                ASN1Object obj = oerIn.parse(IEEE1609dot2.Certificate.build());
                 ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
 
-                byte[] reEncoded = OEREncoder.toByteArray(certificate.toASN1Structure().getCertificateBase(), IEEE1609dot2.certificate);
+                byte[] reEncoded = OEREncoder.toByteArray(certificate.toASN1Structure().getCertificateBase(), IEEE1609dot2.Certificate.build());
 
                 TestCase.assertTrue(path, Arrays.areEqual(encodedCert, reEncoded));
             }

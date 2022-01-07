@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
  * PreSharedKeyRecipientInfo ::= HashedId8
  */
 public class PreSharedKeyRecipientInfo
-    extends HashedId
+    extends HashedId8
 {
     public PreSharedKeyRecipientInfo(byte[] string)
     {

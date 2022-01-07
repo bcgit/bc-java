@@ -35,7 +35,7 @@ public class ToBeSignedCertificate
     extends ASN1Object
 {
     private final CertificateId certificateId;
-    private final HashedId cracaId;
+    private final HashedId3 cracaId;
     private final CrlSeries crlSeries;
     private final ValidityPeriod validityPeriod;
     private final GeographicRegion geographicRegion;
@@ -49,7 +49,7 @@ public class ToBeSignedCertificate
 
 
     public ToBeSignedCertificate(CertificateId certificateId,
-                                 HashedId cracaId,
+                                 HashedId3 cracaId,
                                  CrlSeries crlSeries,
                                  ValidityPeriod validityPeriod,
                                  GeographicRegion geographicRegion,
@@ -85,7 +85,7 @@ public class ToBeSignedCertificate
         Iterator<ASN1Encodable> seq = ASN1Sequence.getInstance(o).iterator();
         return new Builder()
             .setCertificateId(CertificateId.getInstance(seq.next()))
-            .setCracaId(HashedId.getInstance(seq.next()))
+            .setCracaId(HashedId3.getInstance(seq.next()))
             .setCrlSeries(CrlSeries.getInstance(seq.next()))
             .setValidityPeriod(ValidityPeriod.getInstance(seq.next()))
             .setGeographicRegion(OEROptional.getValue(GeographicRegion.class, seq.next()))
@@ -106,7 +106,7 @@ public class ToBeSignedCertificate
         return certificateId;
     }
 
-    public HashedId getCracaId()
+    public HashedId3 getCracaId()
     {
         return cracaId;
     }
@@ -204,7 +204,7 @@ public class ToBeSignedCertificate
     public static class Builder
     {
         private CertificateId certificateId;
-        private HashedId cracaId;
+        private HashedId3 cracaId;
         private CrlSeries crlSeries;
         private ValidityPeriod validityPeriod;
         private GeographicRegion geographicRegion;
@@ -261,8 +261,12 @@ public class ToBeSignedCertificate
 
         public Builder setCracaId(HashedId cracaId)
         {
-            this.cracaId = cracaId;
-            return this;
+            if (cracaId instanceof HashedId3)
+            {
+                this.cracaId = (HashedId3)cracaId;
+                return this;
+            }
+            throw new IllegalArgumentException("not HashID3");
         }
 
         public Builder setCrlSeries(CrlSeries crlSeries)

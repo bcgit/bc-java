@@ -51,4 +51,9 @@ public class Uint8
     {
         return new ASN1Integer(value);
     }
+
+    public int getValue()
+    {
+        return value;
+    }
 }

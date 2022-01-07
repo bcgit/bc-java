@@ -27,8 +27,8 @@ public class IdentifiedRegion
     public static final int countAndSubregions = 2;
     public static final int extension = 3;
 
-    private int choice;
-    private ASN1Encodable region;
+    private final int choice;
+    private final ASN1Encodable region;
 
     public IdentifiedRegion(int choice, ASN1Encodable region)
     {
@@ -69,6 +69,6 @@ public class IdentifiedRegion
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, (ASN1Object)region).toASN1Primitive();
+        return new DERTaggedObject(choice, region).toASN1Primitive();
     }
 }
