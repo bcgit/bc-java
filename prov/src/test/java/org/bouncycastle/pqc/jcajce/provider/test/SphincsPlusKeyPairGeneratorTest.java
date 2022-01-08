@@ -4,11 +4,14 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -31,6 +34,22 @@ public class SphincsPlusKeyPairGeneratorTest
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha_256.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha_512.getId(), "BCPQC");
+    }
+
+    public void testKeySpecs()
+        throws Exception
+    {
+        kf = KeyFactory.getInstance("SPHINCSPlus", "BCPQC");
+        kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
+        KeyPair kp = kpg.generateKeyPair();
+
+        PKCS8EncodedKeySpec privSpec = kf.getKeySpec(kp.getPrivate(), PKCS8EncodedKeySpec.class);
+
+        assertTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), privSpec.getEncoded()));
+        
+        X509EncodedKeySpec pubSpec = kf.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class);
+
+        assertTrue(Arrays.areEqual(kp.getPublic().getEncoded(), pubSpec.getEncoded()));
     }
 
     public void testKeyPairEncoding()
