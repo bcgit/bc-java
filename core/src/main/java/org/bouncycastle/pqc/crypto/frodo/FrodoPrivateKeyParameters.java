@@ -9,17 +9,17 @@ public class FrodoPrivateKeyParameters
 
     public byte[] getPrivateKey()
     {
-        return privateKey;
+        return Arrays.clone(privateKey);
     }
 
-    public void setPrivateKey(byte[] privateKey)
-    {
-        this.privateKey = privateKey;
-    }
-
-    public FrodoPrivateKeyParameters(byte[] privateKey, FrodoParameters params)
+    public FrodoPrivateKeyParameters(FrodoParameters params, byte[] privateKey)
     {
         super(true, params);
         this.privateKey = Arrays.clone(privateKey);
+    }
+
+    public byte[] getEncoded()
+    {
+        return Arrays.clone(privateKey);
     }
 }

@@ -37,8 +37,8 @@ public class FrodoKeyPairGenerator
         byte[] pk = new byte[engine.getPublicKeySize()];
         engine.kem_keypair(pk, sk, random);
 
-        FrodoPublicKeyParameters pubKey = new FrodoPublicKeyParameters(pk, frodoParams.getParameters());
-        FrodoPrivateKeyParameters privKey = new FrodoPrivateKeyParameters(sk, frodoParams.getParameters());
+        FrodoPublicKeyParameters pubKey = new FrodoPublicKeyParameters(frodoParams.getParameters(), pk);
+        FrodoPrivateKeyParameters privKey = new FrodoPrivateKeyParameters(frodoParams.getParameters(), sk);
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
     @Override

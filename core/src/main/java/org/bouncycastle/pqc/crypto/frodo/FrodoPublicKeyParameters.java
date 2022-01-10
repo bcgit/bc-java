@@ -10,10 +10,15 @@ public class FrodoPublicKeyParameters
 
     public byte[] getPublicKey()
     {
-        return publicKey;
+        return Arrays.clone(publicKey);
     }
 
-    public FrodoPublicKeyParameters(byte[] publicKey, FrodoParameters params)
+    public byte[] getEncoded()
+    {
+        return getPublicKey();
+    }
+
+    public FrodoPublicKeyParameters(FrodoParameters params, byte[] publicKey)
     {
         super(false, params);
         this.publicKey = Arrays.clone(publicKey);
