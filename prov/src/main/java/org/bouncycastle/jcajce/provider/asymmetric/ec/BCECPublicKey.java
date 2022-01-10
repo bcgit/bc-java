@@ -43,6 +43,7 @@ public class BCECPublicKey
     private transient ECParameterSpec         ecSpec;
     private transient ProviderConfiguration   configuration;
     private transient byte[]                  encoding;
+    private transient boolean                 oldPcSet;
 
     public BCECPublicKey(
         String algorithm,
@@ -237,9 +238,10 @@ public class BCECPublicKey
 
     public byte[] getEncoded()
     {
-        if (encoding == null)
+        boolean pcSet = Properties.isOverrideSet("org.bouncycastle.ec.enable_pc");
+        if (encoding == null || oldPcSet != pcSet)
         {
-            boolean compress = withCompression || Properties.isOverrideSet("org.bouncycastle.ec.enable_pc");
+            boolean compress = withCompression || pcSet;
 
             AlgorithmIdentifier algId = new AlgorithmIdentifier(
                 X9ObjectIdentifiers.id_ecPublicKey,
@@ -249,6 +251,7 @@ public class BCECPublicKey
 
             // stored curve is null if ImplicitlyCa
             encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(algId, pubKeyOctets);
+            oldPcSet = pcSet;
         }
 
         return Arrays.clone(encoding);
