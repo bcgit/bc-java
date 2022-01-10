@@ -6,21 +6,21 @@ public class CMCEPrivateKeyParameters
     extends CMCEKeyParameters
 {
 
-    private byte[] privateKey;
-
-    public void setPrivateKey(byte[] privateKey)
-    {
-        this.privateKey = privateKey;
-    }
+    private final byte[] privateKey;
 
     public byte[] getPrivateKey()
     {
-        return privateKey;
+        return Arrays.clone(privateKey);
     }
 
-    public CMCEPrivateKeyParameters(byte[] privateKey, CMCEParameters params)
+    public CMCEPrivateKeyParameters(CMCEParameters params, byte[] privateKey)
     {
         super(true, params);
         this.privateKey = Arrays.clone(privateKey);
+    }
+
+    public byte[] getEncoded()
+    {
+        return Arrays.clone(privateKey);
     }
 }

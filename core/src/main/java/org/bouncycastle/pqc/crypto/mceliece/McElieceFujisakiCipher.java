@@ -19,8 +19,8 @@ import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
  * encryption scheme which is secure in the find-guess model with an asymmetric
  * one-way encryption scheme which is sufficiently probabilistic to obtain a
  * public key cryptosystem which is CCA2-secure. For details, see D. Engelbert,
- * R. Overbeck, A. Schmidt, "A summary of the development of the McEliece
- * Cryptosystem", technical report.
+ * R. Overbeck, A. Schmidt, "A Summary of McEliece-Type Cryptosystems and their Security", technical report.
+ * https://www.degruyter.com/document/doi/10.1515/JMC.2007.009/html
  */
 public class McElieceFujisakiCipher
     implements MessageEncryptor

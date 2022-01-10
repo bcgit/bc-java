@@ -157,6 +157,14 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier qTESLA_p_III = qTESLA.branch("12");
 
     /**
+     * SPHINCS+
+     */
+    public static final ASN1ObjectIdentifier sphincsPlus = bc_sig.branch("5");
+    public static final ASN1ObjectIdentifier sphincsPlus_shake_256 = sphincsPlus.branch("1");
+    public static final ASN1ObjectIdentifier sphincsPlus_sha_256 = sphincsPlus.branch("2");
+    public static final ASN1ObjectIdentifier sphincsPlus_sha_512 = sphincsPlus.branch("3");
+
+    /**
      * key_exchange(3) algorithms
      */
     public static final ASN1ObjectIdentifier bc_exch = bc.branch("3");
@@ -174,4 +182,26 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier bc_ext        = bc.branch("4");
 
     public static final ASN1ObjectIdentifier linkedCertificate = bc_ext.branch("1");
+
+    /**
+     * KEM(4) algorithms
+     */
+    public static final ASN1ObjectIdentifier bc_kem = bc.branch("5");
+
+    /**
+     * Classic McEliece
+     */
+    public static final ASN1ObjectIdentifier pqc_kem_mceliece = bc_kem.branch("1");
+
+    public static final ASN1ObjectIdentifier mceliece348864_r3 = pqc_kem_mceliece.branch("1");
+    public static final ASN1ObjectIdentifier mceliece348864f_r3 = pqc_kem_mceliece.branch("2");
+    public static final ASN1ObjectIdentifier mceliece460896_r3 = pqc_kem_mceliece.branch("3");
+    public static final ASN1ObjectIdentifier mceliece460896f_r3 = pqc_kem_mceliece.branch("4");
+    public static final ASN1ObjectIdentifier mceliece6688128_r3 = pqc_kem_mceliece.branch("5");
+    public static final ASN1ObjectIdentifier mceliece6688128f_r3 = pqc_kem_mceliece.branch("6");
+    public static final ASN1ObjectIdentifier mceliece6960119_r3 = pqc_kem_mceliece.branch("7");
+    public static final ASN1ObjectIdentifier mceliece6960119f_r3 = pqc_kem_mceliece.branch("8");
+    public static final ASN1ObjectIdentifier mceliece8192128_r3 = pqc_kem_mceliece.branch("9");
+    public static final ASN1ObjectIdentifier mceliece8192128f_r3 = pqc_kem_mceliece.branch("10");
+
 }

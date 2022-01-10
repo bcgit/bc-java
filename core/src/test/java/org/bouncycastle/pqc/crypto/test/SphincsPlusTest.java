@@ -1,12 +1,17 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyGenerationParameters;
@@ -15,6 +20,10 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -31,45 +40,42 @@ public class SphincsPlusTest
             " shake256-192f-simple.rsp shake256-256f-simple.rsp sha256-128s-robust.rsp sha256-192s-robust.rsp sha256-256s-robust.rsp" +
             " shake256-128s-robust.rsp shake256-192s-robust.rsp shake256-256s-robust.rsp sha256-128s-simple.rsp sha256-192s-simple.rsp" +
             " sha256-256s-simple.rsp shake256-128s-simple.rsp shake256-192s-simple.rsp shake256-256s-simple.rsp";
-
-
-        for (String name : files.split(" "))
+        
+        String[] fileList = splitOn(files, ' ');
+        for (int i = 0; i != fileList.length; i++)
         {
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/" + name);
+            String name = fileList[i];
+            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            boolean skip = false;
             while ((line = bin.readLine()) != null)
             {
-                if (skip)
-                {
-                    continue;
-                }
+
                 line = line.trim();
 
                 if (line.startsWith("#"))
                 {
                     continue;
                 }
-                if (line.isEmpty())
+                if (line.length() == 0)
                 {
                     if (buf.size() > 0)
                     {
-                        String count = buf.get("count");
-                        byte[] sk = Hex.decode(buf.get("sk"));
-                        byte[] pk = Hex.decode(buf.get("pk"));
-                        byte[] msg = Hex.decode(buf.get("msg"));
-                        byte[] sigExpected = Hex.decode(buf.get("sm"));
-                        byte[] oprR = Hex.decode(buf.get("optr"));
+                        String count = (String)buf.get("count");
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] msg = Hex.decode((String)buf.get("msg"));
+                        byte[] sigExpected = Hex.decode((String)buf.get("sm"));
+                        byte[] oprR = Hex.decode((String)buf.get("optr"));
 
                         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
                         SecureRandom random = new FixedSecureRandom(sk);
 
                         SPHINCSPlusParameters parameters;
 
-                        String[] nameParts = name.split("-");
+                        String[] nameParts = splitOn(name, '-');
                         boolean sha256 = nameParts[0].equals("sha256");
                         boolean shake256 = nameParts[0].equals("shake256");
                         int size = Integer.parseInt(nameParts[1].substring(0, 3));
@@ -132,8 +138,8 @@ public class SphincsPlusTest
                         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
                         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
+                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk), pubParams.getEncoded()));
+                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), sk), privParams.getEncoded()));
 
                         //
                         // Signature test
@@ -151,7 +157,6 @@ public class SphincsPlusTest
 
                         assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
                         assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
-                        skip = count.equals("2");
 
                     }
                     buf.clear();
@@ -166,12 +171,11 @@ public class SphincsPlusTest
                 }
             }
             src.close();
-
-
         }
     }
 
     public void testBasicKeyGeneration()
+        throws IOException
     {
         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
         SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4792F267AAFA3F87CA60D01CB54F29202A3E784CCB7EBCDCFD45542B7F6AF778742E0F4479175084AA488B3B74340678AAD111491E7E52F6F1D726DAF2A4E75CAFB60D034B6E912B26BE68464B0095D60D"));
@@ -183,8 +187,17 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), privParams.getEncoded()));
+
+        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams);
+        PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privParams);
+
+        pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(pubInfo.getEncoded());
+        privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(privInfo.getEncoded());
+
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4792f267aafa3f87ca60d01cb54f29202a3e784ccb7ebcdcfd45542b7f6af778742e0f4479175084aa488b3b74340678aa8edb4e5af38c3478ef9533585e368ab0689227f536cc71d8f0affb01e19751ec")), privParams.getEncoded()));
     }
 
     public void testBasicKeyImportSimpleSign()
@@ -192,8 +205,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = new SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters.sha256_128f, Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"));
         SPHINCSPlusPrivateKeyParameters privParams = new SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters.sha256_128f, Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"));
 
-        assertTrue(Arrays.areEqual(Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("b505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e4711e95f8a383854ba16a5dd3e25ff71d3")), privParams.getEncoded()));
 
         byte[] msg = Hex.decode("D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8");
 
@@ -258,8 +271,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("B505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("B505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84")), privParams.getEncoded()));
     }
 
     public void testBasicKeyGenerationShake256128fSimpleSign()
@@ -308,8 +321,8 @@ public class SphincsPlusTest
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
-        assertTrue(Arrays.areEqual(Hex.decode("B505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"), pubParams.getEncoded()));
-        assertTrue(Arrays.areEqual(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"), privParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), Hex.decode("B505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D")), pubParams.getEncoded()));
+        assertTrue(Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D")), privParams.getEncoded()));
     }
 
     public void testBasicKeyGenerationShake256128fRobustSign()
@@ -341,5 +354,26 @@ public class SphincsPlusTest
         signer.init(false, pubParams);
 
         assertTrue(signer.verifySignature(msg, sig));
+    }
+
+    private static String[] splitOn(String input, char c)
+    {
+        String s = input.trim();
+        List l = new ArrayList();
+
+        int idx = s.indexOf(c);
+        while (idx > 0)
+        {
+            l.add(s.substring(0, idx));
+            s = s.substring(idx + 1).trim();
+            idx = s.indexOf(c);
+        }
+
+        if (s.length() > 0)
+        {
+            l.add(s);
+        }
+          
+        return (String[])l.toArray(new String[0]);
     }
 }

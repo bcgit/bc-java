@@ -35,93 +35,19 @@ public class ASN1StreamParser
         this.tmpBuffers = tmpBuffers;
     }
 
-    ASN1Encodable readIndef(int tagValue) throws IOException
+    public ASN1Encodable readObject() throws IOException
     {
-        // Note: INDEF => CONSTRUCTED
-
-        switch (tagValue)
-        {
-        case BERTags.BIT_STRING:
-            return new BERBitStringParser(this);
-        case BERTags.OCTET_STRING:
-            return new BEROctetStringParser(this);
-        case BERTags.EXTERNAL:
-            return new DERExternalParser(this);
-        case BERTags.SEQUENCE:
-            return new BERSequenceParser(this);
-        case BERTags.SET:
-            return new BERSetParser(this);
-        default:
-            throw new ASN1Exception("unknown BER object encountered: 0x" + Integer.toHexString(tagValue));
-        }
-    }
-
-    ASN1Encodable readImplicit(boolean constructed, int tag) throws IOException
-    {
-        if (_in instanceof IndefiniteLengthInputStream)
-        {
-            if (!constructed)
-            {
-                throw new IOException("indefinite-length primitive encoding encountered");
-            }
-            
-            return readIndef(tag);
-        }
-
-        if (constructed)
-        {
-            switch (tag)
-            {
-            case BERTags.BIT_STRING:
-                return new BERBitStringParser(this);
-            case BERTags.OCTET_STRING:
-                return new BEROctetStringParser(this);
-            case BERTags.SET:
-                return new DLSetParser(this);
-            case BERTags.SEQUENCE:
-                return new DLSequenceParser(this);
-            }
-        }
-        else
-        {
-            switch (tag)
-            {
-            case BERTags.BIT_STRING:
-                return new DLBitStringParser((DefiniteLengthInputStream)_in);
-            case BERTags.OCTET_STRING:
-                return new DEROctetStringParser((DefiniteLengthInputStream)_in);
-            case BERTags.SET:
-                throw new ASN1Exception("sequences must use constructed encoding (see X.690 8.9.1/8.10.1)");
-            case BERTags.SEQUENCE:
-                throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
-            }
-        }
-
-        throw new ASN1Exception("implicit tagging not implemented");
-    }
-
-    ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed) throws IOException
-    {
-        if (!constructed)
-        {
-            byte[] contentsOctets = ((DefiniteLengthInputStream) _in).toByteArray();
-            return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
-        }
-
-        boolean isIL = (_in instanceof IndefiniteLengthInputStream);
-        ASN1EncodableVector contentsElements = readVector();
-        return ASN1TaggedObject.createConstructed(tagClass, tagNo, isIL, contentsElements);
-    }
-
-    public ASN1Encodable readObject()
-        throws IOException
-    {
-        int tag = _in.read();
-        if (tag == -1)
+        int tagHdr = _in.read();
+        if (tagHdr < 0)
         {
             return null;
         }
 
+        return implParseObject(tagHdr);
+    }
+
+    ASN1Encodable implParseObject(int tagHdr) throws IOException
+    {
         //
         // turn off looking for "00" while we resolve the tag
         //
@@ -130,9 +56,7 @@ public class ASN1StreamParser
         //
         // calculate tag number
         //
-        int tagNo = ASN1InputStream.readTagNumber(_in, tag);
-
-        boolean isConstructed = (tag & BERTags.CONSTRUCTED) != 0;
+        int tagNo = ASN1InputStream.readTagNumber(_in, tagHdr);
 
         //
         // calculate length
@@ -143,7 +67,7 @@ public class ASN1StreamParser
 
         if (length < 0) // indefinite-length method
         {
-            if (!isConstructed)
+            if (0 == (tagHdr & BERTags.CONSTRUCTED))
             {
                 throw new IOException("indefinite-length primitive encoding encountered");
             }
@@ -151,80 +75,205 @@ public class ASN1StreamParser
             IndefiniteLengthInputStream indIn = new IndefiniteLengthInputStream(_in, _limit);
             ASN1StreamParser sp = new ASN1StreamParser(indIn, _limit, tmpBuffers);
 
-            int tagClass = tag & BERTags.PRIVATE;
+            int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
             {
+                // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecificParser types removed.
                 if (BERTags.APPLICATION == tagClass)
                 {
                     return new BERApplicationSpecificParser(tagNo, sp);
                 }
 
-                return new BERTaggedObjectParser(tagClass, tagNo, true, sp);
+                return new BERTaggedObjectParser(tagClass, tagNo, sp);
             }
 
-            return sp.readIndef(tagNo);
+            return sp.parseImplicitConstructedIL(tagNo);
         }
         else
         {
             DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(_in, length, _limit);
 
-            int tagClass = tag & BERTags.PRIVATE;
-            if (0 != tagClass)
+            if (0 == (tagHdr & BERTags.FLAGS))
             {
-                ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
-
-                // TODO Special handling can be removed once ASN1ApplicationSpecific types removed.
-                if (BERTags.APPLICATION == tagClass)
-                {
-                    // This cast is ensuring the current user-expected return type.
-                    return (DLApplicationSpecific)sp.readTaggedObject(tagClass, tagNo, isConstructed);
-                }
-
-                return new BERTaggedObjectParser(tagClass, tagNo, isConstructed, sp);
-            }
-
-            if (!isConstructed)
-            {
-                // Some primitive encodings can be handled by parsers too...
-                switch (tagNo)
-                {
-                case BERTags.BIT_STRING:
-                    return new DLBitStringParser(defIn);
-                case BERTags.OCTET_STRING:
-                    return new DEROctetStringParser(defIn);
-                }
-
-                try
-                {
-                    return ASN1InputStream.createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new ASN1Exception("corrupted stream detected", e);
-                }
+                return parseImplicitPrimitive(tagNo, defIn);
             }
 
             ASN1StreamParser sp = new ASN1StreamParser(defIn, defIn.getLimit(), tmpBuffers);
 
-            switch (tagNo)
+            int tagClass = tagHdr & BERTags.PRIVATE;
+            if (0 != tagClass)
             {
-            case BERTags.BIT_STRING:
-                return new BERBitStringParser(sp);
-            case BERTags.OCTET_STRING:
-                //
-                // yes, people actually do this...
-                //
-                return new BEROctetStringParser(sp);
-            case BERTags.SEQUENCE:
-                return new DLSequenceParser(sp);
-            case BERTags.SET:
-                return new DLSetParser(sp);
-            case BERTags.EXTERNAL:
-                return new DERExternalParser(sp);
-            default:
-                throw new IOException("unknown tag " + tagNo + " encountered");
+                boolean isConstructed = (tagHdr & BERTags.CONSTRUCTED) != 0;
+
+                // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecific types removed.
+                if (BERTags.APPLICATION == tagClass)
+                {
+                    // This cast is ensuring the current user-expected return type.
+                    return (DLApplicationSpecific)sp.loadTaggedDL(tagClass, tagNo, isConstructed);
+                }
+
+                return new DLTaggedObjectParser(tagClass, tagNo, isConstructed, sp);
+            }
+
+            return sp.parseImplicitConstructedDL(tagNo);
+        }
+    }
+
+    ASN1Primitive loadTaggedDL(int tagClass, int tagNo, boolean constructed) throws IOException
+    {
+        if (!constructed)
+        {
+            byte[] contentsOctets = ((DefiniteLengthInputStream) _in).toByteArray();
+            return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
+        }
+
+        ASN1EncodableVector contentsElements = readVector();
+        return ASN1TaggedObject.createConstructedDL(tagClass, tagNo, contentsElements);
+    }
+
+    ASN1Primitive loadTaggedIL(int tagClass, int tagNo) throws IOException
+    {
+        ASN1EncodableVector contentsElements = readVector();
+        return ASN1TaggedObject.createConstructedIL(tagClass, tagNo, contentsElements);
+    }
+
+    ASN1Encodable parseImplicitConstructedDL(int univTagNo) throws IOException
+    {
+        switch (univTagNo)
+        {
+        case BERTags.BIT_STRING:
+            // TODO[asn1] DLConstructedBitStringParser
+            return new BERBitStringParser(this);
+        case BERTags.EXTERNAL:
+            return new DERExternalParser(this);
+        case BERTags.OCTET_STRING:
+            // TODO[asn1] DLConstructedOctetStringParser
+            return new BEROctetStringParser(this);
+        case BERTags.SET:
+            return new DLSetParser(this);
+        case BERTags.SEQUENCE:
+            return new DLSequenceParser(this);
+        default:
+            // -DM toHexString
+            throw new ASN1Exception("unknown DL object encountered: 0x" + Integer.toHexString(univTagNo));
+        }
+    }
+
+    ASN1Encodable parseImplicitConstructedIL(int univTagNo) throws IOException
+    {
+        switch (univTagNo)
+        {
+        case BERTags.BIT_STRING:
+            return new BERBitStringParser(this);
+        case BERTags.OCTET_STRING:
+            return new BEROctetStringParser(this);
+        case BERTags.EXTERNAL:
+            // TODO[asn1] BERExternalParser
+            return new DERExternalParser(this);
+        case BERTags.SEQUENCE:
+            return new BERSequenceParser(this);
+        case BERTags.SET:
+            return new BERSetParser(this);
+        default:
+            throw new ASN1Exception("unknown BER object encountered: 0x" + Integer.toHexString(univTagNo));
+        }
+    }
+
+    ASN1Encodable parseImplicitPrimitive(int univTagNo) throws IOException
+    {
+        return parseImplicitPrimitive(univTagNo, (DefiniteLengthInputStream)_in);
+    }
+
+    ASN1Encodable parseImplicitPrimitive(int univTagNo, DefiniteLengthInputStream defIn) throws IOException
+    {
+        // Some primitive encodings can be handled by parsers too...
+        switch (univTagNo)
+        {
+        case BERTags.BIT_STRING:
+            return new DLBitStringParser(defIn);
+        case BERTags.EXTERNAL:
+            throw new ASN1Exception("externals must use constructed encoding (see X.690 8.18)");
+        case BERTags.OCTET_STRING:
+            return new DEROctetStringParser(defIn);
+        case BERTags.SET:
+            throw new ASN1Exception("sequences must use constructed encoding (see X.690 8.9.1/8.10.1)");
+        case BERTags.SEQUENCE:
+            throw new ASN1Exception("sets must use constructed encoding (see X.690 8.11.1/8.12.1)");
+        }
+
+        try
+        {
+            return ASN1InputStream.createPrimitiveDERObject(univTagNo, defIn, tmpBuffers);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ASN1Exception("corrupted stream detected", e);
+        }
+    }
+
+    ASN1Encodable parseObject(int univTagNo) throws IOException
+    {
+        if (univTagNo < 0 || univTagNo > 30)
+        {
+            throw new IllegalArgumentException("invalid universal tag number: " + univTagNo);
+        }
+
+        int tagHdr = _in.read();
+        if (tagHdr < 0)
+        {
+            return null;
+        }
+
+        if ((tagHdr & ~BERTags.CONSTRUCTED) != univTagNo)
+        {
+            throw new IOException("unexpected identifier encountered: " + tagHdr);
+        }
+
+        return implParseObject(tagHdr);
+    }
+
+    ASN1TaggedObjectParser parseTaggedObject() throws IOException
+    {
+        int tagHdr = _in.read();
+        if (tagHdr < 0)
+        {
+            return null;
+        }
+
+        int tagClass = tagHdr & BERTags.PRIVATE;
+        if (0 == tagClass)
+        {
+            throw new ASN1Exception("no tagged object found");
+        }
+
+        return (ASN1TaggedObjectParser)implParseObject(tagHdr);
+    }
+
+    // TODO[asn1] Prefer 'loadVector'
+    ASN1EncodableVector readVector() throws IOException
+    {
+        int tagHdr = _in.read();
+        if (tagHdr < 0)
+        {
+            return new ASN1EncodableVector(0);
+        }
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        do
+        {
+            ASN1Encodable obj = implParseObject(tagHdr);
+
+            if (obj instanceof InMemoryRepresentable)
+            {
+                v.add(((InMemoryRepresentable) obj).getLoadedObject());
+            }
+            else
+            {
+                v.add(obj.toASN1Primitive());
             }
         }
+        while ((tagHdr = _in.read()) >= 0);
+        return v;
     }
 
     private void set00Check(boolean enabled)
@@ -233,29 +282,5 @@ public class ASN1StreamParser
         {
             ((IndefiniteLengthInputStream)_in).setEofOn00(enabled);
         }
-    }
-
-    ASN1EncodableVector readVector() throws IOException
-    {
-        ASN1Encodable obj = readObject();
-        if (null == obj)
-        {
-            return new ASN1EncodableVector(0);
-        }
-
-        ASN1EncodableVector v = new ASN1EncodableVector();
-        do
-        {
-            if (obj instanceof InMemoryRepresentable)
-            {
-                v.add(((InMemoryRepresentable)obj).getLoadedObject());
-            }
-            else
-            {
-                v.add(obj.toASN1Primitive());
-            }
-        }
-        while ((obj = readObject()) != null);
-        return v;
     }
 }

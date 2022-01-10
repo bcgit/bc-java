@@ -1,12 +1,14 @@
 package org.bouncycastle.its.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -27,12 +29,20 @@ import org.bouncycastle.its.bc.BcITSExplicitCertificateBuilder;
 import org.bouncycastle.its.bc.BcITSImplicitCertificateBuilder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OERInputStream;
+import org.bouncycastle.oer.OEROutputStream;
+import org.bouncycastle.oer.its.AdditionalParams;
+import org.bouncycastle.oer.its.ButterflyExpansion;
 import org.bouncycastle.oer.its.Certificate;
 import org.bouncycastle.oer.its.CertificateId;
+import org.bouncycastle.oer.its.CertificateType;
 import org.bouncycastle.oer.its.CrlSeries;
+import org.bouncycastle.oer.its.Duration;
 import org.bouncycastle.oer.its.EccP256CurvePoint;
+import org.bouncycastle.oer.its.EeEcaCertRequest;
+import org.bouncycastle.oer.its.EeRaCertRequest;
 import org.bouncycastle.oer.its.EndEntityType;
-import org.bouncycastle.oer.its.HashedId;
+import org.bouncycastle.oer.its.HashedId3;
+import org.bouncycastle.oer.its.HashedId8;
 import org.bouncycastle.oer.its.Hostname;
 import org.bouncycastle.oer.its.IssuerIdentifier;
 import org.bouncycastle.oer.its.Psid;
@@ -40,6 +50,7 @@ import org.bouncycastle.oer.its.PsidGroupPermissions;
 import org.bouncycastle.oer.its.PsidSsp;
 import org.bouncycastle.oer.its.PsidSspRange;
 import org.bouncycastle.oer.its.PublicEncryptionKey;
+import org.bouncycastle.oer.its.PublicVerificationKey;
 import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.SequenceOfPsidSspRange;
@@ -48,9 +59,14 @@ import org.bouncycastle.oer.its.SspRange;
 import org.bouncycastle.oer.its.SubjectAssurance;
 import org.bouncycastle.oer.its.SubjectPermissions;
 import org.bouncycastle.oer.its.SymmAlgorithm;
+import org.bouncycastle.oer.its.Time32;
 import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.Uint8;
+import org.bouncycastle.oer.its.ValidityPeriod;
 import org.bouncycastle.oer.its.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.Ieee1609Dot2Dot1EcaEeInterface;
+import org.bouncycastle.oer.its.template.Ieee1609Dot2Dot1EeRaInterface;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -73,7 +89,7 @@ public class ITSBasicTest
 //                debugOutput = new PrintWriter(System.out);
 //            }
 //        };
-        ASN1Object obj = oi.parse(IEEE1609dot2.certificate);
+        ASN1Object obj = oi.parse(IEEE1609dot2.Certificate.build());
         ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
         fin.close();
         return certificate;
@@ -182,7 +198,7 @@ public class ITSBasicTest
 
         IssuerIdentifier caIssuerIdentifier = IssuerIdentifier
             .builder()
-            .sha256AndDigest(new HashedId.HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
+            .sha256AndDigest(new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length)))
             .createIssuerIdentifier();
 
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));
@@ -362,6 +378,309 @@ public class ITSBasicTest
         TestCase.assertTrue(valid);
     }
 
+
+    public void testRoundTripEeEcaCertRequest()
+        throws Exception
+    {
+        //
+        // The issue is that as of 7-jan-2022 we have not been able to find
+        // and real life examples of the version 2 requests so this is a basic
+        // sanity test.
+        //
+
+        // TBS component
+        ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+        tbsBuilder.setAppPermissions(
+            SequenceOfPsidSsp.builder()
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(622))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(624))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .createSequenceOfPsidSsp()); // App Permissions
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        // builder.setCanRequestRollover(OEROptional.ABSENT);
+        tbsBuilder.setCertIssuePermissions(
+            SequenceOfPsidGroupPermissions.builder()
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(
+                        SubjectPermissions.builder().explicit(
+                            SequenceOfPsidSspRange.builder()
+                                .add(PsidSspRange.builder()
+                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(98).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(99).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(100).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
+                                .build()
+                        ).createSubjectPermissions())
+                    .setMinChainLength(2)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+
+                    .createPsidGroupPermissions())
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(SubjectPermissions.builder()
+                        .explicit(SequenceOfPsidSspRange.builder()
+                            .add(PsidSspRange.builder()
+                                .setPsid(623)
+                                .setSspRange(
+                                    SspRange.builder()
+                                        .extension(Hex.decode("0201FE02FF01"))
+                                        .createSspRange()).createPsidSspRange())
+                            .build())
+                        .createSubjectPermissions())
+                    .setMinChainLength(1)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+                    .createPsidGroupPermissions())
+                .createSequenceOfPsidGroupPermissions());
+
+        tbsBuilder.setCrlSeries(new CrlSeries(1));
+        tbsBuilder.setValidityPeriod(
+            ValidityPeriod.builder()
+                .setTime32(Time32.now())
+                .setDuration(new Duration(Duration.years, 1))
+                .createValidityPeriod());
+        tbsBuilder.setCracaId(new HashedId3(Hex.decode("010203")));
+        tbsBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
+            .publicVerificationKey(
+                PublicVerificationKey.builder().ecdsaBrainpoolP256r1(EccP256CurvePoint.builder().createUncompressedP256(BigInteger.TEN, BigInteger.TEN)).createPublicVerificationKey())
+            .createVerificationKeyIndicator());
+        tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("hostname")).createCertificateId());
+        ToBeSignedCertificate tbs = tbsBuilder.createToBeSignedCertificate();
+
+
+        EeEcaCertRequest cr = EeEcaCertRequest.builder()
+            .setVersion(new Uint8(2))
+            .setTbsCert(tbs)
+            .setGenerationTime(Time32.now())
+            .setType(CertificateType.Explicit)
+            .setCanonicalId(new DERIA5String("test"))
+            .createEeEcaCertRequest();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OEROutputStream oos = new OEROutputStream(bos);
+        oos.write(cr, Ieee1609Dot2Dot1EcaEeInterface.EeEcaCertRequest.build());
+        oos.flush();
+
+        byte[] firstEncoding = bos.toByteArray();
+
+
+        // Decode
+        OERInputStream inputStream = new OERInputStream(new ByteArrayInputStream(firstEncoding));
+        ASN1Object firstDecoding = inputStream.parse(Ieee1609Dot2Dot1EcaEeInterface.EeEcaCertRequest.build());
+
+
+        // Encode again.
+        bos = new ByteArrayOutputStream();
+        oos = new OEROutputStream(bos);
+        oos.write(firstDecoding, Ieee1609Dot2Dot1EcaEeInterface.EeEcaCertRequest.build());
+        oos.flush();
+
+        byte[] secondEncoding = bos.toByteArray();
+
+        // First encoding and second encoding should be the same.
+        assertTrue(Arrays.areEqual(firstEncoding, secondEncoding));
+
+    }
+
+
+    public void testRoundTripEeRaCertRequest()
+        throws Exception
+    {
+        //
+        // The issue is that as of 7-jan-2022 we have not been able to find
+        // and real life examples of the version 2 requests so this is a basic
+        // sanity test.
+        //
+
+        // TBS component
+        ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+        tbsBuilder.setAppPermissions(
+            SequenceOfPsidSsp.builder()
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(622))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(624))
+                    .setSsp(ServiceSpecificPermissions.builder()
+                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
+                        .createServiceSpecificPermissions())
+                    .createPsidSsp())
+                .createSequenceOfPsidSsp()); // App Permissions
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        // builder.setCanRequestRollover(OEROptional.ABSENT);
+        tbsBuilder.setCertIssuePermissions(
+            SequenceOfPsidGroupPermissions.builder()
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(
+                        SubjectPermissions.builder().explicit(
+                            SequenceOfPsidSspRange.builder()
+                                .add(PsidSspRange.builder()
+                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder()
+                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(98).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(99).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(100).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
+                                .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
+                                .build()
+                        ).createSubjectPermissions())
+                    .setMinChainLength(2)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+
+                    .createPsidGroupPermissions())
+                .addGroupPermission(PsidGroupPermissions.builder()
+                    .setSubjectPermissions(SubjectPermissions.builder()
+                        .explicit(SequenceOfPsidSspRange.builder()
+                            .add(PsidSspRange.builder()
+                                .setPsid(623)
+                                .setSspRange(
+                                    SspRange.builder()
+                                        .extension(Hex.decode("0201FE02FF01"))
+                                        .createSspRange()).createPsidSspRange())
+                            .build())
+                        .createSubjectPermissions())
+                    .setMinChainLength(1)
+                    .setChainLengthRange(0)
+                    .setEeType(new EndEntityType(0xC0))
+                    .createPsidGroupPermissions())
+                .createSequenceOfPsidGroupPermissions());
+
+        tbsBuilder.setCrlSeries(new CrlSeries(1));
+        tbsBuilder.setValidityPeriod(
+            ValidityPeriod.builder()
+                .setTime32(Time32.now())
+                .setDuration(new Duration(Duration.years, 1))
+                .createValidityPeriod());
+        tbsBuilder.setCracaId(new HashedId3(Hex.decode("010203")));
+        tbsBuilder.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
+            .publicVerificationKey(
+                PublicVerificationKey.builder().ecdsaBrainpoolP256r1(EccP256CurvePoint.builder().createUncompressedP256(BigInteger.TEN, BigInteger.TEN)).createPublicVerificationKey())
+            .createVerificationKeyIndicator());
+        tbsBuilder.setCertificateId(CertificateId.builder().name(new Hostname("hostname")).createCertificateId());
+        ToBeSignedCertificate tbs = tbsBuilder.createToBeSignedCertificate();
+
+
+        EeRaCertRequest cr = EeRaCertRequest.builder()
+            .setVersion(new Uint8(2))
+            .setTbsCert(tbs)
+            .setGenerationTime(Time32.now())
+            .setType(CertificateType.Explicit)
+            .setAdditionalParams(AdditionalParams.builder().compactUnified(
+                ButterflyExpansion.builder().aes128(new DEROctetString(new byte[16])).build()
+            ).build())
+            .createEeRaCertRequest();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OEROutputStream oos = new OEROutputStream(bos);
+        oos.write(cr, Ieee1609Dot2Dot1EeRaInterface.EeRaCertRequest.build());
+        oos.flush();
+
+        byte[] firstEncoding = bos.toByteArray();
+
+
+        // Decode
+        OERInputStream inputStream = new OERInputStream(new ByteArrayInputStream(firstEncoding));
+        ASN1Object firstDecoding = inputStream.parse(Ieee1609Dot2Dot1EeRaInterface.EeRaCertRequest.build());
+
+
+        // Encode again.
+        bos = new ByteArrayOutputStream();
+        oos = new OEROutputStream(bos);
+        oos.write(firstDecoding, Ieee1609Dot2Dot1EeRaInterface.EeRaCertRequest.build());
+        oos.flush();
+
+        byte[] secondEncoding = bos.toByteArray();
+
+        // First encoding and second encoding should be the same.
+        assertTrue(Arrays.areEqual(firstEncoding, secondEncoding));
+
+    }
+
+
+//
+//    static class PrintingInputStream
+//        extends FilterInputStream
+//    {
+//
+//        /**
+//         * Creates a <code>FilterInputStream</code>
+//         * by assigning the  argument <code>in</code>
+//         * to the field <code>this.in</code> so as
+//         * to remember it for later use.
+//         *
+//         * @param in the underlying input stream, or <code>null</code> if
+//         *           this instance is to be created without an underlying stream.
+//         */
+//        protected PrintingInputStream(InputStream in)
+//        {
+//            super(in);
+//        }
+//
+//        public int read()
+//            throws IOException
+//        {
+//            int i = in.read();
+//            byte[] b = new byte[]{(byte)i};
+//            System.out.print(Hex.toHexString(b));
+//            return i;
+//        }
+//
+//        @Override
+//        public int read(byte[] b)
+//            throws IOException
+//        {
+//            int i = super.read(b);
+//            System.out.print(Hex.toHexString(b));
+//            return i;
+//        }
+//
+//        @Override
+//        public int read(byte[] b, int off, int len)
+//            throws IOException
+//        {
+//            int i = super.read(b, off, len);
+//            System.out.print(Hex.toHexString(b, off, len));
+//            return i;
+//        }
+//    }
 
 }
 

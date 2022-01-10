@@ -347,6 +347,7 @@ public class GMSSSigner
             // test if OTSsignature is correct
             if (otsPublicKey == null)
             {
+                // -DM System.err.println
                 System.err.println("OTS Public Key is null in GMSSSignature.verify");
                 return false;
             }

@@ -39,6 +39,7 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(SphincsPlusTest.class);
+        suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);

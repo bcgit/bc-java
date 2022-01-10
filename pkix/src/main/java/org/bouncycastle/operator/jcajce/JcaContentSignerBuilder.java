@@ -20,8 +20,10 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.CompositePrivateKey;
@@ -113,6 +115,10 @@ public class JcaContentSignerBuilder
         try
         {
             final Signature sig = helper.createSignature(sigAlgId);
+            if (sigAlgId.getAlgorithm().on(BCObjectIdentifiers.sphincsPlus))
+            {
+                sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+            }
             final AlgorithmIdentifier signatureAlgId = sigAlgId;
 
             if (random != null)

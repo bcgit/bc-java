@@ -38,6 +38,7 @@ public class TraceOptimizer
             }
             if (x9 != null && ECAlgorithms.isF2mCurve(x9.getCurve()))
             {
+                // -DM System.out.print
                 System.out.print(name + ":");
                 implPrintNonZeroTraceBits(x9);
             }
@@ -74,6 +75,7 @@ public class TraceOptimizer
                     if (nonZeroTraceBits.contains(Integers.valueOf(i >>> 1)))
                     {
                         nonZeroTraceBits.add(Integers.valueOf(i));
+                        // -DM System.out.println
                         System.out.print(" " + i);
                     }
                 }
@@ -84,11 +86,13 @@ public class TraceOptimizer
                     int tr = calculateTrace(fe);
                     if (tr != 0)
                     {
+                        // -DM System.out.print
                         nonZeroTraceBits.add(Integers.valueOf(i));
                         System.out.print(" " + i);
                     }
                 }
             }
+            // -DM System.out.println
             System.out.println();
         }
 

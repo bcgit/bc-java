@@ -51,4 +51,9 @@ public class Uint16
     {
         return new ASN1Integer(value);
     }
+
+    public int getValue()
+    {
+        return value;
+    }
 }

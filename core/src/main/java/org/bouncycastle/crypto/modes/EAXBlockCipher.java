@@ -126,7 +126,7 @@ public class EAXBlockCipher
         mac.doFinal(nonceMac, 0);
 
         // Same BlockCipher underlies this and the mac, so reuse last key on cipher
-        cipher.init(true, new ParametersWithIV(null, nonceMac));
+        cipher.init(true, new ParametersWithIV(keyParam, nonceMac));
 
         reset();
     }

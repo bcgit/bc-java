@@ -4,13 +4,14 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * Implementation of the SEED algorithm as described in RFC 4009
  */
 public class SEEDEngine
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     private final int BLOCK_SIZE = 16;
 
@@ -243,6 +244,11 @@ public class SEEDEngine
 
     private int[] createWorkingKey(byte[] inKey)
     {
+        if (inKey.length != 16)
+        {
+            throw new IllegalArgumentException("key size must be 128 bits");
+        }
+        
         int[] key = new int[32];
         long lower = bytesToLong(inKey, 0);
         long upper = bytesToLong(inKey, 8);
@@ -342,5 +348,10 @@ public class SEEDEngine
     private int phaseCalc2(int r0, int ki0, int r1, int ki1)
     {
         return G(phaseCalc1(r0, ki0, r1, ki1) + G((r0 ^ ki0) ^ (r1 ^ ki1)));
+    }
+
+    public BlockCipher newInstance()
+    {
+        return new SEEDEngine();
     }
 }

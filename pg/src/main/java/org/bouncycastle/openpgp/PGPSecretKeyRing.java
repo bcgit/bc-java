@@ -409,6 +409,62 @@ public class PGPSecretKeyRing
     }
 
     /**
+     * Either replace the public key on the corresponding secret key in the key ring if present,
+     * or insert the public key as an extra public key in case that the secret ring does not
+     * contain the corresponding secret key.
+     *
+     * @param secretRing secret key ring
+     * @param publicKey  public key to insert or replace
+     * @return secret key ring
+     */
+    public static PGPSecretKeyRing insertOrReplacePublicKey(PGPSecretKeyRing secretRing, PGPPublicKey publicKey)
+    {
+        PGPSecretKey secretKey = secretRing.getSecretKey(publicKey.getKeyID());
+
+        if (secretKey != null)
+        {
+            List<PGPSecretKey> newList = new ArrayList<PGPSecretKey>(secretRing.keys.size());
+            for (Iterator<PGPSecretKey> it = secretRing.getSecretKeys(); it.hasNext(); )
+            {
+                PGPSecretKey sk = it.next();
+                if (sk.getKeyID() == publicKey.getKeyID())
+                {
+                    sk = PGPSecretKey.replacePublicKey(secretKey, publicKey);
+                    newList.add(sk);
+                }
+            }
+
+            return new PGPSecretKeyRing(newList);
+        }
+        else
+        {
+            List<PGPPublicKey> extras = new ArrayList<PGPPublicKey>(secretRing.extraPubKeys.size());
+            boolean found = false;
+
+            for (Iterator<PGPPublicKey> it = secretRing.getExtraPublicKeys(); it.hasNext(); )
+            {
+                PGPPublicKey pk = it.next();
+                if (pk.getKeyID() == publicKey.getKeyID())
+                {
+                    extras.add(publicKey);
+                    found = true;
+                }
+                else
+                {
+                    extras.add(pk);
+                }
+            }
+
+            if (!found)
+            {
+                extras.add(publicKey);
+            }
+
+            return new PGPSecretKeyRing(new ArrayList(secretRing.keys), extras);
+        }
+    }
+
+    /**
      * Return a copy of the passed in secret key ring, with the private keys (where present) associated with the master key and sub keys
      * are encrypted using a new password and the passed in algorithm.
      *

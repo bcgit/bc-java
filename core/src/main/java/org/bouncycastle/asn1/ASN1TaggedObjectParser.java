@@ -49,6 +49,14 @@ public interface ASN1TaggedObjectParser
 
     ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException;
 
+    /**
+     * Needed for open types, until we have better type-guided parsing support. Use sparingly for other
+     * purposes, and prefer {@link #parseExplicitBaseTagged()} or {@link #parseBaseUniversal(boolean, int)}
+     * where possible. Before using, check for matching tag {@link #getTagClass() class} and
+     * {@link #getTagNo() number}.
+     */
+    ASN1Encodable parseExplicitBaseObject() throws IOException;
+
     ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException;
 
     ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException;

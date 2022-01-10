@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.cmce;
 class BENES13
     extends BENES
 {
-
     public BENES13(int n, int t, int m)
     {
         super(n, t, m);
@@ -18,7 +17,7 @@ class BENES13
 
         s = 1 << lgs;
 
-        for (i = 0; i < 64; i += s*2)
+        for (i = 0; i < 64; i += s * 2)
         {
             for (j = i; j < i + s; j++)
             {
@@ -46,15 +45,17 @@ class BENES13
 
         s = 1 << lgs;
 
-        for (i = 0; i < 128; i += s*2)
-            for (j = i; j < i+s; j++)
+        for (i = 0; i < 128; i += s * 2)
+        {
+            for (j = i; j < i + s; j++)
             {
 
-                d = (data[j+0] ^ data[j+s]);
+                d = (data[j + 0] ^ data[j + s]);
                 d &= bits[bit_ptr++];
-                data[j+0] ^= d;
-                data[j+s] ^= d;
+                data[j + 0] ^= d;
+                data[j + s] ^= d;
             }
+        }
     }
 
     /* input: r, sequence of bits to be permuted */
@@ -66,7 +67,7 @@ class BENES13
         int i, iter, inc;
 
         int r_ptr = 0;
-	    int bits_ptr = 0;
+        int bits_ptr = 0;
 
 //        long[] r_int_v_0 = new long[64];
 //        long[] r_int_v_1 = new long[64];
@@ -81,20 +82,20 @@ class BENES13
 
         if (rev == 0)
         {
-            bits_ptr = SYS_T*2+40;
+            bits_ptr = SYS_T * 2 + 40;
             inc = 0;
         }
         else
 
         {
-            bits_ptr = SYS_T*2+40 + 12288;
+            bits_ptr = SYS_T * 2 + 40 + 12288;
             inc = -1024;
         }
 
         for (i = 0; i < 64; i++)//TODO use load8
         {
-            r_int_v[i + 0] = Utils.load8(r, r_ptr + i*16 + 0);
-            r_int_v[i + 64] = Utils.load8(r, r_ptr + i*16 + 8);
+            r_int_v[i + 0] = Utils.load8(r, r_ptr + i * 16 + 0);
+            r_int_v[i + 64] = Utils.load8(r, r_ptr + i * 16 + 8);
         }
 
         transpose_64x64(r_int_h, r_int_v, 0);
@@ -165,8 +166,8 @@ class BENES13
 
         for (i = 0; i < 64; i++)//TODO use store8
         {
-            Utils.store8(r, r_ptr + i*16 + 0, r_int_v[0 + i]);
-            Utils.store8(r, r_ptr + i*16 + 8, r_int_v[64 + i]);
+            Utils.store8(r, r_ptr + i * 16 + 0, r_int_v[0 + i]);
+            Utils.store8(r, r_ptr + i * 16 + 8, r_int_v[64 + i]);
         }
     }
 
@@ -176,16 +177,18 @@ class BENES13
     {
         short a;
         int i, j;
-        byte[][] L = new byte[GFBITS][(1 << GFBITS)/8];
+        byte[][] L = new byte[GFBITS][(1 << GFBITS) / 8];
 
         for (i = 0; i < GFBITS; i++)
         {
             for (j = 0; j < (1 << GFBITS) / 8; j++)
+            {
                 L[i][j] = 0;
+            }
         }
         for (i = 0; i < (1 << GFBITS); i++)
         {
-            a = Utils.bitrev((short) i, GFBITS);
+            a = Utils.bitrev((short)i, GFBITS);
 
             for (j = 0; j < GFBITS; j++)
             {
@@ -200,10 +203,10 @@ class BENES13
         for (i = 0; i < SYS_N; i++)
         {
             s[i] = 0;
-            for (j = GFBITS-1; j >= 0; j--)
+            for (j = GFBITS - 1; j >= 0; j--)
             {
                 s[i] <<= 1;
-                s[i] |= (L[j][i/8] >> (i%8)) & 1;
+                s[i] |= (L[j][i / 8] >> (i % 8)) & 1;
             }
         }
     }

@@ -81,8 +81,10 @@ public class DESExample extends Object
         if (args.length < 2)
         {
             DESExample de = new DESExample();
+            // -DM System.err.print
             System.err.println("Usage: java "+de.getClass().getName()+
                                 " infile outfile [keyfile]");
+            // -DM System.exit
             System.exit(1);
         }
 
@@ -130,6 +132,8 @@ public class DESExample extends Object
         }
         catch (FileNotFoundException fnf)
         {
+            // -DM System.err.print
+            // -DM System.exit
             System.err.println("Input file not found ["+infile+"]");
             System.exit(1);
         }
@@ -140,6 +144,8 @@ public class DESExample extends Object
         }
         catch (IOException fnf)
         {
+            // -DM System.err.print
+            // -DM System.exit
             System.err.println("Output file not created ["+outfile+"]");
             System.exit(1);
         }
@@ -178,6 +184,8 @@ public class DESExample extends Object
                 }
                 catch (Exception nsa)
                 {
+                    // -DM System.err.print
+                    // -DM System.exit
                     System.err.println("Hmmm, no SHA1PRNG, you need the "+
                                         "Sun implementation");
                     System.exit(1);
@@ -211,6 +219,8 @@ public class DESExample extends Object
             }
             catch (IOException createKey)
             {
+                // -DM System.err.print
+                // -DM System.exit
                 System.err.println("Could not decryption create key file "+
                                     "["+keyfile+"]");
                 System.exit(1);
@@ -230,6 +240,8 @@ public class DESExample extends Object
             }
             catch (IOException ioe)
             {
+                // -DM System.err.print
+                // -DM System.exit
                 System.err.println("Decryption key file not found, "+
                                     "or not valid ["+keyfile+"]");
                 System.exit(1);
@@ -271,6 +283,7 @@ public class DESExample extends Object
         }
         catch (IOException closing)
         {
+            // -DM System.err.print
             System.err.println("exception closing resources: " + closing.getMessage());
         }
     }

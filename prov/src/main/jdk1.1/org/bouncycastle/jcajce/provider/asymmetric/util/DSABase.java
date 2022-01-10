@@ -10,49 +10,50 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.signers.DSAEncoding;
 
 public abstract class DSABase
     extends Signature
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
-    protected Digest                  digest;
-    protected DSA                     signer;
-    protected DSAEncoder              encoder;
+    protected Digest digest;
+    protected DSAExt signer;
+    protected DSAEncoding encoding;
     private SecureRandom              appRandom;
 
     protected DSABase(
-        String                  name,
-        Digest                  digest,
-        DSA                     signer,
-        DSAEncoder              encoder)
+        String name,
+        Digest digest,
+        DSAExt signer,
+        DSAEncoding encoding)
     {
         super(name);
-        
+
         this.digest = digest;
         this.signer = signer;
-        this.encoder = encoder;
+        this.encoding = encoding;
     }
 
     protected void engineInitSign(
         PrivateKey privateKey)
-    throws InvalidKeyException
+        throws InvalidKeyException
     {
         doEngineInitSign(privateKey, appRandom);
     }
 
     protected void engineUpdate(
-        byte    b)
+        byte b)
         throws SignatureException
     {
         digest.update(b);
     }
 
     protected void engineUpdate(
-        byte[]  b,
-        int     off,
-        int     len) 
+        byte[] b,
+        int off,
+        int len)
         throws SignatureException
     {
         digest.update(b, off, len);
@@ -61,15 +62,14 @@ public abstract class DSABase
     protected byte[] engineSign()
         throws SignatureException
     {
-        byte[]  hash = new byte[digest.getDigestSize()];
-
+        byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
         try
         {
-            BigInteger[]    sig = signer.generateSignature(hash);
+            BigInteger[] sig = signer.generateSignature(hash);
 
-            return encoder.encode(sig[0], sig[1]);
+            return encoding.encode(signer.getOrder(), sig[0], sig[1]);
         }
         catch (Exception e)
         {
@@ -78,18 +78,16 @@ public abstract class DSABase
     }
 
     protected boolean engineVerify(
-        byte[]  sigBytes) 
+        byte[] sigBytes)
         throws SignatureException
     {
-        byte[]  hash = new byte[digest.getDigestSize()];
-
+        byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        BigInteger[]    sig;
-
+        BigInteger[] sig;
         try
         {
-            sig = encoder.decode(sigBytes);
+            sig = encoding.decode(signer.getOrder(), sigBytes);
         }
         catch (Exception e)
         {
@@ -98,7 +96,7 @@ public abstract class DSABase
 
         return signer.verifySignature(hash, sig[0], sig[1]);
     }
-
+    
     protected void engineSetParameter(
         AlgorithmParameterSpec params)
     {
@@ -109,8 +107,8 @@ public abstract class DSABase
      * @deprecated replaced with <a href = "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)">
      */
     protected void engineSetParameter(
-        String  param,
-        Object  value)
+        String param,
+        Object value)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
@@ -119,7 +117,7 @@ public abstract class DSABase
      * @deprecated
      */
     protected Object engineGetParameter(
-        String      param)
+        String param)
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }

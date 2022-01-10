@@ -196,11 +196,13 @@ public class GMSSRootCalc
 
         if (isFinished)
         {
+            // -DM System.out.print
             System.out.print("Too much updates for Tree!!");
             return;
         }
         if (!isInitialized)
         {
+            // -DM System.err.print
             System.err.println("GMSSRootCalc not initialized!");
             return;
         }
@@ -281,6 +283,7 @@ public class GMSSRootCalc
                     {
                         if (helpHeight == 0)
                         {
+                            // -DM System.out.println
                             System.out.println("M���P");
                         }
                         // add help element to retain stack if it is a right

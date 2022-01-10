@@ -1195,7 +1195,10 @@
         <compile-doc srcDir="${util.target.src.dir}" docsDir="${artifacts.docs.dir}/bcutil">
             <docElements>
                 <package name="org.bouncycastle.asn1.*" />
+                <package name="org.bouncycastle.oer" />
+                <package name="org.bouncycastle.oer.*" />
                 <group title="Extra ASN.1 Packages" packages="org.bouncycastle.asn1*" />
+                <group title="Extra ASN.1 Packages (OER)" packages="org.bouncycastle.oer*" />
             </docElements>
         </compile-doc>
 

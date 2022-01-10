@@ -37,7 +37,7 @@ public class ITSCertificate
     /**
      * Return the certificate's public encryption key, if present.
      *
-     * @return 
+     * @return
      */
     public ITSPublicEncryptionKey getPublicEncryptionKey()
     {
@@ -61,7 +61,7 @@ public class ITSCertificate
 
         verOut.write(
             OEREncoder.toByteArray(certificate.getCertificateBase().getToBeSignedCertificate(),
-                IEEE1609dot2.tbsCertificate));
+                IEEE1609dot2.ToBeSignedCertificate.build()));
 
         verOut.close();
 
@@ -78,6 +78,6 @@ public class ITSCertificate
     public byte[] getEncoded()
         throws IOException
     {
-        return OEREncoder.toByteArray(certificate.getCertificateBase(), IEEE1609dot2.certificate);
+        return OEREncoder.toByteArray(certificate.getCertificateBase(), IEEE1609dot2.Certificate.build());
     }
 }

@@ -11,6 +11,7 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.dvcs;
     exports org.bouncycastle.eac;
     exports org.bouncycastle.est;
+    exports org.bouncycastle.its;
     exports org.bouncycastle.mime;
     exports org.bouncycastle.mozilla;
     exports org.bouncycastle.openssl;
@@ -39,6 +40,9 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.eac.operator;
     exports org.bouncycastle.eac.operator.jcajce;
     exports org.bouncycastle.est.jcajce;
+    exports org.bouncycastle.its.bc;
+    exports org.bouncycastle.its.jcajce;
+    exports org.bouncycastle.its.operator;
     exports org.bouncycastle.mime.encoding;
     exports org.bouncycastle.mime.smime;
     exports org.bouncycastle.mozilla.jcajce;
@@ -50,4 +54,5 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.pkcs.jcajce;
     exports org.bouncycastle.pkix.jcajce;
     exports org.bouncycastle.tsp.cms;
+    exports org.bouncycastle.tsp.ers;
 }

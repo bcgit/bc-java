@@ -370,10 +370,10 @@ public class ExSExprTest
     public static void main(String[] args)
         throws Exception
     {
-        new ExSExprTest().performTest();
+        runTest(new ExSExprTest());
     }
 
-    @Override
+    
     public String getName()
     {
         return "Extended SExpression Tests";
@@ -383,9 +383,10 @@ public class ExSExprTest
     public void testECNistCurves()
         throws Exception
     {
-
-        for (byte[] data : new byte[][]{p384Protected, p384Open, p256Protected, p256Open, p512Protected, p512Open})
+        byte[][] examples = {p384Protected, p384Open, p256Protected, p256Open, p512Protected, p512Open};
+        for (int i = 0; i != examples.length; i++)
         {
+            byte[] data = examples[i];
             ByteArrayInputStream bin = new ByteArrayInputStream(data);
             JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
 
@@ -409,8 +410,10 @@ public class ExSExprTest
         throws Exception
     {
 
-        for (byte[] data : new byte[][]{brainPool256Open, brainPool256Protected, brainPool384Open, brainPool384Protected, brainPool512Open, brainPool512Protected})
+        byte[][] examples = {brainPool256Open, brainPool256Protected, brainPool384Open, brainPool384Protected, brainPool512Open, brainPool512Protected};
+        for (int i = 0; i != examples.length; i++)
         {
+            byte[] data = examples[i];
             ByteArrayInputStream bin = new ByteArrayInputStream(data);
             isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
@@ -477,9 +480,10 @@ public class ExSExprTest
         throws Exception
     {
 
-        for (byte[] key : new byte[][]{dsaElgamalOpen, dsaOpen})
+        byte[][] examples = {dsaElgamalOpen, dsaOpen};
+        for (int i = 0; i != examples.length; i++)
         {
-
+            byte[] key = examples[i];
             ByteArrayInputStream bin = new ByteArrayInputStream(key);
             isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
@@ -501,8 +505,10 @@ public class ExSExprTest
     public void testDSAProtected()
         throws Exception
     {
-        for (byte[] key : new byte[][]{dsaProtected, dsaElgamalProtected})
+        byte[][] examples = {dsaProtected, dsaElgamalProtected};
+        for (int i = 0; i != examples.length; i++)
         {
+            byte[] key = examples[i];
             ByteArrayInputStream bin = new ByteArrayInputStream(key);
             isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
 
@@ -598,7 +604,7 @@ public class ExSExprTest
         isTrue(areEqual(Hex.decode("010001"), pub.getPublicExponent().toByteArray()));
     }
 
-    @Override
+    
     public void performTest()
         throws Exception
     {

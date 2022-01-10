@@ -129,6 +129,11 @@ public abstract class ASN1ApplicationSpecific
         return taggedObject.parseBaseUniversal(declaredExplicit, baseTagNo);
     }
 
+    public ASN1Encodable parseExplicitBaseObject() throws IOException
+    {
+        return taggedObject.parseExplicitBaseObject();
+    }
+
     public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
     {
         return taggedObject.parseExplicitBaseTagged();
@@ -213,7 +218,7 @@ public abstract class ASN1ApplicationSpecific
     public ASN1Encodable readObject() throws IOException
     {
         // NOTE: No way to say you're looking for an implicitly-tagged object via ASN1ApplicationSpecificParser
-        return taggedObject.getBaseObject();
+        return parseExplicitBaseObject();
     }
 
     boolean encodeConstructed()

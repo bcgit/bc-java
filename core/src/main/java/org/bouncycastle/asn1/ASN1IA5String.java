@@ -62,7 +62,7 @@ public abstract class ASN1IA5String
     /**
      * Return an IA5 String from a tagged object.
      *
-     * @param obj the tagged object holding the object we want
+     * @param taggedObject the tagged object holding the object we want
      * @param explicit true if the object is meant to be explicitly
      *              tagged false otherwise.
      * @exception IllegalArgumentException if the tagged object cannot

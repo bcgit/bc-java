@@ -62,6 +62,7 @@ public class DiscoverEndomorphisms
             x9 = ECNamedCurveTable.getByName(curveName);
             if (x9 == null)
             {
+                // -DM System.err.println
                 System.err.println("Unknown curve: " + curveName);
                 return;
             }
@@ -81,12 +82,14 @@ public class DiscoverEndomorphisms
 
             if (c.getB().isZero() && characteristic.mod(ECConstants.FOUR).equals(ECConstants.ONE))
             {
+                // -DM System.out.println
                 System.out.println("Curve '" + displayName + "' has a 'GLV Type A' endomorphism with these parameters:");
                 printGLVTypeAParameters(x9);
             }
 
             if (c.getA().isZero() && characteristic.mod(ECConstants.THREE).equals(ECConstants.ONE))
             {
+                // -DM System.out.println
                 System.out.println("Curve '" + displayName + "' has a 'GLV Type B' endomorphism with these parameters:");
                 printGLVTypeBParameters(x9);
             }
@@ -106,6 +109,7 @@ public class DiscoverEndomorphisms
         ECFieldElement[] iValues = findNonTrivialOrder4FieldElements(x9.getCurve());
 
         printGLVTypeAParameters(x9, lambdas[0], iValues);
+        // -DM System.out.println
         System.out.println("OR");
         printGLVTypeAParameters(x9, lambdas[1], iValues);
     }
@@ -156,6 +160,7 @@ public class DiscoverEndomorphisms
         ECFieldElement[] betaValues = findNonTrivialOrder3FieldElements(x9.getCurve());
 
         printGLVTypeBParameters(x9, lambdas[0], betaValues);
+        // -DM System.out.println
         System.out.println("OR");
         printGLVTypeBParameters(x9, lambdas[1], betaValues);
     }
@@ -203,6 +208,7 @@ public class DiscoverEndomorphisms
         }
         sb.append(": ");
         sb.append(value.toString());
+        // -DM System.out.println
         System.out.println(sb.toString());
     }
 

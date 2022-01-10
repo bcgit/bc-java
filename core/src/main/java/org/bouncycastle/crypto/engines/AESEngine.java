@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -32,7 +33,7 @@ import org.bouncycastle.util.Pack;
  *
  */
 public class AESEngine
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     // The S box
     private static final byte[] S = {
@@ -580,5 +581,10 @@ private static final int[] Tinv0 =
         Pack.intToLittleEndian(C1, out, outOff +  4);
         Pack.intToLittleEndian(C2, out, outOff +  8);
         Pack.intToLittleEndian(C3, out, outOff + 12);
+    }
+
+    public BlockCipher newInstance()
+    {
+        return new AESEngine();
     }
 }

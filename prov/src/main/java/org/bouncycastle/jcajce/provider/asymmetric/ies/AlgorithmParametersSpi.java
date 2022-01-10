@@ -1,9 +1,12 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ies;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -62,10 +65,12 @@ public class AlgorithmParametersSpi
                 ASN1EncodableVector cV = new ASN1EncodableVector();
 
                 cV.add(new ASN1Integer(currentSpec.getCipherKeySize()));
-                cV.add(new ASN1Integer(currentSpec.getNonce()));
+                cV.add(new DEROctetString(currentSpec.getNonce()));
 
                 v.add(new DERSequence(cV));
             }
+            v.add(currentSpec.getPointCompression() ? ASN1Boolean.TRUE : ASN1Boolean.FALSE);
+
             return new DERSequence(v).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
@@ -117,45 +122,60 @@ public class AlgorithmParametersSpi
         {
             ASN1Sequence s = (ASN1Sequence)ASN1Primitive.fromByteArray(params);
 
-            if (s.size() == 1)
+            if (s.size() > 5)
             {
-                this.currentSpec = new IESParameterSpec(null, null, ASN1Integer.getInstance(s.getObjectAt(0)).intValueExact());
+                throw new IOException("sequence too big");
             }
-            else if (s.size() == 2)
-            {
-                ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(s.getObjectAt(0));
 
-                if (tagged.getTagNo() == 0)
+            byte[] derivationV = null;
+            byte[] encodingV = null;
+            BigInteger macKeySize = null;
+            BigInteger keySize = null;
+            byte[] nonce = null;
+            boolean pointCompression = false;
+
+            for (Enumeration en = s.getObjects(); en.hasMoreElements();)
+            {
+                Object o = en.nextElement();
+                if (o instanceof ASN1TaggedObject)
                 {
-                    this.currentSpec = new IESParameterSpec(ASN1OctetString.getInstance(tagged, false).getOctets(), null, ASN1Integer.getInstance(s.getObjectAt(1)).intValueExact());
+                    ASN1TaggedObject t = ASN1TaggedObject.getInstance(o);
+
+                    if (t.getTagNo() == 0)
+                    {
+                        derivationV = ASN1OctetString.getInstance(t, false).getOctets();
+                    }
+                    else if (t.getTagNo() == 1)
+                    {
+                        encodingV = ASN1OctetString.getInstance(t, false).getOctets();
+                    }
                 }
-                else
+                else if (o instanceof ASN1Integer)
                 {
-                    this.currentSpec = new IESParameterSpec(null, ASN1OctetString.getInstance(tagged, false).getOctets(), ASN1Integer.getInstance(s.getObjectAt(1)).intValueExact());
+                    macKeySize = ASN1Integer.getInstance(o).getValue();
+                }
+                else if (o instanceof ASN1Sequence)
+                {
+                    ASN1Sequence seq = ASN1Sequence.getInstance(o);
+
+                    keySize = ASN1Integer.getInstance(seq.getObjectAt(0)).getValue();
+                    nonce = ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets();
+                }
+                else if (o instanceof ASN1Boolean)
+                {
+                    pointCompression = ASN1Boolean.getInstance(o).isTrue();
                 }
             }
-            else if (s.size() == 3)
-            {
-                ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
-                ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
 
+            if (keySize != null)
+            {
                 this.currentSpec = new IESParameterSpec(
-                    ASN1OctetString.getInstance(tagged1, false).getOctets(),
-                    ASN1OctetString.getInstance(tagged2, false).getOctets(),
-                    ASN1Integer.getInstance(s.getObjectAt(2)).intValueExact());
+                    derivationV, encodingV, macKeySize.intValue(), keySize.intValue(), nonce, pointCompression);
             }
-            else if (s.size() == 4)
+            else
             {
-                ASN1TaggedObject tagged1 = ASN1TaggedObject.getInstance(s.getObjectAt(0));
-                ASN1TaggedObject tagged2 = ASN1TaggedObject.getInstance(s.getObjectAt(1));
-                ASN1Sequence     cipherDet = ASN1Sequence.getInstance(s.getObjectAt(3));
-
                 this.currentSpec = new IESParameterSpec(
-                    ASN1OctetString.getInstance(tagged1, false).getOctets(),
-                    ASN1OctetString.getInstance(tagged2, false).getOctets(),
-                    ASN1Integer.getInstance(s.getObjectAt(2)).intValueExact(),
-                    ASN1Integer.getInstance(cipherDet.getObjectAt(0)).intValueExact(),
-                    ASN1OctetString.getInstance(cipherDet.getObjectAt(1)).getOctets());
+                                        derivationV, encodingV, macKeySize.intValue(), -1, null, pointCompression);
             }
         }
         catch (ClassCastException e)

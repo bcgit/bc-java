@@ -2,10 +2,9 @@ package org.bouncycastle.pqc.crypto.cmce;
 
 abstract class BENES
 {
-    protected static int SYS_N;
-    protected static int SYS_T;
-    protected static int GFBITS;
-    protected static int GFMASK;
+    protected final int SYS_N;
+    protected final int SYS_T;
+    protected final int GFBITS;
 
     public BENES(int n, int t, int m)
     {

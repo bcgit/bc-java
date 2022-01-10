@@ -110,6 +110,7 @@ public class JsseDefaultHostnameAuthorizer
                             String value;
                             if (l.get(1) instanceof byte[])
                             {
+                                // -DM Hex.toHexString
                                 value = Hex.toHexString((byte[])l.get(1));
                             }
                             else

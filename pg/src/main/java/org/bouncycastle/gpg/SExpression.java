@@ -8,10 +8,13 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.openpgp.PGPExtendedKeyAttribute;
+import org.bouncycastle.openpgp.PGPRuntimeOperationException;
+import org.bouncycastle.util.Characters;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -22,12 +25,12 @@ public class SExpression
 
     private static final Set<Character> labelStop = new HashSet<Character>()
     {{
-        add(' ');
-        add(')');
-        add('(');
-        add('#');
-        add('\"');
-        add(':');
+        add(Characters.valueOf(' '));
+        add(Characters.valueOf(')'));
+        add(Characters.valueOf('('));
+        add(Characters.valueOf('#'));
+        add(Characters.valueOf('\"'));
+        add(Characters.valueOf(':'));
     }};
     private final ArrayList<Object> values = new ArrayList<Object>();
     private boolean canonical = false;
@@ -107,6 +110,7 @@ public class SExpression
                 {
                     expr.addValue(Strings.fromByteArray(accumulator.toByteArray()));
                 }
+
                 if (c == '(')
                 {
                     if (expr == null)
@@ -120,33 +124,26 @@ public class SExpression
                     {
                         expr.addValue(parseExpression(src, new SExpression(), accumulator, maxDepth));
                     }
-
                 }
-
-                if (c == '#')
+                else if (c == '#')
                 {
                     consumeUntilSkipWhiteSpace(src, accumulator, '#');
-                    expr.addValue(Hex.decode(Strings.fromByteArray(accumulator.toByteArray()).replace("#", "")));
+                    expr.addValue(Hex.decode(Strings.fromByteArray(accumulator.toByteArray())));
                 }
-
-                if (c == '"')
+                else if (c == '"')
                 {
                     consumeUntilSkipCRorLF(src, accumulator, '"');
-                    expr.addValue(new SExpression.QuotedString(Strings.fromByteArray(accumulator.toByteArray()).replace("\"", "")));
+                    expr.addValue(new SExpression.QuotedString(Strings.fromByteArray(accumulator.toByteArray())));
                 }
-
-
-                if (c == ')')
+                else if (c == ')')
                 {
                     return expr;
                 }
-                if (c == -1)
+                else if (c == -1)
                 {
                     break;
                 }
             }
-
-
         }
         finally
         {
@@ -210,7 +207,7 @@ public class SExpression
                 lineEnd = true;
                 continue;
             }
-            if (characterSet.contains((char)c))
+            if (characterSet.contains(Characters.valueOf((char)c)))
             {
                 return c;
             }
@@ -309,9 +306,9 @@ public class SExpression
     {
 
         PGPExtendedKeyAttribute.Builder builder = PGPExtendedKeyAttribute.builder();
-        for (Object v : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
-            builder.addAttribute(v);
+            builder.addAttribute(it.next());
         }
         return builder.build();
     }
@@ -323,8 +320,9 @@ public class SExpression
         set.addAll(Arrays.asList(keys));
 
         SExpression expr = new SExpression();
-        for (Object item : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (set.contains(item.toString()))
             {
                 continue;
@@ -357,9 +355,9 @@ public class SExpression
         set.addAll(Arrays.asList(keys));
 
         SExpression expr = new SExpression();
-        for (Object item : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
-
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 if (!((SExpression)item).values.isEmpty())
@@ -396,7 +394,7 @@ public class SExpression
         }
         catch (Exception ex)
         {
-            throw new RuntimeException(ex.getMessage(), ex);
+            throw new PGPRuntimeOperationException(ex.getMessage(), ex);
         }
         return bos.toByteArray();
     }
@@ -406,9 +404,9 @@ public class SExpression
     {
         out.write('(');
         boolean space = false;
-        for (Object value : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
-
+            Object value = it.next();
             if (value instanceof QuotedString)
             {
                 String s = ((QuotedString)value).value;
@@ -463,8 +461,9 @@ public class SExpression
 
     public SExpression getExpressionWithLabel(String label)
     {
-        for (Object o : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
+            Object o = it.next();
             if (o instanceof SExpression)
             {
                 if (((SExpression)o).hasLabel(label))
@@ -478,8 +477,9 @@ public class SExpression
 
     public SExpression getExpressionWithLabelOrFail(String label)
     {
-        for (Object o : values)
+        for (Iterator it = values.iterator(); it.hasNext();)
         {
+            Object o = it.next();
             if (o instanceof SExpression)
             {
                 if (((SExpression)o).hasLabel(label))
@@ -523,9 +523,9 @@ public class SExpression
 
         public Builder addContent(SExpression other)
         {
-            for (Object v : other.values)
+            for (Iterator it = other.values.iterator(); it.hasNext();)
             {
-                values.add(v);
+                values.add(it.next());
             }
 
             return this;

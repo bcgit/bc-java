@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cmp;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.DERBitString;
 
 /**
@@ -114,7 +115,7 @@ public class PKIFailureInfo
     }
 
     public PKIFailureInfo(
-        DERBitString info)
+        ASN1BitString info)
     {
         super(info.getBytes(), info.getPadBits());
     }

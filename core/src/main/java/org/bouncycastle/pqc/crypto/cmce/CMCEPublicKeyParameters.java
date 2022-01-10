@@ -1,20 +1,23 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
 
 public class CMCEPublicKeyParameters
     extends CMCEKeyParameters
 {
-
+    private final byte[] publicKey;
 
     public byte[] getPublicKey()
     {
-        return publicKey;
+        return Arrays.clone(publicKey);
     }
 
-    private byte[] publicKey;
-    public CMCEPublicKeyParameters(byte[] publicKey, CMCEParameters params)
+    public byte[] getEncoded()
+    {
+        return getPublicKey();
+    }
+
+    public CMCEPublicKeyParameters(CMCEParameters params, byte[] publicKey)
     {
         super(false, params);
         this.publicKey = Arrays.clone(publicKey);

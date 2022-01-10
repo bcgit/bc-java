@@ -2,8 +2,9 @@ package org.bouncycastle.pqc.crypto.cmce;
 
 abstract class GF
 {
-    protected int GFBITS;
-    protected int GFMASK;//  = ((1 << GFBITS) - 1);
+    protected final int GFBITS;
+    protected final int GFMASK;//  = ((1 << GFBITS) - 1);
+
     public GF(int gfbits)
     {
         GFBITS = gfbits;

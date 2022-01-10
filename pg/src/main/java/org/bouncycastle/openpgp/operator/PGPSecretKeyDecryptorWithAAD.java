@@ -10,7 +10,6 @@ public abstract class PGPSecretKeyDecryptorWithAAD
         super(passPhrase, calculatorProvider);
     }
 
-    @Override
     public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         throws PGPException
     {
@@ -18,5 +17,4 @@ public abstract class PGPSecretKeyDecryptorWithAAD
     }
 
     public abstract byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData, int keyOff, int keyLen) throws PGPException;
-
 }

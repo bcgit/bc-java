@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cmp;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -17,13 +18,13 @@ public class OOBCertHash
 {
     private AlgorithmIdentifier hashAlg;
     private CertId certId;
-    private DERBitString  hashVal;
+    private ASN1BitString hashVal;
 
     private OOBCertHash(ASN1Sequence seq)
     {
         int index = seq.size() - 1;
 
-        hashVal = DERBitString.getInstance(seq.getObjectAt(index--));
+        hashVal = ASN1BitString.getInstance(seq.getObjectAt(index--));
 
         for (int i = index; i >= 0; i--)
         {
@@ -78,7 +79,7 @@ public class OOBCertHash
         return certId;
     }
 
-    public DERBitString getHashVal()
+    public ASN1BitString getHashVal()
     {
         return hashVal;
     }
