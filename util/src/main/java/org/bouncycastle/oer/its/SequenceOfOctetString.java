@@ -17,7 +17,7 @@ import org.bouncycastle.util.Arrays;
 public class SequenceOfOctetString
     extends ASN1Object
 {
-    private byte[][] octetStrings;
+    private final byte[][] octetStrings;
 
     private SequenceOfOctetString(ASN1Sequence seq)
     {

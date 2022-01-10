@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -99,7 +100,7 @@ public class ExtensionsGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new RuntimeException(e.getMessage(), e);
+                    throw new ASN1ParsingException(e.getMessage(), e);
                 }
             }
             else

@@ -17,12 +17,21 @@ public class Dump
         throws Exception
     {
         FileInputStream fIn = new FileInputStream(args[0]);
-        ASN1InputStream bIn = new ASN1InputStream(fIn);
-        Object          obj = null;
 
-        while ((obj = bIn.readObject()) != null)
+        try
         {
-            System.out.println(ASN1Dump.dumpAsString(obj));
+            ASN1InputStream bIn = new ASN1InputStream(fIn);
+            Object obj = null;
+
+            while ((obj = bIn.readObject()) != null)
+            {
+                // -DM System.out.println
+                System.out.println(ASN1Dump.dumpAsString(obj));
+            }
+        }
+        finally
+        {
+            fIn.close();
         }
     }
 }

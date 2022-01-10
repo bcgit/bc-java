@@ -13,16 +13,19 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultSignatureNameFinder;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -65,6 +68,34 @@ public class AllTests
         assertEquals(nameFinder.getAlgorithmName(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE)), "RSA");
 
         assertEquals(nameFinder.getAlgorithmName(Extension.authorityKeyIdentifier), Extension.authorityKeyIdentifier.getId());
+    }
+
+    public void testSignatureAlgorithmNameFinder()
+        throws Exception
+    {
+        DefaultSignatureNameFinder nameFinder = new DefaultSignatureNameFinder();
+
+        assertFalse(nameFinder.hasAlgorithmName(OIWObjectIdentifiers.elGamalAlgorithm));
+        assertFalse(nameFinder.hasAlgorithmName(Extension.authorityKeyIdentifier));
+
+        assertEquals(nameFinder.getAlgorithmName(PKCSObjectIdentifiers.sha512WithRSAEncryption), "SHA512WITHRSA");
+        assertEquals(nameFinder.getAlgorithmName(PKCSObjectIdentifiers.id_RSASSA_PSS), "RSASSA-PSS");
+        assertEquals("RIPEMD160WITHRSA", nameFinder.getAlgorithmName(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160));
+        assertEquals("ED448", nameFinder.getAlgorithmName(EdECObjectIdentifiers.id_Ed448));
+        assertEquals("SHA256WITHRSAANDMGF1",
+            nameFinder.getAlgorithmName(
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS, new RSASSAPSSparams(
+                    new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)),
+                    RSASSAPSSparams.DEFAULT_SALT_LENGTH, RSASSAPSSparams.DEFAULT_TRAILER_FIELD))));
+        assertEquals("SHA256WITHRSAANDMGF1USINGSHA1",
+            nameFinder.getAlgorithmName(
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS, new RSASSAPSSparams(
+                    new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)),
+                    RSASSAPSSparams.DEFAULT_SALT_LENGTH, RSASSAPSSparams.DEFAULT_TRAILER_FIELD))));
+        assertEquals("ED448", nameFinder.getAlgorithmName(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448)));
+        assertEquals(Extension.authorityKeyIdentifier.getId(), nameFinder.getAlgorithmName(Extension.authorityKeyIdentifier));
     }
 
     public void testOaepWrap()

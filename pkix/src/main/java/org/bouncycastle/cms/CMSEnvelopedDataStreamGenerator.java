@@ -299,7 +299,7 @@ public class CMSEnvelopedDataStreamGenerator
 
             if (unprotectedAttributeGenerator != null)
             {
-                AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.emptyMap());
+                AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.EMPTY_MAP);
       
                 ASN1Set unprotectedAttrs = new BERSet(attrTable.toASN1EncodableVector());
 

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -21,6 +22,7 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.DecoderException;
@@ -33,26 +35,26 @@ public class PGPUtil
 {
     private static String defProvider = "BC";
 
-    private static HashMap<String, Integer> nameToHashId = new HashMap<String, Integer>()
+    private static Map<String, Integer> nameToHashId = new HashMap<String, Integer>()
     {
         {
-            put("sha1", HashAlgorithmTags.SHA1);
-            put("sha224", HashAlgorithmTags.SHA224);
-            put("sha256", HashAlgorithmTags.SHA256);
-            put("sha384", HashAlgorithmTags.SHA384);
-            put("sha512", HashAlgorithmTags.SHA512);
-            put("sha3-224", HashAlgorithmTags.SHA3_224);
-            put("sha3-256", HashAlgorithmTags.SHA3_256);
-            put("sha3-384", HashAlgorithmTags.SHA3_384);
-            put("sha3-512", HashAlgorithmTags.SHA3_512);
-            put("ripemd160", HashAlgorithmTags.RIPEMD160);
-            put("rmd160", HashAlgorithmTags.RIPEMD160);
-            put("md2", HashAlgorithmTags.MD2);
-            put("md4", HashAlgorithmTags.MD4);
-            put("tiger", HashAlgorithmTags.TIGER_192);
-            put("haval", HashAlgorithmTags.HAVAL_5_160);
-            put("sm3", HashAlgorithmTags.SM3);
-            put("md5", HashAlgorithmTags.MD5);
+            put("sha1", Integers.valueOf(HashAlgorithmTags.SHA1));
+            put("sha224", Integers.valueOf(HashAlgorithmTags.SHA224));
+            put("sha256", Integers.valueOf(HashAlgorithmTags.SHA256));
+            put("sha384", Integers.valueOf(HashAlgorithmTags.SHA384));
+            put("sha512", Integers.valueOf(HashAlgorithmTags.SHA512));
+            put("sha3-224", Integers.valueOf(HashAlgorithmTags.SHA3_224));
+            put("sha3-256", Integers.valueOf(HashAlgorithmTags.SHA3_256));
+            put("sha3-384", Integers.valueOf(HashAlgorithmTags.SHA3_384));
+            put("sha3-512", Integers.valueOf(HashAlgorithmTags.SHA3_512));
+            put("ripemd160", Integers.valueOf(HashAlgorithmTags.RIPEMD160));
+            put("rmd160", Integers.valueOf(HashAlgorithmTags.RIPEMD160));
+            put("md2", Integers.valueOf(HashAlgorithmTags.MD2));
+            put("md4", Integers.valueOf(HashAlgorithmTags.MD4));
+            put("tiger", Integers.valueOf(HashAlgorithmTags.TIGER_192));
+            put("haval", Integers.valueOf(HashAlgorithmTags.HAVAL_5_160));
+            put("sm3", Integers.valueOf(HashAlgorithmTags.SM3));
+            put("md5", Integers.valueOf(HashAlgorithmTags.MD5));
         }
     };
 
@@ -97,7 +99,7 @@ public class PGPUtil
         name = Strings.toLowerCase(name);
         if (nameToHashId.containsKey(name))
         {
-            return nameToHashId.get(name);
+            return ((Integer)nameToHashId.get(name)).intValue();
         }
         throw new IllegalArgumentException("unable to map " + name + " to a hash id");
     }

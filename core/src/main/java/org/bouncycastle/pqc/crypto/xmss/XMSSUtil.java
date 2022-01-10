@@ -169,6 +169,8 @@ public class XMSSUtil
         }
         for (int i = 0; i < x.length; i++)
         {
+            // -DM Hex.toHexString
+            // -DM System.out.println
             System.out.println(Hex.toHexString(x[i]));
         }
     }

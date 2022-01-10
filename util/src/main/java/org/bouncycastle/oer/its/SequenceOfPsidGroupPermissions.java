@@ -58,7 +58,7 @@ public class SequenceOfPsidGroupPermissions
     public static class Builder
     {
 
-        private List<PsidGroupPermissions> groupPermissions = new ArrayList<PsidGroupPermissions>();
+        private final List<PsidGroupPermissions> groupPermissions = new ArrayList<PsidGroupPermissions>();
 
         public Builder setGroupPermissions(List<PsidGroupPermissions> groupPermissions)
         {

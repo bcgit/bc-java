@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -43,6 +41,7 @@ public class SetTest
     }
 
     public void performTest()
+        throws Exception
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
         byte[] data = new byte[10];
@@ -95,15 +94,8 @@ public class SetTest
         // create an implicitly tagged "set" without sorting
         ASN1TaggedObject tag = new DERTaggedObject(false, 1, new DERSequence(v));
 
-        try
-        {
-            // Encode/decode to get 'tag' as a parsed instance
-            tag = (ASN1TaggedObject)ASN1Primitive.fromByteArray(tag.getEncoded(ASN1Encoding.DER));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        // Encode/decode to get 'tag' as a parsed instance
+        tag = (ASN1TaggedObject)ASN1Primitive.fromByteArray(tag.getEncoded(ASN1Encoding.DER));
 
         s = ASN1Set.getInstance(tag, false);
 

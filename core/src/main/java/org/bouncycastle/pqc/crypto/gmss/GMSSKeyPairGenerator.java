@@ -302,6 +302,7 @@ public class GMSSKeyPairGenerator
         {
             return treeToConstruct;
         }
+        // -DM System.err.println
         System.err.println("Baum noch nicht fertig konstruiert!!!");
         return null;
     }
@@ -347,6 +348,7 @@ public class GMSSKeyPairGenerator
         {
             return treeToConstruct;
         }
+        // -DM System.err.println
         System.err.println("N�chster Baum noch nicht fertig konstruiert!!!");
         return null;
     }

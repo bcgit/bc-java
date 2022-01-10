@@ -62,8 +62,7 @@ public class SignerInfoGeneratorBuilder
     }
 
     /**
-     * If the passed in flag is true, the signer signature will be based on the data, not
-     * a collection of signed attributes, and no signed attributes will be included.
+     * Set the algorithm identifier for the contentDigest to be used for processing the data.
      *
      * @return the builder object
      */

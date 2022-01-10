@@ -6,10 +6,6 @@ import java.security.Security;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Settings can either be in java.security or set as system properties.
- * Settings provided in java.security will override system properties.
- */
 class PropertyUtils
 {
     private static final Logger LOG = Logger.getLogger(PropertyUtils.class.getName());

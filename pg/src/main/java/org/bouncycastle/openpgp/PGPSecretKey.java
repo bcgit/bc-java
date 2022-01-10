@@ -35,6 +35,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Arrays;
 
 /**
  * general class to handle and construct  a PGP secret key object.
@@ -491,12 +492,9 @@ public class PGPSecretKey
                     boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
                     byte[] check = checksum(useSHA1 ? decryptorFactory.getChecksumCalculator(HashAlgorithmTags.SHA1) : null, data, (useSHA1) ? data.length - 20 : data.length - 2);
 
-                    for (int i = 0; i != check.length; i++)
+                    if (!Arrays.constantTimeAreEqual(check.length, check, 0, data, data.length - check.length))
                     {
-                        if (check[i] != data[data.length - check.length + i])
-                        {
-                            throw new PGPException("checksum mismatch at " + i + " of " + check.length);
-                        }
+                        throw new PGPException("checksum mismatch at in checksum of " + check.length + " bytes");
                     }
                 }
                 else // version 2 or 3, RSA only.
@@ -779,6 +777,25 @@ public class PGPSecretKey
         PBESecretKeyEncryptor newKeyEncryptor)
         throws PGPException
     {
+        return copyWithNewPassword(key, oldKeyDecryptor, newKeyEncryptor, null);
+    }
+
+    /**
+     * Return a copy of the passed in secret key, encrypted using a new
+     * password and the passed in algorithm.
+     *
+     * @param key             the PGPSecretKey to be copied.
+     * @param oldKeyDecryptor the current decryptor based on the current password for key.
+     * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
+     * @param checksumCalculator digest based checksum calculator for private key data.
+     */
+    public static PGPSecretKey copyWithNewPassword(
+        PGPSecretKey key,
+        PBESecretKeyDecryptor oldKeyDecryptor,
+        PBESecretKeyEncryptor newKeyEncryptor,
+        PGPDigestCalculator checksumCalculator)
+        throws PGPException
+    {
         if (key.isPrivateKeyEmpty())
         {
             throw new PGPException("no private key in this SecretKey - public key present only.");
@@ -812,12 +829,12 @@ public class PGPSecretKey
         }
         else
         {
-            if (s2kUsage == SecretKeyPacket.USAGE_NONE)
-            {
-                s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
-            }
             if (key.secret.getPublicKeyPacket().getVersion() < 4)
             {
+                if (s2kUsage == SecretKeyPacket.USAGE_NONE)
+                {
+                    s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
+                }
                 // Version 2 or 3 - RSA Keys only
 
                 byte[] encKey = newKeyEncryptor.getKey();
@@ -874,7 +891,30 @@ public class PGPSecretKey
             }
             else
             {
-                keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                if (s2kUsage == SecretKeyPacket.USAGE_NONE)
+                {
+                    if (checksumCalculator != null)
+                    {
+                        if (checksumCalculator.getAlgorithm() != HashAlgorithmTags.SHA1)
+                        {
+                            throw new IllegalArgumentException("only SHA-1 supported for checksums");
+                        }
+                        s2kUsage = SecretKeyPacket.USAGE_SHA1;
+
+                        byte[] check = checksum(checksumCalculator, rawKeyData, rawKeyData.length);
+                        rawKeyData = Arrays.concatenate(rawKeyData, check);
+                        keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                    }
+                    else
+                    {
+                        s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
+                        keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                    }
+                }
+                else
+                {
+                    keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
+                }
 
                 iv = newKeyEncryptor.getCipherIV();
 

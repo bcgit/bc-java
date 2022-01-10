@@ -130,19 +130,20 @@ public class ASN1InputStream
         int       length)
         throws IOException
     {
-        boolean isConstructed = (tag & CONSTRUCTED) != 0;
+        // TODO[asn1] Special-case zero length first?
 
         DefiniteLengthInputStream defIn = new DefiniteLengthInputStream(this, length, limit);
+
+        if (0 == (tag & FLAGS))
+        {
+            return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
+        }
 
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
-            return readTaggedObject(tagClass, tagNo, isConstructed, defIn);
-        }
-
-        if (!isConstructed)
-        {
-            return createPrimitiveDERObject(tagNo, defIn, tmpBuffers);
+            boolean isConstructed = (tag & CONSTRUCTED) != 0;
+            return readTaggedObjectDL(tagClass, tagNo, isConstructed, defIn);
         }
 
         switch (tagNo)
@@ -225,7 +226,7 @@ public class ASN1InputStream
         int tagClass = tag & PRIVATE;
         if (0 != tagClass)
         {
-            return sp.readTaggedObject(tagClass, tagNo, true);
+            return sp.loadTaggedIL(tagClass, tagNo);
         }
 
         switch (tagNo)
@@ -235,6 +236,7 @@ public class ASN1InputStream
         case OCTET_STRING:
             return BEROctetStringParser.parse(sp);
         case EXTERNAL:
+            // TODO[asn1] BERExternalParser
             return DERExternalParser.parse(sp);
         case SEQUENCE:
             return BERSequenceParser.parse(sp);
@@ -289,7 +291,7 @@ public class ASN1InputStream
         return new BEROctetString(strings);
     }
 
-    ASN1Primitive readTaggedObject(int tagClass, int tagNo, boolean constructed, DefiniteLengthInputStream defIn)
+    ASN1Primitive readTaggedObjectDL(int tagClass, int tagNo, boolean constructed, DefiniteLengthInputStream defIn)
         throws IOException
     {
         if (!constructed)
@@ -298,9 +300,8 @@ public class ASN1InputStream
             return ASN1TaggedObject.createPrimitive(tagClass, tagNo, contentsOctets);
         }
 
-        boolean isIL = false;
         ASN1EncodableVector contentsElements = readVector(defIn);
-        return ASN1TaggedObject.createConstructed(tagClass, tagNo, isIL, contentsElements);
+        return ASN1TaggedObject.createConstructedDL(tagClass, tagNo, contentsElements);
     }
 
     ASN1EncodableVector readVector() throws IOException

@@ -47,6 +47,7 @@ public class TestGetCSRAttrs
         //
         // Mock up some Attributes, this not a real attribute.!
         //
+        // -DM toBase64String
         config.estCSRAttr = Base64.toBase64String(new CsrAttrs(new AttrOrOID(new ASN1ObjectIdentifier("1.2.3.4"))).getEncoded());
 
         return ESTServerUtils.startServer(config);

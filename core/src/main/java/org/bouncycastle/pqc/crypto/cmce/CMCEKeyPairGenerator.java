@@ -1,10 +1,10 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-
-import java.security.SecureRandom;
 
 public class CMCEKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -38,12 +38,12 @@ public class CMCEKeyPairGenerator
         byte[] pk = new byte[engine.getPublicKeySize()];
         engine.kem_keypair(pk, sk, random);
 
-        CMCEPublicKeyParameters pubKey = new CMCEPublicKeyParameters(pk, cmceParams.getParameters());
-        CMCEPrivateKeyParameters privKey = new CMCEPrivateKeyParameters(sk, cmceParams.getParameters());
+        CMCEPublicKeyParameters pubKey = new CMCEPublicKeyParameters(cmceParams.getParameters(), pk);
+        CMCEPrivateKeyParameters privKey = new CMCEPrivateKeyParameters(cmceParams.getParameters(), sk);
         return new AsymmetricCipherKeyPair(pubKey, privKey);
 
     }
-    @Override
+
     public void init(KeyGenerationParameters param)
     {
         this.initialize(param);

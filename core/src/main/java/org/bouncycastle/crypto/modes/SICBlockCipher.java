@@ -18,8 +18,9 @@ public class SICBlockCipher
     extends StreamBlockCipher
     implements SkippingStreamCipher
 {
-    private final BlockCipher     cipher;
+    private final BlockCipher     baseCipher;
     private final int             blockSize;
+    private ECBCache.CoreEngine   sicCore;
 
     private byte[]          IV;
     private byte[]          counter;
@@ -35,8 +36,8 @@ public class SICBlockCipher
     {
         super(c);
 
-        this.cipher = c;
-        this.blockSize = cipher.getBlockSize();
+        this.baseCipher = c;
+        this.blockSize = baseCipher.getBlockSize();
         this.IV = new byte[blockSize];
         this.counter = new byte[blockSize];
         this.counterOut = new byte[blockSize];
@@ -68,7 +69,7 @@ public class SICBlockCipher
             // if null it's an IV changed only.
             if (ivParam.getParameters() != null)
             {
-                cipher.init(true, ivParam.getParameters());
+                sicCore = ECBCache.getCore(baseCipher, true, ivParam.getParameters());
             }
 
             reset();
@@ -81,12 +82,12 @@ public class SICBlockCipher
 
     public String getAlgorithmName()
     {
-        return cipher.getAlgorithmName() + "/SIC";
+        return baseCipher.getAlgorithmName() + "/SIC";
     }
 
     public int getBlockSize()
     {
-        return cipher.getBlockSize();
+        return baseCipher.getBlockSize();
     }
 
     public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
@@ -107,7 +108,7 @@ public class SICBlockCipher
             throw new OutputLengthException("output buffer too short");
         }
 
-        cipher.processBlock(counter, 0, counterOut, 0);
+        sicCore.cipher.processBlock(counter, 0, counterOut, 0);
         for (int i = 0; i < blockSize; ++i)
         {
             out[outOff + i] = (byte)(in[inOff + i] ^ counterOut[i]);
@@ -133,7 +134,7 @@ public class SICBlockCipher
             byte next;
             if (byteCount == 0)
             {
-                cipher.processBlock(counter, 0, counterOut, 0);
+                sicCore.cipher.processBlock(counter, 0, counterOut, 0);
                 next = (byte)(in[inOff + i] ^ counterOut[byteCount++]);
             }
             else
@@ -156,7 +157,7 @@ public class SICBlockCipher
     {
         if (byteCount == 0)
         {
-            cipher.processBlock(counter, 0, counterOut, 0);
+            sicCore.cipher.processBlock(counter, 0, counterOut, 0);
 
             return (byte)(counterOut[byteCount++] ^ in);
         }
@@ -310,7 +311,10 @@ public class SICBlockCipher
     {
         Arrays.fill(counter, (byte)0);
         System.arraycopy(IV, 0, counter, 0, IV.length);
-        cipher.reset();
+        if (sicCore != null)
+        {
+            sicCore.cipher.reset();
+        }
         this.byteCount = 0;
     }
 
@@ -320,7 +324,7 @@ public class SICBlockCipher
 
         checkCounter();
 
-        cipher.processBlock(counter, 0, counterOut, 0);
+        sicCore.cipher.processBlock(counter, 0, counterOut, 0);
 
         return numberOfBytes;
     }

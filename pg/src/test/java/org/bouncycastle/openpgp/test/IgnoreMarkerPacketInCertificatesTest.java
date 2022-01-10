@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.util.Iterator;
 
@@ -13,6 +12,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class IgnoreMarkerPacketInCertificatesTest
@@ -70,30 +70,28 @@ public class IgnoreMarkerPacketInCertificatesTest
         runTest(new IgnoreMarkerPacketInCertificatesTest());
     }
 
-    @Override
     public String getName()
     {
-        return IgnoreMarkerPacketInCertificatesTest.class.getSimpleName();
+        return "IgnoreMarkerPacketInCertificatesTest";
     }
 
-    @Override
     public void performTest()
         throws Exception
     {
-        ArmoredInputStream armorIn = new ArmoredInputStream(new ByteArrayInputStream(CERT_WITH_MARKER.getBytes(StandardCharsets.UTF_8)));
+        ArmoredInputStream armorIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(CERT_WITH_MARKER)));
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
 
         PGPPublicKeyRing certificate = (PGPPublicKeyRing)objectFactory.nextObject();
         isEquals("Bob Babbage <bob@openpgp.example>", certificate.getPublicKey().getUserIDs().next());
         Iterator<PGPPublicKey> publicKeys = certificate.getPublicKeys();
-        PGPPublicKey primaryKey = publicKeys.next();
+        PGPPublicKey primaryKey = (PGPPublicKey)publicKeys.next();
         isEquals(new BigInteger("FBFCC82A015E7330", 16).longValue(), primaryKey.getKeyID());
         Iterator<PGPSignature> signatures = primaryKey.getSignatures();
         isTrue(signatures.hasNext());
         signatures.next();
         isTrue(!signatures.hasNext());
 
-        PGPPublicKey subkey = publicKeys.next();
+        PGPPublicKey subkey = (PGPPublicKey)publicKeys.next();
         isEquals(new BigInteger("7C2FAA4DF93C37B2", 16).longValue(), subkey.getKeyID());
         signatures = subkey.getSignatures();
         isTrue(signatures.hasNext());

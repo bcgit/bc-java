@@ -205,12 +205,14 @@ public class Treehash
 
         if (this.isFinished)
         {
+            // -DM System.err.println
             System.err
                 .println("No more update possible for treehash instance!");
             return;
         }
         if (!this.isInitialized)
         {
+            // -DM System.err.println
             System.err
                 .println("Treehash instance not initialized before update");
             return;

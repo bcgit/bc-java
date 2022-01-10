@@ -6073,7 +6073,7 @@ public class TlsUtils
         {
             if (psks[i].getPRFAlgorithm() == prfAlgorithm)
             {
-                v.add(Integer.valueOf(i));
+                v.add(Integers.valueOf(i));
             }
         }
         return v;

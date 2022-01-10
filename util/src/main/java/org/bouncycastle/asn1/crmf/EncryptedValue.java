@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.crmf;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -7,7 +8,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -17,10 +17,10 @@ public class EncryptedValue
 {
     private AlgorithmIdentifier intendedAlg;
     private AlgorithmIdentifier symmAlg;
-    private DERBitString        encSymmKey;
+    private ASN1BitString       encSymmKey;
     private AlgorithmIdentifier keyAlg;
     private ASN1OctetString     valueHint;
-    private DERBitString        encValue;
+    private ASN1BitString       encValue;
 
     private EncryptedValue(ASN1Sequence seq)
     {
@@ -38,7 +38,7 @@ public class EncryptedValue
                 symmAlg = AlgorithmIdentifier.getInstance(tObj, false);
                 break;
             case 2:
-                encSymmKey = DERBitString.getInstance(tObj, false);
+                encSymmKey = ASN1BitString.getInstance(tObj, false);
                 break;
             case 3:
                 keyAlg = AlgorithmIdentifier.getInstance(tObj, false);
@@ -52,7 +52,7 @@ public class EncryptedValue
             index++;
         }
 
-        encValue = DERBitString.getInstance(seq.getObjectAt(index));
+        encValue = ASN1BitString.getInstance(seq.getObjectAt(index));
     }
 
     public static EncryptedValue getInstance(Object o)
@@ -72,10 +72,10 @@ public class EncryptedValue
     public EncryptedValue(
         AlgorithmIdentifier intendedAlg,
         AlgorithmIdentifier symmAlg,
-        DERBitString encSymmKey,
+        ASN1BitString encSymmKey,
         AlgorithmIdentifier keyAlg,
         ASN1OctetString valueHint,
-        DERBitString encValue)
+        ASN1BitString encValue)
     {
         if (encValue == null)
         {
@@ -100,7 +100,7 @@ public class EncryptedValue
         return symmAlg;
     }
 
-    public DERBitString getEncSymmKey()
+    public ASN1BitString getEncSymmKey()
     {
         return encSymmKey;
     }
@@ -115,7 +115,7 @@ public class EncryptedValue
         return valueHint;
     }
 
-    public DERBitString getEncValue()
+    public ASN1BitString getEncValue()
     {
         return encValue;
     }

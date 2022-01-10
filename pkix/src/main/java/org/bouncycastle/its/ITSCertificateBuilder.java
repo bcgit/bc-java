@@ -2,7 +2,8 @@ package org.bouncycastle.its;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.its.CrlSeries;
-import org.bouncycastle.oer.its.HashedId;
+
+import org.bouncycastle.oer.its.HashedId3;
 import org.bouncycastle.oer.its.PsidGroupPermissions;
 import org.bouncycastle.oer.its.PsidSsp;
 import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
@@ -16,7 +17,7 @@ public class ITSCertificateBuilder
 
     protected ASN1Integer version = new ASN1Integer(3);
     //  ETSI TS 103 097 V1.4.1 (2020-10) default/constraint - Section 6.
-    protected HashedId cracaId = new HashedId.HashedId3(new byte[3]);
+    protected HashedId3 cracaId = new HashedId3(new byte[3]);
     //  ETSI TS 103 097 V1.4.1 (2020-10) default/constraint - Section 6.
     protected CrlSeries crlSeries = new CrlSeries(0);
 
@@ -60,7 +61,7 @@ public class ITSCertificateBuilder
      */
     public ITSCertificateBuilder setCracaId(byte[] cracaId)
     {
-        this.cracaId = new HashedId.HashedId3(cracaId);
+        this.cracaId = new HashedId3(cracaId);
         this.tbsCertificateBuilder.setCracaId(this.cracaId);
 
         return this;

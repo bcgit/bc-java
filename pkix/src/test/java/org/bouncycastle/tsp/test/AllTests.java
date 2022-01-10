@@ -20,6 +20,7 @@ public class AllTests
         TestSuite suite = new TestSuite("TSP Tests");
         
         suite.addTestSuite(ParseTest.class);
+        suite.addTestSuite(PQCTSPTest.class);
         suite.addTestSuite(NewTSPTest.class);
         suite.addTestSuite(CMSTimeStampedDataTest.class);
         suite.addTestSuite(CMSTimeStampedDataParserTest.class);

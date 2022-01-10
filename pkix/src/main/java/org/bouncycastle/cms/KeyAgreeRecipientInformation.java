@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.util.Arrays;
 
 /**
  * the RecipientInfo class for a recipient who has been sent a message
@@ -82,6 +83,22 @@ public class KeyAgreeRecipientInformation
     public OriginatorIdentifierOrKey getOriginator()
     {
         return this.info.getOriginator();
+    }
+
+    /**
+     * Return the userKeyingMaterial for this agreement recipient.
+     *
+     * @return the user keying material, null if absent.
+     */
+    public byte[] getUserKeyingMaterial()
+    {
+        ASN1OctetString ukm = this.info.getUserKeyingMaterial();
+        if (ukm != null)
+        {
+            return Arrays.clone(ukm.getOctets());
+        }
+
+        return null;
     }
 
     private SubjectPublicKeyInfo getSenderPublicKeyInfo(AlgorithmIdentifier recKeyAlgId,

@@ -2,12 +2,12 @@ package org.bouncycastle.asn1.crmf;
 
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -25,8 +25,8 @@ public class CertTemplate
     private OptionalValidity validity;
     private X500Name subject;
     private SubjectPublicKeyInfo publicKey;
-    private DERBitString issuerUID;
-    private DERBitString subjectUID;
+    private ASN1BitString issuerUID;
+    private ASN1BitString subjectUID;
     private Extensions extensions;
 
     private CertTemplate(ASN1Sequence seq)
@@ -62,10 +62,10 @@ public class CertTemplate
                 publicKey = SubjectPublicKeyInfo.getInstance(tObj, false);
                 break;
             case 7:
-                issuerUID = DERBitString.getInstance(tObj, false);
+                issuerUID = ASN1BitString.getInstance(tObj, false);
                 break;
             case 8:
-                subjectUID = DERBitString.getInstance(tObj, false);
+                subjectUID = ASN1BitString.getInstance(tObj, false);
                 break;
             case 9:
                 extensions = Extensions.getInstance(tObj, false);
@@ -135,12 +135,12 @@ public class CertTemplate
         return publicKey;
     }
 
-    public DERBitString getIssuerUID()
+    public ASN1BitString getIssuerUID()
     {
         return issuerUID;
     }
 
-    public DERBitString getSubjectUID()
+    public ASN1BitString getSubjectUID()
     {
         return subjectUID;
     }

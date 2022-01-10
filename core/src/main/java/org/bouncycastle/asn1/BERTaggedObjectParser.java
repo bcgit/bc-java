@@ -4,20 +4,20 @@ import java.io.IOException;
 
 /**
  * Parser for indefinite-length tagged objects.
+ * 
+ * @deprecated Will be made non-public. Test for and use only {@link ASN1TaggedObjectParser}.
  */
 public class BERTaggedObjectParser
     implements ASN1TaggedObjectParser
 {
-    private int _tagClass;
-    protected int _tagNo;
-    private boolean _constructed;
-    ASN1StreamParser _parser;
+    final int _tagClass;
+    final int _tagNo;
+    final ASN1StreamParser _parser;
 
-    BERTaggedObjectParser(int tagClass, int tagNo, boolean constructed, ASN1StreamParser parser)
+    BERTaggedObjectParser(int tagClass, int tagNo, ASN1StreamParser parser)
     {
         _tagClass = tagClass;
         _tagNo = tagNo;
-        _constructed = constructed;
         _parser = parser;
     }
 
@@ -48,7 +48,7 @@ public class BERTaggedObjectParser
      */
     public boolean isConstructed()
     {
-        return _constructed;
+        return true;
     }
 
     /**
@@ -81,39 +81,38 @@ public class BERTaggedObjectParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return _parser.readTaggedObject(_tagClass, _tagNo, _constructed);
+        return _parser.loadTaggedIL(_tagClass, _tagNo);
     }
 
     public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
     {
         if (declaredExplicit)
         {
-            if (!_constructed)
-            {
-                throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-            }
-
-            // TODO[asn1] Alternate parser method specific to this case
-            return _parser.readObject();
+            return _parser.parseObject(baseTagNo);
         }
 
-        return _parser.readImplicit(_constructed, baseTagNo);
+        return _parser.parseImplicitConstructedIL(baseTagNo);
+    }
+
+    public ASN1Encodable parseExplicitBaseObject() throws IOException
+    {
+        return _parser.readObject();
     }
 
     public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
     {
-        if (!_constructed)
-        {
-            throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-        }
-
-        // TODO[asn1] Alternate parser method specific to this case
-        return (ASN1TaggedObjectParser)_parser.readObject();
+        return _parser.parseTaggedObject();
     }
 
     public ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException
     {
-        return new BERTaggedObjectParser(baseTagClass, baseTagNo, _constructed, _parser);
+        // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecificParser types removed.
+        if (BERTags.APPLICATION == baseTagClass)
+        {
+            return new BERApplicationSpecificParser(baseTagNo, _parser);
+        }
+
+        return new BERTaggedObjectParser(baseTagClass, baseTagNo, _parser);
     }
 
     /**
