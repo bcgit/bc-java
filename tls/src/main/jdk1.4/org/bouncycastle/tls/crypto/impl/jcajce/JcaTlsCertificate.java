@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -32,6 +31,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
+import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 
@@ -73,7 +73,8 @@ public class JcaTlsCertificate
              * 
              * Re-encoding validates as BER and produces DER.
              */
-            byte[] derEncoding = Certificate.getInstance(encoding).getEncoded(ASN1Encoding.DER);
+            ASN1Primitive asn1 = TlsUtils.readASN1Object(encoding);
+            byte[] derEncoding = Certificate.getInstance(asn1).getEncoded(ASN1Encoding.DER);
 
             ByteArrayInputStream input = new ByteArrayInputStream(derEncoding);
             X509Certificate certificate = (X509Certificate)helper.createCertificateFactory("X.509")
@@ -107,6 +108,28 @@ public class JcaTlsCertificate
     {
         this.crypto = crypto;
         this.certificate = certificate;
+    }
+
+    public TlsEncryptor createEncryptor(int tlsCertificateRole) throws IOException
+    {
+        validateKeyUsageBit(JcaTlsCertificate.KU_KEY_ENCIPHERMENT);
+
+        switch (tlsCertificateRole)
+        {
+        case TlsCertificateRole.RSA_ENCRYPTION:
+        {
+            this.pubKeyRSA = getPubKeyRSA();
+            return new JcaTlsRSAEncryptor(crypto, pubKeyRSA);
+        }
+        // TODO[gmssl]
+//        case TlsCertificateRole.SM2_ENCRYPTION:
+//        {
+//            this.pubKeyEC = getPubKeyEC();
+//            return new JcaTlsSM2Encryptor(crypto, pubKeyEC);
+//        }
+        }
+
+        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -229,8 +252,15 @@ public class JcaTlsCertificate
     public ASN1Encodable getSigAlgParams() throws IOException
     {
         byte[] derEncoding = certificate.getSigAlgParams();
+        if (null == derEncoding)
+        {
+            return null;
+        }
 
-        return null == derEncoding ? null : TlsUtils.readDERObject(derEncoding);
+        ASN1Primitive asn1 = TlsUtils.readASN1Object(derEncoding);
+        // TODO[tls] Without a known ASN.1 type, this is not-quite-right
+        TlsUtils.requireDEREncoding(asn1, derEncoding);
+        return asn1;
     }
 
     DHPublicKey getPubKeyDH() throws IOException
@@ -355,7 +385,7 @@ public class JcaTlsCertificate
         return implSupportsSignatureAlgorithm(signatureAlgorithm);
     }
 
-    public TlsCertificate checkUsageInRole(int connectionEnd, int tlsCertificateRole) throws IOException
+    public TlsCertificate checkUsageInRole(int tlsCertificateRole) throws IOException
     {
         switch (tlsCertificateRole)
         {
@@ -372,25 +402,6 @@ public class JcaTlsCertificate
             this.pubKeyEC = getPubKeyEC();
             return this;
         }
-        }
-
-        if (connectionEnd == ConnectionEnd.server)
-        {
-            switch (tlsCertificateRole)
-            {
-            case TlsCertificateRole.RSA_ENCRYPTION:
-            {
-                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
-                this.pubKeyRSA = getPubKeyRSA();
-                return this;
-            }
-            case TlsCertificateRole.SM2_ENCRYPTION:
-            {
-                validateKeyUsageBit(KU_KEY_ENCIPHERMENT);
-                this.pubKeyEC = getPubKeyEC();
-                return this;
-            }
-            }
         }
 
         throw new TlsFatalAlert(AlertDescription.certificate_unknown);

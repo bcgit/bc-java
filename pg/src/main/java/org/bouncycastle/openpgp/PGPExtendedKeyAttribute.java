@@ -2,13 +2,19 @@ package org.bouncycastle.openpgp;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.gpg.SExpression;
 
 public class PGPExtendedKeyAttribute
 {
-    public final List<Object> values;
+    private final List<Object> values;
+
+    public List<Object> getValues()
+    {
+        return values;
+    }
 
     private PGPExtendedKeyAttribute(List<Object> values)
     {
@@ -38,9 +44,9 @@ public class PGPExtendedKeyAttribute
             else if (value instanceof SExpression)
             {
                 Builder b = new Builder();
-                for (Object item : ((SExpression)value).getValues())
+                for (Iterator it = ((SExpression)value).getValues().iterator(); it.hasNext();)
                 {
-                    b.addAttribute(item);
+                    b.addAttribute(it.next());
                 }
                 this.values.add(b.build());
             }

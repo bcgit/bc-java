@@ -178,17 +178,18 @@ public class IESCipher
             len2 = 0;
         }
 
+        int inLen = buffer.size() + inputLen;
         if (engine.getCipher() == null)
         {
-            len3 = inputLen;
+            len3 = inLen;
         }
         else if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            len3 = engine.getCipher().getOutputSize(inputLen);
+            len3 = engine.getCipher().getOutputSize(inLen);
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
-            len3 = engine.getCipher().getOutputSize(inputLen - len1 - len2);
+            len3 = engine.getCipher().getOutputSize(inLen - len1 - len2);
         }
         else
         {
@@ -197,17 +198,16 @@ public class IESCipher
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            return buffer.size() + len1 + 1 + len2 + len3;
+            return len1 + len2 + len3;
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
-            return buffer.size() - len1 - len2 + len3;
+            return len3;
         }
         else
         {
             throw new IllegalStateException("cipher not initialised");
         }
-
     }
 
     public void engineSetPadding(String padding)
@@ -497,6 +497,7 @@ public class IESCipher
     {
 
         byte[] buf = engineDoFinal(input, inputOffset, inputLength);
+
         System.arraycopy(buf, 0, output, outputOffset, buf.length);
         return buf.length;
     }

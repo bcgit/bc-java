@@ -4,13 +4,14 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * Camellia - based on RFC 3713.
  */
 public class CamelliaEngine
-    implements BlockCipher
+    implements BlockCipher, StatelessProcessing
 {
     private boolean initialised = false;
     private boolean _keyIs128;
@@ -21,7 +22,6 @@ public class CamelliaEngine
     private int[] subkey = new int[24 * 4];
     private int[] kw = new int[4 * 2]; // for whitening
     private int[] ke = new int[6 * 2]; // for FL and FL^(-1)
-    private int[] state = new int[4]; // for encryption and decryption
 
     private static final int SIGMA[] = {
         0xa09e667f, 0x3bcc908b,
@@ -550,10 +550,11 @@ public class CamelliaEngine
     private int processBlock128(byte[] in, int inOff,
                                       byte[] out, int outOff)
     {
+        int[] state = new int[4];
+
         for (int i = 0; i < 4; i++)
         {
-            state[i] = bytes2int(in, inOff + (i * 4));
-            state[i] ^= kw[i];
+            state[i] = bytes2int(in, inOff + (i * 4)) ^ kw[i];
         }
 
         camelliaF2(state, subkey, 0);
@@ -584,10 +585,11 @@ public class CamelliaEngine
     private int processBlock192or256(byte[] in, int inOff,
                                            byte[] out, int outOff)
     {
+        int[] state = new int[4];
+
         for (int i = 0; i < 4; i++)
         {
-            state[i] = bytes2int(in, inOff + (i * 4));
-            state[i] ^= kw[i];
+            state[i] = bytes2int(in, inOff + (i * 4)) ^ kw[i];
         }
 
         camelliaF2(state, subkey, 0);
@@ -615,6 +617,7 @@ public class CamelliaEngine
         int2bytes(state[3], out, outOff + 4);
         int2bytes(state[0], out, outOff + 8);
         int2bytes(state[1], out, outOff + 12);
+
         return BLOCK_SIZE;
     }
 
@@ -680,5 +683,10 @@ public class CamelliaEngine
     {
         // nothing
 
+    }
+
+    public BlockCipher newInstance()
+    {
+        return new CamelliaEngine();
     }
 }

@@ -364,6 +364,7 @@ public class ESTService
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         byte[] tlsUnique = ((TLSUniqueProvider)source).getTLSUnique();
 
+                        // -DM Base64.toBase64String
                         localBuilder.setAttribute(PKCSObjectIdentifiers.pkcs_9_at_challengePassword, new DERPrintableString(Base64.toBase64String(tlsUnique)));
                         bos.write(annotateRequest(localBuilder.build(contentSigner).getEncoded()).getBytes());
                         bos.flush();
@@ -592,6 +593,8 @@ public class ESTService
         // pw.print("-----BEGIN CERTIFICATE REQUEST-----\n");
         do
         {
+            // -DM Base64.toBase64String
+            // -DM Base64.toBase64String
             if (i + 48 < data.length)
             {
                 pw.print(Base64.toBase64String(data, i, 48));

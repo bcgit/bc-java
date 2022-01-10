@@ -97,7 +97,7 @@ public class BcITSContentVerifierProvider
 
         if (parentTBSDigest != null)
         {
-            byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.tbsCertificate);
+            byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.ToBeSignedCertificate.build());
             digest.update(enc, 0, enc.length);
             digest.doFinal(parentTBSDigest, 0);
         }

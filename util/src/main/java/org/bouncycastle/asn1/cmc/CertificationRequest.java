@@ -3,6 +3,7 @@ package org.bouncycastle.asn1.cmc;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -39,15 +40,15 @@ public class CertificationRequest
 
     private final CertificationRequestInfo certificationRequestInfo;
     private final AlgorithmIdentifier signatureAlgorithm;
-    private final DERBitString signature;
+    private final ASN1BitString signature;
 
     public CertificationRequest(
         X500Name                subject,
         AlgorithmIdentifier     subjectPublicAlgorithm,
-        DERBitString            subjectPublicKey,
+        ASN1BitString           subjectPublicKey,
         ASN1Set                 attributes,
         AlgorithmIdentifier     signatureAlgorithm,
-        DERBitString            signature)
+        ASN1BitString           signature)
     {
         this.certificationRequestInfo = new CertificationRequestInfo(subject, subjectPublicAlgorithm, subjectPublicKey, attributes);
         this.signatureAlgorithm = signatureAlgorithm;
@@ -100,7 +101,7 @@ public class CertificationRequest
         return AlgorithmIdentifier.getInstance(certificationRequestInfo.getSubjectPublicKeyInfo().getObjectAt(0));
     }
 
-    public DERBitString getSubjectPublicKey()
+    public ASN1BitString getSubjectPublicKey()
     {
         return DERBitString.getInstance(certificationRequestInfo.getSubjectPublicKeyInfo().getObjectAt(1));
     }
@@ -123,7 +124,7 @@ public class CertificationRequest
         return signatureAlgorithm;
     }
 
-    public DERBitString getSignature()
+    public ASN1BitString getSignature()
     {
         return signature;
     }
@@ -171,7 +172,7 @@ public class CertificationRequest
             attributes = ASN1Set.getInstance(tagobj, false);
         }
 
-        private CertificationRequestInfo(X500Name subject, AlgorithmIdentifier algorithm, DERBitString subjectPublicKey, ASN1Set attributes)
+        private CertificationRequestInfo(X500Name subject, AlgorithmIdentifier algorithm, ASN1BitString subjectPublicKey, ASN1Set attributes)
         {
             this.version = ZERO;
             this.subject = subject;

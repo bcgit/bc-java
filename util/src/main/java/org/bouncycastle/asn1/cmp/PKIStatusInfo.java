@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.cmp;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -14,9 +15,9 @@ import org.bouncycastle.asn1.DERSequence;
 public class PKIStatusInfo
     extends ASN1Object
 {
-    ASN1Integer      status;
+    ASN1Integer     status;
     PKIFreeText     statusString;
-    DERBitString    failInfo;
+    ASN1BitString   failInfo;
 
     public static PKIStatusInfo getInstance(
         ASN1TaggedObject obj,
@@ -56,9 +57,9 @@ public class PKIStatusInfo
         else if (seq.size() > 1)
         {
             Object obj = seq.getObjectAt(1); 
-            if (obj instanceof DERBitString)
+            if (obj instanceof ASN1BitString)
             {
-                this.failInfo = DERBitString.getInstance(obj);
+                this.failInfo = ASN1BitString.getInstance(obj);
             }
             else
             {
@@ -108,7 +109,7 @@ public class PKIStatusInfo
         return statusString;
     }
 
-    public DERBitString getFailInfo()
+    public ASN1BitString getFailInfo()
     {
         return failInfo;
     }

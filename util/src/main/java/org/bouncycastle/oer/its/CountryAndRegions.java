@@ -69,7 +69,7 @@ public class CountryAndRegions
     {
 
         private CountryOnly countryOnly;
-        private List<Region> regionList;
+        private final List<Region> regionList;
 
         public CountryAndRegionsBuilder()
         {

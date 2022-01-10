@@ -290,6 +290,18 @@ public class BCPGInputStream
         in.close();
     }
 
+    public int skipMarkerPackets()
+        throws IOException
+    {
+        int tag;
+        while ((tag = nextPacketTag()) == PacketTags.MARKER)
+        {
+            readPacket();
+        }
+
+        return tag;
+    }
+
     /**
      * a stream that overlays our input stream, allowing the user to only read a segment of it.
      *

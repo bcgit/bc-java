@@ -41,4 +41,6 @@ public interface BERTags
     public static final int TAGGED              = 0x80; // decimal 128 - maybe should deprecate this.
     public static final int CONTEXT_SPECIFIC    = 0x80; // decimal 128
     public static final int PRIVATE             = 0xC0; // decimal 192
+
+    public static final int FLAGS               = 0xE0;
 }

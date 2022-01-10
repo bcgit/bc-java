@@ -60,6 +60,8 @@ public class LICENSE
     public static void main(
         String[]    args)
     {
+        // -DM System.out.print
+
         System.out.println(licenseText);
     }
 }

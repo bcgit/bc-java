@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.crmf;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -18,12 +19,12 @@ public class PKMACValue
     extends ASN1Object
 {
     private AlgorithmIdentifier  algId;
-    private DERBitString        value;
+    private ASN1BitString        value;
 
     private PKMACValue(ASN1Sequence seq)
     {
         algId = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
-        value = DERBitString.getInstance(seq.getObjectAt(1));
+        value = ASN1BitString.getInstance(seq.getObjectAt(1));
     }
 
     public static PKMACValue getInstance(Object o)
@@ -77,7 +78,7 @@ public class PKMACValue
         return algId;
     }
 
-    public DERBitString getValue()
+    public ASN1BitString getValue()
     {
         return value;
     }

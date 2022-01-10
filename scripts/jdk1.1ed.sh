@@ -1,8 +1,38 @@
 #
 # JDK 1.2 edits
 
+ed org/bouncycastle/gpg/SExpression.java <<%
+g/\.\.\. /s//[]/g
+w
+q
+%
+
+
 ed org/bouncycastle/asn1/ASN1Integer.java <<%
 g/private final byte.. bytes;/s/final//
+w
+q
+%
+
+
+(
+cd  org/bouncycastle/asn1/; 
+for i in *.java
+do
+ed $i <<%%
+g/final .* contents/s/final//
+g/final .* start/s/final//
+w
+q
+%%
+done
+)
+
+ed org/bouncycastle/asn1/ASN1TaggedObject.java <<%
+g/final .* explicitness;/s/final//
+g/final .* obj;/s/final//
+g/final .* tagClass;/s/final//
+g/final .* tagNo;/s/final//
 w
 q
 %
@@ -16,6 +46,17 @@ q
 ed org/bouncycastle/asn1/DERBitString.java <<%
 g/protected final byte...*data;/s/final//
 g/protected final int.*padBits;/s/final//
+g/final .* elements;/s/final//
+g/final .* segmentLimit;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/asn1/BERBitString.java <<%
+g/protected final byte...*data;/s/final//
+g/protected final int.*padBits;/s/final//
+g/final .* elements;/s/final//
+g/final .* segmentLimit;/s/final//
 w
 q
 %

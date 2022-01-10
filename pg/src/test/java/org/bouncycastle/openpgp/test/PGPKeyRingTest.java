@@ -2812,13 +2812,24 @@ public class PGPKeyRingTest
                 pgpKey = PGPSecretKey.copyWithNewPassword(
                                     pgpKey,
                                     null,
-                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").build(newPass));
+                                    new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").build(newPass),
+                                    new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1));
                 pgpPriv = PGPSecretKeyRing.insertSecretKey(pgpPriv, pgpKey);
 
                 // this should succeed
                 PGPPrivateKey privTmp = pgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
 
-                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_CHECKSUM)
+                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_SHA1)
+                {
+                    fail("usage/key ID mismatch");
+                }
+
+                pgpKey = PGPSecretKey.copyWithNewPassword(
+                                    pgpKey,
+                                    new JcePBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).setProvider("BC").build(newPass),
+                                    null);
+
+                if (pgpKey.getKeyID() != oldKeyID || pgpKey.getS2KUsage() != SecretKeyPacket.USAGE_NONE)
                 {
                     fail("usage/key ID mismatch");
                 }
@@ -3498,7 +3509,7 @@ public class PGPKeyRingTest
         Iterator<PGPSignature> signatures = secretKeys.getPublicKey().getSignaturesOfType(PGPSignature.DIRECT_KEY);
         isTrue(signatures.hasNext());
 
-        PGPSignature signature = signatures.next();
+        PGPSignature signature = (PGPSignature)signatures.next();
         isTrue(!signatures.hasNext());
 
         NotationData[] hashedNotations = signature.getHashedSubPackets().getNotationDataOccurrences();

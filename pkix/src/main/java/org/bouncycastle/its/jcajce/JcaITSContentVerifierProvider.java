@@ -147,7 +147,7 @@ public class JcaITSContentVerifierProvider
 
             if (issuer.getIssuer().isSelf())
             {
-                byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.tbsCertificate);
+                byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.ToBeSignedCertificate.build());
                 os.write(enc, 0, enc.length);
                 parentTBSDigest = calculator.getDigest();
             }

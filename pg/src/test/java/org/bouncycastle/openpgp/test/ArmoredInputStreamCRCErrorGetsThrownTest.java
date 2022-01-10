@@ -67,7 +67,7 @@ public class ArmoredInputStreamCRCErrorGetsThrownTest
         "=FdCC\n" +
         "-----END PGP MESSAGE-----";
 
-    @Override
+    
     public String getName()
     {
         return "ArmoredInputStreamCRCErrorGetsThrowsTest";

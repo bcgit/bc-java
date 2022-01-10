@@ -30,8 +30,8 @@ public class GeographicRegion
     public static final int identifiedRegion = 3;
     public static final int extension = 4;
 
-    private int choice;
-    private ASN1Encodable region;
+    private final int choice;
+    private final ASN1Encodable region;
 
     public GeographicRegion(int choice, ASN1Encodable region)
     {

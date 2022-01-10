@@ -290,4 +290,38 @@ public abstract class ASN1Util
     {
         return tryParseBaseUniversal(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo, declaredExplicit, baseTagNo);
     }
+
+
+    /*
+     * Wrappers for ASN1TaggedObjectParser#parseExplicitBaseObject
+     */
+
+    public static ASN1Encodable parseExplicitBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagClass,
+        int tagNo) throws IOException
+    {
+        return checkTag(taggedObjectParser, tagClass, tagNo).parseExplicitBaseObject();
+    }
+
+    public static ASN1Encodable parseExplicitContextBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagNo)
+        throws IOException
+    {
+        return parseExplicitBaseObject(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    public static ASN1Encodable tryParseExplicitBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagClass,
+        int tagNo) throws IOException
+    {
+        if (!taggedObjectParser.hasTag(tagClass, tagNo))
+        {
+            return null;
+        }
+
+        return taggedObjectParser.parseExplicitBaseObject();
+    }
+
+    public static ASN1Encodable tryParseExplicitContextBaseObject(ASN1TaggedObjectParser taggedObjectParser, int tagNo)
+        throws IOException
+    {
+        return tryParseExplicitBaseObject(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
 }

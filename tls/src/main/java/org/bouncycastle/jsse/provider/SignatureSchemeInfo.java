@@ -123,6 +123,7 @@ class SignatureSchemeInfo
             String keyType13 = JsseUtils.getKeyType13(keyAlgorithm, namedGroup13);
             String jcaSignatureAlgorithmBC = JsseUtils.getJcaSignatureAlgorithmBC(jcaSignatureAlgorithm, keyAlgorithm);
 
+
             this.signatureScheme = signatureScheme;
             this.name = name;
             this.text = name + "(0x" + Integer.toHexString(signatureScheme) + ")";

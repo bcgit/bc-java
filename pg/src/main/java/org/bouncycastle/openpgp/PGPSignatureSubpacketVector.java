@@ -148,14 +148,15 @@ public class PGPSignatureSubpacketVector
     {
         NotationData[] notations = getNotationDataOccurrences();
         List<NotationData> notationsWithName = new ArrayList<NotationData>();
-        for (NotationData notation : notations)
+        for (int i = 0; i != notations.length; i++)
         {
+            NotationData notation = notations[i];
             if (notation.getNotationName().equals(notationName))
             {
                 notationsWithName.add(notation);
             }
         }
-        return notationsWithName.toArray(new NotationData[0]);
+        return (NotationData[])notationsWithName.toArray(new NotationData[0]);
     }
 
     public long getIssuerKeyID()

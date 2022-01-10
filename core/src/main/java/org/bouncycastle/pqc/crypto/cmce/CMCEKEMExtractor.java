@@ -18,18 +18,27 @@ public class CMCEKEMExtractor
     private void initCipher(CMCEParameters param)
     {
         engine = param.getEngine();
-        CMCEPrivateKeyParameters privateParams = (CMCEPrivateKeyParameters) key;
+        CMCEPrivateKeyParameters privateParams = (CMCEPrivateKeyParameters)key;
         if(privateParams.getPrivateKey().length < engine.getPrivateKeySize())
         {
-            privateParams.setPrivateKey(engine.decompress_private_key(privateParams.getPrivateKey()));
-            key = privateParams;
+            key = new CMCEPrivateKeyParameters(privateParams.getParameters(), engine.decompress_private_key(privateParams.getPrivateKey()));
         }
     }
-    
+
     public byte[] extractSecret(byte[] encapsulation)
     {
-        byte[] session_key = new byte[32];
+        return extractSecret(encapsulation, engine.getDefaultSessionKeySize());
+    }
+
+    public byte[] extractSecret(byte[] encapsulation, int sessionKeySizeInBits)
+    {
+        byte[] session_key = new byte[sessionKeySizeInBits / 8];
         engine.kem_dec(session_key, encapsulation, ((CMCEPrivateKeyParameters)key).getPrivateKey());
         return session_key;
+    }
+
+    public int getInputSize()
+    {
+        return engine.getCipherTextSize();
     }
 }

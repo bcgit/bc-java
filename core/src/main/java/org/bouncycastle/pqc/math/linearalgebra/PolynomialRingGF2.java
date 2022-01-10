@@ -148,6 +148,7 @@ public final class PolynomialRingGF2
 
         if (q == 0)
         {
+            // -DM System.err.println
             System.err.println("Error: to be divided by 0");
             return 0;
         }
@@ -173,6 +174,7 @@ public final class PolynomialRingGF2
         long p1 = p;
         if (q == 0)
         {
+            // -DM System.err.println
             System.err.println("Error: to be divided by 0");
             return 0;
         }
@@ -250,11 +252,13 @@ public final class PolynomialRingGF2
     {
         if (deg < 0)
         {
+            // -DM System.err.println
             System.err.println("The Degree is negative");
             return 0;
         }
         if (deg > 31)
         {
+            // -DM System.err.println
             System.err.println("The Degree is more then 31");
             return 0;
         }

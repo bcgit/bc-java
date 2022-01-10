@@ -1256,6 +1256,11 @@ public class BigInteger
         return sign < 0 ? -val : val;
     }
 
+    public short shortValue()
+    {
+        return (short)intValue();
+    }
+
     public byte byteValue()
     {
         return (byte)intValue();

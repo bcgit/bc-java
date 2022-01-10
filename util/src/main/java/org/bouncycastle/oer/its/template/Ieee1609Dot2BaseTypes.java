@@ -222,7 +222,6 @@ public class Ieee1609Dot2BaseTypes
         OERDefinition.octets(16).label("aes128Ccm"),
         OERDefinition.extension()
     ).label("SymmetricEncryptionKey");
-    ;
     /**
      * EncryptionKey ::= CHOICE {
      * public     PublicEncryptionKey,
@@ -355,6 +354,23 @@ public class Ieee1609Dot2BaseTypes
      */
     public static OERDefinition.Builder CountryAndSubregions = OERDefinition.seq(CountryOnly, SequenceOfRegionAndSubregions).label("CountryAndSubregions");
     /**
+     * IdentifiedRegion ::= CHOICE {
+     * countryOnly           CountryOnly,
+     * countryAndRegions     CountryAndRegions,
+     * countryAndSubregions  CountryAndSubregions,
+     * ...
+     * }
+     */
+    public static OERDefinition.Builder IdentifiedRegion = OERDefinition.choice(
+        CountryOnly,
+        CountryAndRegions,
+        CountryAndSubregions,
+        OERDefinition.extension()).label("IdentifiedRegion");
+    /**
+     * SequenceOfIdentifiedRegion ::= SEQUENCE OF IdentifiedRegion
+     */
+    public static OERDefinition.Builder SequenceOfIdentifiedRegion = OERDefinition.seqof(IdentifiedRegion).label("SequenceOfIdentifiedRegion");
+    /**
      * OneEightyDegreeInt ::= INTEGER {
      * min          (-1799999999),
      * max          (1800000000),
@@ -373,8 +389,6 @@ public class Ieee1609Dot2BaseTypes
      */
     public static OERDefinition.Builder NinetyDegreeInt = OERDefinition.integer(-900000000, 900000001).label("NinetyDegreeInt");
     public static OERDefinition.Builder KnownLatitude = NinetyDegreeInt.copy().label("KnownLatitude(NinetyDegreeInt)");
-
-
     //
     // PSID / ITS-AID
     //
@@ -413,23 +427,6 @@ public class Ieee1609Dot2BaseTypes
      * -- treated as sequence of.
      */
     public static OERDefinition.Builder PolygonalRegion = OERDefinition.seqof(TwoDLocation).rangeToMAXFrom(3).label("PolygonalRegion");
-    /**
-     * IdentifiedRegion ::= CHOICE {
-     * countryOnly           CountryOnly,
-     * countryAndRegions     CountryAndRegions,
-     * countryAndSubregions  CountryAndSubregions,
-     * ...
-     * }
-     */
-    public static OERDefinition.Builder IdentifiedRegion = OERDefinition.choice(
-        CountryOnly,
-        CountryAndRegions,
-        CountryAndSubregions,
-        OERDefinition.extension()).label("IdentifiedRegion");
-    /**
-     * SequenceOfIdentifiedRegion ::= SEQUENCE OF IdentifiedRegion
-     */
-    public static OERDefinition.Builder SequenceOfIdentifiedRegion = OERDefinition.seqof(IdentifiedRegion).label("SequenceOfIdentifiedRegion");
     /**
      * GeographicRegion ::= CHOICE {
      * circularRegion     CircularRegion,

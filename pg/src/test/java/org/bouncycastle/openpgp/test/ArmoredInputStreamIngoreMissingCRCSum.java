@@ -96,7 +96,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
             "xqAY9Bwizt4FWgXuLm1a4+So4V9j1TRCXd12Uc2l2RNmgDE=\n" +
             "-----END PGP PRIVATE KEY BLOCK-----";
 
-    @Override
+    
     public String getName()
     {
         return "ArmoredInputStreamIgnoreMissingCRCSum";
@@ -109,7 +109,7 @@ public class ArmoredInputStreamIngoreMissingCRCSum
         runTest(new ArmoredInputStreamIngoreMissingCRCSum());
     }
 
-    @Override
+    
     public void performTest() throws Exception
     {
         ByteArrayInputStream data = new ByteArrayInputStream(Strings.toByteArray(KEY_WITH_MISSING_CRC));

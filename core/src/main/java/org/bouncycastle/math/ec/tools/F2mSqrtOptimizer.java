@@ -31,6 +31,7 @@ public class F2mSqrtOptimizer
             }
             if (x9 != null && ECAlgorithms.isF2mCurve(x9.getCurve()))
             {
+                // -DM System.out.println
                 System.out.print(name + ":");
                 implPrintRootZ(x9);
             }
@@ -52,6 +53,7 @@ public class F2mSqrtOptimizer
         ECFieldElement z = x9.getCurve().fromBigInteger(BigInteger.valueOf(2));
         ECFieldElement rootZ = z.sqrt();
 
+        // -DM System.out.println
         System.out.println(rootZ.toBigInteger().toString(16).toUpperCase());
 
         if (!rootZ.square().equals(z))
