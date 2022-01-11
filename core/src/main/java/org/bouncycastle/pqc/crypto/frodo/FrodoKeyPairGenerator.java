@@ -15,8 +15,6 @@ public class FrodoKeyPairGenerator
     private int D;
     private int B;
 
-    private boolean isAES128;
-
     private SecureRandom random;
 
     private void initialize(

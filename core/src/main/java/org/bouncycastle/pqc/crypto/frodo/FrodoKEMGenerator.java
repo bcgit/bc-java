@@ -3,8 +3,11 @@ package org.bouncycastle.pqc.crypto.frodo;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Arrays;
 
+import javax.security.auth.DestroyFailedException;
 import java.security.SecureRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FrodoKEMGenerator
     implements EncapsulatedSecretGenerator
@@ -32,6 +35,8 @@ public class FrodoKEMGenerator
             implements SecretWithEncapsulation
     {
 
+        private final AtomicBoolean hasBeenDestroyed = new AtomicBoolean(false);
+
         private final byte[] sessionKey;
         private final byte[] cipher_text;
 
@@ -43,12 +48,38 @@ public class FrodoKEMGenerator
 
         public byte[] getSecret()
         {
-            return sessionKey;
+            checkDestroyed();
+
+            return Arrays.clone(sessionKey);
         }
 
         public byte[] getEncapsulation()
         {
-            return cipher_text;
+            checkDestroyed();
+
+            return Arrays.clone(cipher_text);
+        }
+
+        public void destroy() throws DestroyFailedException
+        {
+            if (!hasBeenDestroyed.getAndSet(true))
+            {
+                Arrays.clear(sessionKey);
+                Arrays.clear(cipher_text);
+            }
+        }
+
+        public boolean isDestroyed()
+        {
+            return hasBeenDestroyed.get();
+        }
+
+        void checkDestroyed()
+        {
+            if (isDestroyed())
+            {
+                throw new IllegalStateException("data has been destroyed");
+            }
         }
     }
 }
