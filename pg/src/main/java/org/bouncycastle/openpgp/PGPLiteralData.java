@@ -21,6 +21,8 @@ public class PGPLiteralData
     public static final char    TEXT = 't';
     /** Format tag for UTF-8 encoded textual literal data */
     public static final char    UTF8 = 'u';
+    /** Format tag for MIME message bodies */
+    public static final char    MIME = 'm';
 
     /**
      * The special name indicating a "for your eyes only" packet.
@@ -80,7 +82,7 @@ public class PGPLiteralData
     }
 
     /**
-     * Return the format of the data packet. One of {@link #BINARY}, {@link #TEXT} or {@link #UTF8}
+     * Return the format of the data packet. One of {@link #BINARY}, {@link #TEXT}, {@link #MIME} or {@link #UTF8}
      */
     public int getFormat()
     {
