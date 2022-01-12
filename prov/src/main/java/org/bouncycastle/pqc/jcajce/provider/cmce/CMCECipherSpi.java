@@ -158,7 +158,7 @@ class CMCECipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only an CMCE public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -169,7 +169,7 @@ class CMCECipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only an CMCE private key can be used for unwrapping");
             }
         }
         else
