@@ -137,7 +137,14 @@ public class JceAsymmetricKeyUnwrapper
             // some providers do not support UNWRAP (this appears to be only for asymmetric algorithms)
             if (sKey == null)
             {
-                keyCipher.init(Cipher.DECRYPT_MODE, privKey);
+                if (algParams != null)
+                {
+                    keyCipher.init(Cipher.DECRYPT_MODE, privKey, algParams);
+                }
+                else
+                {
+                    keyCipher.init(Cipher.DECRYPT_MODE, privKey);
+                }
                 sKey = new SecretKeySpec(keyCipher.doFinal(encryptedKey), encryptedKeyAlgorithm.getAlgorithm().getId());
             }
 

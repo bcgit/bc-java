@@ -272,7 +272,14 @@ public class JceAsymmetricKeyWrapper
             {
                 try
                 {
-                    keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
+                    if (algParams != null)
+                    {
+                        keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, algParams, random);
+                    }
+                    else
+                    {
+                        keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
+                    }
                     encryptedKeyBytes = keyEncryptionCipher.doFinal(OperatorUtils.getJceKey(encryptionKey).getEncoded());
                 }
                 catch (InvalidKeyException e)
