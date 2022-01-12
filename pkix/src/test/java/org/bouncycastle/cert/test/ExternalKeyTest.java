@@ -10,7 +10,6 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
-import com.sun.xml.internal.ws.api.message.Message;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bc.ExternalValue;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -85,11 +84,8 @@ public class ExternalKeyTest
         X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("SHA256withECDSA").build(kp.getPrivate()));
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
-
-        isTrue(externalKey.isResolved());
-
-        System.err.println(cert.getPublicKey());
     }
+
     public static void main(
         String[] args)
     {

@@ -7,7 +7,6 @@ import java.security.PublicKey;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bc.ExternalValue;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -60,10 +59,5 @@ public class ExternalPublicKey
         {
             throw new IllegalStateException("unable to encode composite key: " + e.getMessage());
         }
-    }
-
-    public boolean isResolved()
-    {
-        return false;
     }
 }
