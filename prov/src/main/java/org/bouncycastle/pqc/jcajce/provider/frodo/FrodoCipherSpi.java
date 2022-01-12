@@ -8,7 +8,6 @@ import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -22,29 +21,20 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.ARIAEngine;
 import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
-import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
-import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.frodo.BCFrodoPrivateKey;
-import org.bouncycastle.pqc.jcajce.provider.frodo.BCFrodoPublicKey;
 import org.bouncycastle.util.Arrays;
 
 class FrodoCipherSpi
@@ -361,46 +351,6 @@ class FrodoCipherSpi
             throw new UnsupportedOperationException("unknown key algorithm: " + keyAlgorithmName);
         }
         return kWrap;
-    }
-
-    static boolean isNotNull(ASN1Encodable parameters)
-    {
-        return parameters != null && !DERNull.INSTANCE.equals(parameters.toASN1Primitive());
-    }
-
-    private byte[] makeKeyBytes(AlgorithmIdentifier kdfAlgorithm, byte[] secret, int keyLength, byte[] otherInfo)
-            throws InvalidKeySpecException
-    {
-        AlgorithmIdentifier digAlg = AlgorithmIdentifier.getInstance(kdfAlgorithm.getParameters());
-        if (isNotNull(digAlg.getParameters()))
-        {
-            throw new InvalidKeySpecException("Digest algorithm identifier cannot have parameters");
-        }
-
-        // TODO: need to add support for SHAKE!
-        DerivationFunction kdfCalculator;
-        if (X9ObjectIdentifiers.id_kdf_kdf2.equals(kdfAlgorithm.getAlgorithm()))
-        {
-            kdfCalculator = new KDF2BytesGenerator(DigestFactory.getDigest(digAlg.getAlgorithm().getId()));
-            kdfCalculator.init(new KDFParameters(secret, otherInfo));
-        }
-        else if (X9ObjectIdentifiers.id_kdf_kdf3.equals(kdfAlgorithm.getAlgorithm()))
-        {
-            kdfCalculator = new ConcatenationKDFGenerator(DigestFactory.getDigest(digAlg.getAlgorithm().getId()));
-            kdfCalculator.init(new KDFParameters(secret, otherInfo));
-        }
-        else
-        {
-            throw new InvalidKeySpecException("Unrecognized KDF: " + kdfAlgorithm.getAlgorithm());
-        }
-
-        byte[] keyBytes = new byte[(keyLength + 7) / 8];
-
-        kdfCalculator.generateBytes(keyBytes, 0, keyBytes.length);
-
-        Arrays.fill(secret, (byte)0);
-
-        return keyBytes;
     }
 
     public static class Base
