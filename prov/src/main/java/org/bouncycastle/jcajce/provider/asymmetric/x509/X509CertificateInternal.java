@@ -4,6 +4,7 @@ import java.security.cert.CertificateEncodingException;
 
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Arrays;
 
 class X509CertificateInternal extends X509CertificateImpl
 {
@@ -32,6 +33,6 @@ class X509CertificateInternal extends X509CertificateImpl
             throw new CertificateEncodingException();
         }
 
-        return encoding;
+        return Arrays.clone(encoding);
     }
 }

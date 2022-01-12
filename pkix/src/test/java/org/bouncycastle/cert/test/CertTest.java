@@ -1965,7 +1965,7 @@ public class CertTest
         }
     }
 
-    private X500NameBuilder createStdBuilder()
+    private static X500NameBuilder createStdBuilder()
     {
         X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
 
@@ -3470,7 +3470,7 @@ public class CertTest
     }
 
     /*
-     * we generate a self signed certificate for the sake of testing - qTESLA
+     * we generate a self signed certificate for the sake of testing - SPHINCSPlus
      */
     public void checkCreationSPHINCSPlus()
         throws Exception
