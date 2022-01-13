@@ -411,7 +411,9 @@ public class PGPPublicKey
      */
     public boolean isMasterKey()
     {
-        return !(publicPk instanceof PublicSubkeyPacket);
+        // this might seem a bit excessive, but we're also trying to flag something can't be a master key.
+        return !(publicPk instanceof PublicSubkeyPacket)
+            && !(this.isEncryptionKey() && publicPk.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL);
     }
     
     /**
