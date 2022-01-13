@@ -175,13 +175,14 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier newHope = bc_exch.branch("1");
 
     /**
-     * X.509 extension(4) values
+     * X.509 extension/certificate types
      * <p>
      * 1.3.6.1.4.1.22554.4
      */
     public static final ASN1ObjectIdentifier bc_ext        = bc.branch("4");
 
     public static final ASN1ObjectIdentifier linkedCertificate = bc_ext.branch("1");
+    public static final ASN1ObjectIdentifier external_value = bc_ext.branch("2");
 
     /**
      * KEM(4) algorithms
@@ -203,5 +204,18 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier mceliece6960119f_r3 = pqc_kem_mceliece.branch("8");
     public static final ASN1ObjectIdentifier mceliece8192128_r3 = pqc_kem_mceliece.branch("9");
     public static final ASN1ObjectIdentifier mceliece8192128f_r3 = pqc_kem_mceliece.branch("10");
+
+
+    /**
+     * Frodo
+     */
+    public static final ASN1ObjectIdentifier pqc_kem_frodo = bc_kem.branch("2");
+
+    public static final ASN1ObjectIdentifier frodokem19888r3 = pqc_kem_frodo.branch("1");
+    public static final ASN1ObjectIdentifier frodokem19888shaker3 = pqc_kem_frodo.branch("2");
+    public static final ASN1ObjectIdentifier frodokem31296r3 = pqc_kem_frodo.branch("3");
+    public static final ASN1ObjectIdentifier frodokem31296shaker3 = pqc_kem_frodo.branch("4");
+    public static final ASN1ObjectIdentifier frodokem43088r3 = pqc_kem_frodo.branch("5");
+    public static final ASN1ObjectIdentifier frodokem43088shaker3 = pqc_kem_frodo.branch("6");
 
 }

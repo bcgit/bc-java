@@ -46,6 +46,7 @@ public class AllTests
         suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(SphincsPlusKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
+        suite.addTestSuite(FrodoKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }
