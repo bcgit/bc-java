@@ -17,49 +17,36 @@ public class GCMCache
         CoreIndex idx = new CoreIndex(cipher, keyParam);
         CoreEngine coreEngine = null;
 
-        if (cipher instanceof StatelessProcessing)
+        synchronized (cache)
         {
-            synchronized (cache)
+            WeakReference<CoreEngine> markerRef = cache.get(idx);
+            if (markerRef != null)
             {
-                WeakReference<CoreEngine> markerRef = cache.get(idx);
-                if (markerRef != null)
-                {
-                    coreEngine = markerRef.get();
-                }
+                coreEngine = markerRef.get();
+            }
 
+            if (cipher instanceof StatelessProcessing)
+            {
                 if (coreEngine != null)
                 {
                     return coreEngine;
                 }
 
-                coreEngine = new GCMCache.CoreEngine(((StatelessProcessing)cipher).newInstance(), multiplier, keyParam);
-
-                cache.put(idx, new WeakReference<GCMCache.CoreEngine>(coreEngine));
-
-                return coreEngine;
+                cipher = ((StatelessProcessing)cipher).newInstance();
             }
-        }
-        else
-        {
-            synchronized (cache)
-             {
-                 WeakReference<CoreEngine> markerRef = cache.get(idx);
-                 if (markerRef != null)
-                 {
-                     coreEngine = markerRef.get();
-                 }
-
+            else
+            {
                  if (coreEngine != null)
                  {
                      return new GCMCache.CoreEngine(cipher, keyParam, coreEngine);
                  }
+            }
 
-                 coreEngine = new GCMCache.CoreEngine(cipher, multiplier, keyParam);
+            coreEngine = new GCMCache.CoreEngine(cipher, multiplier, keyParam);
 
-                 cache.put(idx, new WeakReference<GCMCache.CoreEngine>(coreEngine));
+            cache.put(idx, new WeakReference<GCMCache.CoreEngine>(coreEngine));
 
-                 return coreEngine;
-             }
+            return coreEngine;
         }
     }
 
