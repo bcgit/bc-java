@@ -7,12 +7,18 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * PollRepContent ::= SEQUENCE OF SEQUENCE {
+ * certReqId    INTEGER,
+ * checkAfter   INTEGER,  -- time in seconds
+ * reason       PKIFreeText OPTIONAL }
+ */
 public class PollRepContent
     extends ASN1Object
 {
-    private ASN1Integer[] certReqId;
-    private ASN1Integer[] checkAfter;
-    private PKIFreeText[] reason;
+    private final ASN1Integer[] certReqId;
+    private final ASN1Integer[] checkAfter;
+    private final PKIFreeText[] reason;
 
     private PollRepContent(ASN1Sequence seq)
     {
@@ -34,21 +40,6 @@ public class PollRepContent
         }
     }
 
-    public static PollRepContent getInstance(Object o)
-    {
-        if (o instanceof PollRepContent)
-        {
-            return (PollRepContent)o;
-        }
-
-        if (o != null)
-        {
-            return new PollRepContent(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
-    }
-
     public PollRepContent(ASN1Integer certReqId, ASN1Integer checkAfter)
     {
         this(certReqId, checkAfter, null);
@@ -63,6 +54,21 @@ public class PollRepContent
         this.certReqId[0] = certReqId;
         this.checkAfter[0] = checkAfter;
         this.reason[0] = reason;
+    }
+
+    public static PollRepContent getInstance(Object o)
+    {
+        if (o instanceof PollRepContent)
+        {
+            return (PollRepContent)o;
+        }
+
+        if (o != null)
+        {
+            return new PollRepContent(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public int size()
@@ -93,6 +99,7 @@ public class PollRepContent
      *         reason                 PKIFreeText OPTIONAL
      *     }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
@@ -113,7 +120,7 @@ public class PollRepContent
 
             outer.add(new DERSequence(v));
         }
-        
+
         return new DERSequence(outer);
     }
 }

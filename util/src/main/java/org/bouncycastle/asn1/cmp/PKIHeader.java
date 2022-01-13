@@ -27,10 +27,11 @@ public class PKIHeader
 
     public static final int CMP_1999 = 1;
     public static final int CMP_2000 = 2;
+    public static final int CMP_2021 = 3;
 
-    private ASN1Integer pvno;
-    private GeneralName sender;
-    private GeneralName recipient;
+    private final ASN1Integer pvno;
+    private final GeneralName sender;
+    private final GeneralName recipient;
     private ASN1GeneralizedTime messageTime;
     private AlgorithmIdentifier protectionAlg;
     private ASN1OctetString senderKID;       // KeyIdentifier
@@ -88,21 +89,6 @@ public class PKIHeader
         }
     }
 
-    public static PKIHeader getInstance(Object o)
-    {
-        if (o instanceof PKIHeader)
-        {
-            return (PKIHeader)o;
-        }
-
-        if (o != null)
-        {
-            return new PKIHeader(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
-    }
-
     public PKIHeader(
         int pvno,
         GeneralName sender,
@@ -119,6 +105,21 @@ public class PKIHeader
         this.pvno = pvno;
         this.sender = sender;
         this.recipient = recipient;
+    }
+
+    public static PKIHeader getInstance(Object o)
+    {
+        if (o instanceof PKIHeader)
+        {
+            return (PKIHeader)o;
+        }
+
+        if (o != null)
+        {
+            return new PKIHeader(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public ASN1Integer getPvno()

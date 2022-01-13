@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public class POPODecKeyChallContent
     extends ASN1Object
 {
-    private ASN1Sequence content;
+    private final ASN1Sequence content;
 
     private POPODecKeyChallContent(ASN1Sequence seq)
     {
@@ -45,6 +45,7 @@ public class POPODecKeyChallContent
      * <pre>
      * POPODecKeyChallContent ::= SEQUENCE OF Challenge
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
