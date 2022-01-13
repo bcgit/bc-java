@@ -24,9 +24,9 @@ import org.bouncycastle.asn1.crmf.PKIPublicationInfo;
 public class CertifiedKeyPair
     extends ASN1Object
 {
-    private CertOrEncCert certOrEncCert;
+    private final CertOrEncCert certOrEncCert;
     private EncryptedKey privateKey;
-    private PKIPublicationInfo  publicationInfo;
+    private PKIPublicationInfo publicationInfo;
 
     private CertifiedKeyPair(ASN1Sequence seq)
     {
@@ -54,21 +54,6 @@ public class CertifiedKeyPair
         }
     }
 
-    public static CertifiedKeyPair getInstance(Object o)
-    {
-        if (o instanceof CertifiedKeyPair)
-        {
-            return (CertifiedKeyPair)o;
-        }
-
-        if (o != null)
-        {
-            return new CertifiedKeyPair(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
-    }
-
     public CertifiedKeyPair(
         CertOrEncCert certOrEncCert)
     {
@@ -78,7 +63,7 @@ public class CertifiedKeyPair
     public CertifiedKeyPair(
         CertOrEncCert certOrEncCert,
         EncryptedKey privateKey,
-        PKIPublicationInfo  publicationInfo)
+        PKIPublicationInfo publicationInfo)
     {
         if (certOrEncCert == null)
         {
@@ -93,7 +78,7 @@ public class CertifiedKeyPair
     public CertifiedKeyPair(
         CertOrEncCert certOrEncCert,
         EncryptedValue privateKey,
-        PKIPublicationInfo  publicationInfo)
+        PKIPublicationInfo publicationInfo)
     {
         if (certOrEncCert == null)
         {
@@ -101,8 +86,23 @@ public class CertifiedKeyPair
         }
 
         this.certOrEncCert = certOrEncCert;
-        this.privateKey = (privateKey != null) ? new EncryptedKey(privateKey) : (EncryptedKey)null;
+        this.privateKey = (privateKey != null) ? new EncryptedKey(privateKey) : null;
         this.publicationInfo = publicationInfo;
+    }
+
+    public static CertifiedKeyPair getInstance(Object o)
+    {
+        if (o instanceof CertifiedKeyPair)
+        {
+            return (CertifiedKeyPair)o;
+        }
+
+        if (o != null)
+        {
+            return new CertifiedKeyPair(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public CertOrEncCert getCertOrEncCert()

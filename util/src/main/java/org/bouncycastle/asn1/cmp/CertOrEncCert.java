@@ -8,6 +8,12 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
 
+/**
+ * CertOrEncCert ::= CHOICE {
+ * certificate     [0] CMPCertificate,
+ * encryptedCert   [1] EncryptedKey
+ * }
+ */
 public class CertOrEncCert
     extends ASN1Object
     implements ASN1Choice
@@ -29,21 +35,6 @@ public class CertOrEncCert
         {
             throw new IllegalArgumentException("unknown tag: " + tagged.getTagNo());
         }
-    }
-
-    public static CertOrEncCert getInstance(Object o)
-    {
-        if (o instanceof CertOrEncCert)
-        {
-            return (CertOrEncCert)o;
-        }
-
-        if (o instanceof ASN1TaggedObject)
-        {
-            return new CertOrEncCert((ASN1TaggedObject)o);
-        }
-
-        return null;
     }
 
     public CertOrEncCert(CMPCertificate certificate)
@@ -76,6 +67,21 @@ public class CertOrEncCert
         this.encryptedKey = encryptedKey;
     }
 
+    public static CertOrEncCert getInstance(Object o)
+    {
+        if (o instanceof CertOrEncCert)
+        {
+            return (CertOrEncCert)o;
+        }
+
+        if (o instanceof ASN1TaggedObject)
+        {
+            return new CertOrEncCert((ASN1TaggedObject)o);
+        }
+
+        return null;
+    }
+
     public CMPCertificate getCertificate()
     {
         return certificate;
@@ -93,6 +99,7 @@ public class CertOrEncCert
      *                      encryptedCert   [1] EncryptedKey
      *           }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

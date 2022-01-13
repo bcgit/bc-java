@@ -13,10 +13,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class PBMParameter
     extends ASN1Object
 {
-    private ASN1OctetString salt;
-    private AlgorithmIdentifier owf;
-    private ASN1Integer iterationCount;
-    private AlgorithmIdentifier mac;
+    private final ASN1OctetString salt;
+    private final AlgorithmIdentifier owf;
+    private final ASN1Integer iterationCount;
+    private final AlgorithmIdentifier mac;
 
     private PBMParameter(ASN1Sequence seq)
     {
@@ -24,6 +24,28 @@ public class PBMParameter
         owf = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
         iterationCount = ASN1Integer.getInstance(seq.getObjectAt(2));
         mac = AlgorithmIdentifier.getInstance(seq.getObjectAt(3));
+    }
+
+    public PBMParameter(
+        byte[] salt,
+        AlgorithmIdentifier owf,
+        int iterationCount,
+        AlgorithmIdentifier mac)
+    {
+        this(new DEROctetString(salt), owf,
+            new ASN1Integer(iterationCount), mac);
+    }
+
+    public PBMParameter(
+        ASN1OctetString salt,
+        AlgorithmIdentifier owf,
+        ASN1Integer iterationCount,
+        AlgorithmIdentifier mac)
+    {
+        this.salt = salt;
+        this.owf = owf;
+        this.iterationCount = iterationCount;
+        this.mac = mac;
     }
 
     public static PBMParameter getInstance(Object o)
@@ -39,28 +61,6 @@ public class PBMParameter
         }
 
         return null;
-    }
-
-    public PBMParameter(
-        byte[] salt,
-        AlgorithmIdentifier owf,
-        int iterationCount,
-        AlgorithmIdentifier mac)
-    {
-        this(new DEROctetString(salt), owf,
-             new ASN1Integer(iterationCount), mac);
-    }
-
-    public PBMParameter(
-        ASN1OctetString salt,
-        AlgorithmIdentifier owf,
-        ASN1Integer iterationCount,
-        AlgorithmIdentifier mac)
-    {
-        this.salt = salt;
-        this.owf = owf;
-        this.iterationCount = iterationCount;
-        this.mac = mac;
     }
 
     public ASN1OctetString getSalt()
@@ -101,6 +101,7 @@ public class PBMParameter
      *                        -- the MAC AlgId (e.g., DES-MAC, Triple-DES-MAC [PKCS11],
      *    }   -- or HMAC [RFC2104, RFC2202])
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
@@ -111,7 +112,7 @@ public class PBMParameter
         v.add(owf);
         v.add(iterationCount);
         v.add(mac);
-        
+
         return new DERSequence(v);
     }
 }

@@ -8,11 +8,16 @@ import org.bouncycastle.asn1.DERNull;
 public class PKIConfirmContent
     extends ASN1Object
 {
-    private ASN1Null val;
+    private final ASN1Null val;
 
     private PKIConfirmContent(ASN1Null val)
     {
         this.val = val;
+    }
+
+    public PKIConfirmContent()
+    {
+        val = DERNull.INSTANCE;
     }
 
     public static PKIConfirmContent getInstance(Object o)
@@ -30,15 +35,11 @@ public class PKIConfirmContent
         throw new IllegalArgumentException("Invalid object: " + o.getClass().getName());
     }
 
-    public PKIConfirmContent()
-    {
-        val = DERNull.INSTANCE;
-    }
-
     /**
      * <pre>
      * PKIConfirmContent ::= NULL
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
