@@ -236,10 +236,11 @@ public class JceAsymmetricKeyWrapper
         else
         {
             Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
+            AlgorithmParameters algParams = null;
 
             try
             {
-                AlgorithmParameters algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+                algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
 
                 if (algParams != null)
                 {

@@ -2,6 +2,7 @@ package org.bouncycastle.operator.jcajce;
 
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -169,6 +170,10 @@ public class JceAsymmetricKeyUnwrapper
         catch (BadPaddingException e)
         {
             throw new OperatorException("bad padding: " + e.getMessage(), e);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            throw new OperatorException("invalid algorithm parameters: " + e.getMessage(), e);
         }
     }
 }
