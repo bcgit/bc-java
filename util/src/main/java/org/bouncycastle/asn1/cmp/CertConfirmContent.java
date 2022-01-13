@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public class CertConfirmContent
     extends ASN1Object
 {
-    private ASN1Sequence content;
+    private final ASN1Sequence content;
 
     private CertConfirmContent(ASN1Sequence seq)
     {
@@ -40,11 +40,12 @@ public class CertConfirmContent
 
         return result;
     }
-    
+
     /**
      * <pre>
      * CertConfirmContent ::= SEQUENCE OF CertStatus
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

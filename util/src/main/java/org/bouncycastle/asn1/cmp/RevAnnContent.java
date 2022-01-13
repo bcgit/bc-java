@@ -12,12 +12,12 @@ import org.bouncycastle.asn1.x509.Extensions;
 public class RevAnnContent
     extends ASN1Object
 {
-    private PKIStatus status;
-    private CertId certId;
-    private ASN1GeneralizedTime willBeRevokedAt;
-    private ASN1GeneralizedTime badSinceDate;
+    private final PKIStatus status;
+    private final CertId certId;
+    private final ASN1GeneralizedTime willBeRevokedAt;
+    private final ASN1GeneralizedTime badSinceDate;
     private Extensions crlDetails;
-    
+
     private RevAnnContent(ASN1Sequence seq)
     {
         status = PKIStatus.getInstance(seq.getObjectAt(0));
@@ -82,6 +82,7 @@ public class RevAnnContent
      *        -- extra CRL details (e.g., crl number, reason, location, etc.)
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

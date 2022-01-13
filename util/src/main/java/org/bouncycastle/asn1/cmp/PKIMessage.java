@@ -13,11 +13,20 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * PKIMessage ::= SEQUENCE {
+ * header           PKIHeader,
+ * body             PKIBody,
+ * protection   [0] PKIProtection OPTIONAL,
+ * extraCerts   [1] SEQUENCE SIZE (1..MAX) OF CMPCertificate
+ * OPTIONAL
+ * }
+ */
 public class PKIMessage
     extends ASN1Object
 {
-    private PKIHeader header;
-    private PKIBody body;
+    private final PKIHeader header;
+    private final PKIBody body;
     private ASN1BitString protection;
     private ASN1Sequence extraCerts;
 
@@ -41,20 +50,6 @@ public class PKIMessage
                 extraCerts = ASN1Sequence.getInstance(tObj, true);
             }
         }
-    }
-
-    public static PKIMessage getInstance(Object o)
-    {
-        if (o instanceof PKIMessage)
-        {
-            return (PKIMessage)o;
-        }
-        else if (o != null)
-        {
-            return new PKIMessage(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
     }
 
     /**
@@ -93,6 +88,20 @@ public class PKIMessage
         PKIBody body)
     {
         this(header, body, null, null);
+    }
+
+    public static PKIMessage getInstance(Object o)
+    {
+        if (o instanceof PKIMessage)
+        {
+            return (PKIMessage)o;
+        }
+        else if (o != null)
+        {
+            return new PKIMessage(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public PKIHeader getHeader()

@@ -14,7 +14,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class KeyRecRepContent
     extends ASN1Object
 {
-    private PKIStatusInfo status;
+    private final PKIStatusInfo status;
     private CMPCertificate newSigCert;
     private ASN1Sequence caCerts;
     private ASN1Sequence keyPairHist;
@@ -116,7 +116,8 @@ public class KeyRecRepContent
      *                         keyPairHist         [2] SEQUENCE SIZE (1..MAX) OF
      *                                                           CertifiedKeyPair OPTIONAL
      *              }
-     * </pre> 
+     * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
