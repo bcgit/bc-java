@@ -14,8 +14,8 @@ public class Challenge
     extends ASN1Object
 {
     private AlgorithmIdentifier owf;
-    private ASN1OctetString witness;
-    private ASN1OctetString challenge;
+    private final ASN1OctetString witness;
+    private final ASN1OctetString challenge;
 
     private Challenge(ASN1Sequence seq)
     {
@@ -28,6 +28,18 @@ public class Challenge
 
         witness = ASN1OctetString.getInstance(seq.getObjectAt(index++));
         challenge = ASN1OctetString.getInstance(seq.getObjectAt(index));
+    }
+
+    public Challenge(byte[] witness, byte[] challenge)
+    {
+        this(null, witness, challenge);
+    }
+
+    public Challenge(AlgorithmIdentifier owf, byte[] witness, byte[] challenge)
+    {
+        this.owf = owf;
+        this.witness = new DEROctetString(witness);
+        this.challenge = new DEROctetString(challenge);
     }
 
     public static Challenge getInstance(Object o)
@@ -43,18 +55,6 @@ public class Challenge
         }
 
         return null;
-    }
-
-    public Challenge(byte[] witness, byte[] challenge)
-    {
-        this(null, witness, challenge);
-    }
-
-    public Challenge(AlgorithmIdentifier owf, byte[] witness, byte[] challenge)
-    {
-        this.owf = owf;
-        this.witness = new DEROctetString(witness);
-        this.challenge = new DEROctetString(challenge);
     }
 
     public AlgorithmIdentifier getOwf()
@@ -97,6 +97,7 @@ public class Challenge
      *                 --   }
      *      }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

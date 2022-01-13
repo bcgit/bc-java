@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 public class ErrorMsgContent
     extends ASN1Object
 {
-    private PKIStatusInfo pkiStatusInfo;
+    private final PKIStatusInfo pkiStatusInfo;
     private ASN1Integer errorCode;
     private PKIFreeText errorDetails;
 
@@ -38,21 +38,6 @@ public class ErrorMsgContent
         }
     }
 
-    public static ErrorMsgContent getInstance(Object o)
-    {
-        if (o instanceof ErrorMsgContent)
-        {
-            return (ErrorMsgContent)o;
-        }
-
-        if (o != null)
-        {
-            return new ErrorMsgContent(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
-    }
-
     public ErrorMsgContent(PKIStatusInfo pkiStatusInfo)
     {
         this(pkiStatusInfo, null, null);
@@ -71,6 +56,21 @@ public class ErrorMsgContent
         this.pkiStatusInfo = pkiStatusInfo;
         this.errorCode = errorCode;
         this.errorDetails = errorDetails;
+    }
+
+    public static ErrorMsgContent getInstance(Object o)
+    {
+        if (o instanceof ErrorMsgContent)
+        {
+            return (ErrorMsgContent)o;
+        }
+
+        if (o != null)
+        {
+            return new ErrorMsgContent(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public PKIStatusInfo getPKIStatusInfo()
@@ -98,6 +98,7 @@ public class ErrorMsgContent
      *                        -- implementation-specific error details
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
