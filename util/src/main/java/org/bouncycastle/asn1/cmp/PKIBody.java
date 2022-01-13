@@ -41,8 +41,28 @@ public class PKIBody
     public static final int TYPE_POLL_REQ = 25;
     public static final int TYPE_POLL_REP = 26;
 
-    private int tagNo;
-    private ASN1Encodable body;
+    private final int tagNo;
+    private final ASN1Encodable body;
+
+    private PKIBody(ASN1TaggedObject tagged)
+    {
+        tagNo = tagged.getTagNo();
+        body = getBodyForType(tagNo, tagged.getObject());
+    }
+
+    /**
+     * Creates a new PKIBody.
+     *
+     * @param type    one of the TYPE_* constants
+     * @param content message content
+     */
+    public PKIBody(
+        int type,
+        ASN1Encodable content)
+    {
+        tagNo = type;
+        body = getBodyForType(type, content);
+    }
 
     public static PKIBody getInstance(Object o)
     {
@@ -57,25 +77,6 @@ public class PKIBody
         }
 
         throw new IllegalArgumentException("Invalid object: " + o.getClass().getName());
-    }
-
-    private PKIBody(ASN1TaggedObject tagged)
-    {
-        tagNo = tagged.getTagNo();
-        body = getBodyForType(tagNo, tagged.getObject());
-    }
-
-    /**
-     * Creates a new PKIBody.
-     * @param type one of the TYPE_* constants
-     * @param content message content
-     */
-    public PKIBody(
-        int type,
-        ASN1Encodable content)
-    {
-        tagNo = type;
-        body = getBodyForType(type, content);
     }
 
     private static ASN1Encodable getBodyForType(
@@ -185,6 +186,7 @@ public class PKIBody
      *        pollRep  [26] PollRepContent          --Polling response
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

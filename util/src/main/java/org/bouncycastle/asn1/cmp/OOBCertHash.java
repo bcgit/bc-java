@@ -18,7 +18,7 @@ public class OOBCertHash
 {
     private AlgorithmIdentifier hashAlg;
     private CertId certId;
-    private ASN1BitString hashVal;
+    private final ASN1BitString hashVal;
 
     private OOBCertHash(ASN1Sequence seq)
     {
@@ -42,6 +42,18 @@ public class OOBCertHash
 
     }
 
+    public OOBCertHash(AlgorithmIdentifier hashAlg, CertId certId, byte[] hashVal)
+    {
+        this(hashAlg, certId, new DERBitString(hashVal));
+    }
+
+    public OOBCertHash(AlgorithmIdentifier hashAlg, CertId certId, DERBitString hashVal)
+    {
+        this.hashAlg = hashAlg;
+        this.certId = certId;
+        this.hashVal = hashVal;
+    }
+
     public static OOBCertHash getInstance(Object o)
     {
         if (o instanceof OOBCertHash)
@@ -55,18 +67,6 @@ public class OOBCertHash
         }
 
         return null;
-    }
-
-    public OOBCertHash(AlgorithmIdentifier hashAlg, CertId certId, byte[] hashVal)
-    {
-        this(hashAlg, certId, new DERBitString(hashVal));
-    }
-
-    public OOBCertHash(AlgorithmIdentifier hashAlg, CertId certId, DERBitString hashVal)
-    {
-        this.hashAlg = hashAlg;
-        this.certId = certId;
-        this.hashVal = hashVal;
     }
 
     public AlgorithmIdentifier getHashAlg()
@@ -94,6 +94,7 @@ public class OOBCertHash
      *                      -- self-signed certificate with the identifier certID.
      *       }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

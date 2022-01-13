@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cmc;
 
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
@@ -13,7 +14,9 @@ public interface CMCObjectIdentifiers
         
    ASN1ObjectIdentifier id_cmc =  id_pkix.branch("7");   // CMC controls
    ASN1ObjectIdentifier id_cct =  id_pkix.branch("12");  // CMC content types
-  
+   ASN1ObjectIdentifier id_kp = id_pkix.branch("3"); // KP
+
+
    // The following controls have the type OCTET STRING
   
    ASN1ObjectIdentifier id_cmc_identityProof =  id_cmc.branch("3");
@@ -98,4 +101,27 @@ public interface CMCObjectIdentifiers
     ASN1ObjectIdentifier id_cmc_identityProofV2 = id_cmc.branch("34");
     
     ASN1ObjectIdentifier id_cmc_popLinkWitnessV2 = id_cmc.branch("33");
+
+    // Extended key usage
+
+    /**
+     * id-kp-cmcCA OBJECT IDENTIFIER ::= {
+     *          iso(1) identified-organization(3) dod(6) internet(1)
+     *          security(5) mechanisms(5) pkix(7) kp(3) 27 }
+     */
+    ASN1ObjectIdentifier id_kp_cmcCA = id_kp.branch("27");
+
+    /**
+     * id-kp-cmcRA OBJECT IDENTIFIER ::= {
+     *          iso(1) identified-organization(3) dod(6) internet(1)
+     *          security(5) mechanisms(5) pkix(7) kp(3) 28 }
+     */
+    ASN1ObjectIdentifier id_kp_cmcRA = id_kp.branch("28");
+
+    /**
+     * id-kp-cmKGA OBJECT IDENTIFIER ::= {
+     *          iso(1) identified-organization(3) dod(6) internet(1)
+     *          security(5) mechanisms(5) pkix(7) kp(3) 32 }
+     */
+    ASN1ObjectIdentifier id_kp_cmKGA = id_kp.branch("32");
 }

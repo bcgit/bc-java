@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.x509.CertificateList;
 public class RevRepContent
     extends ASN1Object
 {
-    private ASN1Sequence status;
+    private final ASN1Sequence status;
     private ASN1Sequence revCerts;
     private ASN1Sequence crls;
 
@@ -113,6 +113,7 @@ public class RevRepContent
      *        -- the resulting CRLs (there may be more than one)
      *   }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
