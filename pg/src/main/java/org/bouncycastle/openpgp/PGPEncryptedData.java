@@ -163,4 +163,18 @@ public abstract class PGPEncryptedData
 
         return Arrays.constantTimeAreEqual(digest, streamDigest);
     }
+
+    /**
+     * Return the version number of the Encrypted Session Key Packet.
+     *
+     * @return version
+     */
+    public abstract int getVersion();
+
+    /**
+     * Return the symmetric encryption algorithm that is used by the packet.
+     *
+     * @return algorithm
+     */
+    public abstract int getAlgorithm();
 }
