@@ -9,13 +9,19 @@ import org.bouncycastle.asn1.DERSequence;
 public class ProtectedPart
     extends ASN1Object
 {
-    private PKIHeader header;
-    private PKIBody body;
+    private final PKIHeader header;
+    private final PKIBody body;
 
     private ProtectedPart(ASN1Sequence seq)
     {
         header = PKIHeader.getInstance(seq.getObjectAt(0));
         body = PKIBody.getInstance(seq.getObjectAt(1));
+    }
+
+    public ProtectedPart(PKIHeader header, PKIBody body)
+    {
+        this.header = header;
+        this.body = body;
     }
 
     public static ProtectedPart getInstance(Object o)
@@ -31,12 +37,6 @@ public class ProtectedPart
         }
 
         return null;
-    }
-
-    public ProtectedPart(PKIHeader header, PKIBody body)
-    {
-        this.header = header;
-        this.body = body;
     }
 
     public PKIHeader getHeader()
@@ -56,6 +56,7 @@ public class ProtectedPart
      *                    body      PKIBody
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

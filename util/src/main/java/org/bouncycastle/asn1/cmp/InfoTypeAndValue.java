@@ -54,8 +54,8 @@ import org.bouncycastle.asn1.DERSequence;
 public class InfoTypeAndValue
     extends ASN1Object
 {
-    private ASN1ObjectIdentifier infoType;
-    private ASN1Encodable       infoValue;
+    private final ASN1ObjectIdentifier infoType;
+    private ASN1Encodable infoValue;
 
     private InfoTypeAndValue(ASN1Sequence seq)
     {
@@ -63,23 +63,8 @@ public class InfoTypeAndValue
 
         if (seq.size() > 1)
         {
-            infoValue = (ASN1Encodable)seq.getObjectAt(1);
+            infoValue = seq.getObjectAt(1);
         }
-    }
-
-    public static InfoTypeAndValue getInstance(Object o)
-    {
-        if (o instanceof InfoTypeAndValue)
-        {
-            return (InfoTypeAndValue)o;
-        }
-
-        if (o != null)
-        {
-            return new InfoTypeAndValue(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
     }
 
     public InfoTypeAndValue(
@@ -95,6 +80,21 @@ public class InfoTypeAndValue
     {
         this.infoType = infoType;
         this.infoValue = optionalValue;
+    }
+
+    public static InfoTypeAndValue getInstance(Object o)
+    {
+        if (o instanceof InfoTypeAndValue)
+        {
+            return (InfoTypeAndValue)o;
+        }
+
+        if (o != null)
+        {
+            return new InfoTypeAndValue(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public ASN1ObjectIdentifier getInfoType()
@@ -114,6 +114,7 @@ public class InfoTypeAndValue
      *                         infoValue              ANY DEFINED BY infoType  OPTIONAL
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

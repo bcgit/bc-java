@@ -17,12 +17,13 @@ public class CMPCertificate
 {
     private Certificate x509v3PKCert;
 
-    private int        otherTagValue;
+    private int otherTagValue;
     private ASN1Object otherCert;
 
     /**
      * Note: the addition of attribute certificates is a BC extension. If you use this constructor they
      * will be added with a tag value of 1.
+     *
      * @deprecated use (type. otherCert) constructor
      */
     public CMPCertificate(AttributeCertificate x509v2AttrCert)
@@ -34,7 +35,7 @@ public class CMPCertificate
      * Note: the addition of other certificates is a BC extension. If you use this constructor they
      * will be added with an explicit tag value of type.
      *
-     * @param type the type of the certificate (used as a tag value).
+     * @param type      the type of the certificate (used as a tag value).
      * @param otherCert the object representing the certificate
      */
     public CMPCertificate(int type, ASN1Object otherCert)
@@ -51,6 +52,22 @@ public class CMPCertificate
         }
 
         this.x509v3PKCert = x509v3PKCert;
+    }
+
+    public static CMPCertificate getInstance(ASN1TaggedObject ato, boolean isExplicit)
+    {
+        if (ato != null)
+        {
+            if (isExplicit)
+            {
+                return CMPCertificate.getInstance(ato.getObject());
+            }
+            else
+            {
+                throw new IllegalArgumentException("tag must be explicit");
+            }
+        }
+        return null;
     }
 
     public static CMPCertificate getInstance(Object o)
@@ -89,7 +106,7 @@ public class CMPCertificate
 
     public boolean isX509v3PKCert()
     {
-         return x509v3PKCert != null;
+        return x509v3PKCert != null;
     }
 
     public Certificate getX509v3PKCert()
@@ -99,9 +116,9 @@ public class CMPCertificate
 
     /**
      * Return an AttributeCertificate interpretation of otherCert.
-     * @deprecated use getOtherCert and getOtherTag to make sure message is really what it should be.
      *
-     * @return  an AttributeCertificate
+     * @return an AttributeCertificate
+     * @deprecated use getOtherCert and getOtherTag to make sure message is really what it should be.
      */
     public AttributeCertificate getX509v2AttrCert()
     {
