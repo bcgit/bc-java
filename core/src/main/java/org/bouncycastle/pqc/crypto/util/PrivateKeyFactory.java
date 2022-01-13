@@ -22,6 +22,8 @@ import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
@@ -137,6 +139,13 @@ public class PrivateKeyFactory
             CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new CMCEPrivateKeyParameters(spParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_frodo))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            FrodoParameters spParams = Utils.frodoParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new FrodoPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {

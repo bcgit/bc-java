@@ -2,6 +2,7 @@ package org.bouncycastle.operator.jcajce;
 
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -145,7 +146,14 @@ public class JceAsymmetricKeyUnwrapper
             // some providers do not support UNWRAP (this appears to be only for asymmetric algorithms)
             if (sKey == null)
             {
-                keyCipher.init(Cipher.DECRYPT_MODE, privKey);
+                if (algParams != null)
+                {
+                    keyCipher.init(Cipher.DECRYPT_MODE, privKey, algParams);
+                }
+                else
+                {
+                    keyCipher.init(Cipher.DECRYPT_MODE, privKey);
+                }
                 sKey = new SecretKeySpec(keyCipher.doFinal(encryptedKey), encryptedKeyAlgorithm.getAlgorithm().getId());
             }
 
@@ -162,6 +170,10 @@ public class JceAsymmetricKeyUnwrapper
         catch (BadPaddingException e)
         {
             throw new OperatorException("bad padding: " + e.getMessage(), e);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            throw new OperatorException("invalid algorithm parameters: " + e.getMessage(), e);
         }
     }
 }

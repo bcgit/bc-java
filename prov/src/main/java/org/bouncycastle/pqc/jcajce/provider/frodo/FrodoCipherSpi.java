@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.cmce;
+package org.bouncycastle.pqc.jcajce.provider.frodo;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -19,51 +19,60 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.ARIAEngine;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
+import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
+import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
+import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.pqc.crypto.cmce.CMCEKEMExtractor;
-import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
+import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
+import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
 import org.bouncycastle.util.Arrays;
 
 import static org.bouncycastle.pqc.jcajce.provider.util.WrapUtil.getWrapper;
 
-class CMCECipherSpi
-    extends CipherSpi
+class FrodoCipherSpi
+        extends CipherSpi
 {
     private final String algorithmName;
-    private CMCEKEMGenerator kemGen;
+    private FrodoKEMGenerator kemGen;
     private KEMParameterSpec kemParameterSpec;
-    private BCCMCEPublicKey wrapKey;
-    private BCCMCEPrivateKey unwrapKey;
+    private BCFrodoPublicKey wrapKey;
+    private BCFrodoPrivateKey unwrapKey;
     private SecureRandom random;
 
     private AlgorithmParameters engineParams;
 
-    CMCECipherSpi(String algorithmName)
+    FrodoCipherSpi(String algorithmName)
+            throws NoSuchAlgorithmException
     {
         this.algorithmName = algorithmName;
     }
 
     @Override
     protected void engineSetMode(String mode)
-        throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
     {
         throw new NoSuchAlgorithmException("Cannot support mode " + mode);
     }
 
     @Override
     protected void engineSetPadding(String padding)
-        throws NoSuchPaddingException
+            throws NoSuchPaddingException
     {
         throw new NoSuchPaddingException("Padding " + padding + " unknown");
     }
 
     protected int engineGetKeySize(
-        Key key)
+            Key key)
     {
         return 2048; // TODO
         //throw new IllegalArgumentException("not an valid key!");
@@ -109,7 +118,7 @@ class CMCECipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, SecureRandom random)
-        throws InvalidKeyException
+            throws InvalidKeyException
     {
         try
         {
@@ -123,7 +132,7 @@ class CMCECipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
-        throws InvalidKeyException, InvalidAlgorithmParameterException
+            throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (random == null)
         {
@@ -147,25 +156,25 @@ class CMCECipherSpi
 
         if (opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof BCCMCEPublicKey)
+            if (key instanceof BCFrodoPublicKey)
             {
-                wrapKey = (BCCMCEPublicKey)key;
-                kemGen = new CMCEKEMGenerator(random);
+                wrapKey = (BCFrodoPublicKey)key;
+                kemGen = new FrodoKEMGenerator(random);
             }
             else
             {
-                throw new InvalidKeyException("Only an CMCE public key can be used for wrapping");
+                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof BCCMCEPrivateKey)
+            if (key instanceof BCFrodoPrivateKey)
             {
-                unwrapKey = (BCCMCEPrivateKey)key;
+                unwrapKey = (BCFrodoPrivateKey)key;
             }
             else
             {
-                throw new InvalidKeyException("Only an CMCE private key can be used for unwrapping");
+                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +185,7 @@ class CMCECipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
-        throws InvalidKeyException, InvalidAlgorithmParameterException
+            throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
 
@@ -203,28 +212,28 @@ class CMCECipherSpi
 
     @Override
     protected int engineUpdate(byte[] bytes, int i, int i1, byte[] bytes1, int i2)
-        throws ShortBufferException
+            throws ShortBufferException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     @Override
     protected byte[] engineDoFinal(byte[] bytes, int i, int i1)
-        throws IllegalBlockSizeException, BadPaddingException
+            throws IllegalBlockSizeException, BadPaddingException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     @Override
     protected int engineDoFinal(byte[] bytes, int i, int i1, byte[] bytes1, int i2)
-        throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
+            throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     protected byte[] engineWrap(
-        Key key)
-        throws IllegalBlockSizeException, InvalidKeyException
+            Key key)
+            throws IllegalBlockSizeException, InvalidKeyException
     {
         byte[] encoded = key.getEncoded();
         if (encoded == null)
@@ -247,7 +256,7 @@ class CMCECipherSpi
             secEnc.destroy();
 
             byte[] keyToWrap = key.getEncoded();
-            
+
             byte[] rv = Arrays.concatenate(encapsulation, kWrap.wrap(keyToWrap, 0, keyToWrap.length));
 
             Arrays.clear(keyToWrap);
@@ -265,10 +274,10 @@ class CMCECipherSpi
     }
 
     protected Key engineUnwrap(
-        byte[] wrappedKey,
-        String wrappedKeyAlgorithm,
-        int wrappedKeyType)
-        throws InvalidKeyException, NoSuchAlgorithmException
+            byte[] wrappedKey,
+            String wrappedKeyAlgorithm,
+            int wrappedKeyType)
+            throws InvalidKeyException, NoSuchAlgorithmException
     {
         // TODO: add support for other types.
         if (wrappedKeyType != Cipher.SECRET_KEY)
@@ -277,7 +286,7 @@ class CMCECipherSpi
         }
         try
         {
-            CMCEKEMExtractor kemExt = new CMCEKEMExtractor(unwrapKey.getKeyParams());
+            FrodoKEMExtractor kemExt = new FrodoKEMExtractor(unwrapKey.getKeyParams());
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getInputSize()));
 
@@ -308,12 +317,12 @@ class CMCECipherSpi
     }
 
     public static class Base
-        extends CMCECipherSpi
+            extends FrodoCipherSpi
     {
         public Base()
-            throws NoSuchAlgorithmException
+                throws NoSuchAlgorithmException
         {
-            super("CMCE");
+            super("Frodo");
         }
     }
 }

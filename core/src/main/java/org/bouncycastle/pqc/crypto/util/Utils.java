@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
@@ -37,6 +38,9 @@ class Utils
 
     static final Map categories = new HashMap();
 
+    static final Map frodoOids = new HashMap();
+    static final Map frodoParams = new HashMap();
+
     static final Map mcElieceOids = new HashMap();
     static final Map mcElieceParams = new HashMap();
 
@@ -47,6 +51,7 @@ class Utils
     {
         categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
         categories.put(PQCObjectIdentifiers.qTESLA_p_III, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_III));
+
 
         mcElieceOids.put(CMCEParameters.mceliece348864r3, BCObjectIdentifiers.mceliece348864_r3);
         mcElieceOids.put(CMCEParameters.mceliece348864fr3, BCObjectIdentifiers.mceliece348864f_r3);
@@ -69,6 +74,21 @@ class Utils
         mcElieceParams.put(BCObjectIdentifiers.mceliece6960119f_r3, CMCEParameters.mceliece6960119fr3);
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128_r3, CMCEParameters.mceliece8192128r3);
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
+
+        frodoOids.put(FrodoParameters.frodokem19888r3, BCObjectIdentifiers.frodokem19888r3);
+        frodoOids.put(FrodoParameters.frodokem19888shaker3, BCObjectIdentifiers.frodokem19888shaker3);
+        frodoOids.put(FrodoParameters.frodokem31296r3, BCObjectIdentifiers.frodokem31296r3);
+        frodoOids.put(FrodoParameters.frodokem31296shaker3, BCObjectIdentifiers.frodokem31296shaker3);
+        frodoOids.put(FrodoParameters.frodokem43088r3, BCObjectIdentifiers.frodokem43088r3);
+        frodoOids.put(FrodoParameters.frodokem43088shaker3, BCObjectIdentifiers.frodokem43088shaker3);
+
+        frodoParams.put(BCObjectIdentifiers.frodokem19888r3, FrodoParameters.frodokem19888r3);
+        frodoParams.put(BCObjectIdentifiers.frodokem19888shaker3, FrodoParameters.frodokem19888shaker3);
+        frodoParams.put(BCObjectIdentifiers.frodokem31296r3, FrodoParameters.frodokem31296r3);
+        frodoParams.put(BCObjectIdentifiers.frodokem31296shaker3, FrodoParameters.frodokem31296shaker3);
+        frodoParams.put(BCObjectIdentifiers.frodokem43088r3, FrodoParameters.frodokem43088r3);
+        frodoParams.put(BCObjectIdentifiers.frodokem43088shaker3, FrodoParameters.frodokem43088shaker3);
+
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -246,5 +266,15 @@ class Utils
     static CMCEParameters mcElieceParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (CMCEParameters)mcElieceParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier frodoOidLookup(FrodoParameters params)
+    {
+        return (ASN1ObjectIdentifier)frodoOids.get(params);
+    }
+
+    static FrodoParameters frodoParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (FrodoParameters)frodoParams.get(oid);
     }
 }

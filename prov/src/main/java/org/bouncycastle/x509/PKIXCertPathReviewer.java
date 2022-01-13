@@ -2492,6 +2492,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 {
                     certSelectX509.setSerialNumber(authID.getAuthorityCertSerialNumber());
                 }
+                else
+                {
+                    byte[] keyID = authID.getKeyIdentifier();
+                    if (keyID != null)
+                    {
+                        certSelectX509.setSubjectKeyIdentifier(new DEROctetString(keyID).getEncoded());
+                    }
+                }
             }
         }
         catch (IOException ex)
