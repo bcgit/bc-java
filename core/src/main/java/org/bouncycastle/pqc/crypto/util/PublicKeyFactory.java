@@ -24,6 +24,8 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
@@ -74,6 +76,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.mceliece6960119f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128f_r3, new CMCEConverter());
+        converters.put(BCObjectIdentifiers.frodokem19888r3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem19888shaker3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem31296r3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem31296shaker3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem43088r3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem43088shaker3, new FrodoConverter());
     }
 
     /**
@@ -297,6 +305,20 @@ public class PublicKeyFactory
             McElieceCCA2PublicKey mKey = McElieceCCA2PublicKey.getInstance(keyInfo.parsePublicKey());
 
             return new McElieceCCA2PublicKeyParameters(mKey.getN(), mKey.getT(), mKey.getG(), Utils.getDigestName(mKey.getDigest().getAlgorithm()));
+        }
+    }
+
+    private static class FrodoConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            FrodoParameters fParams = Utils.frodoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new FrodoPublicKeyParameters(fParams, keyEnc);
         }
     }
 }
