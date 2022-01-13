@@ -24,18 +24,18 @@ import org.bouncycastle.util.io.TeeInputStream;
 public class PGPPBEEncryptedData
     extends PGPEncryptedData
 {
-    SymmetricKeyEncSessionPacket    keyData;
+    SymmetricKeyEncSessionPacket keyData;
 
     /**
      * Construct a PBE encrypted data object.
      *
      * @param keyData the PBE key data packet associated with the encrypted data in the PGP object
-     *            stream.
+     *                stream.
      * @param encData the encrypted data.
      */
     PGPPBEEncryptedData(
-        SymmetricKeyEncSessionPacket    keyData,
-        InputStreamPacket               encData)
+        SymmetricKeyEncSessionPacket keyData,
+        InputStreamPacket encData)
     {
         super(encData);
 
@@ -47,15 +47,15 @@ public class PGPPBEEncryptedData
      *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data.
      * @return the identifier of the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
-     *         encrypt this object.
+     * encrypt this object.
      * @throws PGPException if the session data cannot be recovered.
      */
     public int getSymmetricAlgorithm(
         PBEDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[]       key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
-        byte[]       sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
+        byte[] key = dataDecryptorFactory.makeKeyFromPassPhrase(keyData.getEncAlgorithm(), keyData.getS2K());
+        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getEncAlgorithm(), key, keyData.getSecKeyData());
 
         return sessionData[0];
     }
@@ -78,11 +78,11 @@ public class PGPPBEEncryptedData
 
     /**
      * Open an input stream which will provide the decrypted data protected by this object.
-     * 
+     *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide
-     *            the stream.
+     *                             the stream.
      * @return the resulting decrypted input stream, probably containing a sequence of PGP data
-     *         objects.
+     * objects.
      * @throws PGPException if the session data cannot be recovered or the stream cannot be created.
      */
     public InputStream getDataStream(
@@ -92,7 +92,7 @@ public class PGPPBEEncryptedData
         try
         {
             PGPSessionKey sessionKey = getSessionKey(dataDecryptorFactory);
-            boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+            boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
             PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
             return getDataStream(withIntegrityPacket, dataDecryptor);
@@ -114,7 +114,7 @@ public class PGPPBEEncryptedData
         try
         {
             PGPSessionKey sessionKey = dataDecryptorFactory.getSessionKey();
-            boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+            boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
             PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
             return getDataStream(withIntegrityPacket, dataDecryptor);
@@ -153,7 +153,7 @@ public class PGPPBEEncryptedData
             byte[] iv = new byte[dataDecryptor.getBlockSize()];
             for (int i = 0; i != iv.length; i++)
             {
-                int    ch = encStream.read();
+                int ch = encStream.read();
 
                 if (ch < 0)
                 {
@@ -163,8 +163,8 @@ public class PGPPBEEncryptedData
                 iv[i] = (byte)ch;
             }
 
-            int    v1 = encStream.read();
-            int    v2 = encStream.read();
+            int v1 = encStream.read();
+            int v2 = encStream.read();
 
             if (v1 < 0 || v2 < 0)
             {
@@ -175,8 +175,8 @@ public class PGPPBEEncryptedData
             // Note: the oracle attack on "quick check" bytes is not deemed
             // a security risk for PBE (see PGPPublicKeyEncryptedData)
 
-            boolean repeatCheckPassed = iv[iv.length - 2] == (byte) v1
-                    && iv[iv.length - 1] == (byte) v2;
+            boolean repeatCheckPassed = iv[iv.length - 2] == (byte)v1
+                && iv[iv.length - 1] == (byte)v2;
 
             // Note: some versions of PGP appear to produce 0 for the extra
             // bytes rather than repeating the two previous bytes
@@ -200,13 +200,13 @@ public class PGPPBEEncryptedData
         }
     }
 
-    @Override
-    public int getVersion() {
+    public int getVersion()
+    {
         return keyData.getVersion();
     }
 
-    @Override
-    public int getAlgorithm() {
+    public int getAlgorithm()
+    {
         return keyData.getEncAlgorithm();
     }
 }

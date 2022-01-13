@@ -169,12 +169,18 @@ public abstract class PGPEncryptedData
      *
      * @return version
      */
-    public abstract int getVersion();
+    public int getVersion()
+    {
+        throw new UnsupportedOperationException("not supported - override required");
+    }
 
     /**
      * Return the symmetric encryption algorithm that is used by the packet.
      *
      * @return algorithm
      */
-    public abstract int getAlgorithm();
+    public int getAlgorithm()
+    {
+        throw new UnsupportedOperationException("not supported - override required");
+    }
 }
