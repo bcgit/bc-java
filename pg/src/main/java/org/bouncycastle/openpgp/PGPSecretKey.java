@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
@@ -82,10 +83,28 @@ public class PGPSecretKey
         PBESecretKeyEncryptor keyEncryptor)
         throws PGPException
     {
-        this.pub = pubKey;
+        this.pub = buildPublicKey(isMasterKey, pubKey);
         this.secret = buildSecretKeyPacket(isMasterKey, privKey, pubKey, keyEncryptor, checksumCalculator);
     }
 
+    private static PGPPublicKey buildPublicKey(boolean isMasterKey, PGPPublicKey pubKey)
+    {
+        PublicKeyPacket pubPacket = pubKey.publicPk;
+
+        // make sure we can actually do what's wanted
+         if (isMasterKey && !(pubKey.isEncryptionKey() && pubPacket.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL))
+         {
+             PGPPublicKey mstKey = new PGPPublicKey(pubKey);
+             mstKey.publicPk = new PublicKeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+             return mstKey;
+         }
+         else
+         {
+             PGPPublicKey subKey = new PGPPublicKey(pubKey);
+             subKey.publicPk = new PublicSubkeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+             return subKey;
+         }
+    }
     private static SecretKeyPacket buildSecretKeyPacket(boolean isMasterKey, PGPPrivateKey privKey, PGPPublicKey pubKey, PBESecretKeyEncryptor keyEncryptor, PGPDigestCalculator checksumCalculator)
         throws PGPException
     {

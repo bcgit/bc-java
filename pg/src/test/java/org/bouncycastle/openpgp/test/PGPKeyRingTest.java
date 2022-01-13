@@ -21,6 +21,7 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -3558,6 +3559,7 @@ public class PGPKeyRingTest
             testApacheRings();
             testKeyRingWithMarker();
             testKeyRingGeneratorDirectKeySignedPrimaryKey();
+            testSubKeyCreation();
         }
         catch (PGPException e)
         {
@@ -3571,6 +3573,37 @@ public class PGPKeyRingTest
                 fail("exception: " + e, e);
             }
         }
+    }
+
+    private void testSubKeyCreation()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(256);
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, kp, new Date());
+        PGPDigestCalculator checksumCalculator = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        PGPSecretKey secretKey = new PGPSecretKey(
+                        keyPair.getPrivateKey(),
+                        keyPair.getPublicKey(),
+                        checksumCalculator,
+                        false, // isPrimary = false -> subkey expected
+                        null); // encryptor
+        isTrue(!secretKey.isMasterKey()); // assertion fails, as secretKey.isMasterKey() calls publicKey.isMasterKey() which is true
+
+        keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDSA, kp, new Date());
+        secretKey = new PGPSecretKey(
+                        keyPair.getPrivateKey(),
+                        keyPair.getPublicKey(),
+                        checksumCalculator,
+                        false, // isPrimary = false -> subkey expected
+                        null); // encryptor
+        isTrue(!secretKey.isMasterKey());
+
+        isTrue(secretKey.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket);
     }
 
     public String getName()
