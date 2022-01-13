@@ -203,4 +203,14 @@ public class PGPPublicKeyEncryptedData
             return encData.getInputStream();
         }
     }
+
+    @Override
+    public int getAlgorithm() {
+        return keyData.getAlgorithm();
+    }
+
+    @Override
+    public int getVersion() {
+        return keyData.getVersion();
+    }
 }
