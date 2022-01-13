@@ -4,7 +4,25 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.bcpg.sig.*;
+import org.bouncycastle.bcpg.sig.EmbeddedSignature;
+import org.bouncycastle.bcpg.sig.Exportable;
+import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
+import org.bouncycastle.bcpg.sig.KeyExpirationTime;
+import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PrimaryUserID;
+import org.bouncycastle.bcpg.sig.Revocable;
+import org.bouncycastle.bcpg.sig.RevocationKey;
+import org.bouncycastle.bcpg.sig.RevocationReason;
+import org.bouncycastle.bcpg.sig.SignatureCreationTime;
+import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
+import org.bouncycastle.bcpg.sig.SignatureTarget;
+import org.bouncycastle.bcpg.sig.SignerUserID;
+import org.bouncycastle.bcpg.sig.TrustSignature;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
