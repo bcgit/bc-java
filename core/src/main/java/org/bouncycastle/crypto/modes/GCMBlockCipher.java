@@ -28,7 +28,7 @@ public class GCMBlockCipher
     private static final int BLOCK_SIZE = 16;
 
     private final BlockCipher   baseCipher;
-    private final GCMMultiplier baseMulitplier;
+    private final GCMMultiplier baseMultiplier;
 
     private GCMCache.CoreEngine gcmCore;
 
@@ -73,7 +73,7 @@ public class GCMBlockCipher
         }
 
         this.baseCipher = c;
-        this.baseMulitplier = m;
+        this.baseMultiplier = m;
     }
 
     public BlockCipher getUnderlyingCipher()
@@ -167,7 +167,7 @@ public class GCMBlockCipher
         // if keyParam is null we're reusing the last key.
         if (keyParam != null)
         {
-            gcmCore = GCMCache.getCore(baseCipher, baseMulitplier, keyParam);
+            gcmCore = GCMCache.getCore(baseCipher, baseMultiplier, keyParam);
         }
         else if (gcmCore == null)
         {
