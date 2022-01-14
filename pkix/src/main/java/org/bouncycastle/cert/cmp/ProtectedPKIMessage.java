@@ -8,13 +8,10 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
-import org.bouncycastle.asn1.cmp.PBMParameter;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIHeader;
 import org.bouncycastle.asn1.cmp.PKIMessage;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.crmf.PKMACBuilder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
@@ -144,46 +141,6 @@ public class ProtectedPKIMessage
     /**
      * Verify a message with password based MAC protection.
      *
-     * @param pkMacBuilder MAC builder that can be used to construct the appropriate MacCalculator
-     * @param password the MAC password
-     * @return true if the passed in password and MAC builder verify the message, false otherwise.
-     * @throws CMPException if algorithm not MAC based, or an exception is thrown verifying the MAC.
-     */
-    public boolean verify(PKMACBuilder pkMacBuilder, char[] password)
-        throws CMPException
-    {
-        if (!CMPObjectIdentifiers.passwordBasedMac.equals(pkiMessage.getHeader().getProtectionAlg().getAlgorithm()))
-        {
-            throw new CMPException("protection algorithm not mac based");
-        }
-
-        try
-        {
-            pkMacBuilder.setParameters(PBMParameter.getInstance(pkiMessage.getHeader().getProtectionAlg().getParameters()));
-            MacCalculator calculator = pkMacBuilder.build(password);
-
-            OutputStream macOut = calculator.getOutputStream();
-
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(pkiMessage.getHeader());
-            v.add(pkiMessage.getBody());
-
-            macOut.write(new DERSequence(v).getEncoded(ASN1Encoding.DER));
-
-            macOut.close();
-
-            return Arrays.areEqual(calculator.getMac(), pkiMessage.getProtection().getBytes());
-        }
-        catch (Exception e)
-        {
-            throw new CMPException("unable to verify MAC: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Verify a message with password based MAC protection.
-     *
      * @param pbeMacCalculatorProvider MAC builder that can be used to construct the appropriate MacCalculator
      * @param password the MAC password
      * @return true if the passed in password and MAC builder verify the message, false otherwise.
@@ -192,11 +149,6 @@ public class ProtectedPKIMessage
     public boolean verify(PBEMacCalculatorProvider pbeMacCalculatorProvider, char[] password)
         throws CMPException
     {
-        if (!PKCSObjectIdentifiers.id_PBMAC1.equals(pkiMessage.getHeader().getProtectionAlg().getAlgorithm()))
-        {
-            throw new CMPException("protection algorithm not PB mac based");
-        }
-
         try
         {
             MacCalculator calculator = pbeMacCalculatorProvider.get(pkiMessage.getHeader().getProtectionAlg(), password);
@@ -212,7 +164,7 @@ public class ProtectedPKIMessage
 
             macOut.close();
 
-            return Arrays.areEqual(calculator.getMac(), pkiMessage.getProtection().getBytes());
+            return Arrays.constantTimeAreEqual(calculator.getMac(), pkiMessage.getProtection().getBytes());
         }
         catch (Exception e)
         {
