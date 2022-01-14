@@ -29,6 +29,10 @@ import org.bouncycastle.util.BigIntegers;
 
 /**
  * A builder for RFC 8018 PBE based MAC calculators.
+ * <p>
+ * By default the class uses HMAC-SHA256 as the PRF, with an iteration count of 8192. The default salt length
+ * is the output size of the MAC being used.
+ * </p>
  */
 public class JcePBMac1CalculatorBuilder
 {
@@ -37,10 +41,10 @@ public class JcePBMac1CalculatorBuilder
     public static final AlgorithmIdentifier PRF_SHA384 = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA384, DERNull.INSTANCE);
     public static final AlgorithmIdentifier PRF_SHA512 = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE);
 
-    public static final AlgorithmIdentifier PRF_SHA3_224 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_224, DERNull.INSTANCE);
-    public static final AlgorithmIdentifier PRF_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256, DERNull.INSTANCE);
-    public static final AlgorithmIdentifier PRF_SHA3_384 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_384, DERNull.INSTANCE);
-    public static final AlgorithmIdentifier PRF_SHA3_512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, DERNull.INSTANCE);
+    public static final AlgorithmIdentifier PRF_SHA3_224 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_224);
+    public static final AlgorithmIdentifier PRF_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_256);
+    public static final AlgorithmIdentifier PRF_SHA3_384 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_384);
+    public static final AlgorithmIdentifier PRF_SHA3_512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512);
 
     private static final DefaultMacAlgorithmIdentifierFinder defaultFinder = new DefaultMacAlgorithmIdentifierFinder();
     
@@ -49,24 +53,42 @@ public class JcePBMac1CalculatorBuilder
 
     private SecureRandom random;
     private int saltLength = -1;
-    private int iterationCount = 4096;
+    private int iterationCount = 8192;
     private int keySize;
 
     private PBKDF2Params pbeParams = null;
     private AlgorithmIdentifier prf = PRF_SHA256;
     private byte[] salt = null;
 
+    /**
+     * Base constructor - MAC name and key size.
+     *
+     * @param macAlgorithm name of the MAC algorithm.
+     * @param keySize the key size in bits.
+     */
     public JcePBMac1CalculatorBuilder(String macAlgorithm, int keySize)
     {
         this(macAlgorithm, keySize, defaultFinder);
     }
 
+    /**
+     * Base constructor - MAC name and key size with a custom AlgorithmIdentifier finder for the MAC algorithm.
+     *
+     * @param macAlgorithm name of the MAC algorithm.
+     * @param keySize the key size in bits.
+     * @param algIdFinder an AlgorithmIdentifier finder containing the specified MAC name.
+     */
     public JcePBMac1CalculatorBuilder(String macAlgorithm, int keySize, MacAlgorithmIdentifierFinder algIdFinder)
     {
         this.macAlgorithm = algIdFinder.find(macAlgorithm);
         this.keySize = keySize;
     }
 
+    /**
+     * Base constructor from an ASN.1 parameter set. See RFC 8108 for details.
+     *
+     * @param pbeMacParams the ASN.1 parameters for the MAC calculator we want to create.
+     */
     public JcePBMac1CalculatorBuilder(PBMAC1Params pbeMacParams)
     {
         this.macAlgorithm = pbeMacParams.getMessageAuthScheme();
@@ -102,6 +124,11 @@ public class JcePBMac1CalculatorBuilder
         return this;
     }
 
+    /**
+     * Set the length of the salt in bytes.
+     * @param saltLength
+     * @return
+     */
     public JcePBMac1CalculatorBuilder setSaltLength(int saltLength)
     {
         this.saltLength = saltLength;
