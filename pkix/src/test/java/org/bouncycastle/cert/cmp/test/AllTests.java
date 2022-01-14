@@ -61,7 +61,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
@@ -69,6 +71,8 @@ import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -164,6 +168,34 @@ public class AllTests
         assertEquals(recipient, message.getHeader().getRecipient());
     }
 
+    public void testPBMac1ProtectedMessage()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+        X509CertificateHolder cert = makeV3Certificate(kp, "CN=Test", kp, "CN=Test");
+
+        GeneralName sender = new GeneralName(new X500Name("CN=Sender"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
+
+        MacCalculator pbCalculator = new JcePBMac1CalculatorBuilder("HmacSHA256", 256).setProvider("BC").build("secret".toCharArray());
+
+        ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
+                                                  .setBody(new PKIBody(PKIBody.TYPE_INIT_REP, CertRepMessage.getInstance(new DERSequence(new DERSequence()))))
+                                                  .addCMPCertificate(cert)
+                                                  .build(pbCalculator);
+
+        PBEMacCalculatorProvider macProvider = new JcePBMac1CalculatorProviderBuilder().setProvider("BC").build();
+
+        assertTrue(message.verify(macProvider, "secret".toCharArray()));
+
+        assertEquals(sender, message.getHeader().getSender());
+        assertEquals(recipient, message.getHeader().getRecipient());
+    }
+    
     public void testConfirmationMessage()
         throws Exception
     {
