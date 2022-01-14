@@ -25,6 +25,7 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A builder for RFC 8018 PBE based MAC calculators.
@@ -157,8 +158,8 @@ public class JcePBMac1CalculatorBuilder
             else
             {
                 salt = pbeParams.getSalt();
-                iterationCount = pbeParams.getIterationCount().intValueExact();
-                keySize = pbeParams.getKeyLength().intValueExact() * 8;
+                iterationCount = BigIntegers.intValueExact(pbeParams.getIterationCount());
+                keySize = BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8;
             }
             
             SecretKeyFactory secFact = helper.createSecretKeyFactory("PBKDF2");
