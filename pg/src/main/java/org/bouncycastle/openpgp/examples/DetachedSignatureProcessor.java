@@ -52,10 +52,15 @@ public class DetachedSignatureProcessor
         InputStream in = new BufferedInputStream(new FileInputStream(inputFileName));
         InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
 
-        verifySignature(fileName, in, keyIn);
-
-        keyIn.close();
-        in.close();
+        try
+        {
+            verifySignature(fileName, in, keyIn);
+        }
+        finally
+        {
+            keyIn.close();
+            in.close();
+        }
     }
 
     /*
@@ -125,10 +130,15 @@ public class DetachedSignatureProcessor
         InputStream keyIn = new BufferedInputStream(new FileInputStream(keyFileName));
         OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFileName));
 
-        createSignature(inputFileName, keyIn, out, pass, armor);
-
-        out.close();
-        keyIn.close();
+        try
+        {
+            createSignature(inputFileName, keyIn, out, pass, armor);
+        }
+        finally
+        {
+            out.close();
+            keyIn.close();
+        }
     }
 
     private static void createSignature(
