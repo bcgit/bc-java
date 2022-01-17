@@ -21,12 +21,16 @@ public class RegularExpression
             boolean critical,
             String regex)
     {
-        super(SignatureSubpacketTags.REG_EXP, critical, false, Strings.toUTF8ByteArray(regex));
+        super(
+                SignatureSubpacketTags.REG_EXP,
+                critical,
+                false,
+                Strings.toNullTerminatedUTF8ByteArray(regex));
     }
 
     public String getRegex()
     {
-        return Strings.fromUTF8ByteArray(data);
+        return Strings.fromNullTerminatedUTF8ByteArray(data);
     }
 
     public byte[] getRawRegex()
