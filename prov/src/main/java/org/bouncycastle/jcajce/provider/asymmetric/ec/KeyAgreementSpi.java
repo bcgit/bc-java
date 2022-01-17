@@ -170,40 +170,15 @@ public class KeyAgreementSpi
         return null;
     }
 
-    protected void engineInit(
-        Key key,
-        AlgorithmParameterSpec params,
-        SecureRandom random)
+    protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (params != null &&
-            !(params instanceof MQVParameterSpec || params instanceof UserKeyingMaterialSpec || params instanceof DHUParameterSpec))
+        if (parameterSpec != null &&
+            !(parameterSpec instanceof MQVParameterSpec || parameterSpec instanceof UserKeyingMaterialSpec || parameterSpec instanceof DHUParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
-        initFromKey(key, params);
-    }
-
-    protected void engineInit(
-        Key key,
-        SecureRandom random)
-        throws InvalidKeyException
-    {
-        try
-        {
-            initFromKey(key, null);
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            // this should never occur.
-            throw new InvalidKeyException(e.getMessage());
-        }
-    }
-
-    private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
-        throws InvalidKeyException, InvalidAlgorithmParameterException
-    {
         if (agreement instanceof ECMQVBasicAgreement)
         {
             mqvParameters = null;
@@ -313,7 +288,7 @@ public class KeyAgreementSpi
         return fullName.substring(fullName.lastIndexOf('.') + 1);
     }
     
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return Arrays.clone(result);
     }

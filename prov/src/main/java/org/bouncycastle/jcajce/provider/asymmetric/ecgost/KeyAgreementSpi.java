@@ -91,43 +91,24 @@ public class KeyAgreementSpi
         return null;
     }
 
-    protected void engineInit(
-        Key                     key,
-        AlgorithmParameterSpec  params,
-        SecureRandom            random) 
+    protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (params != null && !(params instanceof UserKeyingMaterialSpec))
+        if (!(key instanceof PrivateKey))
+        {
+            throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
+                + getSimpleName(ECPrivateKey.class) + " for initialisation");
+        }
+
+        if (parameterSpec != null && !(parameterSpec instanceof UserKeyingMaterialSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
-        initFromKey(key, params);
-    }
-
-    protected void engineInit(
-        Key             key,
-        SecureRandom    random) 
-        throws InvalidKeyException
-    {
-        initFromKey(key, null);
-    }
-
-    private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
-        throws InvalidKeyException
-    {
-        {
-            if (!(key instanceof PrivateKey))
-            {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                    + getSimpleName(ECPrivateKey.class) + " for initialisation");
-            }
-
-            ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
-            this.parameters = privKey.getParameters();
-            ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
-            agreement.init(new ParametersWithUKM(privKey, ukmParameters));
-        }
+        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+        this.parameters = privKey.getParameters();
+        ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
+        agreement.init(new ParametersWithUKM(privKey, ukmParameters));
     }
 
     private static String getSimpleName(Class clazz)
@@ -137,7 +118,7 @@ public class KeyAgreementSpi
         return fullName.substring(fullName.lastIndexOf('.') + 1);
     }
 
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return result;
     }
