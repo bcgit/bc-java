@@ -58,6 +58,7 @@ public final class Strings
 
     public static String fromNullTerminatedUTF8ByteArray(byte[] bytes)
     {
+        // Tolerate strings which are non-null terminated
         if (bytes[bytes.length - 1] != 0)
         {
             return fromUTF8ByteArray(bytes);
