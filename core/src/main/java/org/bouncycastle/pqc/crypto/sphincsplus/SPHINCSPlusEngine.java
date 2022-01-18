@@ -109,7 +109,7 @@ abstract class SPHINCSPlusEngine
 
     abstract byte[] T_l(byte[] pkSeed, ADRS adrs, byte[] m);
 
-    abstract byte[] PRF(byte[] skSeed, ADRS adrs);
+    abstract byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs);
 
     abstract byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message);
 
@@ -236,9 +236,13 @@ abstract class SPHINCSPlusEngine
             return Arrays.copyOfRange(digestBuf, 0, N);
         }
 
-        byte[] PRF(byte[] skSeed, ADRS adrs)
+        byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
             int n = skSeed.length;
+
+            // TODO: #UPDATE final submission update announced 17/1/2022
+//            treeDigest.update(pkSeed, 0, pkSeed.length);
+//            treeDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
 
             treeDigest.update(skSeed, 0, skSeed.length);
             byte[] compressedADRS = compressedADRS(adrs);
@@ -407,8 +411,10 @@ abstract class SPHINCSPlusEngine
             return rv;
         }
 
-        byte[] PRF(byte[] skSeed, ADRS adrs)
+        byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
+            // TODO: #UPDATE final submission update announced 17/1/2022
+            //treeDigest.update(pkSeed, 0, pkSeed.length);
             treeDigest.update(skSeed, 0, skSeed.length);
             treeDigest.update(adrs.value, 0, adrs.value.length);
             byte[] prf = new byte[N];
