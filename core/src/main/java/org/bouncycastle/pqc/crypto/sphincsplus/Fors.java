@@ -50,7 +50,7 @@ class Fors
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(s + idx);
 
-            byte[] sk = engine.PRF(skSeed, adrs);
+            byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
             byte[] node = engine.F(pkSeed, adrs, sk);
 
             adrs.setTreeHeight(1);
@@ -88,7 +88,7 @@ class Fors
 
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(i * t + idx);
-            byte[] sk = engine.PRF(skSeed, adrs);
+            byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
             byte[][] authPath = new byte[engine.A][];
 // compute auth path
             for (int j = 0; j < engine.A; j++)
