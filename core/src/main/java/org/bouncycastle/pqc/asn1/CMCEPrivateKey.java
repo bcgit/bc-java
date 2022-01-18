@@ -47,15 +47,16 @@ public class CMCEPrivateKey
     public CMCEPrivateKey(int version, byte[] delta, byte[] c, byte[] g, byte[] alpha, byte[] s, CMCEPublicKey pubKey)
     {
         this.version = version;
-        this.delta = delta;
-        this.C = c;
-        this.g = g;
-        this.alpha = alpha;
-        this.s = s;
+        //todo clone
+        this.delta = Arrays.clone(delta);
+        this.C = Arrays.clone(c);
+        this.g = Arrays.clone(g);
+        this.alpha = Arrays.clone(alpha);
+        this.s = Arrays.clone(s);
         this.PublicKey = pubKey;
     }
 
-    public CMCEPrivateKey(ASN1Sequence seq)
+    private CMCEPrivateKey(ASN1Sequence seq)
     {
         version = ((ASN1Integer)seq.getObjectAt(0)).intValueExact();
 
@@ -72,7 +73,7 @@ public class CMCEPrivateKey
         // todo optional publickey
         if(seq.size() == 7)
         {
-            PublicKey = (CMCEPublicKey)seq.getObjectAt(6);
+            PublicKey = (CMCEPublicKey.getInstance(seq.getObjectAt(6)));
         }
 
 
