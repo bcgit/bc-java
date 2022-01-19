@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
@@ -110,6 +111,24 @@ public class CMCEPrivateKey
     public byte[] getS()
     {
         return Arrays.clone(s);
+    }
+
+    public byte[] getEncoded()
+    {
+        int sk_size = delta.length + C.length + g.length + alpha.length + s.length;
+        byte[] sk = new byte[sk_size];
+        int offset = 0;
+        System.arraycopy(sk, offset, delta, 0, delta.length);
+        offset += delta.length;
+        System.arraycopy(sk, offset, C, 0, C.length);
+        offset += C.length;
+        System.arraycopy(sk, offset, g, 0, g.length);
+        offset += g.length;
+        System.arraycopy(sk, offset, alpha, 0, alpha.length);
+        offset += alpha.length;
+        System.arraycopy(sk, offset, s, 0, s.length);
+        return sk;
+
     }
 
     public CMCEPublicKey getPublicKey()
