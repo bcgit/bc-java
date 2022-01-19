@@ -26,15 +26,15 @@ public class CMCEPrivateKeyParameters
         int sk_size = delta.length + C.length + g.length + alpha.length + s.length;
         privateKey = new byte[sk_size];
         int offset = 0;
-        System.arraycopy(privateKey, offset, delta, 0, delta.length);
+        System.arraycopy(delta, 0, privateKey, offset, delta.length);
         offset += delta.length;
-        System.arraycopy(privateKey, offset, C, 0, C.length);
+        System.arraycopy(C, 0, privateKey, offset, C.length);
         offset += C.length;
-        System.arraycopy(privateKey, offset, g, 0, g.length);
+        System.arraycopy(g, 0, privateKey, offset, g.length);
         offset += g.length;
-        System.arraycopy(privateKey, offset, alpha, 0, alpha.length);
+        System.arraycopy(alpha, 0, privateKey, offset, alpha.length);
         offset += alpha.length;
-        System.arraycopy(privateKey, offset, s, 0, s.length);
+        System.arraycopy(s, 0, privateKey, offset, s.length);
 
     }
     public byte[] reconstructPublicKey()
