@@ -1,14 +1,20 @@
 package org.bouncycastle.pqc.asn1;
 
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
- *
- *
  * ASN.1 Encoding for a
  * Classic McEliece private key for fully populated:
- *
+ * <pre>
  * McEliecePrivateKey ::= SEQUENCE {
  *    Version    INTEGER {v0(0)} -- version (round 3)
  *    delta      OCTET STRING,   -- nonce
@@ -19,11 +25,8 @@ import org.bouncycastle.util.Arrays;
  *    PublicKey  [0] IMPLICIT McEliecePublicKey OPTIONAL
  *                                -- see next section
  *    }
- *
- *
- *
+ * </pre>
  */
-
 public class CMCEPrivateKey
     extends ASN1Object
 {
@@ -37,17 +40,16 @@ public class CMCEPrivateKey
 
     public CMCEPrivateKey(int version, byte[] delta, byte[] c, byte[] g, byte[] alpha, byte[] s)
     {
-        this.version = version;
-        this.delta = delta;
-        this.C = c;
-        this.g = g;
-        this.alpha = alpha;
-        this.s = s;
+        this(version, delta, c, g, alpha, s, null);
     }
+
     public CMCEPrivateKey(int version, byte[] delta, byte[] c, byte[] g, byte[] alpha, byte[] s, CMCEPublicKey pubKey)
     {
         this.version = version;
-        //todo clone
+        if (version != 0)
+        {
+             throw new IllegalArgumentException("unrecognized version");
+        }
         this.delta = Arrays.clone(delta);
         this.C = Arrays.clone(c);
         this.g = Arrays.clone(g);
@@ -58,25 +60,26 @@ public class CMCEPrivateKey
 
     private CMCEPrivateKey(ASN1Sequence seq)
     {
-        version = ((ASN1Integer)seq.getObjectAt(0)).intValueExact();
+        version = BigIntegers.intValueExact(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());
+        if (version != 0)
+        {
+             throw new IllegalArgumentException("unrecognized version");
+        }
+        delta = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
 
-        delta = Arrays.clone(((ASN1OctetString)seq.getObjectAt(1)).getOctets());
+        C = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets());
 
-        C = Arrays.clone(((ASN1OctetString)seq.getObjectAt(2)).getOctets());
+        g = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(3)).getOctets());
 
-        g = Arrays.clone(((ASN1OctetString)seq.getObjectAt(3)).getOctets());
+        alpha = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(4)).getOctets());
 
-        alpha = Arrays.clone(((ASN1OctetString)seq.getObjectAt(4)).getOctets());
-
-        s = Arrays.clone(((ASN1OctetString)seq.getObjectAt(5)).getOctets());
+        s = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(5)).getOctets());
 
         // todo optional publickey
         if(seq.size() == 7)
         {
-            PublicKey = (CMCEPublicKey.getInstance(seq.getObjectAt(6)));
+            PublicKey = CMCEPublicKey.getInstance(seq.getObjectAt(6));
         }
-
-
     }
 
     public int getVersion()
