@@ -1,16 +1,24 @@
 package org.bouncycastle.pqc.asn1;
 
 
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
 
 /**
  *
- *    Classic McEliece Public Key Format
+ *    Classic McEliece Public Key Format.
+ *    See https://datatracker.ietf.org/doc/draft-uni-qsckeys/ for details.
+ *    <pre>
  *        McEliecePublicKey ::= SEQUENCE {
  *        T       OCTET STRING    -- public key
  *    }
- *
+ *    </pre>
  */
 public class CMCEPublicKey
     extends ASN1Object
@@ -25,7 +33,7 @@ public class CMCEPublicKey
 
     public CMCEPublicKey(ASN1Sequence seq)
     {
-        T = Arrays.clone(((ASN1OctetString)seq.getObjectAt(0)).getOctets());
+        T = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
     }
 
     public byte[] getT()
@@ -39,6 +47,7 @@ public class CMCEPublicKey
         v.add(new DEROctetString(T));
         return new DERSequence(v);
     }
+
     public static  CMCEPublicKey getInstance(Object o)
     {
         if (o instanceof CMCEPrivateKey)
