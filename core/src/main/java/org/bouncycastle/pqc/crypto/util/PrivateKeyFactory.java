@@ -129,10 +129,10 @@ public class PrivateKeyFactory
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
         {
-            byte[] keyEnc = CMCEPrivateKey.getInstance(keyInfo.parsePrivateKey()).getEncoded();
+            CMCEPrivateKey cmceKey = CMCEPrivateKey.getInstance(keyInfo.parsePrivateKey());
             CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new CMCEPrivateKeyParameters(spParams, keyEnc);
+            return new CMCEPrivateKeyParameters(spParams, cmceKey.getDelta(), cmceKey.getC(), cmceKey.getG(), cmceKey.getAlpha(), cmceKey.getS());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_frodo))
         {
