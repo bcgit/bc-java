@@ -131,7 +131,7 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
 
             CMCEPublicKey cmcePub = new CMCEPublicKey(params.reconstructPublicKey());
-            CMCEPrivateKey cmcePriv = new CMCEPrivateKey(3, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
+            CMCEPrivateKey cmcePriv = new CMCEPrivateKey(0, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
             return new PrivateKeyInfo(algorithmIdentifier, cmcePriv, attributes);
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)

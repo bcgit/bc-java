@@ -105,11 +105,21 @@ class CMCEEngine
         short[] pi = new short[1 << GFBITS];
         long[] pivots = {0};
 
+        // generating the perm used to generate the private key
         int[] perm = new int[1 << GFBITS];
-        int offset =  32 + IRR_BYTES + SYS_T*2;
+        byte[] hash = new byte[(SYS_N / 8) + ((1 << GFBITS) * 4)];
+        byte[] seed_a = {64}, seed_b = ByteUtils.subArray(sk, 0, 32);
+        byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
+        int hash_idx = hash.length - 32 - IRR_BYTES - ((1 << GFBITS) * 4);
+
+        Xof digest;
+        digest = new SHAKEDigest(256);
+        digest.update(seed, 0, seed.length);
+        digest.doFinal(hash, 0, hash.length);
+
         for (int i = 0; i < (1 << GFBITS); i++)
         {
-            perm[i] = Utils.load4(sk, offset + i * 4);
+            perm[i] = Utils.load4(hash, hash_idx + i * 4);
         }
         pk_gen(pk, sk, perm, pi, pivots);
         return pk;
