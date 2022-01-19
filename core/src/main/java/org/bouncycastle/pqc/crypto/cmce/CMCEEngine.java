@@ -99,6 +99,21 @@ class CMCEEngine
         usePadding = SYS_T % 8 != 0;
         countErrorIndices = (1 << GFBITS) > SYS_N;
     }
+    public byte[] generate_public_key_from_private_key(byte[] sk)
+    {
+        byte[] pk = new byte[getPublicKeySize()];
+        short[] pi = new short[1 << GFBITS];
+        long[] pivots = {0};
+
+        int[] perm = new int[1 << GFBITS];
+        int offset =  32 + IRR_BYTES + SYS_T*2;
+        for (int i = 0; i < (1 << GFBITS); i++)
+        {
+            perm[i] = Utils.load4(sk, offset + i * 4);
+        }
+        pk_gen(pk, sk, perm, pi, pivots);
+        return pk;
+    }
 
     // generates the rest of the private key given the first 40 bytes
     public byte[] decompress_private_key(byte[] sk)
