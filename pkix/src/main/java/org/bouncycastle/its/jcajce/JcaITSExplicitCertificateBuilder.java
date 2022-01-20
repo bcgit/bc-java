@@ -11,8 +11,8 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.oer.its.CertificateId;
-import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
+import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 
 public class JcaITSExplicitCertificateBuilder
     extends ITSExplicitCertificateBuilder
