@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
+import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationReason;
@@ -172,6 +173,8 @@ public class SignatureSubpacketInputStream
             return new SignerUserID(isCritical, isLongLength, data);
         case NOTATION_DATA:
             return new NotationData(isCritical, isLongLength, data);
+        case REG_EXP:
+            return new RegularExpression(isCritical, isLongLength, data);
         case REVOCATION_REASON:
             return new RevocationReason(isCritical, isLongLength, data);
         case REVOCATION_KEY:

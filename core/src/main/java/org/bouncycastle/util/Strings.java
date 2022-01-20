@@ -56,6 +56,26 @@ public final class Strings
         return new String(chars, 0, len);
     }
 
+    public static String fromNullTerminatedUTF8ByteArray(byte[] bytes)
+    {
+        // Tolerate strings which are non-null terminated
+        if (bytes[bytes.length - 1] != 0)
+        {
+            return fromUTF8ByteArray(bytes);
+        }
+        byte[] strippedNullByte = new byte[bytes.length - 1];
+        System.arraycopy(bytes, 0, strippedNullByte, 0, strippedNullByte.length);
+        return fromUTF8ByteArray(strippedNullByte);
+    }
+
+    public static byte[] toNullTerminatedUTF8ByteArray(String string)
+    {
+        byte[] utf8 = toUTF8ByteArray(string);
+        byte[] nullTerminated = new byte[utf8.length + 1];
+        System.arraycopy(utf8, 0, nullTerminated, 0, utf8.length);
+        return nullTerminated;
+    }
+
     public static byte[] toUTF8ByteArray(String string)
     {
         return toUTF8ByteArray(string.toCharArray());
