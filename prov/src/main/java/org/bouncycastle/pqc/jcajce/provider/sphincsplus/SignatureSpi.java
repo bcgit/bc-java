@@ -10,6 +10,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
 
 public class SignatureSpi
@@ -17,7 +18,6 @@ public class SignatureSpi
 {
     private final Digest digest;
     private final SPHINCSPlusSigner signer;
-    private SecureRandom random;
 
     protected SignatureSpi(Digest digest, SPHINCSPlusSigner signer)
     {
@@ -45,7 +45,7 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
-        this.random = random;
+        this.appRandom = random;
         engineInitSign(privateKey);
     }
 
@@ -58,7 +58,14 @@ public class SignatureSpi
 
             CipherParameters param = key.getKeyParams();
 
-            signer.init(true, param);
+            if (appRandom != null)
+            {
+                signer.init(true, new ParametersWithRandom(param, appRandom));
+            }
+            else
+            {
+                signer.init(true, param);
+            }
         }
         else
         {

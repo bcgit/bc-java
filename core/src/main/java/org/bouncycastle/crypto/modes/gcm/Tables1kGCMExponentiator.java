@@ -30,8 +30,7 @@ public class Tables1kGCMExponentiator
         {
             if ((pow & 1L) != 0)
             {
-                ensureAvailable(bit);
-                GCMUtil.multiply(y, getMultiplier(bit));
+                GCMUtil.multiply(y, getPowX2(bit));
             }
             ++bit;
             pow >>>= 1;
@@ -40,14 +39,7 @@ public class Tables1kGCMExponentiator
         GCMUtil.asBytes(y, output);
     }
 
-    private synchronized long[] getMultiplier(int bit)
-    {
-        ensureAvailable(bit);
-
-        return (long[])lookupPowX2.get(bit);
-    }
-
-    private void ensureAvailable(int bit)
+    private synchronized long[] getPowX2(int bit)
     {
         int last = lookupPowX2.size() - 1;
         if (last < bit)
@@ -62,5 +54,7 @@ public class Tables1kGCMExponentiator
             }
             while (++last < bit);
         }
+
+        return (long[])lookupPowX2.get(bit);
     }
 }

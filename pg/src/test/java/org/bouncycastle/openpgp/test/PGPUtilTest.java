@@ -6,6 +6,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPUtil;
@@ -25,6 +29,8 @@ public class PGPUtilTest
     public void performTest()
         throws Exception
     {
+        testCurveNames();
+
         byte[] contentMessage = Strings.toByteArray("Hello, world!\r\nhello, World!\r\n");
 
         File dataFile = File.createTempFile("bcpg", ".txt");
@@ -61,6 +67,18 @@ public class PGPUtilTest
         byte[] bytes = Streams.readAll(ld.getDataStream());
         
         isTrue(id + " contents mismatch", Arrays.areEqual(bytes, content));
+    }
+
+    private void testCurveNames()
+    {
+        isEquals("Curve25519", PGPUtil.getCurveName(CryptlibObjectIdentifiers.curvey25519));
+        isEquals("Curve25519", PGPUtil.getCurveName(EdECObjectIdentifiers.id_X25519));
+        isEquals("Ed25519", PGPUtil.getCurveName(EdECObjectIdentifiers.id_Ed25519));
+        isEquals("NIST P-256", PGPUtil.getCurveName(SECObjectIdentifiers.secp256r1));
+        isEquals("NIST P-384", PGPUtil.getCurveName(SECObjectIdentifiers.secp384r1));
+        isEquals("NIST P-521", PGPUtil.getCurveName(SECObjectIdentifiers.secp521r1));
+        isEquals("brainpoolP256r1", PGPUtil.getCurveName(TeleTrusTObjectIdentifiers.brainpoolP256r1));
+        isEquals("brainpoolP512r1", PGPUtil.getCurveName(TeleTrusTObjectIdentifiers.brainpoolP512r1));
     }
 
     public static void main(

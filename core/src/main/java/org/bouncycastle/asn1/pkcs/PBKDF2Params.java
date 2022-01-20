@@ -183,7 +183,7 @@ public class PBKDF2Params
      */
     public byte[] getSalt()
     {
-        return octStr.getOctets();
+        return Arrays.clone(octStr.getOctets());
     }
 
     /**

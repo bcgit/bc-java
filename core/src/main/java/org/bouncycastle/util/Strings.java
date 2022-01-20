@@ -56,6 +56,17 @@ public final class Strings
         return new String(chars, 0, len);
     }
 
+    public static String fromUTF8ByteArray(byte[] bytes, int off, int length)
+    {
+        char[] chars = new char[length];
+        int len = UTF8.transcodeToUTF16(bytes, off, length, chars);
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("Invalid UTF-8 input");
+        }
+        return new String(chars, 0, len);
+    }
+
     public static byte[] toUTF8ByteArray(String string)
     {
         return toUTF8ByteArray(string.toCharArray());

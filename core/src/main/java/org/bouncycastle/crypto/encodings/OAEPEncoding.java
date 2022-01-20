@@ -222,7 +222,9 @@ public class OAEPEncoding
         // on encryption, we need to make sure our decrypted block comes back
         // the same size.
         //
-        boolean wrongData = (block.length < (2 * defHash.length) + 1);
+
+        // i.e. wrong when block.length < (2 * defHash.length) + 1
+        int wrongMask = (block.length - ((2 * defHash.length) + 1)) >> 31;
 
         if (data.length <= block.length)
         {
@@ -231,7 +233,7 @@ public class OAEPEncoding
         else
         {
             System.arraycopy(data, 0, block, 0, block.length);
-            wrongData = true;
+            wrongMask |= 1;
         }
 
         //
@@ -259,35 +261,37 @@ public class OAEPEncoding
         // check the hash of the encoding params.
         // long check to try to avoid this been a source of a timing attack.
         //
-        boolean defHashWrong = false;
-
         for (int i = 0; i != defHash.length; i++)
         {
-            defHashWrong |= (defHash[i] != block[defHash.length + i]);
+            wrongMask |= defHash[i] ^ block[defHash.length + i];
         }
 
         //
         // find the data block
         //
-        int start = block.length;
+        int start = -1;
 
         for (int index = 2 * defHash.length; index != block.length; index++)
         {
-            if (block[index] != 0 & start == block.length)
-            {
-                start = index;
-            }
+            int octet = block[index] & 0xFF;
+
+            // i.e. mask will be 0xFFFFFFFF if octet is non-zero and start is (still) negative, else 0.
+            int shouldSetMask = (-octet & start) >> 31;
+
+            start += index & shouldSetMask;
         }
 
-        boolean dataStartWrong = (start > (block.length - 1) | block[start] != 1);
+        wrongMask |= start >> 31;
+        ++start;
+        wrongMask |= block[start] ^ 1;
 
-        start++;
-
-        if (defHashWrong | wrongData | dataStartWrong)
+        if (wrongMask != 0)
         {
             Arrays.fill(block, (byte)0);
             throw new InvalidCipherTextException("data wrong");
         }
+
+        ++start;
 
         //
         // extract the data block
