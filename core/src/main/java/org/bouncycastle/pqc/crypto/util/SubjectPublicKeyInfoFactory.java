@@ -3,12 +3,12 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
@@ -107,7 +107,7 @@ public class SubjectPublicKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
 
             // https://datatracker.ietf.org/doc/draft-uni-qsckeys/
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new CMCEPublicKey(encoding));
         }
         else if (publicKey instanceof XMSSPublicKeyParameters)
         {

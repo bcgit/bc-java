@@ -72,10 +72,12 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier    pbeWithSHA1AndDES_CBC   = pkcs_5.branch("10");
     /** PKCS#5: 1.2.840.113549.1.5.11 */
     ASN1ObjectIdentifier    pbeWithSHA1AndRC2_CBC   = pkcs_5.branch("11");
-    /** PKCS#5: 1.2.840.113549.1.5.13 */
-    ASN1ObjectIdentifier    id_PBES2                = pkcs_5.branch("13");
     /** PKCS#5: 1.2.840.113549.1.5.12 */
     ASN1ObjectIdentifier    id_PBKDF2               = pkcs_5.branch("12");
+    /** PKCS#5: 1.2.840.113549.1.5.13 */
+    ASN1ObjectIdentifier    id_PBES2                = pkcs_5.branch("13");
+    /** PKCS#5: 1.2.840.113549.1.5.14 */
+    ASN1ObjectIdentifier    id_PBMAC1               = pkcs_5.branch("14");
 
     //
     // encryptionAlgorithm OBJECT IDENTIFIER ::= {

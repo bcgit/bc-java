@@ -40,42 +40,12 @@ public class KeyAgreementSpi
         super(algorithm, kdf);
     }
 
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return result;
     }
 
-    protected void engineInit(Key key, SecureRandom secureRandom)
-        throws InvalidKeyException
-    {
-        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
-
-        if (priv instanceof X25519PrivateKeyParameters)
-        {
-            agreement = getAgreement("X25519");
-        }
-        else if (priv instanceof X448PrivateKeyParameters)
-        {
-            agreement = getAgreement("X448");
-        }
-        else
-        {
-            throw new IllegalStateException("unsupported private key type");
-        }
-
-        agreement.init(priv);
-
-        if (kdf != null)
-        {
-            ukmParameters = new byte[0];
-        }
-        else
-        {
-            ukmParameters = null;
-        }
-    }
-
-    protected void engineInit(Key key, AlgorithmParameterSpec params, SecureRandom secureRandom)
+    protected void doInitFromKey(Key key, AlgorithmParameterSpec params, SecureRandom secureRandom)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
@@ -109,7 +79,7 @@ public class KeyAgreementSpi
                 priv, ((BCXDHPrivateKey)dhuSpec.getEphemeralPrivateKey()).engineGetKeyParameters(),
                 ((BCXDHPublicKey)dhuSpec.getEphemeralPublicKey()).engineGetKeyParameters()));
         }
-        else
+        else if (params != null)
         {
             agreement.init(priv);
 
@@ -125,6 +95,10 @@ public class KeyAgreementSpi
             {
                 throw new InvalidAlgorithmParameterException("unknown ParameterSpec");
             }
+        }
+        else
+        {
+            agreement.init(priv);
         }
 
         if (kdf != null && ukmParameters == null)

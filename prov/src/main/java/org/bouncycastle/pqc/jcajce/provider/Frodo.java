@@ -19,18 +19,18 @@ public class Frodo
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("KeyFactory.Frodo", PREFIX + "FrodoKeyFactorySpi");
-            provider.addAlgorithm("KeyPairGenerator.Frodo", PREFIX + "FrodoKeyPairGeneratorSpi");
+            provider.addAlgorithm("KeyFactory.FRODO", PREFIX + "FrodoKeyFactorySpi");
+            provider.addAlgorithm("KeyPairGenerator.FRODO", PREFIX + "FrodoKeyPairGeneratorSpi");
 
-            provider.addAlgorithm("KeyGenerator.Frodo", PREFIX + "FrodoKeyGeneratorSpi");
+            provider.addAlgorithm("KeyGenerator.FRODO", PREFIX + "FrodoKeyGeneratorSpi");
 
             AsymmetricKeyInfoConverter keyFact = new FrodoKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.Frodo", PREFIX + "FrodoCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_frodo, "Frodo");
+            provider.addAlgorithm("Cipher.FRODO", PREFIX + "FrodoCipherSpi$Base");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_frodo, "FRODO");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_frodo, "Frodo", keyFact);
-            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.pqc_kem_frodo, "Frodo");
+            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.pqc_kem_frodo, "FRODO");
         }
     }
 }

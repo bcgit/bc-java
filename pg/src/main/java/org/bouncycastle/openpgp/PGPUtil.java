@@ -13,7 +13,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -55,6 +60,18 @@ public class PGPUtil
             put("haval", Integers.valueOf(HashAlgorithmTags.HAVAL_5_160));
             put("sm3", Integers.valueOf(HashAlgorithmTags.SM3));
             put("md5", Integers.valueOf(HashAlgorithmTags.MD5));
+        }
+    };
+
+    private static Map<ASN1ObjectIdentifier, String> oidToName = new HashMap<ASN1ObjectIdentifier, String>()
+    {
+        {
+            put(CryptlibObjectIdentifiers.curvey25519, "Curve25519");
+            put(EdECObjectIdentifiers.id_X25519, "Curve25519");
+            put(EdECObjectIdentifiers.id_Ed25519, "Ed25519");
+            put(SECObjectIdentifiers.secp256r1, "NIST P-256");
+            put(SECObjectIdentifiers.secp384r1, "NIST P-384");
+            put(SECObjectIdentifiers.secp521r1, "NIST P-521");
         }
     };
 
@@ -104,6 +121,25 @@ public class PGPUtil
         throw new IllegalArgumentException("unable to map " + name + " to a hash id");
     }
 
+    /**
+     * Return the EC curve name for the passed in OID.
+     *
+     * @param oid the EC curve object identifier in the PGP key
+     * @return  a string representation of the OID.
+     */
+    public static String getCurveName(
+        ASN1ObjectIdentifier oid)
+    {
+        String name = (String)oidToName.get(oid);
+
+        if (name != null)
+        {
+            return name;
+        }
+
+        // fall back
+        return ECNamedCurveTable.getName(oid);
+    }
 
     /**
      * Return an appropriate name for the signature algorithm represented by the passed

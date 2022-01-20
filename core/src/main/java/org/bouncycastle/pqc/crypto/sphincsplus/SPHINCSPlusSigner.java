@@ -61,14 +61,18 @@ public class SPHINCSPlusSigner
         SPHINCSPlusEngine engine = privKey.getParameters().getEngine();
 
         // generate randomizer
-        byte[] opt = new byte[engine.N];
+        byte[] optRand = new byte[engine.N];
         if (random != null)
         {
-            random.nextBytes(opt);
+            random.nextBytes(optRand);
+        }
+        else
+        {
+            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
         }
 
         Fors fors = new Fors(engine); 
-        byte[] R = engine.PRF_msg(privKey.sk.prf, opt, message);
+        byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, message);
         // compute message digest and index
         IndexedDigest idxDigest = engine.H_msg(R, privKey.pk.seed, privKey.pk.root, message);
         byte[] mHash = idxDigest.digest;
