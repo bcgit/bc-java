@@ -1,14 +1,14 @@
 package org.bouncycastle.its;
 
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.oer.its.CrlSeries;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
 
-import org.bouncycastle.oer.its.HashedId3;
-import org.bouncycastle.oer.its.PsidGroupPermissions;
-import org.bouncycastle.oer.its.PsidSsp;
-import org.bouncycastle.oer.its.SequenceOfPsidGroupPermissions;
-import org.bouncycastle.oer.its.SequenceOfPsidSsp;
-import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId3;
+import org.bouncycastle.oer.its.ieee1609dot2.PsidGroupPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
+import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfPsidGroupPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
+import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 
 public class ITSCertificateBuilder
 {

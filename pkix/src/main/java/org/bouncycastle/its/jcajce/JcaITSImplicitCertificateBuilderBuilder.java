@@ -4,7 +4,7 @@ import java.security.Provider;
 
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSImplicitCertificateBuilder;
-import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 

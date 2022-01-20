@@ -32,13 +32,14 @@ public class OERInputStream
 {
 
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
-    private int maxByteAllocation = 1024 * 1024;
+    protected PrintWriter debugOutput = null;
 
 //    public interface OERHandler
 //    {
 //        void handle(OERInputStream decoder)
 //            throws Exception;
 //    }
+    private int maxByteAllocation = 1024 * 1024;
 
     /**
      * Root decoder of OER streaming data.
@@ -82,6 +83,8 @@ public class OERInputStream
         switch (element.baseType)
         {
 
+        case Switch:
+            throw new IllegalStateException("A switch element should only be found within a sequence.");
 
         case SEQ_OF:
         {
@@ -105,11 +108,14 @@ public class OERInputStream
 
             ASN1EncodableVector avec = new ASN1EncodableVector();
 
+            if (element.children.get(0).aSwitch != null)
+            {
+                throw new IllegalStateException("element def for item in SEQ OF has a switch, switches only supported in sequences");
+            }
 
             for (int n = 0; n < j; n++)
             {
                 avec.add(parse(element.children.get(0)));
-
             }
             return new DERSequence(avec);
         }
@@ -121,10 +127,6 @@ public class OERInputStream
 
             ASN1EncodableVector avec = new ASN1EncodableVector();
 
-            //
-            //
-            //
-
             for (int t = 0; t < element.children.size(); t++)
             {
                 OERDefinition.Element child = element.children.get(t);
@@ -132,19 +134,33 @@ public class OERInputStream
                 if (child.explicit)
                 {
 //                    debugPrint(child.appendLabel("E[" + t + "]"));
+
+                    if (child.aSwitch != null)
+                    {
+                        child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                    }
+
                     avec.add(parse(child));
                 }
                 else
                 {
                     if (sequence.hasOptional(element.optionalOrDefaultChildrenInOrder().indexOf(child)))
                     {
-
+                        if (child.aSwitch != null)
+                        {
+                            child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                        }
                         //  debugPrint(child.appendLabel("O[" + t + "]"));
                         avec.add(OEROptional.getInstance(parse(child)));
 
                     }
                     else
                     {
+                        if (child.aSwitch != null)
+                        {
+                            child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                        }
+
                         if (child.getDefaultValue() != null)
                         {
                             avec.add(child.defaultValue);
@@ -410,13 +426,11 @@ public class OERInputStream
         throw new IllegalStateException("Unhandled type " + element.baseType);
     }
 
-
     private ASN1Encodable absent(OERDefinition.Element child)
     {
         debugPrint(child.appendLabel("Absent"));
         return OEROptional.ABSENT;
     }
-
 
     private byte[] allocateArray(int requiredSize)
     {
@@ -426,7 +440,6 @@ public class OERInputStream
         }
         return new byte[requiredSize];
     }
-
 
     public BigInteger parseInt(boolean unsigned, int size)
         throws Exception
@@ -487,23 +500,6 @@ public class OERInputStream
         throws Exception
     {
         return parseInt(false, 8);
-    }
-
-    private final class LengthInfo
-    {
-        private final BigInteger length;
-        private final boolean shortForm;
-
-        public LengthInfo(BigInteger length, boolean shortForm)
-        {
-            this.length = length;
-            this.shortForm = shortForm;
-        }
-
-        private int intLength()
-        {
-            return length.intValue();
-        }
     }
 
     /**
@@ -602,8 +598,6 @@ public class OERInputStream
 //        return this;
 //    }
 
-    protected PrintWriter debugOutput = null;
-
     protected void debugPrint(String what)
     {
 
@@ -633,7 +627,6 @@ public class OERInputStream
             debugOutput.flush();
         }
     }
-
 
     public static class Choice
         extends OERInputStream
@@ -742,7 +735,6 @@ public class OERInputStream
 
     }
 
-
     /**
      * OER sequence decoder, decodes prefix and determines which optional
      * parts are available.
@@ -834,6 +826,23 @@ public class OERInputStream
             return sb.toString();
         }
 
+    }
+
+    private final class LengthInfo
+    {
+        private final BigInteger length;
+        private final boolean shortForm;
+
+        public LengthInfo(BigInteger length, boolean shortForm)
+        {
+            this.length = length;
+            this.shortForm = shortForm;
+        }
+
+        private int intLength()
+        {
+            return length.intValue();
+        }
     }
 
 
