@@ -6,30 +6,11 @@ import org.bouncycastle.util.Arrays;
 
 class Fors
 {
-    private final WotsPlus wots;
     SPHINCSPlusEngine engine;
 
     public Fors(SPHINCSPlusEngine engine)
     {
         this.engine = engine;
-        this.wots = new WotsPlus(engine);
-    }
-
-    // Input: Secret seed SK.seed, public seed PK.seed, address ADRS
-    // Output: FORS public key PK
-    byte[] pkGen(byte[] skSeed, byte[] pkSeed, ADRS adrs)
-    {
-        ADRS forspkADRS = new ADRS(adrs); // copy address to create FTS public key address
-        byte[][] root = new byte[engine.K][];
-
-        for (int i = 0; i < engine.K; i++)
-        {
-            root[i] = treehash(skSeed, i * engine.T, engine.A, pkSeed, adrs);
-        }
-        forspkADRS.setType(ADRS.FORS_ROOTS);
-        forspkADRS.setKeyPairAddress(adrs.getKeyPairAddress());
-
-        return engine.T_l(pkSeed, forspkADRS, Arrays.concatenate(root));
     }
 
     // Input: Secret seed SK.seed, start index s, target node height z, public seed PK.seed, address ADRS
