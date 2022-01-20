@@ -1,41 +1,39 @@
 package org.bouncycastle.openpgp.test;
 
+import java.util.Arrays;
+
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
-import java.util.Arrays;
-
 public class RegexTest
     extends SimpleTest
 {
-
-    @Override
     public String getName()
     {
-        return RegexTest.class.getSimpleName();
+        return "RegexTest";
     }
 
-    @Override
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         testRegexGetRegex();
         testRegexBytesAreNullTerminated();
         testCopy();
-        testTolerateNonNullTerminatedStrings();
+        testDoNotTolerateNonNullTerminatedStrings();
     }
 
     public void testRegexGetRegex()
     {
         String regexString = "example.org";
-        RegularExpression regex = new RegularExpression(false , regexString);
+        RegularExpression regex = new RegularExpression(false, regexString);
         isEquals(regexString, regex.getRegex());
     }
 
     public void testRegexBytesAreNullTerminated()
     {
         String regexString = "example.org";
-        RegularExpression regex = new RegularExpression(false , regexString);
+        RegularExpression regex = new RegularExpression(false, regexString);
         byte[] regexBytes = regex.getRawRegex();
         isTrue(regexBytes[regexBytes.length - 1] == 0);
     }
@@ -52,18 +50,25 @@ public class RegexTest
         isTrue(Arrays.equals(regex1.getRawRegex(), regex2.getRawRegex()));
     }
 
-    public void testTolerateNonNullTerminatedStrings()
+    public void testDoNotTolerateNonNullTerminatedStrings()
     {
         String regexString = "rfc.4880";
         byte[] nonNullTerminated = Strings.toUTF8ByteArray(regexString);
-        RegularExpression regex = new RegularExpression(false, false, nonNullTerminated);
 
-        isEquals(regexString, regex.getRegex());
+        try
+        {
+            RegularExpression regex = new RegularExpression(false, false, nonNullTerminated);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("data in regex missing null termination", e.getMessage());
+        }
     }
 
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
+        throws Exception
     {
-        new RegexTest().performTest();
+        runTest(new RegexTest());
     }
-
 }
