@@ -138,7 +138,7 @@ public class BitBuilder
             value = value.shiftLeft(7);
         }
     }
-    
+
     protected void finalize()
         throws Throwable
     {

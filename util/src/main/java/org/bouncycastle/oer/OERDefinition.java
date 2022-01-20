@@ -27,12 +27,146 @@ public class OERDefinition
         new BigInteger[]{new BigInteger("-9223372036854775808"), new BigInteger("9223372036854775807")},
     };
 
+    public static Builder integer()
+    {
+        return new Builder(BaseType.INT);
+    }
+
+    public static Builder integer(long val)
+    {
+        return new Builder(BaseType.INT).defaultValue(new ASN1Integer(val));
+    }
+
+    public static Builder bitString(long len)
+    {
+        return new Builder(BaseType.BIT_STRING).fixedSize(len);
+    }
+
+    public static Builder integer(BigInteger lower, BigInteger upper)
+    {
+        return new Builder(BaseType.INT).range(lower, upper);
+    }
+
+    public static Builder integer(long lower, long upper)
+    {
+        return new Builder(BaseType.INT).range(BigInteger.valueOf(lower), BigInteger.valueOf(upper));
+    }
+
+    public static Builder integer(long lower, long upper, ASN1Encodable defaultValue)
+    {
+        return new Builder(BaseType.INT).range(lower, upper, defaultValue);
+    }
+
+    public static Builder nullValue()
+    {
+        return new Builder(BaseType.NULL);
+    }
+
+    public static Builder seq()
+    {
+        return new Builder(BaseType.SEQ);
+    }
+
+    public static Builder seq(Object... items)
+    {
+        return new Builder(BaseType.SEQ).items(items);
+    }
+
+    public static Builder aSwitch(Switch aSwitch)
+    {
+        return new Builder(BaseType.Switch).decodeSwitch(aSwitch);
+    }
+
+    public static Builder enumItem(String label)
+    {
+        return new Builder(BaseType.ENUM_ITEM).label(label);
+    }
+
+    public static Builder enumItem(String label, BigInteger value)
+    {
+        return new Builder(BaseType.ENUM_ITEM).enumValue(value).label(label);
+    }
+
+    public static Builder enumeration(Object... items)
+    {
+        return new Builder(BaseType.ENUM).items(items);
+    }
+
+    public static Builder choice(Object... items)
+    {
+        return new Builder(BaseType.CHOICE).items(items);
+    }
+
+    public static Builder placeholder()
+    {
+        return new Builder(null);
+    }
+
+    public static Builder seqof(Object... items)
+    {
+        return new Builder(BaseType.SEQ_OF).items(items);
+    }
+
+    public static Builder octets()
+    {
+        return new Builder(BaseType.OCTET_STRING).unbounded();
+    }
+
+    public static Builder octets(int size)
+    {
+        return new Builder(BaseType.OCTET_STRING).fixedSize(size);
+    }
+
+    public static Builder octets(int lowerBound, int upperBound)
+    {
+        return new Builder(BaseType.OCTET_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
+    }
+
+    public static Builder ia5String()
+    {
+        return new Builder(BaseType.IA5String);
+    }
+
+    public static Builder utf8String()
+    {
+        return new Builder(BaseType.UTF8_STRING);
+    }
+
+    public static Builder utf8String(int size)
+    {
+        return new Builder(BaseType.UTF8_STRING).rangeToMAXFrom(size);
+    }
+
+    public static Builder utf8String(int lowerBound, int upperBound)
+    {
+        return new Builder(BaseType.UTF8_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
+    }
+
+    public static Builder opaque()
+    {
+        return new Builder(BaseType.OCTET_STRING).unbounded();
+    }
+
+    public static List<Object> optional(Object... items)
+    {
+        return new OptionalList(Arrays.asList(items));
+    }
+
+    public static Builder extension()
+    {
+        return new Builder(BaseType.EXTENSION).label("extension");
+    }
 
     public enum BaseType
     {
         SEQ, SEQ_OF, CHOICE, ENUM, INT, OCTET_STRING,
         UTF8_STRING, BIT_STRING, NULL, EXTENSION, ENUM_ITEM, BOOLEAN, IS0646String, PrintableString, NumericString,
-        BMPString, UniversalString, IA5String, VisibleString
+        BMPString, UniversalString, IA5String, VisibleString, Switch
+    }
+
+    public interface ItemProvider
+    {
+        Builder exitingChild(int index, Builder existingChild);
     }
 
     public static class Element
@@ -41,12 +175,13 @@ public class OERDefinition
         public final List<Element> children;
         public final boolean explicit;
         public final String label;
-        private List<Element> optionalChildrenInOrder;
         public final BigInteger lowerBound;
         public final BigInteger upperBound;
         public final boolean extensionsInDefinition;
         public final BigInteger enumValue;
         public final ASN1Encodable defaultValue;
+        public final Switch aSwitch;
+        private List<Element> optionalChildrenInOrder;
 
         public Element(
             BaseType baseType,
@@ -56,7 +191,7 @@ public class OERDefinition
             BigInteger lowerBound,
             BigInteger upperBound,
             boolean extensionsInDefinition,
-            BigInteger enumValue, ASN1Encodable defaultValue)
+            BigInteger enumValue, ASN1Encodable defaultValue, Switch aSwitch)
         {
             this.baseType = baseType;
             this.children = children;
@@ -67,6 +202,7 @@ public class OERDefinition
             this.extensionsInDefinition = extensionsInDefinition;
             this.enumValue = enumValue;
             this.defaultValue = defaultValue;
+            this.aSwitch = aSwitch;
         }
 
         public String rangeExpression()
@@ -209,136 +345,15 @@ public class OERDefinition
         {
             return lowerBound != null && (lowerBound.equals(upperBound));
         }
+
+        @Override
+        public String toString()
+        {
+            return "Element{" +
+                "label='" + label + '\'' +
+                '}';
+        }
     }
-
-
-    public static Builder integer()
-    {
-        return new Builder(BaseType.INT);
-    }
-
-    public static Builder integer(long val)
-    {
-        return new Builder(BaseType.INT).defaultValue(new ASN1Integer(val));
-    }
-
-    public static Builder bitString(long len)
-    {
-        return new Builder(BaseType.BIT_STRING).fixedSize(len);
-    }
-
-    public static Builder integer(BigInteger lower, BigInteger upper)
-    {
-        return new Builder(BaseType.INT).range(lower, upper);
-    }
-
-    public static Builder integer(long lower, long upper)
-    {
-        return new Builder(BaseType.INT).range(BigInteger.valueOf(lower), BigInteger.valueOf(upper));
-    }
-
-    public static Builder integer(long lower, long upper, ASN1Encodable defaultValue)
-    {
-        return new Builder(BaseType.INT).range(lower, upper, defaultValue);
-    }
-
-    public static Builder nullValue()
-    {
-        return new Builder(BaseType.NULL);
-    }
-
-    public static Builder seq()
-    {
-        return new Builder(BaseType.SEQ);
-    }
-
-    public static Builder seq(Object... items)
-    {
-        return new Builder(BaseType.SEQ).items(items);
-    }
-
-
-    public static Builder enumItem(String label)
-    {
-        return new Builder(BaseType.ENUM_ITEM).label(label);
-    }
-
-    public static Builder enumItem(String label, BigInteger value)
-    {
-        return new Builder(BaseType.ENUM_ITEM).enumValue(value).label(label);
-    }
-
-
-    public static Builder enumeration(Object... items)
-    {
-        return new Builder(BaseType.ENUM).items(items);
-    }
-
-    public static Builder choice(Object... items)
-    {
-        return new Builder(BaseType.CHOICE).items(items);
-    }
-
-    public static Builder placeholder()
-    {
-        return new Builder(null);
-    }
-
-
-    public static Builder seqof(Object... items)
-    {
-        return new Builder(BaseType.SEQ_OF).items(items);
-    }
-
-    public static Builder octets()
-    {
-        return new Builder(BaseType.OCTET_STRING).unbounded();
-    }
-
-    public static Builder octets(int size)
-    {
-        return new Builder(BaseType.OCTET_STRING).fixedSize(size);
-    }
-
-    public static Builder octets(int lowerBound, int upperBound)
-    {
-        return new Builder(BaseType.OCTET_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
-    }
-
-    public static Builder ia5String()
-    {
-        return new Builder(BaseType.IA5String);
-    }
-
-    public static Builder utf8String()
-    {
-        return new Builder(BaseType.UTF8_STRING);
-    }
-    public static Builder utf8String(int size)
-    {
-        return new Builder(BaseType.UTF8_STRING).rangeToMAXFrom(size);
-    }
-
-    public static Builder utf8String(int lowerBound, int upperBound)
-    {
-        return new Builder(BaseType.UTF8_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
-    }
-
-    public static Builder opaque()
-    {
-        return new Builder(BaseType.OCTET_STRING).unbounded();
-    }
-
-    public static List<Object> optional(Object... items)
-    {
-        return new OptionalList(Arrays.asList(items));
-    }
-
-    public static Builder extension()
-    {
-        return new Builder(BaseType.EXTENSION).label("extension");
-    }
-
 
     public static class Builder
     {
@@ -352,8 +367,12 @@ public class OERDefinition
         protected ASN1Encodable defaultValue;
         protected Builder placeholderValue;
         protected Boolean inScope;
+        protected Switch aSwitch;
 
-        private final ItemProvider defaultItemProvider = new ItemProvider()
+        public Builder(BaseType baseType)
+        {
+            this.baseType = baseType;
+        }        private final ItemProvider defaultItemProvider = new ItemProvider()
         {
             public Builder exitingChild(int index, Builder existingChild)
             {
@@ -377,6 +396,7 @@ public class OERDefinition
             b.defaultValue = defaultValue;
             b.enumValue = enumValue;
             b.inScope = inScope;
+            b.aSwitch = aSwitch;
             return b;
         }
 
@@ -420,17 +440,18 @@ public class OERDefinition
             return b;
         }
 
+        public Builder decodeSwitch(Switch aSwitch)
+        {
+            Builder cpy = copy();
+            cpy.aSwitch = aSwitch;
+            return cpy;
+        }
 
         public Builder labelPrefix(String prefix)
         {
             Builder cpy = copy();
             cpy.label = prefix + " " + label;
             return cpy;
-        }
-
-        public Builder(BaseType baseType)
-        {
-            this.baseType = baseType;
         }
 
         public Builder explicit(boolean explicit)
@@ -460,7 +481,6 @@ public class OERDefinition
 
             throw new IllegalStateException("Unable to wrap item in builder");
         }
-
 
         public Builder items(Object... items)
         {
@@ -504,7 +524,6 @@ public class OERDefinition
             newBuilder.explicit = explicit;
             return newBuilder;
         }
-
 
         public Element build()
         {
@@ -569,10 +588,9 @@ public class OERDefinition
                 lowerBound,
                 upperBound,
                 hasExtensions,
-                enumValue, defaultValue);
+                enumValue, defaultValue, aSwitch);
 
         }
-
 
         public Builder range(BigInteger lower, BigInteger upper)
         {
@@ -606,7 +624,6 @@ public class OERDefinition
             return b;
         }
 
-
         public Builder range(long lower, long upper, ASN1Encodable defaultIntValue)
         {
             Builder b = this.copy();
@@ -615,7 +632,6 @@ public class OERDefinition
             b.defaultValue = defaultIntValue;
             return b;
         }
-
 
         public Builder enumValue(BigInteger value)
         {
@@ -635,8 +651,9 @@ public class OERDefinition
             });
         }
 
-    }
 
+
+    }
 
     public static class MutableBuilder
         extends Builder
@@ -667,7 +684,6 @@ public class OERDefinition
         }
     }
 
-
     private static class OptionalList
         extends ArrayList<Object>
     {
@@ -676,11 +692,6 @@ public class OERDefinition
         {
             addAll(asList);
         }
-    }
-
-    public interface ItemProvider
-    {
-        Builder exitingChild(int index, Builder existingChild);
     }
 
 }
