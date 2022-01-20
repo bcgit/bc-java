@@ -329,6 +329,23 @@ public class IEEE1609dot2
         VerificationKeyIndicator.labelPrefix("verifyKeyIndicator"), OERDefinition.extension()
     ).label("ToBeSignedCertificate");
     /**
+     * IssuerIdentifier ::= CHOICE  {
+     * sha256AndDigest         HashedId8,
+     * self                    HashAlgorithm,
+     * ...,
+     * sha384AndDigest         HashedId8
+     * }
+     */
+    public static final OERDefinition.Builder IssuerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8, Ieee1609Dot2BaseTypes.HashAlgorithm, OERDefinition.extension(), Ieee1609Dot2BaseTypes.HashedId8).label("IssuerIdentifier");
+    /**
+     * CertificateType  ::= ENUMERATED  {
+     * explicit,
+     * implicit,
+     * ...
+     * }
+     */
+    public static final OERDefinition.Builder CertificateType = OERDefinition.enumeration(OERDefinition.enumItem("explicit"), OERDefinition.enumItem("implicit"), OERDefinition.extension()).label("CertificateType");
+    /**
      * CertificateBase represents both of these, but with different values
      * depending on the type.
      * <p>
@@ -365,6 +382,30 @@ public class IEEE1609dot2
      * Certificate ::= CertificateBase (ImplicitCertificate | ExplicitCertificate)
      */
     public static final OERDefinition.Builder Certificate = CertificateBase.copy().label("Certificate(CertificateBase)");
+
+
+    /**
+     * ExplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
+     * type(explicit),
+     * toBeSigned(WITH COMPONENTS {...,
+     * verifyKeyIndicator(WITH COMPONENTS {verificationKey})
+     * }),
+     * signature PRESENT
+     * })
+     */
+    public static final OERDefinition.Builder ExplicitCertificate = CertificateBase.label("ExplicitCertificate");
+
+    /**
+     * ImplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
+     *     type(implicit),
+     *     toBeSigned(WITH COMPONENTS {...,
+     *       verifyKeyIndicator(WITH COMPONENTS {reconstructionValue})
+     *     }),
+     *     signature ABSENT
+     *   })
+     */
+    public static final OERDefinition.Builder ImplicitCertificate = CertificateBase.label("ImplicitCertificate");
+
     /**
      * SequenceOfCertificate ::= SEQUENCE OF Certificate
      */
@@ -378,6 +419,43 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder SignerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8.label("digest"), SequenceOfCertificate, OERDefinition.nullValue().label("self"), OERDefinition.extension());
+    /**
+     * HeaderInfo ::= SEQUENCE {
+     * psid                  Psid,
+     * generationTime        Time64 OPTIONAL,
+     * expiryTime            Time64  OPTIONAL,
+     * generationLocation    ThreeDLocation OPTIONAL,
+     * p2pcdLearningRequest  HashedId3 OPTIONAL,
+     * missingCrlIdentifier  MissingCrlIdentifier OPTIONAL,
+     * encryptionKey         EncryptionKey OPTIONAL,
+     * ...,
+     * inlineP2pcdRequest    SequenceOfHashedId3 OPTIONAL,
+     * requestedCertificate  Certificate OPTIONAL,
+     * pduFunctionalType     PduFunctionalType OPTIONAL,
+     * contributedExtensions ContributedExtensionBlocks OPTIONAL
+     * }
+     */
+    public static final OERDefinition.Builder HeaderInfo = OERDefinition.seq(
+        Ieee1609Dot2BaseTypes.Psid.label("psid"),
+        OERDefinition.optional(
+            Ieee1609Dot2BaseTypes.Time64.label("generationTime"),
+            Ieee1609Dot2BaseTypes.Time64.label("expiryTime"),
+            Ieee1609Dot2BaseTypes.ThreeDLocation.label("generationLocation"),
+            Ieee1609Dot2BaseTypes.HashedId3.label("p2pcdLearningRequest"),
+            MissingCrlIdentifier.label("missingCrlIdentifier"),
+            Ieee1609Dot2BaseTypes.EncryptionKey.label("encryptionKey")
+        ), OERDefinition.extension(),
+        OERDefinition.optional(
+            Ieee1609Dot2BaseTypes.SequenceOfHashedId3.label("inlineP2pcdRequest"),
+            Certificate.label("requestedCertificate"),
+            PduFunctionalType.label("pduFunctionalType"),
+            ContributedExtensionBlock.label("contributedExtensions")
+
+        )
+    );
+
+    public static final OERDefinition.Builder ToBeSignedData = new OERDefinition.MutableBuilder(OERDefinition.BaseType.SEQ);
+
     /**
      * SignedData ::= SEQUENCE {
      * hashId     HashAlgorithm,
@@ -432,78 +510,6 @@ public class IEEE1609dot2
         OERDefinition.optional(Ieee1609Dot2Data.label("data"),
             HashedData.label("extDataHash")),
         OERDefinition.extension());
-    /**
-     * HeaderInfo ::= SEQUENCE {
-     * psid                  Psid,
-     * generationTime        Time64 OPTIONAL,
-     * expiryTime            Time64  OPTIONAL,
-     * generationLocation    ThreeDLocation OPTIONAL,
-     * p2pcdLearningRequest  HashedId3 OPTIONAL,
-     * missingCrlIdentifier  MissingCrlIdentifier OPTIONAL,
-     * encryptionKey         EncryptionKey OPTIONAL,
-     * ...,
-     * inlineP2pcdRequest    SequenceOfHashedId3 OPTIONAL,
-     * requestedCertificate  Certificate OPTIONAL,
-     * pduFunctionalType     PduFunctionalType OPTIONAL,
-     * contributedExtensions ContributedExtensionBlocks OPTIONAL
-     * }
-     */
-    public static final OERDefinition.Builder HeaderInfo = OERDefinition.seq(
-        Ieee1609Dot2BaseTypes.Psid.label("psid"),
-        OERDefinition.optional(
-            Ieee1609Dot2BaseTypes.Time64.label("generationTime"),
-            Ieee1609Dot2BaseTypes.Time64.label("expiryTime"),
-            Ieee1609Dot2BaseTypes.ThreeDLocation.label("generationLocation"),
-            Ieee1609Dot2BaseTypes.HashedId3.label("p2pcdLearningRequest"),
-            MissingCrlIdentifier.label("missingCrlIdentifier"),
-            Ieee1609Dot2BaseTypes.EncryptionKey.label("encryptionKey")
-        ), OERDefinition.extension(),
-        OERDefinition.optional(
-            Ieee1609Dot2BaseTypes.SequenceOfHashedId3.label("inlineP2pcdRequest"),
-            Certificate.label("requestedCertificate"),
-            PduFunctionalType.label("pduFunctionalType"),
-            ContributedExtensionBlock.label("contributedExtensions")
-
-        )
-    );
-    /**
-     * ExplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
-     * type(explicit),
-     * toBeSigned(WITH COMPONENTS {...,
-     * verifyKeyIndicator(WITH COMPONENTS {verificationKey})
-     * }),
-     * signature PRESENT
-     * })
-     */
-    public static final OERDefinition.Builder ExplicitCertificate = CertificateBase.label("ExplicitCertificate");
-    /**
-     * ImplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
-     * type(implicit),
-     * toBeSigned(WITH COMPONENTS {...,
-     * verifyKeyIndicator(WITH COMPONENTS {reconstructionValue})
-     * }),
-     * signature ABSENT
-     * })
-     */
-    public static final OERDefinition.Builder ImplicitCertificate = CertificateBase.label("ImplicitCertificate");
-    /**
-     * IssuerIdentifier ::= CHOICE  {
-     * sha256AndDigest         HashedId8,
-     * self                    HashAlgorithm,
-     * ...,
-     * sha384AndDigest         HashedId8
-     * }
-     */
-    public static final OERDefinition.Builder IssuerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8, Ieee1609Dot2BaseTypes.HashAlgorithm, OERDefinition.extension(), Ieee1609Dot2BaseTypes.HashedId8).label("IssuerIdentifier");
-    /**
-     * CertificateType  ::= ENUMERATED  {
-     * explicit,
-     * implicit,
-     * ...
-     * }
-     */
-    public static final OERDefinition.Builder CertificateType = OERDefinition.enumeration(OERDefinition.enumItem("explicit"), OERDefinition.enumItem("implicit"), OERDefinition.extension()).label("CertificateType");
-    public static final OERDefinition.Builder ToBeSignedData = new OERDefinition.MutableBuilder(OERDefinition.BaseType.SEQ);
 
     static
     {

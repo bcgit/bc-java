@@ -205,6 +205,18 @@ public class Ieee1609Dot2BaseTypes
         EccP256CurvePoint,
         EccP256CurvePoint,
         OERDefinition.extension()).label("BasePublicEncryptionKey");
+
+    /**
+     * SymmetricEncryptionKey ::= CHOICE {
+     * aes128Ccm  OCTET STRING(SIZE(16)),
+     * ...
+     * }
+     */
+    public static final OERDefinition.Builder SymmetricEncryptionKey = OERDefinition.choice(
+        OERDefinition.octets(16).label("aes128Ccm"),
+        OERDefinition.extension()
+    ).label("SymmetricEncryptionKey");
+
     /**
      * PublicEncryptionKey ::= SEQUENCE {
      * supportedSymmAlg  SymmAlgorithm,
@@ -219,16 +231,7 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder EncryptionKey = OERDefinition.choice(PublicEncryptionKey.label("public"), SymmetricEncryptionKey.label("symmetric")).label("EncryptionKey");
-    /**
-     * SymmetricEncryptionKey ::= CHOICE {
-     * aes128Ccm  OCTET STRING(SIZE(16)),
-     * ...
-     * }
-     */
-    public static final OERDefinition.Builder SymmetricEncryptionKey = OERDefinition.choice(
-        OERDefinition.octets(16).label("aes128Ccm"),
-        OERDefinition.extension()
-    ).label("SymmetricEncryptionKey");
+
     /**
      * PublicVerificationKey ::= CHOICE {
      * ecdsaNistP256         EccP256CurvePoint,
