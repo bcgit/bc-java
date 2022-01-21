@@ -13,10 +13,10 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSPublicVerificationKey;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.oer.its.EccCurvePoint;
-import org.bouncycastle.oer.its.EccP256CurvePoint;
-import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.PublicVerificationKey;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 
 public class BcITSPublicVerificationKey
     extends ITSPublicVerificationKey
