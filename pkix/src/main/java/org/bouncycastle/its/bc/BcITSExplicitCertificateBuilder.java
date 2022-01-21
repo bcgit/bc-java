@@ -5,8 +5,8 @@ import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSExplicitCertificateBuilder;
 import org.bouncycastle.its.ITSPublicEncryptionKey;
 import org.bouncycastle.its.operator.ITSContentSigner;
-import org.bouncycastle.oer.its.CertificateId;
-import org.bouncycastle.oer.its.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
+import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 
 public class BcITSExplicitCertificateBuilder
     extends ITSExplicitCertificateBuilder

@@ -4,6 +4,10 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.OEROptional;
+import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
+import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Uint8;
 
 /**
  * EeRaCertRequest ::= SEQUENCE {
@@ -50,6 +54,20 @@ public class EeRaCertRequest
         this.additionalParams = additionalParams;
     }
 
+    private EeRaCertRequest(ASN1Sequence seq)
+    {
+        if (seq.size() != 5)
+        {
+            throw new IllegalStateException("expected sequence size of 5");
+        }
+
+        version = Uint8.getInstance(seq.getObjectAt(0));
+        generationTime = Time32.getInstance(seq.getObjectAt(1));
+        type = CertificateType.getInstance(seq.getObjectAt(2));
+        tbsCert = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
+        additionalParams = OEROptional.getInstance(seq.getObjectAt(4)).getObject(AdditionalParams.class);
+    }
+
     public static EeRaCertRequest getInstance(Object o)
     {
         if (o instanceof EeRaCertRequest)
@@ -57,14 +75,12 @@ public class EeRaCertRequest
             return (EeRaCertRequest)o;
         }
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
+        if (o != null)
+        {
+            return new EeRaCertRequest(ASN1Sequence.getInstance(o));
+        }
 
-        return new EeRaCertRequest(
-            Uint8.getInstance(seq.getObjectAt(0)),
-            Time32.getInstance(seq.getObjectAt(1)),
-            CertificateType.getInstance(seq.getObjectAt(2)),
-            ToBeSignedCertificate.getInstance(seq.getObjectAt(3)),
-            OEROptional.getInstance(seq.getObjectAt(4)).getObject(AdditionalParams.class));
+        return null;
 
     }
 
@@ -100,7 +116,7 @@ public class EeRaCertRequest
 
     public ASN1Primitive toASN1Primitive()
     {
-        return Utils.toSequence(version, generationTime, type, tbsCert, OEROptional.getInstance(additionalParams));
+        return ItsUtils.toSequence(version, generationTime, type, tbsCert, OEROptional.getInstance(additionalParams));
     }
 
     public static class Builder
