@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.oer.its.etsi10309.extension;
+package org.bouncycastle.oer.its.etsi10309.extension;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,9 +9,6 @@ import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.OEROutputStream;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
-import org.bouncycastle.oer.its.etsi10309.extension.EtsiTs102941CrlRequest;
-import org.bouncycastle.oer.its.etsi10309.extension.EtsiTs102941DeltaCtlRequest;
-import org.bouncycastle.oer.its.etsi10309.extension.Extension;
 import org.bouncycastle.oer.its.template.EtsiTs103097ExtensionModule;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
