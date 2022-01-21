@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -28,19 +29,6 @@ public class CMCEVectorTest
     public void testParameters()
         throws Exception
     {
-        CMCEParameters[] params = new CMCEParameters[] {
-            CMCEParameters.mceliece348864r3,
-            CMCEParameters.mceliece348864fr3,
-            CMCEParameters.mceliece460896r3,
-            CMCEParameters.mceliece460896fr3,
-            CMCEParameters.mceliece6688128r3,
-            CMCEParameters.mceliece6688128fr3,
-            CMCEParameters.mceliece6960119r3,
-            CMCEParameters.mceliece6960119fr3,
-            CMCEParameters.mceliece8192128r3,
-            CMCEParameters.mceliece8192128fr3
-        };
-
         assertEquals(128, CMCEParameters.mceliece348864r3.getDefaultKeySize());
         assertEquals(128, CMCEParameters.mceliece348864fr3.getDefaultKeySize());
         assertEquals(192, CMCEParameters.mceliece460896r3.getDefaultKeySize());
@@ -94,6 +82,7 @@ public class CMCEVectorTest
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
+            Random rnd = new Random(System.currentTimeMillis());
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -107,8 +96,15 @@ public class CMCEVectorTest
                     if (buf.size() > 0)
                     {
                         String count = buf.get("count");
+                        if (!"0".equals(count))
+                        {
+                            // randomly skip tests after zero.
+                            if (rnd.nextBoolean())
+                            {
+                                continue;
+                            }
+                        }
                         System.out.println("test case: " + count);
-
                         byte[] seed = Hex.decode(buf.get("seed")); // seed for cmce secure random
                         byte[] pk = Hex.decode(buf.get("pk"));     // public key
                         byte[] sk = Hex.decode(buf.get("sk"));     // private key
