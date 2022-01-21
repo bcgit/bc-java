@@ -400,6 +400,10 @@ class ProvX509KeyManager
                 {
                     KeyStore.Builder builder = builders.get(builderIndex);
                     KeyStore keyStore = builder.getKeyStore();
+                    if (null == keyStore)
+                    {
+                        continue;
+                    }
 
                     for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
                     {
@@ -451,6 +455,10 @@ class ProvX509KeyManager
                 {
                     KeyStore.Builder builder = builders.get(builderIndex);
                     KeyStore keyStore = builder.getKeyStore();
+                    if (null == keyStore)
+                    {
+                        continue;
+                    }
 
                     for (Enumeration<String> en = keyStore.aliases(); en.hasMoreElements();)
                     {
@@ -587,12 +595,15 @@ class ProvX509KeyManager
 
                         String localAlias = alias.substring(localAliasStart, localAliasEnd);
                         KeyStore keyStore = builder.getKeyStore();
-                        ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
-
-                        KeyStore.Entry entry = keyStore.getEntry(localAlias, protectionParameter);
-                        if (entry instanceof KeyStore.PrivateKeyEntry)
+                        if (null != keyStore)
                         {
-                            return (KeyStore.PrivateKeyEntry)entry;
+                            ProtectionParameter protectionParameter = builder.getProtectionParameter(localAlias);
+
+                            KeyStore.Entry entry = keyStore.getEntry(localAlias, protectionParameter);
+                            if (entry instanceof KeyStore.PrivateKeyEntry)
+                            {
+                                return (KeyStore.PrivateKeyEntry)entry;
+                            }
                         }
                     }
                 }
