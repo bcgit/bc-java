@@ -50,8 +50,17 @@ public class SABEREngine
     private static final int SABER_SECRETKEYBYTES = (SABER_INDCPA_SECRETKEYBYTES + SABER_INDCPA_PUBLICKEYBYTES + SABER_HASHBYTES + SABER_KEYBYTES);
     private static final int SABER_BYTES_CCA_DEC = (SABER_POLYVECCOMPRESSEDBYTES + SABER_SCALEBYTES_KEM);
 
+    //
+    private static int h1 = (1 << (SABER_EQ - SABER_EP - 1));
+    private static int h2 = ((1 << (SABER_EP - 2)) - (1 << (SABER_EP - SABER_ET - 1)) + (1 << (SABER_EQ - SABER_EP - 1)));
+
+
     public static void main(String[] args)
     {
+
+        byte[] pk = new byte[SABER_INDCPA_PUBLICKEYBYTES];
+        byte[] sk = new byte[SABER_INDCPA_SECRETKEYBYTES];
+
         // key pair gen
         short[][][] A = new short[SABER_L][SABER_L][SABER_N];
         short[][] s = new short[SABER_L][SABER_N];
@@ -95,9 +104,26 @@ public class SABEREngine
                 System.out.printf("%04x ", b[i][j]);
         System.out.println();
 
-        //matrix multiplication
+        for (i = 0; i < SABER_L; i++)
+        {
+            for (j = 0; j < SABER_N; j++)
+            {
+                b[i][j] = (short) (((b[i][j] + h1)&0xffff) >>> (SABER_EQ - SABER_EP));
+            }
+        }
+        System.out.print("b: ");
+        for (i = 0; i < SABER_L; i++)
+            for (j = 0; j < SABER_N; j++)
+                System.out.printf("%04x ", b[i][j]);
+        System.out.println();
+
+        POLVECq2BS(sk, s);
+        POLVECp2BS(pk, b);
+        System.arraycopy(seed_A, 0, pk, SABER_POLYVECCOMPRESSEDBYTES, seed_A.length);
 
 
+        System.out.println("pk: " + ByteUtils.toHexString(pk));
+        System.out.println("sk: " + ByteUtils.toHexString(sk));
     }
 
     private static void GenMatrix(short[][][] A, byte[] seed)
@@ -133,13 +159,13 @@ public class SABEREngine
 
     static void POLT2BS(byte bytes[], short data[])
     {
-        byte j, offset_byte, offset_data;
+        short j, offset_byte, offset_data;
         if (SABER_ET == 3)
         {
             for (j = 0; j < SABER_N / 8; j++)
             {
-                offset_byte = (byte) (3 * j);
-                offset_data = (byte) (8 * j);
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (8 * j);
                 bytes[offset_byte + 0] = (byte) ((data[offset_data + 0] & 0x7) | ((data[offset_data + 1] & 0x7) << 3) | ((data[offset_data + 2] & 0x3) << 6));
                 bytes[offset_byte + 1] = (byte) (((data[offset_data + 2] >> 2) & 0x01) | ((data[offset_data + 3] & 0x7) << 1) | ((data[offset_data + 4] & 0x7) << 4) | (((data[offset_data + 5]) & 0x01) << 7));
                 bytes[offset_byte + 2] = (byte) (((data[offset_data + 5] >> 1) & 0x03) | ((data[offset_data + 6] & 0x7) << 2) | ((data[offset_data + 7] & 0x7) << 5));
@@ -150,7 +176,7 @@ public class SABEREngine
             for (j = 0; j < SABER_N / 2; j++)
             {
                 offset_byte = j;
-                offset_data = (byte) (2 * j);
+                offset_data = (short) (2 * j);
                 bytes[offset_byte] = (byte) ((data[offset_data] & 0x0f) | ((data[offset_data + 1] & 0x0f) << 4));
             }
         }
@@ -158,8 +184,8 @@ public class SABEREngine
         {
             for (j = 0; j < SABER_N / 4; j++)
             {
-                offset_byte = (byte) (3 * j);
-                offset_data = (byte) (4 * j);
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (4 * j);
                 bytes[offset_byte + 0] = (byte) ((data[offset_data + 0] & 0x3f) | ((data[offset_data + 1] & 0x03) << 6));
                 bytes[offset_byte + 1] = (byte) (((data[offset_data + 1] >> 2) & 0x0f) | ((data[offset_data + 2] & 0x0f) << 4));
                 bytes[offset_byte + 2] = (byte) (((data[offset_data + 2] >> 4) & 0x03) | ((data[offset_data + 3] & 0x3f) << 2));
@@ -169,13 +195,13 @@ public class SABEREngine
 
     static void BS2POLT(byte bytes[], short data[])
     {
-        byte j, offset_byte, offset_data;
+        short j, offset_byte, offset_data;
         if (SABER_ET == 3)
         {
             for (j = 0; j < SABER_N / 8; j++)
             {
-                offset_byte = (byte) (3 * j);
-                offset_data = (byte) (8 * j);
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (8 * j);
                 data[offset_data + 0] = (short) ((bytes[offset_byte + 0]) & 0x07);
                 data[offset_data + 1] = (short) (((bytes[offset_byte + 0]) >> 3) & 0x07);
                 data[offset_data + 2] = (short) ((((bytes[offset_byte + 0]) >> 6) & 0x03) | (((bytes[offset_byte + 1]) & 0x01) << 2));
@@ -200,8 +226,8 @@ public class SABEREngine
         {
             for (j = 0; j < SABER_N / 4; j++)
             {
-                offset_byte = (byte) (3 * j);
-                offset_data = (byte) (4 * j);
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (4 * j);
                 data[offset_data + 0] = (short) (bytes[offset_byte + 0] & 0x3f);
                 data[offset_data + 1] = (short) (((bytes[offset_byte + 0] >> 6) & 0x03) | ((bytes[offset_byte + 1] & 0x0f) << 2));
                 data[offset_data + 2] = (short) (((bytes[offset_byte + 1] & 0xff) >> 4) | ((bytes[offset_byte + 2] & 0x03) << 4));
@@ -213,11 +239,11 @@ public class SABEREngine
 
     static void POLq2BS(byte bytes[], int byteIndex, short data[])
     {
-        byte j, offset_byte, offset_data;
+        short j, offset_byte, offset_data;
         for (j = 0; j < SABER_N / 8; j++)
         {
-            offset_byte = (byte) (13 * j);
-            offset_data = (byte) (8 * j);
+            offset_byte = (short) (13 * j);
+            offset_data = (short) (8 * j);
             bytes[byteIndex + offset_byte + 0] = (byte) (data[offset_data + 0] & (0xff));
             bytes[byteIndex + offset_byte + 1] = (byte) (((data[offset_data + 0] >> 8) & 0x1f) | ((data[offset_data + 1] & 0x07) << 5));
             bytes[byteIndex + offset_byte + 2] = (byte) ((data[offset_data + 1] >> 3) & 0xff);
@@ -254,11 +280,11 @@ public class SABEREngine
 
     static void POLp2BS(byte bytes[], int byteIndex, short data[])
     {
-        byte j, offset_byte, offset_data;
+        short j, offset_byte, offset_data;
         for (j = 0; j < SABER_N / 4; j++)
         {
-            offset_byte = (byte) (5 * j);
-            offset_data = (byte) (4 * j);
+            offset_byte = (short) (5 * j);
+            offset_data = (short) (4 * j);
             bytes[byteIndex + offset_byte + 0] = (byte) (data[offset_data + 0] & (0xff));
             bytes[byteIndex + offset_byte + 1] = (byte) (((data[offset_data + 0] >> 8) & 0x03) | ((data[offset_data + 1] & 0x3f) << 2));
             bytes[byteIndex + offset_byte + 2] = (byte) (((data[offset_data + 1] >> 6) & 0x0f) | ((data[offset_data + 2] & 0x0f) << 4));
