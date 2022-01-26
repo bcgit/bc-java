@@ -1,13 +1,14 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
+import java.security.SecureRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.DestroyFailedException;
+
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
-
-import javax.security.auth.DestroyFailedException;
-import java.security.SecureRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FrodoKEMGenerator
     implements EncapsulatedSecretGenerator
@@ -30,7 +31,6 @@ public class FrodoKEMGenerator
         return new FrodoKEMGenerator.SecretWithEncapsulationImpl(sessionKey, cipher_text);
     }
 
-    // TODO: add Destroyable support.
     private class SecretWithEncapsulationImpl
             implements SecretWithEncapsulation
     {
