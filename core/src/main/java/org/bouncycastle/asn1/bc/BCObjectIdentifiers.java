@@ -218,4 +218,13 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier frodokem43088r3 = pqc_kem_frodo.branch("5");
     public static final ASN1ObjectIdentifier frodokem43088shaker3 = pqc_kem_frodo.branch("6");
 
+    /**
+     * SABER
+     */
+    public static final ASN1ObjectIdentifier pqc_kem_saber = bc_kem.branch("3");
+
+    public static final ASN1ObjectIdentifier lightsaberkemr3 = pqc_kem_saber.branch("1");
+    public static final ASN1ObjectIdentifier saberkemhr3 = pqc_kem_saber.branch("2");
+    public static final ASN1ObjectIdentifier firesaberkemr3 = pqc_kem_saber.branch("3");
+
 }
