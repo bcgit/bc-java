@@ -17,5 +17,8 @@ public class FrodoKeyGenerationParameters
         this.params = frodoParameters;
     }
 
-    public  FrodoParameters getParameters() { return params; }
+    public  FrodoParameters getParameters()
+    {
+        return params;
+    }
 }

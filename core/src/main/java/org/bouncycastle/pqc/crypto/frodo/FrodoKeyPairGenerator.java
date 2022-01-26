@@ -7,9 +7,9 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 import java.security.SecureRandom;
 
 public class FrodoKeyPairGenerator
-    implements AsymmetricCipherKeyPairGenerator
+        implements AsymmetricCipherKeyPairGenerator
 {
-    private  FrodoKeyGenerationParameters frodoParams;
+    private FrodoKeyGenerationParameters frodoParams;
 
     private int n;
     private int D;
@@ -39,9 +39,15 @@ public class FrodoKeyPairGenerator
         FrodoPrivateKeyParameters privKey = new FrodoPrivateKeyParameters(frodoParams.getParameters(), sk);
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
-    @Override
-    public void init(KeyGenerationParameters param) { this.initialize(param); }
 
-    public AsymmetricCipherKeyPair generateKeyPair() { return genKeyPair(); }
+    public void init(KeyGenerationParameters param)
+    {
+        this.initialize(param);
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
+    {
+        return genKeyPair();
+    }
 
 }

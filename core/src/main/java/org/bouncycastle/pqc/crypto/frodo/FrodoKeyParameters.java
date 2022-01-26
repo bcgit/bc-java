@@ -3,9 +3,10 @@ package org.bouncycastle.pqc.crypto.frodo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 public class FrodoKeyParameters
-    extends AsymmetricKeyParameter
+        extends AsymmetricKeyParameter
 {
     private FrodoParameters params;
+
     public FrodoKeyParameters(
             boolean isPrivate,
             FrodoParameters params)
@@ -14,6 +15,9 @@ public class FrodoKeyParameters
         this.params = params;
     }
 
-    public FrodoParameters getParameters(){ return params; }
+    public FrodoParameters getParameters()
+    {
+        return params;
+    }
 
 }
