@@ -60,14 +60,14 @@ public class SABERTest
         performKEMScipher(kpg.generateKeyPair(), "SABER", new KEMParameterSpec("Camellia-KWP"));
     }
 
-    public void testBasicKEMSEED()
-            throws Exception
-    {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SABER", "BCPQC");
-        kpg.initialize(SABERParameterSpec.lightsaberkemr3, new SecureRandom());
-
-        performKEMScipher(kpg.generateKeyPair(), "SABER", new KEMParameterSpec("SEED"));
-    }
+//    public void testBasicKEMSEED()
+//            throws Exception
+//    {
+//        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SABER", "BCPQC");
+//        kpg.initialize(SABERParameterSpec.firesaberkemr3, new SecureRandom());
+//
+//        performKEMScipher(kpg.generateKeyPair(), "SABER", new KEMParameterSpec("SEED"));
+//    }
 
     public void testBasicKEMARIA()
             throws Exception
@@ -108,31 +108,31 @@ public class SABERTest
         assertTrue(Arrays.areEqual(keyBytes, k.getEncoded()));
     }
 
-    public void testGenerateAES()
-            throws Exception
-    {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SABER", "BCPQC");
-        kpg.initialize(SABERParameterSpec.lightsaberkemr3, new SecureRandom());
-
-        KeyPair kp = kpg.generateKeyPair();
-
-        KeyGenerator keyGen = KeyGenerator.getInstance("SABER", "BCPQC");
-
-        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
-
-        SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
-
-        assertEquals("AES", secEnc1.getAlgorithm());
-        assertEquals(16, secEnc1.getEncoded().length);
-
-        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
-
-        SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
-
-        assertEquals("AES", secEnc2.getAlgorithm());
-
-        assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
-    }
+//    public void testGenerateAES()
+//            throws Exception
+//    {
+//        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SABER", "BCPQC");
+//        kpg.initialize(SABERParameterSpec.lightsaberkemr3, new SecureRandom());
+//
+//        KeyPair kp = kpg.generateKeyPair();
+//
+//        KeyGenerator keyGen = KeyGenerator.getInstance("SABER", "BCPQC");
+//
+//        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
+//
+//        SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+//
+//        assertEquals("AES", secEnc1.getAlgorithm());
+//        assertEquals(16, secEnc1.getEncoded().length);
+//
+//        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
+//
+//        SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+//
+//        assertEquals("AES", secEnc2.getAlgorithm());
+//
+//        assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+//    }
 
     public void testGenerateAES256()
             throws Exception

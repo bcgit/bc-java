@@ -310,9 +310,9 @@ public class PublicKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(
                     ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
 
-            SABERParameters spParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new SABERPublicKeyParameters(spParams, keyEnc);
+            return new SABERPublicKeyParameters(saberParams, keyEnc);
         }
     }
 
