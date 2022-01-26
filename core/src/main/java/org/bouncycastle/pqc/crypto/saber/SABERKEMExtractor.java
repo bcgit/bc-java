@@ -19,7 +19,6 @@ public class SABERKEMExtractor
         engine = param.getEngine();
     }
 
-    @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
         byte[] session_key = new byte[engine.getSessionKeySize()];

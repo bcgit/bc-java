@@ -10,7 +10,7 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 
 import java.security.SecureRandom;
 
-public class SABEREngine
+class SABEREngine
 {
     // constant parameters
     public static final int SABER_EQ = 13;
