@@ -1,7 +1,7 @@
 package org.bouncycastle.its;
 
-import org.bouncycastle.oer.its.PublicEncryptionKey;
-import org.bouncycastle.oer.its.SymmAlgorithm;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SymmAlgorithm;
 
 public class ITSPublicEncryptionKey
 {

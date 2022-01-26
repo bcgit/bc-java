@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OERInputStream;
-import org.bouncycastle.oer.its.Certificate;
+import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
 import org.bouncycastle.oer.its.template.IEEE1609dot2;
 import org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes;
 import org.bouncycastle.util.Arrays;

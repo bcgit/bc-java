@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
+import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationReason;
@@ -404,6 +405,28 @@ public class PGPSignatureSubpacketVector
     {
         Exportable exportable = getExportable();
         return exportable == null || exportable.isExportable();
+    }
+
+    public RegularExpression getRegularExpression()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.REG_EXP);
+        if (p == null)
+        {
+            return null;
+        }
+        return new RegularExpression(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public RegularExpression[] getRegularExpressions()
+    {
+        SignatureSubpacket[] subpackets = getSubpackets(SignatureSubpacketTags.REG_EXP);
+        RegularExpression[] regexes = new RegularExpression[subpackets.length];
+        for (int i = 0; i < regexes.length; i++)
+        {
+            SignatureSubpacket p = subpackets[i];
+            regexes[i] = new RegularExpression(p.isCritical(), p.isLongLength(), p.getData());
+        }
+        return regexes;
     }
 
     public Revocable getRevocable()

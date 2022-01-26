@@ -13,12 +13,12 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ITSPublicEncryptionKey;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.oer.its.BasePublicEncryptionKey;
-import org.bouncycastle.oer.its.EccCurvePoint;
-import org.bouncycastle.oer.its.EccP256CurvePoint;
-import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.PublicEncryptionKey;
-import org.bouncycastle.oer.its.SymmAlgorithm;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BasePublicEncryptionKey;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SymmAlgorithm;
 
 public class BcITSPublicEncryptionKey
     extends ITSPublicEncryptionKey

@@ -8,9 +8,9 @@ import org.bouncycastle.asn1.x509.CertificateList;
 
 public class RevRepContentBuilder
 {
-    private ASN1EncodableVector status = new ASN1EncodableVector();
-    private ASN1EncodableVector revCerts = new ASN1EncodableVector();
-    private ASN1EncodableVector crls = new ASN1EncodableVector();
+    private final ASN1EncodableVector status = new ASN1EncodableVector();
+    private final ASN1EncodableVector revCerts = new ASN1EncodableVector();
+    private final ASN1EncodableVector crls = new ASN1EncodableVector();
 
     public RevRepContentBuilder add(PKIStatusInfo status)
     {

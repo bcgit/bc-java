@@ -163,4 +163,24 @@ public abstract class PGPEncryptedData
 
         return Arrays.constantTimeAreEqual(digest, streamDigest);
     }
+
+    /**
+     * Return the version number of the Encrypted Session Key Packet.
+     *
+     * @return version
+     */
+    public int getVersion()
+    {
+        throw new UnsupportedOperationException("not supported - override required");
+    }
+
+    /**
+     * Return the symmetric encryption algorithm that is used by the packet.
+     *
+     * @return algorithm
+     */
+    public int getAlgorithm()
+    {
+        throw new UnsupportedOperationException("not supported - override required");
+    }
 }

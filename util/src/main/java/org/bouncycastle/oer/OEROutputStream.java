@@ -26,16 +26,27 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
-public class OEROutputStream extends OutputStream
+public class OEROutputStream
+    extends OutputStream
 {
-    private final OutputStream out;
-
-
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
+    private final OutputStream out;
+    protected PrintWriter debugOutput = null;
 
     public OEROutputStream(OutputStream out)
     {
         this.out = out;
+    }
+
+    public static int byteLength(long value)
+    {
+        long m = 0xFF00000000000000L;
+        int j = 8;
+        for (; j > 0 && (value & m) == 0; j--)
+        {
+            value <<= 8;
+        }
+        return j;
     }
 
     public void write(ASN1Encodable encodable, OERDefinition.Element oerElement)
@@ -82,7 +93,6 @@ public class OEROutputStream extends OutputStream
             {
                 OERDefinition.Element childOERDescription = oerElement.children.get(t);
 
-
                 if (j < 0)
                 {
                     out.write(mask);
@@ -90,7 +100,9 @@ public class OEROutputStream extends OutputStream
                     mask = 0;
                 }
 
+
                 ASN1Encodable asn1EncodableChild = seq.getObjectAt(t);
+
                 if (childOERDescription.explicit && asn1EncodableChild instanceof OEROptional)
                 {
                     // TODO call stack like definition error.
@@ -145,6 +157,11 @@ public class OEROutputStream extends OutputStream
             {
                 ASN1Encodable child = seq.getObjectAt(t);
                 OERDefinition.Element childOERElement = oerElement.children.get(t);
+
+                if (childOERElement.aSwitch != null)
+                {
+                    childOERElement = childOERElement.aSwitch.result(new SwitchIndexer.Asn1SequenceIndexer(seq));
+                }
 
                 if (childOERElement.getDefaultValue() != null)
                 {
@@ -495,9 +512,6 @@ public class OEROutputStream extends OutputStream
 
     }
 
-
-    protected PrintWriter debugOutput = null;
-
     protected void debugPrint(String what)
     {
 
@@ -529,7 +543,6 @@ public class OEROutputStream extends OutputStream
         }
     }
 
-
     private void encodeLength(long len)
         throws IOException
     {
@@ -554,24 +567,11 @@ public class OEROutputStream extends OutputStream
         out.write(quantityEncoded);
     }
 
-
-    public static int byteLength(long value)
-    {
-        long m = 0xFF00000000000000L;
-        int j = 8;
-        for (; j > 0 && (value & m) == 0; j--)
-        {
-            value <<= 8;
-        }
-        return j;
-    }
-
     public void write(int b)
         throws IOException
     {
         out.write(b);
     }
-
 
 
 }

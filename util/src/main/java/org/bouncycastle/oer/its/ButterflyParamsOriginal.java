@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 
 /**
  * ButterflyParamsOriginal ::= SEQUENCE {
@@ -29,23 +30,31 @@ public class ButterflyParamsOriginal
         this.encryptionExpansion = encryptionExpansion;
     }
 
+    private ButterflyParamsOriginal(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 3)
+        {
+            throw new IllegalArgumentException("sequence must be 3 elements");
+        }
+
+        signingExpansion = ButterflyExpansion.getInstance(sequence.getObjectAt(0));
+        encryptionKey = PublicEncryptionKey.getInstance(sequence.getObjectAt(1));
+        encryptionExpansion = ButterflyExpansion.getInstance(sequence.getObjectAt(2));
+    }
+
+
     public static ButterflyParamsOriginal getInstance(Object o)
     {
         if (o instanceof ButterflyParamsOriginal)
         {
             return (ButterflyParamsOriginal)o;
         }
-        ASN1Sequence sequence = ASN1Sequence.getInstance(o);
-        if (sequence.size() != 3)
+        if (o != null)
         {
-            throw new IllegalArgumentException("sequence must be 3 elements");
+            return new ButterflyParamsOriginal(ASN1Sequence.getInstance(o));
         }
 
-        return new ButterflyParamsOriginal(
-            ButterflyExpansion.getInstance(sequence.getObjectAt(0)),
-            PublicEncryptionKey.getInstance(sequence.getObjectAt(1)),
-            ButterflyExpansion.getInstance(sequence.getObjectAt(2))
-        );
+        return null;
     }
 
     public static Builder builder()

@@ -1,10 +1,10 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-
-import java.security.SecureRandom;
 
 public class FrodoKeyPairGenerator
         implements AsymmetricCipherKeyPairGenerator
@@ -18,9 +18,9 @@ public class FrodoKeyPairGenerator
     private SecureRandom random;
 
     private void initialize(
-            KeyGenerationParameters param)
+        KeyGenerationParameters param)
     {
-        this.frodoParams = (FrodoKeyGenerationParameters) param;
+        this.frodoParams = (FrodoKeyGenerationParameters)param;
         this.random = param.getRandom();
 
         this.n = this.frodoParams.getParameters().getN();

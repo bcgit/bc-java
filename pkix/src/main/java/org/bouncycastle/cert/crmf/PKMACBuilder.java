@@ -12,10 +12,13 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacCalculator;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Strings;
 
 public class PKMACBuilder
+    implements PBEMacCalculatorProvider
 {
     private AlgorithmIdentifier owf;
     private int iterationCount;
@@ -96,6 +99,26 @@ public class PKMACBuilder
         this.parameters = parameters;
 
         return this;
+    }
+
+    public MacCalculator get(AlgorithmIdentifier algorithm, char[] password)
+        throws OperatorCreationException
+    {
+        if (!CMPObjectIdentifiers.passwordBasedMac.equals(algorithm.getAlgorithm()))
+        {
+            throw new OperatorCreationException("protection algorithm not mac based");
+        }
+
+        this.setParameters(PBMParameter.getInstance(algorithm.getParameters()));
+
+        try
+        {
+            return this.build(password);
+        }
+        catch (CRMFException e)
+        {
+            throw new OperatorCreationException(e.getMessage(), e.getCause());
+        }
     }
 
     public MacCalculator build(char[] password)
