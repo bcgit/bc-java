@@ -7,9 +7,9 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 import java.security.SecureRandom;
 
 public class SABERKeyPairGenerator
-    implements AsymmetricCipherKeyPairGenerator
+        implements AsymmetricCipherKeyPairGenerator
 {
-    private  SABERKeyGenerationParameters saberParams;
+    private SABERKeyGenerationParameters saberParams;
 
     private int l;
 
@@ -35,8 +35,14 @@ public class SABERKeyPairGenerator
         SABERPrivateKeyParameters privKey = new SABERPrivateKeyParameters(saberParams.getParameters(), sk);
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
-    @Override
-    public void init(KeyGenerationParameters param) { this.initialize(param); }
 
-    public AsymmetricCipherKeyPair generateKeyPair() { return genKeyPair(); }
+    public void init(KeyGenerationParameters param)
+    {
+        this.initialize(param);
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
+    {
+        return genKeyPair();
+    }
 }
