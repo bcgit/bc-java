@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -40,6 +41,9 @@ class Utils
 
     static final Map frodoOids = new HashMap();
     static final Map frodoParams = new HashMap();
+
+    static final Map saberOids = new HashMap();
+    static final Map saberParams = new HashMap();
 
     static final Map mcElieceOids = new HashMap();
     static final Map mcElieceParams = new HashMap();
@@ -88,6 +92,15 @@ class Utils
         frodoParams.put(BCObjectIdentifiers.frodokem31296shaker3, FrodoParameters.frodokem31296shaker3);
         frodoParams.put(BCObjectIdentifiers.frodokem43088r3, FrodoParameters.frodokem43088r3);
         frodoParams.put(BCObjectIdentifiers.frodokem43088shaker3, FrodoParameters.frodokem43088shaker3);
+
+
+        saberOids.put(SABERParameters.lightsaberkemr3, BCObjectIdentifiers.lightsaberkemr3);
+        saberOids.put(SABERParameters.saberkemr3, BCObjectIdentifiers.saberkemhr3);
+        saberOids.put(SABERParameters.firesaberkemr3, BCObjectIdentifiers.firesaberkemr3);
+
+        saberParams.put(BCObjectIdentifiers.lightsaberkemr3, SABERParameters.lightsaberkemr3);
+        saberParams.put(BCObjectIdentifiers.saberkemhr3, SABERParameters.saberkemr3);
+        saberParams.put(BCObjectIdentifiers.firesaberkemr3, SABERParameters.firesaberkemr3);
 
     }
 
@@ -276,5 +289,15 @@ class Utils
     static FrodoParameters frodoParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (FrodoParameters)frodoParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier saberOidLookup(SABERParameters params)
+    {
+        return (ASN1ObjectIdentifier)saberOids.get(params);
+    }
+
+    static SABERParameters saberParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SABERParameters)saberParams.get(oid);
     }
 }

@@ -31,6 +31,8 @@ import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
@@ -82,6 +84,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.frodokem31296shaker3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088r3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088shaker3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkemr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkemhr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkemr3, new SABERConverter());
     }
 
     /**
@@ -293,6 +298,21 @@ public class PublicKeyFactory
             CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new CMCEPublicKeyParameters(spParams, keyEnc);
+        }
+    }
+
+    private static class SABERConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(
+                    ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
+
+            SABERParameters spParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SABERPublicKeyParameters(spParams, keyEnc);
         }
     }
 
