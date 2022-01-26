@@ -18,7 +18,7 @@ class Poly
 
     private final SABEREngine engine;
     private final Utils utils;
-    
+
 
     public Poly(SABEREngine engine)
     {
@@ -27,7 +27,7 @@ class Poly
         this.SABER_N = engine.getSABER_N();
         this.N_RES = (SABER_N << 1);
         this.N_SB = (SABER_N >> 2);
-        this.N_SB_RES = (2*N_SB-1);
+        this.N_SB_RES = (2 * N_SB - 1);
         this.utils = engine.getUtils();
     }
 
@@ -64,10 +64,10 @@ class Poly
     private long load_littleendian(byte[] x, int offset, int bytes)
     {
         int i;
-        long r = (x[offset + 0]&0xff);
+        long r = (x[offset + 0] & 0xff);
         for (i = 1; i < bytes; i++)
         {
-            r |= ((long) (x[offset + i]&0xff)) << (8 * i);
+            r |= ((long) (x[offset + i] & 0xff)) << (8 * i);
         }
         return r;
     }
@@ -76,7 +76,7 @@ class Poly
     {
         int[] a = new int[4], b = new int[4];
         int i, j;
-        if(engine.getSABER_MU() == 6)
+        if (engine.getSABER_MU() == 6)
         {
             int t, d;
             for (i = 0; i < SABER_N / 4; i++)
@@ -101,13 +101,13 @@ class Poly
                 s[4 * i + 3] = (short) (a[3] - b[3]);
             }
         }
-        else if(engine.getSABER_MU() == 8)
+        else if (engine.getSABER_MU() == 8)
         {
             int t, d;
             for (i = 0; i < SABER_N / 4; i++)
             {
 
-                t = (int) load_littleendian(buf,offset + 4 * i, 4);
+                t = (int) load_littleendian(buf, offset + 4 * i, 4);
                 d = 0;
                 for (j = 0; j < 4; j++)
                     d += (t >>> j) & 0x11111111;
@@ -127,12 +127,12 @@ class Poly
                 s[4 * i + 3] = (short) (a[3] - b[3]);
             }
         }
-        else if(engine.getSABER_MU() == 10)
+        else if (engine.getSABER_MU() == 10)
         {
             long t, d;
             for (i = 0; i < SABER_N / 4; i++)
             {
-                t = load_littleendian(buf,offset + 5 * i, 5);
+                t = load_littleendian(buf, offset + 5 * i, 5);
                 d = 0;
                 for (j = 0; j < 5; j++)
                     d += (t >>> j) & 0x0842108421L;
@@ -156,10 +156,11 @@ class Poly
 
     private short OVERFLOWING_MUL(int x, int y)
     {
-        return (short)(x*y);
+        return (short) (x * y);
     }
 
-    private void karatsuba_simple(int[] a_1, int[] b_1, int[] result_final) {
+    private void karatsuba_simple(int[] a_1, int[] b_1, int[] result_final)
+    {
         int[] d01 = new int[KARATSUBA_N / 2 - 1];
         int[] d0123 = new int[KARATSUBA_N / 2 - 1];
         int[] d23 = new int[KARATSUBA_N / 2 - 1];
@@ -168,12 +169,14 @@ class Poly
         int i, j;
         int acc1, acc2, acc3, acc4, acc5, acc6, acc7, acc8, acc9, acc10;
 
-        for (i = 0; i < KARATSUBA_N / 4; i++) {
+        for (i = 0; i < KARATSUBA_N / 4; i++)
+        {
             acc1 = a_1[i]; //a0
             acc2 = a_1[i + KARATSUBA_N / 4]; //a1
             acc3 = a_1[i + 2 * KARATSUBA_N / 4]; //a2
             acc4 = a_1[i + 3 * KARATSUBA_N / 4]; //a3
-            for (j = 0; j < KARATSUBA_N / 4; j++) {
+            for (j = 0; j < KARATSUBA_N / 4; j++)
+            {
 
                 acc5 = b_1[j]; //b0
                 acc6 = b_1[j + KARATSUBA_N / 4]; //b1
@@ -183,7 +186,7 @@ class Poly
 
                 acc7 = (acc5 + acc6); //b01
                 acc8 = (acc1 + acc2); //a01
-                d01[i + j] = (int) (d01[i + j] + (acc7 * (long)acc8));
+                d01[i + j] = (int) (d01[i + j] + (acc7 * (long) acc8));
                 //--------------------------------------------------------
 
                 acc7 = b_1[j + 2 * KARATSUBA_N / 4]; //b2
@@ -221,32 +224,35 @@ class Poly
 
         // 2nd last stage
 
-        for (i = 0; i < KARATSUBA_N / 2 - 1; i++) {
+        for (i = 0; i < KARATSUBA_N / 2 - 1; i++)
+        {
             d0123[i] = (d0123[i] - result_d01[i + 0 * KARATSUBA_N / 4] - result_d01[i + 2 * KARATSUBA_N / 4]);
             d01[i] = (d01[i] - result_final[i + 0 * KARATSUBA_N / 4] - result_final[i + 2 * KARATSUBA_N / 4]);
             d23[i] = (d23[i] - result_final[i + 4 * KARATSUBA_N / 4] - result_final[i + 6 * KARATSUBA_N / 4]);
         }
 
-        for (i = 0; i < KARATSUBA_N / 2 - 1; i++) {
+        for (i = 0; i < KARATSUBA_N / 2 - 1; i++)
+        {
             result_d01[i + 1 * KARATSUBA_N / 4] = (result_d01[i + 1 * KARATSUBA_N / 4] + d0123[i]);
             result_final[i + 1 * KARATSUBA_N / 4] = (result_final[i + 1 * KARATSUBA_N / 4] + d01[i]);
             result_final[i + 5 * KARATSUBA_N / 4] = (result_final[i + 5 * KARATSUBA_N / 4] + d23[i]);
         }
 
         // Last stage
-        for (i = 0; i < KARATSUBA_N - 1; i++) {
+        for (i = 0; i < KARATSUBA_N - 1; i++)
+        {
             result_d01[i] = (result_d01[i] - result_final[i] - result_final[i + KARATSUBA_N]);
         }
 
-        for (i = 0; i < KARATSUBA_N - 1; i++) {
+        for (i = 0; i < KARATSUBA_N - 1; i++)
+        {
             result_final[i + 1 * KARATSUBA_N / 2] = (result_final[i + 1 * KARATSUBA_N / 2] + result_d01[i]);
         }
 
     }
 
 
-
-    private void toom_cook_4way (short[] a1, short[] b1, short[] result)
+    private void toom_cook_4way(short[] a1, short[] b1, short[] result)
     {
         int inv3 = 43691, inv9 = 36409, inv15 = 61167;
 
@@ -281,7 +287,8 @@ class Poly
         int i, j;
 
         // EVALUATION
-        for (j = 0; j < N_SB; ++j) {
+        for (j = 0; j < N_SB; ++j)
+        {
             r0 = a1[j];
             r1 = a1[j + N_SB];
             r2 = a1[j + N_SB * 2];
@@ -303,7 +310,8 @@ class Poly
             aw7[j] = r0;
             aw1[j] = r3;
         }
-        for (j = 0; j < N_SB; ++j) {
+        for (j = 0; j < N_SB; ++j)
+        {
             r0 = b1[j];
             r1 = b1[j + N_SB];
             r2 = b1[j + N_SB * 2];
@@ -337,7 +345,8 @@ class Poly
         karatsuba_simple(aw7, bw7, w7);
 
         // INTERPOLATION
-        for (i = 0; i < N_SB_RES; ++i) {
+        for (i = 0; i < N_SB_RES; ++i)
+        {
             r0 = w1[i];
             r1 = w2[i];
             r2 = w3[i];
@@ -349,7 +358,7 @@ class Poly
 
             r1 = r1 + r4;
             r5 = (r5 - r4);
-            r3 = ((r3&0xffff) - (r2&0xffff)) >>> 1;
+            r3 = ((r3 & 0xffff) - (r2 & 0xffff)) >>> 1;
             r4 = (r4 - r0);
             r4 = (r4 - (r6 << 6));
             r4 = ((r4 << 1) + r5);
@@ -358,21 +367,21 @@ class Poly
             r2 = (r2 - r6);
             r2 = (r2 - r0);
             r1 = (r1 + 45 * r2);
-            r4 = (((((r4&0xffff) -(r2 << 3)) * inv3)) >> 3);
+            r4 = (((((r4 & 0xffff) - (r2 << 3)) * inv3)) >> 3);
             r5 = (r5 + r1);
-            r1 = ((r1&0xffff) + ( (r3&0xffff) << 4)) * inv9 >> 1;
+            r1 = ((r1 & 0xffff) + ((r3 & 0xffff) << 4)) * inv9 >> 1;
             r3 = -(r3 + r1);
-            r5 = ((30 * (r1&0xffff) - (r5&0xffff)) * inv15) >> 2;
+            r5 = ((30 * (r1 & 0xffff) - (r5 & 0xffff)) * inv15) >> 2;
             r2 = (r2 - r4);
             r1 = (r1 - r5);
 
-            C[i]       += (r6&0xffff);
-            C[i + 64]  += (r5&0xffff);
-            C[i + 128] += (r4&0xffff);
-            C[i + 192] += (r3&0xffff);
-            C[i + 256] += (r2&0xffff);
-            C[i + 320] += (r1&0xffff);
-            C[i + 384] += (r0&0xffff);
+            C[i] += (r6 & 0xffff);
+            C[i + 64] += (r5 & 0xffff);
+            C[i + 128] += (r4 & 0xffff);
+            C[i + 192] += (r3 & 0xffff);
+            C[i + 256] += (r2 & 0xffff);
+            C[i + 320] += (r1 & 0xffff);
+            C[i + 384] += (r0 & 0xffff);
         }
     }
 
@@ -409,6 +418,7 @@ class Poly
             }
         }
     }
+
     public void InnerProd(short[][] b, short[][] s, short[] res)
     {
         int j;
