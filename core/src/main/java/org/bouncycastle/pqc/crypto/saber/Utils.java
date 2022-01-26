@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.saber;
 
-public class Utils
+class Utils
 {
 
     private final int SABER_N;
