@@ -92,6 +92,7 @@ public class SABERVectorTest
                         SABERPublicKeyParameters pubParams = (SABERPublicKeyParameters) PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SABERPublicKeyParameters)kp.getPublic()));
                         SABERPrivateKeyParameters privParams = (SABERPrivateKeyParameters) PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo((SABERPrivateKeyParameters)kp.getPrivate()));
 
+
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
 

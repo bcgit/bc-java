@@ -164,7 +164,6 @@ public class SABEREngine
         short[][][] A = new short[SABER_L][SABER_L][SABER_N];
         short[][] s = new short[SABER_L][SABER_N];
         short[][] b = new short[SABER_L][SABER_N];
-        b[0][0] = 0;//todo remove?
 
         byte[] seed_A = new byte[SABER_SEEDBYTES];
         byte[] seed_s = new byte[SABER_NOISE_SEEDBYTES];
@@ -179,27 +178,10 @@ public class SABEREngine
         random.nextBytes(seed_s);
 
         poly.GenMatrix(A, seed_A);
-        System.out.print("A: ");
-        for (i = 0; i < SABER_L; i++)
-            for (j = 0; j < SABER_L; j++)
-                for (int k = 0; k < SABER_N; k++)
-                    System.out.printf("%04x ", A[i][j][k]);
-        System.out.println();
 
         poly.GenSecret(s, seed_s);
-        System.out.print("s: ");
-        for (i = 0; i < SABER_L; i++)
-            for (j = 0; j < SABER_N; j++)
-                System.out.printf("%04x ", s[i][j]);
-        System.out.println();
 
         poly.MatrixVectorMul(A, s, b, 1);
-
-        System.out.print("b: ");
-        for (i = 0; i < SABER_L; i++)
-            for (j = 0; j < SABER_N; j++)
-                System.out.printf("%04x ", b[i][j]);
-        System.out.println();
 
         for (i = 0; i < SABER_L; i++)
         {
@@ -208,11 +190,6 @@ public class SABEREngine
                 b[i][j] = (short) (((b[i][j] + h1)&0xffff) >>> (SABER_EQ - SABER_EP));
             }
         }
-        System.out.print("b: ");
-        for (i = 0; i < SABER_L; i++)
-            for (j = 0; j < SABER_N; j++)
-                System.out.printf("%04x ", b[i][j]);
-        System.out.println();
 
         utils.POLVECq2BS(sk, s);
         utils.POLVECp2BS(pk, b);
