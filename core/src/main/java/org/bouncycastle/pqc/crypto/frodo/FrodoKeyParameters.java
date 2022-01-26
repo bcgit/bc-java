@@ -8,8 +8,8 @@ public class FrodoKeyParameters
     private FrodoParameters params;
 
     public FrodoKeyParameters(
-            boolean isPrivate,
-            FrodoParameters params)
+        boolean isPrivate,
+        FrodoParameters params)
     {
         super(isPrivate);
         this.params = params;

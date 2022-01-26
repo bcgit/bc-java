@@ -9,15 +9,22 @@ import org.bouncycastle.asn1.DERSequence;
 public class CAKeyUpdAnnContent
     extends ASN1Object
 {
-    private CMPCertificate oldWithNew;
-    private CMPCertificate newWithOld;
-    private CMPCertificate newWithNew;
+    private final CMPCertificate oldWithNew;
+    private final CMPCertificate newWithOld;
+    private final CMPCertificate newWithNew;
 
     private CAKeyUpdAnnContent(ASN1Sequence seq)
     {
         oldWithNew = CMPCertificate.getInstance(seq.getObjectAt(0));
         newWithOld = CMPCertificate.getInstance(seq.getObjectAt(1));
         newWithNew = CMPCertificate.getInstance(seq.getObjectAt(2));
+    }
+
+    public CAKeyUpdAnnContent(CMPCertificate oldWithNew, CMPCertificate newWithOld, CMPCertificate newWithNew)
+    {
+        this.oldWithNew = oldWithNew;
+        this.newWithOld = newWithOld;
+        this.newWithNew = newWithNew;
     }
 
     public static CAKeyUpdAnnContent getInstance(Object o)
@@ -33,13 +40,6 @@ public class CAKeyUpdAnnContent
         }
 
         return null;
-    }
-
-    public CAKeyUpdAnnContent(CMPCertificate oldWithNew, CMPCertificate newWithOld, CMPCertificate newWithNew)
-    {
-        this.oldWithNew = oldWithNew;
-        this.newWithOld = newWithOld;
-        this.newWithNew = newWithNew;
     }
 
     public CMPCertificate getOldWithNew()
@@ -65,6 +65,7 @@ public class CAKeyUpdAnnContent
      *                             newWithNew   CMPCertificate  -- new pub signed with new priv
      *  }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

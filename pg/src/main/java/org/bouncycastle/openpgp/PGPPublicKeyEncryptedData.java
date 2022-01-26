@@ -21,11 +21,11 @@ import org.bouncycastle.util.io.TeeInputStream;
 public class PGPPublicKeyEncryptedData
     extends PGPEncryptedData
 {
-    PublicKeyEncSessionPacket        keyData;
+    PublicKeyEncSessionPacket keyData;
 
     PGPPublicKeyEncryptedData(
-        PublicKeyEncSessionPacket    keyData,
-        InputStreamPacket            encData)
+        PublicKeyEncSessionPacket keyData,
+        InputStreamPacket encData)
     {
         super(encData);
 
@@ -33,9 +33,9 @@ public class PGPPublicKeyEncryptedData
     }
 
     private boolean confirmCheckSum(
-        byte[]    sessionInfo)
+        byte[] sessionInfo)
     {
-        int    check = 0;
+        int check = 0;
 
         for (int i = 1; i != sessionInfo.length - 2; i++)
         {
@@ -43,7 +43,7 @@ public class PGPPublicKeyEncryptedData
         }
 
         return (sessionInfo[sessionInfo.length - 2] == (byte)(check >> 8))
-                    && (sessionInfo[sessionInfo.length - 1] == (byte)(check));
+            && (sessionInfo[sessionInfo.length - 1] == (byte)(check));
     }
 
     /**
@@ -58,10 +58,10 @@ public class PGPPublicKeyEncryptedData
 
     /**
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
-     * 
+     *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data.
      * @return the identifier of the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
-     *         encrypt this object.
+     * encrypt this object.
      * @throws PGPException if the session data cannot be recovered.
      */
     public int getSymmetricAlgorithm(
@@ -96,9 +96,9 @@ public class PGPPublicKeyEncryptedData
     /**
      * Open an input stream which will provide the decrypted data protected by this object.
      *
-     * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.
-     * @return  the resulting input stream
-     * @throws PGPException  if the session data cannot be recovered or the stream cannot be created.
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide the stream.
+     * @return the resulting input stream
+     * @throws PGPException if the session data cannot be recovered or the stream cannot be created.
      */
     public InputStream getDataStream(
         PublicKeyDataDecryptorFactory dataDecryptorFactory)
@@ -117,10 +117,10 @@ public class PGPPublicKeyEncryptedData
     /**
      * Open an input stream which will provide the decrypted data protected by this object.
      *
-     * @param dataDecryptorFactory  decryptor factory to use to recover the session data and provide the stream.
-     * @param sessionKey the session key for the stream.
-     * @return  the resulting input stream
-     * @throws PGPException  if the session data cannot be recovered or the stream cannot be created.
+     * @param dataDecryptorFactory decryptor factory to use to recover the session data and provide the stream.
+     * @param sessionKey           the session key for the stream.
+     * @return the resulting input stream
+     * @throws PGPException if the session data cannot be recovered or the stream cannot be created.
      */
     private InputStream getDataStream(
         PGPDataDecryptorFactory dataDecryptorFactory,
@@ -131,7 +131,7 @@ public class PGPPublicKeyEncryptedData
         {
             try
             {
-                boolean      withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+                boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
 
                 PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
@@ -152,7 +152,7 @@ public class PGPPublicKeyEncryptedData
 
                 for (int i = 0; i != iv.length; i++)
                 {
-                    int    ch = encStream.read();
+                    int ch = encStream.read();
 
                     if (ch < 0)
                     {
@@ -162,8 +162,8 @@ public class PGPPublicKeyEncryptedData
                     iv[i] = (byte)ch;
                 }
 
-                int    v1 = encStream.read();
-                int    v2 = encStream.read();
+                int v1 = encStream.read();
+                int v2 = encStream.read();
 
                 if (v1 < 0 || v2 < 0)
                 {
@@ -202,5 +202,15 @@ public class PGPPublicKeyEncryptedData
         {
             return encData.getInputStream();
         }
+    }
+
+    public int getAlgorithm()
+    {
+        return keyData.getAlgorithm();
+    }
+
+    public int getVersion()
+    {
+        return keyData.getVersion();
     }
 }

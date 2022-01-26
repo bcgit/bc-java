@@ -8,12 +8,10 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.ECVKOAgreement;
 import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
-import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -27,8 +25,6 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 public class KeyAgreementSpi
     extends BaseAgreementSpi
 {
-    private static final X9IntegerConverter converter = new X9IntegerConverter();
-
     private String                 kaAlgorithm;
 
     private ECDomainParameters     parameters;
@@ -91,43 +87,24 @@ public class KeyAgreementSpi
         return null;
     }
 
-    protected void engineInit(
-        Key                     key,
-        AlgorithmParameterSpec  params,
-        SecureRandom            random) 
+    protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (params != null && !(params instanceof UserKeyingMaterialSpec))
+        if (!(key instanceof PrivateKey))
+        {
+            throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
+                + getSimpleName(ECPrivateKey.class) + " for initialisation");
+        }
+
+        if (parameterSpec != null && !(parameterSpec instanceof UserKeyingMaterialSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
-        initFromKey(key, params);
-    }
-
-    protected void engineInit(
-        Key             key,
-        SecureRandom    random) 
-        throws InvalidKeyException
-    {
-        initFromKey(key, null);
-    }
-
-    private void initFromKey(Key key, AlgorithmParameterSpec parameterSpec)
-        throws InvalidKeyException
-    {
-        {
-            if (!(key instanceof PrivateKey))
-            {
-                throw new InvalidKeyException(kaAlgorithm + " key agreement requires "
-                    + getSimpleName(ECPrivateKey.class) + " for initialisation");
-            }
-
-            ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
-            this.parameters = privKey.getParameters();
-            ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
-            agreement.init(new ParametersWithUKM(privKey, ukmParameters));
-        }
+        ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+        this.parameters = privKey.getParameters();
+        ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
+        agreement.init(new ParametersWithUKM(privKey, ukmParameters));
     }
 
     private static String getSimpleName(Class clazz)
@@ -144,7 +121,7 @@ public class KeyAgreementSpi
         return (key instanceof BCECGOST3410_2012PublicKey) ? ((BCECGOST3410_2012PublicKey)key).engineGetKeyParameters() : ECUtil.generatePublicKeyParameter(key);
     }
 
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return result;
     }

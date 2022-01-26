@@ -249,7 +249,7 @@ public class KeyAgreementSpi
         return super.engineGenerateSecret(algorithm);
     }
 
-    protected void engineInit(
+    protected void doInitFromKey(
         Key                     key,
         AlgorithmParameterSpec  params,
         SecureRandom            random) 
@@ -362,7 +362,7 @@ public class KeyAgreementSpi
         this.result = bigIntToBytes(x);
     }
 
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return result;
     }

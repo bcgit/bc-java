@@ -382,6 +382,30 @@ public class IEEE1609dot2
      * Certificate ::= CertificateBase (ImplicitCertificate | ExplicitCertificate)
      */
     public static final OERDefinition.Builder Certificate = CertificateBase.copy().label("Certificate(CertificateBase)");
+
+
+    /**
+     * ExplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
+     * type(explicit),
+     * toBeSigned(WITH COMPONENTS {...,
+     * verifyKeyIndicator(WITH COMPONENTS {verificationKey})
+     * }),
+     * signature PRESENT
+     * })
+     */
+    public static final OERDefinition.Builder ExplicitCertificate = CertificateBase.label("ExplicitCertificate");
+
+    /**
+     * ImplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
+     *     type(implicit),
+     *     toBeSigned(WITH COMPONENTS {...,
+     *       verifyKeyIndicator(WITH COMPONENTS {reconstructionValue})
+     *     }),
+     *     signature ABSENT
+     *   })
+     */
+    public static final OERDefinition.Builder ImplicitCertificate = CertificateBase.label("ImplicitCertificate");
+
     /**
      * SequenceOfCertificate ::= SEQUENCE OF Certificate
      */
@@ -429,7 +453,9 @@ public class IEEE1609dot2
 
         )
     );
+
     public static final OERDefinition.Builder ToBeSignedData = new OERDefinition.MutableBuilder(OERDefinition.BaseType.SEQ);
+
     /**
      * SignedData ::= SEQUENCE {
      * hashId     HashAlgorithm,
@@ -459,7 +485,6 @@ public class IEEE1609dot2
         EncryptedData.label("encryptedData"),
         OERDefinition.opaque().label("signedCertificateRequest"),
         OERDefinition.extension());
-
     public static final OERDefinition.Builder Countersignature = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.UINT8.label("protocolVersion"),
         Ieee1609Dot2Content.label("content")

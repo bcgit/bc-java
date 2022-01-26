@@ -8,13 +8,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
-import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.asn1.*;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
@@ -132,10 +126,14 @@ public class PrivateKeyInfoFactory
             CMCEPrivateKeyParameters params = (CMCEPrivateKeyParameters)privateKey;
 
             byte[] encoding = params.getEncoded();
+            //todo either make CMCEPrivateKey split the parameters from the private key or
+            // (current) Make CMCEPrivateKey take parts of the private key splitted in the params
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+            CMCEPublicKey cmcePub = new CMCEPublicKey(params.reconstructPublicKey());
+            CMCEPrivateKey cmcePriv = new CMCEPrivateKey(0, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
+            return new PrivateKeyInfo(algorithmIdentifier, cmcePriv, attributes);
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)
         {

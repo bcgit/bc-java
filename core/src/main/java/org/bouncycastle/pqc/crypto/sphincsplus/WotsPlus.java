@@ -24,7 +24,7 @@ class WotsPlus
             ADRS adrs = new ADRS(paramAdrs);
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
-            byte[] sk = engine.PRF(skSeed, adrs);
+            byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
             tmp[i] = chain(sk, 0, w - 1, pkSeed, adrs);
         }
@@ -83,7 +83,7 @@ class WotsPlus
         {
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
-            byte[] sk = engine.PRF(skSeed, adrs);
+            byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
             sig[i] = chain(sk, 0, msg[i], pkSeed, adrs);
         }
         return Arrays.concatenate(sig);

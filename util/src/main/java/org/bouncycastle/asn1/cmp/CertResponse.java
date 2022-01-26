@@ -9,11 +9,21 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * CertResponse ::= SEQUENCE {
+ * certReqId           INTEGER,
+ * status              PKIStatusInfo,
+ * certifiedKeyPair    CertifiedKeyPair    OPTIONAL,
+ * rspInfo             OCTET STRING        OPTIONAL
+ * -- analogous to the id-regInfo-utf8Pairs string defined
+ * -- for regInfo in CertReqMsg [CRMF]
+ * }
+ */
 public class CertResponse
     extends ASN1Object
 {
-    private ASN1Integer certReqId;
-    private PKIStatusInfo status;
+    private final ASN1Integer certReqId;
+    private final PKIStatusInfo status;
     private CertifiedKeyPair certifiedKeyPair;
     private ASN1OctetString rspInfo;
 
@@ -44,21 +54,6 @@ public class CertResponse
         }
     }
 
-    public static CertResponse getInstance(Object o)
-    {
-        if (o instanceof CertResponse)
-        {
-            return (CertResponse)o;
-        }
-
-        if (o != null)
-        {
-            return new CertResponse(ASN1Sequence.getInstance(o));
-        }
-
-        return null;
-    }
-
     public CertResponse(
         ASN1Integer certReqId,
         PKIStatusInfo status)
@@ -84,6 +79,21 @@ public class CertResponse
         this.status = status;
         this.certifiedKeyPair = certifiedKeyPair;
         this.rspInfo = rspInfo;
+    }
+
+    public static CertResponse getInstance(Object o)
+    {
+        if (o instanceof CertResponse)
+        {
+            return (CertResponse)o;
+        }
+
+        if (o != null)
+        {
+            return new CertResponse(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public ASN1Integer getCertReqId()
@@ -114,7 +124,8 @@ public class CertResponse
      *                            -- analogous to the id-regInfo-utf8Pairs string defined
      *                            -- for regInfo in CertReqMsg [CRMF]
      *             }
-     * </pre> 
+     * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
@@ -133,7 +144,7 @@ public class CertResponse
         {
             v.add(rspInfo);
         }
-        
+
         return new DERSequence(v);
     }
 }

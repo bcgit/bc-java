@@ -8,6 +8,11 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 
+/**
+ * EncryptedKey ::= CHOICE {
+ *          encryptedValue        EncryptedValue, -- deprecated
+ *          envelopedData     [0] EnvelopedData }
+ */
 public class EncryptedKey
     extends ASN1Object
     implements ASN1Choice
