@@ -23,14 +23,26 @@ public class SABERVectorTest
         throws Exception
     {
         SABERParameters[] params = new SABERParameters[] {
-                SABERParameters.lightsaberkemr3,
-                SABERParameters.saberkemr3,
-                SABERParameters.firesaberkemr3
+                SABERParameters.lightsaberkem128r3,
+                SABERParameters.saberkem128r3,
+                SABERParameters.firesaberkem128r3,
+                SABERParameters.lightsaberkem192r3,
+                SABERParameters.saberkem192r3,
+                SABERParameters.firesaberkem192r3,
+                SABERParameters.lightsaberkem256r3,
+                SABERParameters.saberkem256r3,
+                SABERParameters.firesaberkem256r3,
             };
 
-        assertEquals(32, SABERParameters.lightsaberkemr3.getDefaultKeySize());
-        assertEquals(32, SABERParameters.saberkemr3.getDefaultKeySize());
-        assertEquals(32, SABERParameters.firesaberkemr3.getDefaultKeySize());
+        assertEquals(16, SABERParameters.lightsaberkem128r3.getDefaultKeySize());
+        assertEquals(16, SABERParameters.saberkem128r3.getDefaultKeySize());
+        assertEquals(16, SABERParameters.firesaberkem128r3.getDefaultKeySize());
+        assertEquals(24, SABERParameters.lightsaberkem192r3.getDefaultKeySize());
+        assertEquals(24, SABERParameters.saberkem192r3.getDefaultKeySize());
+        assertEquals(24, SABERParameters.firesaberkem192r3.getDefaultKeySize());
+        assertEquals(32, SABERParameters.lightsaberkem256r3.getDefaultKeySize());
+        assertEquals(32, SABERParameters.saberkem256r3.getDefaultKeySize());
+        assertEquals(32, SABERParameters.firesaberkem256r3.getDefaultKeySize());
     }
 
     public void testVectors()
@@ -38,9 +50,9 @@ public class SABERVectorTest
     {
 
         SABERParameters[] params = new SABERParameters[] {
-            SABERParameters.lightsaberkemr3,
-            SABERParameters.saberkemr3,
-            SABERParameters.firesaberkemr3
+                SABERParameters.lightsaberkem256r3,
+                SABERParameters.saberkem256r3,
+                SABERParameters.firesaberkem256r3,
         };
         String[] files = new String[] {
                 "lightsaber.rsp",

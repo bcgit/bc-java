@@ -94,13 +94,25 @@ class Utils
         frodoParams.put(BCObjectIdentifiers.frodokem43088shaker3, FrodoParameters.frodokem43088shaker3);
 
 
-        saberOids.put(SABERParameters.lightsaberkemr3, BCObjectIdentifiers.lightsaberkemr3);
-        saberOids.put(SABERParameters.saberkemr3, BCObjectIdentifiers.saberkemhr3);
-        saberOids.put(SABERParameters.firesaberkemr3, BCObjectIdentifiers.firesaberkemr3);
+        saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
+        saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
+        saberOids.put(SABERParameters.firesaberkem128r3, BCObjectIdentifiers.firesaberkem128r3);
+        saberOids.put(SABERParameters.lightsaberkem192r3, BCObjectIdentifiers.lightsaberkem192r3);
+        saberOids.put(SABERParameters.saberkem192r3, BCObjectIdentifiers.saberkem192r3);
+        saberOids.put(SABERParameters.firesaberkem192r3, BCObjectIdentifiers.firesaberkem192r3);
+        saberOids.put(SABERParameters.lightsaberkem256r3, BCObjectIdentifiers.lightsaberkem256r3);
+        saberOids.put(SABERParameters.saberkem256r3, BCObjectIdentifiers.saberkem256r3);
+        saberOids.put(SABERParameters.firesaberkem256r3, BCObjectIdentifiers.firesaberkem256r3);
 
-        saberParams.put(BCObjectIdentifiers.lightsaberkemr3, SABERParameters.lightsaberkemr3);
-        saberParams.put(BCObjectIdentifiers.saberkemhr3, SABERParameters.saberkemr3);
-        saberParams.put(BCObjectIdentifiers.firesaberkemr3, SABERParameters.firesaberkemr3);
+        saberParams.put(BCObjectIdentifiers.lightsaberkem128r3, SABERParameters.lightsaberkem128r3);
+        saberParams.put(BCObjectIdentifiers.saberkem128r3, SABERParameters.saberkem128r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem128r3, SABERParameters.firesaberkem128r3);
+        saberParams.put(BCObjectIdentifiers.lightsaberkem192r3, SABERParameters.lightsaberkem192r3);
+        saberParams.put(BCObjectIdentifiers.saberkem192r3, SABERParameters.saberkem192r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem192r3, SABERParameters.firesaberkem192r3);
+        saberParams.put(BCObjectIdentifiers.lightsaberkem256r3, SABERParameters.lightsaberkem256r3);
+        saberParams.put(BCObjectIdentifiers.saberkem256r3, SABERParameters.saberkem256r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem256r3, SABERParameters.firesaberkem256r3);
 
     }
 

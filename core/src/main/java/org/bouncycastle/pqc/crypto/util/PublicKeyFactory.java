@@ -84,9 +84,16 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.frodokem31296shaker3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088r3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088shaker3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.lightsaberkemr3, new SABERConverter());
-        converters.put(BCObjectIdentifiers.saberkemhr3, new SABERConverter());
-        converters.put(BCObjectIdentifiers.firesaberkemr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem256r3, new SABERConverter());
+
     }
 
     /**

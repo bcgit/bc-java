@@ -39,6 +39,7 @@ class SABEREngine
     private final int SABER_PUBLICKEYBYTES;
     private final int SABER_SECRETKEYBYTES;
     private final int SABER_BYTES_CCA_DEC;
+    private final int defaultKeySize;
 
     //
     private final int h1;
@@ -108,7 +109,8 @@ class SABEREngine
 
     public int getSessionKeySize()
     {
-        return SABER_KEYBYTES;
+//        return SABER_KEYBYTES;
+        return defaultKeySize / 8;
     }
     public int getCipherTextSize()
     {
@@ -123,8 +125,10 @@ class SABEREngine
         return SABER_SECRETKEYBYTES;
     }
 
-    public SABEREngine(int l)
+    public SABEREngine(int l, int defaultKeySize)
     {
+        this.defaultKeySize = defaultKeySize;
+
         this.SABER_L = l;
         if (l == 2)
         {
@@ -289,8 +293,14 @@ class SABEREngine
         digest_256.doFinal(kr, 32);
 
         // hash concatenation of pre-k and h(c) to k
+        //todo support 128 and 192 bit keys
+        byte[] temp_k = new byte[32];
         digest_256.update(kr, 0, 64);
-        digest_256.doFinal(k, 0);
+        digest_256.doFinal(temp_k, 0);
+
+        System.arraycopy(temp_k,0, k, 0, defaultKeySize/8);
+
+
 
         return 0;
     }
@@ -349,8 +359,12 @@ class SABEREngine
         cmov(kr, sk, SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES, (byte) fail);
 
         // hash concatenation of pre-k and h(c) to k
+        //todo support 128 and 192 bit keys
+        byte[] temp_k = new byte[32];
         digest_256.update(kr, 0, 64);
-        digest_256.doFinal(k, 0);
+        digest_256.doFinal(temp_k, 0);
+
+        System.arraycopy(temp_k,0, k, 0, defaultKeySize/8);
         return 0;
 
     }
