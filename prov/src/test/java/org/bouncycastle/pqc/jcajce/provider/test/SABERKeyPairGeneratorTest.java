@@ -31,9 +31,15 @@ public class SABERKeyPairGeneratorTest
         SABERParameterSpec[] specs =
                 new SABERParameterSpec[]
                         {
-                                SABERParameterSpec.lightsaberkemr3,
-                                SABERParameterSpec.saberkemr3,
-                                SABERParameterSpec.firesaberkemr3,
+                                SABERParameterSpec.lightsaberkem128r3,
+                                SABERParameterSpec.saberkem128r3,
+                                SABERParameterSpec.firesaberkem128r3,
+                                SABERParameterSpec.lightsaberkem192r3,
+                                SABERParameterSpec.saberkem192r3,
+                                SABERParameterSpec.firesaberkem192r3,
+                                SABERParameterSpec.lightsaberkem256r3,
+                                SABERParameterSpec.saberkem256r3,
+                                SABERParameterSpec.firesaberkem256r3,
                         };
         kf = KeyFactory.getInstance("SABER", "BCPQC");
 

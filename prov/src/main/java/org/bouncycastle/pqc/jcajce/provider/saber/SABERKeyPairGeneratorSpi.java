@@ -20,9 +20,15 @@ public class SABERKeyPairGeneratorSpi
 
     static
     {
-        parameters.put(SABERParameterSpec.lightsaberkemr3.getName(), SABERParameters.lightsaberkemr3);
-        parameters.put(SABERParameterSpec.saberkemr3.getName(), SABERParameters.saberkemr3);
-        parameters.put(SABERParameterSpec.firesaberkemr3.getName(), SABERParameters.firesaberkemr3);
+        parameters.put(SABERParameterSpec.lightsaberkem128r3.getName(), SABERParameters.lightsaberkem128r3);
+        parameters.put(SABERParameterSpec.saberkem128r3.getName(), SABERParameters.saberkem128r3);
+        parameters.put(SABERParameterSpec.firesaberkem128r3.getName(), SABERParameters.firesaberkem128r3);
+        parameters.put(SABERParameterSpec.lightsaberkem192r3.getName(), SABERParameters.lightsaberkem192r3);
+        parameters.put(SABERParameterSpec.saberkem192r3.getName(), SABERParameters.saberkem192r3);
+        parameters.put(SABERParameterSpec.firesaberkem192r3.getName(), SABERParameters.firesaberkem192r3);
+        parameters.put(SABERParameterSpec.lightsaberkem256r3.getName(), SABERParameters.lightsaberkem256r3);
+        parameters.put(SABERParameterSpec.saberkem256r3.getName(), SABERParameters.saberkem256r3);
+        parameters.put(SABERParameterSpec.firesaberkem256r3.getName(), SABERParameters.firesaberkem256r3);
     }
 
     SABERKeyGenerationParameters param;
@@ -77,7 +83,7 @@ public class SABERKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new SABERKeyGenerationParameters(random, SABERParameters.firesaberkemr3);
+            param = new SABERKeyGenerationParameters(random, SABERParameters.firesaberkem256r3);
 
             engine.init(param);
             initialised = true;
