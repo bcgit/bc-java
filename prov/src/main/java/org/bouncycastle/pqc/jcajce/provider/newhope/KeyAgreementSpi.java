@@ -45,7 +45,7 @@ public class KeyAgreementSpi
         }
     }
 
-    protected void engineInit(Key key, AlgorithmParameterSpec algorithmParameterSpec, SecureRandom secureRandom)
+    protected void doInitFromKey(Key key, AlgorithmParameterSpec algorithmParameterSpec, SecureRandom secureRandom)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         throw new InvalidAlgorithmParameterException("NewHope does not require parameters");
@@ -97,7 +97,7 @@ public class KeyAgreementSpi
         return shared.length;
     }
 
-    protected byte[] calcSecret()
+    protected byte[] doCalcSecret()
     {
         return engineGenerateSecret();
     }

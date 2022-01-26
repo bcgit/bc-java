@@ -1,6 +1,6 @@
 package org.bouncycastle.its;
 
-import org.bouncycastle.oer.its.PublicVerificationKey;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 
 public class ITSPublicVerificationKey
 {

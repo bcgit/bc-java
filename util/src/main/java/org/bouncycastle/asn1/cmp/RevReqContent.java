@@ -8,11 +8,21 @@ import org.bouncycastle.asn1.DERSequence;
 public class RevReqContent
     extends ASN1Object
 {
-    private ASN1Sequence content;
+    private final ASN1Sequence content;
 
     private RevReqContent(ASN1Sequence seq)
     {
         content = seq;
+    }
+
+    public RevReqContent(RevDetails revDetails)
+    {
+        this.content = new DERSequence(revDetails);
+    }
+
+    public RevReqContent(RevDetails[] revDetailsArray)
+    {
+        this.content = new DERSequence(revDetailsArray);
     }
 
     public static RevReqContent getInstance(Object o)
@@ -28,16 +38,6 @@ public class RevReqContent
         }
 
         return null;
-    }
-
-    public RevReqContent(RevDetails revDetails)
-    {
-        this.content = new DERSequence(revDetails);
-    }
-
-    public RevReqContent(RevDetails[] revDetailsArray)
-    {
-        this.content = new DERSequence(revDetailsArray);
     }
 
     public RevDetails[] toRevDetailsArray()
@@ -56,6 +56,7 @@ public class RevReqContent
      * <pre>
      * RevReqContent ::= SEQUENCE OF RevDetails
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

@@ -3,8 +3,8 @@ package org.bouncycastle.its;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.oer.its.Duration;
-import org.bouncycastle.oer.its.ValidityPeriod;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Duration;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ValidityPeriod;
 
 public class ITSValidityPeriod
 {
@@ -57,10 +57,10 @@ public class ITSValidityPeriod
 
     public ITSValidityPeriod(ValidityPeriod validityPeriod)
     {
-        this.startDate = validityPeriod.getTime32().getValue();
+        this.startDate = validityPeriod.getTime32().getValue().longValue();
         Duration duration = validityPeriod.getDuration();
         this.duration = duration.getValue();
-        this.timeUnit = Unit.values()[duration.getTag()];
+        this.timeUnit = Unit.values()[duration.getChoice()];
     }
 
     ITSValidityPeriod(long startDate, int duration, Unit timeUnit)

@@ -15,6 +15,15 @@ public class OEROptional
     extends ASN1Object
 {
     public static final OEROptional ABSENT = new OEROptional(false, null);
+    private final boolean defined;
+    private final ASN1Encodable value;
+
+
+    private OEROptional(boolean defined, ASN1Encodable value)
+    {
+        this.defined = defined;
+        this.value = value;
+    }
 
     public static OEROptional getInstance(Object o)
     {
@@ -37,16 +46,6 @@ public class OEROptional
             return null;
         }
         return o.getObject(type);
-    }
-
-
-    private final boolean defined;
-    private final ASN1Encodable value;
-
-    private OEROptional(boolean defined, ASN1Encodable value)
-    {
-        this.defined = defined;
-        this.value = value;
     }
 
     /**

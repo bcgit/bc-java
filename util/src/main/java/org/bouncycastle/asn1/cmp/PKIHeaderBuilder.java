@@ -14,9 +14,9 @@ import org.bouncycastle.asn1.x509.GeneralName;
 
 public class PKIHeaderBuilder
 {
-    private ASN1Integer pvno;
-    private GeneralName sender;
-    private GeneralName recipient;
+    private final ASN1Integer pvno;
+    private final GeneralName sender;
+    private final GeneralName recipient;
     private ASN1GeneralizedTime messageTime;
     private AlgorithmIdentifier protectionAlg;
     private ASN1OctetString senderKID;       // KeyIdentifier
@@ -24,8 +24,8 @@ public class PKIHeaderBuilder
     private ASN1OctetString transactionID;
     private ASN1OctetString senderNonce;
     private ASN1OctetString recipNonce;
-    private PKIFreeText     freeText;
-    private ASN1Sequence    generalInfo;
+    private PKIFreeText freeText;
+    private ASN1Sequence generalInfo;
 
     public PKIHeaderBuilder(
         int pvno,
@@ -43,6 +43,23 @@ public class PKIHeaderBuilder
         this.pvno = pvno;
         this.sender = sender;
         this.recipient = recipient;
+    }
+
+    private static ASN1Sequence makeGeneralInfoSeq(
+        InfoTypeAndValue generalInfo)
+    {
+        return new DERSequence(generalInfo);
+    }
+
+    private static ASN1Sequence makeGeneralInfoSeq(
+        InfoTypeAndValue[] generalInfos)
+    {
+        ASN1Sequence genInfoSeq = null;
+        if (generalInfos != null)
+        {
+            genInfoSeq = new DERSequence(generalInfos);
+        }
+        return genInfoSeq;
     }
 
     public PKIHeaderBuilder setMessageTime(ASN1GeneralizedTime time)
@@ -143,23 +160,6 @@ public class PKIHeaderBuilder
         return this;
     }
 
-    private static ASN1Sequence makeGeneralInfoSeq(
-        InfoTypeAndValue generalInfo)
-    {
-        return new DERSequence(generalInfo);
-    }
-
-    private static ASN1Sequence makeGeneralInfoSeq(
-        InfoTypeAndValue[] generalInfos)
-    {
-        ASN1Sequence genInfoSeq = null;
-        if (generalInfos != null)
-        {
-            genInfoSeq = new DERSequence(generalInfos);
-        }
-        return genInfoSeq;
-    }
-
     /**
      * <pre>
      *  PKIHeader ::= SEQUENCE {
@@ -196,6 +196,7 @@ public class PKIHeaderBuilder
      *            -- (this field not primarily intended for human consumption)
      * }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public PKIHeader build()
@@ -224,7 +225,7 @@ public class PKIHeaderBuilder
         recipNonce = null;
         freeText = null;
         generalInfo = null;
-        
+
         return PKIHeader.getInstance(new DERSequence(v));
     }
 

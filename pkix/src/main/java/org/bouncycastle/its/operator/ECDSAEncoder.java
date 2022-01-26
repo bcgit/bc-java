@@ -11,11 +11,11 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
-import org.bouncycastle.oer.its.EccP256CurvePoint;
-import org.bouncycastle.oer.its.EccP384CurvePoint;
-import org.bouncycastle.oer.its.EcdsaP256Signature;
-import org.bouncycastle.oer.its.EcdsaP384Signature;
-import org.bouncycastle.oer.its.Signature;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EcdsaP256Signature;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EcdsaP384Signature;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.util.BigIntegers;
 
 public class ECDSAEncoder

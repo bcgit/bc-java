@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 public class POPODecKeyRespContent
     extends ASN1Object
 {
-    private ASN1Sequence content;
+    private final ASN1Sequence content;
 
     private POPODecKeyRespContent(ASN1Sequence seq)
     {
@@ -46,6 +46,7 @@ public class POPODecKeyRespContent
      * <pre>
      * POPODecKeyRespContent ::= SEQUENCE OF INTEGER
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

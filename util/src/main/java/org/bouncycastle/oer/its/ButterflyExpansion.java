@@ -32,6 +32,20 @@ public class ButterflyExpansion
         this.butterflyExpansion = butterflyExpansion;
     }
 
+    private ButterflyExpansion(ASN1TaggedObject ato)
+    {
+        choice = ato.getTagNo();
+        switch (choice)
+        {
+        case extension:
+        case aes128:
+            this.butterflyExpansion = DEROctetString.getInstance(ato.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + choice);
+        }
+    }
+
     public static ButterflyExpansion getInstance(Object o)
     {
         if (o instanceof ButterflyExpansion)
@@ -39,21 +53,12 @@ public class ButterflyExpansion
             return (ButterflyExpansion)o;
         }
 
-        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(o);
-        int choice = taggedObject.getTagNo();
-        switch (choice)
+        if (o != null)
         {
-        case aes128:
-            return new ButterflyExpansion(
-                aes128,
-                DEROctetString.getInstance(taggedObject.getObject()));
-        case extension:
-            return new ButterflyExpansion(
-                extension,
-                DEROctetString.getInstance(taggedObject.getObject()));
-        default:
-            throw new IllegalArgumentException("invalid choice value " + choice);
+            return new ButterflyExpansion(ASN1TaggedObject.getInstance(o));
         }
+
+        return null;
     }
 
     public static Builder builder()

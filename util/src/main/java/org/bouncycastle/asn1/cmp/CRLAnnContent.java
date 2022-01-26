@@ -9,11 +9,16 @@ import org.bouncycastle.asn1.x509.CertificateList;
 public class CRLAnnContent
     extends ASN1Object
 {
-    private ASN1Sequence content;
+    private final ASN1Sequence content;
 
     private CRLAnnContent(ASN1Sequence seq)
     {
         content = seq;
+    }
+
+    public CRLAnnContent(CertificateList crl)
+    {
+        this.content = new DERSequence(crl);
     }
 
     public static CRLAnnContent getInstance(Object o)
@@ -29,11 +34,6 @@ public class CRLAnnContent
         }
 
         return null;
-    }
-
-    public CRLAnnContent(CertificateList crl)
-    {
-        this.content = new DERSequence(crl);
     }
 
     public CertificateList[] getCertificateLists()
@@ -52,6 +52,7 @@ public class CRLAnnContent
      * <pre>
      * CRLAnnContent ::= SEQUENCE OF CertificateList
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

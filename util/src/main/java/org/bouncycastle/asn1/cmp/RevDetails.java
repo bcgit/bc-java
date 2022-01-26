@@ -12,16 +12,38 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 public class RevDetails
     extends ASN1Object
 {
-    private CertTemplate certDetails;
+    private final CertTemplate certDetails;
     private Extensions crlEntryDetails;
 
     private RevDetails(ASN1Sequence seq)
     {
         certDetails = CertTemplate.getInstance(seq.getObjectAt(0));
-        if  (seq.size() > 1)
+        if (seq.size() > 1)
         {
             crlEntryDetails = Extensions.getInstance(seq.getObjectAt(1));
         }
+    }
+
+    public RevDetails(CertTemplate certDetails)
+    {
+        this.certDetails = certDetails;
+    }
+
+    /**
+     * @param certDetails
+     * @param crlEntryDetails
+     * @deprecated use method taking Extensions
+     */
+    public RevDetails(CertTemplate certDetails, X509Extensions crlEntryDetails)
+    {
+        this.certDetails = certDetails;
+        this.crlEntryDetails = Extensions.getInstance(crlEntryDetails.toASN1Primitive());
+    }
+
+    public RevDetails(CertTemplate certDetails, Extensions crlEntryDetails)
+    {
+        this.certDetails = certDetails;
+        this.crlEntryDetails = crlEntryDetails;
     }
 
     public static RevDetails getInstance(Object o)
@@ -37,28 +59,6 @@ public class RevDetails
         }
 
         return null;
-    }
-
-    public RevDetails(CertTemplate certDetails)
-    {
-        this.certDetails = certDetails;
-    }
-
-    /**
-     * @deprecated use method taking Extensions
-     * @param certDetails
-     * @param crlEntryDetails
-     */
-    public RevDetails(CertTemplate certDetails, X509Extensions crlEntryDetails)
-    {
-        this.certDetails = certDetails;
-        this.crlEntryDetails = Extensions.getInstance(crlEntryDetails.toASN1Primitive());
-    }
-
-    public RevDetails(CertTemplate certDetails, Extensions crlEntryDetails)
-    {
-        this.certDetails = certDetails;
-        this.crlEntryDetails = crlEntryDetails;
     }
 
     public CertTemplate getCertDetails()
@@ -82,6 +82,7 @@ public class RevDetails
      *                   -- requested crlEntryExtensions
      *             }
      * </pre>
+     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()
