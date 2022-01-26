@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
-public class Poly
+class Poly
 {
     private static final int KARATSUBA_N = 64;
 
