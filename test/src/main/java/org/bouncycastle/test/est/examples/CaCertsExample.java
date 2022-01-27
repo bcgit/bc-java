@@ -4,7 +4,9 @@ package org.bouncycastle.test.est.examples;
 import java.io.File;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 
 import javax.net.ssl.SSLSession;
@@ -187,14 +189,14 @@ public class CaCertsExample
         // This is congruent with <https://tools.ietf.org/html/rfc7030#section-4.1.1> Bootstrapping.
         //
 
-        javax.security.cert.X509Certificate[] certs = ((SSLSession)caCertsResponse.getSession()).getPeerCertificateChain();
+        Certificate[] certs = ((SSLSession)caCertsResponse.getSession()).getPeerCertificates();
 
         if (!caCertsResponse.isTrusted())
         {
 
             System.out.println();
 
-            for (javax.security.cert.X509Certificate cert : certs)
+            for (Certificate cert : certs)
             {
 
                 //
@@ -204,12 +206,13 @@ public class CaCertsExample
                 // decision.
                 //
 
-                System.out.println("Subject: " + cert.getSubjectDN());
-                System.out.println("Issuer: " + cert.getIssuerDN());
-                System.out.println("Serial Number: " + cert.getSerialNumber());
-                System.out.println("Not Before: " + cert.getNotBefore());
-                System.out.println("Not After: " + cert.getNotAfter());
-                System.out.println("Signature Algorithm: " + cert.getSigAlgName());
+                X509Certificate x509 = (X509Certificate)cert;
+                System.out.println("Subject: " + x509.getSubjectDN());
+                System.out.println("Issuer: " + x509.getIssuerDN());
+                System.out.println("Serial Number: " + x509.getSerialNumber());
+                System.out.println("Not Before: " + x509.getNotBefore());
+                System.out.println("Not After: " + x509.getNotAfter());
+                System.out.println("Signature Algorithm: " + x509.getSigAlgName());
 
                 System.out.println();
                 System.out.println(cert.toString());
@@ -264,7 +267,7 @@ public class CaCertsExample
         {
             System.out.println("\n TLS Certificates");
             System.out.println();
-            for (javax.security.cert.X509Certificate cert : certs)
+            for (Certificate cert : certs)
             {
                 System.out.println(ExampleUtils.toPem(new X509CertificateHolder(cert.getEncoded())));
             }
