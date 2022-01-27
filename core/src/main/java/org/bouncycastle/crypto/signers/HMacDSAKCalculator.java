@@ -77,6 +77,7 @@ public class HMacDSAKCalculator
         hMac.update((byte)0x00);
         hMac.update(x, 0, x.length);
         hMac.update(m, 0, m.length);
+        initAdditionalInput0(hMac);
 
         hMac.doFinal(K, 0);
 
@@ -137,6 +138,22 @@ public class HMacDSAKCalculator
 
             hMac.doFinal(V, 0);
         }
+    }
+
+    /**
+     * RFC 6979 3.6. Additional data may be added to the input of HMAC [..]. A use case may be a protocol that
+     * requires a non-deterministic signature algorithm on a system that does not have access to a
+     * high-quality random source. It suffices that the additional data [..] is non-repeating (e.g., a
+     * signature counter or a monotonic clock) to ensure "random-looking" signatures are indistinguishable, in
+     * a cryptographic way, from plain (EC)DSA signatures.
+     * <p/>
+     * By default there is no additional input. Override this method to supply additional input, bearing in
+     * mind that this calculator may be used for many signatures.
+     *
+     * @param hmac0 the {@link HMac} to which the additional input should be added.
+     */
+    protected void initAdditionalInput0(HMac hmac0)
+    {
     }
 
     private BigInteger bitsToInt(byte[] t)
