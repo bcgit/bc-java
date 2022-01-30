@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.saber;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 class Poly
 {
