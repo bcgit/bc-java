@@ -40,6 +40,8 @@ public class AllTests
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(CMCEVectorTest.class);
+        suite.addTestSuite(FrodoVectorTest.class);
+        suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);

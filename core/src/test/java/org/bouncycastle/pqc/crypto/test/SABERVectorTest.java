@@ -1,20 +1,26 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.saber.*;
+import org.bouncycastle.pqc.crypto.saber.SABERKEMExtractor;
+import org.bouncycastle.pqc.crypto.saber.SABERKEMGenerator;
+import org.bouncycastle.pqc.crypto.saber.SABERKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
 
 public class SABERVectorTest
     extends TestCase
@@ -34,15 +40,15 @@ public class SABERVectorTest
                 SABERParameters.firesaberkem256r3,
             };
 
-        assertEquals(16, SABERParameters.lightsaberkem128r3.getDefaultKeySize());
-        assertEquals(16, SABERParameters.saberkem128r3.getDefaultKeySize());
-        assertEquals(16, SABERParameters.firesaberkem128r3.getDefaultKeySize());
-        assertEquals(24, SABERParameters.lightsaberkem192r3.getDefaultKeySize());
-        assertEquals(24, SABERParameters.saberkem192r3.getDefaultKeySize());
-        assertEquals(24, SABERParameters.firesaberkem192r3.getDefaultKeySize());
-        assertEquals(32, SABERParameters.lightsaberkem256r3.getDefaultKeySize());
-        assertEquals(32, SABERParameters.saberkem256r3.getDefaultKeySize());
-        assertEquals(32, SABERParameters.firesaberkem256r3.getDefaultKeySize());
+        assertEquals(128, SABERParameters.lightsaberkem128r3.getDefaultKeySize());
+        assertEquals(128, SABERParameters.saberkem128r3.getDefaultKeySize());
+        assertEquals(128, SABERParameters.firesaberkem128r3.getDefaultKeySize());
+        assertEquals(192, SABERParameters.lightsaberkem192r3.getDefaultKeySize());
+        assertEquals(192, SABERParameters.saberkem192r3.getDefaultKeySize());
+        assertEquals(192, SABERParameters.firesaberkem192r3.getDefaultKeySize());
+        assertEquals(256, SABERParameters.lightsaberkem256r3.getDefaultKeySize());
+        assertEquals(256, SABERParameters.saberkem256r3.getDefaultKeySize());
+        assertEquals(256, SABERParameters.firesaberkem256r3.getDefaultKeySize());
     }
 
     public void testVectors()
