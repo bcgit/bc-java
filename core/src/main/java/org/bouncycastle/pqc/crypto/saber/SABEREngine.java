@@ -1,14 +1,11 @@
 package org.bouncycastle.pqc.crypto.saber;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
-
-import java.security.SecureRandom;
+import org.bouncycastle.util.Arrays;
 
 class SABEREngine
 {
@@ -232,7 +229,7 @@ class SABEREngine
         short[] mp = new short[SABER_N];
         short[] vp = new short[SABER_N];
         int i, j;
-        byte[] seed_A = ByteUtils.subArray(pk, SABER_POLYVECCOMPRESSEDBYTES);
+        byte[] seed_A = Arrays.copyOfRange(pk, SABER_POLYVECCOMPRESSEDBYTES, pk.length);
 
         poly.GenMatrix(A, seed_A);
         poly.GenSecret(sp, seed_sp);
@@ -287,7 +284,7 @@ class SABEREngine
         // K^ <-- kr[0:31]
         // noiseseed (r) <-- kr[32:63];
         // buf[0:31] contains message; kr[32:63] contains randomness r;
-        indcpa_kem_enc(buf, ByteUtils.subArray(kr, 32), pk, c);
+        indcpa_kem_enc(buf, Arrays.copyOfRange(kr, 32, kr.length), pk, c);
 
         digest_256.update(c, 0, SABER_BYTES_CCA_DEC);
         digest_256.doFinal(kr, 32);
@@ -332,7 +329,7 @@ class SABEREngine
         byte[] cmp = new byte[SABER_BYTES_CCA_DEC];
         byte[] buf = new byte[64];
         byte[] kr = new byte[64]; // Will contain key, coins
-        byte[] pk = ByteUtils.subArray(sk, SABER_INDCPA_SECRETKEYBYTES);
+        byte[] pk = Arrays.copyOfRange(sk, SABER_INDCPA_SECRETKEYBYTES, sk.length);
 
         indcpa_kem_dec(sk, c, buf); // buf[0:31] <-- message
 
@@ -347,7 +344,7 @@ class SABEREngine
         digest_512.update(buf, 0, 64);
         digest_512.doFinal(kr, 0);
 
-        indcpa_kem_enc(buf, ByteUtils.subArray(kr, 32), pk, cmp);
+        indcpa_kem_enc(buf, Arrays.copyOfRange(kr, 32, kr.length), pk, cmp);
 
         fail = verify(c, cmp, SABER_BYTES_CCA_DEC);
 
