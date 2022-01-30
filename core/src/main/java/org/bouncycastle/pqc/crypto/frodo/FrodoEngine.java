@@ -1,9 +1,10 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-import java.security.*;
 
 class FrodoEngine
 {
@@ -210,9 +211,9 @@ class FrodoEngine
         byte[] s_seedSE_z = new byte[len_s_bytes + len_seedSE_bytes + len_z_bytes];
         random.nextBytes(s_seedSE_z);
 
-        byte[] s = ByteUtils.subArray(s_seedSE_z, 0, len_s_bytes);
-        byte[] seedSE = ByteUtils.subArray(s_seedSE_z, len_s_bytes, len_s_bytes + len_seedSE_bytes);
-        byte[] z = ByteUtils.subArray(s_seedSE_z, len_s_bytes + len_seedSE_bytes, len_s_bytes + len_seedSE_bytes + len_z_bytes);
+        byte[] s = Arrays.copyOfRange(s_seedSE_z, 0, len_s_bytes);
+        byte[] seedSE = Arrays.copyOfRange(s_seedSE_z, len_s_bytes, len_s_bytes + len_seedSE_bytes);
+        byte[] z = Arrays.copyOfRange(s_seedSE_z, len_s_bytes + len_seedSE_bytes, len_s_bytes + len_seedSE_bytes + len_z_bytes);
 
         // 2. Generate pseudorandom seed seedA = SHAKE(z, len_seedA) (length in bits)
         byte[] seedA = new byte[len_seedA_bytes];
@@ -223,10 +224,10 @@ class FrodoEngine
         short[] A = gen.genMatrix(seedA);
 
         // 4. r = SHAKE(0x5F || seedSE, 2*n*nbar*len_chi) (length in bits), parsed as 2*n*nbar len_chi-bit integers in little-endian byte order
-        byte[] temp = ByteUtils.concatenate(new byte[]{0x5f}, seedSE);
         byte[] rbytes = new byte[2 * n * nbar * len_chi_bytes];
 
-        digest.update(temp, 0, temp.length);
+        digest.update((byte)0x5f);
+        digest.update(seedSE, 0, seedSE.length);
         digest.doFinal(rbytes, 0, rbytes.length);
 
         short[] r = new short[2 * n * nbar];
@@ -248,14 +249,14 @@ class FrodoEngine
 
         // 9. pkh = SHAKE(seedA || b, len_pkh) (length in bits)
         // 10. pk = seedA || b
-        System.arraycopy(ByteUtils.concatenate(seedA, b), 0, pk, 0, len_pk_bytes);
+        System.arraycopy(Arrays.concatenate(seedA, b), 0, pk, 0, len_pk_bytes);
 
         byte[] pkh = new byte[len_pkh_bytes];
         digest.update(pk, 0, pk.length);
         digest.doFinal(pkh, 0, pkh.length);
 
         //10. sk = (s || seedA || b, S^T, pkh)
-        System.arraycopy(ByteUtils.concatenate(s, pk), 0,
+        System.arraycopy(Arrays.concatenate(s, pk), 0,
                 sk, 0, len_s_bytes + len_pk_bytes);
 
         for (int i = 0; i < nbar; i++)
@@ -348,8 +349,8 @@ class FrodoEngine
     public void kem_enc(byte[] ct, byte[] ss, byte[] pk, SecureRandom random)
     {
         // Parse pk = seedA || b
-        byte[] seedA = ByteUtils.subArray(pk, 0, len_seedA_bytes);
-        byte[] b = ByteUtils.subArray(pk, len_seedA_bytes, len_pk_bytes);
+        byte[] seedA = Arrays.copyOfRange(pk, 0, len_seedA_bytes);
+        byte[] b = Arrays.copyOfRange(pk, len_seedA_bytes, len_pk_bytes);
 
         // 1. Choose a uniformly random key mu in {0,1}^len_mu (length in bits)
         byte[] mu = new byte[len_mu_bytes];
@@ -362,15 +363,17 @@ class FrodoEngine
 
         // 3. seedSE || k = SHAKE(pkh || mu, len_seedSE + len_k) (length in bits)
         byte[] seedSE_k = new byte[len_seedSE + len_k];
-        digest.update(ByteUtils.concatenate(pkh, mu), 0, len_pkh_bytes + len_mu_bytes);
+        digest.update(pkh, 0, len_pkh_bytes);
+        digest.update(mu, 0, len_mu_bytes);
         digest.doFinal(seedSE_k, 0, len_seedSE_bytes + len_k_bytes);
 
-        byte[] seedSE = ByteUtils.subArray(seedSE_k, 0, len_seedSE_bytes);
-        byte[] k = ByteUtils.subArray(seedSE_k, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
+        byte[] seedSE = Arrays.copyOfRange(seedSE_k, 0, len_seedSE_bytes);
+        byte[] k = Arrays.copyOfRange(seedSE_k, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
 
         // 4. r = SHAKE(0x96 || seedSE, 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * nbar) * len_chi_bytes];
-        digest.update(ByteUtils.concatenate(new byte[]{(byte) 0x96}, seedSE), 0, seedSE.length + 1);
+        digest.update((byte)0x96);
+        digest.update(seedSE, 0, seedSE.length);
         digest.doFinal(rbytes, 0, rbytes.length);
 
         short[] r = new short[rbytes.length / 2];
@@ -411,9 +414,10 @@ class FrodoEngine
 
         // 15. ss = SHAKE(c1 || c2 || k, len_ss)
         // ct = c1 + c2
-        System.arraycopy(ByteUtils.concatenate(c1, c2), 0, ct, 0, len_ct_bytes);
-
-        digest.update(ByteUtils.concatenate(ct, k), 0, c1.length + c2.length + len_k_bytes);
+        System.arraycopy(Arrays.concatenate(c1, c2), 0, ct, 0, len_ct_bytes);
+        digest.update(c1, 0, c1.length);
+        digest.update(c2, 0, c2.length);
+        digest.update(k, 0, len_k_bytes);
         digest.doFinal(ss, 0, len_s_bytes);
     }
 
@@ -487,28 +491,28 @@ class FrodoEngine
         // Parse ct = c1 || c2
         int offset = 0;
         int length = mbar * n * D / 8;
-        byte[] c1 = ByteUtils.subArray(ct, offset, offset + length);
+        byte[] c1 = Arrays.copyOfRange(ct, offset, offset + length);
 
         offset += length;
         length = mbar * nbar * D / 8;
-        byte[] c2 = ByteUtils.subArray(ct, offset, offset + length);
+        byte[] c2 = Arrays.copyOfRange(ct, offset, offset + length);
 
         // Parse sk = (s || seedA || b, S^T, pkh)
         offset = 0;
         length = len_s_bytes;
-        byte[] s = ByteUtils.subArray(sk, offset, offset + length);
+        byte[] s = Arrays.copyOfRange(sk, offset, offset + length);
 
         offset += length;
         length = len_seedA_bytes;
-        byte[] seedA = ByteUtils.subArray(sk, offset, offset + length);
+        byte[] seedA = Arrays.copyOfRange(sk, offset, offset + length);
 
         offset += length;
         length = (D * n * nbar) / 8;
-        byte[] b = ByteUtils.subArray(sk, offset, offset + length);
+        byte[] b = Arrays.copyOfRange(sk, offset, offset + length);
 
         offset += length;
         length = n * nbar * 16 / 8;
-        byte[] Sbytes = ByteUtils.subArray(sk, offset, offset + length);
+        byte[] Sbytes = Arrays.copyOfRange(sk, offset, offset + length);
 
         short[] Stransposed = new short[nbar * n];
 
@@ -520,7 +524,7 @@ class FrodoEngine
 
         offset += length;
         length = len_pkh_bytes;
-        byte[] pkh = ByteUtils.subArray(sk, offset, offset + length);
+        byte[] pkh = Arrays.copyOfRange(sk, offset, offset + length);
 
         // 1. B' = Frodo.Unpack(c1, mbar, n)
         short[] Bprime = unpack(c1, mbar, n);
@@ -539,20 +543,23 @@ class FrodoEngine
 
         // 6. seedSE' || k' = SHAKE(pkh || mu', len_seedSE + len_k) (length in bits)
         byte[] seedSEprime_kprime = new byte[len_seedSE_bytes + len_k_bytes];
-        digest.update(ByteUtils.concatenate(pkh, muprime), 0, len_pkh_bytes + len_mu_bytes);
+        digest.update(pkh, 0, len_pkh_bytes);
+        digest.update(muprime, 0, len_mu_bytes);
         digest.doFinal(seedSEprime_kprime, 0, len_seedSE_bytes + len_k_bytes);
 
-        byte[] seedSEprime = ByteUtils.subArray(seedSEprime_kprime, 0, len_seedSE_bytes);
-        byte[] kprime = ByteUtils.subArray(seedSEprime_kprime, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
+        byte[] kprime = Arrays.copyOfRange(seedSEprime_kprime, len_seedSE_bytes, len_seedSE_bytes + len_k_bytes);
 
         // 7. r = SHAKE(0x96 || seedSE', 2*mbar*n + mbar*nbar*len_chi) (length in bits)
         byte[] rbytes = new byte[(2 * mbar * n + mbar * mbar) * len_chi_bytes];
-        digest.update(ByteUtils.concatenate(new byte[]{(byte) 0x96}, seedSEprime), 0, len_seedSE_bytes + 1);
+        digest.update((byte)0x96);
+        digest.update(seedSEprime_kprime, 0, len_seedSE_bytes);
         digest.doFinal(rbytes, 0, rbytes.length);
 
         short[] r = new short[2 * mbar * n + mbar * nbar];
         for (int i = 0; i < r.length; i++)
+        {
             r[i] = Pack.littleEndianToShort(rbytes, i * 2);
+        }
 
         // 8. S' = Frodo.SampleMatrix(r[0 .. mbar*n-1], mbar, n)
         short[] Sprime = sample_matrix(r, 0, mbar, n);
@@ -587,7 +594,9 @@ class FrodoEngine
         byte[] kbar = ctselect(kprime, s, use_kprime);
 
         // 17. ss = SHAKE(c1 || c2 || kbar, len_ss) (length in bits)
-        digest.update(ByteUtils.concatenate(ByteUtils.concatenate(c1, c2), kbar), 0, c1.length + c2.length + kbar.length);
+        digest.update(c1, 0, c1.length);
+        digest.update(c2, 0, c2.length);
+        digest.update(kbar, 0, kbar.length);
         digest.doFinal(ss, 0, len_ss_bytes);
     }
 
