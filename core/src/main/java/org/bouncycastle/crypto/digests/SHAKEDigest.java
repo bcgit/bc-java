@@ -29,11 +29,21 @@ public class SHAKEDigest
         this(128);
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param bitLength the security strength in bits of the XOF.
+     */
     public SHAKEDigest(int bitLength)
     {
         super(checkBitLength(bitLength));
     }
 
+    /**
+     * Clone constructor
+     *
+     * @param source the other digest to be copied.
+     */
     public SHAKEDigest(SHAKEDigest source)
     {
         super(source);
