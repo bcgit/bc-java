@@ -1,14 +1,14 @@
 package org.bouncycastle.pqc.crypto.saber;
 
-import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import java.security.SecureRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.DestroyFailedException;
+
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
-
-import javax.security.auth.DestroyFailedException;
-import java.security.SecureRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SABERKEMGenerator
     implements EncapsulatedSecretGenerator
