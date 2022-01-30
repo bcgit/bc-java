@@ -39,12 +39,13 @@ import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
+import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -56,6 +57,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class DHTest
@@ -1046,6 +1048,36 @@ public class DHTest
         return null;
     }
 
+    private void testHybridValueParameterSpec()
+        throws Exception
+    {
+        byte[] ukm = Hex.decode("030f136fa7fef90d185655ed1c6d46bacdb820");
+        byte[] T = Hex.decode("01714e682cc80ca6b2d7c62e2f2e19d11755dba4aafd7e1ee5fda3e5f4d0af9a3ad773c38a");
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        keyGen.initialize(256, new FixedSecureRandom(T));
+
+        KeyPair kp = keyGen.generateKeyPair();
+        KeyAgreement agreement = KeyAgreement.getInstance("ECCDHwithSHA256CKDF", "BC");
+
+        agreement.init(kp.getPrivate(), new UserKeyingMaterialSpec(ukm));
+
+        agreement.doPhase(kp.getPublic(), true);
+
+        SecretKey k = agreement.generateSecret("AES[256]");
+
+        isTrue("54bd0e4f560398260a90f30fe688d1a3cc4219074a090a2613bc36cef09b8dbb".equals(Hex.toHexString(k.getEncoded())));
+
+        agreement.init(kp.getPrivate(), new HybridValueParameterSpec(T, new UserKeyingMaterialSpec(ukm)));
+
+        agreement.doPhase(kp.getPublic(), true);
+
+        k = agreement.generateSecret("AES[256]");
+
+        isTrue("393aff8691eaf9ee3513aa9b81626268512453f862f411069dd263e1835d5fad".equals(Hex.toHexString(k.getEncoded())));
+    }
+
     private void testExceptions()
         throws Exception
     {
@@ -1568,6 +1600,7 @@ public class DHTest
 
         testMinSpecValue();
         testGenerateUsingStandardGroup();
+        testHybridValueParameterSpec();
     }
 
     public static void main(
