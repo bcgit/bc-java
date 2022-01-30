@@ -5,16 +5,9 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.security.*;
 
 abstract class FrodoMatrixGenerator
 {
@@ -45,7 +38,7 @@ abstract class FrodoMatrixGenerator
             for (i = 0; i < n; i++)
             {
                 // 1. b = i || seedA in {0,1}^{16 + len_seedA}, where i is encoded as a 16-bit integer in little-endian byte order
-                b = ByteUtils.concatenate(Pack.shortToLittleEndian(i), seedA);
+                b = Arrays.concatenate(Pack.shortToLittleEndian(i), seedA);
 
                 // 2. c_{i,0} || c_{i,1} || ... || c_{i,n-1} = SHAKE128(b, 16n) (length in bits) where each c_{i,j} is parsed as a 16-bit integer in little-endian byte order format
                 Xof digest = new SHAKEDigest(128);
