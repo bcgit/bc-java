@@ -192,7 +192,7 @@ class CMCEEngine
                     buf[i] |= i;
                     buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
                 }
-                Arrays.sort(buf);
+                sort64(buf, 0, buf.length);
                 for (int i = 0; i < (1 << GFBITS); i++)
                 {
                     pi[i] = (short)(buf[i] & GFMASK);
@@ -1184,7 +1184,7 @@ class CMCEEngine
                 temp[(int)x] = ((get_q_short(temp, (int)(qIndex + x)) ^ 1) << 16) | get_q_short(temp, (int)((qIndex) + (x ^ 1)));
             }
         }
-        sort(temp, 0, (int)n); /* A = (id<<16)+pibar */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar */
 
         for (x = 0; x < n; ++x)
         {
@@ -1202,13 +1202,13 @@ class CMCEEngine
         {
             temp[(int)x] = (int)((temp[(int)x] << 16) | x); /* A = (pibar<<16)+id */
         }
-        sort(temp, 0, (int)n); /* A = (id<<16)+pibar^-1 */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar^-1 */
 
         for (x = 0; x < n; ++x)
         {
             temp[(int)x] = (temp[(int)x] << 16) + (temp[(int)(n + x)] >> 16); /* A = (pibar^(-1)<<16)+pibar */
         }
-        sort(temp, 0, (int)n); /* A = (id<<16)+pibar^2 */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar^2 */
 
         if (w <= 10)
         {
@@ -1225,13 +1225,13 @@ class CMCEEngine
                 {
                     temp[(int)x] = (int)(((temp[(int)(n + x)] & ~0x3ff) << 6) | x); /* A = (p<<16)+id */
                 }
-                sort(temp, 0, (int)n); /* A = (id<<16)+p^{-1} */
+                sort32(temp, 0, (int)n); /* A = (id<<16)+p^{-1} */
 
                 for (x = 0; x < n; ++x)
                 {
                     temp[(int)x] = (temp[(int)x] << 20) | temp[(int)(n + x)]; /* A = (p^{-1}<<20)+(p<<10)+c */
                 }
-                sort(temp, 0, (int)n); /* A = (id<<20)+(pp<<10)+cp */
+                sort32(temp, 0, (int)n); /* A = (id<<20)+(pp<<10)+cp */
 
                 for (x = 0; x < n; ++x)
                 {
@@ -1262,7 +1262,7 @@ class CMCEEngine
                 {
                     temp[(int)x] = (int)((temp[(int)(n + x)] & ~0xffff) | x);
                 }
-                sort(temp, 0, (int)n); /* A = (id<<16)+p^(-1) */
+                sort32(temp, 0, (int)n); /* A = (id<<16)+p^(-1) */
                 for (x = 0; x < n; ++x)
                 {
                     temp[(int)x] = (temp[(int)x] << 16) | (temp[(int)(n + x)] & 0xffff);
@@ -1278,7 +1278,7 @@ class CMCEEngine
                     }
                     /* B = (p^(-1)<<16)+p */
 
-                    sort(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+p^(-2) */
+                    sort32(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+p^(-2) */
                     for (x = 0; x < n; ++x)
                     {
                         temp[(int)(n + x)] = (temp[(int)(n + x)] << 16) | (temp[(int)x] & 0xffff);
@@ -1287,7 +1287,7 @@ class CMCEEngine
                 }
 
 
-                sort(temp, 0, (int)n);
+                sort32(temp, 0, (int)n);
                 /* A = id<<16+cp */
                 for (x = 0; x < n; ++x)
                 {
@@ -1318,7 +1318,7 @@ class CMCEEngine
             }
         }
 
-        sort(temp, 0, (int)n); /* A = (id<<16)+pi^(-1) */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pi^(-1) */
 
         for (j = 0; j < n / 2; ++j)
         {
@@ -1335,7 +1335,7 @@ class CMCEEngine
         }
         /* B = (pi^(-1)<<16)+F */
 
-        sort(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+F(pi) */
+        sort32(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+F(pi) */
 
         pos += (2 * w - 3) * step * (n / 2);
 
@@ -1354,7 +1354,7 @@ class CMCEEngine
         }
         /* A = (L<<16)+F(pi) */
 
-        sort(temp, 0, (int)n); /* A = (id<<16)+F(pi(L)) = (id<<16)+M */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+F(pi(L)) = (id<<16)+M */
 
         pos -= (2 * w - 2) * step * (n / 2);
 
@@ -1397,11 +1397,11 @@ class CMCEEngine
             buf[i] |= i;
             buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
         }
-        // sort the buffer
+        // sort32 the buffer
 
-        // FieldOrdering 2.4.2 - 3. Sort the pairs (ai,i) in lexicographic order to obtain pairs (aπ(i),π(i))
+        // FieldOrdering 2.4.2 - 3. sort32 the pairs (ai,i) in lexicographic order to obtain pairs (aπ(i),π(i))
         // where π is a permutation of {0,1,...,q −1}
-        Arrays.sort(buf);
+        sort64(buf, 0, buf.length);
 
         // FieldOrdering 2.4.2 - 2. If a0,a1,...,aq−1 are not distinct, return ⊥.
         for (i = 1; i < (1 << GFBITS); i++)
@@ -1748,7 +1748,7 @@ class CMCEEngine
         return defaultKeySize;
     }
 
-    private static void sort(int[] temp, int from, int to)
+    private static void sort32(int[] temp, int from, int to)
     {
         int top,p,q,r,i;
         int n = to - from;
@@ -1795,5 +1795,53 @@ class CMCEEngine
                 }
             }
         }
+    }
+
+    private static void sort64(long[] temp, int from, int to)
+    {
+        int top,p,q,r,i;
+        int n = to - from;
+
+        if (n < 2) return;
+        top = 1;
+        while (top < n - top) top += top;
+
+        for (p = top;p > 0;p >>>= 1)
+        {
+            for (i = 0;i < n - p;++i)
+            {
+                if ((i & p) == 0)
+                {
+                    long c = temp[from + i + p] - temp[from + i];
+                    c >>>= 63;
+                    c = -c;
+                    c &= temp[from + i] ^ temp[from + i + p];
+                    temp[from + i] ^= c;
+                    temp[from + i + p] ^= c;
+                }
+            }
+            i = 0;
+            for (q = top;q > p;q >>>= 1)
+            {
+                for (;i < n - q;++i)
+                {
+                    if ((i & p) == 0)
+                    {
+                        long a = temp[from + i + p];
+                        for (r = q;r > p;r >>>= 1)
+                        {
+                            long c = temp[from + i + r] - a;
+                            c >>>= 63;
+                            c = -c;
+                            c &= a ^ temp[from + i + r];
+                            a ^= c;
+                            temp[from + i + r] ^= c;
+                        }
+                        temp[from + i + p] = a;
+                    }
+                }
+            }
+        }
+
     }
 }
