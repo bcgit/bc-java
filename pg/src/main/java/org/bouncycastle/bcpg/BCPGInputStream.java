@@ -398,6 +398,10 @@ public class BCPGInputStream
                         throw new EOFException("premature end of stream in PartialInputStream");
                     }
                     dataLength -= readLen;
+                    if (partial && dataLength == 0)
+                    {
+                        loadDataLength();
+                    }
                     return readLen;
                 }
             }
@@ -419,6 +423,10 @@ public class BCPGInputStream
                         throw new EOFException("premature end of stream in PartialInputStream");
                     }
                     dataLength--;
+                    if (partial && dataLength == 0)
+                    {
+                        loadDataLength();
+                    }
                     return ch;
                 }
             }
