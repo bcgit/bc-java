@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="crypto1.5" default="build" basedir="..">
+<project name="crypto1.8" default="build" basedir="..">
 
-    <property name="bc.javac.source" value="1.5" />
-    <property name="bc.javac.target" value="1.5" />
+    <property name="bc.javac.source" value="1.8" />
+    <property name="bc.javac.target" value="1.8" />
     <property name="build.dir" value="build" />
-    <property name="jdk.name" value="jdk1.5" />
+    <property name="jdk.name" value="jdk1.8" />
     <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}" />
     <property name="src.dir" value="${build.dir}/${jdk.name}" />
-    <property name="target.prefix" value="jdk15to18" />
+    <property name="target.prefix" value="jdk18on" />
     <property name="javadoc.args" value="-breakiterator" />
 
     <target name="clean">
