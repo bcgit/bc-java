@@ -134,8 +134,6 @@ class CMCEEngine
         // a: COND_BYTES (field ordering) ((2m-1) * 2^(m-4))
         // g: IRR_BYTES (polynomial) (t * 2)
 
-        //TODO according to how much truncation is applied generate hash accordingly
-
         // generate hash using the seed given in the sk (64 || first 32 bytes)
         byte[] hash = new byte[(SYS_N / 8) + ((1 << GFBITS) * 4) + IRR_BYTES + 32];
 
@@ -174,7 +172,7 @@ class CMCEEngine
             short[] pi = new short[1 << GFBITS];
 
             hash_idx = hash.length - 32 - IRR_BYTES - ((1 << GFBITS) * 4);
-            for (int i = 0; i < (1 << GFBITS); i++)//DONE use Utils load4
+            for (int i = 0; i < (1 << GFBITS); i++)
             {
                 perm[i] = Utils.load4(hash, hash_idx + i * 4);
             }
@@ -275,7 +273,7 @@ class CMCEEngine
 
             // storing poly to sk
             skIndex = 32 + 8;
-            for (int i = 0; i < SYS_T; i++)//DONE change to Utils store_gf
+            for (int i = 0; i < SYS_T; i++)
             {
                 Utils.store_gf(sk, skIndex + i * 2, field[i]);
             }
@@ -291,7 +289,7 @@ class CMCEEngine
             // b0 + 2b1 + ··· + 2σ2−1bσ2−1, take the next σ2 bits as a σ2-bit integer a1, and so on through aq−1.
 
 
-            for (int i = 0; i < (1 << GFBITS); i++)//DONE use Utils load4
+            for (int i = 0; i < (1 << GFBITS); i++)
             {
                 perm[i] = Utils.load4(E, seedIndex + i * 4);
             }
@@ -322,7 +320,7 @@ class CMCEEngine
             // This part is reserved for compression which is not implemented and is not required
             if (!usePivots)
             {
-                Utils.store8(sk, 32, 0xFFFFFFFFL);//DONE use Utils store8
+                Utils.store8(sk, 32, 0xFFFFFFFFL);
             }
             else
             {
@@ -343,7 +341,7 @@ class CMCEEngine
         1. Define H = (In−k |T)
         2. Compute and return C0 = He ∈Fn−k2 .
          */
-        short[] row = new short[SYS_N / 8]; //TODO make this byte array
+        short[] row = new short[SYS_N / 8];
         int i, j, pk_ptr = 0;
         byte b;
         int tail = PK_NROWS % 8;
@@ -405,7 +403,7 @@ class CMCEEngine
         2.4.4 Fixed-weight-vector generation
         1. Generate σ1τ uniform random bits b0,b1,...,bσ1τ−1.
          */
-        while (true) // TODO change this to while loop and make randombyte work
+        while (true)
         {
 
             /*
@@ -418,7 +416,7 @@ class CMCEEngine
                 buf_bytes = new byte[SYS_T * 4];
 
                 random.nextBytes(buf_bytes);
-                for (int i = 0; i < SYS_T * 2; i++)//DONE change to Utils load_gf
+                for (int i = 0; i < SYS_T * 2; i++)
                 {
                     buf_nums[i] = Utils.load_gf(buf_bytes, i * 2, GFMASK);
                 }
@@ -570,7 +568,7 @@ class CMCEEngine
         digest.update(cipher_text, 0, cipher_text.length); // input
         digest.doFinal(key, 0, key.length);     // output
 
-        if (usePadding) //TODO use padding: make sure it works
+        if (usePadding)
         {
             //
             // clear outputs (set to all 0's) if padding bits are not all zero
@@ -714,7 +712,7 @@ class CMCEEngine
             r[i] = 0;
         }
 
-        for (int i = 0; i < SYS_T; i++)//DONE change to Utils load_gf
+        for (int i = 0; i < SYS_T; i++)
         {
             g[i] = Utils.load_gf(sk, 40 + i * 2, GFMASK);
         }
@@ -1041,7 +1039,7 @@ class CMCEEngine
     }
 
     /* return number of trailing zeros of the non-zero input in */
-    private static int ctz(long in) // TODO check if it works
+    private static int ctz(long in)
     {
         int i, b, m = 0, r = 0;
 
@@ -1385,20 +1383,10 @@ class CMCEEngine
         int i, j, k;
         g[SYS_T] = 1;
 
-        for (i = 0; i < SYS_T; i++)//TODO change to Utils load_gf (get sk instead of field)
+        for (i = 0; i < SYS_T; i++)
         {
             g[i] = Utils.load_gf(sk, 40 + i * 2, GFMASK);
-//            g[i] = field[i];
         }
-//        System.out.print("g: ");
-//        for(i=0;i<SYS_T+1;i++)
-//            System.out.printf("%d ",g[i]);
-//        System.out.println();
-//
-//        System.out.print("perm: ");
-//        for(i=0;i<perm.length;i++)
-//            System.out.printf("%d ",perm[i]);
-//        System.out.println();
 
         // Create buffer
         long[] buf = new long[1 << GFBITS];
@@ -1410,16 +1398,10 @@ class CMCEEngine
             buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
         }
         // sort the buffer
-        //TODO implement own sort for unsigned integers
 
         // FieldOrdering 2.4.2 - 3. Sort the pairs (ai,i) in lexicographic order to obtain pairs (aπ(i),π(i))
         // where π is a permutation of {0,1,...,q −1}
         Arrays.sort(buf);
-
-//        System.out.print("sorted buff: ");
-//        for(i=0;i<(1 << GFBITS);i++)
-//            System.out.printf("%d ",buf[i]);
-//        System.out.println();
 
         // FieldOrdering 2.4.2 - 2. If a0,a1,...,aq−1 are not distinct, return ⊥.
         for (i = 1; i < (1 << GFBITS); i++)
@@ -1437,29 +1419,15 @@ class CMCEEngine
         {
             pi[i] = (short)(buf[i] & GFMASK);
         }
-        for (i = 0; i < SYS_N; i++)//DONE change to Utils bitrev
+        for (i = 0; i < SYS_N; i++)
         {
             L[i] = Utils.bitrev(pi[i], GFBITS);
         }
-
-//        System.out.print("pi: ");
-//        for(i=0;i<1<<GFBITS;i++)
-//            System.out.printf("%d ",pi[i]);
-//        System.out.println();
-//
-//        System.out.print("L: ");
-//        for(i=0;i<L.length;i++)
-//            System.out.printf("%d ",L[i]);
-//        System.out.println();
 
         // filling matrix
         short[] inv = new short[SYS_N];
 
         root(inv, g, L);
-//        System.out.print("inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         for (i = 0; i < SYS_N; i++)
         {
@@ -1474,10 +1442,6 @@ class CMCEEngine
                 mat[i][j] = 0;
             }
         }
-//        System.out.print("after inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         for (i = 0; i < SYS_T; i++)
         {
@@ -1510,10 +1474,6 @@ class CMCEEngine
                 inv[j] = gf.gf_mul(inv[j], L[j]);
             }
         }
-//        System.out.print("2after inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         // gaussian elimination
         int row, c;
@@ -1584,7 +1544,6 @@ class CMCEEngine
         {
             if (usePadding)
             {
-                ///TODO usepadding: make sure this works
                 int tail, pk_index = 0;
                 tail = PK_NROWS % 8;
                 for (i = 0; i < PK_NROWS; i++)
@@ -1728,7 +1687,7 @@ class CMCEEngine
             }
         }
 
-        for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)//DONE change this to the polynomial in the parameters
+        for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)
         {
             for (int polyIndex : poly)
             {
@@ -1751,7 +1710,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of pk are all zero */
-    int check_pk_padding(byte[] pk)// TODO make sure this works
+    int check_pk_padding(byte[] pk)
     {
         byte b;
         int i, ret;
@@ -1771,7 +1730,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of c are all zero */
-    int check_c_padding(byte[] c)// TODO make sure this works
+    int check_c_padding(byte[] c)
     {
         byte b;
         int ret;
@@ -1791,6 +1750,50 @@ class CMCEEngine
 
     private static void sort(int[] temp, int from, int to)
     {
-        Arrays.sort(temp, from, to);
+        int top,p,q,r,i;
+        int n = to - from;
+
+        if (n < 2) return;
+        top = 1;
+        while (top < n - top) top += top;
+
+        for (p = top;p > 0;p >>>= 1)
+        {
+            for (i = 0;i < n - p;++i)
+            {
+                if ((i & p) == 0)
+                {
+                    int ab = temp[from + i + p] ^ temp[from + i];
+                    int c = temp[from + i + p] - temp[from + i];
+                    c ^= ab & (c ^ temp[from + i + p]);
+                    c >>= 31;
+                    c &= ab;
+                    temp[from + i] ^= c;
+                    temp[from + i + p] ^= c;
+                }
+            }
+            i = 0;
+            for (q = top;q > p;q >>>= 1)
+            {
+                for (;i < n - q;++i)
+                {
+                    if ((i & p) == 0)
+                    {
+                        int a = temp[from + i + p];
+                        for (r = q;r > p;r >>>= 1)
+                        {
+                            int ab = temp[from + i + r] ^ a;
+                            int c = temp[from + i + r] - a;
+                            c ^= ab & (c ^ temp[from + i + r]);
+                            c >>= 31;
+                            c &= ab;
+                            a ^= c;
+                            temp[from + i + r] ^= c;
+                        }
+                        temp[from + i + p] = a;
+                    }
+                }
+            }
+        }
     }
 }
