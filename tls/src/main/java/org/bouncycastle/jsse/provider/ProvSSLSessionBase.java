@@ -178,7 +178,7 @@ abstract class ProvSSLSessionBase
          * "Note: this method exists for compatibility with previous releases. New applications
          * should use getPeerCertificates() instead."
          */
-        return OldCertUtil.getPeerCertificateChain(isFips, (X509Certificate[])getPeerCertificates());
+        return OldCertUtil.getPeerCertificateChain(this);
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
@@ -262,6 +262,11 @@ abstract class ProvSSLSessionBase
     final void invalidatedBySessionContext()
     {
         implInvalidate(false);
+    }
+
+    public boolean isFipsMode()
+    {
+        return isFips;
     }
 
     public boolean isValid()
