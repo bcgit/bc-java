@@ -678,6 +678,23 @@ class ProvX509KeyManager
         return Collections.emptySet();
     }
 
+    static boolean isSuitableKeyType(boolean forServer, String keyType, X509Certificate eeCert,
+        TransportData transportData)
+    {
+        Map<String, PublicKeyFilter> filters = forServer ? FILTERS_SERVER : FILTERS_CLIENT;
+        PublicKeyFilter filter = filters.get(keyType);
+        if (null == filter)
+        {
+            return false;
+        }
+
+        PublicKey publicKey = eeCert.getPublicKey();
+        boolean[] keyUsage = eeCert.getKeyUsage();
+        BCAlgorithmConstraints algorithmConstraints = TransportData.getAlgorithmConstraints(transportData, true);
+
+        return filter.accepts(publicKey, keyUsage, algorithmConstraints);
+    }
+
     private static List<Match> addToMatches(List<Match> matches, Match match)
     {
         if (null == matches)
