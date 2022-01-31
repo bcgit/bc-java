@@ -23,6 +23,19 @@ abstract class DigestAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.KeyGenerator.HMAC/" + algorithm, mainName);
     }
 
+    protected void addKMACAlgorithm(
+        ConfigurableProvider provider,
+        String algorithm,
+        String algorithmClassName,
+        String keyGeneratorClassName)
+    {
+        String mainName = "KMAC" + algorithm;
+
+        provider.addAlgorithm("Mac." + mainName, algorithmClassName);
+        provider.addAlgorithm("KeyGenerator." + mainName, keyGeneratorClassName);
+        provider.addAlgorithm("Alg.Alias.KeyGenerator.KMAC" + algorithm, mainName);
+    }
+
     protected void addHMACAlias(
         ConfigurableProvider provider,
         String algorithm,

@@ -2,9 +2,12 @@ package org.bouncycastle.jcajce.provider.digest;
 
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.digests.ParallelHash;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.digests.TupleHash;
 import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
@@ -49,6 +52,44 @@ public class SHA3
         {
             BCMessageDigest d = (BCMessageDigest)super.clone();
             d.digest = new SHAKEDigest((SHAKEDigest)digest);
+
+            return d;
+        }
+    }
+
+    static public class DigestTupleHash
+        extends BCMessageDigest
+        implements Cloneable
+    {
+        public DigestTupleHash(int type, int size)
+        {
+            super(new TupleHash(type, null, size));
+        }
+
+        public Object clone()
+            throws CloneNotSupportedException
+        {
+            BCMessageDigest d = (BCMessageDigest)super.clone();
+            d.digest = new TupleHash((TupleHash)digest);
+
+            return d;
+        }
+    }
+
+    static public class DigestParallelHash
+        extends BCMessageDigest
+        implements Cloneable
+    {
+        public DigestParallelHash(int type, int size)
+        {
+            super(new ParallelHash(type, null, 128, size));
+        }
+
+        public Object clone()
+            throws CloneNotSupportedException
+        {
+            BCMessageDigest d = (BCMessageDigest)super.clone();
+            d.digest = new ParallelHash((ParallelHash)digest);
 
             return d;
         }
@@ -198,6 +239,60 @@ public class SHA3
         }
     }
 
+    public static class KMac128
+        extends BaseMac
+    {
+        public KMac128()
+        {
+            super(new KMAC(128, new byte[0]));
+        }
+    }
+
+    public static class KMac256
+        extends BaseMac
+    {
+        public KMac256()
+        {
+            super(new KMAC(256, new byte[0]));
+        }
+    }
+
+    public static class DigestTupleHash128_256
+        extends DigestTupleHash
+    {
+        public DigestTupleHash128_256()
+        {
+            super(128, 256);
+        }
+    }
+
+    public static class DigestTupleHash256_512
+        extends DigestTupleHash
+    {
+        public DigestTupleHash256_512()
+        {
+            super(256, 512);
+        }
+    }
+
+    public static class DigestParallelHash128_256
+        extends DigestParallelHash
+    {
+        public DigestParallelHash128_256()
+        {
+            super(128, 256);
+        }
+    }
+
+    public static class DigestParallelHash256_512
+        extends DigestParallelHash
+    {
+        public DigestParallelHash256_512()
+        {
+            super(256, 512);
+        }
+    }
+
     public static class Mappings
         extends DigestAlgorithmProvider
     {
@@ -235,6 +330,19 @@ public class SHA3
 
             addHMACAlgorithm(provider, "SHA3-512", PREFIX + "$HashMac512",  PREFIX + "$KeyGenerator512");
             addHMACAlias(provider, "SHA3-512", NISTObjectIdentifiers.id_hmacWithSHA3_512);
+
+            addKMACAlgorithm(provider, "128", PREFIX + "$KMac128",  PREFIX + "$KeyGenerator256");
+            addKMACAlgorithm(provider, "256", PREFIX + "$KMac256",  PREFIX + "$KeyGenerator512");
+
+            provider.addAlgorithm("MessageDigest.TUPLEHASH256-512", PREFIX + "$DigestTupleHash256_512");
+            provider.addAlgorithm("MessageDigest.TUPLEHASH128-256", PREFIX + "$DigestTupleHash128_256");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.TUPLEHASH256", "TUPLEHASH256-512");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.TUPLEHASH128", "TUPLEHASH128-256");
+
+            provider.addAlgorithm("MessageDigest.PARALLELHASH256-512", PREFIX + "$DigestParallelHash256_512");
+            provider.addAlgorithm("MessageDigest.PARALLELHASH128-256", PREFIX + "$DigestParallelHash128_256");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.PARALLELHASH256", "PARALLELHASH256-512");
+            provider.addAlgorithm("Alg.Alias.MessageDigest.PARALLELHASH128", "PARALLELHASH128-256");
         }
     }
 }
