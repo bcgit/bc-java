@@ -1,0 +1,42 @@
+#!/bin/sh -
+#
+# build script for 1.8+
+#
+# If it's given a buildname it creates a subdirectory and places a build in it,
+# otherwise it just creates the docs and class files.
+#
+
+if [ "${JDKPATH}" = "" ] 
+then
+	JDKPATH=/usr/lib/jvm/java-8-openjdk-amd64
+fi
+
+JAVA_HOME=$JDKPATH
+export JAVA_HOME
+
+PATH=$JDKPATH/bin:$PATH
+export PATH
+
+if [ "$1" = "test" ]
+then
+    ant -f ant/jdk18+.xml test
+elif [ "$1" = "clean" ]
+then
+    ant -f ant/jdk18+.xml clean
+else
+    if ant -f ant/jdk18+.xml build-provider
+    then
+        ant -f ant/jdk18+.xml build
+        ant -f ant/jdk18+.xml zip-src
+    fi
+fi
+
+if [ -f build/artifacts/jdk1.8/jars/bcprov-jdk15on*.jar ]
+then
+	tar cf - prov/src/main/resources/META-INF | (cd build/artifacts/jdk1.8/jars/; tar xf -)
+        cd build/artifacts/jdk1.8/jars/
+        mv prov/src/main/resources/META-INF .
+        jar uf bcprov-jdk18on*.jar META-INF
+        jar uf bcprov-ext-jdk18on*.jar META-INF
+        rm -r prov META-INF
+fi

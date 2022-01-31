@@ -11,7 +11,7 @@ then
    exit 0
 fi 
 
-for jarName in bc$1-jdk15on-*.jar
+for jarName in bc$1-jdk18on-*.jar
 do
 
 rm -rf module.tmp
@@ -24,11 +24,11 @@ rm -rf module.tmp
     mkdir -p module.tmp/v5
     mkdir -p module.tmp/versions/v9
     mkdir -p module.tmp/versions/v11
-    ( cd module.tmp/v5; jar xf ../../build/artifacts/jdk1.5/jars/$jarName )
+    ( cd module.tmp/v5; jar xf ../../build/artifacts/jdk1.8/jars/$jarName )
 
-    provJar=`echo build/artifacts/jdk1.5/jars/bcprov-jdk15on*.jar`
-    utilJar=`echo build/artifacts/jdk1.5/jars/bcutil-jdk15on*.jar`
-    pkixJar=`echo build/artifacts/jdk1.5/jars/bcpkix-jdk15on*.jar`
+    provJar=`echo build/artifacts/jdk1.8/jars/bcprov-jdk18on*.jar`
+    utilJar=`echo build/artifacts/jdk1.8/jars/bcutil-jdk18on*.jar`
+    pkixJar=`echo build/artifacts/jdk1.8/jars/bcpkix-jdk18on*.jar`
     if [ $1 = "prov" ]
     then
 	javac -target 1.9 -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java:core/src/main/java
@@ -44,7 +44,7 @@ rm -rf module.tmp
 	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
     elif [ $1 = "jmail" ]
     then
-        jmailSrc=`echo build/artifacts/jdk1.5/bcjmail-jdk15on-*/src/`
+        jmailSrc=`echo build/artifacts/jdk1.8/bcjmail-jdk18on-*/src/`
 	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$jmailSrc
     elif [ $1 = "pkix" ]
     then
@@ -74,8 +74,8 @@ rm -rf module.tmp
 	rm v9/$p
     done
 )
-sh ./bnd.sh build/artifacts/jdk1.5/jars/$jarName
-cp build/artifacts/jdk1.5/jars/$jarName module.tmp/$jarName
+sh ./bnd.sh build/artifacts/jdk1.8/jars/$jarName
+cp build/artifacts/jdk1.8/jars/$jarName module.tmp/$jarName
 # Java 11 Step
 (
     export JAVA_HOME=$JAVA_11
@@ -99,7 +99,7 @@ cp build/artifacts/jdk1.5/jars/$jarName module.tmp/$jarName
         jar uf $jarName --release 15 -C v15 .
     fi
 )
-cp module.tmp/$jarName build/artifacts/jdk1.5/jars/$jarName
+cp module.tmp/$jarName build/artifacts/jdk1.8/jars/$jarName
 
-bcsign-oracle build/artifacts/jdk1.5/jars/$jarName
+bcsign11 build/artifacts/jdk1.8/jars/$jarName
 done
