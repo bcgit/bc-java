@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,12 +17,9 @@ final class ImportSSLSession_5
     implements ImportSSLSession
 {
     final SSLSession sslSession;
-    final boolean isFips;
 
     ImportSSLSession_5(SSLSession sslSession)
     {
-        ProvSSLSessionContext sslSessionContext = (ProvSSLSessionContext)sslSession.getSessionContext();
-        this.isFips = (null == sslSessionContext) ? false : sslSessionContext.getSSLContext().isFips();
         this.sslSession = sslSession;
     }
 
@@ -87,7 +83,7 @@ final class ImportSSLSession_5
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        return OldCertUtil.getPeerCertificateChain(isFips, (X509Certificate[])getPeerCertificates());
+        return OldCertUtil.getPeerCertificateChain(this);
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
@@ -151,6 +147,17 @@ final class ImportSSLSession_5
     public void invalidate()
     {
         sslSession.invalidate();
+    }
+
+    public boolean isFipsMode()
+    {
+        SSLSessionContext sessionContext = getSessionContext();
+        if (sessionContext instanceof ProvSSLSessionContext)
+        {
+            return ((ProvSSLSessionContext)sessionContext).getSSLContext().isFips();
+        }
+
+        return false;
     }
 
     public boolean isValid()
