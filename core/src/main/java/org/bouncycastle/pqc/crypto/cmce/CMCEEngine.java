@@ -1,11 +1,10 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
 
 class CMCEEngine
 {
@@ -240,11 +239,11 @@ class CMCEEngine
             // Update seed using the last 32 bytes (l) of E
             // If anything fails, this set δ ←δ′ (the next last 32 bytes of E) and restart the algorithm.
             seedIndex = E.length - 32;
-            seed_b = ByteUtils.subArray(E, seedIndex, seedIndex + 32);
+            seed_b = Arrays.copyOfRange(E, seedIndex, seedIndex + 32);
 
             // store the previous last 32 bytes used as δ
             System.arraycopy(prev_sk, 0, sk, 0, 32);
-            prev_sk = ByteUtils.subArray(seed_b, 0, 32);
+            prev_sk = Arrays.copyOfRange(seed_b, 0, 32);
 
             // (step 5 and 4 are swapped)
             // SeededKeyGen - 5. Compute g from the next σ1t bits of E by the Irreducible algorithm. If this fails,
