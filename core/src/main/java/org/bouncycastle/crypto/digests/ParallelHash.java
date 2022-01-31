@@ -33,7 +33,7 @@ public class ParallelHash
     /**
      * Base constructor.
      *
-     * @param bitLength bit length of the underlying SHAKE function, 128 or 256.
+     * @param bitLength security strength (bits) of the underlying SHAKE function, 128 or 256.
      * @param S the customization string - available for local use.
      * @param B the blocksize (in bytes) for hashing.
      */

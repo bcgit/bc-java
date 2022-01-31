@@ -90,7 +90,8 @@ public class RegressionTest
         new SM2CipherTest(),
         new ZucTest(),
         new ChaCha20Poly1305Test(),
-        new SipHash128Test()
+        new SipHash128Test(),
+        new XOFTest()
     };
 
     public static void main(String[] args)
