@@ -7,6 +7,7 @@ import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
@@ -17,27 +18,36 @@ import java.util.Date;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 
+import org.bouncycastle.jsse.BCExtendedSSLSession;
+
 class OldCertUtil
 {
-    public static javax.security.cert.X509Certificate[] getPeerCertificateChain(boolean isFips, X509Certificate[] peerCertificates) throws SSLPeerUnverifiedException
+    static javax.security.cert.X509Certificate[] getPeerCertificateChain(BCExtendedSSLSession sslSession)
+        throws SSLPeerUnverifiedException
     {
-        /*
-         * "Note: this method exists for compatibility with previous releases. New applications
-         * should use getPeerCertificates() instead."
-         */
-        javax.security.cert.X509Certificate[] chain = new javax.security.cert.X509Certificate[peerCertificates.length];
+        boolean isFips = sslSession.isFipsMode();
+        Certificate[] peerCertificates = sslSession.getPeerCertificates();
+
+        javax.security.cert.X509Certificate[] result = new javax.security.cert.X509Certificate[peerCertificates.length];
+        int count = 0;
 
         try
         {
             for (int i = 0; i < peerCertificates.length; ++i)
             {
-                if (isFips)
+                Certificate peerCertificate = peerCertificates[i];
+                if (peerCertificate instanceof X509Certificate)
                 {
-                    chain[i] = new X509CertificateWrapper(peerCertificates[i]);
-                }
-                else
-                {
-                    chain[i] = javax.security.cert.X509Certificate.getInstance(peerCertificates[i].getEncoded());
+                    X509Certificate peerX509Certificate = (X509Certificate)peerCertificate;
+                    if (isFips)
+                    {
+                        result[count++] = new X509CertificateWrapper(peerX509Certificate);
+                    }
+                    else
+                    {
+                        result[count++] = javax.security.cert.X509Certificate.getInstance(
+                            peerX509Certificate.getEncoded());
+                    }
                 }
             }
         }
@@ -46,7 +56,14 @@ class OldCertUtil
             throw new SSLPeerUnverifiedException(e.getMessage());
         }
 
-        return chain;
+        if (count >= result.length)
+        {
+            return result;
+        }
+
+        javax.security.cert.X509Certificate[] tmp = new javax.security.cert.X509Certificate[count];
+        System.arraycopy(result, 0, tmp, 0, count);
+        return tmp;
     }
 
     @SuppressWarnings("deprecation")

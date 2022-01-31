@@ -30,4 +30,6 @@ public abstract class BCExtendedSSLSession implements SSLSession
     {
         return Collections.emptyList();
     }
+
+    public abstract boolean isFipsMode();
 }
