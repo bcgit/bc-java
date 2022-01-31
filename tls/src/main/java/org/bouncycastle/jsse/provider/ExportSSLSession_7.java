@@ -2,6 +2,7 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -14,9 +15,12 @@ class ExportSSLSession_7
     implements ExportSSLSession
 {
     final BCExtendedSSLSession sslSession;
+    final boolean isFips;
 
     ExportSSLSession_7(BCExtendedSSLSession sslSession)
     {
+        ProvSSLSessionContext sslSessionContext = (ProvSSLSessionContext)sslSession.getSessionContext();
+        this.isFips = (null == sslSessionContext) ? false : sslSessionContext.getSSLContext().isFips();
         this.sslSession = sslSession;
     }
 
@@ -79,7 +83,11 @@ class ExportSSLSession_7
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        return sslSession.getPeerCertificateChain();
+        /*
+         * "Note: this method exists for compatibility with previous releases. New applications
+         * should use getPeerCertificates() instead."
+         */
+        return OldCertUtil.getPeerCertificateChain(isFips, (X509Certificate[])getPeerCertificates());
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
