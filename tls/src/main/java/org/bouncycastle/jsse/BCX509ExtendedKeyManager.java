@@ -18,7 +18,11 @@ public abstract class BCX509ExtendedKeyManager
                 String alias = chooseClientAlias(new String[]{ keyType }, issuers, socket);
                 if (null != alias)
                 {
-                    return getKeyBC(keyType, alias);
+                    BCX509Key key = getKeyBC(keyType, alias);
+                    if (null != key)
+                    {
+                        return key;
+                    }
                 }
             }
         }
@@ -34,7 +38,11 @@ public abstract class BCX509ExtendedKeyManager
                 String alias = chooseEngineClientAlias(new String[]{ keyType }, issuers, engine);
                 if (null != alias)
                 {
-                    return getKeyBC(keyType, alias);
+                    BCX509Key key = getKeyBC(keyType, alias);
+                    if (null != key)
+                    {
+                        return key;
+                    }
                 }
             }
         }
@@ -50,7 +58,11 @@ public abstract class BCX509ExtendedKeyManager
                 String alias = chooseEngineServerAlias(keyType, issuers, engine);
                 if (null != alias)
                 {
-                    return getKeyBC(keyType, alias);
+                    BCX509Key key = getKeyBC(keyType, alias);
+                    if (null != key)
+                    {
+                        return key;
+                    }
                 }
             }
         }
@@ -66,7 +78,11 @@ public abstract class BCX509ExtendedKeyManager
                 String alias = chooseServerAlias(keyType, issuers, socket);
                 if (null != alias)
                 {
-                    return getKeyBC(keyType, alias);
+                    BCX509Key key = getKeyBC(keyType, alias);
+                    if (null != key)
+                    {
+                        return key;
+                    }
                 }
             }
         }
