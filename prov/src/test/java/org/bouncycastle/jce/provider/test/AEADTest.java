@@ -91,7 +91,7 @@ public class AEADTest extends SimpleTest
 
         eax.init(Cipher.ENCRYPT_MODE, key, iv);
         byte[] ciphertext = eax.doFinal(new byte[100]);
-        ciphertext[0] = (byte)(ciphertext[0] + 1);  // Tamper
+        ciphertext[ciphertext.length - 1] = (byte)(ciphertext[ciphertext.length - 1] + 1);  // Tamper
 
         try
         {
