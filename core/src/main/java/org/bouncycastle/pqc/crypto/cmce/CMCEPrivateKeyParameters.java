@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Arrays;
 
 public class CMCEPrivateKeyParameters
@@ -52,26 +51,26 @@ public class CMCEPrivateKeyParameters
 
     public byte[] getDelta()
     {
-        return ByteUtils.subArray(privateKey,0, 32);
+        return Arrays.copyOfRange(privateKey,0, 32);
     }
 
     public byte[] getC()
     {
-        return ByteUtils.subArray(privateKey, 32, 32+8);
+        return Arrays.copyOfRange(privateKey, 32, 32+8);
     }
 
     public byte[] getG()
     {
-        return ByteUtils.subArray(privateKey, 40, 40+getParameters().getT()*2);
+        return Arrays.copyOfRange(privateKey, 40, 40+getParameters().getT()*2);
     }
 
     public byte[] getAlpha()
     {
-        return ByteUtils.subArray(privateKey, 40+getParameters().getT()*2, privateKey.length-32);
+        return Arrays.copyOfRange(privateKey, 40+getParameters().getT()*2, privateKey.length-32);
     }
 
     public byte[] getS()
     {
-        return ByteUtils.subArray(privateKey, privateKey.length-32, privateKey.length);
+        return Arrays.copyOfRange(privateKey, privateKey.length-32, privateKey.length);
     }
 }
