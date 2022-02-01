@@ -91,7 +91,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                             key = PEMUtilities.generateSecretKeyForPKCS5Scheme2(helper, oid, password, salt, iterationCount, defParams.getPrf());
                         }
                         
-                        cipher = helper.createCipher(oid);
+                        cipher = helper.createCipher(PEMUtilities.getCipherName(scheme.getAlgorithm()));
                         AlgorithmParameters algParams = helper.createAlgorithmParameters(oid);
 
                         algParams.init(scheme.getParameters().toASN1Primitive().getEncoded());
@@ -102,7 +102,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                     {
                         PKCS12PBEParams params = PKCS12PBEParams.getInstance(algorithm.getParameters());
 
-                        cipher = helper.createCipher(algorithm.getAlgorithm().getId());
+                        cipher = helper.createCipher(PEMUtilities.getCipherName(algorithm.getAlgorithm()));
 
                         cipher.init(Cipher.DECRYPT_MODE, new PKCS12KeyWithParameters(password, params.getIV(), params.getIterations().intValue()));
                     }
@@ -110,7 +110,7 @@ public class JceOpenSSLPKCS8DecryptorProviderBuilder
                     {
                         PBEParameter params = PBEParameter.getInstance(algorithm.getParameters());
 
-                        cipher = helper.createCipher(algorithm.getAlgorithm().getId());
+                        cipher = helper.createCipher(PEMUtilities.getCipherName(algorithm.getAlgorithm()));
 
                         cipher.init(Cipher.DECRYPT_MODE, new PBKDF1KeyWithParameters(password, new CharToByteConverter()
                         {

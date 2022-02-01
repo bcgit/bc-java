@@ -144,7 +144,7 @@ public class JceOpenSSLPKCS8EncryptorBuilder
 
         try
         {
-            this.cipher = helper.createCipher(algOID.getId());
+            this.cipher = helper.createCipher(PEMUtilities.getCipherName(algOID));
 
             if (PEMUtilities.isPKCS5Scheme2(algOID))
             {

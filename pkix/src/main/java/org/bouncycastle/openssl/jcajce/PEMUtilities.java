@@ -36,6 +36,8 @@ class PEMUtilities
     private static final Set PKCS5_SCHEME_2 = new HashSet();
     private static final Map PRFS = new HashMap();
     private static final Map PRFS_SALT = new HashMap();
+    private static final Map CIPHER_NAMES = new HashMap();
+    private static final Map KEY_NAMES = new HashMap();
 
     static
     {
@@ -84,6 +86,17 @@ class PEMUtilities
         PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(48));
         PRFS_SALT.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(64));
         PRFS_SALT.put(CryptoProObjectIdentifiers.gostR3411Hmac, Integers.valueOf(32));
+
+        CIPHER_NAMES.put(PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE/CBC/PKCS5Padding");
+        CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes128_CBC, "AES/CBC/PKCS7Padding");
+        CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes192_CBC, "AES/CBC/PKCS7Padding");
+        CIPHER_NAMES.put(NISTObjectIdentifiers.id_aes256_CBC, "AES/CBC/PKCS7Padding");
+
+        // note: is <String,String>
+        KEY_NAMES.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), "DESEDE");
+        KEY_NAMES.put(NISTObjectIdentifiers.id_aes128_CBC.getId(), "AES");
+        KEY_NAMES.put(NISTObjectIdentifiers.id_aes192_CBC.getId(), "AES");
+        KEY_NAMES.put(NISTObjectIdentifiers.id_aes256_CBC.getId(), "AES");
     }
 
     static int getKeySize(String algorithm)
@@ -133,7 +146,7 @@ class PEMUtilities
                             
         SecretKey sKey = keyGen.generateSecret(new PBEKeySpec(password, salt, iterationCount, PEMUtilities.getKeySize(algorithm)));
 
-        return new SecretKeySpec(sKey.getEncoded(), algorithm);
+        return new SecretKeySpec(sKey.getEncoded(), getAlgorithmName(algorithm));
     }
 
     public static SecretKey generateSecretKeyForPKCS5Scheme2(JcaJceHelper helper, String algorithm, char[] password, byte[] salt, int iterationCount, AlgorithmIdentifier prf)
@@ -151,6 +164,8 @@ class PEMUtilities
 
         return new SecretKeySpec(sKey.getEncoded(), algorithm);
     }
+
+
 
     static byte[] crypt(
         boolean encrypt,
@@ -325,5 +340,25 @@ class PEMUtilities
         {
             throw new PEMException("Unable to create OpenSSL PBDKF: " + e.getMessage(), e);
         }
+    }
+
+    static String getCipherName(ASN1ObjectIdentifier oid)
+    {
+        String name = (String)CIPHER_NAMES.get(oid);
+        if (name != null)
+        {
+            return name;
+        }
+        return oid.getId();
+    }
+
+    static String getAlgorithmName(String oid)
+    {
+        String name = (String)KEY_NAMES.get(oid);
+        if (name != null)
+        {
+            return name;
+        }
+        return oid;
     }
 }
