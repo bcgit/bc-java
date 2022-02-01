@@ -2,6 +2,7 @@ module org.bouncycastle.mail
 {
     requires org.bouncycastle.provider;
     requires org.bouncycastle.pkix;
+    requires jakarta.mail;
 
     exports org.bouncycastle.mail.smime;
     exports org.bouncycastle.mail.smime.examples;
