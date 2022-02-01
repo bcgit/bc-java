@@ -7,8 +7,8 @@ public class IDNUtil
     public static final int ALLOW_UNASSIGNED;
     public static final int USE_STD3_ASCII_RULES;
 
-    public static final Method toASCIIMethod;
-    public static final Method toUnicodeMethod;
+    private static final Method toASCIIMethod;
+    private static final Method toUnicodeMethod;
 
     private static final String IDN_CLASSNAME = "java.net.IDN";
 //    private static final String ACE_PREFIX = "xn--";
