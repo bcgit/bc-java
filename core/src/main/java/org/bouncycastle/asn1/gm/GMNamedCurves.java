@@ -40,39 +40,51 @@ public class GMNamedCurves
      */
     static X9ECParametersHolder sm2p256v1 = new X9ECParametersHolder()
     {
-        protected X9ECParameters createParameters()
+        protected ECCurve createCurve()
         {
             BigInteger p = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF");
             BigInteger a = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC");
             BigInteger b = fromHex("28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93");
-            byte[] S = null;
             BigInteger n = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+        }
+
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = getCurve();
+
             X9ECPoint G = configureBasepoint(curve,
                 "0432C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0");
 
-            return new X9ECParameters(curve, G, n, h, S);
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
         }
     };
 
     static X9ECParametersHolder wapip192v1 = new X9ECParametersHolder()
     {
-        protected X9ECParameters createParameters()
+        protected ECCurve createCurve()
         {
             BigInteger p = fromHex("BDB6F4FE3E8B1D9E0DA8C0D46F4C318CEFE4AFE3B6B8551F");
             BigInteger a = fromHex("BB8E5E8FBC115E139FE6A814FE48AAA6F0ADA1AA5DF91985");
             BigInteger b = fromHex("1854BEBDC31B21B7AEFC80AB0ECD10D5B1B3308E6DBF11C1");
-            byte[] S = null;
             BigInteger n = fromHex("BDB6F4FE3E8B1D9E0DA8C0D40FC962195DFAE76F56564677");
             BigInteger h = BigInteger.valueOf(1);
 
-            ECCurve curve = configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+        }
+
+        protected X9ECParameters createParameters()
+        {
+            byte[] S = null;
+            ECCurve curve = getCurve();
+
             X9ECPoint G = configureBasepoint(curve,
                 "044AD5F7048DE709AD51236DE65E4D4B482C836DC6E410664002BB3A02D4AAADACAE24817A4CA3A1B014B5270432DB27D2");
 
-            return new X9ECParameters(curve, G, n, h, S);
+            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
         }
     };
 
@@ -94,11 +106,16 @@ public class GMNamedCurves
         defineCurve("sm2p256v1", GMObjectIdentifiers.sm2p256v1, sm2p256v1);
     }
 
-    public static X9ECParameters getByName(
-        String name)
+    public static X9ECParameters getByName(String name)
     {
         ASN1ObjectIdentifier oid = getOID(name);
         return oid == null ? null : getByOID(oid);
+    }
+
+    public static X9ECParametersHolder getByNameLazy(String name)
+    {
+        ASN1ObjectIdentifier oid = getOID(name);
+        return oid == null ? null : getByOIDLazy(oid);
     }
 
     /**
@@ -107,11 +124,15 @@ public class GMNamedCurves
      *
      * @param oid an object identifier representing a named curve, if present.
      */
-    public static X9ECParameters getByOID(
-        ASN1ObjectIdentifier oid)
+    public static X9ECParameters getByOID(ASN1ObjectIdentifier oid)
     {
-        X9ECParametersHolder holder = (X9ECParametersHolder)curves.get(oid);
+        X9ECParametersHolder holder = getByOIDLazy(oid);
         return holder == null ? null : holder.getParameters();
+    }
+
+    public static X9ECParametersHolder getByOIDLazy(ASN1ObjectIdentifier oid)
+    {
+        return (X9ECParametersHolder)curves.get(oid);
     }
 
     /**
