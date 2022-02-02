@@ -19,7 +19,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKeyStructure;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -194,20 +193,7 @@ public class JCEECPrivateKey
         {
             ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
             X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
-
-            if (ecP == null) // GOST Curve
-            {
-                ECDomainParameters gParam = ECGOST3410NamedCurves.getByOID(oid);
-                EllipticCurve ellipticCurve = EC5Util.convertCurve(gParam.getCurve(), gParam.getSeed());
-
-                ecSpec = new ECNamedCurveSpec(
-                    ECGOST3410NamedCurves.getName(oid),
-                    ellipticCurve,
-                    EC5Util.convertPoint(gParam.getG()),
-                    gParam.getN(),
-                    gParam.getH());
-            }
-            else
+            if (ecP != null)
             {
                 EllipticCurve ellipticCurve = EC5Util.convertCurve(ecP.getCurve(), ecP.getSeed());
 
