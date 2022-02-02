@@ -36,31 +36,48 @@ import org.bouncycastle.util.Arrays;
 
 public class EC5Util
 {
-    private static Map customCurves = new HashMap();
-
-    static
+    private static class CustomCurves
     {
-        Enumeration e = CustomNamedCurves.getNames();
-        while (e.hasMoreElements())
-        {
-            String name = (String)e.nextElement();
+        private static Map CURVE_MAP = createCurveMap();
 
-            X9ECParametersHolder curveParams = ECNamedCurveTable.getByNameLazy(name);
-            if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
+        private static Map createCurveMap()
+        {
+            Map map = new HashMap();
+
+            Enumeration e = CustomNamedCurves.getNames();
+            while (e.hasMoreElements())
             {
-                customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByNameLazy(name).getCurve());
+                String name = (String)e.nextElement();
+
+                X9ECParametersHolder curveParams = ECNamedCurveTable.getByNameLazy(name);
+                if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
+                {
+                    ECCurve curve = curveParams.getCurve();
+                    if (ECAlgorithms.isFpCurve(curve))
+                    {
+                        map.put(curve, CustomNamedCurves.getByNameLazy(name).getCurve());
+                    }
+                }
             }
+
+            ECCurve c_25519 = CustomNamedCurves.getByNameLazy("Curve25519").getCurve();
+
+            map.put(new ECCurve.Fp(
+                c_25519.getField().getCharacteristic(),
+                c_25519.getA().toBigInteger(),
+                c_25519.getB().toBigInteger(),
+                c_25519.getOrder(),
+                c_25519.getCofactor()
+                ), c_25519);
+
+            return map;
         }
 
-        ECCurve c_25519 = CustomNamedCurves.getByNameLazy("Curve25519").getCurve();
-
-        customCurves.put(new ECCurve.Fp(
-            c_25519.getField().getCharacteristic(),
-            c_25519.getA().toBigInteger(),
-            c_25519.getB().toBigInteger(),
-            c_25519.getOrder(),
-            c_25519.getCofactor()
-            ), c_25519);
+        static ECCurve substitute(ECCurve c)
+        {
+            ECCurve custom = (ECCurve)CURVE_MAP.get(c);
+            return null != custom ? custom : c;
+        }
     }
 
     public static ECCurve getCurve(
@@ -261,14 +278,7 @@ public class EC5Util
 
         if (field instanceof ECFieldFp)
         {
-            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
-
-            if (customCurves.containsKey(curve))
-            {
-                return (ECCurve)customCurves.get(curve);
-            }
-
-            return curve;
+            return CustomCurves.substitute(new ECCurve.Fp(((ECFieldFp)field).getP(), a, b));
         }
         else
         {
