@@ -23,7 +23,7 @@ import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -218,7 +218,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             }
             else
             {
-                X9ECParameters x9Params = ECNamedCurveTable.getByOID(ecKey.getCurveOID());
+                X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
                 ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
                 agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
