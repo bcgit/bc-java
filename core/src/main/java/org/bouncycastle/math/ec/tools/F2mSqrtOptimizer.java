@@ -8,9 +8,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 
 public class F2mSqrtOptimizer
@@ -24,33 +25,37 @@ public class F2mSqrtOptimizer
         while (it.hasNext())
         {
             String name = (String)it.next();
-            X9ECParameters x9 = CustomNamedCurves.getByName(name);
+            X9ECParametersHolder x9 = CustomNamedCurves.getByNameLazy(name);
             if (x9 == null)
             {
-                x9 = ECNamedCurveTable.getByName(name);
+                x9 = ECNamedCurveTable.getByNameLazy(name);
             }
-            if (x9 != null && ECAlgorithms.isF2mCurve(x9.getCurve()))
+            if (x9 != null)
             {
-                // -DM System.out.println
-                System.out.print(name + ":");
-                implPrintRootZ(x9);
+                ECCurve curve = x9.getCurve();
+                if (ECAlgorithms.isF2mCurve(curve))
+                {
+                    // -DM System.out.println
+                    System.out.print(name + ":");
+                    implPrintRootZ(curve);
+                }
             }
         }
     }
 
-    public static void printRootZ(X9ECParameters x9)
+    public static void printRootZ(ECCurve curve)
     {
-        if (!ECAlgorithms.isF2mCurve(x9.getCurve()))
+        if (!ECAlgorithms.isF2mCurve(curve))
         {
             throw new IllegalArgumentException("Sqrt optimization only defined over characteristic-2 fields");
         }
 
-        implPrintRootZ(x9);
+        implPrintRootZ(curve);
     }
 
-    private static void implPrintRootZ(X9ECParameters x9)
+    private static void implPrintRootZ(ECCurve curve)
     {
-        ECFieldElement z = x9.getCurve().fromBigInteger(BigInteger.valueOf(2));
+        ECFieldElement z = curve.fromBigInteger(BigInteger.valueOf(2));
         ECFieldElement rootZ = z.sqrt();
 
         // -DM System.out.println
