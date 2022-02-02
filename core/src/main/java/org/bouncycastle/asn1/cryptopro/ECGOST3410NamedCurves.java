@@ -229,19 +229,6 @@ public class ECGOST3410NamedCurves
         names.put(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetC, "Tc26-Gost-3410-12-512-paramSetC");
     }
 
-    /**
-     * return the ECDomainParameters object for the given OID, null if it 
-     * isn't present.
-     *
-     * @param oid an object identifier representing a named parameters, if present.
-     * 
-     * @deprecated Use {@link #getByOIDX9(ASN1ObjectIdentifier)} instead.
-     */
-    public static ECDomainParameters getByOID(ASN1ObjectIdentifier oid)
-    {
-        return (ECDomainParameters)params.get(oid);
-    }
-
     public static X9ECParameters getByOIDX9(ASN1ObjectIdentifier oid)
     {
         ECDomainParameters ec = (ECDomainParameters)params.get(oid);
@@ -258,15 +245,6 @@ public class ECGOST3410NamedCurves
         return names.elements();
     }
 
-    /**
-     * @deprecated Use {@link #getByNameX9(String)} instead.
-     */
-    public static ECDomainParameters getByName(String name)
-    {
-        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(name);
-        return oid == null ? null : (ECDomainParameters)params.get(oid);
-    }
-
     public static X9ECParameters getByNameX9(String name)
     {
         ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)objIds.get(name);
@@ -281,7 +259,7 @@ public class ECGOST3410NamedCurves
     {
         return (String)names.get(oid);
     }
-    
+
     public static ASN1ObjectIdentifier getOID(String name)
     {
         return (ASN1ObjectIdentifier)objIds.get(name);
