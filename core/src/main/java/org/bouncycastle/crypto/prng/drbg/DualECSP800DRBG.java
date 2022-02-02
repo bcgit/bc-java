@@ -42,15 +42,15 @@ public class DualECSP800DRBG
     {
         nistPoints = new DualECPoints[3];
 
-        ECCurve.Fp curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-256").getCurve();
+        ECCurve.Fp curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-256").getCurve();
 
         nistPoints[0] = new DualECPoints(128, curve.createPoint(p256_Px, p256_Py), curve.createPoint(p256_Qx, p256_Qy), 1);
 
-        curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-384").getCurve();
+        curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-384").getCurve();
 
         nistPoints[1] = new DualECPoints(192, curve.createPoint(p384_Px, p384_Py), curve.createPoint(p384_Qx, p384_Qy), 1);
 
-        curve = (ECCurve.Fp)NISTNamedCurves.getByName("P-521").getCurve();
+        curve = (ECCurve.Fp)NISTNamedCurves.getByNameLazy("P-521").getCurve();
 
         nistPoints[2] = new DualECPoints(256, curve.createPoint(p521_Px, p521_Py), curve.createPoint(p521_Qx, p521_Qy), 1);
     }

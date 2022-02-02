@@ -9,7 +9,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
@@ -31,34 +31,37 @@ public class TraceOptimizer
         while (it.hasNext())
         {
             String name = (String)it.next();
-            X9ECParameters x9 = CustomNamedCurves.getByName(name);
+            X9ECParametersHolder x9 = CustomNamedCurves.getByNameLazy(name);
             if (x9 == null)
             {
-                x9 = ECNamedCurveTable.getByName(name);
+                x9 = ECNamedCurveTable.getByNameLazy(name);
             }
-            if (x9 != null && ECAlgorithms.isF2mCurve(x9.getCurve()))
+            if (x9 != null)
             {
-                // -DM System.out.print
-                System.out.print(name + ":");
-                implPrintNonZeroTraceBits(x9);
+                ECCurve curve = x9.getCurve();
+                if (ECAlgorithms.isF2mCurve(curve))
+                {
+                    // -DM System.out.print
+                    System.out.print(name + ":");
+                    implPrintNonZeroTraceBits(curve);
+                }
             }
         }
     }
 
-    public static void printNonZeroTraceBits(X9ECParameters x9)
+    public static void printNonZeroTraceBits(ECCurve curve)
     {
-        if (!ECAlgorithms.isF2mCurve(x9.getCurve()))
+        if (!ECAlgorithms.isF2mCurve(curve))
         {
             throw new IllegalArgumentException("Trace only defined over characteristic-2 fields");
         }
 
-        implPrintNonZeroTraceBits(x9);
+        implPrintNonZeroTraceBits(curve);
     }
 
-    public static void implPrintNonZeroTraceBits(X9ECParameters x9)
+    public static void implPrintNonZeroTraceBits(ECCurve curve)
     {
-        ECCurve c = x9.getCurve();
-        int m = c.getFieldSize();
+        int m = curve.getFieldSize();
 
         ArrayList nonZeroTraceBits = new ArrayList();
 
@@ -82,7 +85,7 @@ public class TraceOptimizer
                 else
                 {
                     BigInteger zi = ONE.shiftLeft(i);
-                    ECFieldElement fe = c.fromBigInteger(zi);
+                    ECFieldElement fe = curve.fromBigInteger(zi);
                     int tr = calculateTrace(fe);
                     if (tr != 0)
                     {
@@ -103,7 +106,7 @@ public class TraceOptimizer
             for (int i = 0; i < 1000; ++i)
             {
                 BigInteger x = new BigInteger(m, R);
-                ECFieldElement fe = c.fromBigInteger(x);
+                ECFieldElement fe = curve.fromBigInteger(x);
                 int check = calculateTrace(fe);
 
                 int tr = 0;

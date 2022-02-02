@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
@@ -909,20 +909,19 @@ public class OpenedPGPKeyData
         }
         else
         {
-
             ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(curve);
-            X9ECParameters params = CustomNamedCurves.getByName(curve);
-            if (params == null)
+            X9ECParametersHolder holder = CustomNamedCurves.getByNameLazy(curve);
+            if (holder == null)
             {
-                params = TeleTrusTNamedCurves.getByOID(oid);
+                holder = TeleTrusTNamedCurves.getByOIDLazy(oid);
             }
 
-            if (params == null)
+            if (holder == null)
             {
                 throw new IllegalStateException("unable to resolve parameters for " + curve);
             }
 
-            ECPoint pnt = params.getCurve().decodePoint(qoint);
+            ECPoint pnt = holder.getCurve().decodePoint(qoint);
             ECPublicBCPGKey basePubKey = new ECDSAPublicBCPGKey(oid, pnt);
             publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), basePubKey);
         }

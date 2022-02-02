@@ -85,7 +85,7 @@ public class PGPPublicKey
             }
             else if (key instanceof ECPublicBCPGKey)
             {
-                this.keyStrength = ECNamedCurveTable.getByOID(((ECPublicBCPGKey)key).getCurveOID()).getCurve().getFieldSize();
+                this.keyStrength = ECNamedCurveTable.getByOIDLazy(((ECPublicBCPGKey)key).getCurveOID()).getCurve().getFieldSize();
             }
         }
     }
