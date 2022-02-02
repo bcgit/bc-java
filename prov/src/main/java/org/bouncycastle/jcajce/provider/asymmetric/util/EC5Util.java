@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -44,15 +45,14 @@ public class EC5Util
         {
             String name = (String)e.nextElement();
 
-            X9ECParameters curveParams = ECNamedCurveTable.getByName(name);
+            X9ECParametersHolder curveParams = ECNamedCurveTable.getByNameLazy(name);
             if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
             {
-                customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
+                customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByNameLazy(name).getCurve());
             }
         }
 
-        X9ECParameters x9_25519 = CustomNamedCurves.getByName("Curve25519");
-        ECCurve c_25519 = x9_25519.getCurve();
+        ECCurve c_25519 = CustomNamedCurves.getByNameLazy("Curve25519").getCurve();
 
         customCurves.put(new ECCurve.Fp(
             c_25519.getField().getCharacteristic(),
