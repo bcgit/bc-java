@@ -18,6 +18,20 @@ public class RevAnnContent
     private final ASN1GeneralizedTime badSinceDate;
     private Extensions crlDetails;
 
+    public RevAnnContent(PKIStatus status, CertId certId, ASN1GeneralizedTime willBeRevokedAt, ASN1GeneralizedTime badSinceDate)
+    {
+        this(status, certId, willBeRevokedAt, badSinceDate, null);
+    }
+
+    public RevAnnContent(PKIStatus status, CertId certId, ASN1GeneralizedTime willBeRevokedAt, ASN1GeneralizedTime badSinceDate, Extensions crlDetails)
+    {
+        this.status = status;
+        this.certId = certId;
+        this.willBeRevokedAt = willBeRevokedAt;
+        this.badSinceDate = badSinceDate;
+        this.crlDetails = crlDetails;
+    }
+
     private RevAnnContent(ASN1Sequence seq)
     {
         status = PKIStatus.getInstance(seq.getObjectAt(0));
