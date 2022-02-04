@@ -58,11 +58,14 @@ public class Element
 
     /**
      * Expands the definition if the element holds an element supplier.
+     *
      * @param e The element.
      * @return the expanded definition or the passed in element if it has no supplier.
      */
-    public static Element expandDeferredDefinition(Element e) {
-        if (e.elementSupplier != null) {
+    public static Element expandDeferredDefinition(Element e)
+    {
+        if (e.elementSupplier != null)
+        {
             return e.elementSupplier.build();
         }
         return e;

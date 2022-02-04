@@ -32,7 +32,8 @@ public class SignedDataPayload
 
     private SignedDataPayload(ASN1Sequence sequence)
     {
-        if (sequence.size() != 2) {
+        if (sequence.size() != 2)
+        {
             throw new IllegalArgumentException("expected sequence size of 2");
         }
         data = OEROptional.getValue(Ieee1609Dot2Data.class, sequence.getObjectAt(0));

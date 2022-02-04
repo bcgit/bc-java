@@ -24,7 +24,8 @@ public class SequenceOfOctetString
 {
     private final List<ASN1OctetString> octetStrings;
 
-    public SequenceOfOctetString(List<ASN1OctetString> octetStrings) {
+    public SequenceOfOctetString(List<ASN1OctetString> octetStrings)
+    {
         this.octetStrings = Collections.unmodifiableList(octetStrings);
     }
 

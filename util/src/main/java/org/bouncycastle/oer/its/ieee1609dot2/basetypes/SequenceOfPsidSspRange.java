@@ -25,7 +25,7 @@ public class SequenceOfPsidSspRange
 
     private SequenceOfPsidSspRange(ASN1Sequence sequence)
     {
-        List<PsidSspRange> l = new ArrayList<>();
+        List<PsidSspRange> l = new ArrayList<PsidSspRange>();
         for (Iterator<ASN1Encodable> e = sequence.iterator(); e.hasNext(); )
         {
             l.add(PsidSspRange.getInstance(e.next()));

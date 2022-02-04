@@ -51,7 +51,7 @@ public class VerificationKeyIndicator
             value = DEROctetString.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalArgumentException("invalid choice value "+choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
 
         }
 
@@ -65,7 +65,8 @@ public class VerificationKeyIndicator
             return (VerificationKeyIndicator)src;
         }
 
-        if (src != null) {
+        if (src != null)
+        {
             return new VerificationKeyIndicator(ASN1TaggedObject.getInstance(src));
         }
 

@@ -28,7 +28,7 @@ public class SequenceOfIdentifiedRegion
 
     private SequenceOfIdentifiedRegion(ASN1Sequence s)
     {
-        ArrayList<IdentifiedRegion> l = new ArrayList<>();
+        ArrayList<IdentifiedRegion> l = new ArrayList<IdentifiedRegion>();
         for (Iterator<ASN1Encodable> it = s.iterator(); it.hasNext(); )
         {
             l.add(IdentifiedRegion.getInstance(it.next()));
