@@ -27,7 +27,8 @@ public class HeaderInfoContributorId
         super(bytes);
     }
 
-    public HeaderInfoContributorId(ASN1Integer integer) {
+    public HeaderInfoContributorId(ASN1Integer integer)
+    {
         this(integer.getValue());
     }
 

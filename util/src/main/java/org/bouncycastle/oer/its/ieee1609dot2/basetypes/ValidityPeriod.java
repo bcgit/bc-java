@@ -36,7 +36,8 @@ public class ValidityPeriod
             return (ValidityPeriod)o;
         }
 
-        if (o != null) {
+        if (o != null)
+        {
             return new ValidityPeriod(ASN1Sequence.getInstance(o));
         }
 

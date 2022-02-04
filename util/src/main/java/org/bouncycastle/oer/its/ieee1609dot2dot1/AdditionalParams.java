@@ -57,8 +57,9 @@ public class AdditionalParams
         this.choice = choice;
     }
 
-    private AdditionalParams(ASN1TaggedObject ato) {
-        this(ato.getTagNo(),ato.getObject());
+    private AdditionalParams(ASN1TaggedObject ato)
+    {
+        this(ato.getTagNo(), ato.getObject());
     }
 
     public static AdditionalParams getInstance(Object o)

@@ -29,7 +29,7 @@ public class SequenceOfPsidGroupPermissions
 
     private SequenceOfPsidGroupPermissions(ASN1Sequence seq)
     {
-        ArrayList<PsidGroupPermissions> l = new ArrayList<>();
+        ArrayList<PsidGroupPermissions> l = new ArrayList<PsidGroupPermissions>();
         for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
         {
             l.add(PsidGroupPermissions.getInstance(it.next()));

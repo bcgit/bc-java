@@ -29,7 +29,7 @@ public class SequenceOfRegionAndSubregions
 
     private SequenceOfRegionAndSubregions(ASN1Sequence s)
     {
-        ArrayList<RegionAndSubregions> items = new ArrayList<>();
+        ArrayList<RegionAndSubregions> items = new ArrayList<RegionAndSubregions>();
         for (Iterator<ASN1Encodable> it = s.iterator(); it.hasNext(); )
         {
             items.add(RegionAndSubregions.getInstance(it.next()));
