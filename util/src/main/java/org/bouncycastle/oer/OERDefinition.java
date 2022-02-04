@@ -193,7 +193,7 @@ public class OERDefinition
         protected Builder placeholderValue;
         protected Boolean inScope;
         protected Switch aSwitch;
-        protected ArrayList<ASN1Encodable> validSwitchValues = new ArrayList<>();
+        protected ArrayList<ASN1Encodable> validSwitchValues = new ArrayList<ASN1Encodable>();
         protected ElementSupplier elementSupplier;
         protected boolean mayRecurse;
 
@@ -227,7 +227,7 @@ public class OERDefinition
             b.enumValue = enumValue;
             b.inScope = inScope;
             b.aSwitch = aSwitch;
-            b.validSwitchValues = new ArrayList<>(validSwitchValues);
+            b.validSwitchValues = new ArrayList<ASN1Encodable>(validSwitchValues);
             b.elementSupplier = elementSupplier;
             b.mayRecurse = mayRecurse;
             return b;

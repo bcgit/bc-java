@@ -35,7 +35,8 @@ public class Signature
         this.value = value;
     }
 
-    private Signature(ASN1TaggedObject ato) {
+    private Signature(ASN1TaggedObject ato)
+    {
         choice = ato.getTagNo();
         switch (choice)
         {
@@ -63,7 +64,8 @@ public class Signature
             return (Signature)objectAt;
         }
 
-        if (objectAt != null) {
+        if (objectAt != null)
+        {
             return new Signature(ASN1TaggedObject.getInstance(objectAt));
         }
 

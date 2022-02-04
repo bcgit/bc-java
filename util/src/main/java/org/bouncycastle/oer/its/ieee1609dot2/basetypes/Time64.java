@@ -60,7 +60,8 @@ public class Time64
             return new Time64((UINT64)o);
         }
 
-        if (o != null) {
+        if (o != null)
+        {
             return new Time64(ASN1Integer.getInstance(o).getValue());
         }
 

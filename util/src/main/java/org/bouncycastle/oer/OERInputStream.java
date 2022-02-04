@@ -188,7 +188,7 @@ public class OERInputStream
             if (choice.isContextSpecific())
             {
                 Element choiceDef = Element.expandDeferredDefinition(element.getChildren().get(choice.getTag()));
-                return new DERTaggedObject(choice.tag, parse( choiceDef ));
+                return new DERTaggedObject(choice.tag, parse(choiceDef));
             }
             else if (choice.isApplicationTagClass())
             {
@@ -229,9 +229,12 @@ public class OERInputStream
                 data = allocateArray(Math.abs(bytesToRead));
                 Streams.readFully(this, data);
 
-                if (bytesToRead <0) {
+                if (bytesToRead < 0)
+                {
                     bi = new BigInteger(data); // Twos compliment
-                } else {
+                }
+                else
+                {
                     bi = BigIntegers.fromUnsignedByteArray(data);
                 }
 
@@ -248,7 +251,7 @@ public class OERInputStream
                 }
                 else
                 {
-                    bi =  new BigInteger(1,data);
+                    bi = new BigInteger(1, data);
                 }
             }
             else
