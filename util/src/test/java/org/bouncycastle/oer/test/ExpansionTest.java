@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.oer.test;
+package org.bouncycastle.oer.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
