@@ -226,13 +226,19 @@ public class ExpansionTest
                         .replace("/", ".");
                     returnType = Class.forName(k);
                 }
+                catch (ClassNotFoundException ncdf)     // Java 8
+                {
+                    // Look for all caps version of class name, eg UINT16 etc
+                    String k = (upperLevelClass.getPackage().getName().replace("template.", "") + "." + returnTypeName.toUpperCase())
+                        .replace("/", ".");
+                    returnType = Class.forName(k);
+                }
                 catch (NoClassDefFoundError ncdf)
                 {
                     // Look for all caps version of class name, eg UINT16 etc
                     String k = (upperLevelClass.getPackage().getName().replace("template.", "") + "." + returnTypeName.toUpperCase())
                         .replace("/", ".");
                     returnType = Class.forName(k);
-
                 }
             }
 
