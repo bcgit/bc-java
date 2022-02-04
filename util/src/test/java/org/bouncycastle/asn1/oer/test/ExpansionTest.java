@@ -868,7 +868,7 @@ public class ExpansionTest
     private static List<Field> extractFields(Class... clasz)
         throws Exception
     {
-        List<Field> fields = new ArrayList<>();
+        List<Field> fields = new ArrayList<Field>();
         for (Class c : clasz)
         {
             for (Field f : c.getFields())
