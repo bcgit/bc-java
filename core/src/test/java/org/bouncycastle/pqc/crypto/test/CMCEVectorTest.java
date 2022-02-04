@@ -26,6 +26,7 @@ import org.bouncycastle.util.encoders.Hex;
 public class CMCEVectorTest
     extends TestCase
 {
+
     public void testParameters()
         throws Exception
     {
@@ -40,24 +41,38 @@ public class CMCEVectorTest
         assertEquals(256, CMCEParameters.mceliece8192128r3.getDefaultKeySize());
         assertEquals(256, CMCEParameters.mceliece8192128fr3.getDefaultKeySize());
     }
-    
+
     public void testVectors()
         throws Exception
     {
-        String[] files = new String[] {
-            "3488-64-cmce.rsp",
-            "3488-64-f-cmce.rsp",
-            "4608-96-cmce.rsp",
-            "4608-96-f-cmce.rsp",
-            "6688-128-cmce.rsp",
-            "6688-128-f-cmce.rsp",
-            "6960-119-cmce.rsp",
-            "6960-119-f-cmce.rsp",
-            "8192-128-cmce.rsp",
-            "8192-128-f-cmce.rsp"
-        };
 
-        CMCEParameters[] params = new CMCEParameters[] {
+        boolean full = System.getProperty("test.full", "false").equals("true");
+
+        String[] files;
+        if (full)
+        {
+            files = new String[]{
+                "3488-64-cmce.rsp",
+                "3488-64-f-cmce.rsp",
+                "4608-96-cmce.rsp",
+                "4608-96-f-cmce.rsp",
+                "6688-128-cmce.rsp",
+                "6688-128-f-cmce.rsp",
+                "6960-119-cmce.rsp",
+                "6960-119-f-cmce.rsp",
+                "8192-128-cmce.rsp",
+                "8192-128-f-cmce.rsp"
+            };
+        }
+        else
+        {
+            files = new String[]{
+                "3488-64-cmce.rsp",
+                "3488-64-f-cmce.rsp",
+            };
+        }
+
+        CMCEParameters[] params = new CMCEParameters[]{
             CMCEParameters.mceliece348864r3,
             CMCEParameters.mceliece348864fr3,
             CMCEParameters.mceliece460896r3,
@@ -127,7 +142,7 @@ public class CMCEVectorTest
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
-                        
+
                         // KEM Enc
                         CMCEKEMGenerator cmceEncCipher = new CMCEKEMGenerator(random);
                         SecretWithEncapsulation secWenc = cmceEncCipher.generateEncapsulated(pubParams, 256);
