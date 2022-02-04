@@ -30,7 +30,7 @@ public class OERExpander
 {
 
 
-    public static Map<Element, Set<Element>> choiceOptionsAlreadySelected = new HashMap<>();
+    public static Map<Element, Set<Element>> choiceOptionsAlreadySelected = new HashMap<Element, Set<Element>>();
     private int depth;
     private int maxDepth = 20;
 
@@ -50,7 +50,7 @@ public class OERExpander
     {
         depth = 0;
         Populate populate = makePopulate(e, false);
-        LinkedHashSet<ASN1Encodable> uniqueItems = new LinkedHashSet<>();
+        LinkedHashSet<ASN1Encodable> uniqueItems = new LinkedHashSet<ASN1Encodable>();
         int t = -1;
         do
         {
@@ -137,7 +137,7 @@ public class OERExpander
         implements Populate
     {
 
-        private final Map<ArrayOfAsn1, Populate> populateMap = new HashMap<>();
+        private final Map<ArrayOfAsn1, Populate> populateMap = new HashMap<ArrayOfAsn1, Populate>();
         private Populate lastPopulate = null;
         private final Element def;
 
@@ -186,7 +186,7 @@ public class OERExpander
 
         private final Element def;
 
-        List<Populate> script = new ArrayList<>();
+        List<Populate> script = new ArrayList<Populate>();
 
         public SeqPopulate(Element def)
         {
@@ -246,8 +246,8 @@ public class OERExpander
 
         private final Element def;
         private int cnt = 0;
-        List<Populate> script = new ArrayList<>();
-        List<Integer> choices = new ArrayList<>();
+        List<Populate> script = new ArrayList<Populate>();
+        List<Integer> choices = new ArrayList<Integer>();
 
         public ChoicePopulate(Element def)
         {
@@ -264,7 +264,7 @@ public class OERExpander
                 {
                     if (!choiceOptionsAlreadySelected.containsKey(def))
                     {
-                        HashSet<Element> set = new HashSet<>();
+                        HashSet<Element> set = new HashSet<Element>();
                         set.add(e);
                         choiceOptionsAlreadySelected.put(def, set);
                     }
@@ -323,7 +323,7 @@ public class OERExpander
     {
         private final Element def;
         private int cnt = 0;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
 
         public EnumPopulate(Element def)
         {
@@ -371,7 +371,7 @@ public class OERExpander
 
         private final Element def;
         private int cnt = 0;
-        List<Populate> script = new ArrayList<>();
+        List<Populate> script = new ArrayList<Populate>();
 
         public SeqOfPopulate(Element def)
         {
@@ -431,7 +431,7 @@ public class OERExpander
         implements Populate
     {
         private final Element def;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
         private String part = "the cat sat on the mat";
         private StringBuffer expander = new StringBuffer();
 
@@ -561,7 +561,7 @@ public class OERExpander
         implements Populate
     {
         private final Element def;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
         int ctr = 0;
 
         public OctetStringPopulate(Element def)
@@ -615,7 +615,7 @@ public class OERExpander
 
         private final Element def;
         private int ctr = 0;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
 
         public BooleanPopulate(Element def)
         {
@@ -650,7 +650,7 @@ public class OERExpander
     {
         private final Element def;
         private int ctr = 0;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
 
         public IntPopulate(Element def)
         {
@@ -716,7 +716,7 @@ public class OERExpander
     {
 
         private final Element element;
-        List<ASN1Encodable> script = new ArrayList<>();
+        List<ASN1Encodable> script = new ArrayList<ASN1Encodable>();
         private int ctr = 0;
 
         public BitStringPopulate(Element element)
