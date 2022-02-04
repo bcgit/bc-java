@@ -1,11 +1,10 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
 
 class CMCEEngine
 {
@@ -108,13 +107,12 @@ class CMCEEngine
         // generating the perm used to generate the private key
         int[] perm = new int[1 << GFBITS];
         byte[] hash = new byte[(SYS_N / 8) + ((1 << GFBITS) * 4)];
-        byte[] seed_a = {64}, seed_b = ByteUtils.subArray(sk, 0, 32);
-        byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
         int hash_idx = hash.length - 32 - IRR_BYTES - ((1 << GFBITS) * 4);
 
         Xof digest;
         digest = new SHAKEDigest(256);
-        digest.update(seed, 0, seed.length);
+        digest.update((byte)64);
+        digest.update(sk, 0, 32);
         digest.doFinal(hash, 0, hash.length);
 
         for (int i = 0; i < (1 << GFBITS); i++)
@@ -135,17 +133,14 @@ class CMCEEngine
         // a: COND_BYTES (field ordering) ((2m-1) * 2^(m-4))
         // g: IRR_BYTES (polynomial) (t * 2)
 
-        //TODO according to how much truncation is applied generate hash accordingly
-
         // generate hash using the seed given in the sk (64 || first 32 bytes)
-        byte[] seed_a = {64}, seed_b = ByteUtils.subArray(sk, 0, 32);
-        byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
         byte[] hash = new byte[(SYS_N / 8) + ((1 << GFBITS) * 4) + IRR_BYTES + 32];
 
         int hash_idx = 0;
         Xof digest;
         digest = new SHAKEDigest(256);
-        digest.update(seed, 0, seed.length); // input
+        digest.update((byte)64);
+        digest.update(sk, 0, 32); // input
         digest.doFinal(hash, 0, hash.length);
 
 
@@ -176,7 +171,7 @@ class CMCEEngine
             short[] pi = new short[1 << GFBITS];
 
             hash_idx = hash.length - 32 - IRR_BYTES - ((1 << GFBITS) * 4);
-            for (int i = 0; i < (1 << GFBITS); i++)//DONE use Utils load4
+            for (int i = 0; i < (1 << GFBITS); i++)
             {
                 perm[i] = Utils.load4(hash, hash_idx + i * 4);
             }
@@ -196,7 +191,7 @@ class CMCEEngine
                     buf[i] |= i;
                     buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
                 }
-                Arrays.sort(buf);
+                sort64(buf, 0, buf.length);
                 for (int i = 0; i < (1 << GFBITS); i++)
                 {
                     pi[i] = (short)(buf[i] & GFMASK);
@@ -223,7 +218,6 @@ class CMCEEngine
         byte[] seed_b = new byte[32];
         seed_a[0] = 64;
         random.nextBytes(seed_b);
-        byte[] seed = ByteUtils.concatenate(seed_a, seed_b);
 
         //2. Output SeededKeyGen(δ).
         // SeededKeyGen
@@ -232,12 +226,12 @@ class CMCEEngine
         byte[] prev_sk = seed_b;
         long[] pivots = {0};
 
+        Xof digest = new SHAKEDigest(256);
         while (true)
         {
             // SeededKeyGen - 1. Compute E = G(δ), a string of n + σ2q + σ1t + l bits. (3488 + 32*4096 + 16*64 + 256)
-
-            Xof digest = new SHAKEDigest(256);
-            digest.update(seed, 0, seed.length);
+            digest.update(seed_a, 0, seed_a.length);
+            digest.update(seed_b, 0, seed_b.length);
             digest.doFinal(E, 0, E.length);
             // Store the seeds generated
 
@@ -245,12 +239,11 @@ class CMCEEngine
             // Update seed using the last 32 bytes (l) of E
             // If anything fails, this set δ ←δ′ (the next last 32 bytes of E) and restart the algorithm.
             seedIndex = E.length - 32;
-            seed_b = ByteUtils.subArray(E, seedIndex, seedIndex + 32);
-            seed = ByteUtils.concatenate(seed_a, seed_b);
+            seed_b = Arrays.copyOfRange(E, seedIndex, seedIndex + 32);
 
             // store the previous last 32 bytes used as δ
             System.arraycopy(prev_sk, 0, sk, 0, 32);
-            prev_sk = ByteUtils.subArray(seed_b, 0, 32);
+            prev_sk = Arrays.copyOfRange(seed_b, 0, 32);
 
             // (step 5 and 4 are swapped)
             // SeededKeyGen - 5. Compute g from the next σ1t bits of E by the Irreducible algorithm. If this fails,
@@ -279,7 +272,7 @@ class CMCEEngine
 
             // storing poly to sk
             skIndex = 32 + 8;
-            for (int i = 0; i < SYS_T; i++)//DONE change to Utils store_gf
+            for (int i = 0; i < SYS_T; i++)
             {
                 Utils.store_gf(sk, skIndex + i * 2, field[i]);
             }
@@ -295,7 +288,7 @@ class CMCEEngine
             // b0 + 2b1 + ··· + 2σ2−1bσ2−1, take the next σ2 bits as a σ2-bit integer a1, and so on through aq−1.
 
 
-            for (int i = 0; i < (1 << GFBITS); i++)//DONE use Utils load4
+            for (int i = 0; i < (1 << GFBITS); i++)
             {
                 perm[i] = Utils.load4(E, seedIndex + i * 4);
             }
@@ -326,7 +319,7 @@ class CMCEEngine
             // This part is reserved for compression which is not implemented and is not required
             if (!usePivots)
             {
-                Utils.store8(sk, 32, 0xFFFFFFFFL);//DONE use Utils store8
+                Utils.store8(sk, 32, 0xFFFFFFFFL);
             }
             else
             {
@@ -347,7 +340,7 @@ class CMCEEngine
         1. Define H = (In−k |T)
         2. Compute and return C0 = He ∈Fn−k2 .
          */
-        short[] row = new short[SYS_N / 8]; //TODO make this byte array
+        short[] row = new short[SYS_N / 8];
         int i, j, pk_ptr = 0;
         byte b;
         int tail = PK_NROWS % 8;
@@ -409,7 +402,7 @@ class CMCEEngine
         2.4.4 Fixed-weight-vector generation
         1. Generate σ1τ uniform random bits b0,b1,...,bσ1τ−1.
          */
-        while (true) // TODO change this to while loop and make randombyte work
+        while (true)
         {
 
             /*
@@ -422,7 +415,7 @@ class CMCEEngine
                 buf_bytes = new byte[SYS_T * 4];
 
                 random.nextBytes(buf_bytes);
-                for (int i = 0; i < SYS_T * 2; i++)//DONE change to Utils load_gf
+                for (int i = 0; i < SYS_T * 2; i++)
                 {
                     buf_nums[i] = Utils.load_gf(buf_bytes, i * 2, GFMASK);
                 }
@@ -536,8 +529,6 @@ class CMCEEngine
     public int kem_enc(byte[] cipher_text, byte[] key, byte[] pk, SecureRandom random)
     {
         byte[] error_vector = new byte[SYS_N / 8];
-        byte[] two_error_vector = new byte[1 + SYS_N / 8];
-        two_error_vector[0] = 0x02;
         byte mask;
         int i, padding_ok = 0;
         if (usePadding)
@@ -559,15 +550,11 @@ class CMCEEngine
          */
 
         // C1 = 0x2 || error_vector
-        System.arraycopy(error_vector, 0, two_error_vector, 1, error_vector.length);
-
         // C = C0 || SHAKE256(C1, 32)
         Xof digest = new SHAKEDigest(256);
-        digest.update(two_error_vector, 0, two_error_vector.length); // input
+        digest.update((byte)0x02);
+        digest.update(error_vector, 0, error_vector.length); // input
         digest.doFinal(cipher_text, SYND_BYTES, 32);     // output
-
-        byte[] one_ec = ByteUtils.concatenate(two_error_vector, cipher_text);
-        one_ec[0] = 0x1;
 
         /*
         2.4.5 Encapsulation
@@ -575,15 +562,13 @@ class CMCEEngine
          */
 
         // K = Hash((0x1 || e || C), 32)
-        digest = new SHAKEDigest(256);
-        digest.update(one_ec, 0, one_ec.length); // input
+        digest.update((byte)0x01);
+        digest.update(error_vector, 0, error_vector.length);
+        digest.update(cipher_text, 0, cipher_text.length); // input
         digest.doFinal(key, 0, key.length);     // output
 
-
-        if (usePadding) //TODO use padding: make sure it works
+        if (usePadding)
         {
-
-
             //
             // clear outputs (set to all 0's) if padding bits are not all zero
             mask = (byte)padding_ok;
@@ -609,8 +594,6 @@ class CMCEEngine
     {
         byte[] conf = new byte[32];
         byte[] error_vector = new byte[SYS_N / 8];
-        byte[] two_error_vector = new byte[1 + SYS_N / 8];
-        two_error_vector[0] = 0x02;
 
         int i, padding_ok = 0;
         byte mask;
@@ -634,10 +617,9 @@ class CMCEEngine
          */
 
         // 0x2 || error_vector
-        System.arraycopy(error_vector, 0, two_error_vector, 1, error_vector.length);
-
         Xof digest = new SHAKEDigest(256);
-        digest.update(two_error_vector, 0, two_error_vector.length); // input
+        digest.update((byte)0x02);
+        digest.update(error_vector, 0, error_vector.length); // input
         digest.doFinal(conf, 0, 32);     // output
 
         /*
@@ -729,7 +711,7 @@ class CMCEEngine
             r[i] = 0;
         }
 
-        for (int i = 0; i < SYS_T; i++)//DONE change to Utils load_gf
+        for (int i = 0; i < SYS_T; i++)
         {
             g[i] = Utils.load_gf(sk, 40 + i * 2, GFMASK);
         }
@@ -1056,7 +1038,7 @@ class CMCEEngine
     }
 
     /* return number of trailing zeros of the non-zero input in */
-    private static int ctz(long in) // TODO check if it works
+    private static int ctz(long in)
     {
         int i, b, m = 0, r = 0;
 
@@ -1201,7 +1183,7 @@ class CMCEEngine
                 temp[(int)x] = ((get_q_short(temp, (int)(qIndex + x)) ^ 1) << 16) | get_q_short(temp, (int)((qIndex) + (x ^ 1)));
             }
         }
-        Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+pibar */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar */
 
         for (x = 0; x < n; ++x)
         {
@@ -1219,13 +1201,13 @@ class CMCEEngine
         {
             temp[(int)x] = (int)((temp[(int)x] << 16) | x); /* A = (pibar<<16)+id */
         }
-        Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+pibar^-1 */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar^-1 */
 
         for (x = 0; x < n; ++x)
         {
             temp[(int)x] = (temp[(int)x] << 16) + (temp[(int)(n + x)] >> 16); /* A = (pibar^(-1)<<16)+pibar */
         }
-        Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+pibar^2 */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pibar^2 */
 
         if (w <= 10)
         {
@@ -1242,13 +1224,13 @@ class CMCEEngine
                 {
                     temp[(int)x] = (int)(((temp[(int)(n + x)] & ~0x3ff) << 6) | x); /* A = (p<<16)+id */
                 }
-                Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+p^{-1} */
+                sort32(temp, 0, (int)n); /* A = (id<<16)+p^{-1} */
 
                 for (x = 0; x < n; ++x)
                 {
                     temp[(int)x] = (temp[(int)x] << 20) | temp[(int)(n + x)]; /* A = (p^{-1}<<20)+(p<<10)+c */
                 }
-                Arrays.sort(temp, 0, (int)n); /* A = (id<<20)+(pp<<10)+cp */
+                sort32(temp, 0, (int)n); /* A = (id<<20)+(pp<<10)+cp */
 
                 for (x = 0; x < n; ++x)
                 {
@@ -1279,7 +1261,7 @@ class CMCEEngine
                 {
                     temp[(int)x] = (int)((temp[(int)(n + x)] & ~0xffff) | x);
                 }
-                Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+p^(-1) */
+                sort32(temp, 0, (int)n); /* A = (id<<16)+p^(-1) */
                 for (x = 0; x < n; ++x)
                 {
                     temp[(int)x] = (temp[(int)x] << 16) | (temp[(int)(n + x)] & 0xffff);
@@ -1295,7 +1277,7 @@ class CMCEEngine
                     }
                     /* B = (p^(-1)<<16)+p */
 
-                    Arrays.sort(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+p^(-2) */
+                    sort32(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+p^(-2) */
                     for (x = 0; x < n; ++x)
                     {
                         temp[(int)(n + x)] = (temp[(int)(n + x)] << 16) | (temp[(int)x] & 0xffff);
@@ -1304,7 +1286,7 @@ class CMCEEngine
                 }
 
 
-                Arrays.sort(temp, 0, (int)n);
+                sort32(temp, 0, (int)n);
                 /* A = id<<16+cp */
                 for (x = 0; x < n; ++x)
                 {
@@ -1335,7 +1317,7 @@ class CMCEEngine
             }
         }
 
-        Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+pi^(-1) */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+pi^(-1) */
 
         for (j = 0; j < n / 2; ++j)
         {
@@ -1352,7 +1334,7 @@ class CMCEEngine
         }
         /* B = (pi^(-1)<<16)+F */
 
-        Arrays.sort(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+F(pi) */
+        sort32(temp, (int)n, (int)(n * 2)); /* B = (id<<16)+F(pi) */
 
         pos += (2 * w - 3) * step * (n / 2);
 
@@ -1371,7 +1353,7 @@ class CMCEEngine
         }
         /* A = (L<<16)+F(pi) */
 
-        Arrays.sort(temp, 0, (int)n); /* A = (id<<16)+F(pi(L)) = (id<<16)+M */
+        sort32(temp, 0, (int)n); /* A = (id<<16)+F(pi(L)) = (id<<16)+M */
 
         pos -= (2 * w - 2) * step * (n / 2);
 
@@ -1400,20 +1382,10 @@ class CMCEEngine
         int i, j, k;
         g[SYS_T] = 1;
 
-        for (i = 0; i < SYS_T; i++)//TODO change to Utils load_gf (get sk instead of field)
+        for (i = 0; i < SYS_T; i++)
         {
             g[i] = Utils.load_gf(sk, 40 + i * 2, GFMASK);
-//            g[i] = field[i];
         }
-//        System.out.print("g: ");
-//        for(i=0;i<SYS_T+1;i++)
-//            System.out.printf("%d ",g[i]);
-//        System.out.println();
-//
-//        System.out.print("perm: ");
-//        for(i=0;i<perm.length;i++)
-//            System.out.printf("%d ",perm[i]);
-//        System.out.println();
 
         // Create buffer
         long[] buf = new long[1 << GFBITS];
@@ -1424,17 +1396,11 @@ class CMCEEngine
             buf[i] |= i;
             buf[i] &= 0x7fffffffffffffffL; // getting rid of signed longs
         }
-        // sort the buffer
-        //TODO implement own sort for unsigned integers
+        // sort32 the buffer
 
-        // FieldOrdering 2.4.2 - 3. Sort the pairs (ai,i) in lexicographic order to obtain pairs (aπ(i),π(i))
+        // FieldOrdering 2.4.2 - 3. sort32 the pairs (ai,i) in lexicographic order to obtain pairs (aπ(i),π(i))
         // where π is a permutation of {0,1,...,q −1}
-        Arrays.sort(buf);
-
-//        System.out.print("sorted buff: ");
-//        for(i=0;i<(1 << GFBITS);i++)
-//            System.out.printf("%d ",buf[i]);
-//        System.out.println();
+        sort64(buf, 0, buf.length);
 
         // FieldOrdering 2.4.2 - 2. If a0,a1,...,aq−1 are not distinct, return ⊥.
         for (i = 1; i < (1 << GFBITS); i++)
@@ -1452,29 +1418,15 @@ class CMCEEngine
         {
             pi[i] = (short)(buf[i] & GFMASK);
         }
-        for (i = 0; i < SYS_N; i++)//DONE change to Utils bitrev
+        for (i = 0; i < SYS_N; i++)
         {
             L[i] = Utils.bitrev(pi[i], GFBITS);
         }
-
-//        System.out.print("pi: ");
-//        for(i=0;i<1<<GFBITS;i++)
-//            System.out.printf("%d ",pi[i]);
-//        System.out.println();
-//
-//        System.out.print("L: ");
-//        for(i=0;i<L.length;i++)
-//            System.out.printf("%d ",L[i]);
-//        System.out.println();
 
         // filling matrix
         short[] inv = new short[SYS_N];
 
         root(inv, g, L);
-//        System.out.print("inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         for (i = 0; i < SYS_N; i++)
         {
@@ -1489,10 +1441,6 @@ class CMCEEngine
                 mat[i][j] = 0;
             }
         }
-//        System.out.print("after inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         for (i = 0; i < SYS_T; i++)
         {
@@ -1525,10 +1473,6 @@ class CMCEEngine
                 inv[j] = gf.gf_mul(inv[j], L[j]);
             }
         }
-//        System.out.print("2after inv: ");
-//        for(i=0;i<inv.length;i++)
-//            System.out.printf("%d ",inv[i]);
-//        System.out.println();
 
         // gaussian elimination
         int row, c;
@@ -1599,7 +1543,6 @@ class CMCEEngine
         {
             if (usePadding)
             {
-                ///TODO usepadding: make sure this works
                 int tail, pk_index = 0;
                 tail = PK_NROWS % 8;
                 for (i = 0; i < PK_NROWS; i++)
@@ -1743,7 +1686,7 @@ class CMCEEngine
             }
         }
 
-        for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)//DONE change this to the polynomial in the parameters
+        for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)
         {
             for (int polyIndex : poly)
             {
@@ -1766,7 +1709,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of pk are all zero */
-    int check_pk_padding(byte[] pk)// TODO make sure this works
+    int check_pk_padding(byte[] pk)
     {
         byte b;
         int i, ret;
@@ -1786,7 +1729,7 @@ class CMCEEngine
     }
 
     /* check if the padding bits of c are all zero */
-    int check_c_padding(byte[] c)// TODO make sure this works
+    int check_c_padding(byte[] c)
     {
         byte b;
         int ret;
@@ -1802,5 +1745,102 @@ class CMCEEngine
     public int getDefaultSessionKeySize()
     {
         return defaultKeySize;
+    }
+
+    private static void sort32(int[] temp, int from, int to)
+    {
+        int top,p,q,r,i;
+        int n = to - from;
+
+        if (n < 2) return;
+        top = 1;
+        while (top < n - top) top += top;
+
+        for (p = top;p > 0;p >>>= 1)
+        {
+            for (i = 0;i < n - p;++i)
+            {
+                if ((i & p) == 0)
+                {
+                    int ab = temp[from + i + p] ^ temp[from + i];
+                    int c = temp[from + i + p] - temp[from + i];
+                    c ^= ab & (c ^ temp[from + i + p]);
+                    c >>= 31;
+                    c &= ab;
+                    temp[from + i] ^= c;
+                    temp[from + i + p] ^= c;
+                }
+            }
+            i = 0;
+            for (q = top;q > p;q >>>= 1)
+            {
+                for (;i < n - q;++i)
+                {
+                    if ((i & p) == 0)
+                    {
+                        int a = temp[from + i + p];
+                        for (r = q;r > p;r >>>= 1)
+                        {
+                            int ab = temp[from + i + r] ^ a;
+                            int c = temp[from + i + r] - a;
+                            c ^= ab & (c ^ temp[from + i + r]);
+                            c >>= 31;
+                            c &= ab;
+                            a ^= c;
+                            temp[from + i + r] ^= c;
+                        }
+                        temp[from + i + p] = a;
+                    }
+                }
+            }
+        }
+    }
+
+    private static void sort64(long[] temp, int from, int to)
+    {
+        int top,p,q,r,i;
+        int n = to - from;
+
+        if (n < 2) return;
+        top = 1;
+        while (top < n - top) top += top;
+
+        for (p = top;p > 0;p >>>= 1)
+        {
+            for (i = 0;i < n - p;++i)
+            {
+                if ((i & p) == 0)
+                {
+                    long c = temp[from + i + p] - temp[from + i];
+                    c >>>= 63;
+                    c = -c;
+                    c &= temp[from + i] ^ temp[from + i + p];
+                    temp[from + i] ^= c;
+                    temp[from + i + p] ^= c;
+                }
+            }
+            i = 0;
+            for (q = top;q > p;q >>>= 1)
+            {
+                for (;i < n - q;++i)
+                {
+                    if ((i & p) == 0)
+                    {
+                        long a = temp[from + i + p];
+                        for (r = q;r > p;r >>>= 1)
+                        {
+                            long c = temp[from + i + r] - a;
+                            c >>>= 63;
+                            c = -c;
+                            c &= a ^ temp[from + i + r];
+                            a ^= c;
+                            temp[from + i + r] ^= c;
+                        }
+                        temp[from + i + p] = a;
+                    }
+                }
+            }
+        }
+
     }
 }

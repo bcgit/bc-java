@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.frodo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 public class FrodoKeyParameters
-    extends AsymmetricKeyParameter
+        extends AsymmetricKeyParameter
 {
     private FrodoParameters params;
 

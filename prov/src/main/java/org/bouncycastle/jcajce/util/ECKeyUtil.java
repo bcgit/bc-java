@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 
@@ -68,10 +69,10 @@ public class ECKeyUtil
             {
                 ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
 
-                X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
+                X9ECParametersHolder x9 = CustomNamedCurves.getByOIDLazy(oid);
                 if (x9 == null)
                 {
-                    x9 = ECNamedCurveTable.getByOID(oid);
+                    x9 = ECNamedCurveTable.getByOIDLazy(oid);
                 }
                 curve = x9.getCurve();
             }

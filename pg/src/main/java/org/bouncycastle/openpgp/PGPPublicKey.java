@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
@@ -99,7 +100,7 @@ public class PGPPublicKey
                 }
                 else
                 {
-                    X9ECParameters ecParameters = ECNamedCurveTable.getByOID(curveOID);
+                    X9ECParametersHolder ecParameters = ECNamedCurveTable.getByOIDLazy(curveOID);
 
                     if (ecParameters != null)
                     {

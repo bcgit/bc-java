@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -35,32 +36,48 @@ import org.bouncycastle.util.Arrays;
 
 public class EC5Util
 {
-    private static Map customCurves = new HashMap();
-
-    static
+    private static class CustomCurves
     {
-        Enumeration e = CustomNamedCurves.getNames();
-        while (e.hasMoreElements())
-        {
-            String name = (String)e.nextElement();
+        private static Map CURVE_MAP = createCurveMap();
 
-            X9ECParameters curveParams = ECNamedCurveTable.getByName(name);
-            if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
+        private static Map createCurveMap()
+        {
+            Map map = new HashMap();
+
+            Enumeration e = CustomNamedCurves.getNames();
+            while (e.hasMoreElements())
             {
-                customCurves.put(curveParams.getCurve(), CustomNamedCurves.getByName(name).getCurve());
+                String name = (String)e.nextElement();
+
+                X9ECParametersHolder curveParams = ECNamedCurveTable.getByNameLazy(name);
+                if (curveParams != null)  // there may not be a regular curve, may just be a custom curve.
+                {
+                    ECCurve curve = curveParams.getCurve();
+                    if (ECAlgorithms.isFpCurve(curve))
+                    {
+                        map.put(curve, CustomNamedCurves.getByNameLazy(name).getCurve());
+                    }
+                }
             }
+
+            ECCurve c_25519 = CustomNamedCurves.getByNameLazy("Curve25519").getCurve();
+
+            map.put(new ECCurve.Fp(
+                c_25519.getField().getCharacteristic(),
+                c_25519.getA().toBigInteger(),
+                c_25519.getB().toBigInteger(),
+                c_25519.getOrder(),
+                c_25519.getCofactor()
+                ), c_25519);
+
+            return map;
         }
 
-        X9ECParameters x9_25519 = CustomNamedCurves.getByName("Curve25519");
-        ECCurve c_25519 = x9_25519.getCurve();
-
-        customCurves.put(new ECCurve.Fp(
-            c_25519.getField().getCharacteristic(),
-            c_25519.getA().toBigInteger(),
-            c_25519.getB().toBigInteger(),
-            c_25519.getOrder(),
-            c_25519.getCofactor()
-            ), c_25519);
+        static ECCurve substitute(ECCurve c)
+        {
+            ECCurve custom = (ECCurve)CURVE_MAP.get(c);
+            return null != custom ? custom : c;
+        }
     }
 
     public static ECCurve getCurve(
@@ -261,14 +278,7 @@ public class EC5Util
 
         if (field instanceof ECFieldFp)
         {
-            ECCurve.Fp curve = new ECCurve.Fp(((ECFieldFp)field).getP(), a, b);
-
-            if (customCurves.containsKey(curve))
-            {
-                return (ECCurve)customCurves.get(curve);
-            }
-
-            return curve;
+            return CustomCurves.substitute(new ECCurve.Fp(((ECFieldFp)field).getP(), a, b));
         }
         else
         {

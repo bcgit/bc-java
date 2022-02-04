@@ -79,7 +79,11 @@ class ExportSSLSession_7
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        return sslSession.getPeerCertificateChain();
+        /*
+         * "Note: this method exists for compatibility with previous releases. New applications
+         * should use getPeerCertificates() instead."
+         */
+        return OldCertUtil.getPeerCertificateChain(sslSession);
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
