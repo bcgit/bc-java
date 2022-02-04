@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import org.bouncycastle.asn1.ASN1Absent;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -100,7 +101,7 @@ public class OEROptional
     {
         if (!defined)
         {
-            throw new RuntimeException("bang");
+            return ASN1Absent.INSTANCE;
         }
         return get().toASN1Primitive();
     }
@@ -153,4 +154,6 @@ public class OEROptional
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
     }
+
+
 }

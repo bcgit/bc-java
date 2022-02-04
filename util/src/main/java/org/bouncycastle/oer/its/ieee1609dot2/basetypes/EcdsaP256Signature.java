@@ -28,7 +28,7 @@ public class EcdsaP256Signature
     {
         if (sequence.size() != 2)
         {
-            throw new IllegalStateException("expected sequence size of 2");
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
         this.rSig = EccP256CurvePoint.getInstance(sequence.getObjectAt(0));
         this.sSig = ASN1OctetString.getInstance(sequence.getObjectAt(1));
@@ -52,12 +52,12 @@ public class EcdsaP256Signature
         return new Builder();
     }
 
-    public EccP256CurvePoint getrSig()
+    public EccP256CurvePoint getRSig()
     {
         return rSig;
     }
 
-    public ASN1OctetString getsSig()
+    public ASN1OctetString getSSig()
     {
         return sSig;
     }

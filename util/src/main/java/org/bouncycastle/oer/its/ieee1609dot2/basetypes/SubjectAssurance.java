@@ -1,10 +1,11 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
-import java.io.IOException;
-
-import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 
+/**
+ * SubjectAssurance ::= OCTET STRING (SIZE(1))
+ */
 public class SubjectAssurance
     extends DEROctetString
 {
@@ -12,13 +13,15 @@ public class SubjectAssurance
     public SubjectAssurance(byte[] string)
     {
         super(string);
+        if (string.length != 1)
+        {
+            throw new IllegalArgumentException("length is not 1");
+        }
     }
 
-
-    public SubjectAssurance(ASN1Encodable obj)
-        throws IOException
+    private SubjectAssurance(ASN1OctetString string)
     {
-        super(obj);
+        this(string.getOctets());
     }
 
     public static SubjectAssurance getInstance(Object o)
@@ -27,9 +30,13 @@ public class SubjectAssurance
         {
             return (SubjectAssurance)o;
         }
-        else
+
+        if (o != null)
         {
-            return new SubjectAssurance(DEROctetString.getInstance(o).getOctets());
+            return new SubjectAssurance(DEROctetString.getInstance(o));
         }
+
+        return null;
+
     }
 }

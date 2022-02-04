@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -18,6 +19,7 @@ public class SymmetricCiphertext
     implements ASN1Choice
 {
     public static final int aes128ccm = 0;
+    public static final int extension = 1;
 
     private final int choice;
     private final ASN1Encodable value;
@@ -28,6 +30,23 @@ public class SymmetricCiphertext
         this.value = value;
     }
 
+
+    private SymmetricCiphertext(ASN1TaggedObject ato)
+    {
+        this.choice = ato.getTagNo();
+        switch (choice)
+        {
+        case aes128ccm:
+            value = AesCcmCiphertext.getInstance(ato.getObject());
+            break;
+        case extension:
+            value = ASN1OctetString.getInstance(ato.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value "+choice);
+        }
+    }
+
     public static SymmetricCiphertext getInstance(Object o)
     {
         if (o instanceof SymmetricCiphertext)
@@ -35,8 +54,12 @@ public class SymmetricCiphertext
             return (SymmetricCiphertext)o;
         }
 
-        ASN1TaggedObject ato = ASN1TaggedObject.getInstance(o);
-        return new Builder().setChoice(ato.getTagNo()).setValue(ato.getObject()).createSymmetricCiphertext();
+        if (o != null)
+        {
+            return new SymmetricCiphertext(ASN1TaggedObject.getInstance(o));
+        }
+
+        return null;
     }
 
     public int getChoice()

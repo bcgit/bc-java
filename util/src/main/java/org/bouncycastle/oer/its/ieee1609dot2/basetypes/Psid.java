@@ -4,6 +4,9 @@ import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Integer;
 
+/**
+ * Psid ::= INTEGER (0..MAX)
+ */
 public class Psid
     extends ASN1Integer
 {
@@ -33,12 +36,19 @@ public class Psid
         {
             return (Psid)o;
         }
-        return new Psid(ASN1Integer.getInstance(o).getValue());
+
+        if (o != null)
+        {
+            return new Psid(ASN1Integer.getInstance(o).getValue());
+        }
+
+        return null;
+
     }
 
     private void validate()
     {
-        if (BigInteger.ZERO.compareTo(getValue()) >= 0)
+        if (getValue().signum() < 0)
         {
             throw new IllegalStateException("psid must be greater than zero");
         }

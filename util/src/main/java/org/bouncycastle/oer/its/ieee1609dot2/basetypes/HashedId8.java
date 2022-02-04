@@ -20,7 +20,13 @@ public class HashedId8
         {
             return (HashedId8)src;
         }
-        byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
-        return new HashedId8(octetString);
+
+        if (src != null)
+        {
+            byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
+            return new HashedId8(octetString);
+        }
+
+        return null;
     }
 }

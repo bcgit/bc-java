@@ -22,9 +22,9 @@ public class AesCcmCiphertext
     extends ASN1Object
 {
     private final ASN1OctetString nonce;
-    private final SequenceOfOctetString opaque;
+    private final ASN1OctetString opaque;
 
-    public AesCcmCiphertext(ASN1OctetString nonce, SequenceOfOctetString opaque)
+    public AesCcmCiphertext(ASN1OctetString nonce, ASN1OctetString opaque)
     {
         this.nonce = nonce;
         this.opaque = opaque;
@@ -34,11 +34,11 @@ public class AesCcmCiphertext
     {
         if (seq.size() != 2)
         {
-            throw new IllegalArgumentException("expected sequence length of 2");
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
         Iterator<ASN1Encodable> it = seq.iterator();
         nonce = ASN1OctetString.getInstance(it.next());
-        opaque = SequenceOfOctetString.getInstance(it.next());
+        opaque = ASN1OctetString.getInstance(it.next());
     }
 
     public static AesCcmCiphertext getInstance(Object o)
@@ -55,6 +55,16 @@ public class AesCcmCiphertext
         return null;
     }
 
+    public ASN1OctetString getNonce()
+    {
+        return nonce;
+    }
+
+    public ASN1OctetString getOpaque()
+    {
+        return opaque;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         return ItsUtils.toSequence(nonce, opaque);
@@ -64,7 +74,7 @@ public class AesCcmCiphertext
     {
 
         private ASN1OctetString nonce;
-        private SequenceOfOctetString opaque;
+        private ASN1OctetString opaque;
 
         public Builder setNonce(ASN1OctetString nonce)
         {
@@ -72,7 +82,7 @@ public class AesCcmCiphertext
             return this;
         }
 
-        public Builder setOpaque(SequenceOfOctetString opaque)
+        public Builder setOpaque(ASN1OctetString opaque)
         {
             this.opaque = opaque;
             return this;

@@ -1,23 +1,30 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
-import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 
 /**
  * Certificate ::= CertificateBase (ImplicitCertificate | ExplicitCertificate)
  */
 public class Certificate
-    extends ASN1Object
+    extends CertificateBase
 {
-
-    // ContentSigner & ContentVerifier
-
-    private final CertificateBase certificateBase;
-
-    public Certificate(CertificateBase certificateBase)
+    public Certificate(ASN1Integer version, CertificateType type, IssuerIdentifier issuer, ToBeSignedCertificate toBeSignedCertificate, Signature signature)
     {
-        this.certificateBase = certificateBase;
+        super(version, type, issuer, toBeSignedCertificate, signature);
     }
+
+    public Certificate(CertificateBase base)
+    {
+        this(base.getVersion(), base.getType(), base.getIssuer(), base.getToBeSignedCertificate(), base.getSignature());
+    }
+
+    protected Certificate(ASN1Sequence seq)
+    {
+        super(seq);
+    }
+
 
     public static Certificate getInstance(Object value)
     {
@@ -25,44 +32,12 @@ public class Certificate
         {
             return (Certificate)value;
         }
-        else
+
+        if (value != null)
         {
-            return new Certificate(CertificateBase.getInstance(value));
+            return new Certificate(ASN1Sequence.getInstance(value));
         }
+        return null;
     }
-
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
-    public CertificateBase getCertificateBase()
-    {
-        return certificateBase;
-    }
-
-    @Override
-    public ASN1Primitive toASN1Primitive()
-    {
-        return certificateBase.toASN1Primitive();
-    }
-
-    public static class Builder
-    {
-
-        private CertificateBase certificateBase;
-
-        public Builder setCertificateBase(CertificateBase certificateBase)
-        {
-            this.certificateBase = certificateBase;
-            return this;
-        }
-
-        public Certificate createCertificate()
-        {
-            return new Certificate(certificateBase);
-        }
-    }
-
 
 }

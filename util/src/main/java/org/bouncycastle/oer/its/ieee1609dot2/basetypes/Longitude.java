@@ -34,20 +34,24 @@ public class Longitude
         super(bytes);
     }
 
+    private Longitude(ASN1Integer i)
+    {
+        this(i.getValue());
+    }
+
     public static Longitude getInstance(Object o)
     {
         if (o instanceof Longitude)
         {
             return (Longitude)o;
         }
-        else if (o instanceof OneEightyDegreeInt)
+
+        if (o != null)
         {
-            return new Longitude(((OneEightyDegreeInt)o).getValue());
+            return new Longitude(ASN1Integer.getInstance(o));
         }
-        else
-        {
-            return new Longitude(ASN1Integer.getInstance(o).getValue());
-        }
+        return null;
+
     }
 
 }

@@ -2,6 +2,7 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -50,15 +51,19 @@ public class CertificateId
         case name:
             value = Hostname.getInstance(asn1TaggedObject.getObject());
             break;
-        case extension:
         case binaryId:
             value = DEROctetString.getInstance(asn1TaggedObject.getObject());
             break;
         case none:
-            value = asn1TaggedObject.getObject();
+            value = ASN1Null.getInstance(asn1TaggedObject.getObject());
             break;
+        case extension:
+            value = DEROctetString.getInstance(asn1TaggedObject.getObject());
+            break;
+
+
         default:
-            throw new IllegalArgumentException("unknown choice in CertificateId");
+            throw new IllegalArgumentException("invalid choice value "+choice);
         }
     }
 

@@ -1,10 +1,12 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.GroupLinkageValue;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.IValue;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.LinkageValue;
@@ -27,14 +29,14 @@ public class LinkageData
 
     private LinkageData(ASN1Sequence seq)
     {
-        if (seq.size() != 2 && seq.size() != 3)
+        if (seq.size()  != 3)
         {
-            throw new IllegalArgumentException("sequence must be size 2 or 3");
+            throw new IllegalArgumentException("expected sequence size of 3");
         }
 
-        this.iCert = IValue.getInstance(seq.getObjectAt(2));
-        this.linkageValue = LinkageValue.getInstance(seq.getObjectAt(2));
-        this.groupLinkageValue = GroupLinkageValue.getInstance(seq.getObjectAt(2));
+        this.iCert = IValue.getInstance(seq.getObjectAt(0));
+        this.linkageValue = LinkageValue.getInstance(seq.getObjectAt(1));
+        this.groupLinkageValue = OEROptional.getValue(GroupLinkageValue.class,seq.getObjectAt(2));
     }
 
     public static LinkageData getInstance(Object src)
@@ -45,17 +47,29 @@ public class LinkageData
         }
         else if (src != null)
         {
-            // TODO: need choice processing here
             return new LinkageData(ASN1Sequence.getInstance(src));
         }
 
         return null;
     }
 
+    public IValue getICert()
+    {
+        return iCert;
+    }
+
+    public LinkageValue getLinkageValue()
+    {
+        return linkageValue;
+    }
+
+    public GroupLinkageValue getGroupLinkageValue()
+    {
+        return groupLinkageValue;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        return new DERSequence(v);
+        return new DERSequence(new ASN1Encodable[]{iCert,linkageValue, OEROptional.getInstance(groupLinkageValue)});
     }
 }

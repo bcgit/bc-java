@@ -15,11 +15,11 @@ import org.bouncycastle.asn1.DERSequence;
 public class ContributedExtensionBlocks
     extends ASN1Object
 {
-    private final List<ContributedExtensionBlock> extensionBlocks;
+    private final List<ContributedExtensionBlock> contributedExtensionBlocks;
 
     public ContributedExtensionBlocks(List<ContributedExtensionBlock> extensionBlocks)
     {
-        this.extensionBlocks = Collections.unmodifiableList(extensionBlocks);
+        this.contributedExtensionBlocks = Collections.unmodifiableList(extensionBlocks);
     }
 
     private ContributedExtensionBlocks(ASN1Sequence sequence)
@@ -29,7 +29,7 @@ public class ContributedExtensionBlocks
         {
             blocks.add(ContributedExtensionBlock.getInstance(it.next()));
         }
-        extensionBlocks = Collections.unmodifiableList(blocks);
+        contributedExtensionBlocks = Collections.unmodifiableList(blocks);
     }
 
     public static Builder builder()
@@ -37,17 +37,17 @@ public class ContributedExtensionBlocks
         return new Builder();
     }
 
-    public List<ContributedExtensionBlock> getExtensionBlocks()
+    public List<ContributedExtensionBlock> getContributedExtensionBlocks()
     {
-        return extensionBlocks;
+        return contributedExtensionBlocks;
     }
 
     public int size()
     {
-        return extensionBlocks.size();
+        return contributedExtensionBlocks.size();
     }
 
-    public ContributedExtensionBlocks getInstance(Object o)
+    public static ContributedExtensionBlocks getInstance(Object o)
     {
         if (o instanceof ContributedExtensionBlocks)
         {
@@ -65,7 +65,7 @@ public class ContributedExtensionBlocks
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(extensionBlocks.toArray(new ContributedExtensionBlock[0]));
+        return new DERSequence(contributedExtensionBlocks.toArray(new ContributedExtensionBlock[0]));
     }
 
     public static class Builder

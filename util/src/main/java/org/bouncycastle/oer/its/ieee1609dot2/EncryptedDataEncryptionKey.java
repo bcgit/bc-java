@@ -3,9 +3,11 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EciesP256EncryptedKey;
 
 /**
  * EncryptedDataEncryptionKey ::= CHOICE {
@@ -38,10 +40,13 @@ public class EncryptedDataEncryptionKey
         {
         case eciesNistP256:
         case eciesBrainpoolP256r1:
-            value = ato.getObject();
+            value = EciesP256EncryptedKey.getInstance(ato.getObject());
+            break;
+        case extension:
+            value = ASN1OctetString.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalStateException("unknown choice " + ato.getTagNo());
+            throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
         }
     }
 

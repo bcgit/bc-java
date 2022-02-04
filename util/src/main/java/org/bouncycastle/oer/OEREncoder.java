@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 
 public class OEREncoder
 {
-    public static byte[] toByteArray(ASN1Encodable encodable, OERDefinition.Element oerElement)
+    public static byte[] toByteArray(ASN1Encodable encodable, Element oerElement)
     {
         try
         {

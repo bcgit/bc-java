@@ -50,7 +50,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SubjectAssurance;
 import org.bouncycastle.oer.its.ieee1609dot2.SubjectPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
-import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -185,9 +185,9 @@ public class ITSJcaJceBasicTest
 
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));
 
-        VerificationKeyIndicator vki = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getVerificationKeyIndicator();
+        VerificationKeyIndicator vki = cert.toASN1Structure().getToBeSignedCertificate().getVerificationKeyIndicator();
         assertEquals(vki.getChoice(), VerificationKeyIndicator.reconstructionValue);
-        assertEquals(vki.getObject(), EccP256CurvePoint.builder().createUncompressedP256(BigInteger.ONE, BigIntegers.TWO));
+        assertEquals(vki.getValue(), EccP256CurvePoint.builder().createUncompressedP256(BigInteger.ONE, BigIntegers.TWO));
     }
 
     public void testBuildSelfSigned()

@@ -3,45 +3,58 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.util.BigIntegers;
 
+/**
+ * SymmAlgorithm ::= ENUMERATED {
+ * aes128Ccm,
+ * ...
+ * }
+ */
 public class SymmAlgorithm
     extends ASN1Enumerated
 {
-    public static SymmAlgorithm aes128Ccm = new SymmAlgorithm(0);
+    public static final SymmAlgorithm aes128Ccm = new SymmAlgorithm(BigInteger.ZERO);
+    public static final SymmAlgorithm extension = new SymmAlgorithm(BigInteger.ONE);
 
-    public SymmAlgorithm(int ordinal)
+    public SymmAlgorithm(BigInteger ordinal)
     {
         super(ordinal);
-
-        if (ordinal != 0)
-        {
-            throw new IllegalArgumentException("ordinal can only be zero");
-        }
+        assertValues();
     }
+
+    private SymmAlgorithm(ASN1Enumerated enumerated)
+    {
+        super(enumerated.getValue());
+        assertValues();
+    }
+
+    protected void assertValues()
+    {
+        switch (BigIntegers.intValueExact(getValue()))
+        {
+        case 0:
+        case 1:
+            return;
+        }
+        throw new IllegalArgumentException("invalid enumeration value " + getValue());
+    }
+
 
     public static SymmAlgorithm getInstance(Object src)
     {
-        if (src == null)
-        {
-            return null;
-        }
-        else if (src instanceof SymmAlgorithm)
+        if (src instanceof SymmAlgorithm)
         {
             return (SymmAlgorithm)src;
         }
-        else
+
+        if (src != null)
         {
-            BigInteger bi = ASN1Enumerated.getInstance(src).getValue();
-            switch (bi.intValue())
-            {
-            case 0:
-                return aes128Ccm;
-            default:
-                throw new IllegalArgumentException("unaccounted enum value " + bi);
-            }
+            return new SymmAlgorithm(ASN1Enumerated.getInstance(src));
         }
 
-    }
+        return null;
 
+    }
 
 }

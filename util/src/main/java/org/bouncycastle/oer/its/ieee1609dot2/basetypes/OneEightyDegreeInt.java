@@ -37,16 +37,24 @@ public class OneEightyDegreeInt
         assertValue();
     }
 
+    private OneEightyDegreeInt(ASN1Integer i)
+    {
+        this(i.getValue());
+    }
+
     public static OneEightyDegreeInt getInstance(Object o)
     {
         if (o instanceof OneEightyDegreeInt)
         {
             return (OneEightyDegreeInt)o;
         }
-        else
+
+        if (o != null)
         {
-            return new OneEightyDegreeInt(ASN1Integer.getInstance(o).getValue());
+            return new OneEightyDegreeInt(ASN1Integer.getInstance(o));
         }
+
+        return null;
     }
 
     public void assertValue()

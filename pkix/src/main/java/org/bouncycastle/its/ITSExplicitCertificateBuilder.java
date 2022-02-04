@@ -21,7 +21,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
-import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
 
 public class ITSExplicitCertificateBuilder
@@ -72,7 +72,7 @@ public class ITSExplicitCertificateBuilder
         }
         else
         {
-            signerCert = signer.getAssociatedCertificate().toASN1Structure().getCertificateBase().getToBeSignedCertificate();
+            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSignedCertificate();
             verificationKeyIndicator = signerCert.getVerificationKeyIndicator();
         }
 
@@ -145,16 +145,14 @@ public class ITSExplicitCertificateBuilder
         }
 
         baseBldr.setVersion(version);
-        baseBldr.setType(CertificateType.Explicit);
+        baseBldr.setType(CertificateType.explicit);
         baseBldr.setIssuer(issuerIdentifierBuilder.createIssuerIdentifier());
 
         baseBldr.setToBeSignedCertificate(tbsCertificate);
         baseBldr.setSignature(sig);
 
-        Certificate.Builder bldr = new Certificate.Builder();
 
-        bldr.setCertificateBase(baseBldr.createCertificateBase());
 
-        return new ITSCertificate(bldr.createCertificate());
+        return new ITSCertificate(baseBldr.createCertificateBase());
     }
 }

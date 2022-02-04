@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 
@@ -17,11 +16,21 @@ import org.bouncycastle.asn1.DERSequence;
 public class SequenceOfPsidSspRange
     extends ASN1Object
 {
-    private final List<PsidSspRange> items;
+    private final List<PsidSspRange> psidSspRanges;
 
     public SequenceOfPsidSspRange(List<PsidSspRange> items)
     {
-        this.items = Collections.unmodifiableList(items);
+        this.psidSspRanges = Collections.unmodifiableList(items);
+    }
+
+    private SequenceOfPsidSspRange(ASN1Sequence sequence)
+    {
+        List<PsidSspRange> l = new ArrayList<>();
+        for (Iterator<ASN1Encodable> e = sequence.iterator(); e.hasNext(); )
+        {
+            l.add(PsidSspRange.getInstance(e.next()));
+        }
+        this.psidSspRanges = Collections.unmodifiableList(l);
     }
 
     public static SequenceOfPsidSspRange getInstance(Object o)
@@ -30,14 +39,19 @@ public class SequenceOfPsidSspRange
         {
             return (SequenceOfPsidSspRange)o;
         }
-        ASN1Sequence sequence = ASN1Sequence.getInstance(o);
-        Enumeration e = sequence.getObjects();
-        ArrayList<PsidSspRange> accumulator = new ArrayList<PsidSspRange>();
-        while (e.hasMoreElements())
+
+        if (o != null)
         {
-            accumulator.add(PsidSspRange.getInstance(e.nextElement()));
+            return new SequenceOfPsidSspRange(ASN1Sequence.getInstance(o));
         }
-        return new SequenceOfPsidSspRange(accumulator);
+        return null;
+
+    }
+
+
+    public List<PsidSspRange> getPsidSspRanges()
+    {
+        return psidSspRanges;
     }
 
     public static Builder builder()
@@ -48,7 +62,7 @@ public class SequenceOfPsidSspRange
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (Iterator it = items.iterator(); it.hasNext(); )
+        for (Iterator it = psidSspRanges.iterator(); it.hasNext(); )
         {
             avec.add((ASN1Encodable)it.next());
         }

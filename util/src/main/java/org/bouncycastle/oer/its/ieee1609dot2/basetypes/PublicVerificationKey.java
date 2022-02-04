@@ -26,42 +26,48 @@ public class PublicVerificationKey
     public final static int extension = 2;
     public final static int ecdsaBrainpoolP384r1 = 3;
 
-    final int choice;
-    final ASN1Encodable curvePoint;
+    private final int choice;
+    private final ASN1Encodable value;
 
 
     public PublicVerificationKey(int choice, ASN1Encodable curvePoint)
     {
         this.choice = choice;
-        this.curvePoint = curvePoint;
+        this.value = curvePoint;
+    }
+
+    private PublicVerificationKey(ASN1TaggedObject taggedObject)
+    {
+        this.choice = taggedObject.getTagNo();
+        switch (choice)
+        {
+        case ecdsaNistP256:
+        case ecdsaBrainpoolP256r1:
+            value = EccP256CurvePoint.getInstance(taggedObject.getObject());
+            return;
+        case extension:
+            value = DEROctetString.getInstance(taggedObject.getObject());
+            return;
+        case ecdsaBrainpoolP384r1:
+            value = EccP384CurvePoint.getInstance(taggedObject.getObject());
+            return;
+        }
+        throw new IllegalArgumentException("invalid choice value " + taggedObject.getTagNo());
+
     }
 
     public static PublicVerificationKey getInstance(Object object)
     {
-
         if (object instanceof PublicVerificationKey)
         {
             return (PublicVerificationKey)object;
         }
 
-        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(object);
-        ASN1Encodable point;
-        switch (taggedObject.getTagNo())
+        if (object != null)
         {
-        case ecdsaNistP256:
-        case ecdsaBrainpoolP256r1:
-            point = EccP256CurvePoint.getInstance(taggedObject.getObject());
-            break;
-        case extension:
-            point = DEROctetString.getInstance(taggedObject.getObject());
-            break;
-        case ecdsaBrainpoolP384r1:
-            point = EccP384CurvePoint.getInstance(taggedObject.getObject());
-            break;
-        default:
-            throw new IllegalArgumentException("unknown tag value " + taggedObject.getTagNo());
+            return new PublicVerificationKey(ASN1TaggedObject.getInstance(object));
         }
-        return new PublicVerificationKey(taggedObject.getTagNo(), point);
+        return null;
     }
 
     public static Builder builder()
@@ -74,14 +80,14 @@ public class PublicVerificationKey
         return choice;
     }
 
-    public ASN1Encodable getCurvePoint()
+    public ASN1Encodable getValue()
     {
-        return curvePoint;
+        return value;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, curvePoint);
+        return new DERTaggedObject(choice, value);
     }
 
     public static class Builder

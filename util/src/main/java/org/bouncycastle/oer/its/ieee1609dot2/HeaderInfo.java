@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.OEROptional;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EncryptionKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId3;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfHashedId3;
@@ -41,6 +42,7 @@ public class HeaderInfo
     private final ThreeDLocation generationLocation;
     private final HashedId3 p2pcdLearningRequest;
     private final MissingCrlIdentifier missingCrlIdentifier;
+    private final EncryptionKey encryptionKey;
     private final SequenceOfHashedId3 inlineP2pcdRequest;
     private final Certificate requestedCertificate;
     private final PduFunctionalType pduFunctionalType;
@@ -51,7 +53,7 @@ public class HeaderInfo
     {
         if (sequence.size() != 11)
         {
-            throw new IllegalArgumentException("expected sequence length of 11");
+            throw new IllegalArgumentException("expected sequence size of 11");
         }
 
         Iterator<ASN1Encodable> it = sequence.iterator();
@@ -62,6 +64,7 @@ public class HeaderInfo
         generationLocation = OEROptional.getValue(ThreeDLocation.class, it.next());
         p2pcdLearningRequest = OEROptional.getValue(HashedId3.class, it.next());
         missingCrlIdentifier = OEROptional.getValue(MissingCrlIdentifier.class, it.next());
+        encryptionKey = OEROptional.getValue(EncryptionKey.class, it.next());
         inlineP2pcdRequest = OEROptional.getValue(SequenceOfHashedId3.class, it.next());
         requestedCertificate = OEROptional.getValue(Certificate.class, it.next());
         pduFunctionalType = OEROptional.getValue(PduFunctionalType.class, it.next());
@@ -87,6 +90,7 @@ public class HeaderInfo
                       ThreeDLocation generationLocation,
                       HashedId3 p2pcdLearningRequest,
                       MissingCrlIdentifier missingCrlIdentifier,
+                      EncryptionKey encryptionKey,
                       SequenceOfHashedId3 inlineP2pcdRequest,
                       Certificate requestedCertificate,
                       PduFunctionalType pduFunctionalType,
@@ -98,6 +102,7 @@ public class HeaderInfo
         this.generationLocation = generationLocation;
         this.p2pcdLearningRequest = p2pcdLearningRequest;
         this.missingCrlIdentifier = missingCrlIdentifier;
+        this.encryptionKey = encryptionKey;
         this.inlineP2pcdRequest = inlineP2pcdRequest;
         this.requestedCertificate = requestedCertificate;
         this.pduFunctionalType = pduFunctionalType;
@@ -149,6 +154,11 @@ public class HeaderInfo
         return missingCrlIdentifier;
     }
 
+    public EncryptionKey getEncryptionKey()
+    {
+        return encryptionKey;
+    }
+
     public SequenceOfHashedId3 getInlineP2pcdRequest()
     {
         return inlineP2pcdRequest;
@@ -178,6 +188,7 @@ public class HeaderInfo
             OEROptional.getInstance(generationLocation),
             OEROptional.getInstance(p2pcdLearningRequest),
             OEROptional.getInstance(missingCrlIdentifier),
+            OEROptional.getInstance(encryptionKey),
             OEROptional.getInstance(inlineP2pcdRequest),
             OEROptional.getInstance(requestedCertificate),
             OEROptional.getInstance(pduFunctionalType),
@@ -198,6 +209,7 @@ public class HeaderInfo
         private ThreeDLocation generationLocation;
         private HashedId3 p2pcdLearningRequest;
         private MissingCrlIdentifier missingCrlIdentifier;
+        private EncryptionKey encryptionKey;
         private SequenceOfHashedId3 inlineP2pcdRequest;
         private Certificate requestedCertificate;
         private PduFunctionalType pduFunctionalType;
@@ -230,6 +242,12 @@ public class HeaderInfo
         public Builder p2pcdLearningRequest(HashedId3 p2pcdLearningRequest)
         {
             this.p2pcdLearningRequest = p2pcdLearningRequest;
+            return this;
+        }
+
+        public Builder encryptionKey(EncryptionKey encryptionKey)
+        {
+            this.encryptionKey = encryptionKey;
             return this;
         }
 
@@ -272,6 +290,7 @@ public class HeaderInfo
                 generationLocation,
                 p2pcdLearningRequest,
                 missingCrlIdentifier,
+                encryptionKey,
                 inlineP2pcdRequest,
                 requestedCertificate,
                 pduFunctionalType,

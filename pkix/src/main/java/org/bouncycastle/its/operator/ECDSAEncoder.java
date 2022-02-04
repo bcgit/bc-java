@@ -27,14 +27,14 @@ public class ECDSAEncoder
         if (signature.getChoice() == Signature.ecdsaNistP256Signature || signature.getChoice() == Signature.ecdsaBrainpoolP256r1Signature)
         {
             EcdsaP256Signature sig = EcdsaP256Signature.getInstance(signature.getValue());
-            r = ASN1OctetString.getInstance(sig.getrSig().getValue()).getOctets();
-            s = sig.getsSig().getOctets();
+            r = ASN1OctetString.getInstance(sig.getRSig().getValue()).getOctets();
+            s = sig.getSSig().getOctets();
         }
         else
         {
             EcdsaP384Signature sig = EcdsaP384Signature.getInstance(signature.getValue());
-            r = ASN1OctetString.getInstance(sig.getrSig().getValue()).getOctets();
-            s = sig.getsSig().getOctets();
+            r = ASN1OctetString.getInstance(sig.getRSig().getValue()).getOctets();
+            s = sig.getSSig().getOctets();
         }
 
         try

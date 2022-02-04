@@ -1,8 +1,6 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Object;
@@ -21,13 +19,34 @@ public class RegionAndSubregions
     implements RegionInterface
 {
     private final Region region;
-    private final List<Uint16> subRegions;
+    private final SequenceOfUint16 subRegions;
 
 
-    public RegionAndSubregions(Region region, List<Uint16> subRegions)
+    public RegionAndSubregions(Region region, List<UINT16> subRegions)
     {
         this.region = region;
-        this.subRegions = Collections.unmodifiableList(subRegions);
+        this.subRegions = new SequenceOfUint16(subRegions);
+    }
+
+    private RegionAndSubregions(ASN1Sequence seq)
+    {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
+        region = Region.getInstance(seq.getObjectAt(0));
+        subRegions = SequenceOfUint16.getInstance(seq.getObjectAt(1));
+    }
+
+    public Region getRegion()
+    {
+        return region;
+    }
+
+    public SequenceOfUint16 getSubRegions()
+    {
+        return subRegions;
     }
 
     public static RegionAndSubregions getInstance(Object o)
@@ -36,30 +55,26 @@ public class RegionAndSubregions
         {
             return (RegionAndSubregions)o;
         }
-        else
+
+        if (o != null)
         {
-            ASN1Sequence seq = ASN1Sequence.getInstance(0);
-            Builder builder = new Builder();
-            builder.setRegion(Region.getInstance(seq.getObjectAt(0)));
-            ASN1Sequence subRegionsSeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
-            for (Iterator it = subRegionsSeq.iterator(); it.hasNext(); )
-            {
-                builder.setSubRegion(Uint16.getInstance(it.next()));
-            }
-            return builder.createRegionAndSubregions();
+            return new RegionAndSubregions(ASN1Sequence.getInstance(o));
         }
+
+        return null;
+
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(region, ItsUtils.toSequence(subRegions));
+        return ItsUtils.toSequence(region, subRegions);
     }
 
     public static class Builder
     {
 
         private Region region;
-        private List<Uint16> subRegions;
+        private List<UINT16> subRegions;
 
         public Builder setRegion(Region region)
         {
@@ -67,13 +82,13 @@ public class RegionAndSubregions
             return this;
         }
 
-        public Builder setSubRegions(List<Uint16> subRegions)
+        public Builder setSubRegions(List<UINT16> subRegions)
         {
             this.subRegions = subRegions;
             return this;
         }
 
-        public Builder setSubRegion(Uint16... subRegions)
+        public Builder setSubRegion(UINT16... subRegions)
         {
             this.subRegions.addAll(Arrays.asList(subRegions));
             return this;

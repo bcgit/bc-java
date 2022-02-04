@@ -49,7 +49,7 @@ public class OEROutputStream
         return j;
     }
 
-    public void write(ASN1Encodable encodable, OERDefinition.Element oerElement)
+    public void write(ASN1Encodable encodable, Element oerElement)
         throws IOException
     {
 
@@ -63,11 +63,16 @@ public class OEROutputStream
             return;
         }
 
+        oerElement = Element.expandDeferredDefinition(oerElement);
+
         encodable = encodable.toASN1Primitive();
 
-        switch (oerElement.baseType)
+        switch (oerElement.getBaseType())
         {
 
+        case Supplier:
+            write(encodable, oerElement.getElementSupplier().build());
+            break;
         case SEQ:
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(encodable);
@@ -76,7 +81,7 @@ public class OEROutputStream
             int j = 7;
             int mask = 0;
 
-            if (oerElement.extensionsInDefinition)
+            if (oerElement.isExtensionsInDefinition())
             {
                 if (oerElement.hasPopulatedExtension())
                 {
@@ -89,9 +94,9 @@ public class OEROutputStream
             // Write optional bit mask.
             //
 
-            for (int t = 0; t < oerElement.children.size(); t++)
+            for (int t = 0; t < oerElement.getChildren().size(); t++)
             {
-                OERDefinition.Element childOERDescription = oerElement.children.get(t);
+                Element childOERDescription = oerElement.getChildren().get(t);
 
                 if (j < 0)
                 {
@@ -103,13 +108,13 @@ public class OEROutputStream
 
                 ASN1Encodable asn1EncodableChild = seq.getObjectAt(t);
 
-                if (childOERDescription.explicit && asn1EncodableChild instanceof OEROptional)
+                if (childOERDescription.isExplicit() && asn1EncodableChild instanceof OEROptional)
                 {
                     // TODO call stack like definition error.
                     throw new IllegalStateException("absent sequence element that is required by oer definition");
                 }
 
-                if (!childOERDescription.explicit)
+                if (!childOERDescription.isExplicit())
                 {
                     ASN1Encodable obj = seq.getObjectAt(t);
                     if (childOERDescription.getDefaultValue() != null)
@@ -119,7 +124,7 @@ public class OEROutputStream
                         {
                             if (((OEROptional)obj).isDefined())
                             {
-                                if (!((OEROptional)obj).get().equals(childOERDescription.defaultValue))
+                                if (!((OEROptional)obj).get().equals(childOERDescription.getDefaultValue()))
                                 {
                                     mask |= bits[j];
                                 }
@@ -153,14 +158,15 @@ public class OEROutputStream
             //
             // Write the values
             //
-            for (int t = 0; t < oerElement.children.size(); t++)
+            for (int t = 0; t < oerElement.getChildren().size(); t++)
             {
                 ASN1Encodable child = seq.getObjectAt(t);
-                OERDefinition.Element childOERElement = oerElement.children.get(t);
+                Element childOERElement = oerElement.getChildren().get(t);
 
-                if (childOERElement.aSwitch != null)
+
+                if (childOERElement.getaSwitch() != null)
                 {
-                    childOERElement = childOERElement.aSwitch.result(new SwitchIndexer.Asn1SequenceIndexer(seq));
+                    childOERElement = childOERElement.getaSwitch().result(new SwitchIndexer.Asn1SequenceIndexer(seq));
                 }
 
                 if (childOERElement.getDefaultValue() != null)
@@ -211,6 +217,7 @@ public class OEROutputStream
             BitBuilder bb = new BitBuilder();
             int tag;
 
+            ASN1Primitive valueToWrite = null;
             if (item instanceof ASN1ApplicationSpecific)
             {
                 //
@@ -218,7 +225,7 @@ public class OEROutputStream
                 //
                 tag = ((ASN1ApplicationSpecific)item).getApplicationTag();
                 bb.writeBit(0).writeBit(1);
-                item = ((ASN1ApplicationSpecific)item).getEnclosedObject();
+                valueToWrite = ((ASN1ApplicationSpecific)item).getEnclosedObject();
             }
             else if (item instanceof ASN1TaggedObject)
             {
@@ -232,7 +239,7 @@ public class OEROutputStream
                     .writeBit(tagClass & BERTags.APPLICATION);
 
                 tag = taggedObject.getTagNo();
-                item = taggedObject.getBaseObject().toASN1Primitive();
+                valueToWrite = taggedObject.getObject().toASN1Primitive();
             }
             else
             {
@@ -272,7 +279,7 @@ public class OEROutputStream
 
             // Save the header.
             bb.writeAndClear(out);
-            write(item, oerElement.children.get(tag));
+            write(valueToWrite, oerElement.getChildren().get(tag));
             out.flush();
             break;
         }
@@ -288,14 +295,16 @@ public class OEROutputStream
                 ordinal = ASN1Enumerated.getInstance(encodable).getValue();
             }
 
-            for (Iterator it = oerElement.children.iterator(); it.hasNext(); )
+            for (Iterator it = oerElement.getChildren().iterator(); it.hasNext(); )
             {
-                OERDefinition.Element child = (OERDefinition.Element)it.next();
+                Element child = (Element)it.next();
+                child = Element.expandDeferredDefinition(child);
+
                 //
                 // This by default is canonical OER, see NOTE 1 and NOTE 2, 11.14
                 // Section 11.4 of T-REC-X.696-201508-I!!PDF-E.pdf
                 //
-                if (child.enumValue.equals(ordinal))
+                if (child.getEnumValue().equals(ordinal))
                 {
                     if (ordinal.compareTo(BigInteger.valueOf(127)) > 0)
                     {
@@ -421,10 +430,10 @@ public class OEROutputStream
             //
             // IA5Strings can be fixed length because they have a fixed multiplier.
             //
-            if (oerElement.isFixedLength() && oerElement.upperBound.intValue() != encoded.length)
+            if (oerElement.isFixedLength() && oerElement.getUpperBound().intValue() != encoded.length)
             {
                 throw new IOException("IA5String string length does not equal declared fixed length "
-                    + encoded.length + " " + oerElement.upperBound);
+                    + encoded.length + " " + oerElement.getUpperBound());
             }
 
             if (oerElement.isFixedLength())
@@ -497,7 +506,7 @@ public class OEROutputStream
             // Used to define options does not encode.
             break;
         case BOOLEAN:
-            debugPrint(oerElement.label);
+            debugPrint(oerElement.getLabel());
             ASN1Boolean asn1Boolean = ASN1Boolean.getInstance(encodable);
             if (asn1Boolean.isTrue())
             {

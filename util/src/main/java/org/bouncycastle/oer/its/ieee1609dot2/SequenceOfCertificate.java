@@ -28,21 +28,30 @@ public class SequenceOfCertificate
         this.certificates = Collections.unmodifiableList(certificates);
     }
 
+    private SequenceOfCertificate(ASN1Sequence sequence)
+    {
+        Iterator<ASN1Encodable> seq = sequence.iterator();
+        List<Certificate> certificates = new ArrayList<Certificate>();
+        while (seq.hasNext())
+        {
+            certificates.add(Certificate.getInstance(seq.next()));
+        }
+        this.certificates = Collections.unmodifiableList(certificates);
+    }
+
+
     public static SequenceOfCertificate getInstance(Object src)
     {
         if (src instanceof SequenceOfCertificate)
         {
             return (SequenceOfCertificate)src;
         }
-
-        Iterator<ASN1Encodable> seq = ASN1Sequence.getInstance(src).iterator();
-        List<Certificate> certificates = new ArrayList<Certificate>();
-        while (seq.hasNext())
+        if (src != null)
         {
-            certificates.add(Certificate.getInstance(seq.next()));
+            return new SequenceOfCertificate(ASN1Sequence.getInstance(src));
         }
 
-        return new SequenceOfCertificate(certificates);
+        return null;
     }
 
     public static Builder builder()

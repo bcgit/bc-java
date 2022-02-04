@@ -40,7 +40,7 @@ public class BasePublicEncryptionKey
             value = DEROctetString.getInstance(dto.getObject());
             break;
         default:
-            throw new IllegalStateException("unknown choice " + dto.getTagNo());
+            throw new IllegalArgumentException("invalid choice value " + dto.getTagNo());
         }
     }
 

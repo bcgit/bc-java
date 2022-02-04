@@ -3,9 +3,10 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -27,6 +28,16 @@ public class SequenceOfRecipientInfo
         this.recipientInfos = Collections.unmodifiableList(recipientInfos);
     }
 
+    private SequenceOfRecipientInfo(ASN1Sequence sequence)
+    {
+        ArrayList<RecipientInfo> infoArrayList = new ArrayList<RecipientInfo>();
+        for (Iterator<ASN1Encodable> it = sequence.iterator(); it.hasNext(); )
+        {
+            infoArrayList.add(RecipientInfo.getInstance(it.next()));
+        }
+        recipientInfos = Collections.unmodifiableList(infoArrayList);
+    }
+
     public static SequenceOfRecipientInfo getInstance(Object object)
     {
 
@@ -35,14 +46,11 @@ public class SequenceOfRecipientInfo
             return (SequenceOfRecipientInfo)object;
         }
 
-        ASN1Sequence sequence = ASN1Sequence.getInstance(object);
-        Enumeration enumeration = sequence.getObjects();
-        ArrayList<RecipientInfo> infoArrayList = new ArrayList<RecipientInfo>();
-        while (enumeration.hasMoreElements())
+        if (object != null)
         {
-            infoArrayList.add(RecipientInfo.getInstance(enumeration.nextElement()));
+            return new SequenceOfRecipientInfo(ASN1Sequence.getInstance(object));
         }
-        return new Builder().setRecipientInfos(infoArrayList).createSequenceOfRecipientInfo();
+        return null;
     }
 
     public ASN1Primitive toASN1Primitive()

@@ -27,6 +27,16 @@ public class ToBeSignedData
         this.headerInfo = headerInfo;
     }
 
+    private ToBeSignedData(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+        this.payload = SignedDataPayload.getInstance(sequence.getObjectAt(0));
+        this.headerInfo = HeaderInfo.getInstance(sequence.getObjectAt(1));
+    }
+
     public static ToBeSignedData getInstance(Object o)
     {
         if (o instanceof ToBeSignedData)
@@ -34,11 +44,12 @@ public class ToBeSignedData
             return (ToBeSignedData)o;
         }
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        return new Builder()
-            .setPayload(SignedDataPayload.getInstance(seq.getObjectAt(0)))
-            .setHeaderInfo(HeaderInfo.getInstance(seq.getObjectAt(1)))
-            .createToBeSignedData();
+        if (o != null)
+        {
+            return new ToBeSignedData(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public SignedDataPayload getPayload()

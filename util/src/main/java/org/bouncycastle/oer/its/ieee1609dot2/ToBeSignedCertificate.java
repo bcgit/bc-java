@@ -84,28 +84,45 @@ public class ToBeSignedCertificate
         this.verificationKeyIndicator = verificationKeyIndicator;
     }
 
+
+    private ToBeSignedCertificate(ASN1Sequence sequence)
+    {
+
+        Iterator<ASN1Encodable> seq = ASN1Sequence.getInstance(sequence).iterator();
+
+        if (sequence.size() != 12)
+        {
+            throw new IllegalArgumentException("expected sequence size of 12");
+        }
+
+        certificateId = CertificateId.getInstance(seq.next());
+        cracaId = HashedId3.getInstance(seq.next());
+        crlSeries = CrlSeries.getInstance(seq.next());
+        validityPeriod = ValidityPeriod.getInstance(seq.next());
+        geographicRegion = OEROptional.getValue(GeographicRegion.class, seq.next());
+        assuranceLevel = OEROptional.getValue(SubjectAssurance.class, seq.next());
+        appPermissions = OEROptional.getValue(SequenceOfPsidSsp.class, seq.next());
+        certIssuePermissions = OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next());
+        certRequestPermissions = OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next());
+        canRequestRollover = OEROptional.getValue(ASN1Null.class, seq.next());
+        encryptionKey = OEROptional.getValue(PublicEncryptionKey.class, seq.next());
+        verificationKeyIndicator = VerificationKeyIndicator.getInstance(seq.next());
+    }
+
+
     public static ToBeSignedCertificate getInstance(Object o)
     {
-        if (o == null || o instanceof ToBeSignedCertificate)
+        if (o instanceof ToBeSignedCertificate)
         {
             return (ToBeSignedCertificate)o;
         }
 
-        Iterator<ASN1Encodable> seq = ASN1Sequence.getInstance(o).iterator();
-        return new Builder()
-            .setCertificateId(CertificateId.getInstance(seq.next()))
-            .setCracaId(HashedId3.getInstance(seq.next()))
-            .setCrlSeries(CrlSeries.getInstance(seq.next()))
-            .setValidityPeriod(ValidityPeriod.getInstance(seq.next()))
-            .setGeographicRegion(OEROptional.getValue(GeographicRegion.class, seq.next()))
-            .setAssuranceLevel(OEROptional.getValue(SubjectAssurance.class, seq.next()))
-            .setAppPermissions(OEROptional.getValue(SequenceOfPsidSsp.class, seq.next()))
-            .setCertIssuePermissions(OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next()))
-            .setCertRequestPermissions(OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next()))
-            .setCanRequestRollover(OEROptional.getValue(ASN1Null.class, seq.next()))
-            .setEncryptionKey(OEROptional.getValue(PublicEncryptionKey.class, seq.next()))
-            .setVerificationKeyIndicator(VerificationKeyIndicator.getInstance(seq.next()))
-            .createToBeSignedCertificate();
+        if (o != null)
+        {
+            return new ToBeSignedCertificate(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
 
     }
 

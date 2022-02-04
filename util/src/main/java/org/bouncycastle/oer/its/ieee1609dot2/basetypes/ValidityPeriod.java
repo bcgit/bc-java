@@ -28,6 +28,7 @@ public class ValidityPeriod
         this.duration = duration;
     }
 
+
     public static ValidityPeriod getInstance(Object o)
     {
         if (o instanceof ValidityPeriod)
@@ -35,12 +36,24 @@ public class ValidityPeriod
             return (ValidityPeriod)o;
         }
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        return new Builder()
-            .setTime32(ASN1Integer.getInstance(seq.getObjectAt(0)))
-            .setDuration(Duration.getInstance(seq.getObjectAt(1)))
-            .createValidityPeriod();
+        if (o != null) {
+            return new ValidityPeriod(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
+
     }
+
+    private ValidityPeriod(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+        time32 = Time32.getInstance(sequence.getObjectAt(0));
+        duration = Duration.getInstance(sequence.getObjectAt(1));
+    }
+
 
     public static Builder builder()
     {

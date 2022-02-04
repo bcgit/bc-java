@@ -24,7 +24,7 @@ public class GroupLinkageValue
     {
         if (seq.size() != 2)
         {
-            throw new IllegalArgumentException("sequence not length 2");
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
 
         jValue = ASN1OctetString.getInstance(seq.getObjectAt(0));
@@ -45,7 +45,7 @@ public class GroupLinkageValue
         return null;
     }
 
-    public ASN1OctetString getjValue()
+    public ASN1OctetString getJValue()
     {
         return jValue;
     }
