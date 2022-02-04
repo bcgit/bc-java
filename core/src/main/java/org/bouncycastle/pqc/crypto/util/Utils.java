@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -40,6 +41,9 @@ class Utils
 
     static final Map frodoOids = new HashMap();
     static final Map frodoParams = new HashMap();
+
+    static final Map saberOids = new HashMap();
+    static final Map saberParams = new HashMap();
 
     static final Map mcElieceOids = new HashMap();
     static final Map mcElieceParams = new HashMap();
@@ -88,6 +92,27 @@ class Utils
         frodoParams.put(BCObjectIdentifiers.frodokem31296shaker3, FrodoParameters.frodokem31296shaker3);
         frodoParams.put(BCObjectIdentifiers.frodokem43088r3, FrodoParameters.frodokem43088r3);
         frodoParams.put(BCObjectIdentifiers.frodokem43088shaker3, FrodoParameters.frodokem43088shaker3);
+
+
+        saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
+        saberOids.put(SABERParameters.saberkem128r3, BCObjectIdentifiers.saberkem128r3);
+        saberOids.put(SABERParameters.firesaberkem128r3, BCObjectIdentifiers.firesaberkem128r3);
+        saberOids.put(SABERParameters.lightsaberkem192r3, BCObjectIdentifiers.lightsaberkem192r3);
+        saberOids.put(SABERParameters.saberkem192r3, BCObjectIdentifiers.saberkem192r3);
+        saberOids.put(SABERParameters.firesaberkem192r3, BCObjectIdentifiers.firesaberkem192r3);
+        saberOids.put(SABERParameters.lightsaberkem256r3, BCObjectIdentifiers.lightsaberkem256r3);
+        saberOids.put(SABERParameters.saberkem256r3, BCObjectIdentifiers.saberkem256r3);
+        saberOids.put(SABERParameters.firesaberkem256r3, BCObjectIdentifiers.firesaberkem256r3);
+
+        saberParams.put(BCObjectIdentifiers.lightsaberkem128r3, SABERParameters.lightsaberkem128r3);
+        saberParams.put(BCObjectIdentifiers.saberkem128r3, SABERParameters.saberkem128r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem128r3, SABERParameters.firesaberkem128r3);
+        saberParams.put(BCObjectIdentifiers.lightsaberkem192r3, SABERParameters.lightsaberkem192r3);
+        saberParams.put(BCObjectIdentifiers.saberkem192r3, SABERParameters.saberkem192r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem192r3, SABERParameters.firesaberkem192r3);
+        saberParams.put(BCObjectIdentifiers.lightsaberkem256r3, SABERParameters.lightsaberkem256r3);
+        saberParams.put(BCObjectIdentifiers.saberkem256r3, SABERParameters.saberkem256r3);
+        saberParams.put(BCObjectIdentifiers.firesaberkem256r3, SABERParameters.firesaberkem256r3);
 
     }
 
@@ -276,5 +301,15 @@ class Utils
     static FrodoParameters frodoParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (FrodoParameters)frodoParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier saberOidLookup(SABERParameters params)
+    {
+        return (ASN1ObjectIdentifier)saberOids.get(params);
+    }
+
+    static SABERParameters saberParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SABERParameters)saberParams.get(oid);
     }
 }

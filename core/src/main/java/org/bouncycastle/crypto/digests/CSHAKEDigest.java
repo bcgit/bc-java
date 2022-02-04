@@ -14,7 +14,7 @@ public class CSHAKEDigest
     /**
      * Base constructor.
      *
-     * @param bitLength bit length of the underlying SHAKE function, 128 or 256.
+     * @param bitLength security strength (in bits) of the underlying SHAKE function, 128 or 256.
      * @param N         the function name string, note this is reserved for use by NIST. Avoid using it if not required.
      * @param S         the customization string - available for local use.
      */

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="crypto1.8" default="build" basedir="..">
+
+    <property name="bc.javac.source" value="1.8" />
+    <property name="bc.javac.target" value="1.8" />
+    <property name="build.dir" value="build" />
+    <property name="jdk.name" value="jdk1.8" />
+    <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}" />
+    <property name="src.dir" value="${build.dir}/${jdk.name}" />
+    <property name="target.prefix" value="jdk18on" />
+    <property name="javadoc.args" value="-breakiterator" />
+
+    <target name="clean">
+        <delete dir="${build.dir}" />
+    </target>
+
+    <target name="init">
+        <mkdir dir="${src.dir}" />
+        <mkdir dir="${artifacts.dir}" />
+        <mkdir dir="${artifacts.dir}/reports" />
+        <mkdir dir="${artifacts.dir}/reports/xml" />
+        <mkdir dir="${artifacts.dir}/reports/html" />
+        <mkdir dir="${artifacts.dir}/jars" />
+        <mkdir dir="${artifacts.dir}/checkstyle" />
+        <copy todir="${src.dir}">
+            <fileset dir="core/src/main/java" includes="**/*.java" />
+            <fileset dir="core/src/main/java" includes="**/*.properties" />
+            <fileset dir="core/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="core/src/test/java" includes="**/*.java" />
+            <fileset dir="core/src/test/javadoc" includes="**/*.html" />
+            <fileset dir="core/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="prov/src/main/java" includes="**/*.java" />
+            <fileset dir="prov/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="prov/src/main/resources" includes="**/*.properties" />
+            <fileset dir="prov/src/test/java" includes="**/*.java" />
+            <fileset dir="prov/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="tls/src/main/java" includes="**/*.java" />
+            <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="pkix/src/main/java" includes="**/*.java" />
+            <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="pkix/src/main/java" includes="**/*.properties" />
+            <fileset dir="pkix/src/test/java" includes="**/*.java" />
+            <fileset dir="pkix/src/test/javadoc" includes="**/*.html" />
+            <fileset dir="pkix/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="pg/src/main/java" includes="**/*.java" />
+            <fileset dir="pg/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="pg/src/main/java" includes="**/*.properties" />
+            <fileset dir="pg/src/test/java" includes="**/*.java" />
+            <fileset dir="pg/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="util/src/main/java" includes="**/*.java" />
+            <fileset dir="util/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="util/src/main/java" includes="**/*.properties" />
+            <fileset dir="util/src/test/java" includes="**/*.java" />
+            <fileset dir="util/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="mail/src/main/java" includes="**/*.java" />
+            <fileset dir="mail/src/main/javadoc" includes="**/*.html" />
+            <fileset dir="mail/src/main/resources" includes="**/*.properties" />
+            <fileset dir="mail/src/main/resources" includes="**/mailcap" />
+            <fileset dir="mail/src/test/java" includes="**/*.java" />
+            <fileset dir="mail/src/test/resources" includes="**/*.*" />
+
+            <fileset dir="core/src/test/data" includes="**/*.message" />
+            <fileset dir="core/src/test/data" includes="**/*.eml" />
+            <fileset dir="core/src/test/data" includes="**/*.sig" />
+            <fileset dir="core/src/test/data" includes="**/*.data" />
+            <fileset dir="core/src/test/data" includes="**/*.pem" />
+            <fileset dir="core/src/test/data" includes="**/*.p7m" />
+            <fileset dir="core/src/test/data" includes="**/*.crt" />
+            <fileset dir="core/src/test/data" includes="**/*.crl" />
+            <fileset dir="core/src/test/data" includes="**/*.der" />
+            <fileset dir="core/src/test/data" includes="**/*.csr" />
+            <fileset dir="core/src/test/data" includes="**/*.cer" />
+            <fileset dir="core/src/test/data" includes="**/*.cvcert" />
+        </copy>
+        <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
+    </target>
+
+    <target name="checkstyle-on" if="checkstyle.on">
+        <taskdef resource="checkstyletask.properties" />
+        <checkstyle config="checkstyle/bc-checks.xml">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+            <formatter type="plain"/>
+            <formatter type="xml" toFile="${artifacts.dir}/checkstyle/${jdk.name}-errors.xml"/>
+        </checkstyle>
+    </target>
+    
+    <target name="checkstyle-off" unless="checkstyle.on">
+    </target>
+    
+    <target name="build" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-util" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-tls" />
+        <ant antfile="ant/bc+-build.xml" dir="." />
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-jmail" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-libraries" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-tls" />
+    </target>
+
+    <target name="build-lw" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-lw" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-lw" />
+    </target>
+
+    <target name="build-provider" depends="init, checkstyle-on, checkstyle-off">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-provider" />
+        <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-provider" />
+    </target>
+
+    <target name="build-test" depends="init">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-test" />
+    </target>
+
+    <target name="test" depends="build-test">
+        <ant antfile="ant/bc+-build.xml" dir="." target="test" />
+    </target>
+
+    <target name="test-lw" depends="build-test">
+        <ant antfile="ant/bc+-build.xml" dir="." target="test-lw" />
+    </target>
+
+    <target name="zip-src">
+        <ant antfile="ant/bc+-build.xml" dir="." target="zip-src" />
+    </target>
+</project>
