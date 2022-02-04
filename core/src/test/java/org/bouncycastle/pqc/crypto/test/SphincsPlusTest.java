@@ -35,142 +35,148 @@ public class SphincsPlusTest
         throws Exception
     {
 
+        boolean full = System.getProperty("test.full","false").equals("true");
+
         String files = "sha256-128f-robust.rsp sha256-192f-robust.rsp sha256-256f-robust.rsp shake256-128f-robust.rsp shake256-192f-robust.rsp" +
-            " shake256-256f-robust.rsp sha256-128f-simple.rsp sha256-192f-simple.rsp sha256-256f-simple.rsp shake256-128f-simple.rsp" +
-            " shake256-192f-simple.rsp shake256-256f-simple.rsp sha256-128s-robust.rsp sha256-192s-robust.rsp sha256-256s-robust.rsp" +
-            " shake256-128s-robust.rsp shake256-192s-robust.rsp shake256-256s-robust.rsp sha256-128s-simple.rsp sha256-192s-simple.rsp" +
-            " sha256-256s-simple.rsp shake256-128s-simple.rsp shake256-192s-simple.rsp shake256-256s-simple.rsp";
-        
+        " shake256-256f-robust.rsp sha256-128f-simple.rsp sha256-192f-simple.rsp sha256-256f-simple.rsp shake256-128f-simple.rsp" +
+        " shake256-192f-simple.rsp shake256-256f-simple.rsp sha256-128s-robust.rsp sha256-192s-robust.rsp sha256-256s-robust.rsp" +
+        " shake256-128s-robust.rsp shake256-192s-robust.rsp shake256-256s-robust.rsp sha256-128s-simple.rsp sha256-192s-simple.rsp" +
+        " sha256-256s-simple.rsp shake256-128s-simple.rsp shake256-192s-simple.rsp shake256-256s-simple.rsp";
+
+
         String[] fileList = splitOn(files, ' ');
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
-            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-
-            String line = null;
-            HashMap<String, String> buf = new HashMap<String, String>();
-            while ((line = bin.readLine()) != null)
+            if ( full || name.contains("-128s-") || name.contains("-128f-"))
             {
+                InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
+                BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
-                line = line.trim();
+                String line = null;
+                HashMap<String, String> buf = new HashMap<String, String>();
+                while ((line = bin.readLine()) != null)
+                {
 
-                if (line.startsWith("#"))
-                {
-                    continue;
-                }
-                if (line.length() == 0)
-                {
-                    if (buf.size() > 0)
+                    line = line.trim();
+
+                    if (line.startsWith("#"))
                     {
-                        String count = (String)buf.get("count");
-                        byte[] sk = Hex.decode((String)buf.get("sk"));
-                        byte[] pk = Hex.decode((String)buf.get("pk"));
-                        byte[] msg = Hex.decode((String)buf.get("msg"));
-                        byte[] sigExpected = Hex.decode((String)buf.get("sm"));
-                        byte[] oprR = Hex.decode((String)buf.get("optr"));
-
-                        SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
-                        SecureRandom random = new FixedSecureRandom(sk);
-
-                        SPHINCSPlusParameters parameters;
-
-                        String[] nameParts = splitOn(name, '-');
-                        boolean sha256 = nameParts[0].equals("sha256");
-                        boolean shake256 = nameParts[0].equals("shake256");
-                        int size = Integer.parseInt(nameParts[1].substring(0, 3));
-                        boolean fast = nameParts[1].endsWith("f");
-                        boolean slow = nameParts[1].endsWith("s");
-                        boolean simple = nameParts[2].equals("simple.rsp");
-                        boolean robust = nameParts[2].equals("robust.rsp");
-
-                        StringBuffer b = new StringBuffer();
-                        if (sha256)
-                        {
-                            b.append("sha256");
-                        }
-                        else if (shake256)
-                        {
-                            b.append("shake256");
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("unknown digest");
-                        }
-
-                        b.append("_");
-                        b.append(size);
-
-                        if (fast)
-                        {
-                            b.append("f");
-                        }
-                        else if (slow)
-                        {
-                            b.append("s");
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("unknown speed");
-                        }
-
-                        if (robust)
-                        {
-                            // nothing.
-                        }
-                        else if (simple)
-                        {
-                            b.append("_simple");
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("unknown complexity");
-                        }
-
-                        parameters = (SPHINCSPlusParameters)SPHINCSPlusParameters.class.getField(b.toString()).get(null);
-
-                        //
-                        // Generate keys and test.
-                        //
-                        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, parameters));
-                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-
-                        SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
-                        SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
-
-                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk), pubParams.getEncoded()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), sk), privParams.getEncoded()));
-
-                        //
-                        // Signature test
-                        //
-
-                        SPHINCSPlusSigner signer = new SPHINCSPlusSigner();
-
-                        signer.init(true, new ParametersWithRandom(privParams, new FixedSecureRandom(oprR)));
-
-                        byte[] sigGenerated = signer.generateSignature(msg);
-                        byte[] attachedSig = Arrays.concatenate(sigGenerated, msg);
-
-
-                        signer.init(false, pubParams);
-
-                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
-                        assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
-
+                        continue;
                     }
-                    buf.clear();
+                    if (line.length() == 0)
+                    {
+                        if (buf.size() > 0)
+                        {
+                            String count = (String)buf.get("count");
+                            byte[] sk = Hex.decode((String)buf.get("sk"));
+                            byte[] pk = Hex.decode((String)buf.get("pk"));
+                            byte[] msg = Hex.decode((String)buf.get("msg"));
+                            byte[] sigExpected = Hex.decode((String)buf.get("sm"));
+                            byte[] oprR = Hex.decode((String)buf.get("optr"));
 
-                    continue;
-                }
+                            SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
+                            SecureRandom random = new FixedSecureRandom(sk);
 
-                int a = line.indexOf("=");
-                if (a > -1)
-                {
-                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                            SPHINCSPlusParameters parameters;
+
+                            String[] nameParts = splitOn(name, '-');
+                            boolean sha256 = nameParts[0].equals("sha256");
+                            boolean shake256 = nameParts[0].equals("shake256");
+                            int size = Integer.parseInt(nameParts[1].substring(0, 3));
+                            boolean fast = nameParts[1].endsWith("f");
+                            boolean slow = nameParts[1].endsWith("s");
+                            boolean simple = nameParts[2].equals("simple.rsp");
+                            boolean robust = nameParts[2].equals("robust.rsp");
+
+                            StringBuffer b = new StringBuffer();
+                            if (sha256)
+                            {
+                                b.append("sha256");
+                            }
+                            else if (shake256)
+                            {
+                                b.append("shake256");
+                            }
+                            else
+                            {
+                                throw new IllegalArgumentException("unknown digest");
+                            }
+
+                            b.append("_");
+                            b.append(size);
+
+                            if (fast)
+                            {
+                                b.append("f");
+                            }
+                            else if (slow)
+                            {
+                                b.append("s");
+                            }
+                            else
+                            {
+                                throw new IllegalArgumentException("unknown speed");
+                            }
+
+                            if (robust)
+                            {
+                                // nothing.
+                            }
+                            else if (simple)
+                            {
+                                b.append("_simple");
+                            }
+                            else
+                            {
+                                throw new IllegalArgumentException("unknown complexity");
+                            }
+
+                            parameters = (SPHINCSPlusParameters)SPHINCSPlusParameters.class.getField(b.toString()).get(null);
+
+                            //
+                            // Generate keys and test.
+                            //
+                            kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, parameters));
+                            AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+                            SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
+                            SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
+
+                            assertTrue(name + " " + count + ": public key", Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk), pubParams.getEncoded()));
+                            assertTrue(name + " " + count + ": secret key", Arrays.areEqual(Arrays.concatenate(privParams.getParameters().getEncoded(), sk), privParams.getEncoded()));
+
+                            //
+                            // Signature test
+                            //
+
+                            SPHINCSPlusSigner signer = new SPHINCSPlusSigner();
+
+                            signer.init(true, new ParametersWithRandom(privParams, new FixedSecureRandom(oprR)));
+
+                            byte[] sigGenerated = signer.generateSignature(msg);
+                            byte[] attachedSig = Arrays.concatenate(sigGenerated, msg);
+
+
+                            signer.init(false, pubParams);
+
+                            assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
+                            assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
+
+                        }
+                        buf.clear();
+
+                        continue;
+                    }
+
+                    int a = line.indexOf("=");
+                    if (a > -1)
+                    {
+                        buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                    }
                 }
+                src.close();
             }
-            src.close();
         }
     }
 
