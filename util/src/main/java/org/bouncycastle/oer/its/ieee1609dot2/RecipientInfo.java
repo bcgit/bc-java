@@ -1,22 +1,94 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
+import org.bouncycastle.asn1.ASN1Choice;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERTaggedObject;
+
 /**
  * <pre>
- *     RecipientInfo ::= CHOICE {
- *         pskRecipInfo PreSharedKeyReicpientInfo,
- *         symmRecipInfo SymmRecipientInfo,
- *         certRecipInfo PKRecipientInfo,
- *         signedDataRecipInfo PKRecipientInfo,
- *         rekRecipInfo PKRecipientInfo
- *     }
+ *   RecipientInfo ::= CHOICE {
+ *     pskRecipInfo         PreSharedKeyRecipientInfo,
+ *     symmRecipInfo        SymmRecipientInfo,
+ *     certRecipInfo        PKRecipientInfo,
+ *     signedDataRecipInfo  PKRecipientInfo,
+ *     rekRecipInfo         PKRecipientInfo
+ *   }
  * </pre>
  */
 public class RecipientInfo
+    extends ASN1Object
+    implements ASN1Choice
 {
+    public static final int pskRecipInfo = 0;
+    public static final int symmRecipInfo = 1;
+    public static final int certRecipInfo = 2;
+    public static final int signedDataRecipInfo = 3;
+    public static final int rekRecipInfo = 4;
 
+
+    private final int choice;
+    private final ASN1Encodable value;
+
+
+    public RecipientInfo(int choice, ASN1Encodable value)
+    {
+        this.choice = choice;
+        this.value = value;
+    }
+
+    private RecipientInfo(ASN1TaggedObject instance)
+    {
+        choice = instance.getTagNo();
+        switch (choice)
+        {
+        case pskRecipInfo:
+            value = PreSharedKeyRecipientInfo.getInstance(instance.getObject());
+            break;
+        case symmRecipInfo:
+            value = SymmRecipientInfo.getInstance(instance.getObject());
+            break;
+        case certRecipInfo:
+        case signedDataRecipInfo:
+        case rekRecipInfo:
+            value = PKRecipientInfo.getInstance(instance.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + choice);
+        }
+    }
 
     public static RecipientInfo getInstance(Object object)
     {
-        return new RecipientInfo();
+        if (object instanceof RecipientInfo)
+        {
+            return (RecipientInfo)object;
+        }
+
+        if (object != null)
+        {
+            return new RecipientInfo(ASN1TaggedObject.getInstance(object));
+        }
+
+        return null;
+
+    }
+
+    public int getChoice()
+    {
+        return choice;
+    }
+
+    public ASN1Encodable getValue()
+    {
+        return value;
+    }
+
+    @Override
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new DERTaggedObject(choice, value);
     }
 }

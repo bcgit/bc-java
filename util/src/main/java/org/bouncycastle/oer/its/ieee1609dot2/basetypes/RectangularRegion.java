@@ -27,18 +27,32 @@ public class RectangularRegion
         this.southEast = southEast;
     }
 
+    private RectangularRegion(ASN1Sequence s)
+    {
+        if (s.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
+        northWest = TwoDLocation.getInstance(s.getObjectAt(0));
+        southEast = TwoDLocation.getInstance(s.getObjectAt(1));
+
+    }
+
+
     public static RectangularRegion getInstance(Object o)
     {
         if (o instanceof RectangularRegion)
         {
             return (RectangularRegion)o;
         }
-        else
+
+        if (o != null)
         {
-            ASN1Sequence seg = ASN1Sequence.getInstance(o);
-            return new RectangularRegion(TwoDLocation.getInstance(seg.getObjectAt(0)),
-                TwoDLocation.getInstance(seg.getObjectAt(1)));
+            return new RectangularRegion(ASN1Sequence.getInstance(o));
         }
+
+        return null;
 
     }
 

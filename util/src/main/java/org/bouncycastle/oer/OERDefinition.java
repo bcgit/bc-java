@@ -3,7 +3,6 @@ package org.bouncycastle.oer;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -13,14 +12,14 @@ import org.bouncycastle.asn1.ASN1Integer;
 
 public class OERDefinition
 {
-    private static final BigInteger[] uIntMax = new BigInteger[]{
+    static final BigInteger[] uIntMax = new BigInteger[]{
         new BigInteger("256"),
         new BigInteger("65536"),
         new BigInteger("4294967296"),
         new BigInteger("18446744073709551616"),
     };
 
-    private static final BigInteger[][] sIntRange = new BigInteger[][]{
+    static final BigInteger[][] sIntRange = new BigInteger[][]{
         new BigInteger[]{new BigInteger("-128"), new BigInteger("127")},
         new BigInteger[]{new BigInteger("-32768"), new BigInteger("32767")},
         new BigInteger[]{new BigInteger("-2147483648"), new BigInteger("2147483647")},
@@ -157,11 +156,17 @@ public class OERDefinition
         return new Builder(BaseType.EXTENSION).label("extension");
     }
 
+    public static Builder deferred(ElementSupplier elementSupplier)
+    {
+        return new OERDefinition.Builder(BaseType.Supplier).elementSupplier(elementSupplier);
+    }
+
+
     public enum BaseType
     {
         SEQ, SEQ_OF, CHOICE, ENUM, INT, OCTET_STRING,
         UTF8_STRING, BIT_STRING, NULL, EXTENSION, ENUM_ITEM, BOOLEAN, IS0646String, PrintableString, NumericString,
-        BMPString, UniversalString, IA5String, VisibleString, Switch
+        BMPString, UniversalString, IA5String, VisibleString, Switch, Supplier
     }
 
     public interface ItemProvider
@@ -169,197 +174,17 @@ public class OERDefinition
         Builder exitingChild(int index, Builder existingChild);
     }
 
-    public static class Element
+    public interface ElementSupplier
     {
-        public final BaseType baseType;
-        public final List<Element> children;
-        public final boolean explicit;
-        public final String label;
-        public final BigInteger lowerBound;
-        public final BigInteger upperBound;
-        public final boolean extensionsInDefinition;
-        public final BigInteger enumValue;
-        public final ASN1Encodable defaultValue;
-        public final Switch aSwitch;
-        private List<Element> optionalChildrenInOrder;
-
-        public Element(
-            BaseType baseType,
-            List<Element> children,
-            boolean explicit,
-            String label,
-            BigInteger lowerBound,
-            BigInteger upperBound,
-            boolean extensionsInDefinition,
-            BigInteger enumValue, ASN1Encodable defaultValue, Switch aSwitch)
-        {
-            this.baseType = baseType;
-            this.children = children;
-            this.explicit = explicit;
-            this.label = label;
-            this.lowerBound = lowerBound;
-            this.upperBound = upperBound;
-            this.extensionsInDefinition = extensionsInDefinition;
-            this.enumValue = enumValue;
-            this.defaultValue = defaultValue;
-            this.aSwitch = aSwitch;
-        }
-
-        public String rangeExpression()
-        {
-            return "(" + (lowerBound != null ? lowerBound.toString() : "MIN") + " ... "
-                + (upperBound != null ? upperBound.toString() : "MAX") + ")";
-        }
-
-        public String appendLabel(String s)
-        {
-            return "[" + (label == null ? "" : label) + (explicit ? " (E)" : "") + "] " + s;
-        }
-
-        public List<Element> optionalOrDefaultChildrenInOrder()
-        {
-            synchronized (this)
-            {
-                // do it once, these definitions can be shared about.
-                if (optionalChildrenInOrder == null)
-                {
-                    ArrayList<Element> optList = new ArrayList<Element>();
-                    for (Iterator it = children.iterator(); it.hasNext(); )
-                    {
-                        Element e = (Element)it.next();
-                        if (!e.explicit || e.getDefaultValue() != null)
-                        {
-                            optList.add(e);
-                        }
-                    }
-                    optionalChildrenInOrder = Collections.unmodifiableList(optList);
-                }
-                return optionalChildrenInOrder;
-            }
-        }
-
-        public boolean isUnbounded()
-        {
-            return upperBound == null && lowerBound == null;
-        }
-
-        public boolean isLowerRangeZero()
-        {
-            return BigInteger.ZERO.equals(lowerBound);
-        }
-
-
-        /**
-         * Return true in cases where the range is all positive (0 .. 10)
-         *
-         * @return true if condition met.
-         */
-        public boolean isUnsignedWithRange()
-        {
-            return isLowerRangeZero() && (upperBound != null && BigInteger.ZERO.compareTo(upperBound) < 0);
-        }
-
-
-        // True for cases where there is no lower bound or lower bound is less than zero.
-        public boolean canBeNegative()
-        {
-            return lowerBound != null && BigInteger.ZERO.compareTo(lowerBound) > 0;
-        }
-
-
-        /**
-         * Determine the number of integer bytes for a range, ints, signed or unsigned that can fit into 1 to 8 octets
-         * use a fixed with encoding.
-         * Returns a negative number if the value is signed and the absolute value is the number of bytes.
-         */
-        public int intBytesForRange()
-        {
-            if (lowerBound != null && upperBound != null)
-            {
-                if (BigInteger.ZERO.equals(lowerBound))
-                {
-                    //
-                    // Positive range.
-                    //
-
-                    for (int i = 0, j = 1; i < uIntMax.length; i++, j *= 2)
-                    {
-                        if (upperBound.compareTo(uIntMax[i]) < 0)
-                        {
-                            return j;
-                        }
-                    }
-                }
-                else
-                {
-                    for (int i = 0, j = 1; i < sIntRange.length; i++, j *= 2)
-                    {
-                        if (lowerBound.compareTo(sIntRange[i][0]) >= 0 && upperBound.compareTo(sIntRange[i][1]) < 0)
-                        {
-                            return -j;
-                        }
-                    }
-                }
-            }
-            return 0;
-        }
-
-        public boolean hasPopulatedExtension()
-        {
-            for (Iterator it = children.iterator(); it.hasNext(); )
-            {
-                Element child = (Element)it.next();
-                if (child.baseType == BaseType.EXTENSION)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public boolean hasDefaultChildren()
-        {
-            for (Iterator it = children.iterator(); it.hasNext(); )
-            {
-                Element child = (Element)it.next();
-                if (child.defaultValue != null)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public ASN1Encodable getDefaultValue()
-        {
-            return defaultValue;
-        }
-
-
-        public Element getFirstChid()
-        {
-            return children.get(0);
-        }
-
-        public boolean isFixedLength()
-        {
-            return lowerBound != null && (lowerBound.equals(upperBound));
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Element{" +
-                "label='" + label + '\'' +
-                '}';
-        }
+        Element build();
     }
+
 
     public static class Builder
     {
         protected final BaseType baseType;
         protected ArrayList<Builder> children = new ArrayList<Builder>();
-        protected boolean explicit = false;
+        protected boolean explicit = true;
         protected String label;
         protected BigInteger upperBound;
         protected BigInteger lowerBound;
@@ -368,11 +193,16 @@ public class OERDefinition
         protected Builder placeholderValue;
         protected Boolean inScope;
         protected Switch aSwitch;
+        protected ArrayList<ASN1Encodable> validSwitchValues = new ArrayList<>();
+        protected ElementSupplier elementSupplier;
+        protected boolean mayRecurse;
 
         public Builder(BaseType baseType)
         {
             this.baseType = baseType;
-        }        private final ItemProvider defaultItemProvider = new ItemProvider()
+        }
+
+        private final ItemProvider defaultItemProvider = new ItemProvider()
         {
             public Builder exitingChild(int index, Builder existingChild)
             {
@@ -397,6 +227,9 @@ public class OERDefinition
             b.enumValue = enumValue;
             b.inScope = inScope;
             b.aSwitch = aSwitch;
+            b.validSwitchValues = new ArrayList<>(validSwitchValues);
+            b.elementSupplier = elementSupplier;
+            b.mayRecurse = mayRecurse;
             return b;
         }
 
@@ -405,6 +238,19 @@ public class OERDefinition
             return copy(defaultItemProvider);
         }
 
+        public Builder elementSupplier(ElementSupplier elementSupplier)
+        {
+            Builder b = this.copy();
+            b.elementSupplier = elementSupplier;
+            return b;
+        }
+
+        public Builder validSwitchValue(ASN1Encodable... values)
+        {
+            Builder b = this.copy();
+            b.validSwitchValues.addAll(Arrays.asList(values));
+            return b;
+        }
 
         public Builder inScope(boolean scope)
         {
@@ -468,7 +314,7 @@ public class OERDefinition
             return b;
         }
 
-        private Builder wrap(boolean explicit, Object item)
+        protected Builder wrap(boolean explicit, Object item)
         {
             if (item instanceof Builder)
             {
@@ -525,10 +371,15 @@ public class OERDefinition
             return newBuilder;
         }
 
+        public Builder mayRecurse(boolean val)
+        {
+            Builder b = this.copy();
+            b.mayRecurse = val;
+            return b;
+        }
+
         public Element build()
         {
-
-
             List<Element> children = new ArrayList<Element>();
             boolean hasExtensions = false;
 
@@ -569,7 +420,7 @@ public class OERDefinition
                         // There was an extension point but it was empty.
                         // So drop it from the list of children.
                         //
-                        if (this.baseType != BaseType.CHOICE)
+                        if (this.baseType != BaseType.CHOICE && this.baseType != BaseType.ENUM)
                         {
                             continue;
                         }
@@ -588,7 +439,7 @@ public class OERDefinition
                 lowerBound,
                 upperBound,
                 hasExtensions,
-                enumValue, defaultValue, aSwitch);
+                enumValue, defaultValue, aSwitch, validSwitchValues.isEmpty() ? null : validSwitchValues, elementSupplier, mayRecurse);
 
         }
 
@@ -652,7 +503,6 @@ public class OERDefinition
         }
 
 
-
     }
 
     public static class MutableBuilder
@@ -666,8 +516,13 @@ public class OERDefinition
             super(baseType);
         }
 
+        public MutableBuilder label(String label)
+        {
+            this.label = label;
+            return this;
+        }
 
-        public void addItemsAndFreeze(Builder... items)
+        public MutableBuilder addItemsAndFreeze(Builder... items)
         {
             if (frozen)
             {
@@ -676,11 +531,33 @@ public class OERDefinition
 
             for (int i = 0; i != items.length; i++)
             {
-                Builder b = items[i];
-                super.children.add(b);
+                Object item = items[i];
+                if (item instanceof OptionalList)
+                {
+                    for (Iterator it = ((List)item).iterator(); it.hasNext(); )
+                    {
+                        super.children.add(wrap(false, it.next()));
+                    }
+                }
+                else
+                {
+
+                    if (item.getClass().isArray())
+                    {
+                        for (Object o : (Object[])item)
+                        {
+                            super.children.add(wrap(true, o));
+                        }
+                    }
+                    else
+                    {
+                        super.children.add(wrap(true, item));
+                    }
+                }
             }
 
             frozen = true;
+            return this;
         }
     }
 

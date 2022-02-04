@@ -132,11 +132,11 @@ public class JcaITSPublicVerificationKey
         }
         ECCurve curve = params.getCurve();
 
-        ASN1Encodable pviCurvePoint = verificationKey.getCurvePoint();
+        ASN1Encodable pviCurvePoint = verificationKey.getValue();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)verificationKey.getCurvePoint();
+            itsPoint = (EccCurvePoint)verificationKey.getValue();
         }
         else
         {

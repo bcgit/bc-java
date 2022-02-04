@@ -33,20 +33,23 @@ public class PduFunctionalType
         super(bytes);
     }
 
+    public PduFunctionalType(ASN1Integer instance)
+    {
+        super(instance.getValue());
+    }
+
     public static PduFunctionalType getInstance(Object src)
     {
         if (src instanceof PduFunctionalType)
         {
             return (PduFunctionalType)src;
         }
-        else if (src instanceof ASN1Integer)
+
+        if (src != null)
         {
-            return new PduFunctionalType(((ASN1Integer)src).getValue());
+            return new PduFunctionalType(ASN1Integer.getInstance(src));
         }
-        else
-        {
-            ASN1Integer in = ASN1Integer.getInstance(src);
-            return getInstance(in);
-        }
+
+        return null;
     }
 }

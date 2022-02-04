@@ -50,12 +50,12 @@ public class EcdsaP384Signature
         return null;
     }
 
-    public EccP384CurvePoint getrSig()
+    public EccP384CurvePoint getRSig()
     {
         return rSig;
     }
 
-    public ASN1OctetString getsSig()
+    public ASN1OctetString getSSig()
     {
         return sSig;
     }

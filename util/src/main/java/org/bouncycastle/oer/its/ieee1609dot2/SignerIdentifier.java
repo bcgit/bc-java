@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
@@ -32,16 +33,39 @@ public class SignerIdentifier
 
 
     private final int choice;
-    private final ASN1Encodable object;
+    private final ASN1Encodable signerIdentifier;
 
 
     public SignerIdentifier(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.object = value;
+        this.signerIdentifier = value;
     }
 
-    public static final SignerIdentifier getInstance(Object src)
+    private SignerIdentifier(ASN1TaggedObject ato)
+    {
+        choice = ato.getTagNo();
+        switch (choice)
+        {
+        case digest:
+            signerIdentifier =  HashedId8.getInstance(ato.getObject());
+            break;
+        case certificate:
+            signerIdentifier = SequenceOfCertificate.getInstance(ato.getObject());
+            break;
+        case self:
+            signerIdentifier = DERNull.getInstance(ato.getObject());
+            break;
+        case extension:
+            signerIdentifier = ASN1OctetString.getInstance(ato.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + choice);
+        }
+
+    }
+
+    public static SignerIdentifier getInstance(Object src)
     {
 
         if (src instanceof SignerIdentifier)
@@ -49,19 +73,12 @@ public class SignerIdentifier
             return (SignerIdentifier)src;
         }
 
-        ASN1TaggedObject to = ASN1TaggedObject.getInstance(src);
-        switch (to.getTagNo())
+        if (src != null)
         {
-        case digest:
-            return new SignerIdentifier(to.getTagNo(), HashedId8.getInstance(to.getObject()));
-        case certificate:
-            return new SignerIdentifier(to.getTagNo(), SequenceOfCertificate.getInstance(to.getObject()));
-        case self:
-            break;
-        case extension:
-            break;
+            return new SignerIdentifier(ASN1TaggedObject.getInstance(src));
         }
-        throw new IllegalArgumentException("unknown choice " + to.getTagNo());
+
+        return null;
     }
 
     public static Builder builder()
@@ -69,19 +86,22 @@ public class SignerIdentifier
         return new Builder();
     }
 
-    public ASN1Primitive toASN1Primitive()
-    {
-        return new DERTaggedObject(choice, object);
-    }
 
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getObject()
+    @Override
+    public ASN1Primitive toASN1Primitive()
     {
-        return object;
+        return new DERTaggedObject(choice, signerIdentifier);
+    }
+
+
+    public ASN1Encodable getSignerIdentifier()
+    {
+        return signerIdentifier;
     }
 
     public static class Builder

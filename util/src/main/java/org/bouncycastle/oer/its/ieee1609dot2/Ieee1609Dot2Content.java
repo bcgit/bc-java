@@ -31,13 +31,35 @@ public class Ieee1609Dot2Content
     public static final int extension = 4;
 
     private final int choice;
-    private final ASN1Encodable object;
+    private final ASN1Encodable content;
 
     public Ieee1609Dot2Content(int choice, ASN1Encodable object)
     {
         this.choice = choice;
-        this.object = object;
+        this.content = object;
     }
+
+    private Ieee1609Dot2Content(ASN1TaggedObject to)
+    {
+        choice = to.getTagNo();
+        switch (choice)
+        {
+        case unsecuredData:
+        case signedCertificateRequest:
+        case extension:
+            content = ASN1OctetString.getInstance(to.getObject());
+            return;
+        case signedData:
+            content = SignedData.getInstance(to.getObject());
+            return;
+        case encryptedData:
+            content = EncryptedData.getInstance(to.getObject());
+            return;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + to.getTagNo());
+        }
+    }
+
 
     public static Ieee1609Dot2Content getInstance(Object src)
     {
@@ -46,20 +68,11 @@ public class Ieee1609Dot2Content
             return (Ieee1609Dot2Content)src;
         }
 
-        ASN1TaggedObject to = ASN1TaggedObject.getInstance(src);
-        switch (to.getTagNo())
+        if (src != null)
         {
-        case unsecuredData:
-        case signedCertificateRequest:
-        case extension:
-            return new Ieee1609Dot2Content(to.getTagNo(), ASN1OctetString.getInstance(to.getObject()));
-        case signedData:
-            return new Ieee1609Dot2Content(to.getTagNo(), SignedData.getInstance(to.getObject()));
-        case encryptedData:
-            return new Ieee1609Dot2Content(to.getTagNo(), EncryptedData.getInstance(to.getObject()));
+            return new Ieee1609Dot2Content(ASN1TaggedObject.getInstance(src));
         }
-
-        throw new IllegalArgumentException("unknown tag value " + to.getTagNo());
+        return null;
     }
 
     public static Builder builder()
@@ -69,7 +82,7 @@ public class Ieee1609Dot2Content
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, object);
+        return new DERTaggedObject(choice, content);
     }
 
     public int getChoice()
@@ -77,9 +90,9 @@ public class Ieee1609Dot2Content
         return choice;
     }
 
-    public ASN1Encodable getObject()
+    public ASN1Encodable getContent()
     {
-        return object;
+        return content;
     }
 
     public static class Builder

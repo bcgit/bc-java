@@ -30,6 +30,11 @@ public class PsidGroupPermissions
 
     private PsidGroupPermissions(ASN1Sequence seq)
     {
+
+        if (seq.size() != 4)
+        {
+            throw new IllegalArgumentException("expected sequence size of 4");
+        }
         this.subjectPermissions = SubjectPermissions.getInstance(seq.getObjectAt(0));
         this.minChainLength = OEROptional.getInstance(seq.getObjectAt(1)).getObject(ASN1Integer.class);
         this.chainLengthRange = OEROptional.getInstance(seq.getObjectAt(2)).getObject(ASN1Integer.class);

@@ -36,39 +36,56 @@ public class IdentifiedRegion
         this.region = region;
     }
 
+    private IdentifiedRegion(ASN1TaggedObject ato)
+    {
+        this.choice = ato.getTagNo();
+
+        switch (choice)
+        {
+        case countryOnly:
+            region = CountryOnly.getInstance(ato.getObject());
+            break;
+        case countryAndRegions:
+            region = CountryAndRegions.getInstance(ato.getObject());
+            break;
+        case countAndSubregions:
+            region = CountryAndSubregions.getInstance(ato.getObject());
+            break;
+        case extension:
+            region = DEROctetString.getInstance(ato.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + choice);
+        }
+    }
+
+
     public static IdentifiedRegion getInstance(Object o)
     {
         if (o instanceof IdentifiedRegion)
         {
             return (IdentifiedRegion)o;
         }
-        else
+        if (o != null)
         {
-            ASN1TaggedObject asn1TaggedObject = ASN1TaggedObject.getInstance(o);
-
-            int choice = asn1TaggedObject.getTagNo();
-
-            o = asn1TaggedObject.getObject();
-            switch (choice)
-            {
-            case countryOnly:
-                return new IdentifiedRegion(choice, CountryOnly.getInstance(o));
-            case countryAndRegions:
-                return new IdentifiedRegion(choice, CountryAndRegions.getInstance(o));
-            case countAndSubregions:
-                return new IdentifiedRegion(choice, RegionAndSubregions.getInstance(o));
-            case extension:
-                return new IdentifiedRegion(choice, DEROctetString.getInstance(o));
-            default:
-                throw new IllegalArgumentException("unknown choice " + choice);
-            }
-
-
+            return new IdentifiedRegion(ASN1TaggedObject.getInstance(o));
         }
+
+        return null;
+    }
+
+    public int getChoice()
+    {
+        return choice;
+    }
+
+    public ASN1Encodable getRegion()
+    {
+        return region;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, region).toASN1Primitive();
+        return new DERTaggedObject(choice, region);
     }
 }

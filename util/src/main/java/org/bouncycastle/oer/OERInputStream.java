@@ -22,7 +22,6 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -34,7 +33,7 @@ public class OERInputStream
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
     protected PrintWriter debugOutput = null;
 
-//    public interface OERHandler
+    //    public interface OERHandler
 //    {
 //        void handle(OERInputStream decoder)
 //            throws Exception;
@@ -64,27 +63,30 @@ public class OERInputStream
         this.maxByteAllocation = maxByteAllocation;
     }
 
-    private int countOptionalChildTypes(OERDefinition.Element element)
+    private int countOptionalChildTypes(Element element)
     {
         int optionalElements = 0;
-        for (Iterator it = element.children.iterator(); it.hasNext(); )
+        for (Iterator it = element.getChildren().iterator(); it.hasNext(); )
         {
-            OERDefinition.Element e = (OERDefinition.Element)it.next();
+            Element e = (Element)it.next();
 
-            optionalElements += e.explicit ? 0 : 1;
+            optionalElements += e.isExplicit() ? 0 : 1;
         }
         return optionalElements;
     }
 
-    public ASN1Object parse(OERDefinition.Element element)
+    public ASN1Object parse(Element element)
         throws Exception
     {
 
-        switch (element.baseType)
+        switch (element.getBaseType())
         {
 
         case Switch:
             throw new IllegalStateException("A switch element should only be found within a sequence.");
+
+        case Supplier:
+            return parse(element.getElementSupplier().build());
 
         case SEQ_OF:
         {
@@ -108,36 +110,38 @@ public class OERInputStream
 
             ASN1EncodableVector avec = new ASN1EncodableVector();
 
-            if (element.children.get(0).aSwitch != null)
+            if (element.getChildren().get(0).getaSwitch() != null)
             {
                 throw new IllegalStateException("element def for item in SEQ OF has a switch, switches only supported in sequences");
             }
 
             for (int n = 0; n < j; n++)
             {
-                avec.add(parse(element.children.get(0)));
+                Element def = Element.expandDeferredDefinition(element.getChildren().get(0));
+                avec.add(parse(def));
             }
             return new DERSequence(avec);
         }
 
         case SEQ:
         {
-            Sequence sequence = sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.extensionsInDefinition);
+            Sequence sequence = sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.isExtensionsInDefinition());
             debugPrint(element.appendLabel(sequence.toString()));
 
             ASN1EncodableVector avec = new ASN1EncodableVector();
 
-            for (int t = 0; t < element.children.size(); t++)
+            for (int t = 0; t < element.getChildren().size(); t++)
             {
-                OERDefinition.Element child = element.children.get(t);
+                Element child = element.getChildren().get(t);
+                child = Element.expandDeferredDefinition(child);
 
-                if (child.explicit)
+                if (child.isExplicit())
                 {
 //                    debugPrint(child.appendLabel("E[" + t + "]"));
 
-                    if (child.aSwitch != null)
+                    if (child.getaSwitch() != null)
                     {
-                        child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                        child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
                     }
 
                     avec.add(parse(child));
@@ -146,9 +150,9 @@ public class OERInputStream
                 {
                     if (sequence.hasOptional(element.optionalOrDefaultChildrenInOrder().indexOf(child)))
                     {
-                        if (child.aSwitch != null)
+                        if (child.getaSwitch() != null)
                         {
-                            child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                            child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
                         }
                         //  debugPrint(child.appendLabel("O[" + t + "]"));
                         avec.add(OEROptional.getInstance(parse(child)));
@@ -156,14 +160,14 @@ public class OERInputStream
                     }
                     else
                     {
-                        if (child.aSwitch != null)
+                        if (child.getaSwitch() != null)
                         {
-                            child = child.aSwitch.result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                            child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
                         }
 
                         if (child.getDefaultValue() != null)
                         {
-                            avec.add(child.defaultValue);
+                            avec.add(child.getDefaultValue());
                             debugPrint("Using default.");
                         }
                         else
@@ -177,15 +181,14 @@ public class OERInputStream
             return new DERSequence(avec);
         }
 
-
         case CHOICE:
         {
             Choice choice = choice();
             debugPrint(element.appendLabel(choice.toString()));
             if (choice.isContextSpecific())
             {
-                OERDefinition.Element item = element.children.get(choice.getTag());
-                return new DERTaggedObject(choice.tag, parse(element.children.get(choice.getTag())));
+                Element choiceDef = Element.expandDeferredDefinition(element.getChildren().get(choice.getTag()));
+                return new DERTaggedObject(choice.tag, parse( choiceDef ));
             }
             else if (choice.isApplicationTagClass())
             {
@@ -197,12 +200,7 @@ public class OERInputStream
             }
             else if (choice.isUniversalTagClass())
             {
-                switch (choice.getTag())
-                {
-
-                }
-
-
+                throw new IllegalStateException("Unimplemented tag type");
             }
             else
             {
@@ -212,7 +210,7 @@ public class OERInputStream
         case ENUM:
         {
             BigInteger bi = enumeration();
-            debugPrint(element.appendLabel("ENUM(" + bi + ") = " + element.children.get(bi.intValue()).label));
+            debugPrint(element.appendLabel("ENUM(" + bi + ") = " + element.getChildren().get(bi.intValue()).getLabel()));
             return new ASN1Enumerated(bi);
         }
         case INT:
@@ -230,22 +228,11 @@ public class OERInputStream
             {
                 data = allocateArray(Math.abs(bytesToRead));
                 Streams.readFully(this, data);
-                switch (data.length)
-                {
-                case 1:
-                    bi = BigInteger.valueOf(data[0]);
-                    break;
-                case 2:
-                    bi = BigInteger.valueOf(Pack.bigEndianToShort(data, 0));
-                    break;
-                case 4:
-                    bi = BigInteger.valueOf(Pack.bigEndianToInt(data, 0));
-                    break;
-                case 8:
-                    bi = BigInteger.valueOf(Pack.bigEndianToLong(data, 0));
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown size");
+
+                if (bytesToRead <0) {
+                    bi = new BigInteger(data); // Twos compliment
+                } else {
+                    bi = BigIntegers.fromUnsignedByteArray(data);
                 }
 
 
@@ -261,7 +248,7 @@ public class OERInputStream
                 }
                 else
                 {
-                    bi = BigIntegers.fromUnsignedByteArray(data);
+                    bi =  new BigInteger(1,data);
                 }
             }
             else
@@ -298,10 +285,10 @@ public class OERInputStream
 
             int readSize = 0;
 
-            if (element.upperBound != null && element.upperBound.equals(element.lowerBound))
+            if (element.getUpperBound() != null && element.getUpperBound().equals(element.getLowerBound()))
             {
                 // Fixed length there is no range.
-                readSize = element.upperBound.intValue();
+                readSize = element.getUpperBound().intValue();
             }
             else
             {
@@ -313,7 +300,7 @@ public class OERInputStream
 
             if (Streams.readFully(this, data) != readSize)
             {
-                throw new IOException("did not read all of " + element.label);
+                throw new IOException("did not read all of " + element.getLabel());
             }
 
             if (debugOutput != null)
@@ -330,7 +317,7 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = allocateArray(element.upperBound.intValue());
+                data = allocateArray(element.getUpperBound().intValue());
             }
             else
             {
@@ -372,12 +359,12 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = new byte[element.lowerBound.intValue() / 8];
+                data = new byte[element.getLowerBound().intValue() / 8];
             }
-            else if (BigInteger.ZERO.compareTo(element.upperBound) > 0)
+            else if (BigInteger.ZERO.compareTo(element.getUpperBound()) > 0)
             {
                 // Fixed size.
-                data = allocateArray(element.upperBound.intValue() / 8);
+                data = allocateArray(element.getUpperBound().intValue() / 8);
             }
             else
             {
@@ -423,10 +410,10 @@ public class OERInputStream
         }
 
 
-        throw new IllegalStateException("Unhandled type " + element.baseType);
+        throw new IllegalStateException("Unhandled type " + element.getBaseType());
     }
 
-    private ASN1Encodable absent(OERDefinition.Element child)
+    private ASN1Encodable absent(Element child)
     {
         debugPrint(child.appendLabel("Absent"));
         return OEROptional.ABSENT;

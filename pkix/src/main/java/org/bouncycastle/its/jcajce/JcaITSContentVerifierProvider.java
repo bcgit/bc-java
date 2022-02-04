@@ -18,7 +18,7 @@ import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
-import org.bouncycastle.oer.its.template.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
@@ -73,12 +73,12 @@ public class JcaITSContentVerifierProvider
             throw new IllegalStateException("unable to extract parent data: " + e.getMessage());
         }
         ToBeSignedCertificate toBeSignedCertificate =
-            issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate();
+            issuer.toASN1Structure().getToBeSignedCertificate();
         VerificationKeyIndicator vki = toBeSignedCertificate.getVerificationKeyIndicator();
 
-        if (vki.getObject() instanceof PublicVerificationKey)
+        if (vki.getValue() instanceof PublicVerificationKey)
         {
-            PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getObject());
+            PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getValue());
             sigChoice = pvi.getChoice();
             switch (pvi.getChoice())
             {
@@ -147,7 +147,7 @@ public class JcaITSContentVerifierProvider
 
             if (issuer.getIssuer().isSelf())
             {
-                byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getCertificateBase().getToBeSignedCertificate(), IEEE1609dot2.ToBeSignedCertificate.build());
+                byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getToBeSignedCertificate(), IEEE1609dot2.ToBeSignedCertificate.build());
                 os.write(enc, 0, enc.length);
                 parentTBSDigest = calculator.getDigest();
             }

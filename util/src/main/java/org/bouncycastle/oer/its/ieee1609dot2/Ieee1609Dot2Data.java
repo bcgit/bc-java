@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ItsUtils;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Uint8;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 /**
  * <pre>
@@ -20,10 +20,10 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Uint8;
 public class Ieee1609Dot2Data
     extends ASN1Object
 {
-    private final Uint8 protocolVersion;
+    private final UINT8 protocolVersion;
     private final Ieee1609Dot2Content content;
 
-    public Ieee1609Dot2Data(Uint8 protocolVersion, Ieee1609Dot2Content content)
+    public Ieee1609Dot2Data(UINT8 protocolVersion, Ieee1609Dot2Content content)
     {
         this.protocolVersion = protocolVersion;
         this.content = content;
@@ -36,7 +36,7 @@ public class Ieee1609Dot2Data
             throw new IllegalArgumentException("expected sequence size of 2");
         }
         Iterator<ASN1Encodable> items = ASN1Sequence.getInstance(src).iterator();
-        this.protocolVersion = Uint8.getInstance(items.next());
+        this.protocolVersion = UINT8.getInstance(items.next());
         this.content = Ieee1609Dot2Content.getInstance(items.next());
     }
 
@@ -65,7 +65,7 @@ public class Ieee1609Dot2Data
         return ItsUtils.toSequence(protocolVersion, content);
     }
 
-    public Uint8 getProtocolVersion()
+    public UINT8 getProtocolVersion()
     {
         return protocolVersion;
     }
@@ -77,10 +77,10 @@ public class Ieee1609Dot2Data
 
     public static class Builder
     {
-        private Uint8 protocolVersion;
+        private UINT8 protocolVersion;
         private Ieee1609Dot2Content content;
 
-        public Builder setProtocolVersion(Uint8 protocolVersion)
+        public Builder setProtocolVersion(UINT8 protocolVersion)
         {
             this.protocolVersion = protocolVersion;
             return this;

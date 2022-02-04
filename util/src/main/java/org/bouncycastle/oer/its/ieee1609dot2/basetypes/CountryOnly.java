@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.ASN1Integer;
 
 public class CountryOnly
-    extends Uint16
+    extends UINT16
     implements RegionInterface
 {
     public CountryOnly(int value)

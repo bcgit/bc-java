@@ -1,6 +1,7 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 
 /**
@@ -16,14 +17,24 @@ public class ExplicitCertificate
     extends CertificateBase
 {
 
-    private ExplicitCertificate(CertificateBase base)
+    public ExplicitCertificate(CertificateBase base)
     {
         this(base.getVersion(), base.getIssuer(), base.getToBeSignedCertificate(), base.getSignature());
     }
 
     public ExplicitCertificate(ASN1Integer version, IssuerIdentifier issuer, ToBeSignedCertificate toBeSignedCertificate, Signature signature)
     {
-        super(version, CertificateType.Explicit, issuer, toBeSignedCertificate, signature);
+        super(version, CertificateType.explicit, issuer, toBeSignedCertificate, signature);
+    }
+
+
+    protected ExplicitCertificate(ASN1Sequence seq)
+    {
+        super(seq);
+        if (!getType().equals(CertificateType.explicit))
+        {
+            throw new IllegalArgumentException("object was certificate base but the type was not explicit");
+        }
     }
 
     public static ExplicitCertificate getInstance(Object o)
@@ -33,19 +44,12 @@ public class ExplicitCertificate
             return (ExplicitCertificate)o;
         }
 
-        CertificateBase base = CertificateBase.getInstance(o);
-
-        if (base != null)
+        if (o != null)
         {
-            if (!base.getType().equals(CertificateType.Explicit))
-            {
-                throw new IllegalArgumentException("object was certificate base but the type was not explicit");
-            }
-            return new ExplicitCertificate(base);
+            return new ExplicitCertificate(ASN1Sequence.getInstance(o));
         }
 
         return null;
-
     }
 
 }

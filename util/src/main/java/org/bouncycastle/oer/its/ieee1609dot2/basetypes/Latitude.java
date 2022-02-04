@@ -29,20 +29,24 @@ public class Latitude
         super(bytes);
     }
 
+    private Latitude(ASN1Integer instance)
+    {
+        this(instance.getValue());
+    }
+
     public static Latitude getInstance(Object o)
     {
         if (o instanceof Latitude)
         {
             return (Latitude)o;
         }
-        else if (o instanceof NinetyDegreeInt)
+
+        if (o != null)
         {
-            return new Latitude(((NinetyDegreeInt)o).getValue());
+            return new Latitude(ASN1Integer.getInstance(o));
         }
-        else
-        {
-            return new Latitude(ASN1Integer.getInstance(o).getValue());
-        }
+
+        return null;
     }
 
 

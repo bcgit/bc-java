@@ -19,9 +19,9 @@ public class CircularRegion
 {
 
     private final TwoDLocation center;
-    private final Uint16 radius;
+    private final UINT16 radius;
 
-    public CircularRegion(TwoDLocation center, Uint16 radius)
+    public CircularRegion(TwoDLocation center, UINT16 radius)
     {
         this.center = center;
         this.radius = radius;
@@ -31,10 +31,10 @@ public class CircularRegion
     {
         if (sequence.size() != 2)
         {
-            throw new IllegalArgumentException("expected sequence length of 2, got " + sequence.size());
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
         this.center = TwoDLocation.getInstance(sequence.getObjectAt(0));
-        this.radius = Uint16.getInstance(sequence.getObjectAt(1));
+        this.radius = UINT16.getInstance(sequence.getObjectAt(1));
     }
 
     public static CircularRegion getInstance(Object o)
@@ -57,7 +57,7 @@ public class CircularRegion
         return center;
     }
 
-    public Uint16 getRadius()
+    public UINT16 getRadius()
     {
         return radius;
     }
@@ -71,7 +71,7 @@ public class CircularRegion
     {
 
         private TwoDLocation center;
-        private Uint16 radius;
+        private UINT16 radius;
 
         public Builder setCenter(TwoDLocation center)
         {
@@ -79,7 +79,7 @@ public class CircularRegion
             return this;
         }
 
-        public Builder setRadius(Uint16 radius)
+        public Builder setRadius(UINT16 radius)
         {
             this.radius = radius;
             return this;

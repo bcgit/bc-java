@@ -26,13 +26,31 @@ public class ServiceSpecificPermissions
     public static final int bitmapSsp = 2;
 
     private final int choice;
-    private final ASN1Encodable object;
+    private final ASN1Encodable permission;
 
     public ServiceSpecificPermissions(int choice, ASN1Encodable object)
     {
         this.choice = choice;
-        this.object = object;
+        this.permission = object;
     }
+
+    private ServiceSpecificPermissions(ASN1TaggedObject sto)
+    {
+        this.choice = sto.getTagNo();
+        switch (choice)
+        {
+        case opaque:
+        case extension:
+            permission = DEROctetString.getInstance(sto.getObject());
+            return;
+        case bitmapSsp:
+            permission = BitmapSsp.getInstance(sto.getObject());
+            return;
+        }
+        throw new IllegalArgumentException("invalid choice value " + choice);
+
+    }
+
 
     public static ServiceSpecificPermissions getInstance(Object o)
     {
@@ -40,17 +58,13 @@ public class ServiceSpecificPermissions
         {
             return (ServiceSpecificPermissions)o;
         }
-        ASN1TaggedObject dto = ASN1TaggedObject.getInstance(o);
-        switch (dto.getTagNo())
+
+        if (o != null)
         {
-        case opaque:
-        case extension:
-            return new ServiceSpecificPermissions(dto.getTagNo(), DEROctetString.getInstance(dto.getObject()));
-        case bitmapSsp:
-            return new ServiceSpecificPermissions(dto.getTagNo(), BitmapSsp.getInstance(dto.getObject()));
-        default:
-            throw new IllegalArgumentException("unknown choice " + dto.getTagNo());
+            return new ServiceSpecificPermissions(ASN1TaggedObject.getInstance(o));
         }
+
+        return null;
     }
 
     public static Builder builder()
@@ -63,14 +77,14 @@ public class ServiceSpecificPermissions
         return choice;
     }
 
-    public ASN1Encodable getObject()
+    public ASN1Encodable getPermission()
     {
-        return object;
+        return permission;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, object);
+        return new DERTaggedObject(choice, permission);
     }
 
     public static class Builder

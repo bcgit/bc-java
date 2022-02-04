@@ -1,12 +1,8 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
-import java.io.IOException;
-
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
@@ -43,34 +39,23 @@ public class SspRange
         switch (choice)
         {
         case opaque:
-            if (!(value instanceof SequenceOfOctetString))
-            {
-                throw new IllegalArgumentException("value is not SequenceOfOctetString");
-            }
-            break;
         case all:
-            if (!(value instanceof ASN1Null))
-            {
-                throw new IllegalArgumentException("value is not ASN1Null");
-            }
-            break;
         case extension:
-            if (!(value instanceof ASN1OctetString))
-            {
-                throw new IllegalArgumentException("value is not ASN1OctetString");
-            }
-            break;
         case bitmapSspRange:
-            if (!(value instanceof BitmapSspRange))
-            {
-                throw new IllegalArgumentException("value is not BitmapSspRange");
-            }
             break;
+        default:
+            throw new IllegalArgumentException("invalid choice value 5");
         }
 
 
         this.choice = choice;
         this.value = value;
+    }
+
+
+    private SspRange(ASN1TaggedObject ato)
+    {
+        this(ato.getTagNo(), ato.getObject());
     }
 
 
@@ -81,32 +66,23 @@ public class SspRange
             return (SspRange)src;
         }
 
-        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(src);
-        int item = taggedObject.getTagNo();
-
-        switch (item)
+        if (src != null)
         {
-        case opaque:
-            return new SspRange(opaque,
-                SequenceOfOctetString.getInstance(taggedObject.getObject()));
-        case all:
-            return new SspRange(all, DERNull.INSTANCE);
-        case extension:
-            try
-            {
-                return new SspRange(extension, new DEROctetString(taggedObject.getObject().getEncoded()));
-            }
-            catch (IOException ioException)
-            {
-                throw new RuntimeException(ioException.getMessage(), ioException);
-            }
-
-        case bitmapSspRange:
-            return new SspRange(bitmapSspRange, BitmapSspRange.getInstance(taggedObject.getObject()));
+            return new SspRange(ASN1TaggedObject.getInstance(src));
         }
 
-        throw new IllegalStateException("unknown choice " + item);
+        return null;
 
+    }
+
+    public int getChoice()
+    {
+        return choice;
+    }
+
+    public ASN1Encodable getValue()
+    {
+        return value;
     }
 
     public static Builder builder()

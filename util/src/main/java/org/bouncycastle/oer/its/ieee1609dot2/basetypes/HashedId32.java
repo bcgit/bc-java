@@ -21,7 +21,11 @@ public class HashedId32
         {
             return (HashedId32)src;
         }
-        byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
-        return new HashedId32(octetString);
+        if (src != null)
+        {
+            byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
+            return new HashedId32(octetString);
+        }
+        return null;
     }
 }

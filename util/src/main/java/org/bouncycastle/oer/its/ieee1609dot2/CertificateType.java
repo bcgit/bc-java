@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * CertificateType ::= ENUMERATED {
@@ -14,13 +15,19 @@ import org.bouncycastle.asn1.ASN1Enumerated;
 public class CertificateType
     extends ASN1Enumerated
 {
-    public static final CertificateType Explicit = new CertificateType(0);
-    public static final CertificateType Implicit = new CertificateType(1);
-    public static final CertificateType Extension = new CertificateType(2);
+    public static final CertificateType explicit = new CertificateType(BigInteger.ZERO);
+    public static final CertificateType implicit = new CertificateType(BigInteger.ONE);
+    public static final CertificateType extension = new CertificateType(BigIntegers.TWO);
 
-    protected CertificateType(int ordinal)
+    public CertificateType(BigInteger ordinal)
     {
         super(ordinal);
+        assertValues();
+    }
+
+    private CertificateType(ASN1Enumerated instance)
+    {
+        this(instance.getValue());
     }
 
     public static CertificateType getInstance(Object src)
@@ -29,21 +36,22 @@ public class CertificateType
         {
             return (CertificateType)src;
         }
-        else
+
+        if (src != null)
         {
-            BigInteger bi = ASN1Enumerated.getInstance(src).getValue();
-            switch (bi.intValue())
-            {
-            case 0:
-                return Explicit;
-            case 1:
-                return Implicit;
-            case 2:
-                return Extension;
-            default:
-                throw new IllegalArgumentException("unaccounted enum value " + bi);
-            }
+            return new CertificateType(ASN1Enumerated.getInstance(src));
+        }
+        return null;
+
+    }
+
+    protected void assertValues()
+    {
+        if (getValue().compareTo(BigInteger.ZERO) < 0  || getValue().compareTo(BigIntegers.TWO) > 0)
+        {
+            throw new IllegalArgumentException("invalid enumeration value "+getValue());
         }
     }
+
 
 }

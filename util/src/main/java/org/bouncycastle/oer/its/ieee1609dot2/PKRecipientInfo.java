@@ -28,6 +28,19 @@ public class PKRecipientInfo
         this.encKey = encKey;
     }
 
+    private PKRecipientInfo(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
+        recipientId = HashedId8.getInstance(sequence.getObjectAt(0));
+        encKey = EncryptedDataEncryptionKey.getInstance(sequence.getObjectAt(1));
+
+    }
+
+
     public static PKRecipientInfo getInstance(Object object)
     {
         if (object instanceof PKRecipientInfo)
@@ -35,11 +48,13 @@ public class PKRecipientInfo
             return (PKRecipientInfo)object;
         }
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(object);
+        if (object != null)
+        {
+            return new PKRecipientInfo(ASN1Sequence.getInstance(object));
+        }
 
-        return new PKRecipientInfo(
-            HashedId8.getInstance(seq.getObjectAt(0)),
-            EncryptedDataEncryptionKey.getInstance(seq.getObjectAt(0)));
+        return null;
+
     }
 
     public HashedId getRecipientId()

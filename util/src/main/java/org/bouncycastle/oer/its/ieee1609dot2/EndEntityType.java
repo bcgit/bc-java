@@ -23,8 +23,7 @@ public class EndEntityType
         this(new DERBitString(eeType));
     }
 
-
-    public EndEntityType(DERBitString str)
+    private EndEntityType(DERBitString str)
     {
         this.type = str;
     }
@@ -41,6 +40,11 @@ public class EndEntityType
         }
 
         return null;
+    }
+
+    public ASN1BitString getType()
+    {
+        return type;
     }
 
     public ASN1Primitive toASN1Primitive()

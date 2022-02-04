@@ -7,13 +7,10 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
- * <pre>
- *      ThreeDLocation ::= SEQUENCE {
- *        latitude   Latitude,
- *        longitude  Longitude,
- *        elevation  Elevation
- *   }
- * </pre>
+ * TwoDLocation ::= SEQUENCE {
+ * latitude   Latitude,
+ * longitude  Longitude
+ * }
  */
 public class TwoDLocation
     extends ASN1Object
@@ -29,9 +26,9 @@ public class TwoDLocation
 
     private TwoDLocation(ASN1Sequence seq)
     {
-        if (seq.size() != 1 && seq.size() != 2)
+        if (seq.size() != 2)
         {
-            throw new IllegalArgumentException("expected sequence size of 1 or 2");
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
         latitude = Latitude.getInstance(seq.getObjectAt(0));
         longitude = Longitude.getInstance(seq.getObjectAt(1));

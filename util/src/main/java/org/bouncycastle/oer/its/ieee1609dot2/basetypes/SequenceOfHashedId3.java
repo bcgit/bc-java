@@ -37,7 +37,7 @@ public class SequenceOfHashedId3
         return new Builder();
     }
 
-    public SequenceOfHashedId3 getInstance(Object o)
+    public static SequenceOfHashedId3 getInstance(Object o)
     {
         if (o instanceof SequenceOfHashedId3)
         {
@@ -49,6 +49,11 @@ public class SequenceOfHashedId3
         }
 
         return null;
+    }
+
+    public List<HashedId3> getHashedId3s()
+    {
+        return hashedId3s;
     }
 
     @Override

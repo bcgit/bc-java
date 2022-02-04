@@ -1,15 +1,19 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.its.ItsUtils;
 
+/**
+ * SequenceOfIdentifiedRegion ::= SEQUENCE OF IdentifiedRegion
+ */
 public class SequenceOfIdentifiedRegion
     extends ASN1Object
 {
@@ -22,6 +26,17 @@ public class SequenceOfIdentifiedRegion
         this.identifiedRegions = Collections.unmodifiableList(identifiedRegions);
     }
 
+    private SequenceOfIdentifiedRegion(ASN1Sequence s)
+    {
+        ArrayList<IdentifiedRegion> l = new ArrayList<>();
+        for (Iterator<ASN1Encodable> it = s.iterator(); it.hasNext(); )
+        {
+            l.add(IdentifiedRegion.getInstance(it.next()));
+        }
+        identifiedRegions = Collections.unmodifiableList(l);
+    }
+
+
     public static SequenceOfIdentifiedRegion getInstance(Object o)
     {
         if (o instanceof SequenceOfIdentifiedRegion)
@@ -29,7 +44,12 @@ public class SequenceOfIdentifiedRegion
             return (SequenceOfIdentifiedRegion)o;
         }
 
-        return new SequenceOfIdentifiedRegion(ItsUtils.fillList(IdentifiedRegion.class, ASN1Sequence.getInstance(o)));
+        if (o != null)
+        {
+            return new SequenceOfIdentifiedRegion(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     public List<IdentifiedRegion> getIdentifiedRegions()
@@ -39,6 +59,6 @@ public class SequenceOfIdentifiedRegion
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(identifiedRegions.toArray(new ASN1Encodable[0]));
+        return ItsUtils.toSequence(identifiedRegions);
     }
 }

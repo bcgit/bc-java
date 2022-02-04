@@ -27,17 +27,28 @@ public class MissingCrlIdentifier
         this.crlSeries = crlSeries;
     }
 
+    private MissingCrlIdentifier(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
+        cracaId = HashedId3.getInstance(sequence.getObjectAt(0));
+        crlSeries = CrlSeries.getInstance(sequence.getObjectAt(1));
+    }
+
     public static MissingCrlIdentifier getInstance(Object src)
     {
         if (src instanceof MissingCrlIdentifier)
         {
             return (MissingCrlIdentifier)src;
         }
-        ASN1Sequence seq = ASN1Sequence.getInstance(src);
-        HashedId3 id = HashedId3.getInstance(seq.getObjectAt(0));
-        CrlSeries series = CrlSeries.getInstance(seq.getObjectAt(1));
-
-        return new MissingCrlIdentifier(id, series);
+        if (src != null)
+        {
+            return new MissingCrlIdentifier(ASN1Sequence.getInstance(src));
+        }
+        return null;
     }
 
     public ASN1Primitive toASN1Primitive()

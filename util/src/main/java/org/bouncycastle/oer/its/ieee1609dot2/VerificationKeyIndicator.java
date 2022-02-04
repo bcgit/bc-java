@@ -28,42 +28,48 @@ public class VerificationKeyIndicator
     public static final int extension = 2;
 
     private final int choice;
-    private final ASN1Encodable object;
+    private final ASN1Encodable value;
 
-    public VerificationKeyIndicator(int choice, ASN1Encodable object)
+    public VerificationKeyIndicator(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.object = object;
+        this.value = value;
     }
 
-    public static VerificationKeyIndicator getInstance(Object objectAt)
+    private VerificationKeyIndicator(ASN1TaggedObject ato)
     {
-        if (objectAt instanceof VerificationKeyIndicator)
-        {
-            return (VerificationKeyIndicator)objectAt;
-        }
-
-        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(objectAt);
-        switch (taggedObject.getTagNo())
+        this.choice = ato.getTagNo();
+        switch (choice)
         {
         case verificationKey:
-            return new Builder()
-                .setChoice(verificationKey)
-                .setObject(PublicVerificationKey.getInstance(taggedObject.getObject()))
-                .createVerificationKeyIndicator();
+            value = PublicVerificationKey.getInstance(ato.getObject());
+            break;
         case reconstructionValue:
-            return new Builder()
-                .setChoice(reconstructionValue)
-                .setObject(EccP256CurvePoint.getInstance(taggedObject.getObject()))
-                .createVerificationKeyIndicator();
-
+            value = EccP256CurvePoint.getInstance(ato.getObject());
+            break;
         case extension:
-            return new VerificationKeyIndicator(extension,
-                DEROctetString.getInstance(taggedObject.getLoadedObject())
-            );
+            value = DEROctetString.getInstance(ato.getObject());
+            break;
         default:
-            throw new IllegalArgumentException("unhandled tag " + taggedObject.getTagNo());
+            throw new IllegalArgumentException("invalid choice value "+choice);
+
         }
+
+    }
+
+
+    public static VerificationKeyIndicator getInstance(Object src)
+    {
+        if (src instanceof VerificationKeyIndicator)
+        {
+            return (VerificationKeyIndicator)src;
+        }
+
+        if (src != null) {
+            return new VerificationKeyIndicator(ASN1TaggedObject.getInstance(src));
+        }
+
+        return null;
 
     }
 
@@ -77,14 +83,14 @@ public class VerificationKeyIndicator
         return choice;
     }
 
-    public ASN1Encodable getObject()
+    public ASN1Encodable getValue()
     {
-        return object;
+        return value;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, object);
+        return new DERTaggedObject(choice, value);
     }
 
     public static class Builder

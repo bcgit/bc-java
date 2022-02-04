@@ -35,17 +35,9 @@ public class Signature
         this.value = value;
     }
 
-    public static Signature getInstance(Object objectAt)
-    {
-        if (objectAt instanceof Signature)
-        {
-            return (Signature)objectAt;
-        }
-
-        ASN1TaggedObject ato = ASN1TaggedObject.getInstance(objectAt);
-        ASN1Encodable value;
-
-        switch (ato.getTagNo())
+    private Signature(ASN1TaggedObject ato) {
+        choice = ato.getTagNo();
+        switch (choice)
         {
         case ecdsaNistP256Signature:
         case ecdsaBrainpoolP256r1Signature:
@@ -58,10 +50,24 @@ public class Signature
             value = EcdsaP384Signature.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalStateException("unknown choice " + ato.getTagNo());
+            throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
         }
-        return new Signature(ato.getTagNo(), value);
 
+    }
+
+
+    public static Signature getInstance(Object objectAt)
+    {
+        if (objectAt instanceof Signature)
+        {
+            return (Signature)objectAt;
+        }
+
+        if (objectAt != null) {
+            return new Signature(ASN1TaggedObject.getInstance(objectAt));
+        }
+
+        return null;
     }
 
     public static Builder builder()
