@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.Pack;
 
 class Utils
@@ -18,10 +17,9 @@ class Utils
     }
     static short load_gf(byte[] src, int offset, int gfmask)
     {
-        //TODO make this without using temp
-        byte[] temp = ByteUtils.subArray(src, offset, offset + 2);
+//        byte[] temp = Arrays.copyOfRange(src, offset, offset + 2);
 //        temp[1] &= 0xf; // java signed bits calculation
-        return (short) (Pack.littleEndianToShort(temp, 0) & gfmask);
+        return (short) (Pack.littleEndianToShort(src, offset) & gfmask);
 
 //        short a;
 //        a = src[offset + 1];

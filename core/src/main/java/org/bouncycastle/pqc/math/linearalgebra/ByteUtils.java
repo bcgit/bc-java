@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.math.linearalgebra;
 
 /**
  * This class is a utility class for manipulating byte arrays.
+ * @deprecated use org.bouncycastle.util.Arrays.
  */
 public final class ByteUtils
 {

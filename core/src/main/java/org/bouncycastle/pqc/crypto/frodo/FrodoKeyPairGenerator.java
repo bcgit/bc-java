@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
 public class FrodoKeyPairGenerator
-    implements AsymmetricCipherKeyPairGenerator
+        implements AsymmetricCipherKeyPairGenerator
 {
     private FrodoKeyGenerationParameters frodoParams;
 

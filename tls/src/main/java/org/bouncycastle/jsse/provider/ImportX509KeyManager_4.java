@@ -65,4 +65,10 @@ final class ImportX509KeyManager_4
     {
         return ProvX509Key.from(x509KeyManager, keyType, alias);
     }
+
+    @Override
+    protected BCX509Key validateKeyBC(boolean forServer, String keyType, String alias, Socket socket)
+    {
+        return ProvX509Key.validate(x509KeyManager, forServer, keyType, alias, TransportData.from(socket));
+    }
 }

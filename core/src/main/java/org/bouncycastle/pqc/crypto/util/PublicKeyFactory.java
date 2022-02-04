@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -31,6 +32,8 @@ import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
@@ -82,6 +85,16 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.frodokem31296shaker3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088r3, new FrodoConverter());
         converters.put(BCObjectIdentifiers.frodokem43088shaker3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem128r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem192r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem256r3, new SABERConverter());
+
     }
 
     /**
@@ -292,6 +305,21 @@ public class PublicKeyFactory
             CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new CMCEPublicKeyParameters(spParams, keyEnc);
+        }
+    }
+
+    private static class SABERConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(
+                    ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
+
+            SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SABERPublicKeyParameters(saberParams, keyEnc);
         }
     }
 

@@ -162,7 +162,8 @@
                     <classpath>
                         <path refid="project.classpath" /> 
                         <fileset dir="${artifacts.jars.dir}">
-                            <include name="**/*.jar" />
+			    <include name="**/*.jar" />
+                            <exclude name="**/bcjmail*.jar" />
                         </fileset>
                     </classpath>
                 </javac>

@@ -250,7 +250,7 @@ public class BCJSSEClientTest
         SSLSession origSession = sslSocket.getSession();
 
         BCExtendedSSLSession session = ((BCSSLSocket)sslSocket).getBCSession();
-        session.getPeerCertificateChain();
+//        session.getPeerCertificateChain();    - this is about to be removed Java 18.
 
         System.out.println("Session ID: " + Hex.toHexString(origSession.getId()));
 

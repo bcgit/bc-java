@@ -83,7 +83,7 @@ final class ImportSSLSession_5
     @SuppressWarnings("deprecation")
     public javax.security.cert.X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException
     {
-        return sslSession.getPeerCertificateChain();
+        return OldCertUtil.getPeerCertificateChain(this);
     }
 
     public Certificate[] getPeerCertificates() throws SSLPeerUnverifiedException
@@ -147,6 +147,17 @@ final class ImportSSLSession_5
     public void invalidate()
     {
         sslSession.invalidate();
+    }
+
+    public boolean isFipsMode()
+    {
+        SSLSessionContext sessionContext = getSessionContext();
+        if (sessionContext instanceof ProvSSLSessionContext)
+        {
+            return ((ProvSSLSessionContext)sessionContext).getSSLContext().isFips();
+        }
+
+        return false;
     }
 
     public boolean isValid()
