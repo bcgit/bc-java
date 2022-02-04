@@ -34,11 +34,12 @@ public class CountryAndRegions
     {
         if (sequence.size() != 2)
         {
-            throw new IllegalStateException("expected sequence size of two");
+            throw new IllegalArgumentException("expected sequence size of 2");
         }
         countryOnly = CountryOnly.getInstance(sequence.getObjectAt(0));
         regions = ItsUtils.fillList(Region.class, ASN1Sequence.getInstance(sequence.getObjectAt(1)));
     }
+
 
     public static CountryAndRegions getInstance(Object object)
     {

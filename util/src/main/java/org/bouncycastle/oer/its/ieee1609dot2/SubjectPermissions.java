@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -30,7 +31,7 @@ public class SubjectPermissions
 
     public static final int explicit = 0;
     public static final int all = 1;
-    public static final int extension = 3;
+    public static final int extension = 2;
 
     private final ASN1Encodable value;
     private final int choice;
@@ -41,6 +42,27 @@ public class SubjectPermissions
         this.choice = choice;
     }
 
+    private SubjectPermissions(ASN1TaggedObject ato)
+    {
+        this.choice = ato.getTagNo();
+
+        switch (choice)
+        {
+        case explicit:
+            value = SequenceOfPsidSspRange.getInstance(ato.getObject());
+            break;
+        case all:
+            value = ASN1Null.getInstance(ato.getObject());
+            break;
+        case extension:
+            value = DEROctetString.getInstance(ato.getObject());
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value "+choice);
+        }
+    }
+
+
     public static SubjectPermissions getInstance(Object src)
     {
         if (src instanceof SubjectPermissions)
@@ -48,28 +70,21 @@ public class SubjectPermissions
             return (SubjectPermissions)src;
         }
 
-        ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(src);
-        int item = taggedObject.getTagNo();
-
-        switch (item)
+        if (src != null)
         {
-        case explicit:
-            return new SubjectPermissions(explicit,
-                SequenceOfPsidSspRange.getInstance(taggedObject.getObject()));
-        case all:
-            return new SubjectPermissions(all, DERNull.INSTANCE);
-        case extension:
-            try
-            {
-                return new SubjectPermissions(extension, new DEROctetString(taggedObject.getObject().getEncoded()));
-            }
-            catch (IOException ioException)
-            {
-                throw new RuntimeException(ioException.getMessage(), ioException);
-            }
+            return new SubjectPermissions(ASN1TaggedObject.getInstance(src));
         }
-
         return null;
+    }
+
+    public ASN1Encodable getValue()
+    {
+        return value;
+    }
+
+    public int getChoice()
+    {
+        return choice;
     }
 
     public static Builder builder()

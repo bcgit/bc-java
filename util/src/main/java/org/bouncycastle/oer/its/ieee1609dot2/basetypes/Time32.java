@@ -6,7 +6,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 
 // Seconds since ETSI epoch which is 1 Jan 2004 00:00:00 UTC
 public class Time32
-    extends Uint32
+    extends UINT32
 {
     /**
      * The ETSI Epoch for Time32
@@ -23,7 +23,7 @@ public class Time32
         super(value);
     }
 
-    public Time32(Uint32 uint32)
+    public Time32(UINT32 uint32)
     {
         this(uint32.getValue());
     }
@@ -49,14 +49,15 @@ public class Time32
 
     public static Time32 getInstance(Object o)
     {
-        if (o instanceof Uint32)
+        if (o instanceof UINT32)
         {
-            return new Time32((Uint32)o);
+            return new Time32((UINT32)o);
         }
-        else
+        if (o != null)
         {
             return new Time32(ASN1Integer.getInstance(o).getValue());
         }
+        return null;
     }
 
     public long toUnixMillis()

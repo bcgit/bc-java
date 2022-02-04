@@ -9,8 +9,8 @@ import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
-import org.bouncycastle.oer.its.template.IEEE1609dot2;
-import org.bouncycastle.oer.its.template.Ieee1609Dot2BaseTypes;
+import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.ieee1609dot2.basetypes.Ieee1609Dot2BaseTypes;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
@@ -144,7 +144,7 @@ public class ITSCertLoadTest
                 ASN1Object obj = oerIn.parse(IEEE1609dot2.Certificate.build());
                 ITSCertificate certificate = new ITSCertificate(Certificate.getInstance(obj));
 
-                byte[] reEncoded = OEREncoder.toByteArray(certificate.toASN1Structure().getCertificateBase(), IEEE1609dot2.Certificate.build());
+                byte[] reEncoded = OEREncoder.toByteArray(certificate.toASN1Structure(), IEEE1609dot2.Certificate.build());
 
                 TestCase.assertTrue(path, Arrays.areEqual(encodedCert, reEncoded));
             }

@@ -1,5 +1,11 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -7,7 +13,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -17,11 +22,20 @@ import org.bouncycastle.util.Arrays;
 public class SequenceOfOctetString
     extends ASN1Object
 {
-    private final byte[][] octetStrings;
+    private final List<ASN1OctetString> octetStrings;
+
+    public SequenceOfOctetString(List<ASN1OctetString> octetStrings) {
+        this.octetStrings = Collections.unmodifiableList(octetStrings);
+    }
 
     private SequenceOfOctetString(ASN1Sequence seq)
     {
-        this.octetStrings = toByteArrays(seq);
+        List<ASN1OctetString> items = new ArrayList<ASN1OctetString>();
+        for (Iterator<ASN1Encodable> it = seq.iterator(); it.hasNext(); )
+        {
+            items.add(DEROctetString.getInstance(it.next()));
+        }
+        octetStrings = Collections.unmodifiableList(items);
     }
 
     public static SequenceOfOctetString getInstance(Object o)
@@ -38,29 +52,18 @@ public class SequenceOfOctetString
         return null;
     }
 
-    static byte[][] toByteArrays(ASN1Sequence seq)
+    public List<ASN1OctetString> getOctetStrings()
     {
-        byte[][] octetStrings = new byte[seq.size()][];
-        for (int i = 0; i != seq.size(); i++)
-        {
-            octetStrings[i] = ASN1OctetString.getInstance(seq.getObjectAt(i)).getOctets();
-        }
-
         return octetStrings;
-    }
-
-    public int size()
-    {
-        return octetStrings.length;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (int i = 0; i != octetStrings.length; i++)
+        for (int i = 0; i != octetStrings.size(); i++)
         {
-            v.add(new DEROctetString(Arrays.clone(octetStrings[i])));
+            v.add(octetStrings.get(i));
         }
 
         return new DERSequence(v);

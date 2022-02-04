@@ -6,5 +6,6 @@ package org.bouncycastle.oer;
  */
 public interface Switch
 {
-    OERDefinition.Element result(SwitchIndexer indexer);
+    Element result(SwitchIndexer indexer);
+
 }

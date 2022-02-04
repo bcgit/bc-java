@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.ASN1Integer;
  * CrlSeries ::= Uint16
  */
 public class CrlSeries
-    extends Uint16
+    extends UINT16
 {
     public CrlSeries(int value)
     {

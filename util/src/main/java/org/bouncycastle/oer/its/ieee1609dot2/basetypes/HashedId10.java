@@ -21,7 +21,11 @@ public class HashedId10
         {
             return (HashedId10)src;
         }
-        byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
-        return new HashedId10(octetString);
+        if (src != null)
+        {
+            byte[] octetString = ASN1OctetString.getInstance(src).getOctets();
+            return new HashedId10(octetString);
+        }
+        return null;
     }
 }

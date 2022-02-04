@@ -23,16 +23,30 @@ public class PublicEncryptionKey
         this.basePublicEncryptionKey = basePublicEncryptionKey;
     }
 
+    private PublicEncryptionKey(ASN1Sequence seq)
+    {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
+
+        this.supportedSymmAlg = SymmAlgorithm.getInstance(seq.getObjectAt(0));
+        this.basePublicEncryptionKey = BasePublicEncryptionKey.getInstance(seq.getObjectAt(1));
+
+    }
+
     public static PublicEncryptionKey getInstance(Object o)
     {
         if (o instanceof PublicEncryptionKey)
         {
             return (PublicEncryptionKey)o;
         }
-        ASN1Sequence seq = ASN1Sequence.getInstance(o);
-        return new PublicEncryptionKey(
-            SymmAlgorithm.getInstance(seq.getObjectAt(0)),
-            BasePublicEncryptionKey.getInstance(seq.getObjectAt(1)));
+        if (o != null)
+        {
+            return new PublicEncryptionKey(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
 
     }
 

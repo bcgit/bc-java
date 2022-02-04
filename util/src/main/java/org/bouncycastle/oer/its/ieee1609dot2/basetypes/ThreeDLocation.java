@@ -64,7 +64,7 @@ public class ThreeDLocation
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{latitude, longitude});
+        return new DERSequence(new ASN1Encodable[]{latitude, longitude, elevation});
     }
 
     public Latitude getLatitude()

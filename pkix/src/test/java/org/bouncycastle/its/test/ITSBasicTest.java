@@ -30,16 +30,16 @@ import org.bouncycastle.its.bc.BcITSImplicitCertificateBuilder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.OEROutputStream;
-import org.bouncycastle.oer.its.AdditionalParams;
-import org.bouncycastle.oer.its.ButterflyExpansion;
+import org.bouncycastle.oer.its.ieee1609dot2dot1.AdditionalParams;
+import org.bouncycastle.oer.its.ieee1609dot2dot1.ButterflyExpansion;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Duration;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
-import org.bouncycastle.oer.its.EeEcaCertRequest;
-import org.bouncycastle.oer.its.EeRaCertRequest;
+import org.bouncycastle.oer.its.ieee1609dot2dot1.EeEcaCertRequest;
+import org.bouncycastle.oer.its.ieee1609dot2dot1.EeRaCertRequest;
 import org.bouncycastle.oer.its.ieee1609dot2.EndEntityType;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId3;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
@@ -61,12 +61,12 @@ import org.bouncycastle.oer.its.ieee1609dot2.SubjectPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SymmAlgorithm;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Uint8;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ValidityPeriod;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
-import org.bouncycastle.oer.its.template.IEEE1609dot2;
-import org.bouncycastle.oer.its.template.Ieee1609Dot2Dot1EcaEeInterface;
-import org.bouncycastle.oer.its.template.Ieee1609Dot2Dot1EeRaInterface;
+import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
+import org.bouncycastle.oer.its.template.ieee1609dot2dot1.Ieee1609Dot2Dot1EcaEeInterface;
+import org.bouncycastle.oer.its.template.ieee1609dot2dot1.Ieee1609Dot2Dot1EeRaInterface;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -101,8 +101,8 @@ public class ITSBasicTest
         byte[] certRaw = Hex.decode("80030080e5f6db2f26d073ae798300000000001a5617008466a88101011a0d203004268ab91a0645a1042d65488001018002026f810302013201012080010780012482080301fffc03ff0003800125820a0401ffffff04ff00000080018982060201e002ff1f80018a82060201c002ff3f80018b820e0601000000fff806ff000000000780018c820a0401ffffe004ff00001f00018dc0008082e35a13ea972ef64806c7bff581f4effd2b7118bc3e096e194b47d859e1334b93808082a2f65bbb216fdee3c18c9fd5b4197e884b938de55feed7ed96f11713215e6258808019b31711707d09aa00b79973190bbd84eefd1255ad3b4f1a4d224b4172dfadddce409989d93178a3ec054b814bce4bbb99a979e4624c9972b8b0c862ff9ae70b");
         ITSCertificate cert = loadCertificate(certRaw);
 
-        PublicEncryptionKey pec = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getEncryptionKey();
-        assertSame(pec.getSupportedSymmAlg(), SymmAlgorithm.aes128Ccm);
+        PublicEncryptionKey pec = cert.toASN1Structure().getToBeSignedCertificate().getEncryptionKey();
+        assertEquals(pec.getSupportedSymmAlg(), SymmAlgorithm.aes128Ccm);
     }
 
     public void testImplicitBuilder()
@@ -180,7 +180,7 @@ public class ITSBasicTest
                 .setSubjectPermissions(SubjectPermissions.builder()
                     .explicit(SequenceOfPsidSspRange.builder()
                         .add(PsidSspRange.builder()
-                            .setPsid(623)
+                            .setPsid(new Psid(623))
                             .setSspRange(
                                 SspRange.builder()
                                     .extension(Hex.decode("0201FE02FF01"))
@@ -203,9 +203,9 @@ public class ITSBasicTest
 
         assertTrue(cert.getIssuer().equals(caIssuerIdentifier));
 
-        VerificationKeyIndicator vki = cert.toASN1Structure().getCertificateBase().getToBeSignedCertificate().getVerificationKeyIndicator();
+        VerificationKeyIndicator vki = cert.toASN1Structure().getToBeSignedCertificate().getVerificationKeyIndicator();
         assertEquals(vki.getChoice(), VerificationKeyIndicator.reconstructionValue);
-        assertEquals(vki.getObject(), EccP256CurvePoint.builder().createUncompressedP256(BigInteger.ONE, BigIntegers.TWO));
+        assertEquals(vki.getValue(), EccP256CurvePoint.builder().createUncompressedP256(BigInteger.ONE, BigIntegers.TWO));
     }
 
     public void testBuildSelfSigned()
@@ -473,10 +473,10 @@ public class ITSBasicTest
 
 
         EeEcaCertRequest cr = EeEcaCertRequest.builder()
-            .setVersion(new Uint8(2))
+            .setVersion(new UINT8(2))
             .setTbsCert(tbs)
             .setGenerationTime(Time32.now())
-            .setType(CertificateType.Explicit)
+            .setType(CertificateType.explicit)
             .setCanonicalId(new DERIA5String("test"))
             .createEeEcaCertRequest();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -600,10 +600,10 @@ public class ITSBasicTest
 
 
         EeRaCertRequest cr = EeRaCertRequest.builder()
-            .setVersion(new Uint8(2))
+            .setVersion(new UINT8(2))
             .setTbsCert(tbs)
             .setGenerationTime(Time32.now())
-            .setType(CertificateType.Explicit)
+            .setType(CertificateType.explicit)
             .setAdditionalParams(AdditionalParams.builder().compactUnified(
                 ButterflyExpansion.builder().aes128(new DEROctetString(new byte[16])).build()
             ).build())

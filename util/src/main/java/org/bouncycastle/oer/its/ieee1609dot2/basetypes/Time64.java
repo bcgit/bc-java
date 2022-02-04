@@ -10,7 +10,7 @@ import org.bouncycastle.util.BigIntegers;
  * Time64 ::= Uint64
  */
 public class Time64
-    extends Uint64
+    extends UINT64
 {
     /**
      * The ETSI Epoch for Time64
@@ -27,7 +27,7 @@ public class Time64
         super(value);
     }
 
-    public Time64(Uint64 uint64)
+    public Time64(UINT64 uint64)
     {
         this(uint64.getValue());
     }
@@ -55,14 +55,16 @@ public class Time64
 
     public static Time64 getInstance(Object o)
     {
-        if (o instanceof Uint64)
+        if (o instanceof UINT64)
         {
-            return new Time64((Uint64)o);
+            return new Time64((UINT64)o);
         }
-        else
-        {
+
+        if (o != null) {
             return new Time64(ASN1Integer.getInstance(o).getValue());
         }
+
+        return null;
     }
 
     public long toUnixMillis()

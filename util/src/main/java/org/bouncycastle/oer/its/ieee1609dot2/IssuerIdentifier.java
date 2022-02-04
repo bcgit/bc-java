@@ -40,32 +40,42 @@ public class IssuerIdentifier
         this.value = value;
     }
 
+    private IssuerIdentifier(ASN1TaggedObject ato)
+    {
+        choice = ato.getTagNo();
+        Object o = ato.getObject();
+        switch (choice)
+        {
+        case sha384AndDigest: // sha384AndDigest  HashedId8
+        case sha256AndDigest: // sha256AndDigest HashId8
+            value = HashedId8.getInstance(o);
+            break;
+        case self: // self HashAlgorithm
+            value = HashAlgorithm.getInstance(o);
+            break;
+        case extension: // sha384AndDigest  HashedId8
+            value = DEROctetString.getInstance(o);
+            break;
+        default:
+            throw new IllegalArgumentException("invalid choice value " + choice);
+        }
+
+    }
+
     public static IssuerIdentifier getInstance(Object choice)
     {
         if (choice instanceof IssuerIdentifier)
         {
             return (IssuerIdentifier)choice;
         }
-        else
+
+        if (choice != null)
         {
-            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(choice);
-            int item = taggedObject.getTagNo();
-
-            switch (item)
-            {
-            case sha256AndDigest: // sha256AndDigest HashId8
-                return new IssuerIdentifier(sha256AndDigest, HashedId8.getInstance(taggedObject.getObject()));
-            case self: // self HashAlgorithm
-                return new IssuerIdentifier(self, HashAlgorithm.getInstance(taggedObject.getObject()));
-            case extension: // sha384AndDigest  HashedId8
-                return new IssuerIdentifier(extension, DEROctetString.getInstance(taggedObject.getObject()));
-            case sha384AndDigest: // sha384AndDigest  HashedId8
-                return new IssuerIdentifier(sha384AndDigest, HashedId8.getInstance(taggedObject.getObject()));
-            default:
-                throw new IllegalArgumentException("unable to decode into known choice" + item);
-            }
-
+            return new IssuerIdentifier(ASN1TaggedObject.getInstance(choice));
         }
+
+        return null;
+
     }
 
     public static Builder builder()

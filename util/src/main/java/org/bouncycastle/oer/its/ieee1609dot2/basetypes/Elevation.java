@@ -8,10 +8,10 @@ import org.bouncycastle.asn1.ASN1Integer;
  * Elevation ::= Uint16
  */
 public class Elevation
-    extends Uint16
+    extends UINT16
 {
 
-    public Elevation(Uint16 value)
+    public Elevation(UINT16 value)
     {
         super(value.getValue());
     }
@@ -45,7 +45,7 @@ public class Elevation
 
         if (o != null)
         {
-            return new Elevation(Uint16.getInstance(o));
+            return new Elevation(UINT16.getInstance(o));
         }
 
         return null;

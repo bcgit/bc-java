@@ -55,6 +55,7 @@ public class ItsUtils
         return new DERSequence(objs);
     }
 
+    @Deprecated
     public static <T> List<T> fillList(final Class<T> type, final ASN1Sequence sequence)
     {
         return AccessController.doPrivileged(new PrivilegedAction<List<T>>()

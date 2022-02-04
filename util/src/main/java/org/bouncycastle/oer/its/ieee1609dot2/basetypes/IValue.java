@@ -43,6 +43,11 @@ public class IValue
         return null;
     }
 
+    public BigInteger getValue()
+    {
+        return value;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         return new ASN1Integer(value);

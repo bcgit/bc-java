@@ -62,7 +62,7 @@ public class GeographicRegion
             region = DEROctetString.getInstance(taggedObject.getObject());
             break;
         default:
-            throw new IllegalStateException("unknown region choice " + choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
         }
 
 

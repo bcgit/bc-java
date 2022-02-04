@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
  * SymmetricEncryptionKey ::= CHOICE {
@@ -31,7 +32,7 @@ public class SymmetricEncryptionKey
         this.value = value;
     }
 
-    public SymmetricEncryptionKey(ASN1TaggedObject instance)
+    private SymmetricEncryptionKey(ASN1TaggedObject instance)
     {
         this.choice = instance.getTagNo();
         if (choice == aes128ccm)
@@ -49,7 +50,7 @@ public class SymmetricEncryptionKey
         }
         else
         {
-            throw new IllegalArgumentException("unknown tag " + choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
         }
     }
 
@@ -68,9 +69,19 @@ public class SymmetricEncryptionKey
 
     }
 
+    public int getChoice()
+    {
+        return choice;
+    }
+
+    public ASN1Encodable getValue()
+    {
+        return value;
+    }
+
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return null;
+        return new DERTaggedObject(choice, value);
     }
 }

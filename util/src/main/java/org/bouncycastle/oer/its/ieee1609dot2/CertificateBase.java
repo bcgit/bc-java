@@ -42,6 +42,21 @@ public class CertificateBase
         this.signature = signature;
     }
 
+    protected CertificateBase(ASN1Sequence seq)
+    {
+
+        if (seq.size() != 5)
+        {
+            throw new IllegalArgumentException("expected sequence size of 5");
+        }
+        version = ASN1Integer.getInstance(seq.getObjectAt(0));
+        type = CertificateType.getInstance(seq.getObjectAt(1));
+        issuer = IssuerIdentifier.getInstance(seq.getObjectAt(2));
+        toBeSignedCertificate = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
+        signature = OEROptional.getValue(Signature.class, seq.getObjectAt(4));
+    }
+
+
     public static CertificateBase getInstance(Object o)
     {
         if (o instanceof CertificateBase)
@@ -51,20 +66,7 @@ public class CertificateBase
 
         if (o != null)
         {
-
-            ASN1Sequence seq = ASN1Sequence.getInstance(o);
-            ASN1Integer version = ASN1Integer.getInstance(seq.getObjectAt(0));
-            CertificateType type = CertificateType.getInstance(seq.getObjectAt(1));
-            IssuerIdentifier issuerIdentifier = IssuerIdentifier.getInstance(seq.getObjectAt(2));
-            ToBeSignedCertificate cert = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
-            Signature signature = OEROptional.getValue(Signature.class, seq.getObjectAt(4));
-            return new Builder()
-                .setVersion(version)
-                .setType(type)
-                .setIssuer(issuerIdentifier)
-                .setToBeSignedCertificate(cert)
-                .setSignature(signature)
-                .createCertificateBase();
+            return new CertificateBase(ASN1Sequence.getInstance(o));
         }
 
         return null;

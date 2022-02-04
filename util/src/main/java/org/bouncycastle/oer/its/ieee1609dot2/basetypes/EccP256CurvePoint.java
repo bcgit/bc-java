@@ -2,6 +2,7 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -28,7 +29,7 @@ import org.bouncycastle.util.BigIntegers;
  * }
  */
 public class EccP256CurvePoint
-    extends EccCurvePoint
+    extends EccCurvePoint implements ASN1Choice
 {
 
     public static final int xOnly = 0;
@@ -65,7 +66,7 @@ public class EccP256CurvePoint
             value = ASN1Sequence.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalArgumentException("unknown tag " + ato.getTagNo());
+            throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
         }
     }
 

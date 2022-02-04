@@ -2,7 +2,6 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 
@@ -12,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.oer.its.ItsUtils;
 
 /**
  * SequenceOfPsidSsp ::= SEQUENCE OF PsidSsp
@@ -19,12 +19,23 @@ import org.bouncycastle.asn1.DERSequence;
 public class SequenceOfPsidSsp
     extends ASN1Object
 {
-    private final List<PsidSsp> items;
+    private final List<PsidSsp> psidSsps;
 
     public SequenceOfPsidSsp(List<PsidSsp> items)
     {
-        this.items = Collections.unmodifiableList(items);
+        this.psidSsps = Collections.unmodifiableList(items);
     }
+
+    private SequenceOfPsidSsp(ASN1Sequence sequence)
+    {
+        List<PsidSsp> accumulator = new ArrayList<PsidSsp>();
+        for (Iterator<ASN1Encodable> it = sequence.iterator(); it.hasNext(); )
+        {
+            accumulator.add(PsidSsp.getInstance(it.next()));
+        }
+        this.psidSsps = Collections.unmodifiableList(accumulator);
+    }
+
 
     public static SequenceOfPsidSsp getInstance(Object o)
     {
@@ -32,14 +43,13 @@ public class SequenceOfPsidSsp
         {
             return (SequenceOfPsidSsp)o;
         }
-        ASN1Sequence sequence = ASN1Sequence.getInstance(o);
-        Enumeration e = sequence.getObjects();
-        ArrayList<PsidSsp> accumulator = new ArrayList<PsidSsp>();
-        while (e.hasMoreElements())
+
+        if (o != null)
         {
-            accumulator.add(PsidSsp.getInstance(e.nextElement()));
+            return new SequenceOfPsidSsp(ASN1Sequence.getInstance(o));
         }
-        return new Builder().setItems(accumulator).createSequenceOfPsidSsp();
+
+        return null;
     }
 
     public static Builder builder()
@@ -47,20 +57,14 @@ public class SequenceOfPsidSsp
         return new Builder();
     }
 
-    public List<PsidSsp> getItems()
+    public List<PsidSsp> getPsidSsps()
     {
-        return items;
+        return psidSsps;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector avec = new ASN1EncodableVector();
-        for (Iterator it = items.iterator(); it.hasNext(); )
-        {
-            avec.add((ASN1Encodable)it.next());
-        }
-
-        return new DERSequence(avec);
+        return ItsUtils.toSequence(this.psidSsps);
     }
 
     public static class Builder

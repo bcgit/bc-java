@@ -1,6 +1,7 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -8,8 +9,8 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.oer.its.EtsiOriginatingHeaderInfoExtension;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.oer.its.etsi103097.extension.EtsiOriginatingHeaderInfoExtension;
 
 /**
  * ContributedExtensionBlock ::= SEQUENCE {
@@ -34,9 +35,15 @@ public class ContributedExtensionBlock
     private ContributedExtensionBlock(ASN1Sequence sequence)
     {
 
-        Iterator<ASN1Encodable> items = sequence.iterator();
+        if (sequence.size() != 2)
+        {
+            throw new IllegalArgumentException("expected sequence size of 2");
+        }
 
-        HeaderInfoContributorId id = HeaderInfoContributorId.getInstance(items.next());
+
+        contributorId = HeaderInfoContributorId.getInstance(sequence.getObjectAt(0));
+
+        Iterator<ASN1Encodable> items = ASN1Sequence.getInstance(sequence.getObjectAt(1)).iterator();
         List<EtsiOriginatingHeaderInfoExtension> extns = new ArrayList<EtsiOriginatingHeaderInfoExtension>();
 
         while (items.hasNext())
@@ -44,10 +51,8 @@ public class ContributedExtensionBlock
             extns.add(EtsiOriginatingHeaderInfoExtension.getInstance(items.next()));
         }
 
-        contributorId = null;
-        this.extns = null;
+        this.extns = Collections.unmodifiableList(extns);
 
-//        return new ContributedExtensionBlock(id, extns);
 
     }
 

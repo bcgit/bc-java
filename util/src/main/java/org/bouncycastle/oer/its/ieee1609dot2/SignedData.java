@@ -1,8 +1,5 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
-import java.util.Iterator;
-
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -36,6 +33,20 @@ public class SignedData
         this.signature = signature;
     }
 
+    private SignedData(ASN1Sequence sequence)
+    {
+        if (sequence.size() != 4)
+        {
+            throw new IllegalArgumentException("expected sequence size of 4");
+        }
+
+        hashId = HashAlgorithm.getInstance(sequence.getObjectAt(0));
+        tbsData = ToBeSignedData.getInstance(sequence.getObjectAt(1));
+        signer = SignerIdentifier.getInstance(sequence.getObjectAt(2));
+        signature = Signature.getInstance(sequence.getObjectAt(3));
+    }
+
+
     public static SignedData getInstance(Object src)
     {
         if (src instanceof SignedData)
@@ -43,12 +54,12 @@ public class SignedData
             return (SignedData)src;
         }
 
-        Iterator<ASN1Encodable> items = ASN1Sequence.getInstance(src).iterator();
-        return new SignedData(
-            HashAlgorithm.getInstance(items.next()),
-            ToBeSignedData.getInstance(items.next()),
-            SignerIdentifier.getInstance(items.next()),
-            Signature.getInstance(items.next()));
+        if (src != null)
+        {
+            return new SignedData(ASN1Sequence.getInstance(src));
+        }
+
+        return null;
     }
 
     public ASN1Primitive toASN1Primitive()
