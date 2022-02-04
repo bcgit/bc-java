@@ -70,6 +70,21 @@ subprojects {
 
   version = '1.70'
 
+ task testFull(type:Test) {
+    systemProperties = [
+            'bc.test.data.home': bcTestDataHome,
+            'test.full':'true'
+    ]
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+
+    finalizedBy jacocoTestReport
+
+    filter {
+      includeTestsMatching "AllTest*"
+    }
+  }
+
   test {
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
