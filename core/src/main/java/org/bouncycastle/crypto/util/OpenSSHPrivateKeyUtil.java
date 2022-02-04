@@ -267,7 +267,6 @@ public class OpenSSHPrivateKeyUtil
             }
             else if (keyType.startsWith("ecdsa"))
             {
-
                 ASN1ObjectIdentifier oid = SSHNamedCurves.getByName(Strings.fromByteArray(pkIn.readBlock()));
                 if (oid == null)
                 {
@@ -287,7 +286,30 @@ public class OpenSSHPrivateKeyUtil
                 result = new ECPrivateKeyParameters(new BigInteger(1, privKey),
                     new ECNamedDomainParameters(oid, curveParams));
             }
+            else if (keyType.startsWith("ssh-rsa"))
+            {
+                BigInteger modulus = new BigInteger(1, pkIn.readBlock());
+                BigInteger pubExp = new BigInteger(1, pkIn.readBlock());
+                BigInteger privExp = new BigInteger(1, pkIn.readBlock());
+                BigInteger coef = new BigInteger(1, pkIn.readBlock());
+                BigInteger p = new BigInteger(1, pkIn.readBlock());
+                BigInteger q = new BigInteger(1, pkIn.readBlock());
 
+                BigInteger pSub1 = p.subtract(BigIntegers.ONE);
+                BigInteger qSub1 = q.subtract(BigIntegers.ONE);
+                BigInteger dP = privExp.remainder(pSub1);
+                BigInteger dQ = privExp.remainder(qSub1);
+
+                result = new RSAPrivateCrtKeyParameters(
+                                modulus,
+                                pubExp,
+                                privExp,
+                                p,
+                                q,
+                                dP,
+                                dQ,
+                                coef);
+            }
 
             // Comment for private key
             pkIn.skipBlock();
