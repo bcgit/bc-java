@@ -138,11 +138,12 @@ public class SecP521R1FieldElement extends ECFieldElement.AbstractFp
             return this;
         }
 
+        int[] tt0 = Nat.create(33);
         int[] t1 = Nat.create(17);
         int[] t2 = Nat.create(17);
 
-        SecP521R1Field.squareN(x1, 519, t1);
-        SecP521R1Field.square(t1, t2);
+        SecP521R1Field.squareN(x1, 519, t1, tt0);
+        SecP521R1Field.square(t1, t2, tt0);
 
         return Nat.eq(17, x1, t2) ? new SecP521R1FieldElement(t1) : null;
     }

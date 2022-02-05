@@ -77,6 +77,12 @@ public class SecP521R1Field
         reduce(tt, z);
     }
 
+    public static void multiply(int[] x, int[] y, int[] z, int[] tt)
+    {
+        implMultiply(x, y, tt);
+        reduce(tt, z);
+    }
+
     public static void negate(int[] x, int[] z)
     {
         if (0 != isZero(x))
@@ -145,11 +151,31 @@ public class SecP521R1Field
         reduce(tt, z);
     }
 
+    public static void square(int[] x, int[] z, int[] tt)
+    {
+        implSquare(x, tt);
+        reduce(tt, z);
+    }
+
     public static void squareN(int[] x, int n, int[] z)
     {
 //        assert n > 0;
 
         int[] tt = Nat.create(33);
+        implSquare(x, tt);
+        reduce(tt, z);
+
+        while (--n > 0)
+        {
+            implSquare(z, tt);
+            reduce(tt, z);
+        }
+    }
+
+    public static void squareN(int[] x, int n, int[] z, int[] tt)
+    {
+//        assert n > 0;
+
         implSquare(x, tt);
         reduce(tt, z);
 
