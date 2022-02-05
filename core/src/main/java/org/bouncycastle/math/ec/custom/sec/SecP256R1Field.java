@@ -94,6 +94,12 @@ public class SecP256R1Field
         reduce(tt, z);
     }
 
+    public static void multiply(int[] x, int[] y, int[] z, int[] tt)
+    {
+        Nat256.mul(x, y, tt);
+        reduce(tt, z);
+    }
+
     public static void multiplyAddToExt(int[] x, int[] y, int[] zz)
     {
         int c = Nat256.mulAddTo(x, y, zz);
@@ -240,11 +246,31 @@ public class SecP256R1Field
         reduce(tt, z);
     }
 
+    public static void square(int[] x, int[] z, int[] tt)
+    {
+        Nat256.square(x, tt);
+        reduce(tt, z);
+    }
+
     public static void squareN(int[] x, int n, int[] z)
     {
 //        assert n > 0;
 
         int[] tt = Nat256.createExt();
+        Nat256.square(x, tt);
+        reduce(tt, z);
+
+        while (--n > 0)
+        {
+            Nat256.square(z, tt);
+            reduce(tt, z);
+        }
+    }
+
+    public static void squareN(int[] x, int n, int[] z, int[] tt)
+    {
+//        assert n > 0;
+
         Nat256.square(x, tt);
         reduce(tt, z);
 
