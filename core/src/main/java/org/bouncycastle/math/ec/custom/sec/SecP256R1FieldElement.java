@@ -137,32 +137,33 @@ public class SecP256R1FieldElement extends ECFieldElement.AbstractFp
             return this;
         }
 
+        int[] tt0 = Nat256.createExt();
         int[] t1 = Nat256.create();
         int[] t2 = Nat256.create();
 
-        SecP256R1Field.square(x1, t1);
-        SecP256R1Field.multiply(t1, x1, t1);
+        SecP256R1Field.square(x1, t1, tt0);
+        SecP256R1Field.multiply(t1, x1, t1, tt0);
 
-        SecP256R1Field.squareN(t1, 2, t2);
-        SecP256R1Field.multiply(t2, t1, t2);
+        SecP256R1Field.squareN(t1, 2, t2, tt0);
+        SecP256R1Field.multiply(t2, t1, t2, tt0);
 
-        SecP256R1Field.squareN(t2, 4, t1);
-        SecP256R1Field.multiply(t1, t2, t1);
+        SecP256R1Field.squareN(t2, 4, t1, tt0);
+        SecP256R1Field.multiply(t1, t2, t1, tt0);
 
-        SecP256R1Field.squareN(t1, 8, t2);
-        SecP256R1Field.multiply(t2, t1, t2);
+        SecP256R1Field.squareN(t1, 8, t2, tt0);
+        SecP256R1Field.multiply(t2, t1, t2, tt0);
 
-        SecP256R1Field.squareN(t2, 16, t1);
-        SecP256R1Field.multiply(t1, t2, t1);
+        SecP256R1Field.squareN(t2, 16, t1, tt0);
+        SecP256R1Field.multiply(t1, t2, t1, tt0);
 
-        SecP256R1Field.squareN(t1, 32, t1);
-        SecP256R1Field.multiply(t1, x1, t1);
+        SecP256R1Field.squareN(t1, 32, t1, tt0);
+        SecP256R1Field.multiply(t1, x1, t1, tt0);
 
-        SecP256R1Field.squareN(t1, 96, t1);
-        SecP256R1Field.multiply(t1, x1, t1);
+        SecP256R1Field.squareN(t1, 96, t1, tt0);
+        SecP256R1Field.multiply(t1, x1, t1, tt0);
 
-        SecP256R1Field.squareN(t1, 94, t1);
-        SecP256R1Field.square(t1, t2);
+        SecP256R1Field.squareN(t1, 94, t1, tt0);
+        SecP256R1Field.square(t1, t2, tt0);
 
         return Nat256.eq(x1, t2) ? new SecP256R1FieldElement(t1) : null;
     }

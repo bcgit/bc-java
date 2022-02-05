@@ -137,54 +137,55 @@ public class SecP384R1FieldElement extends ECFieldElement.AbstractFp
             return this;
         }
 
+        int[] tt0 = Nat.create(24);
         int[] t1 = Nat.create(12);
         int[] t2 = Nat.create(12);
         int[] t3 = Nat.create(12);
         int[] t4 = Nat.create(12);
 
-        SecP384R1Field.square(x1, t1);
-        SecP384R1Field.multiply(t1, x1, t1);
+        SecP384R1Field.square(x1, t1, tt0);
+        SecP384R1Field.multiply(t1, x1, t1, tt0);
 
-        SecP384R1Field.squareN(t1, 2, t2);
-        SecP384R1Field.multiply(t2, t1, t2);
+        SecP384R1Field.squareN(t1, 2, t2, tt0);
+        SecP384R1Field.multiply(t2, t1, t2, tt0);
 
-        SecP384R1Field.square(t2, t2);
-        SecP384R1Field.multiply(t2, x1, t2);
+        SecP384R1Field.square(t2, t2, tt0);
+        SecP384R1Field.multiply(t2, x1, t2, tt0);
 
-        SecP384R1Field.squareN(t2, 5, t3);
-        SecP384R1Field.multiply(t3, t2, t3);
+        SecP384R1Field.squareN(t2, 5, t3, tt0);
+        SecP384R1Field.multiply(t3, t2, t3, tt0);
 
-        SecP384R1Field.squareN(t3, 5, t4);
-        SecP384R1Field.multiply(t4, t2, t4);
+        SecP384R1Field.squareN(t3, 5, t4, tt0);
+        SecP384R1Field.multiply(t4, t2, t4, tt0);
 
-        SecP384R1Field.squareN(t4, 15, t2);
-        SecP384R1Field.multiply(t2, t4, t2);
+        SecP384R1Field.squareN(t4, 15, t2, tt0);
+        SecP384R1Field.multiply(t2, t4, t2, tt0);
 
-        SecP384R1Field.squareN(t2, 2, t3);
-        SecP384R1Field.multiply(t1, t3, t1);
+        SecP384R1Field.squareN(t2, 2, t3, tt0);
+        SecP384R1Field.multiply(t1, t3, t1, tt0);
 
-        SecP384R1Field.squareN(t3, 28, t3);
-        SecP384R1Field.multiply(t2, t3, t2);
+        SecP384R1Field.squareN(t3, 28, t3, tt0);
+        SecP384R1Field.multiply(t2, t3, t2, tt0);
 
-        SecP384R1Field.squareN(t2, 60, t3);
-        SecP384R1Field.multiply(t3, t2, t3);
+        SecP384R1Field.squareN(t2, 60, t3, tt0);
+        SecP384R1Field.multiply(t3, t2, t3, tt0);
 
         int[] r = t2;
 
-        SecP384R1Field.squareN(t3, 120, r);
-        SecP384R1Field.multiply(r, t3, r);
+        SecP384R1Field.squareN(t3, 120, r, tt0);
+        SecP384R1Field.multiply(r, t3, r, tt0);
 
-        SecP384R1Field.squareN(r, 15, r);
-        SecP384R1Field.multiply(r, t4, r);
+        SecP384R1Field.squareN(r, 15, r, tt0);
+        SecP384R1Field.multiply(r, t4, r, tt0);
 
-        SecP384R1Field.squareN(r, 33, r);
-        SecP384R1Field.multiply(r, t1, r);
+        SecP384R1Field.squareN(r, 33, r, tt0);
+        SecP384R1Field.multiply(r, t1, r, tt0);
 
-        SecP384R1Field.squareN(r, 64, r);
-        SecP384R1Field.multiply(r, x1, r);
+        SecP384R1Field.squareN(r, 64, r, tt0);
+        SecP384R1Field.multiply(r, x1, r, tt0);
 
-        SecP384R1Field.squareN(r, 30, t1);
-        SecP384R1Field.square(t1, t2);
+        SecP384R1Field.squareN(r, 30, t1, tt0);
+        SecP384R1Field.square(t1, t2, tt0);
 
         return Nat.eq(12, x1, t2) ? new SecP384R1FieldElement(t1) : null;
     }
