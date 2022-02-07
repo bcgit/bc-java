@@ -33,11 +33,6 @@ public class OERInputStream
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
     protected PrintWriter debugOutput = null;
 
-    //    public interface OERHandler
-//    {
-//        void handle(OERInputStream decoder)
-//            throws Exception;
-//    }
     private int maxByteAllocation = 1024 * 1024;
 
     /**
@@ -76,7 +71,7 @@ public class OERInputStream
     }
 
     public ASN1Object parse(Element element)
-        throws Exception
+        throws IOException
     {
 
         switch (element.getBaseType())
@@ -499,7 +494,7 @@ public class OERInputStream
      * @throws Exception
      */
     public LengthInfo readLength()
-        throws Exception
+        throws IOException
     {
         int accumulator = 0;
         int byteVal = read();
@@ -529,7 +524,7 @@ public class OERInputStream
 
 
     public BigInteger enumeration()
-        throws Exception
+        throws IOException
     {
         int first = read();
         if (first == -1)
@@ -563,7 +558,7 @@ public class OERInputStream
 
 
     public Sequence sequence(int expectedOptional, boolean hasOptionalChildren, boolean hasExtension)
-        throws Exception
+        throws IOException
     {
         return new Sequence(this, expectedOptional, hasOptionalChildren, hasExtension);
     }
@@ -576,7 +571,7 @@ public class OERInputStream
 //    }
 
     public Choice choice()
-        throws Exception
+        throws IOException
     {
         return new Choice(this);
     }
@@ -632,7 +627,7 @@ public class OERInputStream
          * @param src source stream.
          */
         public Choice(InputStream src)
-            throws Exception
+            throws IOException
         {
 
             super(src);
