@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.its.ETSISignedDataBuilder;
-import org.bouncycastle.its.ETSISignedDataVerifier;
+import org.bouncycastle.its.ETSISignedData;
 import org.bouncycastle.its.bc.BcEtsi103097DataVerifierProvider;
 import org.bouncycastle.its.bc.BcEtsi103097DataSigner;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Signed;
@@ -62,7 +62,7 @@ public class ETSIDataSignerTest
         ETSISignedDataBuilder signedDataBuilder = new ETSISignedDataBuilder(beSignedData);
         SignedData signedData = signedDataBuilder.getSignedData(new BcEtsi103097DataSigner(privateKeyParameters));
 
-        ETSISignedDataVerifier signedDataVerifier = new ETSISignedDataVerifier(signedData);
+        ETSISignedData signedDataVerifier = new ETSISignedData(signedData);
         assertTrue(signedDataVerifier.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
 
 
@@ -89,6 +89,7 @@ public class ETSIDataSignerTest
                 .build()
         );
 
+        System.out.println();
 
     }
 }
