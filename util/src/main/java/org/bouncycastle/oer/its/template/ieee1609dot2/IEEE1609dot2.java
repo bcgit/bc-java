@@ -74,7 +74,7 @@ public class IEEE1609dot2
      */
     public static final Switch ContributedExtensionBlockSwitch = new Switch()
     {
-        @Override
+
         public Element result(SwitchIndexer indexer)
         {
             ASN1Integer type = ASN1Integer.getInstance(indexer.get(0));
@@ -541,7 +541,7 @@ public class IEEE1609dot2
         {
             private Element built;
 
-            @Override
+
             public Element build()
             {
                 synchronized (this)
@@ -574,7 +574,7 @@ public class IEEE1609dot2
         {
             private Element built;
 
-            @Override
+
             public Element build()
             {
                 synchronized (this)

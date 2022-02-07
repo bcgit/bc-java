@@ -87,12 +87,12 @@ public class SignedData
         return signature;
     }
 
-    public Builder builder()
+    public static Builder builder()
     {
         return new Builder();
     }
 
-    public class Builder
+    public static class Builder
     {
         private HashAlgorithm hashId;
         private ToBeSignedData tbsData;
