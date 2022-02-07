@@ -31,15 +31,15 @@ public class ETSISignedDataBuilder
      * @param signer
      * @return
      */
-    public SignedData getSignedData(ETSIDataSigner signer)
+    public ETSISignedData build(ETSIDataSigner signer)
     {
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
-        return SignedData.builder()
+        return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().self().build())
-            .setSignature(signer.getSignature()).build();
+            .setSignature(signer.getSignature()).build());
     }
 
     /**
@@ -49,7 +49,7 @@ public class ETSISignedDataBuilder
      * @param certificateList
      * @return
      */
-    public SignedData getSignedData(ETSIDataSigner signer, List<ITSCertificate> certificateList)
+    public ETSISignedData build(ETSIDataSigner signer, List<ITSCertificate> certificateList)
     {
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
@@ -59,11 +59,11 @@ public class ETSISignedDataBuilder
             certificates.add(Certificate.getInstance(certificate.toASN1Structure()));
         }
 
-        return SignedData.builder()
+        return new ETSISignedData( SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().certificate(new SequenceOfCertificate(certificates)).build())
-            .setSignature(signer.getSignature()).build();
+            .setSignature(signer.getSignature()).build());
     }
 
     /**
@@ -73,16 +73,16 @@ public class ETSISignedDataBuilder
      * @param identifier
      * @return
      */
-    public SignedData getSignedData(ETSIDataSigner signer, HashedId8 identifier)
+    public ETSISignedData build(ETSIDataSigner signer, HashedId8 identifier)
     {
 
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
-        return SignedData.builder()
+        return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().digest(identifier).build())
-            .setSignature(signer.getSignature()).build();
+            .setSignature(signer.getSignature()).build());
     }
 
 
