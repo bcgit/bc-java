@@ -8,8 +8,12 @@ import org.bouncycastle.its.operator.ETSIDataSigner;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
+import org.bouncycastle.oer.its.ieee1609dot2.HashedData;
+import org.bouncycastle.oer.its.ieee1609dot2.HeaderInfo;
+import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Data;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
+import org.bouncycastle.oer.its.ieee1609dot2.SignedDataPayload;
 import org.bouncycastle.oer.its.ieee1609dot2.SignerIdentifier;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
@@ -17,13 +21,53 @@ import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 
 public class ETSISignedDataBuilder
 {
-    private final ToBeSignedData toBeSignedData;
+
     private static final Element def = IEEE1609dot2.ToBeSignedData.build();
 
-    public ETSISignedDataBuilder(ToBeSignedData toBeSignedData)
+    private Ieee1609Dot2Data data;
+    private HashedData extDataHash;
+    private HeaderInfo headerInfo;
+
+
+    public ETSISignedDataBuilder()
     {
-        this.toBeSignedData = toBeSignedData;
+
     }
+
+    public static ETSISignedDataBuilder builder() {
+        return new ETSISignedDataBuilder();
+    }
+
+    public ETSISignedDataBuilder setData(Ieee1609Dot2Data data)
+    {
+        this.data = data;
+        return this;
+    }
+
+    public ETSISignedDataBuilder setExtDataHash(HashedData extDataHash)
+    {
+        this.extDataHash = extDataHash;
+        return this;
+    }
+
+    public ETSISignedDataBuilder setHeaderInfo(HeaderInfo headerInfo)
+    {
+        this.headerInfo = headerInfo;
+        return this;
+    }
+
+
+    private ToBeSignedData getToBeSignedData()
+    {
+
+        SignedDataPayload signedDataPayload = new SignedDataPayload(data, extDataHash);
+
+        return ToBeSignedData.builder()
+            .setPayload(signedDataPayload)
+            .setHeaderInfo(headerInfo)
+            .createToBeSignedData();
+    }
+
 
     /**
      * Self signed
@@ -33,6 +77,7 @@ public class ETSISignedDataBuilder
      */
     public ETSISignedData build(ETSIDataSigner signer)
     {
+        ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
         return new ETSISignedData(SignedData.builder()
@@ -51,6 +96,7 @@ public class ETSISignedDataBuilder
      */
     public ETSISignedData build(ETSIDataSigner signer, List<ITSCertificate> certificateList)
     {
+        ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
         List<Certificate> certificates = new ArrayList<Certificate>();
@@ -59,7 +105,7 @@ public class ETSISignedDataBuilder
             certificates.add(Certificate.getInstance(certificate.toASN1Structure()));
         }
 
-        return new ETSISignedData( SignedData.builder()
+        return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().certificate(new SequenceOfCertificate(certificates)).build())
@@ -76,6 +122,7 @@ public class ETSISignedDataBuilder
     public ETSISignedData build(ETSIDataSigner signer, HashedId8 identifier)
     {
 
+        ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
         return new ETSISignedData(SignedData.builder()

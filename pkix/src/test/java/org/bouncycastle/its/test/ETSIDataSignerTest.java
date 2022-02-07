@@ -35,17 +35,17 @@ public class ETSIDataSignerTest
     public void test()
         throws Exception
     {
-        ToBeSignedData beSignedData = ToBeSignedData.builder()
-            .setHeaderInfo(
-                HeaderInfo.builder().psid(new Psid(10)).generationTime(Time64.now()).build())
-            .setPayload(SignedDataPayload.builder()
-                .setData(Ieee1609Dot2Data.builder()
-                    .setProtocolVersion(new UINT8(3))
-                    .setContent(
-                        Ieee1609Dot2Content.builder()
-                            .unsecuredData(new DEROctetString("The cat sat on the mat".getBytes())).build())
-                    .build())
-                .build()).createToBeSignedData();
+//        ToBeSignedData beSignedData = ToBeSignedData.builder()
+//            .setHeaderInfo(
+//                HeaderInfo.builder().psid(new Psid(10)).generationTime(Time64.now()).build())
+//            .setPayload(SignedDataPayload.builder()
+//                .setData(Ieee1609Dot2Data.builder()
+//                    .setProtocolVersion(new UINT8(3))
+//                    .setContent(
+//                        Ieee1609Dot2Content.builder()
+//                            .unsecuredData(new DEROctetString("The cat sat on the mat".getBytes())).build())
+//                    .build())
+//                .build()).createToBeSignedData();
 
 
         ECKeyPairGenerator generator = new ECKeyPairGenerator();
@@ -57,7 +57,15 @@ public class ETSIDataSignerTest
         ECPrivateKeyParameters privateKeyParameters = (ECPrivateKeyParameters)kp.getPrivate();
 
 
-        ETSISignedDataBuilder signedDataBuilder = new ETSISignedDataBuilder(beSignedData);
+        ETSISignedDataBuilder signedDataBuilder = ETSISignedDataBuilder.builder()
+            .setHeaderInfo(HeaderInfo.builder().psid(new Psid(10)).generationTime(Time64.now()).build())
+            .setData(Ieee1609Dot2Data.builder()
+                .setProtocolVersion(new UINT8(3))
+                .setContent(
+                    Ieee1609Dot2Content.builder()
+                        .unsecuredData(new DEROctetString("The cat sat on the mat".getBytes())).build())
+                .build());
+
         ETSISignedData signedData = signedDataBuilder.build(new BcEtsi103097DataSigner(privateKeyParameters));
         assertTrue(signedData.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
 
