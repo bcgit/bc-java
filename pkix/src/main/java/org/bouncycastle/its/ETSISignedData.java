@@ -64,7 +64,7 @@ public class ETSISignedData
         this.signedData = SignedData.getInstance(etsiTs103097Data_signed.getContent());
     }
 
-    public ETSISignedData(SignedData signedData)
+    ETSISignedData(SignedData signedData)
     {
         this.signedData = signedData;
     }

@@ -17,11 +17,9 @@ import org.bouncycastle.its.ETSISignedDataBuilder;
 import org.bouncycastle.its.ETSISignedData;
 import org.bouncycastle.its.bc.BcEtsi103097DataVerifierProvider;
 import org.bouncycastle.its.bc.BcEtsi103097DataSigner;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Signed;
 import org.bouncycastle.oer.its.ieee1609dot2.HeaderInfo;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Data;
-import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedDataPayload;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
@@ -60,36 +58,8 @@ public class ETSIDataSignerTest
 
 
         ETSISignedDataBuilder signedDataBuilder = new ETSISignedDataBuilder(beSignedData);
-        SignedData signedData = signedDataBuilder.getSignedData(new BcEtsi103097DataSigner(privateKeyParameters));
-
-        ETSISignedData signedDataVerifier = new ETSISignedData(signedData);
-        assertTrue(signedDataVerifier.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
-
-
-        /**
-         * EtsiTs103097Data-Signed {ToBeSignedDataContent} ::= EtsiTs103097Data (WITH COMPONENTS {...,
-         *   content (WITH COMPONENTS {
-         *     signedData (WITH COMPONENTS {...,
-         *       tbsData (WITH COMPONENTS {
-         *         payload (WITH COMPONENTS {
-         *           data (WITH COMPONENTS {...,
-         *             content (WITH COMPONENTS {
-         *               unsecuredData (CONTAINING ToBeSignedDataContent)
-         *             })
-         *           }) PRESENT
-         *         })
-         *       })
-         *     })
-         *   })
-         * })
-         */
-        EtsiTs103097Data_Signed signed = new EtsiTs103097Data_Signed(
-            Ieee1609Dot2Content.builder()
-                .signedData(signedData)
-                .build()
-        );
-
-        System.out.println();
+        ETSISignedData signedData = signedDataBuilder.build(new BcEtsi103097DataSigner(privateKeyParameters));
+        assertTrue(signedData.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
 
     }
 }
