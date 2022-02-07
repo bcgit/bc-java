@@ -34,7 +34,8 @@ public class ETSISignedDataBuilder
 
     }
 
-    public static ETSISignedDataBuilder builder() {
+    public static ETSISignedDataBuilder builder()
+    {
         return new ETSISignedDataBuilder();
     }
 
