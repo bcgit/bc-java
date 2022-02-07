@@ -4,12 +4,14 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.its.operator.ETSIDataSigner;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
 import org.bouncycastle.oer.its.ieee1609dot2.HashedData;
 import org.bouncycastle.oer.its.ieee1609dot2.HeaderInfo;
+import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Data;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
@@ -17,31 +19,54 @@ import org.bouncycastle.oer.its.ieee1609dot2.SignedDataPayload;
 import org.bouncycastle.oer.its.ieee1609dot2.SignerIdentifier;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time64;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 
 public class ETSISignedDataBuilder
 {
-
     private static final Element def = IEEE1609dot2.ToBeSignedData.build();
+
+    private final HeaderInfo headerInfo;
 
     private Ieee1609Dot2Data data;
     private HashedData extDataHash;
-    private HeaderInfo headerInfo;
 
-
-    public ETSISignedDataBuilder()
+    private ETSISignedDataBuilder(Psid psid)
     {
-
+        this(HeaderInfo.builder().psid(psid).generationTime(Time64.now()).build());
     }
 
-    public static ETSISignedDataBuilder builder()
+    private ETSISignedDataBuilder(HeaderInfo headerInfo)
     {
-        return new ETSISignedDataBuilder();
+        this.headerInfo = headerInfo;
     }
 
-    public ETSISignedDataBuilder setData(Ieee1609Dot2Data data)
+    public static ETSISignedDataBuilder builder(Psid psid)
     {
-        this.data = data;
+        return new ETSISignedDataBuilder(psid);
+    }
+
+    public static ETSISignedDataBuilder builder(HeaderInfo headerInfo)
+    {
+        return new ETSISignedDataBuilder(headerInfo);
+    }
+
+    public ETSISignedDataBuilder setData(Ieee1609Dot2Content data)
+    {
+        this.data = Ieee1609Dot2Data.builder()
+            .setProtocolVersion(new UINT8(3))
+            .setContent(data).build();
+        return this;
+    }
+
+    public ETSISignedDataBuilder setUnsecuredData(byte[] data)
+    {
+        this.data = Ieee1609Dot2Data.builder()
+            .setProtocolVersion(new UINT8(3))
+            .setContent(Ieee1609Dot2Content.builder()
+                .unsecuredData(new DEROctetString(data)).build()).build();
         return this;
     }
 
@@ -51,16 +76,8 @@ public class ETSISignedDataBuilder
         return this;
     }
 
-    public ETSISignedDataBuilder setHeaderInfo(HeaderInfo headerInfo)
-    {
-        this.headerInfo = headerInfo;
-        return this;
-    }
-
-
     private ToBeSignedData getToBeSignedData()
     {
-
         SignedDataPayload signedDataPayload = new SignedDataPayload(data, extDataHash);
 
         return ToBeSignedData.builder()
@@ -133,7 +150,6 @@ public class ETSISignedDataBuilder
             .setSignature(signer.getSignature()).build());
     }
 
-
     private static void write(OutputStream os, byte[] data)
     {
         try
@@ -147,5 +163,4 @@ public class ETSISignedDataBuilder
             throw new RuntimeException(ex.getMessage(), ex);
         }
     }
-
 }

@@ -45,7 +45,7 @@ rm -rf module.tmp
     elif [ $1 = "jmail" ]
     then
         jmailSrc=`echo build/artifacts/jdk1.8/bcjmail-jdk18on-*/src/`
-	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$jmailSrc
+	javac  -target 1.9 --module-path ${provJar}:$utilJar:$pkixJar:libs/jakarta.mail-2.0.1.jar:libs/jakarta.activation-api-2.0.0.jar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$jmailSrc
     elif [ $1 = "pkix" ]
     then
 	javac  -target 1.9 --module-path ${provJar}:$utilJar -classpath module.tmp/v5 -d module.tmp/v9 `find $1/src/main/jdk1.9 -name "*.java"` -sourcepath $1/src/main/jdk1.9:$1/src/main/java
