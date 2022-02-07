@@ -22,13 +22,12 @@ import org.bouncycastle.operator.bc.BcDefaultDigestProvider;
 public class BcEtsi103097DataSigner
     implements ETSIDataSigner
 {
-
     private final ECPrivateKeyParameters privKey;
     private final ASN1ObjectIdentifier curveID;
     private final AlgorithmIdentifier digestAlgo;
     private final ExtendedDigest digest;
-    DSADigestSigner signer;
 
+    private DSADigestSigner signer;
 
     public BcEtsi103097DataSigner(ECPrivateKeyParameters privKey)
     {
@@ -59,15 +58,12 @@ public class BcEtsi103097DataSigner
         {
             throw new IllegalStateException("cannot recognise digest type: " + digestAlgo.getAlgorithm());
         }
-
-
     }
 
     public AlgorithmIdentifier getDigestAlgorithm()
     {
         return digestAlgo;
     }
-
 
     public OutputStream getOutputStream()
     {
@@ -76,7 +72,6 @@ public class BcEtsi103097DataSigner
 
         return new SignerOutputStream(signer);
     }
-
 
     public Signature getSignature()
     {
@@ -96,6 +91,4 @@ public class BcEtsi103097DataSigner
         }
         throw new IllegalStateException("unrecognised curve " + curveID);
     }
-
-
 }
