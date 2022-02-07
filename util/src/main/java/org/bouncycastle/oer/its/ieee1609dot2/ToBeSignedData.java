@@ -67,6 +67,11 @@ public class ToBeSignedData
         return new DERSequence(new ASN1Encodable[]{payload, headerInfo});
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 
