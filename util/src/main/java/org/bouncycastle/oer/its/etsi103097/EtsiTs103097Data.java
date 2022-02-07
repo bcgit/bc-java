@@ -36,6 +36,12 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 public class EtsiTs103097Data
     extends Ieee1609Dot2Data
 {
+
+    public EtsiTs103097Data(Ieee1609Dot2Content content)
+    {
+        super(new UINT8(3), content);
+    }
+
     public EtsiTs103097Data(UINT8 protocolVersion, Ieee1609Dot2Content content)
     {
         super(protocolVersion, content);
