@@ -4,20 +4,16 @@ import java.io.IOException;
 
 /**
  * Base class for an ASN.1 ApplicationSpecific object
+ *
+ * @deprecated Will be removed. Change application code to handle as {@link ASN1TaggedObject} only, testing
+ *             for the expected {@link ASN1TaggedObject#getTagClass() tag class} of
+ *             {@link BERTags#APPLICATION} in relevant objects before using. If using a
+ *             {@link ASN1StreamParser stream parser}, handle application-tagged objects using
+ *             {@link ASN1TaggedObjectParser} in the usual way, again testing for a
+ *             {@link ASN1TaggedObjectParser#getTagClass() tag class} of {@link BERTags#APPLICATION}.
  */
-// * @deprecated Will be removed. Change application code to handle as
-// *             {@link ASN1TaggedObject} only, testing for the expected
-// *             {@link ASN1TaggedObject#getTagClass() tag class} of
-// *             {@link BERTags#APPLICATION} in relevant objects before using. If
-// *             using a {@link ASN1StreamParser stream parser}, handle
-// *             application-tagged objects using {@link ASN1TaggedObjectParser}
-// *             in the usual way, again testing for a
-// *             {@link ASN1TaggedObjectParser#getTagClass() tag class} of
-// *             {@link BERTags#APPLICATION}.
-// */
 public abstract class ASN1ApplicationSpecific
-//    extends ASN1TaggedObject
-    extends ASN1Primitive
+    extends ASN1TaggedObject
     implements ASN1ApplicationSpecificParser
 {
     /**
@@ -51,8 +47,7 @@ public abstract class ASN1ApplicationSpecific
 
     ASN1ApplicationSpecific(ASN1TaggedObject taggedObject)
     {
-//        super(taggedObject.explicitness, checkTagClass(taggedObject.tagClass), taggedObject.tagNo, taggedObject.obj);
-        checkTagClass(taggedObject.getTagClass());
+        super(taggedObject.explicitness, checkTagClass(taggedObject.tagClass), taggedObject.tagNo, taggedObject.obj);
 
         this.taggedObject = taggedObject;
     }
@@ -75,25 +70,6 @@ public abstract class ASN1ApplicationSpecific
     public byte[] getContents()
     {
         return taggedObject.getContents();
-    }
-
-    public final ASN1Primitive getLoadedObject()
-    {
-        return this;
-    }
-
-    /**
-     * Return the enclosed object assuming explicit tagging.
-     *
-     * @return  the resulting object
-     * @throws IOException if reconstruction fails.
-     * 
-     * @deprecated Will be removed. Use {@link #getEnclosedObject()} instead.
-     */
-    public ASN1Primitive getObject()
-        throws IOException 
-    {
-        return getEnclosedObject();
     }
 
     /**
@@ -144,29 +120,14 @@ public abstract class ASN1ApplicationSpecific
         return taggedObject.parseImplicitBaseTagged(baseTagClass, baseTagNo);
     }
 
-    public int getTagClass()
-    {
-        return BERTags.APPLICATION;
-    }
-
-    public int getTagNo()
-    {
-        return taggedObject.getTagNo();
-    }
-
     public boolean hasApplicationTag(int tagNo)
     {
-        return taggedObject.hasTag(BERTags.APPLICATION, tagNo);
+        return this.tagNo == tagNo;
     }
 
     public boolean hasContextTag(int tagNo)
     {
         return false;
-    }
-
-    public boolean hasTag(int tagClass, int tagNo)
-    {
-        return taggedObject.hasTag(tagClass, tagNo);
     }
 
     /**
@@ -179,30 +140,6 @@ public abstract class ASN1ApplicationSpecific
     public ASN1TaggedObject getTaggedObject()
     {
         return taggedObject;
-    }
-
-    boolean asn1Equals(ASN1Primitive o)
-    {
-        ASN1TaggedObject that;
-        if (o instanceof ASN1ApplicationSpecific)
-        {
-            that = ((ASN1ApplicationSpecific)o).taggedObject;
-        }
-        else if (o instanceof ASN1TaggedObject)
-        {
-            that = (ASN1TaggedObject)o;
-        }
-        else
-        {
-            return false;
-        }
-
-        return taggedObject.equals(that);
-    }
-
-    public int hashCode()
-    {
-        return taggedObject.hashCode();
     }
 
     /**
@@ -234,6 +171,21 @@ public abstract class ASN1ApplicationSpecific
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
         taggedObject.encode(out, withTag);
+    }
+
+    String getASN1Encoding()
+    {
+        return taggedObject.getASN1Encoding();
+    }
+
+    ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
+    {
+        return taggedObject.rebuildConstructed(primitive);
+    }
+
+    ASN1TaggedObject replaceTag(int tagClass, int tagNo)
+    {
+        return taggedObject.replaceTag(tagClass, tagNo);
     }
 
     ASN1Primitive toDERObject()

@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import junit.framework.Assert;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -102,6 +97,11 @@ import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
+
+import junit.framework.Assert;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class NewSignedDataTest
     extends TestCase
@@ -3014,10 +3014,7 @@ public class NewSignedDataTest
     public void testMixed()
         throws Exception
     {
-        ASN1ApplicationSpecific appSpec = ASN1ApplicationSpecific.getInstance(mixedSignedData);
-        assertTrue(appSpec.hasApplicationTag(23));
-
-        ASN1TaggedObject appTag = appSpec.getTaggedObject();
+        ASN1TaggedObject appTag = ASN1TaggedObject.getInstance(mixedSignedData);
         assertTrue(appTag.hasTag(BERTags.APPLICATION, 23));
         assertNotNull(ASN1Util.tryGetBaseUniversal(appTag, BERTags.APPLICATION, 23, true, BERTags.SEQUENCE));
 

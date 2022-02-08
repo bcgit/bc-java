@@ -107,13 +107,8 @@ public abstract class ASN1TaggedObject
         this.obj = obj;
     }
 
-    boolean asn1Equals(ASN1Primitive other)
+    final boolean asn1Equals(ASN1Primitive other)
     {
-        if (other instanceof ASN1ApplicationSpecific)
-        {
-            return other.equals(this);
-        }
-
         if (!(other instanceof ASN1TaggedObject))
         {
             return false;
@@ -234,7 +229,6 @@ public abstract class ASN1TaggedObject
      *
      * @return the encoded contents of the object.
      */
-    // TODO Need this public if/when ASN1ApplicationSpecific extends ASN1TaggedObject
     byte[] getContents()
     {
         try
@@ -273,7 +267,6 @@ public abstract class ASN1TaggedObject
      *
      * @return true if constructed, otherwise false.
      */
-    // TODO Need this public if/when ASN1ApplicationSpecific extends ASN1TaggedObject
     boolean isConstructed()
     {
         return encodeConstructed();
