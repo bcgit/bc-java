@@ -12,8 +12,6 @@ public class BasicGCMMultiplier
 
     public void multiplyH(byte[] x)
     {
-        long[] t = GCMUtil.asLongs(x);
-        GCMUtil.multiply(t, H);
-        GCMUtil.asBytes(t, x);
+        GCMUtil.multiply(x, H);
     }
 }

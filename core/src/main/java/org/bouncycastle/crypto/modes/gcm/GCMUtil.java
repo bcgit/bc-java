@@ -146,10 +146,48 @@ public abstract class GCMUtil
 
     public static void multiply(byte[] x, byte[] y)
     {
-        long[] t1 = GCMUtil.asLongs(x);
-        long[] t2 = GCMUtil.asLongs(y);
-        GCMUtil.multiply(t1, t2);
-        GCMUtil.asBytes(t1, x);
+        long[] t1 = asLongs(x);
+        long[] t2 = asLongs(y);
+        multiply(t1, t2);
+        asBytes(t1, x);
+    }
+
+    static void multiply(byte[] x, long[] y)
+    {
+        /*
+         * "Three-way recursion" as described in "Batch binary Edwards", Daniel J. Bernstein.
+         *
+         * Without access to the high part of a 64x64 product x * y, we use a bit reversal to calculate it:
+         *     rev(x) * rev(y) == rev((x * y) << 1) 
+         */
+
+        long x0 = Pack.bigEndianToLong(x, 0);
+        long x1 = Pack.bigEndianToLong(x, 8);
+        long y0 = y[0], y1 = y[1];
+        long x0r = Longs.reverse(x0), x1r = Longs.reverse(x1);
+        long y0r = Longs.reverse(y0), y1r = Longs.reverse(y1);
+
+        long h0  = Longs.reverse(implMul64(x0r, y0r));
+        long h1  = implMul64(x0, y0) << 1;
+        long h2  = Longs.reverse(implMul64(x1r, y1r));
+        long h3  = implMul64(x1, y1) << 1;
+        long h4  = Longs.reverse(implMul64(x0r ^ x1r, y0r ^ y1r));
+        long h5  = implMul64(x0 ^ x1, y0 ^ y1) << 1;
+
+        long z0  = h0;
+        long z1  = h1 ^ h0 ^ h2 ^ h4;
+        long z2  = h2 ^ h1 ^ h3 ^ h5;
+        long z3  = h3;
+
+        z1 ^= z3 ^ (z3 >>>  1) ^ (z3 >>>  2) ^ (z3 >>>  7);
+//      z2 ^=      (z3 <<  63) ^ (z3 <<  62) ^ (z3 <<  57);
+        z2 ^=                    (z3 <<  62) ^ (z3 <<  57);
+
+        z0 ^= z2 ^ (z2 >>>  1) ^ (z2 >>>  2) ^ (z2 >>>  7);
+        z1 ^=      (z2 <<  63) ^ (z2 <<  62) ^ (z2 <<  57);
+
+        Pack.longToBigEndian(z0, x, 0);
+        Pack.longToBigEndian(z1, x, 8);
     }
 
     public static void multiply(int[] x, int[] y)
