@@ -17,17 +17,11 @@ public class Latitude
     {
         super(value);
     }
-
-
     public Latitude(BigInteger value)
     {
         super(value);
     }
 
-    public Latitude(byte[] bytes)
-    {
-        super(bytes);
-    }
 
     private Latitude(ASN1Integer instance)
     {

@@ -18,10 +18,6 @@ public class KnownLongitude
         super(value);
     }
 
-    public KnownLongitude(byte[] bytes)
-    {
-        super(bytes);
-    }
 
     private KnownLongitude(ASN1Integer integer)
     {

@@ -77,7 +77,7 @@ public class IEEE1609dot2
 
         public Element result(SwitchIndexer indexer)
         {
-            ASN1Integer type = ASN1Integer.getInstance(indexer.get(0));
+            ASN1Integer type = ASN1Integer.getInstance(indexer.get(0).toASN1Primitive());
 
             if (type.equals(etsiHeaderInfoContributorId))
             {

@@ -29,11 +29,6 @@ public class Longitude
         super(value);
     }
 
-    public Longitude(byte[] bytes)
-    {
-        super(bytes);
-    }
-
     private Longitude(ASN1Integer i)
     {
         this(i.getValue());

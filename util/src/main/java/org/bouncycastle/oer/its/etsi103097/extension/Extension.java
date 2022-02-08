@@ -65,7 +65,8 @@ public class Extension
     public Extension(ExtId id, ASN1Encodable content)
     {
         this.id = id;
-        if (id.intValueExact() != 1 && id.intValueExact() != 2)
+
+        if (id.getExtId().intValue() != 1 && id.getExtId().intValue() != 2)
         {
             throw new IllegalArgumentException("id not 1 (EtsiTs102941CrlRequest) or 2 (EtsiTs102941DeltaCtlRequest)");
         }
