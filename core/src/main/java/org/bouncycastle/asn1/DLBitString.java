@@ -75,9 +75,4 @@ public class DLBitString
     {
         out.writeEncodingDL(withTag, BERTags.BIT_STRING, pad, buf, off, len);
     }
-
-    static DLBitString fromOctetString(ASN1OctetString octetString)
-    {
-        return new DLBitString(octetString.getOctets(), true);
-    }
 }
