@@ -3,6 +3,8 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * NinetyDegreeInt ::= INTEGER {
@@ -12,34 +14,50 @@ import org.bouncycastle.asn1.ASN1Integer;
  * }
  */
 public class OneEightyDegreeInt
-    extends ASN1Integer
+    extends ASN1Object
 {
     private static final BigInteger loweBound = new BigInteger("-1799999999");
     private static final BigInteger upperBound = new BigInteger("1800000000");
     private static final BigInteger unknown = new BigInteger("1800000001");
 
+    private final BigInteger value;
 
-    public OneEightyDegreeInt(long value)
+    public OneEightyDegreeInt(long degree)
     {
-        super(value);
-        assertValue();
+        this(BigInteger.valueOf(degree));
     }
 
-    public OneEightyDegreeInt(BigInteger value)
+    public OneEightyDegreeInt(BigInteger degree)
     {
-        super(value);
-        assertValue();
+        if (!degree.equals(unknown))
+        {
+            if (degree.compareTo(loweBound) < 0)
+            {
+                throw new IllegalStateException("one eighty degree int cannot be less than -1799999999");
+            }
+            if (degree.compareTo(upperBound) > 0)
+            {
+                throw new IllegalStateException("one eighty degree int cannot be greater than 1800000000");
+            }
+        }
+
+        value = degree;
     }
 
-    public OneEightyDegreeInt(byte[] bytes)
-    {
-        super(bytes);
-        assertValue();
-    }
 
     private OneEightyDegreeInt(ASN1Integer i)
     {
         this(i.getValue());
+    }
+
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new ASN1Integer(value);
+    }
+
+    public BigInteger getValue()
+    {
+        return value;
     }
 
     public static OneEightyDegreeInt getInstance(Object o)
@@ -57,25 +75,11 @@ public class OneEightyDegreeInt
         return null;
     }
 
-    public void assertValue()
+    private static BigInteger assertValue(BigInteger bi)
     {
-        BigInteger bi = getValue();
 
-        if (bi.compareTo(loweBound) < 0)
-        {
-            throw new IllegalStateException("one eighty degree int cannot be less than -1799999999");
-        }
 
-        if (bi.equals(unknown))
-        {
-            return;
-        }
-
-        if (bi.compareTo(upperBound) > 0)
-        {
-            throw new IllegalStateException("one eighty degree int cannot be greater than 1800000000");
-        }
-
+        return bi;
     }
 
 }

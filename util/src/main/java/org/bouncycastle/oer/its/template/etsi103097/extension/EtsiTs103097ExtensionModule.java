@@ -86,7 +86,7 @@ public class EtsiTs103097ExtensionModule
              */
 
 
-                    ASN1Integer type = ASN1Integer.getInstance(indexer.get(0));
+                    ASN1Integer type = ASN1Integer.getInstance(indexer.get(0).toASN1Primitive());
                     if (type.equals(etsiTs102941CrlRequestId))
                     {
                         return etsiTs102941CrlRequestIdDef;

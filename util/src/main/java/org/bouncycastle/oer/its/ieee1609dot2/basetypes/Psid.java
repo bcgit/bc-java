@@ -3,31 +3,40 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Primitive;
 
 /**
  * Psid ::= INTEGER (0..MAX)
  */
 public class Psid
-    extends ASN1Integer
+    extends ASN1Object
 {
+    private final BigInteger psid;
 
-    public Psid(long value)
+    public Psid(long psid)
     {
-        super(value);
-        validate();
+        this(BigInteger.valueOf(psid));
     }
 
-
-    public Psid(BigInteger value)
+    public Psid(BigInteger psid)
     {
-        super(value);
-        validate();
+        if (psid.signum() < 0)
+        {
+            throw new IllegalStateException("psid must be greater than zero");
+        }
+        this.psid = psid;
+
     }
 
-    public Psid(byte[] bytes)
+    public BigInteger getPsid()
     {
-        super(bytes);
-        validate();
+        return psid;
+    }
+
+    public ASN1Primitive toASN1Primitive()
+    {
+        return new ASN1Integer(psid);
     }
 
     public static Psid getInstance(Object o)
@@ -44,13 +53,5 @@ public class Psid
 
         return null;
 
-    }
-
-    private void validate()
-    {
-        if (getValue().signum() < 0)
-        {
-            throw new IllegalStateException("psid must be greater than zero");
-        }
     }
 }

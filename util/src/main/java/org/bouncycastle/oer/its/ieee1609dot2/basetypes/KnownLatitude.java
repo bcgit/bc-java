@@ -20,11 +20,6 @@ public class KnownLatitude
         super(value);
     }
 
-    public KnownLatitude(byte[] bytes)
-    {
-        super(bytes);
-    }
-
     private KnownLatitude(ASN1Integer integer)
     {
         this(integer.getValue());
