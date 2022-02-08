@@ -36,7 +36,7 @@ public class DLBitStringParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return DLBitString.createPrimitive(stream.toByteArray());
+        return ASN1BitString.createPrimitive(stream.toByteArray());
     }
 
     public ASN1Primitive toASN1Primitive()
