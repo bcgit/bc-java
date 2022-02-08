@@ -342,8 +342,6 @@ public class ASN1InputStream
         //
         if (tagNo == 0x1f)
         {
-            tagNo = 0;
-
             int b = s.read();
             if (b < 31)
             {
@@ -354,9 +352,11 @@ public class ASN1InputStream
                 throw new IOException("corrupted stream - high tag number < 31 found");
             }
 
+            tagNo = b & 0x7f;
+
             // X.690-0207 8.1.2.4.2
             // "c) bits 7 to 1 of the first subsequent octet shall not all be zero."
-            if ((b & 0x7f) == 0)
+            if (0 == tagNo)
             {
                 throw new IOException("corrupted stream - invalid high tag number found");
             }
@@ -368,18 +368,18 @@ public class ASN1InputStream
                     throw new IOException("Tag number more than 31 bits");
                 }
 
-                tagNo |= (b & 0x7f);
                 tagNo <<= 7;
+
                 b = s.read();
                 if (b < 0)
                 {
                     throw new EOFException("EOF found inside tag value.");
                 }
-            }
 
-            tagNo |= (b & 0x7f);
+                tagNo |= (b & 0x7f);
+            }
         }
-        
+
         return tagNo;
     }
 
