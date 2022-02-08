@@ -218,16 +218,7 @@ public class OEROutputStream
             int tag;
 
             ASN1Primitive valueToWrite = null;
-            if (item instanceof ASN1ApplicationSpecific)
-            {
-                //
-                // Application specific tag prefix.
-                //
-                tag = ((ASN1ApplicationSpecific)item).getApplicationTag();
-                bb.writeBit(0).writeBit(1);
-                valueToWrite = ((ASN1ApplicationSpecific)item).getEnclosedObject();
-            }
-            else if (item instanceof ASN1TaggedObject)
+            if (item instanceof ASN1TaggedObject)
             {
                 ASN1TaggedObject taggedObject = (ASN1TaggedObject)item;
 
@@ -239,7 +230,7 @@ public class OEROutputStream
                     .writeBit(tagClass & BERTags.APPLICATION);
 
                 tag = taggedObject.getTagNo();
-                valueToWrite = taggedObject.getObject().toASN1Primitive();
+                valueToWrite = taggedObject.getBaseObject().toASN1Primitive();
             }
             else
             {
@@ -266,13 +257,17 @@ public class OEROutputStream
 
             if (debugOutput != null)
             {
-                if (item instanceof ASN1ApplicationSpecific)
+                if (item instanceof ASN1TaggedObject)
                 {
-                    debugPrint(oerElement.appendLabel("AS"));
-                }
-                else if (item instanceof ASN1TaggedObject)
-                {
-                    debugPrint(oerElement.appendLabel("CS"));
+                    ASN1TaggedObject taggedObject = (ASN1TaggedObject)item;
+                    if (BERTags.APPLICATION == taggedObject.getTagClass())
+                    {
+                        debugPrint(oerElement.appendLabel("AS"));
+                    }
+                    else
+                    {
+                        debugPrint(oerElement.appendLabel("CS"));
+                    }
                 }
             }
 
