@@ -5,7 +5,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.modes.gcm.GCMCache;
+import org.bouncycastle.crypto.modes.gcm.BasicGCMExponentiator;
+import org.bouncycastle.crypto.modes.gcm.GCMExponentiator;
 import org.bouncycastle.crypto.modes.gcm.GCMMultiplier;
 import org.bouncycastle.crypto.modes.gcm.GCMUtil;
 import org.bouncycastle.crypto.modes.gcm.Tables4kGCMMultiplier;
@@ -24,10 +25,10 @@ public class GCMBlockCipher
 {
     private static final int BLOCK_SIZE = 16;
 
-    private final BlockCipher   baseCipher;
-    private final GCMMultiplier baseMultiplier;
-
-    private GCMCache.CoreEngine gcmCore;
+    // not final due to a compiler bug
+    private BlockCipher   cipher;
+    private GCMMultiplier multiplier;
+    private GCMExponentiator exp;
 
     // These fields are set by init and not modified by processing
     private boolean             forEncryption;
@@ -36,6 +37,7 @@ public class GCMBlockCipher
     private byte[]              lastKey;
     private byte[]              nonce;
     private byte[]              initialAssociatedText;
+    private byte[]              H;
     private byte[]              J0;
 
     // These fields are modified during processing
@@ -69,20 +71,18 @@ public class GCMBlockCipher
             m = new Tables4kGCMMultiplier();
         }
 
-        this.baseCipher = c;
-        this.baseMultiplier = m;
+        this.cipher = c;
+        this.multiplier = m;
     }
 
     public BlockCipher getUnderlyingCipher()
     {
-        return (gcmCore == null) ? baseCipher : gcmCore.cipher;
+        return cipher;
     }
 
     public String getAlgorithmName()
     {
-        String baseName = (gcmCore == null) ? baseCipher.getAlgorithmName() : gcmCore.cipher.getAlgorithmName();
-
-        return baseName + "/GCM";
+        return cipher.getAlgorithmName() + "/GCM";
     }
 
     /**
@@ -164,9 +164,16 @@ public class GCMBlockCipher
         // if keyParam is null we're reusing the last key.
         if (keyParam != null)
         {
-            gcmCore = GCMCache.getCore(baseCipher, baseMultiplier, keyParam);
+            cipher.init(true, keyParam);
+
+            this.H = new byte[BLOCK_SIZE];
+            cipher.processBlock(H, 0, H, 0);
+
+            // GCMMultiplier tables don't change unless the key changes (and are expensive to init)
+            multiplier.init(H);
+            exp = null;
         }
-        else if (gcmCore == null)
+        else if (this.H == null)
         {
             throw new IllegalArgumentException("Key must be specified in initial init");
         }
@@ -194,7 +201,7 @@ public class GCMBlockCipher
         this.atLength = 0;
         this.atLengthPre = 0;
         this.counter = Arrays.clone(J0);
-        this.blocksRemaining = -2;          // page 8, len(P) <= 2^39 - 256, one block taken by tag, but doFinal on J0.
+        this.blocksRemaining = -2;      // page 8, len(P) <= 2^39 - 256, 1 block used by tag but done on J0
         this.bufOff = 0;
         this.totalLength = 0;
 
@@ -442,7 +449,12 @@ public class GCMBlockCipher
 
             // Calculate the adjustment factor
             byte[] H_c = new byte[16];
-            gcmCore.exp.exponentiateX(c, H_c);
+            if (exp == null)
+            {
+                exp = new BasicGCMExponentiator();
+                exp.init(H);
+            }
+            exp.exponentiateX(c, H_c);
 
             // Carry the difference forward
             GCMUtil.multiply(S_at, H_c);
@@ -460,7 +472,7 @@ public class GCMBlockCipher
 
         // T = MSBt(GCTRk(J0,S))
         byte[] tag = new byte[BLOCK_SIZE];
-        gcmCore.cipher.processBlock(J0, 0, tag, 0);
+        cipher.processBlock(J0, 0, tag, 0);
         GCMUtil.xor(tag, S);
 
         int resultLen = extra;
@@ -499,7 +511,7 @@ public class GCMBlockCipher
     private void reset(
         boolean clearMac)
     {
-        gcmCore.cipher.reset();
+        cipher.reset();
 
         // note: we do not reset the nonce.
 
@@ -599,19 +611,19 @@ public class GCMBlockCipher
     private void gHASHBlock(byte[] Y, byte[] b)
     {
         GCMUtil.xor(Y, b);
-        gcmCore.multiplier.multiplyH(Y);
+        multiplier.multiplyH(Y);
     }
 
     private void gHASHBlock(byte[] Y, byte[] b, int off)
     {
         GCMUtil.xor(Y, b, off);
-        gcmCore.multiplier.multiplyH(Y);
+        multiplier.multiplyH(Y);
     }
 
     private void gHASHPartial(byte[] Y, byte[] b, int off, int len)
     {
         GCMUtil.xor(Y, b, off, len);
-        gcmCore.multiplier.multiplyH(Y);
+        multiplier.multiplyH(Y);
     }
 
     private void getNextCTRBlock(byte[] block)
@@ -628,7 +640,7 @@ public class GCMBlockCipher
         c += counter[13] & 0xFF; counter[13] = (byte)c; c >>>= 8;
         c += counter[12] & 0xFF; counter[12] = (byte)c;
 
-        gcmCore.cipher.processBlock(counter, 0, block, 0);
+        cipher.processBlock(counter, 0, block, 0);
     }
 
     private void checkStatus()
