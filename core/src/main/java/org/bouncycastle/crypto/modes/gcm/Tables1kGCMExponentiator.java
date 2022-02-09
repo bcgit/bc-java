@@ -39,7 +39,7 @@ public class Tables1kGCMExponentiator
         GCMUtil.asBytes(y, output);
     }
 
-    private synchronized long[] getPowX2(int bit)
+    private long[] getPowX2(int bit)
     {
         int last = lookupPowX2.size() - 1;
         if (last < bit)
