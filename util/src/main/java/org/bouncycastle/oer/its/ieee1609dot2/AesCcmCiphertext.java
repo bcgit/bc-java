@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ItsUtils;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfOctetString;
 
 /**
  * <pre>
@@ -22,12 +21,12 @@ public class AesCcmCiphertext
     extends ASN1Object
 {
     private final ASN1OctetString nonce;
-    private final ASN1OctetString opaque;
+    private final ASN1OctetString ccmCiphertext;
 
     public AesCcmCiphertext(ASN1OctetString nonce, ASN1OctetString opaque)
     {
         this.nonce = nonce;
-        this.opaque = opaque;
+        this.ccmCiphertext = opaque;
     }
 
     private AesCcmCiphertext(ASN1Sequence seq)
@@ -38,7 +37,7 @@ public class AesCcmCiphertext
         }
         Iterator<ASN1Encodable> it = seq.iterator();
         nonce = ASN1OctetString.getInstance(it.next());
-        opaque = ASN1OctetString.getInstance(it.next());
+        ccmCiphertext = ASN1OctetString.getInstance(it.next());
     }
 
     public static AesCcmCiphertext getInstance(Object o)
@@ -60,14 +59,14 @@ public class AesCcmCiphertext
         return nonce;
     }
 
-    public ASN1OctetString getOpaque()
+    public ASN1OctetString getCcmCiphertext()
     {
-        return opaque;
+        return ccmCiphertext;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(nonce, opaque);
+        return ItsUtils.toSequence(nonce, ccmCiphertext);
     }
 
     public static class Builder
