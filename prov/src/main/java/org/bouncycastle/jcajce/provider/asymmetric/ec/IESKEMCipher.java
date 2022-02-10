@@ -322,13 +322,7 @@ public class IESKEMCipher
         final byte[] in = buffer.toByteArray();
         buffer.reset();
 
-        // Convert parameters for use in IESEngine
-
-
         final ECDomainParameters ecParams = ((ECKeyParameters)key).getParameters();
-
-        final byte[] V;
-        
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
@@ -362,13 +356,17 @@ public class IESKEMCipher
                 enc[i] = (byte)(input[inputOffset + i] ^ out[i]);
             }
 
-            hMac.init(new KeyParameter(Arrays.copyOfRange(out, inputLen, out.length)));
+            KeyParameter macKey = new KeyParameter(out, inputLen, out.length - inputLen);
+            hMac.init(macKey);
 
             hMac.update(enc, 0, inputLen);
 
             byte[] mac = new byte[hMac.getMacSize()];
 
             hMac.doFinal(mac, 0);
+
+            Arrays.clear(macKey.getKey());
+            Arrays.clear(out);
 
             System.arraycopy(mac, 0, enc, inputLen, macLength);
 
@@ -377,33 +375,44 @@ public class IESKEMCipher
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
             ECPrivateKeyParameters k = (ECPrivateKeyParameters)key;
+            ECCurve curve = k.getParameters().getCurve();
 
-            ECPoint q = k.getParameters().getCurve().decodePoint(Arrays.copyOfRange(input, inputOffset, inputLen - (16 + macLength)));
+            int pEncLength = (curve.getFieldSize() + 7) / 8;
+            if (input[inputOffset] == 0x04)
+            {
+                pEncLength = 1 + 2 * pEncLength;
+            }
+            else
+            {
+                pEncLength = 1 + pEncLength;
+            }
+
+            int keyLength = inputLen - (pEncLength + macLength);
+
+            ECPoint q = curve.decodePoint(Arrays.copyOfRange(input, inputOffset, inputOffset + pEncLength));
             // Decrypt the buffer
             agreement.init(key);
 
             byte[] secret = converter.integerToBytes(
                 agreement.calculateAgreement(new ECPublicKeyParameters(q, k.getParameters())),
                 converter.getByteLength(ecParams.getCurve()));
-            byte[] out = new byte[16 + macKeyLength];
+            byte[] out = new byte[keyLength + macKeyLength];
 
             kdf.init(new KDFParameters(secret, engineSpec.getRecipientInfo()));
 
             kdf.generateBytes(out, 0, out.length);
 
-            byte[] enc = new byte[16];
-            System.arraycopy(input, inputOffset + (inputLen - 32), enc, 0, enc.length);
-            byte[] dec = new byte[16];
-            for (int i = 0; i != 16; i++)
+            byte[] dec = new byte[keyLength];
+            for (int i = 0; i != dec.length; i++)
             {
-                dec[i] = (byte)(enc[i] ^ out[i]);
+                dec[i] = (byte)(input[inputOffset + pEncLength + i] ^ out[i]);
             }
 
-            KeyParameter macKey = new KeyParameter(out, 16, out.length - 16);
+            KeyParameter macKey = new KeyParameter(out, keyLength, out.length - keyLength);
 
             hMac.init(macKey);
 
-            hMac.update(enc, 0, enc.length);
+            hMac.update(input, inputOffset + pEncLength, dec.length);
 
             byte[] mac = new byte[hMac.getMacSize()];
 
