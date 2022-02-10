@@ -15,7 +15,7 @@ import org.bouncycastle.jce.spec.IESKEMParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 
-public class JcaEtsiDataDecryptor
+public class JcaETSIDataDecryptor
     implements ETSIDataDecryptor
 {
     public final PrivateKey privateKey;
@@ -23,7 +23,7 @@ public class JcaEtsiDataDecryptor
     private final byte[] recipientHash;
 
 
-    public JcaEtsiDataDecryptor(PrivateKey recipientInfo, byte[] recipientHash, JcaJceHelper provider)
+    JcaETSIDataDecryptor(PrivateKey recipientInfo, byte[] recipientHash, JcaJceHelper provider)
     {
         this.privateKey = recipientInfo;
         this.helper = provider;
@@ -80,9 +80,9 @@ public class JcaEtsiDataDecryptor
             return this;
         }
 
-        public JcaEtsiDataDecryptor build()
+        public JcaETSIDataDecryptor build()
         {
-            return new JcaEtsiDataDecryptor(key, recipientHash, provider);
+            return new JcaETSIDataDecryptor(key, recipientHash, provider);
         }
     }
 

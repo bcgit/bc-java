@@ -1,3 +1,4 @@
+
 package org.bouncycastle.its.jcajce;
 
 import java.io.OutputStream;
@@ -24,7 +25,7 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 
-public class JcaEtsi103097DataSigner
+public class JcaETSI103097DataSigner
     implements ETSIDataSigner
 {
     public static class Builder
@@ -45,9 +46,9 @@ public class JcaEtsi103097DataSigner
             return this;
         }
 
-        public JcaEtsi103097DataSigner build(PrivateKey privateKey)
+        public JcaETSI103097DataSigner build(PrivateKey privateKey)
         {
-            return new JcaEtsi103097DataSigner((ECPrivateKey)privateKey, helper);
+            return new JcaETSI103097DataSigner((ECPrivateKey)privateKey, helper);
         }
     }
 
@@ -60,7 +61,7 @@ public class JcaEtsi103097DataSigner
 
     private java.security.Signature sig;
 
-    private JcaEtsi103097DataSigner(ECPrivateKey privateKey, JcaJceHelper helper)
+    private JcaETSI103097DataSigner(ECPrivateKey privateKey, JcaJceHelper helper)
     {
         this.privKey = privateKey;
         this.helper = helper;

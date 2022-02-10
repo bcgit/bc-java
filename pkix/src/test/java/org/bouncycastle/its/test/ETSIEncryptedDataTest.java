@@ -6,12 +6,10 @@ import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.its.ETSIEncryptedData;
 import org.bouncycastle.its.ETSIRecipientID;
 import org.bouncycastle.its.ETSIRecipientInfo;
-import org.bouncycastle.its.jcajce.JcaEtsiDataDecryptor;
+import org.bouncycastle.its.jcajce.JcaETSIDataDecryptor;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
@@ -59,7 +57,7 @@ public class ETSIEncryptedDataTest
         ETSIRecipientInfo info = edc.getRecipients().getMatches(new ETSIRecipientID(Hex.decode("6cc2023b5115003e"))).iterator().next();
 
 
-        ETSIDataDecryptor dec = JcaEtsiDataDecryptor.builder(
+        ETSIDataDecryptor dec = JcaETSIDataDecryptor.builder(
             kp.getPrivate(),
             Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")
         ).provider("BC").build();
