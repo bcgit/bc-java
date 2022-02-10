@@ -55,10 +55,7 @@ public class Ieee1609Dot2Data
         return null;
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
+
 
     public ASN1Primitive toASN1Primitive()
     {
@@ -73,6 +70,11 @@ public class Ieee1609Dot2Data
     public Ieee1609Dot2Content getContent()
     {
         return content;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public static class Builder
