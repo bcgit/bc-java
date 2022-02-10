@@ -3,13 +3,13 @@ package org.bouncycastle.jcajce.provider.asymmetric;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
-import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
-import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -228,6 +228,8 @@ public class EC
             provider.addAlgorithm("Cipher.ECIESWITHSHA384ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA384andDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESwithSHA512andDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA512andDESedeCBC");
             provider.addAlgorithm("Cipher.ECIESWITHSHA512ANDDESEDE-CBC", PREFIX + "IESCipher$ECIESwithSHA512andDESedeCBC");
+
+            provider.addAlgorithm("Cipher.ETSIKEMWITHSHA256", PREFIX + "IESKEMCipher$KEMwithSHA256");
 
             provider.addAlgorithm("Signature.ECDSA", PREFIX + "SignatureSpi$ecDSA");
             provider.addAlgorithm("Signature.NONEwithECDSA", PREFIX + "SignatureSpi$ecDSAnone");
