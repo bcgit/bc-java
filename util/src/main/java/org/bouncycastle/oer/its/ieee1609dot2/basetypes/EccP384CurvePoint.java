@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
@@ -172,16 +173,22 @@ public class EccP384CurvePoint
             return this.createEccP384CurvePoint();
         }
 
-        public EccP384CurvePoint createCompressedY0(BigInteger y)
+        public EccP384CurvePoint createCompressed(ECPoint point)
         {
-            this.choice = compressedY0;
-            throw new IllegalStateException("not fully implemented.");
-        }
 
-        public EccP384CurvePoint createCompressedY1(BigInteger y)
-        {
-            this.choice = compressedY1;
-            throw new IllegalStateException("not fully implemented.");
+            byte[] encoded = point.getEncoded(true);
+            if (encoded[0] == 0x02)
+            {
+                this.choice = compressedY0;
+            }
+            else if (encoded[0] == 0x03)
+            {
+                this.choice = compressedY1;
+            }
+            byte[] copy = new byte[encoded.length - 1];
+            System.arraycopy(encoded, 0, copy, 0, copy.length);
+            this.value = new DEROctetString(copy);
+            return this.createEccP384CurvePoint();
         }
 
         public EccP384CurvePoint createUncompressedP384(BigInteger x, BigInteger y)
