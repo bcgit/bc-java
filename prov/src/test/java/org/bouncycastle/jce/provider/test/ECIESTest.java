@@ -70,7 +70,8 @@ public class ECIESTest
     {
         etsiEciesTest();
         etsiEciesRandomTest();
-        
+        etsiEciesUncompressedRandomTest();
+
         byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
         byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
 
@@ -229,7 +230,7 @@ public class ECIESTest
 
         etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")));
 
-        SecretKey k = (SecretKey)etsiKem.unwrap(Hex.decode("03996da81b76fbdcaae0289abddfaf2b7198456dbe5495e58c7c61e32a2c2610ca49a6e39470e44e37f302da99da444426f368211d919a06c57b574647b97ccc51"), "AES[128]", Cipher.SECRET_KEY);
+        SecretKey k = (SecretKey)etsiKem.unwrap(Hex.decode("03996da81b76fbdcaae0289abddfaf2b7198456dbe5495e58c7c61e32a2c2610ca49a6e39470e44e37f302da99da444426f368211d919a06c57b574647b97ccc51"), "AES", Cipher.SECRET_KEY);
         // check the decryption
         Cipher ccm = Cipher.getInstance("CCM", "BC");
 
@@ -257,7 +258,31 @@ public class ECIESTest
 
         etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E"), true));
 
-        SecretKey decK = (SecretKey)etsiKem.unwrap(enc, "AES[128]", Cipher.SECRET_KEY);
+        SecretKey decK = (SecretKey)etsiKem.unwrap(enc, "AES", Cipher.SECRET_KEY);
+
+        isTrue(Arrays.areEqual(k.getEncoded(), decK.getEncoded()));
+    }
+
+    private void etsiEciesUncompressedRandomTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        SecretKey k = new SecretKeySpec(Hex.decode("d311371e8373bea1027e6ae573d6f1dd"), "AES");
+
+        Cipher etsiKem = Cipher.getInstance("ETSIKEMwithSHA256", "BC");
+
+        etsiKem.init(Cipher.WRAP_MODE, kp.getPublic(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B511500"), false));
+
+        byte[] enc = etsiKem.wrap(k);
+
+        etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B511500"), false));
+
+        SecretKey decK = (SecretKey)etsiKem.unwrap(enc, "AES", Cipher.SECRET_KEY);
 
         isTrue(Arrays.areEqual(k.getEncoded(), decK.getEncoded()));
     }
