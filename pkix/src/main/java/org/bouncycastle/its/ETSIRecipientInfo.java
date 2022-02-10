@@ -1,7 +1,6 @@
 package org.bouncycastle.its;
 
 
-import org.bouncycastle.its.jcajce.JcaEtsiDataDecryptor;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.oer.its.ieee1609dot2.AesCcmCiphertext;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedData;
@@ -49,14 +48,11 @@ public class ETSIRecipientInfo
         EncryptedDataEncryptionKey edec = pkRecipientInfo.getEncKey();
 
         EciesP256EncryptedKey key = EciesP256EncryptedKey.getInstance(edec.getValue());
-
-
         EccP256CurvePoint point = EccP256CurvePoint.getInstance(key.getV());
 
         // [ephemeral public key][encrypted key][tag]
         byte[] wrappedKey = Arrays.concatenate(point.getEncodedPoint(), key.getC().getOctets(), key.getT().getOctets());
+
         return ddec.decrypt(wrappedKey, act.getCcmCiphertext().getOctets(), act.getNonce().getOctets());
-
-
     }
 }
