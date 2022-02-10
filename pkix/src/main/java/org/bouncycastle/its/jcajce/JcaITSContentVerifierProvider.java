@@ -103,19 +103,18 @@ public class JcaITSContentVerifierProvider
         }
     }
 
-    @Override
+
     public boolean hasAssociatedCertificate()
     {
         return issuer != null;
     }
 
-    @Override
     public ITSCertificate getAssociatedCertificate()
     {
         return issuer;
     }
 
-    @Override
+
     public ContentVerifier get(int verifierAlgorithmIdentifier)
         throws OperatorCreationException
     {
@@ -172,19 +171,18 @@ public class JcaITSContentVerifierProvider
 
             return new ContentVerifier()
             {
-                @Override
+
                 public AlgorithmIdentifier getAlgorithmIdentifier()
                 {
                     return null;
                 }
 
-                @Override
+
                 public OutputStream getOutputStream()
                 {
                     return os;
                 }
 
-                @Override
                 public boolean verify(byte[] expected)
                 {
                     byte[] clientCertDigest = calculator.getDigest();
