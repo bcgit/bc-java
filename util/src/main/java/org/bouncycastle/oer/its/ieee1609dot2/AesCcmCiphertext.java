@@ -69,6 +69,11 @@ public class AesCcmCiphertext
         return ItsUtils.toSequence(nonce, ccmCiphertext);
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 
