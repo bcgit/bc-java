@@ -6,9 +6,9 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 public class EtsiTs103097Data_Unsecured extends EtsiTs103097Data
 {
-    public EtsiTs103097Data_Unsecured(UINT8 protocolVersion, Ieee1609Dot2Content content)
+    public EtsiTs103097Data_Unsecured(Ieee1609Dot2Content content)
     {
-        super(protocolVersion, content);
+        super(content);
     }
 
     protected EtsiTs103097Data_Unsecured(ASN1Sequence src)
