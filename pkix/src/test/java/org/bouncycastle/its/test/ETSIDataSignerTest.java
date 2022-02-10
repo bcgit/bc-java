@@ -22,8 +22,8 @@ import org.bouncycastle.its.ETSISignedData;
 import org.bouncycastle.its.ETSISignedDataBuilder;
 import org.bouncycastle.its.bc.BcEtsi103097DataSigner;
 import org.bouncycastle.its.bc.BcEtsi103097DataVerifierProvider;
-import org.bouncycastle.its.jcajce.JcaEtsi103097DataSigner;
-import org.bouncycastle.its.jcajce.JcaEtsi103097DataVerifierProvider;
+import org.bouncycastle.its.jcajce.JcaETSI103097DataSigner;
+import org.bouncycastle.its.jcajce.JcaETSI103097DataVerifierProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
 
@@ -86,8 +86,8 @@ public class ETSIDataSignerTest
             .setUnsecuredData("The cat sat on the mat".getBytes());
 
         ETSISignedData signedData = signedDataBuilder.build(
-            new JcaEtsi103097DataSigner.Builder().setProvider("BC").build(privateKeyParameters));
+            new JcaETSI103097DataSigner.Builder().setProvider("BC").build(privateKeyParameters));
 
-        assertTrue(signedData.signatureValid(new JcaEtsi103097DataVerifierProvider.Builder().setProvider("BC").build(publicVerificationKey)));
+        assertTrue(signedData.signatureValid(new JcaETSI103097DataVerifierProvider.Builder().setProvider("BC").build(publicVerificationKey)));
     }
 }

@@ -22,7 +22,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.OperatorCreationException;
 
-public class JcaEtsi103097DataVerifierProvider
+public class JcaETSI103097DataVerifierProvider
     implements ETSIDataVerifierProvider
 {
     public static class Builder
@@ -43,9 +43,9 @@ public class JcaEtsi103097DataVerifierProvider
             return this;
         }
 
-        public JcaEtsi103097DataVerifierProvider build(PublicKey publicKey)
+        public JcaETSI103097DataVerifierProvider build(PublicKey publicKey)
         {
-            return new JcaEtsi103097DataVerifierProvider((ECPublicKey)publicKey, helper);
+            return new JcaETSI103097DataVerifierProvider((ECPublicKey)publicKey, helper);
         }
     }
 
@@ -56,7 +56,7 @@ public class JcaEtsi103097DataVerifierProvider
     private final int sigChoice;
     private final String signer;
 
-    private JcaEtsi103097DataVerifierProvider(ECPublicKey publicKey, JcaJceHelper helper)
+    private JcaETSI103097DataVerifierProvider(ECPublicKey publicKey, JcaJceHelper helper)
     {
         this.publicKey = publicKey;
         this.helper = helper;
