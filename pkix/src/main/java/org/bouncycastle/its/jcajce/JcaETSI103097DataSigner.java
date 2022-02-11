@@ -1,4 +1,3 @@
-
 package org.bouncycastle.its.jcajce;
 
 import java.io.OutputStream;

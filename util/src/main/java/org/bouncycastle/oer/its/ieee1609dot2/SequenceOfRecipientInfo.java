@@ -65,6 +65,10 @@ public class SequenceOfRecipientInfo
         return recipientInfos;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder
     {
 

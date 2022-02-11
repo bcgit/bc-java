@@ -50,6 +50,10 @@ public class EncryptedDataEncryptionKey
         }
     }
 
+
+
+
+
     public static EncryptedDataEncryptionKey getInstance(Object o)
     {
         if (o instanceof EncryptedDataEncryptionKey)
@@ -81,28 +85,16 @@ public class EncryptedDataEncryptionKey
         return new DERTaggedObject(choice, value);
     }
 
-    public static class Builder
-    {
+    public static EncryptedDataEncryptionKey eciesNistP256(EciesP256EncryptedKey value) {
+        return new EncryptedDataEncryptionKey(eciesNistP256,value);
+    }
 
-        private int choice;
-        private ASN1Encodable value;
+    public static EncryptedDataEncryptionKey eciesBrainpoolP256r1(EciesP256EncryptedKey value) {
+        return new EncryptedDataEncryptionKey(eciesBrainpoolP256r1,value);
+    }
 
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setValue(ASN1Encodable value)
-        {
-            this.value = value;
-            return this;
-        }
-
-        public EncryptedDataEncryptionKey createEncryptedDataEncryptionKey()
-        {
-            return new EncryptedDataEncryptionKey(choice, value);
-        }
+    public static EncryptedDataEncryptionKey extension(ASN1OctetString value) {
+        return new EncryptedDataEncryptionKey(extension,value);
     }
 
 }
