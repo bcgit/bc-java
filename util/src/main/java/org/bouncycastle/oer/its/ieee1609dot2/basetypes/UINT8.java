@@ -55,7 +55,7 @@ public class UINT8
         }
         if (value.compareTo(MAX) > 0)
         {
-            throw new IllegalArgumentException("value 0x"+value.toString(16)+"  must not exceed 0x" + MAX.toString(16));
+            throw new IllegalArgumentException("value 0x" + value.toString(16) + "  must not exceed 0x" + MAX.toString(16));
         }
     }
 

@@ -51,9 +51,6 @@ public class EncryptedDataEncryptionKey
     }
 
 
-
-
-
     public static EncryptedDataEncryptionKey getInstance(Object o)
     {
         if (o instanceof EncryptedDataEncryptionKey)
@@ -85,16 +82,19 @@ public class EncryptedDataEncryptionKey
         return new DERTaggedObject(choice, value);
     }
 
-    public static EncryptedDataEncryptionKey eciesNistP256(EciesP256EncryptedKey value) {
-        return new EncryptedDataEncryptionKey(eciesNistP256,value);
+    public static EncryptedDataEncryptionKey eciesNistP256(EciesP256EncryptedKey value)
+    {
+        return new EncryptedDataEncryptionKey(eciesNistP256, value);
     }
 
-    public static EncryptedDataEncryptionKey eciesBrainpoolP256r1(EciesP256EncryptedKey value) {
-        return new EncryptedDataEncryptionKey(eciesBrainpoolP256r1,value);
+    public static EncryptedDataEncryptionKey eciesBrainpoolP256r1(EciesP256EncryptedKey value)
+    {
+        return new EncryptedDataEncryptionKey(eciesBrainpoolP256r1, value);
     }
 
-    public static EncryptedDataEncryptionKey extension(ASN1OctetString value) {
-        return new EncryptedDataEncryptionKey(extension,value);
+    public static EncryptedDataEncryptionKey extension(ASN1OctetString value)
+    {
+        return new EncryptedDataEncryptionKey(extension, value);
     }
 
 }

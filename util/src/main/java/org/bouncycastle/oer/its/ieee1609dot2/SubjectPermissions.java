@@ -58,7 +58,7 @@ public class SubjectPermissions
             value = DEROctetString.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalArgumentException("invalid choice value "+choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
         }
     }
 

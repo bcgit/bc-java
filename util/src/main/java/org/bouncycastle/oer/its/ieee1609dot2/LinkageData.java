@@ -1,7 +1,6 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -29,14 +28,14 @@ public class LinkageData
 
     private LinkageData(ASN1Sequence seq)
     {
-        if (seq.size()  != 3)
+        if (seq.size() != 3)
         {
             throw new IllegalArgumentException("expected sequence size of 3");
         }
 
         this.iCert = IValue.getInstance(seq.getObjectAt(0));
         this.linkageValue = LinkageValue.getInstance(seq.getObjectAt(1));
-        this.groupLinkageValue = OEROptional.getValue(GroupLinkageValue.class,seq.getObjectAt(2));
+        this.groupLinkageValue = OEROptional.getValue(GroupLinkageValue.class, seq.getObjectAt(2));
     }
 
     public static LinkageData getInstance(Object src)
@@ -70,6 +69,6 @@ public class LinkageData
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{iCert,linkageValue, OEROptional.getInstance(groupLinkageValue)});
+        return new DERSequence(new ASN1Encodable[]{iCert, linkageValue, OEROptional.getInstance(groupLinkageValue)});
     }
 }

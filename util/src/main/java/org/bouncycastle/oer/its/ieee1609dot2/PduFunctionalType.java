@@ -21,7 +21,6 @@ public class PduFunctionalType
     public static final PduFunctionalType iso21177ExtendedAuth = new PduFunctionalType(2);
 
 
-
     private final BigInteger functionalType;
 
     public PduFunctionalType(long value)
