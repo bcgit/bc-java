@@ -63,7 +63,7 @@ public class CertificateId
 
 
         default:
-            throw new IllegalArgumentException("invalid choice value "+choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
         }
     }
 

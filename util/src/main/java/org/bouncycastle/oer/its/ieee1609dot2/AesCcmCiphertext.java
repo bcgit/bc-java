@@ -89,7 +89,7 @@ public class AesCcmCiphertext
 
         public Builder setNonce(byte[] nonce)
         {
-           return setNonce(new DEROctetString(nonce));
+            return setNonce(new DEROctetString(nonce));
         }
 
 

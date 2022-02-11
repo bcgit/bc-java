@@ -17,6 +17,7 @@ public class Latitude
     {
         super(value);
     }
+
     public Latitude(BigInteger value)
     {
         super(value);

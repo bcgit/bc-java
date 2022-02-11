@@ -87,23 +87,28 @@ public class RecipientInfo
     }
 
 
-    public static RecipientInfo pskRecipInfo(PreSharedKeyRecipientInfo info) {
+    public static RecipientInfo pskRecipInfo(PreSharedKeyRecipientInfo info)
+    {
         return new RecipientInfo(pskRecipInfo, info);
     }
 
-    public static RecipientInfo symmRecipInfo(SymmRecipientInfo info) {
+    public static RecipientInfo symmRecipInfo(SymmRecipientInfo info)
+    {
         return new RecipientInfo(symmRecipInfo, info);
     }
 
-    public static RecipientInfo certRecipInfo(PKRecipientInfo info) {
+    public static RecipientInfo certRecipInfo(PKRecipientInfo info)
+    {
         return new RecipientInfo(certRecipInfo, info);
     }
 
-    public static RecipientInfo signedDataRecipInfo(PKRecipientInfo info) {
+    public static RecipientInfo signedDataRecipInfo(PKRecipientInfo info)
+    {
         return new RecipientInfo(signedDataRecipInfo, info);
     }
 
-    public static RecipientInfo rekRecipInfo(PKRecipientInfo info) {
+    public static RecipientInfo rekRecipInfo(PKRecipientInfo info)
+    {
         return new RecipientInfo(rekRecipInfo, info);
     }
 
