@@ -6,6 +6,10 @@ import java.security.interfaces.ECPublicKey;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.its.ETSIKeyWrapper;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -51,14 +55,29 @@ public class JceETSIKeyWrapper
                 size = size + 1;
             }
 
+            SubjectPublicKeyInfo pkInfo = SubjectPublicKeyInfo.getInstance(recipientKey.getEncoded());
+            ASN1ObjectIdentifier curveID = ASN1ObjectIdentifier.getInstance(pkInfo.getAlgorithm().getParameters());
 
-            // TODO add brainpool.
             EciesP256EncryptedKey key = EciesP256EncryptedKey.builder()
                 .setV(EccP256CurvePoint.builder().createEncodedPoint(Arrays.copyOfRange(wrappedKey, 0, size)))
                 .setC(Arrays.copyOfRange(wrappedKey, size, size + secretKey.length))
                 .setT(Arrays.copyOfRange(wrappedKey, size + secretKey.length, wrappedKey.length)).build();
 
-            return EncryptedDataEncryptionKey.eciesNistP256(key);
+            if (curveID.equals(SECObjectIdentifiers.secp256r1))
+            {
+                return EncryptedDataEncryptionKey.eciesNistP256(key);
+            }
+            else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
+            {
+                return EncryptedDataEncryptionKey.eciesBrainpoolP256r1(key);
+            }
+            else
+            {
+                throw new IllegalStateException("recipient key curve is not P-256 or Brainpool P256r1");
+            }
+
+
+
 
         }
         catch (Exception ex)
