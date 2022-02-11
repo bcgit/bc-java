@@ -91,12 +91,11 @@ public class ETSIEncryptedDataTest
 
         // recoding
 
-        //encryptedData = new ETSIEncryptedData(encryptedData.getEncoded());
+        encryptedData = new ETSIEncryptedData(encryptedData.getEncoded());
 
         // decryption
 
         ETSIRecipientInfo info = encryptedData.getRecipients().getMatches(new ETSIRecipientID(Hex.decode("6cc2023b5115003e"))).iterator().next();
-
 
         ETSIDataDecryptor dec = JcaETSIDataDecryptor.builder(
             kp.getPrivate(),
