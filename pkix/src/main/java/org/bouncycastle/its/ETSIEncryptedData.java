@@ -50,24 +50,12 @@ public class ETSIEncryptedData
             throw new IllegalStateException("EtsiTs103097Data-Encrypted did not have encrypted data content");
         }
         this.encryptedData = EncryptedData.getInstance(content.getContent());
-
-    }
-
-    public ETSIEncryptedData(EtsiTs103097Data_Encrypted data)
-    {
-        Ieee1609Dot2Content content = data.getContent();
-        if (content.getChoice() != Ieee1609Dot2Content.encryptedData)
-        {
-            throw new IllegalStateException("EtsiTs103097Data-Encrypted did not have encrypted data content");
-        }
-        this.encryptedData = EncryptedData.getInstance(data.getContent());
     }
 
     ETSIEncryptedData(EncryptedData data)
     {
         this.encryptedData = data;
     }
-
 
     public byte[] getEncoded()
     {

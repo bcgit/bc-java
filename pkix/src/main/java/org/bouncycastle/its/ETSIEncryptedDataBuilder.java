@@ -1,6 +1,5 @@
 package org.bouncycastle.its;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,15 +11,10 @@ import org.bouncycastle.oer.its.ieee1609dot2.SymmetricCiphertext;
 
 public class ETSIEncryptedDataBuilder
 {
-
-    private final SecureRandom random;
-
-
     private final List<ETSIRecipientInfoBuilder> recipientInfoBuilders = new ArrayList<ETSIRecipientInfoBuilder>();
 
     public ETSIEncryptedDataBuilder()
     {
-        this.random = new SecureRandom(); // TODO: remove
     }
 
     public void addRecipientInfoBuilder(ETSIRecipientInfoBuilder recipientInfoBuilder)
@@ -30,11 +24,8 @@ public class ETSIEncryptedDataBuilder
 
     public ETSIEncryptedData build(ETSIDataEncryptor encryptor, byte[] content)
     {
-
-        byte[] key = new byte[16];
-        random.nextBytes(key);
-
-        byte[] opaque = encryptor.encrypt(key, content);
+        byte[] opaque = encryptor.encrypt(content);
+        byte[] key = encryptor.getKey();
         byte[] nonce = encryptor.getNonce();
 
         SequenceOfRecipientInfo.Builder builder = SequenceOfRecipientInfo.builder();
@@ -53,5 +44,4 @@ public class ETSIEncryptedDataBuilder
                 .createAesCcmCiphertext())).createEncryptedData()
         );
     }
-
 }
