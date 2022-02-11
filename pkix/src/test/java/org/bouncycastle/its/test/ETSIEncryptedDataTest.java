@@ -2,6 +2,9 @@ package org.bouncycastle.its.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -18,6 +21,7 @@ import org.bouncycastle.its.jcajce.JceETSIKeyWrapper;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.its.operator.ETSIDataEncryptor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -80,7 +84,7 @@ public class ETSIEncryptedDataTest
 
         kpGen.initialize(new ECGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
 
-      //  kpGen.initialize(new ECGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
+        //  kpGen.initialize(new ECGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -151,6 +155,67 @@ public class ETSIEncryptedDataTest
 
     }
 
+
+    private Object[] getRecipient(String name, String curve)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec(curve), new SecureRandom());
+        KeyPair kp = kpGen.generateKeyPair();
+
+        //
+        // We are using the name recipient hash value and the first 8 bytes are used for the recipient id.
+        // This is for the test only.
+        //
+        byte[] refHash = MessageDigest.getInstance("SHA256").digest(name.getBytes());
+        byte[] id = Arrays.copyOfRange(refHash, 0, 8);
+
+        JceETSIKeyWrapper keyWrapper = new JceETSIKeyWrapper.Builder((ECPublicKey)kp.getPublic(), refHash).setProvider("BC").build();
+        ETSIRecipientInfoBuilder recipientInfoBuilder = new ETSIRecipientInfoBuilder(keyWrapper, id);
+
+        // We need the private key for the test.
+        return new Object[]{recipientInfoBuilder, kp.getPrivate(), refHash, id};
+
+    }
+
+
+    public void testEncryptionMulti()
+        throws Exception
+    {
+
+        Object[][] items = new Object[][]{
+            getRecipient("RCP1", "P-256"),
+            getRecipient("RCP2", "brainpoolP256r1"),
+        };
+
+
+        ETSIEncryptedDataBuilder builder = new ETSIEncryptedDataBuilder();
+
+        builder.addRecipientInfoBuilder((ETSIRecipientInfoBuilder)items[0][0]);
+        builder.addRecipientInfoBuilder((ETSIRecipientInfoBuilder)items[1][0]);
+
+        ETSIDataEncryptor encryptor = new JceETSIDataEncryptor.Builder().setProvider("BC").build();
+        ETSIEncryptedData encryptedData = builder.build(encryptor, Strings.toByteArray("Test message"));
+
+        // recoding
+        encryptedData = new ETSIEncryptedData(encryptedData.getEncoded());
+
+        // Find and decrypt for each recipient.
+        for (Object[] item : items)
+        {
+            ETSIRecipientInfo info = encryptedData.getRecipients().getMatches(new ETSIRecipientID((byte[])item[3])).iterator().next();
+
+            ETSIDataDecryptor dec = JcaETSIDataDecryptor.builder(
+                (PrivateKey)item[1],
+                (byte[])item[2]
+            ).provider("BC").build();
+
+            byte[] content = info.getContent(dec);
+
+            assertEquals("Test message", Strings.fromByteArray(content));
+        }
+    }
 
 
 }
