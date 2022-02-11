@@ -69,6 +69,9 @@ public class ETSIDataSignerTest
         ETSISignedData signedData = signedDataBuilder.build(new BcEtsi103097DataSigner(privateKeyParameters));
         assertTrue(signedData.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
 
+        // recode test
+        signedData = new ETSISignedData(signedData.getEncoded());
+        assertTrue(signedData.signatureValid(new BcEtsi103097DataVerifierProvider(publicVerificationKey)));
     }
 
     public void testJca()
