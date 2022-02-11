@@ -2,7 +2,6 @@ package org.bouncycastle.its.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -81,13 +80,13 @@ public class ETSIEncryptedDataTest
         kpGen.initialize(new ECGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
         KeyPair kp = kpGen.generateKeyPair();
 
-        ETSIEncryptedDataBuilder builder = new ETSIEncryptedDataBuilder(new SecureRandom());
+        ETSIEncryptedDataBuilder builder = new ETSIEncryptedDataBuilder();
 
         JceETSIKeyWrapper keyWrapper = new JceETSIKeyWrapper.Builder((ECPublicKey)kp.getPublic(), Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")).setProvider("BC").build();
         ETSIRecipientInfoBuilder recipientInfoBuilder = new ETSIRecipientInfoBuilder(keyWrapper, Hex.decode("6CC2023B5115003E"));
         builder.addRecipientInfoBuilder(recipientInfoBuilder);
 
-        ETSIDataEncryptor encryptor = new JceETSIDataEncryptor();
+        ETSIDataEncryptor encryptor = new JceETSIDataEncryptor.Builder().setProvider("BC").build();
         ETSIEncryptedData encryptedData = builder.build(encryptor, Strings.toByteArray("Hello World"));
 
         // decryption

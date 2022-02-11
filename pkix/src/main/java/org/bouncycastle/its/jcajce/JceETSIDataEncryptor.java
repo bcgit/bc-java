@@ -1,5 +1,8 @@
 package org.bouncycastle.its.jcajce;
 
+import java.security.Provider;
+import java.security.SecureRandom;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -8,32 +11,88 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.its.operator.ETSIDataEncryptor;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 
 public class JceETSIDataEncryptor
     implements ETSIDataEncryptor
 {
-
+    private SecureRandom random;
     private JcaJceHelper helper;
 
-    public JceETSIDataEncryptor()
+    private byte[] nonce;
+
+    private JceETSIDataEncryptor(SecureRandom random, JcaJceHelper helper)
     {
-        this.helper = new DefaultJcaJceHelper();
+        this.random = random;
+        this.helper = helper;
     }
 
-
-    public byte[] encrypt(byte[] key, byte[] nonce, byte[] content)
+    public byte[] encrypt(byte[] key, byte[] content)
     {
+        nonce = new byte[12];
+        random.nextBytes(nonce);
+
         try
         {
             SecretKey k = new SecretKeySpec(key, "AES");
             Cipher ccm = helper.createCipher("CCM");
             ccm.init(Cipher.ENCRYPT_MODE, k, new GCMParameterSpec(128, nonce));
             return ccm.doFinal(content);
-
         }
         catch (Exception ex)
         {
             throw new RuntimeException(ex.getMessage(), ex);
+        }
+    }
+
+    public byte[] getNonce()
+    {
+        return nonce;
+    }
+
+    public static class Builder
+    {
+        private SecureRandom random;
+        private JcaJceHelper helper = new DefaultJcaJceHelper();
+
+        public Builder()
+        {
+        }
+
+        /**
+         * Sets the JCE provider to source cryptographic primitives from.
+         *
+         * @param provider the JCE provider to use.
+         * @return the current builder.
+         */
+        public Builder setProvider(Provider provider)
+        {
+            this.helper = new ProviderJcaJceHelper(provider);
+
+            return this;
+        }
+
+        /**
+         * Sets the JCE provider to source cryptographic primitives from.
+         *
+         * @param providerName the name of the JCE provider to use.
+         * @return the current builder.
+         */
+        public Builder setProvider(String providerName)
+        {
+            this.helper = new NamedJcaJceHelper(providerName);
+
+            return this;
+        }
+
+        public JceETSIDataEncryptor build()
+        {
+            if (random == null)
+            {
+                random = new SecureRandom();
+            }
+            return new JceETSIDataEncryptor(random, helper);
         }
     }
 }
