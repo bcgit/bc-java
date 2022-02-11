@@ -2,6 +2,7 @@ package org.bouncycastle.its;
 
 
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
+import org.bouncycastle.its.operator.ETSIDataEncryptor;
 import org.bouncycastle.oer.its.ieee1609dot2.AesCcmCiphertext;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedData;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedDataEncryptionKey;
@@ -21,6 +22,12 @@ public class ETSIRecipientInfo
     {
         this.recipientInfo = recipientInfo;
         this.encryptedData = encryptedData;
+    }
+
+    public ETSIRecipientInfo(RecipientInfo recipientInfo)
+    {
+        this.recipientInfo = recipientInfo;
+        this.encryptedData = null;
     }
 
     public RecipientInfo getRecipientInfo()
@@ -55,4 +62,6 @@ public class ETSIRecipientInfo
 
         return ddec.decrypt(wrappedKey, act.getCcmCiphertext().getOctets(), act.getNonce().getOctets());
     }
+
+
 }

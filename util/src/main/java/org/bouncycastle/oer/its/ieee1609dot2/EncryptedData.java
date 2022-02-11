@@ -67,6 +67,11 @@ public class EncryptedData
         return ciphertext;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+
     public static class Builder
     {
 

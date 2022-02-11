@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 
 /**
@@ -99,9 +100,23 @@ public class EciesP256EncryptedKey
             return this;
         }
 
+
+        public Builder setC(byte[] c)
+        {
+            this.c = new DEROctetString(c);
+            return this;
+        }
+
+
         public Builder setT(ASN1OctetString t)
         {
             this.t = t;
+            return this;
+        }
+
+        public Builder setT(byte[] t)
+        {
+            this.t = new DEROctetString(t);
             return this;
         }
 

@@ -176,9 +176,41 @@ public class EccP256CurvePoint
             return this.createEccP256CurvePoint();
         }
 
+        public EccP256CurvePoint createEncodedPoint(byte[] encoded)
+        {
+            if (encoded[0] == 0x02)
+            {
+                //33
+                this.choice = compressedY0;
+                byte[] copy = new byte[encoded.length - 1];
+                System.arraycopy(encoded, 1, copy, 0, copy.length);
+                this.value = new DEROctetString(copy);
+            }
+            else if (encoded[0] == 0x03)
+            {
+                //33
+                this.choice = compressedY1;
+                byte[] copy = new byte[encoded.length - 1];
+                System.arraycopy(encoded, 1, copy, 0, copy.length);
+                this.value = new DEROctetString(copy);
+            } else if (encoded[0] == 0x04) {
+                // 65
+                this.choice = uncompressedP256;
+                value = new DERSequence(new ASN1Encodable[]{
+                    new DEROctetString(Arrays.copyOfRange(encoded,1,34)),
+                    new DEROctetString(Arrays.copyOfRange(encoded,34,66)),
+                });
+
+            } else {
+                throw new IllegalArgumentException("unrecognised encoding "+encoded[0]);
+            }
+
+            return this.createEccP256CurvePoint();
+        }
+
+
         public EccP256CurvePoint createCompressed(ECPoint point)
         {
-
             byte[] encoded = point.getEncoded(true);
             if (encoded[0] == 0x02)
             {

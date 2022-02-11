@@ -72,6 +72,10 @@ public class PKRecipientInfo
         return ItsUtils.toSequence(recipientId, encKey);
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder
     {
 
