@@ -18,9 +18,9 @@ public class ETSIEncryptedDataBuilder
 
     private final List<ETSIRecipientInfoBuilder> recipientInfoBuilders = new ArrayList<ETSIRecipientInfoBuilder>();
 
-    public ETSIEncryptedDataBuilder(SecureRandom random)
+    public ETSIEncryptedDataBuilder()
     {
-        this.random = random;
+        this.random = new SecureRandom(); // TODO: remove
     }
 
     public void addRecipientInfoBuilder(ETSIRecipientInfoBuilder recipientInfoBuilder)
@@ -28,16 +28,14 @@ public class ETSIEncryptedDataBuilder
         recipientInfoBuilders.add(recipientInfoBuilder);
     }
 
-
     public ETSIEncryptedData build(ETSIDataEncryptor encryptor, byte[] content)
     {
 
         byte[] key = new byte[16];
         random.nextBytes(key);
-        byte[] nonce = new byte[12];
-        random.nextBytes(nonce);
 
-        byte[] opaque = encryptor.encrypt(key, nonce, content);
+        byte[] opaque = encryptor.encrypt(key, content);
+        byte[] nonce = encryptor.getNonce();
 
         SequenceOfRecipientInfo.Builder builder = SequenceOfRecipientInfo.builder();
         for (ETSIRecipientInfoBuilder recipientInfoBuilder : recipientInfoBuilders)

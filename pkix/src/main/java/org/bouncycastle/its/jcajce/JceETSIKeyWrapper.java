@@ -67,7 +67,6 @@ public class JceETSIKeyWrapper
         }
     }
 
-
     public static class Builder
     {
         private final ECPublicKey recipientKey;
