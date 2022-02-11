@@ -56,7 +56,8 @@ public class SequenceOfRecipientInfo
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
-        for (RecipientInfo info:recipientInfos) {
+        for (RecipientInfo info : recipientInfos)
+        {
             v.add(info);
         }
         return new DERSequence(v);
