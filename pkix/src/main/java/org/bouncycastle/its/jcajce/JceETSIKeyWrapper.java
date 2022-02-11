@@ -24,12 +24,13 @@ public class JceETSIKeyWrapper
     private final byte[] recipientHash;
     private final JcaJceHelper helper;
 
-    public JceETSIKeyWrapper(ECPublicKey key, byte[] recipientHash, JcaJceHelper helper)
+    private JceETSIKeyWrapper(ECPublicKey key, byte[] recipientHash, JcaJceHelper helper)
     {
         this.recipientKey = key;
         this.recipientHash = recipientHash;
         this.helper = helper;
     }
+
 
     public EncryptedDataEncryptionKey wrap(byte[] secretKey)
     {
@@ -79,15 +80,29 @@ public class JceETSIKeyWrapper
             this.recipientHash = recipientHash;
         }
 
+        /**
+         * Sets the JCE provider to source cryptographic primitives from.
+         *
+         * @param provider the JCE provider to use.
+         * @return the current builder.
+         */
         public Builder setProvider(Provider provider)
         {
             this.helper = new ProviderJcaJceHelper(provider);
+
             return this;
         }
 
-        public Builder setProvider(String name)
+        /**
+         * Sets the JCE provider to source cryptographic primitives from.
+         *
+         * @param providerName the name of the JCE provider to use.
+         * @return the current builder.
+         */
+        public Builder setProvider(String providerName)
         {
-            this.helper = new NamedJcaJceHelper(name);
+            this.helper = new NamedJcaJceHelper(providerName);
+
             return this;
         }
 
