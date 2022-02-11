@@ -21,6 +21,7 @@ public class JceETSIDataEncryptor
     private JcaJceHelper helper;
 
     private byte[] nonce;
+    private byte[] key;
 
     private JceETSIDataEncryptor(SecureRandom random, JcaJceHelper helper)
     {
@@ -28,8 +29,11 @@ public class JceETSIDataEncryptor
         this.helper = helper;
     }
 
-    public byte[] encrypt(byte[] key, byte[] content)
+    public byte[] encrypt(byte[] content)
     {
+        key = new byte[16];
+        random.nextBytes(key);
+
         nonce = new byte[12];
         random.nextBytes(nonce);
 
@@ -46,6 +50,12 @@ public class JceETSIDataEncryptor
         }
     }
 
+    @Override
+    public byte[] getKey()
+    {
+        return key;
+    }
+
     public byte[] getNonce()
     {
         return nonce;
@@ -58,6 +68,12 @@ public class JceETSIDataEncryptor
 
         public Builder()
         {
+        }
+
+        public Builder setRandom(SecureRandom random)
+        {
+            this.random = random;
+            return this;
         }
 
         /**
