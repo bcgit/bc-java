@@ -89,6 +89,10 @@ public class ETSIEncryptedDataTest
         ETSIDataEncryptor encryptor = new JceETSIDataEncryptor.Builder().setProvider("BC").build();
         ETSIEncryptedData encryptedData = builder.build(encryptor, Strings.toByteArray("Hello World"));
 
+        // recoding
+
+        //encryptedData = new ETSIEncryptedData(encryptedData.getEncoded());
+
         // decryption
 
         ETSIRecipientInfo info = encryptedData.getRecipients().getMatches(new ETSIRecipientID(Hex.decode("6cc2023b5115003e"))).iterator().next();
