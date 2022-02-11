@@ -50,7 +50,6 @@ public class JceETSIDataEncryptor
         }
     }
 
-    @Override
     public byte[] getKey()
     {
         return key;

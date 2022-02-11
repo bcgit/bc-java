@@ -144,13 +144,13 @@ public class JcaITSContentSigner
 
     }
 
-    @Override
+
     public OutputStream getOutputStream()
     {
         return digest.getOutputStream();
     }
 
-    @Override
+
     public byte[] getSignature()
     {
         byte[] clientCertDigest = digest.getDigest();
@@ -169,25 +169,25 @@ public class JcaITSContentSigner
         }
     }
 
-    @Override
+
     public ITSCertificate getAssociatedCertificate()
     {
         return signerCert;
     }
 
-    @Override
+
     public byte[] getAssociatedCertificateDigest()
     {
         return Arrays.clone(parentDigest);
     }
 
-    @Override
+
     public AlgorithmIdentifier getDigestAlgorithm()
     {
         return digestAlgo;
     }
 
-    @Override
+
     public boolean isForSelfSigning()
     {
         return parentData == null;
