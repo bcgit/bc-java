@@ -2,16 +2,25 @@ package org.bouncycastle.its.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.its.ETSIEncryptedData;
+import org.bouncycastle.its.ETSIEncryptedDataBuilder;
 import org.bouncycastle.its.ETSIRecipientID;
 import org.bouncycastle.its.ETSIRecipientInfo;
+import org.bouncycastle.its.ETSIRecipientInfoBuilder;
 import org.bouncycastle.its.jcajce.JcaETSIDataDecryptor;
+import org.bouncycastle.its.jcajce.JceETSIDataEncryptor;
+import org.bouncycastle.its.jcajce.JceETSIKeyWrapper;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
+import org.bouncycastle.its.operator.ETSIDataEncryptor;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
@@ -28,7 +37,7 @@ public class ETSIEncryptedDataTest
     }
 
 
-    public void test()
+    public void testDecryption()
         throws Exception
     {
 
@@ -62,8 +71,41 @@ public class ETSIEncryptedDataTest
             Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")
         ).provider("BC").build();
 
-       info.getContent(dec); // Will fail on bad tag otherwise
+        info.getContent(dec); // Will fail on bad tag otherwise
 
     }
+
+    public void testEncryption()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        kpGen.initialize(new ECGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
+        KeyPair kp = kpGen.generateKeyPair();
+
+        ETSIEncryptedDataBuilder builder = new ETSIEncryptedDataBuilder(new SecureRandom());
+
+        JceETSIKeyWrapper keyWrapper = new JceETSIKeyWrapper((ECPublicKey)kp.getPublic(), Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E"), new DefaultJcaJceHelper());
+        ETSIRecipientInfoBuilder recipientInfoBuilder = new ETSIRecipientInfoBuilder(keyWrapper, Hex.decode("6CC2023B5115003E"));
+        builder.addRecipientInfoBuilder(recipientInfoBuilder);
+
+        ETSIDataEncryptor encryptor = new JceETSIDataEncryptor();
+        ETSIEncryptedData encryptedData = builder.build(encryptor, Strings.toByteArray("Hello World"));
+
+        // decryption
+
+        ETSIRecipientInfo info = encryptedData.getRecipients().getMatches(new ETSIRecipientID(Hex.decode("6cc2023b5115003e"))).iterator().next();
+
+
+        ETSIDataDecryptor dec = JcaETSIDataDecryptor.builder(
+            kp.getPrivate(),
+            Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")
+        ).provider("BC").build();
+
+        byte[] content = info.getContent(dec);
+
+        assertEquals("Hello World", Strings.fromByteArray(content));
+
+    }
+
 
 }

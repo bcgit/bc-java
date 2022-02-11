@@ -34,13 +34,13 @@ public class JcaETSIDataDecryptor
     {
         try
         {
-            Cipher etsiKem =  helper.createCipher("ETSIKEMwithSHA256");
+            Cipher etsiKem = helper.createCipher("ETSIKEMwithSHA256");
             etsiKem.init(Cipher.UNWRAP_MODE, privateKey, new IESKEMParameterSpec(recipientHash));
 
             // [ephemeral public key][encrypted key][tag]
             SecretKey secretKey = (SecretKey)etsiKem.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
 
-            Cipher ccm =  helper.createCipher("CCM");
+            Cipher ccm = helper.createCipher("CCM");
             ccm.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, nonce));
             return ccm.doFinal(content);
         }
@@ -53,7 +53,7 @@ public class JcaETSIDataDecryptor
 
     public static Builder builder(PrivateKey privateKey, byte[] recipientHash)
     {
-        return new Builder(privateKey,recipientHash);
+        return new Builder(privateKey, recipientHash);
     }
 
     public static class Builder
@@ -62,7 +62,7 @@ public class JcaETSIDataDecryptor
         private final byte[] recipientHash;
         private final PrivateKey key;
 
-        public Builder(PrivateKey key,byte[] recipientHash)
+        public Builder(PrivateKey key, byte[] recipientHash)
         {
             this.key = key;
             this.recipientHash = Arrays.clone(recipientHash);

@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
 
 /**
@@ -86,10 +87,21 @@ public class AesCcmCiphertext
             return this;
         }
 
+        public Builder setNonce(byte[] nonce)
+        {
+           return setNonce(new DEROctetString(nonce));
+        }
+
+
         public Builder setOpaque(ASN1OctetString opaque)
         {
             this.opaque = opaque;
             return this;
+        }
+
+        public Builder setOpaque(byte[] opaque)
+        {
+            return setOpaque(new DEROctetString(opaque));
         }
 
         public AesCcmCiphertext createAesCcmCiphertext()

@@ -43,9 +43,20 @@ public class SymmetricCiphertext
             value = ASN1OctetString.getInstance(ato.getObject());
             break;
         default:
-            throw new IllegalArgumentException("invalid choice value "+choice);
+            throw new IllegalArgumentException("invalid choice value " + choice);
         }
     }
+
+    public static SymmetricCiphertext aes128ccm(AesCcmCiphertext ciphertext)
+    {
+        return new SymmetricCiphertext(aes128ccm, ciphertext);
+    }
+
+    public static SymmetricCiphertext extension(ASN1OctetString ciphertext)
+    {
+        return new SymmetricCiphertext(extension, ciphertext);
+    }
+
 
     public static SymmetricCiphertext getInstance(Object o)
     {
@@ -77,27 +88,5 @@ public class SymmetricCiphertext
         return new DERTaggedObject(choice, value);
     }
 
-    public static class Builder
-    {
-
-        private int choice;
-        private ASN1Encodable value;
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setValue(ASN1Encodable value)
-        {
-            this.value = value;
-            return this;
-        }
-
-        public SymmetricCiphertext createSymmetricCiphertext()
-        {
-            return new SymmetricCiphertext(choice, value);
-        }
-    }
 }
+
