@@ -18,7 +18,6 @@ import org.bouncycastle.its.jcajce.JceETSIDataEncryptor;
 import org.bouncycastle.its.jcajce.JceETSIKeyWrapper;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.its.operator.ETSIDataEncryptor;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -84,7 +83,7 @@ public class ETSIEncryptedDataTest
 
         ETSIEncryptedDataBuilder builder = new ETSIEncryptedDataBuilder(new SecureRandom());
 
-        JceETSIKeyWrapper keyWrapper = new JceETSIKeyWrapper((ECPublicKey)kp.getPublic(), Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E"), new DefaultJcaJceHelper());
+        JceETSIKeyWrapper keyWrapper = new JceETSIKeyWrapper.Builder((ECPublicKey)kp.getPublic(), Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")).setProvider("BC").build();
         ETSIRecipientInfoBuilder recipientInfoBuilder = new ETSIRecipientInfoBuilder(keyWrapper, Hex.decode("6CC2023B5115003E"));
         builder.addRecipientInfoBuilder(recipientInfoBuilder);
 
