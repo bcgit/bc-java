@@ -193,16 +193,20 @@ public class EccP256CurvePoint
                 byte[] copy = new byte[encoded.length - 1];
                 System.arraycopy(encoded, 1, copy, 0, copy.length);
                 this.value = new DEROctetString(copy);
-            } else if (encoded[0] == 0x04) {
+            }
+            else if (encoded[0] == 0x04)
+            {
                 // 65
                 this.choice = uncompressedP256;
                 value = new DERSequence(new ASN1Encodable[]{
-                    new DEROctetString(Arrays.copyOfRange(encoded,1,34)),
-                    new DEROctetString(Arrays.copyOfRange(encoded,34,66)),
+                    new DEROctetString(Arrays.copyOfRange(encoded, 1, 34)),
+                    new DEROctetString(Arrays.copyOfRange(encoded, 34, 66)),
                 });
 
-            } else {
-                throw new IllegalArgumentException("unrecognised encoding "+encoded[0]);
+            }
+            else
+            {
+                throw new IllegalArgumentException("unrecognised encoding " + encoded[0]);
             }
 
             return this.createEccP256CurvePoint();

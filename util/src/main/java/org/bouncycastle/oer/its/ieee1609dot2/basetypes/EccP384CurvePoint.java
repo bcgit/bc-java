@@ -30,7 +30,8 @@ import org.bouncycastle.util.BigIntegers;
  * }
  */
 public class EccP384CurvePoint
-    extends EccCurvePoint implements ASN1Choice
+    extends EccCurvePoint
+    implements ASN1Choice
 {
 
     public static final int xOnly = 0;

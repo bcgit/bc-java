@@ -56,7 +56,6 @@ public class Ieee1609Dot2Data
     }
 
 
-
     public ASN1Primitive toASN1Primitive()
     {
         return ItsUtils.toSequence(protocolVersion, content);
