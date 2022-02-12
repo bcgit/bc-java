@@ -44,6 +44,7 @@
             <fileset dir="tls/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
+            <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/java" includes="**/*.properties" />
             <fileset dir="pkix/src/test/java" includes="**/*.java" />
