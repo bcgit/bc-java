@@ -5,7 +5,6 @@ import java.security.Provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -41,7 +40,7 @@ public class JcaETSIDataDecryptor
             SecretKey secretKey = (SecretKey)etsiKem.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
 
             Cipher ccm = helper.createCipher("CCM");
-            ccm.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, nonce));
+            ccm.init(Cipher.DECRYPT_MODE, secretKey, ClassUtil.getGCMSpec(nonce, 128));
             return ccm.doFinal(content);
         }
         catch (Exception gex)
