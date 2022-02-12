@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.its.operator.ETSIDataEncryptor;
@@ -41,7 +40,7 @@ public class JceETSIDataEncryptor
         {
             SecretKey k = new SecretKeySpec(key, "AES");
             Cipher ccm = helper.createCipher("CCM");
-            ccm.init(Cipher.ENCRYPT_MODE, k, new GCMParameterSpec(128, nonce));
+            ccm.init(Cipher.ENCRYPT_MODE, k, ClassUtil.getGCMSpec(nonce, 128));
             return ccm.doFinal(content);
         }
         catch (Exception ex)
