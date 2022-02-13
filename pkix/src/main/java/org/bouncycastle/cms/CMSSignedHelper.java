@@ -180,7 +180,18 @@ class CMSSignedHelper
 
                 if (obj instanceof ASN1TaggedObject)
                 {
-                    certList.add(new X509AttributeCertificateHolder(AttributeCertificate.getInstance(((ASN1TaggedObject)obj).getObject())));
+                    ASN1TaggedObject tObj = (ASN1TaggedObject)obj;
+
+                    // CertificateChoices ::= CHOICE {
+                    //     certificate Certificate,
+                    //     extendedCertificate [0] IMPLICIT ExtendedCertificate,  -- Obsolete
+                    //     v1AttrCert [1] IMPLICIT AttributeCertificateV1,        -- Obsolete
+                    //     v2AttrCert [2] IMPLICIT AttributeCertificateV2,
+                    //     other [3] IMPLICIT OtherCertificateFormat }
+                    if (tObj.getTagNo() == 1 || tObj.getTagNo() == 2)
+                    {
+                        certList.add(new X509AttributeCertificateHolder(AttributeCertificate.getInstance(tObj.getObject())));
+                    }
                 }
             }
 
