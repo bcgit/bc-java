@@ -48,6 +48,11 @@ public class NetscapeCertType
         super(usage.getBytes(), usage.getPadBits());
     }
 
+    public boolean hasUsages(int usages)
+    {
+        return (intValue() & usages) == usages;
+    }
+
     public String toString()
     {
         return "NetscapeCertType: 0x" + Integer.toHexString(intValue());
