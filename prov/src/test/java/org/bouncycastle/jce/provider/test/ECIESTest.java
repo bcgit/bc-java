@@ -13,7 +13,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
@@ -26,6 +25,7 @@ import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -234,7 +234,8 @@ public class ECIESTest
         // check the decryption
         Cipher ccm = Cipher.getInstance("CCM", "BC");
 
-        ccm.init(Cipher.DECRYPT_MODE, k, new GCMParameterSpec(128, Hex.decode("eaf3a6736b866446b1501313")));
+        ccm.init(Cipher.DECRYPT_MODE, k, new AEADParameterSpec(
+             Hex.decode("eaf3a6736b866446b1501313"), 128));
 
         byte[] pt = ccm.doFinal(Hex.decode("1e56af1083537123946957844cc5906698a777dddc317966a3920e16cfad39c6977f28156bd849b57e33b2a9abd1caa8a08520084214b865a355f6d274c3a64694b81b605b729c2a6fbe88c561e591a055713698d40cabe196b1c96fefccc05f977beef6ce3528950c0e05f1c43749fd06114641c0442d0c952eb2eb0fa6b6f0b3142c6a7e170c2520edf79076c0b6000d4216af50a72955a28e48b0d5ba14b05e3ed4e5220c8bcc207070f6738b3b6ecabe056584b971df2a515bccd129bb614d2666a461542fa4c4d25a67a91bacda14fba0310cb937fa9d5d3351f17272eef2b6e492c3d7a02df81befed05139ce58a9c7f5d2f24f8acd99c4f8a8adbdd6a535f89a8a406430d3a335caa563b35bbb0733379d58f9056d017fdd7"));
     }
