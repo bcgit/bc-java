@@ -521,7 +521,7 @@ public class CMSSignedData
         }
         digestAlgs.add(digestAlg);
 
-        ASN1Set             digests = CMSUtils.convertToBERSet(digestAlgs);
+        ASN1Set             digests = CMSUtils.convertToDlSet(digestAlgs);
         ASN1Sequence        sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
 
         ASN1EncodableVector vec = new ASN1EncodableVector();
@@ -585,7 +585,7 @@ public class CMSSignedData
             vec.add(signer.toASN1Structure());
         }
 
-        ASN1Set             digests = CMSUtils.convertToBERSet(digestAlgs);
+        ASN1Set             digests = CMSUtils.convertToDlSet(digestAlgs);
         ASN1Set             signers = new DLSet(vec);
         ASN1Sequence        sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
 
