@@ -50,13 +50,12 @@ public class MPInteger
         
         byte[]    bytes = value.toByteArray();
         
-        if (bytes[0] == 0)
-        {
-            out.write(bytes, 1, bytes.length - 1);
+        int off = 0;
+        
+        while (off < bytes.length && bytes[off] == 0) {
+            off += 1;
         }
-        else
-        {
-            out.write(bytes, 0, bytes.length);
-        }
+        
+        out.write(bytes, off, bytes.length - off);
     }
 }
