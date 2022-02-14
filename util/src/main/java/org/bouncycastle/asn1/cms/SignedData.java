@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5652#section-5.1">RFC 5652</a>:
@@ -63,14 +64,17 @@ public class SignedData
     private static final ASN1Integer VERSION_4 = new ASN1Integer(4);
     private static final ASN1Integer VERSION_5 = new ASN1Integer(5);
 
-    private ASN1Integer version;
-    private ASN1Set     digestAlgorithms;
-    private ContentInfo contentInfo;
+    private final ASN1Integer version;
+    private final ASN1Set     digestAlgorithms;
+    private final ContentInfo contentInfo;
+    private final ASN1Set     signerInfos;
+    private final boolean     digsBer;
+    private final boolean     sigsBer;
+
     private ASN1Set     certificates;
     private ASN1Set     crls;
-    private ASN1Set     signerInfos;
-    private boolean certsBer;
-    private boolean        crlsBer;
+    private boolean     certsBer;
+    private boolean     crlsBer;
 
     /**
      * Return a SignedData object from the given object.
@@ -114,8 +118,10 @@ public class SignedData
         this.certificates = certificates;
         this.crls = crls;
         this.signerInfos = signerInfos;
+        this.digsBer = digestAlgorithms instanceof BERSet;
         this.crlsBer = crls instanceof BERSet;
         this.certsBer = certificates instanceof BERSet;
+        this.sigsBer = signerInfos instanceof BERSet;
     }
 
 
@@ -224,6 +230,7 @@ public class SignedData
         digestAlgorithms = ((ASN1Set)e.nextElement());
         contentInfo = ContentInfo.getInstance(e.nextElement());
 
+        ASN1Set sigInfs = null;
         while (e.hasMoreElements())
         {
             ASN1Primitive o = (ASN1Primitive)e.nextElement();
@@ -253,9 +260,22 @@ public class SignedData
             }
             else
             {
-                signerInfos = (ASN1Set)o;
+                if (!(o instanceof ASN1Set))
+                {
+                    throw new IllegalArgumentException("SET expected, not encountered");
+                }
+                sigInfs = (ASN1Set)o;
             }
         }
+
+        if (sigInfs == null)
+        {
+            throw new IllegalArgumentException("signerInfos not set");
+        }
+
+        signerInfos = sigInfs;
+        digsBer = digestAlgorithms instanceof BERSet;
+        sigsBer = signerInfos instanceof BERSet;
     }
 
     public ASN1Integer getVersion()
@@ -325,6 +345,13 @@ public class SignedData
 
         v.add(signerInfos);
 
-        return new BERSequence(v);
+        if (digsBer || sigsBer || crlsBer || certsBer)
+        {
+            return new BERSequence(v);
+        }
+        else
+        {
+            return new DLSequence(v);
+        }
     }
 }
