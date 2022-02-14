@@ -73,7 +73,7 @@ public class CMSSignedDataGenerator
     /**
      * Specify use of definite length rather than indefinite length encoding.
      *
-     * @param isDefiniteLength ture
+     * @param isDefiniteLength true use definite length, false use indefinite (default false).
      */
     public void setDefiniteLengthEncoding(boolean isDefiniteLength)
     {
