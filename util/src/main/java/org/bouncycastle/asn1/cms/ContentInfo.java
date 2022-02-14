@@ -80,7 +80,6 @@ public class ContentInfo
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
-
         contentType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
 
         if (seq.size() > 1)
@@ -129,6 +128,16 @@ public class ContentInfo
     public ASN1Encodable getContent()
     {
         return content;
+    }
+
+    /**
+     * Return true if this object encapsulates a definite-length structure.
+     *
+     * @return true if definite-length, false if indefinite.
+     */
+    public boolean isDefiniteLength()
+    {
+        return isDefiniteLength;
     }
 
     /**

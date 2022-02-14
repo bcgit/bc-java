@@ -344,8 +344,8 @@ public class SignedData
         }
 
         v.add(signerInfos);
-
-        if (digsBer || sigsBer || crlsBer || certsBer)
+        
+        if (!contentInfo.isDefiniteLength() || digsBer || sigsBer || crlsBer || certsBer)
         {
             return new BERSequence(v);
         }
