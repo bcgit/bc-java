@@ -223,7 +223,7 @@ public class CMSSignedDataStreamGenerator
             digestAlgs.add(signerGen.getDigestAlgorithm());
         }
 
-        sigGen.getRawOutputStream().write(CMSUtils.convertToBERSet(digestAlgs).getEncoded());
+        sigGen.getRawOutputStream().write(CMSUtils.convertToDlSet(digestAlgs).getEncoded());
         
         BERSequenceGenerator eiGen = new BERSequenceGenerator(sigGen.getRawOutputStream());
         eiGen.addObject(eContentType);

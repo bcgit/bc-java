@@ -147,7 +147,7 @@ class CMSUtils
         return readContentInfo(new ASN1InputStream(input));
     }
 
-    static ASN1Set convertToBERSet(Set<AlgorithmIdentifier> digestAlgs)
+    static ASN1Set convertToDlSet(Set<AlgorithmIdentifier> digestAlgs)
     {
         return new DLSet((AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]));
     }
@@ -288,6 +288,18 @@ class CMSUtils
         }
 
         return new BERSet(v);
+    }
+
+    static ASN1Set createDlSetFromList(List derObjects)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        for (Iterator it = derObjects.iterator(); it.hasNext(); )
+        {
+            v.add((ASN1Encodable)it.next());
+        }
+
+        return new DLSet(v);
     }
 
     static ASN1Set createDerSetFromList(List derObjects)

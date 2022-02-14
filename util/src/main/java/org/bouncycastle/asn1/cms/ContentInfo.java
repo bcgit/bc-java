@@ -9,6 +9,10 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.DLTaggedObject;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5652#section-3">RFC 5652</a> ContentInfo, and
@@ -30,8 +34,9 @@ public class ContentInfo
     extends ASN1Object
     implements CMSObjectIdentifiers
 {
-    private ASN1ObjectIdentifier contentType;
-    private ASN1Encodable        content;
+    private final ASN1ObjectIdentifier contentType;
+    private final ASN1Encodable        content;
+    private final boolean              isDefiniteLength;
 
     /**
      * Return an ContentInfo object from the given object.
@@ -88,6 +93,11 @@ public class ContentInfo
 
             content = tagged.getObject();
         }
+        else
+        {
+            content = null;
+        }
+        isDefiniteLength = !(seq instanceof BERSequence);
     }
 
     public ContentInfo(
@@ -96,6 +106,19 @@ public class ContentInfo
     {
         this.contentType = contentType;
         this.content = content;
+        if (content != null)
+        {
+            ASN1Primitive prim = content.toASN1Primitive();
+            this.isDefiniteLength =
+                prim instanceof DEROctetString
+                    || prim instanceof DLSequence
+                    || prim instanceof DERSequence;
+        }
+        else
+        {
+            // no content, keep it simple.
+            this.isDefiniteLength = true;
+        }
     }
 
     public ASN1ObjectIdentifier getContentType()
@@ -119,9 +142,16 @@ public class ContentInfo
 
         if (content != null)
         {
-            v.add(new BERTaggedObject(0, content));
+            if (isDefiniteLength)
+            {
+                v.add(new DLTaggedObject(0, content));
+            }
+            else
+            {
+                v.add(new BERTaggedObject(0, content));
+            }
         }
 
-        return new BERSequence(v);
+        return isDefiniteLength ? new DLSequence(v) : new BERSequence(v);
     }
 }
