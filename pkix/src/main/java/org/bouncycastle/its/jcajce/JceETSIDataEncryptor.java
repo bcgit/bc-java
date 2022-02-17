@@ -16,8 +16,8 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 public class JceETSIDataEncryptor
     implements ETSIDataEncryptor
 {
-    private SecureRandom random;
-    private JcaJceHelper helper;
+    private final SecureRandom random;
+    private final JcaJceHelper helper;
 
     private byte[] nonce;
     private byte[] key;

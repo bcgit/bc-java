@@ -122,10 +122,14 @@ public class BcITSContentSigner
         return parentData == null;
     }
 
+    public ASN1ObjectIdentifier getCurveID()
+    {
+        return curveID;
+    }
+
     public byte[] getSignature()
     {
         byte[] clientCertDigest = new byte[digest.getDigestSize()];
-
 
         digest.doFinal(clientCertDigest, 0);
 

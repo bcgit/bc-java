@@ -10,7 +10,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 
 public class JcaITSImplicitCertificateBuilderBuilder
 {
-    private JcaDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaDigestCalculatorProviderBuilder();
+    private final JcaDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaDigestCalculatorProviderBuilder();
 
     public JcaITSImplicitCertificateBuilderBuilder setProvider(Provider provider)
     {

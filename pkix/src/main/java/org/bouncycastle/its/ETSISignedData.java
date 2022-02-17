@@ -7,7 +7,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.its.operator.ECDSAEncoder;
-import org.bouncycastle.its.operator.ETSIDataVerifierProvider;
+import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OERInputStream;
@@ -77,11 +77,11 @@ public class ETSISignedData
      * @return true if the signature was valid.
      * @throws Exception
      */
-    public boolean signatureValid(ETSIDataVerifierProvider verifierProvider)
+    public boolean signatureValid(ITSContentVerifierProvider verifierProvider)
         throws Exception
     {
         Signature sig = signedData.getSignature();
-        ContentVerifier verifier = verifierProvider.getContentVerifier(sig.getChoice());
+        ContentVerifier verifier = verifierProvider.get(sig.getChoice());
         OutputStream os = verifier.getOutputStream();
         os.write(OEREncoder.toByteArray(signedData.getTbsData(), IEEE1609dot2.ToBeSignedData.build()));
         os.close();

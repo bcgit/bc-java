@@ -127,7 +127,9 @@ public class JcaITSContentSigner
             try
             {
                 parentData = signerCert.getEncoded();
-                digest.getOutputStream().write(parentData, 0, parentData.length);
+                OutputStream os = digest.getOutputStream();
+                os.write(parentData, 0, parentData.length);
+                os.close();
                 parentDigest = digest.getDigest();
             }
             catch (IOException e)
@@ -160,7 +162,7 @@ public class JcaITSContentSigner
             signature = helper.createSignature(signer);
             signature.initSign(privateKey);
             signature.update(clientCertDigest, 0, clientCertDigest.length);
-            signature.update(digest.getDigest());
+            signature.update(parentDigest, 0, parentDigest.length);
             return signature.sign();
         }
         catch (Exception e)
@@ -187,6 +189,10 @@ public class JcaITSContentSigner
         return digestAlgo;
     }
 
+    public ASN1ObjectIdentifier getCurveID()
+    {
+        return curveID;
+    }
 
     public boolean isForSelfSigning()
     {
