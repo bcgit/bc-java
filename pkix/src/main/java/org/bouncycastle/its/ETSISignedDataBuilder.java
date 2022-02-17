@@ -5,7 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.its.operator.ETSIDataSigner;
+import org.bouncycastle.its.operator.ECDSAEncoder;
+import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
@@ -20,6 +21,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.SignerIdentifier;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time64;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
@@ -93,16 +95,18 @@ public class ETSISignedDataBuilder
      * @param signer
      * @return
      */
-    public ETSISignedData build(ETSIDataSigner signer)
+    public ETSISignedData build(ITSContentSigner signer)
     {
         ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
+
+        Signature signature = ECDSAEncoder.toITS(signer.getCurveID(), signer.getSignature());
 
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().self().build())
-            .setSignature(signer.getSignature()).build());
+            .setSignature(signature).build());
     }
 
     /**
@@ -112,7 +116,7 @@ public class ETSISignedDataBuilder
      * @param certificateList
      * @return
      */
-    public ETSISignedData build(ETSIDataSigner signer, List<ITSCertificate> certificateList)
+    public ETSISignedData build(ITSContentSigner signer, List<ITSCertificate> certificateList)
     {
         ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
@@ -123,11 +127,13 @@ public class ETSISignedDataBuilder
             certificates.add(Certificate.getInstance(certificate.toASN1Structure()));
         }
 
+        Signature signature = ECDSAEncoder.toITS(signer.getCurveID(), signer.getSignature());
+
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().certificate(new SequenceOfCertificate(certificates)).build())
-            .setSignature(signer.getSignature()).build());
+            .setSignature(signature).build());
     }
 
     /**
@@ -137,17 +143,19 @@ public class ETSISignedDataBuilder
      * @param identifier
      * @return
      */
-    public ETSISignedData build(ETSIDataSigner signer, HashedId8 identifier)
+    public ETSISignedData build(ITSContentSigner signer, HashedId8 identifier)
     {
 
         ToBeSignedData toBeSignedData = getToBeSignedData();
         write(signer.getOutputStream(), OEREncoder.toByteArray(toBeSignedData, def));
 
+        Signature signature = ECDSAEncoder.toITS(signer.getCurveID(), signer.getSignature());
+
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
             .setSigner(SignerIdentifier.builder().digest(identifier).build())
-            .setSignature(signer.getSignature()).build());
+            .setSignature(signature).build());
     }
 
     private static void write(OutputStream os, byte[] data)

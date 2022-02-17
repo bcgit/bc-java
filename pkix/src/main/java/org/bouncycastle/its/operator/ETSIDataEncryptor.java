@@ -6,12 +6,14 @@ public interface ETSIDataEncryptor
 
     /**
      * return the last key generated
+     *
      * @return last key value generated.
      */
     byte[] getKey();
 
     /**
      * return the last nonce generated
+     *
      * @return last nonce value generated.
      */
     byte[] getNonce();
