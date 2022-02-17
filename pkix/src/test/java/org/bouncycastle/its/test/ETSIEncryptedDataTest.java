@@ -75,6 +75,7 @@ public class ETSIEncryptedDataTest
 
         info.getContent(dec); // Will fail on bad tag otherwise
 
+        assertEquals("d311371e8373bea1027e6ae573d6f1dd", Hex.toHexString(dec.getKey()));
     }
 
     public void testEncryptionNist()
