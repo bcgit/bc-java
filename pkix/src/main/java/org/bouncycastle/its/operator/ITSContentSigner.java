@@ -2,9 +2,9 @@ package org.bouncycastle.its.operator;
 
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.its.ITSCertificate;
-import org.bouncycastle.operator.ContentSigner;
 
 public interface ITSContentSigner
 {
@@ -30,6 +30,8 @@ public interface ITSContentSigner
     byte[] getAssociatedCertificateDigest();
 
     AlgorithmIdentifier getDigestAlgorithm();
+
+    ASN1ObjectIdentifier getCurveID();
 
     /**
      * Return true if this ContentSigner is for self signing. False otherwise.

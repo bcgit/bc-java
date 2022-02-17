@@ -51,6 +51,7 @@ public class JcaITSContentVerifierProvider
         {
             return new JcaITSContentVerifierProvider(issuer, helper);
         }
+
     }
 
     private final ITSCertificate issuer;
@@ -58,7 +59,7 @@ public class JcaITSContentVerifierProvider
     private final AlgorithmIdentifier digestAlgo;
     private final ECPublicKey pubParams;
     private final int sigChoice;
-    private JcaJceHelper helper;
+    private final JcaJceHelper helper;
 
     private JcaITSContentVerifierProvider(ITSCertificate issuer, JcaJceHelper helper)
     {

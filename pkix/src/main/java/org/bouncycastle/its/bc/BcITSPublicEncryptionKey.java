@@ -31,8 +31,8 @@ public class BcITSPublicEncryptionKey
     static PublicEncryptionKey fromKeyParameters(ECPublicKeyParameters pubKey)
     {
         ASN1ObjectIdentifier curveID = ((ECNamedDomainParameters)pubKey.getParameters()).getName();
-        ECPoint q  = pubKey.getQ();
-        
+        ECPoint q = pubKey.getQ();
+
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
             return new PublicEncryptionKey(

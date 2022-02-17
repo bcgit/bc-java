@@ -29,34 +29,34 @@ public class BcITSPublicVerificationKey
     static PublicVerificationKey fromKeyParameters(ECPublicKeyParameters pubKey)
     {
         ASN1ObjectIdentifier curveID = ((ECNamedDomainParameters)pubKey.getParameters()).getName();
-        ECPoint q  = pubKey.getQ();
+        ECPoint q = pubKey.getQ();
 
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaNistP256,
-                    EccP256CurvePoint.builder()
-                        .createUncompressedP256(
-                            q.getAffineXCoord().toBigInteger(),
-                            q.getAffineYCoord().toBigInteger()));
+                EccP256CurvePoint.builder()
+                    .createUncompressedP256(
+                        q.getAffineXCoord().toBigInteger(),
+                        q.getAffineYCoord().toBigInteger()));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaBrainpoolP256r1,
-                    EccP256CurvePoint.builder()
-                        .createUncompressedP256(
-                            q.getAffineXCoord().toBigInteger(),
-                            q.getAffineYCoord().toBigInteger()));
+                EccP256CurvePoint.builder()
+                    .createUncompressedP256(
+                        q.getAffineXCoord().toBigInteger(),
+                        q.getAffineYCoord().toBigInteger()));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaBrainpoolP384r1,
-                    EccP384CurvePoint.builder()
-                        .createUncompressedP384(
-                            q.getAffineXCoord().toBigInteger(),
-                            q.getAffineYCoord().toBigInteger()));
+                EccP384CurvePoint.builder()
+                    .createUncompressedP384(
+                        q.getAffineXCoord().toBigInteger(),
+                        q.getAffineYCoord().toBigInteger()));
         }
         else
         {
