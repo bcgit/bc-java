@@ -17,10 +17,11 @@ import org.bouncycastle.util.Arrays;
 public class JcaETSIDataDecryptor
     implements ETSIDataDecryptor
 {
-    public final PrivateKey privateKey;
+    private final PrivateKey privateKey;
     private final JcaJceHelper helper;
     private final byte[] recipientHash;
 
+    private SecretKey secretKey = null;
 
     JcaETSIDataDecryptor(PrivateKey recipientInfo, byte[] recipientHash, JcaJceHelper provider)
     {
@@ -37,7 +38,7 @@ public class JcaETSIDataDecryptor
             etsiKem.init(Cipher.UNWRAP_MODE, privateKey, new IESKEMParameterSpec(recipientHash));
 
             // [ephemeral public key][encrypted key][tag]
-            SecretKey secretKey = (SecretKey)etsiKem.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+            secretKey = (SecretKey)etsiKem.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
 
             Cipher ccm = helper.createCipher("CCM");
             ccm.init(Cipher.DECRYPT_MODE, secretKey, ClassUtil.getGCMSpec(nonce, 128));
@@ -47,6 +48,16 @@ public class JcaETSIDataDecryptor
         {
             throw new RuntimeException(gex.getMessage(), gex);
         }
+    }
+
+    public byte[] getKey()
+    {
+        if (secretKey == null)
+        {
+            throw new IllegalStateException("no secret key recovered");
+        }
+
+        return secretKey.getEncoded();
     }
 
 
