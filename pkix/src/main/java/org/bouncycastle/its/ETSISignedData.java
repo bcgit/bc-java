@@ -69,6 +69,11 @@ public class ETSISignedData
         this.signedData = signedData;
     }
 
+    public SignedData getSignedData()
+    {
+        return this.signedData;
+    }
+
     /**
      * Verify signature is valid with respect to the supplied public key.
      * Contextual verification, ie "is this SignedData what you are expecting?" type checking needs to be done
@@ -98,5 +103,4 @@ public class ETSISignedData
                 .build()
         ), EtsiTs103097Module.EtsiTs103097Data_Signed.build());
     }
-
 }
