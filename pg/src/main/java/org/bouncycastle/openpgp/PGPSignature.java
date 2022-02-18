@@ -3,7 +3,9 @@ package org.bouncycastle.openpgp;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -20,6 +22,7 @@ import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
@@ -640,5 +643,47 @@ public class PGPSignature
                 || PGPSignature.NO_CERTIFICATION == signatureType
                 || PGPSignature.CASUAL_CERTIFICATION == signatureType
                 || PGPSignature.POSITIVE_CERTIFICATION == signatureType;
+    }
+
+    public static boolean isSignatureEncodingEqual(PGPSignature sig1, PGPSignature sig2) {
+        return Arrays.areEqual(sig1.sigPck.getSignatureBytes(), sig2.sigPck.getSignatureBytes());
+    }
+
+    public static PGPSignature join(PGPSignature sig1, PGPSignature sig2) throws PGPException {
+        if (!isSignatureEncodingEqual(sig1, sig2)) {
+            throw new IllegalArgumentException("These are different signatures.");
+        }
+
+        // merge unhashed subpackets
+        SignatureSubpacket[] sig1Unhashed = sig1.getUnhashedSubPackets().packets;
+        SignatureSubpacket[] sig2Unhashed = sig2.getUnhashedSubPackets().packets;
+        List<SignatureSubpacket> merged = new ArrayList<>(java.util.Arrays.asList(sig1Unhashed));
+
+        for (SignatureSubpacket subpacket : sig2Unhashed) {
+            boolean found = false;
+            for (SignatureSubpacket existing : sig1Unhashed) {
+                if (subpacket.equals(existing)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                merged.add(subpacket);
+            }
+        }
+
+        SignatureSubpacket[] unhashed = merged.toArray(new SignatureSubpacket[0]);
+        return new PGPSignature(
+                new SignaturePacket(
+                        sig1.getSignatureType(),
+                        sig1.getKeyID(),
+                        sig1.getKeyAlgorithm(),
+                        sig1.getHashAlgorithm(),
+                        sig1.getHashedSubPackets().packets,
+                        unhashed,
+                        sig1.getDigestPrefix(),
+                        sig1.sigPck.getSignature()
+                )
+        );
     }
 }
