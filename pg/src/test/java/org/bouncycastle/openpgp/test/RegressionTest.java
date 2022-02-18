@@ -31,6 +31,7 @@ public class RegressionTest
         new PGPECMessageTest(),
         new PGPParsingTest(),
         new PGPEdDSATest(),
+        new PGPPublicKeyMergeTest(),
         new SExprTest(),
         new ArmoredInputStreamTest(),
         new PGPUtilTest(),
