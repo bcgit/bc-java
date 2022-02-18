@@ -438,7 +438,7 @@ public class PGPPublicKeyRing
             KeyFingerPrintCalculator fingerPrintCalculator)
             throws PGPException, IOException
     {
-        if (first.getPublicKey().getKeyID() != second.getPublicKey().getKeyID())
+        if (!Arrays.areEqual(first.getPublicKey().getFingerprint(), second.getPublicKey().getFingerprint()))
         {
             throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
         }
