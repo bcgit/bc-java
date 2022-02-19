@@ -42,7 +42,8 @@ public class RegressionTest
         new ArmoredInputStreamIngoreMissingCRCSum(),
         new PGPSessionKeyTest(),
         new PGPCanonicalizedDataGeneratorTest(),
-        new RegexTest()
+        new RegexTest(),
+        new PolicyURITest()
     };
 
     public static void main(String[] args)
