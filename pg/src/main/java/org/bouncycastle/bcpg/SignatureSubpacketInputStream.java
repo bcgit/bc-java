@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -167,6 +168,8 @@ public class SignatureSubpacketInputStream
             return new PreferredAlgorithms(type, isCritical, isLongLength, data);
         case KEY_FLAGS:
             return new KeyFlags(isCritical, isLongLength, data);
+        case POLICY_URL:
+            return new PolicyURI(isCritical, isLongLength, data);
         case PRIMARY_USER_ID:
             return new PrimaryUserID(isCritical, isLongLength, data);
         case SIGNER_USER_ID:
