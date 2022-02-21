@@ -185,7 +185,7 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier external_value = bc_ext.branch("2");
 
     /**
-     * KEM(4) algorithms
+     * KEM(5) algorithms
      */
     public static final ASN1ObjectIdentifier bc_kem = bc.branch("5");
 
