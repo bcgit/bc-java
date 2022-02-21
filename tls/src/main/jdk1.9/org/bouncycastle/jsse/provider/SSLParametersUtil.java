@@ -39,6 +39,7 @@ abstract class SSLParametersUtil
         ssl.setServerNames(prov.getServerNames());
         ssl.setSNIMatchers(prov.getSNIMatchers());
         ssl.setApplicationProtocols(prov.getApplicationProtocols());
+        ssl.setMaximumPacketSize(prov.getMaximumPacketSize());
 
         return ssl;
     }
@@ -96,6 +97,10 @@ abstract class SSLParametersUtil
                 ssl.setApplicationProtocols(applicationProtocols);
             }
         }
+
+        // From JDK 9
+
+        ssl.setMaximumPacketSize(prov.getMaximumPacketSize());
 
         return ssl;
     }
@@ -166,6 +171,10 @@ abstract class SSLParametersUtil
             }
         }
 
+        // From JDK 9
+
+        bc.setMaximumPacketSize(ssl.getMaximumPacketSize());
+
         return bc;
     }
 
@@ -228,6 +237,8 @@ abstract class SSLParametersUtil
         {
             prov.setApplicationProtocols(applicationProtocols);
         }
+
+        prov.setMaximumPacketSize(ssl.getMaximumPacketSize());
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
@@ -305,5 +316,9 @@ abstract class SSLParametersUtil
                 prov.setApplicationProtocols(applicationProtocols);
             }
         }
+
+        // From JDK 9
+
+        prov.setMaximumPacketSize(ssl.getMaximumPacketSize());
     }
 }
