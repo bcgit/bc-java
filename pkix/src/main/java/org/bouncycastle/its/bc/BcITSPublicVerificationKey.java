@@ -16,6 +16,8 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point256;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point384;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 
 public class BcITSPublicVerificationKey
@@ -35,28 +37,32 @@ public class BcITSPublicVerificationKey
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaNistP256,
-                EccP256CurvePoint.builder()
-                    .createUncompressedP256(
-                        q.getAffineXCoord().toBigInteger(),
-                        q.getAffineYCoord().toBigInteger()));
+                EccP256CurvePoint.uncompressedP256(
+                    Point256.builder()
+                        .setX(q.getAffineXCoord().toBigInteger())
+                        .setY(q.getAffineYCoord().toBigInteger())
+                        .createPoint256()
+                ));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaBrainpoolP256r1,
-                EccP256CurvePoint.builder()
-                    .createUncompressedP256(
-                        q.getAffineXCoord().toBigInteger(),
-                        q.getAffineYCoord().toBigInteger()));
+                EccP256CurvePoint
+                    .uncompressedP256(Point256.builder()
+                        .setX(q.getAffineXCoord().toBigInteger())
+                        .setY(q.getAffineYCoord().toBigInteger())
+                        .createPoint256()));
         }
         else if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
         {
             return new PublicVerificationKey(
                 PublicVerificationKey.ecdsaBrainpoolP384r1,
-                EccP384CurvePoint.builder()
-                    .createUncompressedP384(
-                        q.getAffineXCoord().toBigInteger(),
-                        q.getAffineYCoord().toBigInteger()));
+                EccP384CurvePoint.uncompressedP384(Point384.builder()
+                    .setX(q.getAffineXCoord().toBigInteger())
+                    .setY(q.getAffineYCoord().toBigInteger())
+                    .createPoint384()));
+
         }
         else
         {
@@ -93,11 +99,11 @@ public class BcITSPublicVerificationKey
         }
         ECCurve curve = params.getCurve();
 
-        ASN1Encodable pviCurvePoint = verificationKey.getValue();
+        ASN1Encodable pviCurvePoint = verificationKey.getPublicVerificationKey();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)verificationKey.getValue();
+            itsPoint = (EccCurvePoint)verificationKey.getPublicVerificationKey();
         }
         else
         {

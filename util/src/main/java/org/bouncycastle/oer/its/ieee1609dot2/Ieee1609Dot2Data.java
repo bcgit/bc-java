@@ -7,6 +7,13 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted_Unicast;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Signed;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_SignedAndEncrypted;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_SignedExternalPayload;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Unsecured;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 /**
@@ -93,11 +100,50 @@ public class Ieee1609Dot2Data
             return this;
         }
 
-        public Ieee1609Dot2Data build()
+        public Ieee1609Dot2Data createIeee1609Dot2Data()
         {
             return new Ieee1609Dot2Data(protocolVersion, content);
         }
 
+        public CounterSignature createCounterSignature()
+        {
+            return new CounterSignature(protocolVersion, content);
+        }
+
+        public EtsiTs103097Data createEtsiTs103097Data()
+        {
+            return new EtsiTs103097Data(protocolVersion, content);
+        }
+
+        public EtsiTs103097Data_Unsecured createEtsiTs103097Data_Unsecured()
+        {
+            return new EtsiTs103097Data_Unsecured(content);
+        }
+
+        public EtsiTs103097Data_Signed createEtsiTs103097Data_Signed()
+        {
+            return new EtsiTs103097Data_Signed(content);
+        }
+
+        public EtsiTs103097Data_SignedExternalPayload createEtsiTs103097Data_SignedExternalPayload()
+        {
+            return new EtsiTs103097Data_SignedExternalPayload(content);
+        }
+
+        public EtsiTs103097Data_Encrypted createEtsiTs103097Data_Encrypted()
+        {
+            return new EtsiTs103097Data_Encrypted(content);
+        }
+
+        public EtsiTs103097Data_SignedAndEncrypted createEtsiTs103097Data_SignedAndEncrypted()
+        {
+            return new EtsiTs103097Data_SignedAndEncrypted(content);
+        }
+
+        public EtsiTs103097Data_Encrypted_Unicast createEtsiTs103097Data_Encrypted_Unicast()
+        {
+            return new EtsiTs103097Data_Encrypted_Unicast(content);
+        }
     }
 
 }

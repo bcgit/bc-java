@@ -42,6 +42,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.PsidGroupPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.SubjectPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BitmapSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Hostname;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
@@ -84,15 +85,12 @@ public class ETSIDataSignerTest
             SequenceOfPsidSsp.builder()
                 .setItem(PsidSsp.builder()
                     .setPsid(new Psid(622))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
-                        .createServiceSpecificPermissions())
+                    .setSsp(ServiceSpecificPermissions
+                        .bitmapSsp(new BitmapSsp(new DEROctetString(Hex.decode("0101")))))
                     .createPsidSsp())
                 .setItem(PsidSsp.builder()
                     .setPsid(new Psid(624))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
-                        .createServiceSpecificPermissions())
+                    .setSsp(ServiceSpecificPermissions.bitmapSsp(new BitmapSsp(new DEROctetString(Hex.decode("020138")))))
                     .createPsidSsp())
                 .createSequenceOfPsidSsp()); // App Permissions
         tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
@@ -101,20 +99,20 @@ public class ETSIDataSignerTest
             SequenceOfPsidGroupPermissions.builder()
                 .addGroupPermission(PsidGroupPermissions.builder()
                     .setSubjectPermissions(
-                        SubjectPermissions.builder().explicit(
+                        SubjectPermissions.explicit(
                             SequenceOfPsidSspRange.builder()
                                 .add(PsidSspRange.builder()
-                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                                    .setPsid(36).setSspRange(SspRange.extension(Hex.decode("0301fffc03ff0003"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                                    .setPsid(37).setSspRange(SspRange.extension(Hex.decode("0401FFFFFF04FF000000"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(137).setSspRange(SspRange.extension(Hex.decode("0201E002FF1F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(138).setSspRange(SspRange.extension(Hex.decode("0201C002FF3F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                                    .setPsid(139).setSspRange(SspRange.extension(Hex.decode("0601000000FFF806FF0000000007"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(140).setSspRange(SspRange.extension(Hex.decode("0401FFFFE004FF00001F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
@@ -124,23 +122,20 @@ public class ETSIDataSignerTest
                                 .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
                                 .build()
-                        ).createSubjectPermissions())
+                        ))
                     .setMinChainLength(2)
                     .setChainLengthRange(0)
                     .setEeType(new EndEntityType(0xC0))
 
                     .createPsidGroupPermissions())
                 .addGroupPermission(PsidGroupPermissions.builder()
-                    .setSubjectPermissions(SubjectPermissions.builder()
+                    .setSubjectPermissions(SubjectPermissions
                         .explicit(SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
                                 .setPsid(623)
-                                .setSspRange(
-                                    SspRange.builder()
-                                        .extension(Hex.decode("0201FE02FF01"))
-                                        .createSspRange()).createPsidSspRange())
+                                .setSspRange(SspRange.extension(Hex.decode("0201FE02FF01"))).createPsidSspRange())
                             .build())
-                        .createSubjectPermissions())
+                        )
                     .setMinChainLength(1)
                     .setChainLengthRange(0)
                     .setEeType(new EndEntityType(0xC0))
@@ -155,7 +150,7 @@ public class ETSIDataSignerTest
         itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
-            CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
+            CertificateId.name(new Hostname("Legion of the BouncyCastle CA")),
             publicVerificationKey);
 
 
@@ -189,15 +184,11 @@ public class ETSIDataSignerTest
             SequenceOfPsidSsp.builder()
                 .setItem(PsidSsp.builder()
                     .setPsid(new Psid(622))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("0101")))
-                        .createServiceSpecificPermissions())
+                    .setSsp(ServiceSpecificPermissions.bitmapSsp(new BitmapSsp(new DEROctetString(Hex.decode("0101")))))
                     .createPsidSsp())
                 .setItem(PsidSsp.builder()
                     .setPsid(new Psid(624))
-                    .setSsp(ServiceSpecificPermissions.builder()
-                        .bitmapSsp(new DEROctetString(Hex.decode("020138")))
-                        .createServiceSpecificPermissions())
+                    .setSsp(ServiceSpecificPermissions.bitmapSsp(new BitmapSsp( new DEROctetString(Hex.decode("020138")))))
                     .createPsidSsp())
                 .createSequenceOfPsidSsp()); // App Permissions
         tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
@@ -206,20 +197,20 @@ public class ETSIDataSignerTest
             SequenceOfPsidGroupPermissions.builder()
                 .addGroupPermission(PsidGroupPermissions.builder()
                     .setSubjectPermissions(
-                        SubjectPermissions.builder().explicit(
+                        SubjectPermissions.explicit(
                             SequenceOfPsidSspRange.builder()
                                 .add(PsidSspRange.builder()
-                                    .setPsid(36).setSspRange(SspRange.builder().extension(Hex.decode("0301fffc03ff0003")).createSspRange()).createPsidSspRange())
+                                    .setPsid(36).setSspRange(SspRange.extension(Hex.decode("0301fffc03ff0003"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(37).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFFF04FF000000")).createSspRange()).createPsidSspRange())
+                                    .setPsid(37).setSspRange(SspRange.extension(Hex.decode("0401FFFFFF04FF000000"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(137).setSspRange(SspRange.builder().extension(Hex.decode("0201E002FF1F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(137).setSspRange(SspRange.extension(Hex.decode("0201E002FF1F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(138).setSspRange(SspRange.builder().extension(Hex.decode("0201C002FF3F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(138).setSspRange(SspRange.extension(Hex.decode("0201C002FF3F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(139).setSspRange(SspRange.builder().extension(Hex.decode("0601000000FFF806FF0000000007")).createSspRange()).createPsidSspRange())
+                                    .setPsid(139).setSspRange(SspRange.extension(Hex.decode("0601000000FFF806FF0000000007"))).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(140).setSspRange(SspRange.builder().extension(Hex.decode("0401FFFFE004FF00001F")).createSspRange()).createPsidSspRange())
+                                    .setPsid(140).setSspRange(SspRange.extension(Hex.decode("0401FFFFE004FF00001F"))).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
@@ -229,23 +220,20 @@ public class ETSIDataSignerTest
                                 .add(PsidSspRange.builder().setPsid(101).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(102).createPsidSspRange())
                                 .build()
-                        ).createSubjectPermissions())
+                        ))
                     .setMinChainLength(2)
                     .setChainLengthRange(0)
                     .setEeType(new EndEntityType(0xC0))
 
                     .createPsidGroupPermissions())
                 .addGroupPermission(PsidGroupPermissions.builder()
-                    .setSubjectPermissions(SubjectPermissions.builder()
+                    .setSubjectPermissions(SubjectPermissions
                         .explicit(SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
                                 .setPsid(623)
-                                .setSspRange(
-                                    SspRange.builder()
-                                        .extension(Hex.decode("0201FE02FF01"))
-                                        .createSspRange()).createPsidSspRange())
+                                .setSspRange(SspRange.extension(Hex.decode("0201FE02FF01"))).createPsidSspRange())
                             .build())
-                        .createSubjectPermissions())
+                        )
                     .setMinChainLength(1)
                     .setChainLengthRange(0)
                     .setEeType(new EndEntityType(0xC0))
@@ -260,7 +248,7 @@ public class ETSIDataSignerTest
         itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
 
         ITSCertificate newCert = itsCertificateBuilder.build(
-            CertificateId.builder().name(new Hostname("Legion of the BouncyCastle CA")).createCertificateId(),
+            CertificateId.name(new Hostname("Legion of the BouncyCastle CA")),
             new JcaITSPublicVerificationKey.Builder().build(publicVerificationKey));
 
 

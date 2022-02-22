@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -24,16 +25,16 @@ public class IdentifiedRegion
 
     public static final int countryOnly = 0;
     public static final int countryAndRegions = 1;
-    public static final int countAndSubregions = 2;
+    public static final int countryAndSubregions = 2;
     public static final int extension = 3;
 
     private final int choice;
-    private final ASN1Encodable region;
+    private final ASN1Encodable identifiedRegion;
 
     public IdentifiedRegion(int choice, ASN1Encodable region)
     {
         this.choice = choice;
-        this.region = region;
+        this.identifiedRegion = region;
     }
 
     private IdentifiedRegion(ASN1TaggedObject ato)
@@ -43,22 +44,41 @@ public class IdentifiedRegion
         switch (choice)
         {
         case countryOnly:
-            region = CountryOnly.getInstance(ato.getObject());
+            identifiedRegion = CountryOnly.getInstance(ato.getObject());
             break;
         case countryAndRegions:
-            region = CountryAndRegions.getInstance(ato.getObject());
+            identifiedRegion = CountryAndRegions.getInstance(ato.getObject());
             break;
-        case countAndSubregions:
-            region = CountryAndSubregions.getInstance(ato.getObject());
+        case countryAndSubregions:
+            identifiedRegion = CountryAndSubregions.getInstance(ato.getObject());
             break;
         case extension:
-            region = DEROctetString.getInstance(ato.getObject());
+            identifiedRegion = DEROctetString.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
     }
 
+    public static IdentifiedRegion countryOnly(CountryOnly only)
+    {
+        return new IdentifiedRegion(countryOnly, only);
+    }
+
+    public static IdentifiedRegion countryAndRegions(CountryAndRegions value)
+    {
+        return new IdentifiedRegion(countryAndRegions, value);
+    }
+
+    public static IdentifiedRegion countryAndSubregions(CountryAndSubregions countryAndSubregions)
+    {
+        return new IdentifiedRegion(IdentifiedRegion.countryAndSubregions, countryAndSubregions);
+    }
+
+    public static IdentifiedRegion extension(ASN1OctetString value)
+    {
+        return new IdentifiedRegion(IdentifiedRegion.extension, value);
+    }
 
     public static IdentifiedRegion getInstance(Object o)
     {
@@ -79,13 +99,13 @@ public class IdentifiedRegion
         return choice;
     }
 
-    public ASN1Encodable getRegion()
+    public ASN1Encodable getIdentifiedRegion()
     {
-        return region;
+        return identifiedRegion;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, region);
+        return new DERTaggedObject(choice, identifiedRegion);
     }
 }

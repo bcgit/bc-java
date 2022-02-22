@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -27,13 +28,13 @@ public class PublicVerificationKey
     public final static int ecdsaBrainpoolP384r1 = 3;
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable publicVerificationKey;
 
 
     public PublicVerificationKey(int choice, ASN1Encodable curvePoint)
     {
         this.choice = choice;
-        this.value = curvePoint;
+        this.publicVerificationKey = curvePoint;
     }
 
     private PublicVerificationKey(ASN1TaggedObject taggedObject)
@@ -43,18 +44,40 @@ public class PublicVerificationKey
         {
         case ecdsaNistP256:
         case ecdsaBrainpoolP256r1:
-            value = EccP256CurvePoint.getInstance(taggedObject.getObject());
+            publicVerificationKey = EccP256CurvePoint.getInstance(taggedObject.getObject());
             return;
         case extension:
-            value = DEROctetString.getInstance(taggedObject.getObject());
+            publicVerificationKey = DEROctetString.getInstance(taggedObject.getObject());
             return;
         case ecdsaBrainpoolP384r1:
-            value = EccP384CurvePoint.getInstance(taggedObject.getObject());
+            publicVerificationKey = EccP384CurvePoint.getInstance(taggedObject.getObject());
             return;
         }
         throw new IllegalArgumentException("invalid choice value " + taggedObject.getTagNo());
 
     }
+
+
+    public static PublicVerificationKey ecdsaNistP256(EccP256CurvePoint point)
+    {
+        return new PublicVerificationKey(ecdsaNistP256, point);
+    }
+
+    public static PublicVerificationKey ecdsaBrainpoolP256r1(EccP256CurvePoint point)
+    {
+        return new PublicVerificationKey(ecdsaBrainpoolP256r1, point);
+    }
+
+    public static PublicVerificationKey extension(ASN1OctetString point)
+    {
+        return new PublicVerificationKey(extension, point);
+    }
+
+    public static PublicVerificationKey ecdsaBrainpoolP384r1(EccP384CurvePoint point)
+    {
+        return new PublicVerificationKey(ecdsaBrainpoolP384r1, point);
+    }
+
 
     public static PublicVerificationKey getInstance(Object object)
     {
@@ -80,14 +103,14 @@ public class PublicVerificationKey
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getPublicVerificationKey()
     {
-        return value;
+        return publicVerificationKey;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, publicVerificationKey);
     }
 
     public static class Builder

@@ -12,7 +12,7 @@ import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 public class EtsiTs103097Module
 {
 
-    public static final OERDefinition.Builder EtsiTs103097Certificate = IEEE1609dot2.ExplicitCertificate.copy();
+    public static final OERDefinition.Builder EtsiTs103097Certificate = IEEE1609dot2.ExplicitCertificate.typeName("EtsiTs103097Certificate");
 
 
     /**
@@ -43,7 +43,7 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data = IEEE1609dot2.Ieee1609Dot2Data.copy();
+    public static final OERDefinition.Builder EtsiTs103097Data = IEEE1609dot2.Ieee1609Dot2Data.typeName("EtsiTs103097Data");
 
     /**
      * EtsiTs103097Data-Unsecured {ToBeSentDataContent} ::= EtsiTs103097Data (WITH COMPONENTS {...,
@@ -52,7 +52,7 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_Unsecured = EtsiTs103097Data.label("EtsiTs103097Data-Unsecured");
+    public static final OERDefinition.Builder EtsiTs103097Data_Unsecured = EtsiTs103097Data.typeName("EtsiTs103097Data-Unsecured");
 
 
     /**
@@ -72,7 +72,7 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_Signed = EtsiTs103097Data.label("EtsiTs103097Data-Signed");
+    public static final OERDefinition.Builder EtsiTs103097Data_Signed = EtsiTs103097Data.typeName("EtsiTs103097Data-Signed");
 
 
     /**
@@ -90,7 +90,7 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_SignedExternalPayload = EtsiTs103097Data.label("EtsiTs103097Data-SignedExternalPayload");
+    public static final OERDefinition.Builder EtsiTs103097Data_SignedExternalPayload = EtsiTs103097Data.typeName("EtsiTs103097Data-SignedExternalPayload");
 
 
     /**
@@ -106,14 +106,14 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_Encrypted = EtsiTs103097Data.label("EtsiTs103097Data-Encrypted");
+    public static final OERDefinition.Builder EtsiTs103097Data_Encrypted = EtsiTs103097Data.typeName("EtsiTs103097Data-Encrypted");
 
 
     /**
      * EtsiTs103097Data-SignedAndEncrypted {ToBesignedAndEncryptedDataContent} ::= EtsiTs103097Data-Encrypted
      * {EtsiTs103097Data-Signed {ToBesignedAndEncryptedDataContent}}
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_SignedAndEncrypted = EtsiTs103097Data.label("EtsiTs103097Data-SignedAndEncrypted");
+    public static final OERDefinition.Builder EtsiTs103097Data_SignedAndEncrypted = EtsiTs103097Data.typeName("EtsiTs103097Data-SignedAndEncrypted");
 
 
     /**
@@ -126,7 +126,7 @@ public class EtsiTs103097Module
      * })
      * })
      */
-    public static final OERDefinition.Builder EtsiTs103097Data_Encrypted_Unicast = EtsiTs103097Data.label("EtsiTs103097Data-Encrypted-Unicast");
+    public static final OERDefinition.Builder EtsiTs103097Data_Encrypted_Unicast = EtsiTs103097Data.typeName("EtsiTs103097Data-Encrypted-Unicast");
 
 
 }

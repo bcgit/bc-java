@@ -26,12 +26,12 @@ public class ServiceSpecificPermissions
     public static final int bitmapSsp = 2;
 
     private final int choice;
-    private final ASN1Encodable permission;
+    private final ASN1Encodable serviceSpecificPermissions;
 
     public ServiceSpecificPermissions(int choice, ASN1Encodable object)
     {
         this.choice = choice;
-        this.permission = object;
+        this.serviceSpecificPermissions = object;
     }
 
     private ServiceSpecificPermissions(ASN1TaggedObject sto)
@@ -41,10 +41,10 @@ public class ServiceSpecificPermissions
         {
         case opaque:
         case extension:
-            permission = DEROctetString.getInstance(sto.getObject());
+            serviceSpecificPermissions = DEROctetString.getInstance(sto.getObject());
             return;
         case bitmapSsp:
-            permission = BitmapSsp.getInstance(sto.getObject());
+            serviceSpecificPermissions = BitmapSsp.getInstance(sto.getObject());
             return;
         }
         throw new IllegalArgumentException("invalid choice value " + choice);
@@ -67,61 +67,41 @@ public class ServiceSpecificPermissions
         return null;
     }
 
-    public static Builder builder()
+    public static ServiceSpecificPermissions opaque(ASN1OctetString octetString)
     {
-        return new ServiceSpecificPermissions.Builder();
+        return new ServiceSpecificPermissions(opaque, octetString);
     }
+
+    public static ServiceSpecificPermissions opaque(byte[] octetString)
+    {
+        return new ServiceSpecificPermissions(opaque, new DEROctetString(octetString));
+    }
+
+
+    public static ServiceSpecificPermissions extension(ASN1OctetString octetString)
+    {
+        return new ServiceSpecificPermissions(extension, octetString);
+    }
+
+    public static ServiceSpecificPermissions bitmapSsp(BitmapSsp ssp)
+    {
+        return new ServiceSpecificPermissions(bitmapSsp, ssp);
+    }
+
 
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getPermission()
+    public ASN1Encodable getServiceSpecificPermissions()
     {
-        return permission;
+        return serviceSpecificPermissions;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, permission);
+        return new DERTaggedObject(choice, serviceSpecificPermissions);
     }
 
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable object;
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setObject(ASN1Encodable object)
-        {
-            this.object = object;
-            return this;
-        }
-
-        public Builder opaque()
-        {
-            return setChoice(ServiceSpecificPermissions.opaque);
-        }
-
-        public Builder extension(byte[] data)
-        {
-            return setChoice(ServiceSpecificPermissions.bitmapSsp).setObject(new DEROctetString(data));
-        }
-
-        public Builder bitmapSsp(ASN1OctetString octetString)
-        {
-            return setChoice(ServiceSpecificPermissions.bitmapSsp).setObject(octetString);
-        }
-
-        public ServiceSpecificPermissions createServiceSpecificPermissions()
-        {
-            return new ServiceSpecificPermissions(choice, object);
-        }
-    }
 }

@@ -50,7 +50,7 @@ public class ETSISignedData
         {
             throw new IllegalStateException("EtsiTs103097Data-Signed did not have signed data content");
         }
-        this.signedData = SignedData.getInstance(content.getContent());
+        this.signedData = SignedData.getInstance(content.getIeee1609Dot2Content());
 
     }
 
@@ -93,9 +93,8 @@ public class ETSISignedData
     public byte[] getEncoded()
     {
         return OEREncoder.toByteArray(new EtsiTs103097Data_Signed(
-            Ieee1609Dot2Content.builder()
+            Ieee1609Dot2Content
                 .signedData(signedData)
-                .build()
         ), EtsiTs103097Module.EtsiTs103097Data_Signed.build());
     }
 

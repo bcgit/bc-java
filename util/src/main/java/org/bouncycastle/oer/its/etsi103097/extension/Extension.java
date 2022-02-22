@@ -73,6 +73,16 @@ public class Extension
         this.content = content;
     }
 
+    public static Extension etsiTs102941CrlRequest(EtsiTs102941CrlRequest request)
+    {
+        return new Extension(etsiTs102941CrlRequestId, request);
+    }
+
+    public static Extension etsiTs102941DeltaCtlRequest(EtsiTs102941DeltaCtlRequest request)
+    {
+        return new Extension(etsiTs102941DeltaCtlRequestId, request);
+    }
+
     public static Extension getInstance(Object o)
     {
         if (o instanceof Extension)
@@ -104,4 +114,5 @@ public class Extension
     {
         return content;
     }
+
 }

@@ -68,4 +68,33 @@ public class SymmRecipientInfo
     {
         return ItsUtils.toSequence(recipientId, encKey);
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private HashedId8 recipientId;
+        private SymmetricCiphertext encKey;
+
+        public Builder setRecipientId(HashedId8 recipientId)
+        {
+            this.recipientId = recipientId;
+            return this;
+        }
+
+        public Builder setEncKey(SymmetricCiphertext encKey)
+        {
+            this.encKey = encKey;
+            return this;
+        }
+
+        public SymmRecipientInfo createSymmRecipientInfo()
+        {
+            return new SymmRecipientInfo(recipientId, encKey);
+        }
+    }
+
 }

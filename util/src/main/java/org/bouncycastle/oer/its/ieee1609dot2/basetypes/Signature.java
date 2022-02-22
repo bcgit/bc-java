@@ -27,13 +27,34 @@ public class Signature
     public static final int ecdsaBrainpoolP384r1Signature = 3;
     private static final int extension = 2;
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable signature;
 
     public Signature(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.signature = value;
     }
+
+    public static Signature ecdsaNistP256Signature(EcdsaP256Signature v)
+    {
+        return new Signature(ecdsaNistP256Signature, v);
+    }
+
+    public static Signature ecdsaBrainpoolP256r1Signature(EcdsaP256Signature v)
+    {
+        return new Signature(ecdsaBrainpoolP256r1Signature, v);
+    }
+
+    public static Signature ecdsaBrainpoolP384r1Signature(EcdsaP384Signature v)
+    {
+        return new Signature(ecdsaBrainpoolP384r1Signature, v);
+    }
+
+    public static Signature extension(DEROctetString octetString)
+    {
+        return new Signature(extension, octetString);
+    }
+
 
     private Signature(ASN1TaggedObject ato)
     {
@@ -42,13 +63,13 @@ public class Signature
         {
         case ecdsaNistP256Signature:
         case ecdsaBrainpoolP256r1Signature:
-            value = EcdsaP256Signature.getInstance(ato.getObject());
+            signature = EcdsaP256Signature.getInstance(ato.getObject());
             break;
         case extension:
-            value = DEROctetString.getInstance(ato.getObject());
+            signature = DEROctetString.getInstance(ato.getObject());
             break;
         case ecdsaBrainpoolP384r1Signature:
-            value = EcdsaP384Signature.getInstance(ato.getObject());
+            signature = EcdsaP384Signature.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
@@ -72,62 +93,20 @@ public class Signature
         return null;
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getSignature()
     {
-        return value;
+        return signature;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, signature);
     }
 
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable value;
-/*
-    ecdsaNistP256Signature EcdsaP256Signature,
- *         ecdsaBrainpoolP256r1Signature EcdsaP256Signature,
- *         ...
- *         ecdsaBrainpoolP384r1Signature EcdsaP384Signature
- */
-
-        public Builder ecdsaNistP256Signature(EcdsaP256Signature signature)
-        {
-            choice = ecdsaNistP256Signature;
-            value = signature;
-            return this;
-        }
-
-        public Builder ecdsaBrainpoolP256r1Signature(EcdsaP256Signature signature)
-        {
-            choice = ecdsaBrainpoolP256r1Signature;
-            value = signature;
-            return this;
-        }
-
-        public Builder ecdsaBrainpoolP384r1Signature(EcdsaP384Signature signature)
-        {
-            choice = ecdsaBrainpoolP384r1Signature;
-            value = signature;
-            return this;
-        }
-
-        public Signature createSignature()
-        {
-            return new Signature(choice, value);
-        }
-    }
 
 }

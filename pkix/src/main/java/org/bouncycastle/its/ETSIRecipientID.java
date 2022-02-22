@@ -48,7 +48,7 @@ public class ETSIRecipientID
     {
         if (obj.getRecipientInfo().getChoice() == RecipientInfo.certRecipInfo)
         {
-            PKRecipientInfo objPkInfo = PKRecipientInfo.getInstance(obj.getRecipientInfo().getValue());
+            PKRecipientInfo objPkInfo = PKRecipientInfo.getInstance(obj.getRecipientInfo().getRecipientInfo());
             return Arrays.areEqual(objPkInfo.getRecipientId().getHashBytes(), this.id.getHashBytes());
         }
         return false;

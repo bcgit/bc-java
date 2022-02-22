@@ -70,4 +70,33 @@ public class RectangularRegion
     {
         return new DERSequence(new ASN1Encodable[]{northWest, southEast});
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private TwoDLocation northWest;
+        private TwoDLocation southEast;
+
+        public Builder setNorthWest(TwoDLocation northWest)
+        {
+            this.northWest = northWest;
+            return this;
+        }
+
+        public Builder setSouthEast(TwoDLocation southEast)
+        {
+            this.southEast = southEast;
+            return this;
+        }
+
+        public RectangularRegion createRectangularRegion()
+        {
+            return new RectangularRegion(northWest, southEast);
+        }
+    }
+
 }

@@ -31,7 +31,7 @@ public class ITSCertificate
 
     public ITSValidityPeriod getValidityPeriod()
     {
-        return new ITSValidityPeriod(certificate.getToBeSignedCertificate().getValidityPeriod());
+        return new ITSValidityPeriod(certificate.getToBeSigned().getValidityPeriod());
     }
 
     /**
@@ -41,7 +41,7 @@ public class ITSCertificate
      */
     public ITSPublicEncryptionKey getPublicEncryptionKey()
     {
-        PublicEncryptionKey encryptionKey = certificate.getToBeSignedCertificate().getEncryptionKey();
+        PublicEncryptionKey encryptionKey = certificate.getToBeSigned().getEncryptionKey();
 
         if (encryptionKey != null)
         {
@@ -60,7 +60,7 @@ public class ITSCertificate
 
 
         verOut.write(
-            OEREncoder.toByteArray(certificate.getToBeSignedCertificate(),
+            OEREncoder.toByteArray(certificate.getToBeSigned(),
                 IEEE1609dot2.ToBeSignedCertificate.build()));
 
         verOut.close();

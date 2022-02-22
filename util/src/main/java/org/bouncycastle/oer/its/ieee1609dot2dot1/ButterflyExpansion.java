@@ -61,10 +61,31 @@ public class ButterflyExpansion
         return null;
     }
 
-    public static Builder builder()
+    public static ButterflyExpansion aes128(byte[] value)
     {
-        return new Builder();
+        if (value.length != 16)
+        {
+            throw new IllegalArgumentException("length must be 16");
+        }
+        return new ButterflyExpansion(aes128, new DEROctetString(value));
     }
+
+    public static ButterflyExpansion aes128(ASN1OctetString value)
+    {
+        return aes128(value.getOctets());
+    }
+
+
+    public static ButterflyExpansion extension(byte[] value)
+    {
+        return new ButterflyExpansion(extension, new DEROctetString(value));
+    }
+
+    public static ButterflyExpansion extension(ASN1OctetString value)
+    {
+        return new ButterflyExpansion(extension, value);
+    }
+
 
     public ASN1Primitive toASN1Primitive()
     {
@@ -79,31 +100,6 @@ public class ButterflyExpansion
     public ASN1Encodable getButterflyExpansion()
     {
         return butterflyExpansion;
-    }
-
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable butterflyExpansion;
-
-        public Builder aes128(ASN1OctetString value)
-        {
-            choice = ButterflyExpansion.aes128;
-            butterflyExpansion = value;
-            return this;
-        }
-
-        public Builder extension(ASN1OctetString value)
-        {
-            choice = ButterflyExpansion.extension;
-            butterflyExpansion = value;
-            return this;
-        }
-
-        public ButterflyExpansion build()
-        {
-            return new ButterflyExpansion(choice, butterflyExpansion);
-        }
     }
 
 }

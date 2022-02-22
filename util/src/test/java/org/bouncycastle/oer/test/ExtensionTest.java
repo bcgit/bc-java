@@ -45,7 +45,7 @@ public class ExtensionTest
             Extension.etsiTs102941DeltaCtlRequestId,
             EtsiTs102941DeltaCtlRequest.builder()
                 .setIssuerId(new HashedId8(Hex.decode("0001020304050608")))
-                .setLastKnownCtlSequence(ctlSequence).build());
+                .setLastKnownCtlSequence(ctlSequence).createEtsiTs102941CtlRequest());
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         OEROutputStream oos = new OEROutputStream(bos);
@@ -74,7 +74,7 @@ public class ExtensionTest
             Extension.etsiTs102941CrlRequestId,
             EtsiTs102941CrlRequest.builder()
                 .setIssuerId(new HashedId8(Hex.decode("0001020304050607")))
-                .setLastKnownUpdate(time).build());
+                .setLastKnownUpdate(time).createEtsiTs102941CrlRequest());
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         OEROutputStream oos = new OEROutputStream(bos);

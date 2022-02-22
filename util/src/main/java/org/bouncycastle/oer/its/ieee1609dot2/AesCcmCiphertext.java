@@ -91,17 +91,16 @@ public class AesCcmCiphertext
         {
             return setNonce(new DEROctetString(nonce));
         }
-
-
-        public Builder setOpaque(ASN1OctetString opaque)
+        
+        public Builder setCcmCiphertext(ASN1OctetString opaque)
         {
             this.opaque = opaque;
             return this;
         }
 
-        public Builder setOpaque(byte[] opaque)
+        public Builder setCcmCiphertext(byte[] opaque)
         {
-            return setOpaque(new DEROctetString(opaque));
+            return setCcmCiphertext(new DEROctetString(opaque));
         }
 
         public AesCcmCiphertext createAesCcmCiphertext()

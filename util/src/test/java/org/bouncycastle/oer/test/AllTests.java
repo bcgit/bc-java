@@ -34,6 +34,7 @@ public class AllTests
         TestSuite suite = new TestSuite("ASN.1 Tests");
         
         suite.addTestSuite(AllTests.class);
+        suite.addTestSuite(TestBuilders.class);
         
         return new BCTestSetup(suite);
     }
