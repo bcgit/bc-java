@@ -91,6 +91,7 @@ public class SignerIdentifier
         this.signerIdentifier = value;
     }
 
+
     private SignerIdentifier(ASN1TaggedObject ato)
     {
         choice = ato.getTagNo();
@@ -130,16 +131,37 @@ public class SignerIdentifier
         return null;
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
 
     public int getChoice()
     {
         return choice;
     }
+
+    public static SignerIdentifier digest(HashedId8 id)
+    {
+        return new SignerIdentifier(digest, id);
+    }
+
+    public static SignerIdentifier certificate(SequenceOfCertificate sequenceOfCertificate)
+    {
+        return new SignerIdentifier(certificate, sequenceOfCertificate);
+    }
+
+    public static SignerIdentifier self()
+    {
+        return new SignerIdentifier(self, DERNull.INSTANCE);
+    }
+
+    public static SignerIdentifier extension(ASN1OctetString extension)
+    {
+        return new SignerIdentifier(SignerIdentifier.extension, extension);
+    }
+
+    public static SignerIdentifier extension(byte[] extension)
+    {
+        return new SignerIdentifier(SignerIdentifier.extension, new DEROctetString(extension));
+    }
+
 
     @Override
     public ASN1Primitive toASN1Primitive()
@@ -153,55 +175,6 @@ public class SignerIdentifier
         return signerIdentifier;
     }
 
-    public static class Builder
-    {
-        private ASN1Encodable encodable;
-        private int choice;
 
-        public Builder setEncodable(ASN1Encodable encodable)
-        {
-            this.encodable = encodable;
-            return this;
-        }
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder digest(HashedId8 digest)
-        {
-            this.choice = SignerIdentifier.digest;
-            this.encodable = digest;
-            return this;
-        }
-
-        public Builder certificate(SequenceOfCertificate sequenceOfCertificate)
-        {
-            this.choice = SignerIdentifier.certificate;
-            this.encodable = sequenceOfCertificate;
-            return this;
-        }
-
-        public Builder self()
-        {
-            this.choice = self;
-            this.encodable = DERNull.INSTANCE;
-            return this;
-        }
-
-        public Builder extension(byte[] value)
-        {
-            this.choice = extension;
-            this.encodable = new DEROctetString(value);
-            return this;
-        }
-
-        public SignerIdentifier build()
-        {
-            return new SignerIdentifier(choice, encodable);
-        }
-    }
 
 }

@@ -39,8 +39,8 @@ public class BcITSPublicEncryptionKey
                 SymmAlgorithm.aes128Ccm,
                 new BasePublicEncryptionKey.Builder()
                     .setChoice(BasePublicEncryptionKey.eciesNistP256)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
+                    .setValue(EccP256CurvePoint
+                        .uncompressedP256(
                             q.getAffineXCoord().toBigInteger(),
                             q.getAffineYCoord().toBigInteger()))
                     .createBasePublicEncryptionKey());
@@ -51,8 +51,8 @@ public class BcITSPublicEncryptionKey
                 SymmAlgorithm.aes128Ccm,
                 new BasePublicEncryptionKey.Builder()
                     .setChoice(BasePublicEncryptionKey.eciesBrainpoolP256r1)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
+                    .setValue(EccP256CurvePoint
+                        .uncompressedP256(
                             q.getAffineXCoord().toBigInteger(),
                             q.getAffineYCoord().toBigInteger()))
                     .createBasePublicEncryptionKey());
@@ -72,7 +72,7 @@ public class BcITSPublicEncryptionKey
     {
         X9ECParameters params;
 
-        BasePublicEncryptionKey baseKey = encryptionKey.getBasePublicEncryptionKey();
+        BasePublicEncryptionKey baseKey = encryptionKey.getPublicKey();
         ASN1ObjectIdentifier curveID;
 
         switch (baseKey.getChoice())
@@ -90,11 +90,11 @@ public class BcITSPublicEncryptionKey
         }
         ECCurve curve = params.getCurve();
 
-        ASN1Encodable pviCurvePoint = encryptionKey.getBasePublicEncryptionKey().getValue();
+        ASN1Encodable pviCurvePoint = encryptionKey.getPublicKey().getBasePublicEncryptionKey();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)baseKey.getValue();
+            itsPoint = (EccCurvePoint)baseKey.getBasePublicEncryptionKey();
         }
         else
         {

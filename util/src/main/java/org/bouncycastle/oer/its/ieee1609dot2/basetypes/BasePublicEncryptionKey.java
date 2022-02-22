@@ -23,9 +23,8 @@ public class BasePublicEncryptionKey
     public static final int eciesBrainpoolP256r1 = 1;
     public static final int extension = 2;
 
-
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable basePublicEncryptionKey;
 
     private BasePublicEncryptionKey(ASN1TaggedObject dto)
     {
@@ -34,10 +33,10 @@ public class BasePublicEncryptionKey
         {
         case eciesNistP256:
         case eciesBrainpoolP256r1:
-            value = EccP256CurvePoint.getInstance(dto.getObject());
+            basePublicEncryptionKey = EccP256CurvePoint.getInstance(dto.getObject());
             break;
         case extension:
-            value = DEROctetString.getInstance(dto.getObject());
+            basePublicEncryptionKey = DEROctetString.getInstance(dto.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + dto.getTagNo());
@@ -47,7 +46,7 @@ public class BasePublicEncryptionKey
     public BasePublicEncryptionKey(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.basePublicEncryptionKey = value;
     }
 
     public static BasePublicEncryptionKey getInstance(Object objectAt)
@@ -64,19 +63,35 @@ public class BasePublicEncryptionKey
         return null;
     }
 
+    public static BasePublicEncryptionKey eciesNistP256(EccP256CurvePoint point)
+    {
+        return new BasePublicEncryptionKey(eciesNistP256, point);
+    }
+
+    public static BasePublicEncryptionKey eciesBrainpoolP256r1(EccP256CurvePoint point)
+    {
+        return new BasePublicEncryptionKey(eciesBrainpoolP256r1, point);
+    }
+
+    public static BasePublicEncryptionKey extension(DEROctetString ext)
+    {
+        return new BasePublicEncryptionKey(extension, ext);
+    }
+
+
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getBasePublicEncryptionKey()
     {
-        return value;
+        return basePublicEncryptionKey;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, basePublicEncryptionKey);
     }
 
     public static class Builder

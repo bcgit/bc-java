@@ -27,6 +27,7 @@ public class Element
     private List<ASN1Encodable> validSwitchValues;
     private final OERDefinition.ElementSupplier elementSupplier;
     private final boolean mayRecurse;
+    private final String typeName;
 
     public Element(
         OERDefinition.BaseType baseType,
@@ -39,7 +40,7 @@ public class Element
         BigInteger enumValue, ASN1Encodable defaultValue, Switch aSwitch,
         List<ASN1Encodable> switchValues,
         OERDefinition.ElementSupplier elementSupplier,
-        boolean mayRecurse)
+        boolean mayRecurse, String typeName)
     {
         this.baseType = baseType;
         this.children = children;
@@ -54,6 +55,7 @@ public class Element
         this.validSwitchValues = switchValues != null ? Collections.unmodifiableList(switchValues) : null;
         this.elementSupplier = elementSupplier;
         this.mayRecurse = mayRecurse;
+        this.typeName = typeName;
     }
 
     /**
@@ -285,4 +287,22 @@ public class Element
     {
         return mayRecurse;
     }
+
+    public String getTypeName()
+    {
+        return typeName;
+    }
+
+    public String getDerivedTypeName()
+    {
+
+        if (typeName != null)
+        {
+            return typeName;
+        }
+
+        return baseType.name();
+
+    }
+
 }

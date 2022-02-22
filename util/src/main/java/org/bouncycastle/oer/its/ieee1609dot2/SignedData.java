@@ -124,7 +124,7 @@ public class SignedData
             return this;
         }
 
-        public SignedData build()
+        public SignedData createSignedData()
         {
             return new SignedData(hashId, tbsData, signer, signature);
         }

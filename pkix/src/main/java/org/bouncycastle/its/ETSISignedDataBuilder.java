@@ -37,7 +37,7 @@ public class ETSISignedDataBuilder
 
     private ETSISignedDataBuilder(Psid psid)
     {
-        this(HeaderInfo.builder().psid(psid).generationTime(Time64.now()).build());
+        this(HeaderInfo.builder().setPsid(psid).setGenerationTime(Time64.now()).createHeaderInfo());
     }
 
     private ETSISignedDataBuilder(HeaderInfo headerInfo)
@@ -59,7 +59,7 @@ public class ETSISignedDataBuilder
     {
         this.data = Ieee1609Dot2Data.builder()
             .setProtocolVersion(new UINT8(3))
-            .setContent(data).build();
+            .setContent(data).createIeee1609Dot2Data();
         return this;
     }
 
@@ -67,8 +67,8 @@ public class ETSISignedDataBuilder
     {
         this.data = Ieee1609Dot2Data.builder()
             .setProtocolVersion(new UINT8(3))
-            .setContent(Ieee1609Dot2Content.builder()
-                .unsecuredData(new DEROctetString(data)).build()).build();
+            .setContent(Ieee1609Dot2Content
+                .unsecuredData(new DEROctetString(data))).createEtsiTs103097Data();
         return this;
     }
 
@@ -105,8 +105,8 @@ public class ETSISignedDataBuilder
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
-            .setSigner(SignerIdentifier.builder().self().build())
-            .setSignature(signature).build());
+            .setSigner(SignerIdentifier.self())
+            .setSignature(signature).createSignedData());
     }
 
     /**
@@ -132,8 +132,8 @@ public class ETSISignedDataBuilder
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
-            .setSigner(SignerIdentifier.builder().certificate(new SequenceOfCertificate(certificates)).build())
-            .setSignature(signature).build());
+            .setSigner(SignerIdentifier.certificate(new SequenceOfCertificate(certificates)))
+            .setSignature(signature).createSignedData());
     }
 
     /**
@@ -154,8 +154,8 @@ public class ETSISignedDataBuilder
         return new ETSISignedData(SignedData.builder()
             .setHashId(ITSAlgorithmUtils.getHashAlgorithm(signer.getDigestAlgorithm().getAlgorithm()))
             .setTbsData(toBeSignedData)
-            .setSigner(SignerIdentifier.builder().digest(identifier).build())
-            .setSignature(signature).build());
+            .setSigner(SignerIdentifier.digest(identifier))
+            .setSignature(signature).createSignedData());
     }
 
     private static void write(OutputStream os, byte[] data)

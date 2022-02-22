@@ -67,6 +67,11 @@ public class CircularRegion
         return ItsUtils.toSequence(center, radius);
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 

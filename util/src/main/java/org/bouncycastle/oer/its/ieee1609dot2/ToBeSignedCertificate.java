@@ -7,11 +7,11 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.ItsUtils;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.GeographicRegion;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId3;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
@@ -43,18 +43,18 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ValidityPeriod;
 public class ToBeSignedCertificate
     extends ASN1Object
 {
-    private final CertificateId certificateId;
+    private final CertificateId id;
     private final HashedId3 cracaId;
     private final CrlSeries crlSeries;
     private final ValidityPeriod validityPeriod;
-    private final GeographicRegion geographicRegion;
+    private final GeographicRegion region;
     private final SubjectAssurance assuranceLevel;
     private final SequenceOfPsidSsp appPermissions;
     private final SequenceOfPsidGroupPermissions certIssuePermissions;
     private final SequenceOfPsidGroupPermissions certRequestPermissions;
     private final ASN1Null canRequestRollover;
     private final PublicEncryptionKey encryptionKey;
-    private final VerificationKeyIndicator verificationKeyIndicator;
+    private final VerificationKeyIndicator verifyKeyIndicator;
 
 
     public ToBeSignedCertificate(CertificateId certificateId,
@@ -70,18 +70,18 @@ public class ToBeSignedCertificate
                                  PublicEncryptionKey encryptionKey,
                                  VerificationKeyIndicator verificationKeyIndicator)
     {
-        this.certificateId = certificateId;
+        this.id = certificateId;
         this.cracaId = cracaId;
         this.crlSeries = crlSeries;
         this.validityPeriod = validityPeriod;
-        this.geographicRegion = geographicRegion;
+        this.region = geographicRegion;
         this.assuranceLevel = assuranceLevel;
         this.appPermissions = appPermissions;
         this.certIssuePermissions = certIssuePermissions;
         this.certRequestPermissions = certRequestPermissions;
         this.canRequestRollover = canRequestRollover;
         this.encryptionKey = encryptionKey;
-        this.verificationKeyIndicator = verificationKeyIndicator;
+        this.verifyKeyIndicator = verificationKeyIndicator;
     }
 
 
@@ -95,18 +95,18 @@ public class ToBeSignedCertificate
             throw new IllegalArgumentException("expected sequence size of 12");
         }
 
-        certificateId = CertificateId.getInstance(seq.next());
+        id = CertificateId.getInstance(seq.next());
         cracaId = HashedId3.getInstance(seq.next());
         crlSeries = CrlSeries.getInstance(seq.next());
         validityPeriod = ValidityPeriod.getInstance(seq.next());
-        geographicRegion = OEROptional.getValue(GeographicRegion.class, seq.next());
+        region = OEROptional.getValue(GeographicRegion.class, seq.next());
         assuranceLevel = OEROptional.getValue(SubjectAssurance.class, seq.next());
         appPermissions = OEROptional.getValue(SequenceOfPsidSsp.class, seq.next());
         certIssuePermissions = OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next());
         certRequestPermissions = OEROptional.getValue(SequenceOfPsidGroupPermissions.class, seq.next());
         canRequestRollover = OEROptional.getValue(ASN1Null.class, seq.next());
         encryptionKey = OEROptional.getValue(PublicEncryptionKey.class, seq.next());
-        verificationKeyIndicator = VerificationKeyIndicator.getInstance(seq.next());
+        verifyKeyIndicator = VerificationKeyIndicator.getInstance(seq.next());
     }
 
 
@@ -127,9 +127,9 @@ public class ToBeSignedCertificate
     }
 
 
-    public CertificateId getCertificateId()
+    public CertificateId getId()
     {
-        return certificateId;
+        return id;
     }
 
     public HashedId3 getCracaId()
@@ -147,9 +147,9 @@ public class ToBeSignedCertificate
         return validityPeriod;
     }
 
-    public GeographicRegion getGeographicRegion()
+    public GeographicRegion getRegion()
     {
-        return geographicRegion;
+        return region;
     }
 
     public SubjectAssurance getAssuranceLevel()
@@ -182,9 +182,9 @@ public class ToBeSignedCertificate
         return encryptionKey;
     }
 
-    public VerificationKeyIndicator getVerificationKeyIndicator()
+    public VerificationKeyIndicator getVerifyKeyIndicator()
     {
-        return verificationKeyIndicator;
+        return verifyKeyIndicator;
     }
 
     /**
@@ -212,35 +212,40 @@ public class ToBeSignedCertificate
     public ASN1Primitive toASN1Primitive()
     {
         return ItsUtils.toSequence(
-            certificateId,
+            id,
             cracaId,
             crlSeries,
             validityPeriod,
-            OEROptional.getInstance(geographicRegion),
+            OEROptional.getInstance(region),
             OEROptional.getInstance(assuranceLevel),
             OEROptional.getInstance(appPermissions),
             OEROptional.getInstance(certIssuePermissions),
             OEROptional.getInstance(certRequestPermissions),
             OEROptional.getInstance(canRequestRollover),
             OEROptional.getInstance(encryptionKey),
-            verificationKeyIndicator);
+            verifyKeyIndicator);
     }
 
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
-        private CertificateId certificateId;
+        private CertificateId id;
         private HashedId3 cracaId;
         private CrlSeries crlSeries;
         private ValidityPeriod validityPeriod;
-        private GeographicRegion geographicRegion;
+        private GeographicRegion region;
         private SubjectAssurance assuranceLevel;
         private SequenceOfPsidSsp appPermissions;
         private SequenceOfPsidGroupPermissions certIssuePermissions;
         private SequenceOfPsidGroupPermissions certRequestPermissions;
         private ASN1Null canRequestRollover;
         private PublicEncryptionKey encryptionKey;
-        private VerificationKeyIndicator verificationKeyIndicator;
+        private VerificationKeyIndicator verifyKeyIndicator;
 
         public Builder()
         {
@@ -248,51 +253,47 @@ public class ToBeSignedCertificate
 
         public Builder(Builder o)
         {
-            this.certificateId = o.certificateId;
+            this.id = o.id;
             this.cracaId = o.cracaId;
             this.crlSeries = o.crlSeries;
             this.validityPeriod = o.validityPeriod;
-            this.geographicRegion = o.geographicRegion;
+            this.region = o.region;
             this.assuranceLevel = o.assuranceLevel;
             this.appPermissions = o.appPermissions;
             this.certIssuePermissions = o.certIssuePermissions;
             this.certRequestPermissions = o.certRequestPermissions;
             this.canRequestRollover = o.canRequestRollover;
             this.encryptionKey = o.encryptionKey;
-            this.verificationKeyIndicator = o.verificationKeyIndicator;
+            this.verifyKeyIndicator = o.verifyKeyIndicator;
         }
 
         public Builder(ToBeSignedCertificate o)
         {
-            this.certificateId = o.certificateId;
+            this.id = o.id;
             this.cracaId = o.cracaId;
             this.crlSeries = o.crlSeries;
             this.validityPeriod = o.validityPeriod;
-            this.geographicRegion = o.geographicRegion;
+            this.region = o.region;
             this.assuranceLevel = o.assuranceLevel;
             this.appPermissions = o.appPermissions;
             this.certIssuePermissions = o.certIssuePermissions;
             this.certRequestPermissions = o.certRequestPermissions;
             this.canRequestRollover = o.canRequestRollover;
             this.encryptionKey = o.encryptionKey;
-            this.verificationKeyIndicator = o.verificationKeyIndicator;
+            this.verifyKeyIndicator = o.verifyKeyIndicator;
         }
 
 
-        public Builder setCertificateId(CertificateId certificateId)
+        public Builder setId(CertificateId id)
         {
-            this.certificateId = certificateId;
+            this.id = id;
             return this;
         }
 
-        public Builder setCracaId(HashedId cracaId)
+        public Builder setCracaId(HashedId3 cracaId)
         {
-            if (cracaId instanceof HashedId3)
-            {
-                this.cracaId = (HashedId3)cracaId;
-                return this;
-            }
-            throw new IllegalArgumentException("not HashID3");
+            this.cracaId = (HashedId3)cracaId;
+            return this;
         }
 
         public Builder setCrlSeries(CrlSeries crlSeries)
@@ -307,9 +308,9 @@ public class ToBeSignedCertificate
             return this;
         }
 
-        public Builder setGeographicRegion(GeographicRegion geographicRegion)
+        public Builder setRegion(GeographicRegion region)
         {
-            this.geographicRegion = geographicRegion;
+            this.region = region;
             return this;
         }
 
@@ -337,9 +338,9 @@ public class ToBeSignedCertificate
             return this;
         }
 
-        public Builder setCanRequestRollover(ASN1Null canRequestRollover)
+        public Builder setCanRequestRollover()
         {
-            this.canRequestRollover = canRequestRollover;
+            this.canRequestRollover = DERNull.INSTANCE;
             return this;
         }
 
@@ -349,27 +350,27 @@ public class ToBeSignedCertificate
             return this;
         }
 
-        public Builder setVerificationKeyIndicator(VerificationKeyIndicator verificationKeyIndicator)
+        public Builder setVerifyKeyIndicator(VerificationKeyIndicator verifyKeyIndicator)
         {
-            this.verificationKeyIndicator = verificationKeyIndicator;
+            this.verifyKeyIndicator = verifyKeyIndicator;
             return this;
         }
 
         public ToBeSignedCertificate createToBeSignedCertificate()
         {
             return new ToBeSignedCertificate(
-                certificateId,
+                id,
                 cracaId,
                 crlSeries,
                 validityPeriod,
-                geographicRegion,
+                region,
                 assuranceLevel,
                 appPermissions,
                 certIssuePermissions,
                 certRequestPermissions,
                 canRequestRollover,
                 encryptionKey,
-                verificationKeyIndicator);
+                verifyKeyIndicator);
         }
     }
 }

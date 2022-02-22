@@ -97,7 +97,7 @@ public class EtsiTs102941CrlRequest
             return this;
         }
 
-        public EtsiTs102941CrlRequest build()
+        public EtsiTs102941CrlRequest createEtsiTs102941CrlRequest()
         {
             return new EtsiTs102941CrlRequest(issuerId, lastKnownUpdate);
         }

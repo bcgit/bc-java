@@ -15,12 +15,12 @@ public class PublicEncryptionKey
     extends ASN1Object
 {
     private final SymmAlgorithm supportedSymmAlg;
-    private final BasePublicEncryptionKey basePublicEncryptionKey;
+    private final BasePublicEncryptionKey publicKey;
 
     public PublicEncryptionKey(SymmAlgorithm supportedSymmAlg, BasePublicEncryptionKey basePublicEncryptionKey)
     {
         this.supportedSymmAlg = supportedSymmAlg;
-        this.basePublicEncryptionKey = basePublicEncryptionKey;
+        this.publicKey = basePublicEncryptionKey;
     }
 
     private PublicEncryptionKey(ASN1Sequence seq)
@@ -31,7 +31,7 @@ public class PublicEncryptionKey
         }
 
         this.supportedSymmAlg = SymmAlgorithm.getInstance(seq.getObjectAt(0));
-        this.basePublicEncryptionKey = BasePublicEncryptionKey.getInstance(seq.getObjectAt(1));
+        this.publicKey = BasePublicEncryptionKey.getInstance(seq.getObjectAt(1));
 
     }
 
@@ -55,13 +55,42 @@ public class PublicEncryptionKey
         return supportedSymmAlg;
     }
 
-    public BasePublicEncryptionKey getBasePublicEncryptionKey()
+    public BasePublicEncryptionKey getPublicKey()
     {
-        return basePublicEncryptionKey;
+        return publicKey;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(supportedSymmAlg, basePublicEncryptionKey);
+        return ItsUtils.toSequence(supportedSymmAlg, publicKey);
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private SymmAlgorithm supportedSymmAlg;
+        private BasePublicEncryptionKey publicKey;
+
+        public Builder setSupportedSymmAlg(SymmAlgorithm supportedSymmAlg)
+        {
+            this.supportedSymmAlg = supportedSymmAlg;
+            return this;
+        }
+
+        public Builder setPublicKey(BasePublicEncryptionKey basePublicEncryptionKey)
+        {
+            this.publicKey = basePublicEncryptionKey;
+            return this;
+        }
+
+        public PublicEncryptionKey createPublicEncryptionKey()
+        {
+            return new PublicEncryptionKey(supportedSymmAlg, publicKey);
+        }
+    }
+
 }

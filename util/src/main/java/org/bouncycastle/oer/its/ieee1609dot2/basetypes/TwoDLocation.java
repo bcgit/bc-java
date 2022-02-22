@@ -64,6 +64,12 @@ public class TwoDLocation
         return longitude;
     }
 
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 

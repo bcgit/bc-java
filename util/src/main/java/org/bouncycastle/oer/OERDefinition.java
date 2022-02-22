@@ -153,7 +153,7 @@ public class OERDefinition
 
     public static Builder extension()
     {
-        return new Builder(BaseType.EXTENSION).label("extension");
+        return new Builder(BaseType.EXTENSION).label("extension").typeName("OCTET STRING");
     }
 
     public static Builder deferred(ElementSupplier elementSupplier)
@@ -185,6 +185,7 @@ public class OERDefinition
         protected final BaseType baseType;
         protected ArrayList<Builder> children = new ArrayList<Builder>();
         protected boolean explicit = true;
+        protected String typeName;
         protected String label;
         protected BigInteger upperBound;
         protected BigInteger lowerBound;
@@ -230,6 +231,7 @@ public class OERDefinition
             b.validSwitchValues = new ArrayList<ASN1Encodable>(validSwitchValues);
             b.elementSupplier = elementSupplier;
             b.mayRecurse = mayRecurse;
+            b.typeName = typeName;
             return b;
         }
 
@@ -277,6 +279,16 @@ public class OERDefinition
             return b;
         }
 
+        public Builder typeName(String name)
+        {
+            Builder b = this.copy();
+            b.typeName = name;
+            if (b.label == null)
+            {
+                b.label = name;
+            }
+            return b;
+        }
 
         public Builder unbounded()
         {
@@ -361,13 +373,7 @@ public class OERDefinition
         public Builder label(String label)
         {
             Builder newBuilder = this.copy();
-
-            if (label != null)
-            {
-                newBuilder.label = label;
-            }
-
-            newBuilder.explicit = explicit;
+            newBuilder.label = label;
             return newBuilder;
         }
 
@@ -431,6 +437,8 @@ public class OERDefinition
             }
 
 
+
+
             return new Element(
                 baseType,
                 children,
@@ -439,7 +447,13 @@ public class OERDefinition
                 lowerBound,
                 upperBound,
                 hasExtensions,
-                enumValue, defaultValue, aSwitch, validSwitchValues.isEmpty() ? null : validSwitchValues, elementSupplier, mayRecurse);
+                enumValue,
+                defaultValue,
+                aSwitch,
+                validSwitchValues.isEmpty() ? null : validSwitchValues,
+                elementSupplier,
+                mayRecurse,
+                typeName);
 
         }
 
