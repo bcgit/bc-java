@@ -25,6 +25,8 @@ abstract class SSLParametersUtil
     private static final Method setSNIMatchers;
     private static final Method getUseCipherSuitesOrder;
     private static final Method setUseCipherSuitesOrder;
+    private static final Method getMaximumPacketSize;
+    private static final Method setMaximumPacketSize;
 
     static
     {
@@ -42,6 +44,8 @@ abstract class SSLParametersUtil
         setSNIMatchers = ReflectionUtil.findMethod(methods, "setSNIMatchers");
         getUseCipherSuitesOrder = ReflectionUtil.findMethod(methods, "getUseCipherSuitesOrder");
         setUseCipherSuitesOrder = ReflectionUtil.findMethod(methods, "setUseCipherSuitesOrder");
+        getMaximumPacketSize = ReflectionUtil.findMethod(methods, "getMaximumPacketSize");
+        setMaximumPacketSize = ReflectionUtil.findMethod(methods, "setMaximumPacketSize");
     }
 
     static BCSSLParameters getParameters(ProvSSLParameters prov)
@@ -68,6 +72,7 @@ abstract class SSLParametersUtil
         ssl.setServerNames(prov.getServerNames());
         ssl.setSNIMatchers(prov.getSNIMatchers());
         ssl.setApplicationProtocols(prov.getApplicationProtocols());
+        ssl.setMaximumPacketSize(prov.getMaximumPacketSize());
 
         return ssl;
     }
@@ -137,6 +142,13 @@ abstract class SSLParametersUtil
             {
                 set(ssl, setApplicationProtocols, applicationProtocols);
             }
+        }
+
+        // From JDK 9
+
+        if (null != setMaximumPacketSize)
+        {
+            set(ssl, setMaximumPacketSize, prov.getMaximumPacketSize());
         }
 
         return ssl;
@@ -216,6 +228,13 @@ abstract class SSLParametersUtil
             }
         }
 
+        // From JDK 1.9
+
+        if (null != getMaximumPacketSize)
+        {
+            bc.setMaximumPacketSize((Integer)get(ssl, getMaximumPacketSize));
+        }
+
         return bc;
     }
 
@@ -278,6 +297,8 @@ abstract class SSLParametersUtil
         {
             prov.setApplicationProtocols(applicationProtocols);
         }
+
+        prov.setMaximumPacketSize(ssl.getMaximumPacketSize());
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
@@ -362,6 +383,13 @@ abstract class SSLParametersUtil
             {
                 prov.setApplicationProtocols(applicationProtocols);
             }
+        }
+
+        // From JDK 9
+
+        if (null != getMaximumPacketSize)
+        {
+            prov.setMaximumPacketSize((Integer)get(ssl, getMaximumPacketSize));
         }
     }
 
