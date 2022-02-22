@@ -55,21 +55,23 @@ public class ITSImplicitCertificateBuilder
 
         byte[] parentDigest = calculator.getDigest();
 
-        IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
+
         HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
+
+
         if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
         {
-            issuerIdentifierBuilder.sha256AndDigest(hashedID);
+            issuerIdentifier = IssuerIdentifier.sha256AndDigest(hashedID);
         }
         else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
         {
-            issuerIdentifierBuilder.sha384AndDigest(hashedID);
+            issuerIdentifier = IssuerIdentifier.sha384AndDigest(hashedID);
         }
         else
         {
             throw new IllegalStateException("unknown digest");
         }
-        this.issuerIdentifier = issuerIdentifierBuilder.createIssuerIdentifier();
+
     }
 
     public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
@@ -79,21 +81,18 @@ public class ITSImplicitCertificateBuilder
 
     public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
     {
-        EccP256CurvePoint reconstructionValue = EccP256CurvePoint.builder()
-            .createUncompressedP256(x, y);
+        EccP256CurvePoint reconstructionValue = EccP256CurvePoint.uncompressedP256(x, y);
 
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
 
-        tbsBldr.setCertificateId(certificateId);
+        tbsBldr.setId(certificateId);
 
         if (publicEncryptionKey != null)
         {
             tbsBldr.setEncryptionKey(publicEncryptionKey);
         }
 
-        tbsBldr.setVerificationKeyIndicator(VerificationKeyIndicator.builder()
-            .reconstructionValue(reconstructionValue)
-            .createVerificationKeyIndicator());
+        tbsBldr.setVerifyKeyIndicator(VerificationKeyIndicator.reconstructionValue(reconstructionValue));
 
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
@@ -103,7 +102,7 @@ public class ITSImplicitCertificateBuilder
 
         baseBldr.setIssuer(issuerIdentifier);
 
-        baseBldr.setToBeSignedCertificate(tbsBldr.createToBeSignedCertificate());
+        baseBldr.setToBeSigned(tbsBldr.createToBeSignedCertificate());
 
         return new ITSCertificate(baseBldr.createCertificateBase());
     }

@@ -16,12 +16,12 @@ public class CountryAndSubregions
     extends ASN1Object
 {
 
-    private final CountryOnly countryOnly;
+    private final CountryOnly country;
     private final SequenceOfRegionAndSubregions regionAndSubregions;
 
     public CountryAndSubregions(CountryOnly countryOnly, SequenceOfRegionAndSubregions regionAndSubregions)
     {
-        this.countryOnly = countryOnly;
+        this.country = countryOnly;
         this.regionAndSubregions = regionAndSubregions;
     }
 
@@ -32,7 +32,7 @@ public class CountryAndSubregions
             throw new IllegalArgumentException("expected sequence size of 2");
         }
 
-        countryOnly = CountryOnly.getInstance(sequence.getObjectAt(0));
+        country = CountryOnly.getInstance(sequence.getObjectAt(0));
         regionAndSubregions = SequenceOfRegionAndSubregions.getInstance(sequence.getObjectAt(1));
     }
 
@@ -52,9 +52,9 @@ public class CountryAndSubregions
     }
 
 
-    public CountryOnly getCountryOnly()
+    public CountryOnly getCountry()
     {
-        return countryOnly;
+        return country;
     }
 
     public SequenceOfRegionAndSubregions getRegionAndSubregions()
@@ -65,6 +65,36 @@ public class CountryAndSubregions
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{countryOnly, regionAndSubregions});
+        return new DERSequence(new ASN1Encodable[]{country, regionAndSubregions});
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private CountryOnly country;
+        private SequenceOfRegionAndSubregions regionAndSubregions;
+
+        public Builder setCountry(CountryOnly country)
+        {
+            this.country = country;
+            return this;
+        }
+
+        public Builder setRegionAndSubregions(SequenceOfRegionAndSubregions regionAndSubregions)
+        {
+            this.regionAndSubregions = regionAndSubregions;
+            return this;
+        }
+
+        public CountryAndSubregions createCountryAndSubregions()
+        {
+            return new CountryAndSubregions(country, regionAndSubregions);
+        }
+
+    }
+
 }

@@ -7,15 +7,12 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * EccP256CurvePoint ::= CHOICE {
@@ -34,7 +31,7 @@ public class EccP256CurvePoint
     implements ASN1Choice
 {
 
-    public static final int xOnly = 0;
+    public static final int xonly = 0;
     public static final int fill = 1;
     public static final int compressedY0 = 2;
     public static final int compressedY1 = 3;
@@ -42,12 +39,12 @@ public class EccP256CurvePoint
 
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable eccp256CurvePoint;
 
     public EccP256CurvePoint(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.eccp256CurvePoint = value;
     }
 
     private EccP256CurvePoint(ASN1TaggedObject ato)
@@ -57,19 +54,118 @@ public class EccP256CurvePoint
         switch (ato.getTagNo())
         {
         case fill:
-            value = ASN1Null.getInstance(ato.getObject());
+            eccp256CurvePoint = ASN1Null.getInstance(ato.getObject());
             break;
-        case xOnly:
+        case xonly:
         case compressedY0:
         case compressedY1:
-            value = ASN1OctetString.getInstance(ato.getObject());
+            eccp256CurvePoint = ASN1OctetString.getInstance(ato.getObject());
             break;
         case uncompressedP256:
-            value = ASN1Sequence.getInstance(ato.getObject());
+            eccp256CurvePoint = Point256.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
         }
+    }
+
+
+    public static EccP256CurvePoint xOnly(ASN1OctetString value)
+    {
+        return new EccP256CurvePoint(xonly, value);
+    }
+
+    public static EccP256CurvePoint xOnly(byte[] value)
+    {
+        return new EccP256CurvePoint(xonly, new DEROctetString(value));
+    }
+
+
+    public static EccP256CurvePoint fill()
+    {
+        return new EccP256CurvePoint(fill, DERNull.INSTANCE);
+    }
+
+    public static EccP256CurvePoint compressedY0(ASN1OctetString octetString)
+    {
+        return new EccP256CurvePoint(compressedY0, octetString);
+    }
+
+    public static EccP256CurvePoint compressedY1(ASN1OctetString octetString)
+    {
+        return new EccP256CurvePoint(compressedY1, octetString);
+    }
+
+    public static EccP256CurvePoint compressedY0(byte[] octetString)
+    {
+        return new EccP256CurvePoint(compressedY0, new DEROctetString(octetString));
+    }
+
+    public static EccP256CurvePoint compressedY1(byte[] octetString)
+    {
+        return new EccP256CurvePoint(compressedY1, new DEROctetString(octetString));
+    }
+
+
+    public static EccP256CurvePoint uncompressedP256(Point256 point256)
+    {
+        return new EccP256CurvePoint(uncompressedP256, point256);
+    }
+
+    public static EccP256CurvePoint uncompressedP256(BigInteger x, BigInteger y)
+    {
+        return new EccP256CurvePoint(uncompressedP256, Point256.builder().setX(x).setY(y).createPoint256());
+    }
+
+    public static EccP256CurvePoint createEncodedPoint(byte[] encoded)
+    {
+        if (encoded[0] == 0x02)
+        {
+            //33
+            byte[] copy = new byte[encoded.length - 1];
+            System.arraycopy(encoded, 1, copy, 0, copy.length);
+            return new EccP256CurvePoint(compressedY0, new DEROctetString(copy));
+        }
+        else if (encoded[0] == 0x03)
+        {
+            //33
+            byte[] copy = new byte[encoded.length - 1];
+            System.arraycopy(encoded, 1, copy, 0, copy.length);
+            return new EccP256CurvePoint(compressedY1, new DEROctetString(copy));
+        }
+        else if (encoded[0] == 0x04)
+        {
+            // 65
+
+            return new EccP256CurvePoint(uncompressedP256,
+                new Point256(new DEROctetString(Arrays.copyOfRange(encoded, 1, 34)),
+                    new DEROctetString(Arrays.copyOfRange(encoded, 34, 66))));
+
+        }
+        else
+        {
+            throw new IllegalArgumentException("unrecognised encoding " + encoded[0]);
+        }
+
+
+    }
+
+
+    public EccP256CurvePoint createCompressed(ECPoint point)
+    {
+        int choice = 0;
+        byte[] encoded = point.getEncoded(true);
+        if (encoded[0] == 0x02)
+        {
+            choice = compressedY0;
+        }
+        else if (encoded[0] == 0x03)
+        {
+            choice = compressedY1;
+        }
+        byte[] copy = new byte[encoded.length - 1];
+        System.arraycopy(encoded, 0, copy, 0, copy.length);
+        return new EccP256CurvePoint(choice, new DEROctetString(copy));
     }
 
     public static EccP256CurvePoint getInstance(Object object)
@@ -87,14 +183,9 @@ public class EccP256CurvePoint
         return null;
     }
 
-    public static Builder builder()
+    public ASN1Encodable getEccp256CurvePoint()
     {
-        return new Builder();
-    }
-
-    public ASN1Encodable getValue()
-    {
-        return value;
+        return eccp256CurvePoint;
     }
 
     public int getChoice()
@@ -104,7 +195,7 @@ public class EccP256CurvePoint
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, eccp256CurvePoint);
     }
 
     public byte[] getEncodedPoint()
@@ -114,7 +205,7 @@ public class EccP256CurvePoint
         {
         case compressedY0:
         {
-            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            byte[] originalKey = DEROctetString.getInstance(eccp256CurvePoint).getOctets();
             key = new byte[originalKey.length + 1];
             key[0] = 0x02;
             System.arraycopy(originalKey, 0, key, 1, originalKey.length);
@@ -122,19 +213,19 @@ public class EccP256CurvePoint
         break;
         case compressedY1:
         {
-            byte[] originalKey = DEROctetString.getInstance(value).getOctets();
+            byte[] originalKey = DEROctetString.getInstance(eccp256CurvePoint).getOctets();
             key = new byte[originalKey.length + 1];
             key[0] = 0x03;
             System.arraycopy(originalKey, 0, key, 1, originalKey.length);
         }
         break;
         case uncompressedP256:
-            ASN1Sequence sequence = ASN1Sequence.getInstance(value);
-            byte[] x = DEROctetString.getInstance(sequence.getObjectAt(0)).getOctets();
-            byte[] y = DEROctetString.getInstance(sequence.getObjectAt(1)).getOctets();
+            Point256 point256 = Point256.getInstance(eccp256CurvePoint);
+            byte[] x = point256.getX().getOctets();
+            byte[] y = point256.getY().getOctets();
             key = Arrays.concatenate(new byte[]{0x04}, x, y);
             break;
-        case xOnly:
+        case xonly:
             throw new IllegalStateException("x Only not implemented");
         default:
             throw new IllegalStateException("unknown point choice");
@@ -144,105 +235,4 @@ public class EccP256CurvePoint
 
     }
 
-    public static class Builder
-    {
-
-        private int choice;
-        private ASN1Encodable value;
-
-        Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        Builder setValue(ASN1Encodable value)
-        {
-            this.value = value;
-            return this;
-        }
-
-        public EccP256CurvePoint createXOnly(BigInteger x)
-        {
-            this.choice = xOnly;
-            this.value = new DEROctetString(BigIntegers.asUnsignedByteArray(x));
-            return this.createEccP256CurvePoint();
-        }
-
-        public EccP256CurvePoint createFill()
-        {
-            this.choice = fill;
-            this.value = DERNull.INSTANCE;
-            return this.createEccP256CurvePoint();
-        }
-
-        public EccP256CurvePoint createEncodedPoint(byte[] encoded)
-        {
-            if (encoded[0] == 0x02)
-            {
-                //33
-                this.choice = compressedY0;
-                byte[] copy = new byte[encoded.length - 1];
-                System.arraycopy(encoded, 1, copy, 0, copy.length);
-                this.value = new DEROctetString(copy);
-            }
-            else if (encoded[0] == 0x03)
-            {
-                //33
-                this.choice = compressedY1;
-                byte[] copy = new byte[encoded.length - 1];
-                System.arraycopy(encoded, 1, copy, 0, copy.length);
-                this.value = new DEROctetString(copy);
-            }
-            else if (encoded[0] == 0x04)
-            {
-                // 65
-                this.choice = uncompressedP256;
-                value = new DERSequence(new ASN1Encodable[]{
-                    new DEROctetString(Arrays.copyOfRange(encoded, 1, 34)),
-                    new DEROctetString(Arrays.copyOfRange(encoded, 34, 66)),
-                });
-
-            }
-            else
-            {
-                throw new IllegalArgumentException("unrecognised encoding " + encoded[0]);
-            }
-
-            return this.createEccP256CurvePoint();
-        }
-
-
-        public EccP256CurvePoint createCompressed(ECPoint point)
-        {
-            byte[] encoded = point.getEncoded(true);
-            if (encoded[0] == 0x02)
-            {
-                this.choice = compressedY0;
-            }
-            else if (encoded[0] == 0x03)
-            {
-                this.choice = compressedY1;
-            }
-            byte[] copy = new byte[encoded.length - 1];
-            System.arraycopy(encoded, 0, copy, 0, copy.length);
-            this.value = new DEROctetString(copy);
-            return this.createEccP256CurvePoint();
-        }
-
-        public EccP256CurvePoint createUncompressedP256(BigInteger x, BigInteger y)
-        {
-            choice = uncompressedP256;
-            value = new DERSequence(new ASN1Encodable[]{
-                new DEROctetString(BigIntegers.asUnsignedByteArray(32, x)),
-                new DEROctetString(BigIntegers.asUnsignedByteArray(32, y)),
-            });
-            return this.createEccP256CurvePoint();
-        }
-
-        private EccP256CurvePoint createEccP256CurvePoint()
-        {
-            return new EccP256CurvePoint(choice, value);
-        }
-    }
 }

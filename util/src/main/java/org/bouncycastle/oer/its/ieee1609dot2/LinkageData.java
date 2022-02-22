@@ -26,6 +26,13 @@ public class LinkageData
     private final LinkageValue linkageValue;
     private final GroupLinkageValue groupLinkageValue;
 
+    public LinkageData(IValue iCert, LinkageValue linkageValue, GroupLinkageValue groupLinkageValue)
+    {
+        this.iCert = iCert;
+        this.linkageValue = linkageValue;
+        this.groupLinkageValue = groupLinkageValue;
+    }
+
     private LinkageData(ASN1Sequence seq)
     {
         if (seq.size() != 3)
@@ -70,5 +77,40 @@ public class LinkageData
     public ASN1Primitive toASN1Primitive()
     {
         return new DERSequence(new ASN1Encodable[]{iCert, linkageValue, OEROptional.getInstance(groupLinkageValue)});
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private IValue iCert;
+        private LinkageValue linkageValue;
+        private GroupLinkageValue groupLinkageValue;
+
+        public Builder setICert(IValue iCert)
+        {
+            this.iCert = iCert;
+            return this;
+        }
+
+        public Builder setLinkageValue(LinkageValue linkageValue)
+        {
+            this.linkageValue = linkageValue;
+            return this;
+        }
+
+        public Builder setGroupLinkageValue(GroupLinkageValue groupLinkageValue)
+        {
+            this.groupLinkageValue = groupLinkageValue;
+            return this;
+        }
+
+        public LinkageData createLinkageData()
+        {
+            return new LinkageData(iCert, linkageValue, groupLinkageValue);
+        }
     }
 }

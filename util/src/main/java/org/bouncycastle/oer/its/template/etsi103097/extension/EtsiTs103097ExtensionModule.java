@@ -1,5 +1,6 @@
 package org.bouncycastle.oer.its.template.etsi103097.extension;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OERDefinition;
@@ -18,14 +19,14 @@ public class EtsiTs103097ExtensionModule
 
     public static final ASN1Integer etsiTs102941CrlRequestId = new ASN1Integer(1);
     public static final ASN1Integer etsiTs102941DeltaCtlRequestId = new ASN1Integer(2);
-
+    private static final ASN1Encodable[] extensionKeys = new ASN1Encodable[]{etsiTs102941CrlRequestId, etsiTs102941DeltaCtlRequestId};
 
     /**
      * ExtId ::= INTEGER(0..255)
      */
     public static final OERDefinition.Builder ExtId = OERDefinition.integer(0, 255)
         .validSwitchValue(etsiTs102941CrlRequestId, etsiTs102941DeltaCtlRequestId)
-        .label("ExtId");
+        .typeName("ExtId");
 
 
     /**
@@ -37,7 +38,7 @@ public class EtsiTs103097ExtensionModule
     public static final OERDefinition.Builder EtsiTs102941CrlRequest = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.HashedId8.label("issuerId"),
         OERDefinition.optional(Ieee1609Dot2BaseTypes.Time32.label("lastKnownUpdate"))
-    ).label("EtsiTs102941CrlRequest");
+    ).typeName("EtsiTs102941CrlRequest");
 
 
     /**
@@ -49,13 +50,13 @@ public class EtsiTs103097ExtensionModule
     public static final OERDefinition.Builder EtsiTs102941CtlRequest = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.HashedId8.label("issuerId"),
         OERDefinition.optional(OERDefinition.integer(0, 255).label("lastKnownCtlSequence"))
-    ).label("EtsiTs102941CtlRequest");
+    ).typeName("EtsiTs102941CtlRequest");
 
 
     /**
      * EtsiTs102941DeltaCtlRequest::= EtsiTs102941CtlRequest
      */
-    public static final OERDefinition.Builder EtsiTs102941DeltaCtlRequest = EtsiTs102941CtlRequest.label("EtsiTs102941DeltaCtlRequest");
+    public static final OERDefinition.Builder EtsiTs102941DeltaCtlRequest = EtsiTs102941CtlRequest.typeName("EtsiTs102941DeltaCtlRequest");
 
     /**
      * Extension {EXT-TYPE : ExtensionTypes} ::= SEQUENCE {
@@ -65,8 +66,7 @@ public class EtsiTs103097ExtensionModule
      * <p>
      * This uses a switch to determine which OER definition to use based on the value of id.
      */
-    public static final OERDefinition.Builder Extension = OERDefinition.seq(
-        ExtId.labelPrefix("id"),
+    public static final OERDefinition.Builder Extension = OERDefinition.seq(ExtId.label("id"),
         OERDefinition.aSwitch(
 
             /**
@@ -74,8 +74,8 @@ public class EtsiTs103097ExtensionModule
              */
             new Switch()
             {
-                private final Element etsiTs102941CrlRequestIdDef = EtsiTs102941CrlRequest.build();
-                private final Element etsiTs102941DeltaCtlRequestIdDef = EtsiTs102941DeltaCtlRequest.build();
+                private final Element etsiTs102941CrlRequestIdDef = EtsiTs102941CrlRequest.label("content").build();
+                private final Element etsiTs102941DeltaCtlRequestIdDef = EtsiTs102941DeltaCtlRequest.label("content").build();
 
 
                 public Element result(SwitchIndexer indexer)
@@ -100,10 +100,15 @@ public class EtsiTs103097ExtensionModule
 
                 }
 
-            })).label("Extension");
+                public ASN1Encodable[] keys()
+                {
+                    return extensionKeys;
+                }
 
 
+            }).label("content")).typeName("Extension");
 
-    public static final OERDefinition.Builder EtsiOriginatingHeaderInfoExtension = Extension.label("EtsiOriginatingHeaderInfoExtension");
+
+    public static final OERDefinition.Builder EtsiOriginatingHeaderInfoExtension = Extension.typeName("EtsiOriginatingHeaderInfoExtension");
 
 }

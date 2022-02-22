@@ -22,7 +22,7 @@ public class EncryptionKey
     public static final int symmetric = 1;
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable encryptionKey;
 
 
     public static EncryptionKey getInstance(Object o)
@@ -46,7 +46,7 @@ public class EncryptionKey
         {
         case publicOption:
         case symmetric:
-            this.value = value;
+            this.encryptionKey = value;
             return;
         }
 
@@ -54,6 +54,15 @@ public class EncryptionKey
 
     }
 
+    public static EncryptionKey publicOption(PublicEncryptionKey key)
+    {
+        return new EncryptionKey(publicOption, key);
+    }
+
+    public static EncryptionKey symmetric(SymmetricEncryptionKey key)
+    {
+        return new EncryptionKey(symmetric, key);
+    }
 
     private EncryptionKey(ASN1TaggedObject value)
     {
@@ -65,14 +74,14 @@ public class EncryptionKey
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getEncryptionKey()
     {
-        return value;
+        return encryptionKey;
     }
 
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, encryptionKey);
     }
 }

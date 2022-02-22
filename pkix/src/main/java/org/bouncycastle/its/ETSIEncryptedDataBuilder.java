@@ -39,7 +39,7 @@ public class ETSIEncryptedDataBuilder
         return new ETSIEncryptedData(EncryptedData.builder()
             .setRecipients(builder.createSequenceOfRecipientInfo())
             .setCiphertext(SymmetricCiphertext.aes128ccm(AesCcmCiphertext.builder()
-                .setOpaque(opaque)
+                .setCcmCiphertext(opaque)
                 .setNonce(nonce)
                 .createAesCcmCiphertext())).createEncryptedData()
         );

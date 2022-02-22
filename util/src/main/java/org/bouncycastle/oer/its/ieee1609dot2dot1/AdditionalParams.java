@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its.ieee1609dot2dot1;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -78,10 +77,32 @@ public class AdditionalParams
         return null;
     }
 
-    public static Builder builder()
+
+    public static AdditionalParams original(ButterflyParamsOriginal value)
     {
-        return new Builder();
+        return new AdditionalParams(original, value);
     }
+
+    public static AdditionalParams unified(ButterflyExpansion exp)
+    {
+        return new AdditionalParams(unified, exp);
+    }
+
+    public static AdditionalParams compactUnified(ButterflyExpansion exp)
+    {
+        return new AdditionalParams(compactUnified, exp);
+    }
+
+    public static AdditionalParams encryptionKey(PublicEncryptionKey pek)
+    {
+        return new AdditionalParams(encryptionKey, pek);
+    }
+
+    public static AdditionalParams extension(DEROctetString st)
+    {
+        return new AdditionalParams(extension, st);
+    }
+
 
     public int getChoice()
     {
@@ -98,51 +119,5 @@ public class AdditionalParams
         return new DERTaggedObject(choice, additionalParams);
     }
 
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable additionalParams;
-
-        public Builder original(ButterflyParamsOriginal original)
-        {
-            this.additionalParams = original;
-            this.choice = AdditionalParams.original;
-            return this;
-        }
-
-        public Builder unified(ButterflyExpansion unified)
-        {
-            this.additionalParams = unified;
-            this.choice = AdditionalParams.unified;
-            return this;
-        }
-
-        public Builder compactUnified(ButterflyExpansion compactUnified)
-        {
-            this.additionalParams = compactUnified;
-            this.choice = AdditionalParams.compactUnified;
-            return this;
-        }
-
-        public Builder encryptionKey(PublicEncryptionKey encryptionKey)
-        {
-            this.additionalParams = encryptionKey;
-            this.choice = AdditionalParams.encryptionKey;
-            return this;
-        }
-
-        public Builder extension(ASN1OctetString extension)
-        {
-            this.additionalParams = extension;
-            this.choice = AdditionalParams.extension;
-            return this;
-        }
-
-        public AdditionalParams build()
-        {
-            return new AdditionalParams(choice, additionalParams);
-        }
-
-    }
 
 }

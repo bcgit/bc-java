@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
 
 /**
@@ -21,12 +22,12 @@ public class BitmapSspRange
     extends ASN1Object
 {
     private final ASN1OctetString sspValue;
-    private final ASN1OctetString sspBitmask;
+    private final ASN1OctetString sspBitMask;
 
     public BitmapSspRange(ASN1OctetString sspValue, ASN1OctetString sspBitmask)
     {
         this.sspValue = sspValue;
-        this.sspBitmask = sspBitmask;
+        this.sspBitMask = sspBitmask;
     }
 
     private BitmapSspRange(ASN1Sequence seq)
@@ -37,7 +38,7 @@ public class BitmapSspRange
         }
         Iterator<ASN1Encodable> it = seq.iterator();
         sspValue = ASN1OctetString.getInstance(it.next());
-        sspBitmask = ASN1OctetString.getInstance(it.next());
+        sspBitMask = ASN1OctetString.getInstance(it.next());
     }
 
     public static BitmapSspRange getInstance(Object o)
@@ -59,13 +60,56 @@ public class BitmapSspRange
         return sspValue;
     }
 
-    public ASN1OctetString getSspBitmask()
+    public ASN1OctetString getSspBitMask()
     {
-        return sspBitmask;
+        return sspBitMask;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(sspValue, sspBitmask);
+        return ItsUtils.toSequence(sspValue, sspBitMask);
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private ASN1OctetString sspValue;
+        private ASN1OctetString sspBitMask;
+
+        public Builder setSspValue(ASN1OctetString sspValue)
+        {
+            this.sspValue = sspValue;
+            return this;
+        }
+
+        public Builder setSspBitMask(ASN1OctetString sspBitMask)
+        {
+            this.sspBitMask = sspBitMask;
+            return this;
+        }
+
+
+        public Builder setSspValue(byte[] sspValue)
+        {
+            this.sspValue = new DEROctetString(sspValue);
+            return this;
+        }
+
+        public Builder setSspBitMask(byte[] sspBitmask)
+        {
+            this.sspBitMask = new DEROctetString(sspBitmask);
+            return this;
+        }
+
+
+        public BitmapSspRange createBitmapSspRange()
+        {
+            return new BitmapSspRange(sspValue, sspBitMask);
+        }
+    }
+
 }

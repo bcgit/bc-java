@@ -45,6 +45,11 @@ public class UINT16
         return null;
     }
 
+    public static UINT16 valueOf(int i)
+    {
+        return new UINT16(i);
+    }
+
     @Override
     protected void assertLimit()
     {

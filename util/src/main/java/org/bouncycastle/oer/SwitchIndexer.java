@@ -43,4 +43,21 @@ public abstract class SwitchIndexer
         }
     }
 
+    public static class FixedValueIndexer
+        extends SwitchIndexer
+    {
+        private final ASN1Encodable returnValue;
+
+        public FixedValueIndexer(ASN1Encodable returnValue)
+        {
+            this.returnValue = returnValue;
+        }
+
+        @Override
+        public ASN1Encodable get(int index)
+        {
+            return returnValue;
+        }
+    }
+
 }

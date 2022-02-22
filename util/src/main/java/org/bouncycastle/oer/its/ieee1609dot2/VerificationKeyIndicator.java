@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -28,12 +29,12 @@ public class VerificationKeyIndicator
     public static final int extension = 2;
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable verificationKeyIndicator;
 
     public VerificationKeyIndicator(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.verificationKeyIndicator = value;
     }
 
     private VerificationKeyIndicator(ASN1TaggedObject ato)
@@ -42,19 +43,39 @@ public class VerificationKeyIndicator
         switch (choice)
         {
         case verificationKey:
-            value = PublicVerificationKey.getInstance(ato.getObject());
+            verificationKeyIndicator = PublicVerificationKey.getInstance(ato.getObject());
             break;
         case reconstructionValue:
-            value = EccP256CurvePoint.getInstance(ato.getObject());
+            verificationKeyIndicator = EccP256CurvePoint.getInstance(ato.getObject());
             break;
         case extension:
-            value = DEROctetString.getInstance(ato.getObject());
+            verificationKeyIndicator = DEROctetString.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
 
         }
 
+    }
+
+    public static VerificationKeyIndicator verificationKey(PublicVerificationKey value)
+    {
+        return new VerificationKeyIndicator(verificationKey, value);
+    }
+
+    public static VerificationKeyIndicator reconstructionValue(EccP256CurvePoint value)
+    {
+        return new VerificationKeyIndicator(reconstructionValue, value);
+    }
+
+    public static VerificationKeyIndicator extension(ASN1OctetString string)
+    {
+        return new VerificationKeyIndicator(extension, string);
+    }
+
+    public static VerificationKeyIndicator extension(byte[] string)
+    {
+        return new VerificationKeyIndicator(extension, new DEROctetString(string));
     }
 
 
@@ -74,69 +95,20 @@ public class VerificationKeyIndicator
 
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
 
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getVerificationKeyIndicator()
     {
-        return value;
+        return verificationKeyIndicator;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, verificationKeyIndicator);
     }
 
-    public static class Builder
-    {
-
-        private int choice;
-        private ASN1Encodable object;
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setObject(ASN1Encodable object)
-        {
-            this.object = object;
-            return this;
-        }
-
-        public Builder publicVerificationKey(PublicVerificationKey publicVerificationKey)
-        {
-            this.object = publicVerificationKey;
-            this.choice = verificationKey;
-            return this;
-        }
-
-        public Builder reconstructionValue(EccP256CurvePoint curvePoint)
-        {
-            this.object = curvePoint;
-            this.choice = reconstructionValue;
-            return this;
-        }
-
-        public Builder extension(byte[] value)
-        {
-            this.object = new DEROctetString(value);
-            this.choice = extension;
-            return this;
-        }
-
-
-        public VerificationKeyIndicator createVerificationKeyIndicator()
-        {
-            return new VerificationKeyIndicator(choice, object);
-        }
-    }
 }

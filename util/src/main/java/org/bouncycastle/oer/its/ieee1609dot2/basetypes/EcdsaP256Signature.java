@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
 
 /**
@@ -72,13 +73,19 @@ public class EcdsaP256Signature
         private EccP256CurvePoint rSig;
         private ASN1OctetString sSig;
 
-        public Builder setrSig(EccP256CurvePoint rSig)
+        public Builder setRSig(EccP256CurvePoint rSig)
         {
             this.rSig = rSig;
             return this;
         }
 
-        public Builder setsSig(ASN1OctetString sSig)
+        public Builder setSSig(byte[] sSig)
+        {
+            this.sSig = new DEROctetString(sSig);
+            return this;
+        }
+
+        public Builder setSSig(ASN1OctetString sSig)
         {
             this.sSig = sSig;
             return this;
