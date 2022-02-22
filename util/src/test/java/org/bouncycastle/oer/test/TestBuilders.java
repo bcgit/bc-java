@@ -443,7 +443,7 @@ public class TestBuilders
                     Point256.builder().setY(new DEROctetString(new byte[32])).createPoint256();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
                 try
@@ -451,7 +451,7 @@ public class TestBuilders
                     Point256.builder().setX(new DEROctetString(new byte[32])).createPoint256();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
@@ -460,7 +460,7 @@ public class TestBuilders
                     Point256.builder().setY(new DEROctetString(new byte[31])).createPoint256();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
@@ -469,7 +469,7 @@ public class TestBuilders
                     Point256.builder().setX(new DEROctetString(new byte[31])).createPoint256();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
@@ -489,7 +489,7 @@ public class TestBuilders
                     Point384.builder().setY(new DEROctetString(new byte[48])).createPoint384();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
                 try
@@ -497,7 +497,7 @@ public class TestBuilders
                     Point384.builder().setX(new DEROctetString(new byte[48])).createPoint384();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
@@ -506,7 +506,7 @@ public class TestBuilders
                     Point384.builder().setY(new DEROctetString(new byte[47])).createPoint384();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
@@ -515,7 +515,7 @@ public class TestBuilders
                     Point384.builder().setX(new DEROctetString(new byte[47])).createPoint384();
                     fail("expected exception");
                 }
-                catch (Exception _)
+                catch (Exception ignored)
                 {
                 }
 
