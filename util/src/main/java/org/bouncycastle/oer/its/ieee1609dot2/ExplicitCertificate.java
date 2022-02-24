@@ -1,8 +1,8 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 /**
  * ExplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
@@ -19,12 +19,12 @@ public class ExplicitCertificate
 
     public ExplicitCertificate(CertificateBase base)
     {
-        this(base.getVersion(), base.getIssuer(), base.getToBeSignedCertificate(), base.getSignature());
+        this(base.getVersion(), base.getIssuer(), base.getToBeSigned(), base.getSignature());
     }
 
-    public ExplicitCertificate(ASN1Integer version, IssuerIdentifier issuer, ToBeSignedCertificate toBeSignedCertificate, Signature signature)
+    public ExplicitCertificate(UINT8 version, IssuerIdentifier issuer, ToBeSignedCertificate toBeSigned, Signature signature)
     {
-        super(version, CertificateType.explicit, issuer, toBeSignedCertificate, signature);
+        super(version, CertificateType.explicit, issuer, toBeSigned, signature);
     }
 
 

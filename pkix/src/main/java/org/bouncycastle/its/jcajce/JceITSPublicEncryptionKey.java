@@ -94,8 +94,8 @@ public class JceITSPublicEncryptionKey
                 SymmAlgorithm.aes128Ccm,
                 new BasePublicEncryptionKey.Builder()
                     .setChoice(BasePublicEncryptionKey.eciesNistP256)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
+                    .setValue(EccP256CurvePoint
+                        .uncompressedP256(
                             pKey.getW().getAffineX(),
                             pKey.getW().getAffineY()))
                     .createBasePublicEncryptionKey());
@@ -106,8 +106,8 @@ public class JceITSPublicEncryptionKey
                 SymmAlgorithm.aes128Ccm,
                 new BasePublicEncryptionKey.Builder()
                     .setChoice(BasePublicEncryptionKey.eciesBrainpoolP256r1)
-                    .setValue(EccP256CurvePoint.builder()
-                        .createUncompressedP256(
+                    .setValue(EccP256CurvePoint
+                        .uncompressedP256(
                             pKey.getW().getAffineX(),
                             pKey.getW().getAffineY()))
                     .createBasePublicEncryptionKey());
@@ -121,7 +121,7 @@ public class JceITSPublicEncryptionKey
 
     public PublicKey getKey()
     {
-        BasePublicEncryptionKey baseKey = encryptionKey.getBasePublicEncryptionKey();
+        BasePublicEncryptionKey baseKey = encryptionKey.getPublicKey();
         X9ECParameters params;
 
         switch (baseKey.getChoice())
@@ -137,11 +137,11 @@ public class JceITSPublicEncryptionKey
             throw new IllegalStateException("unknown key type");
         }
 
-        ASN1Encodable pviCurvePoint = encryptionKey.getBasePublicEncryptionKey().getValue();
+        ASN1Encodable pviCurvePoint = encryptionKey.getPublicKey().getBasePublicEncryptionKey();
         final EccCurvePoint itsPoint;
         if (pviCurvePoint instanceof EccCurvePoint)
         {
-            itsPoint = (EccCurvePoint)baseKey.getValue();
+            itsPoint = (EccCurvePoint)baseKey.getBasePublicEncryptionKey();
         }
         else
         {

@@ -1,7 +1,6 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
 import org.bouncycastle.asn1.ASN1Choice;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -33,12 +32,12 @@ public class Duration
     public static final int years = 6;
 
     private final int choice;
-    private final int value;
+    private final UINT16 duration;
 
-    public Duration(int tag, int value)
+    public Duration(int tag, UINT16 value)
     {
         this.choice = tag;
-        this.value = value;
+        this.duration = value;
     }
 
     private Duration(ASN1TaggedObject taggedObject)
@@ -55,7 +54,7 @@ public class Duration
         case years:
             try
             {
-                value = ASN1Integer.getInstance(taggedObject.getObject()).getValue().intValue();
+                duration = UINT16.getInstance(taggedObject.getObject());
             }
             catch (Exception ioex)
             {
@@ -83,9 +82,44 @@ public class Duration
 
     }
 
+    public static Duration years(UINT16 value)
+    {
+        return new Duration(years, value);
+    }
+
+    public static Duration sixtyHours(UINT16 value)
+    {
+        return new Duration(sixtyHours, value);
+    }
+
+    public static Duration hours(UINT16 value)
+    {
+        return new Duration(hours, value);
+    }
+
+    public static Duration minutes(UINT16 value)
+    {
+        return new Duration(minutes, value);
+    }
+
+    public static Duration seconds(UINT16 value)
+    {
+        return new Duration(seconds, value);
+    }
+
+    public static Duration milliseconds(UINT16 value)
+    {
+        return new Duration(milliseconds, value);
+    }
+
+    public static Duration microseconds(UINT16 value)
+    {
+        return new Duration(microseconds, value);
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, new ASN1Integer(value));
+        return new DERTaggedObject(choice, duration);
     }
 
     public int getChoice()
@@ -93,8 +127,8 @@ public class Duration
         return choice;
     }
 
-    public int getValue()
+    public UINT16 getDuration()
     {
-        return value;
+        return duration;
     }
 }

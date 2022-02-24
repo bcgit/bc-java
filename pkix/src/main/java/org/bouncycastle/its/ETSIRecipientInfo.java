@@ -2,7 +2,6 @@ package org.bouncycastle.its;
 
 
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
-import org.bouncycastle.its.operator.ETSIDataEncryptor;
 import org.bouncycastle.oer.its.ieee1609dot2.AesCcmCiphertext;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedData;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedDataEncryptionKey;
@@ -48,13 +47,13 @@ public class ETSIRecipientInfo
             throw new IllegalArgumentException("Encrypted data is no AES 128 CCM");
         }
 
-        AesCcmCiphertext act = AesCcmCiphertext.getInstance(encryptedData.getCiphertext().getValue());
+        AesCcmCiphertext act = AesCcmCiphertext.getInstance(encryptedData.getCiphertext().getSymmetricCiphertext());
 
         // Test it is the correct kind of recipient info.
-        PKRecipientInfo pkRecipientInfo = PKRecipientInfo.getInstance(recipientInfo.getValue());
+        PKRecipientInfo pkRecipientInfo = PKRecipientInfo.getInstance(recipientInfo.getRecipientInfo());
         EncryptedDataEncryptionKey edec = pkRecipientInfo.getEncKey();
 
-        EciesP256EncryptedKey key = EciesP256EncryptedKey.getInstance(edec.getValue());
+        EciesP256EncryptedKey key = EciesP256EncryptedKey.getInstance(edec.getEncryptedDataEncryptionKey());
         EccP256CurvePoint point = EccP256CurvePoint.getInstance(key.getV());
 
         // [ephemeral public key][encrypted key][tag]

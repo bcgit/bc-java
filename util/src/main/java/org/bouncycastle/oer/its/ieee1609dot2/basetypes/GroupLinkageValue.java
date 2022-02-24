@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
 
 /**
@@ -29,6 +30,28 @@ public class GroupLinkageValue
 
         jValue = ASN1OctetString.getInstance(seq.getObjectAt(0));
         value = ASN1OctetString.getInstance(seq.getObjectAt(1));
+        assertValues();
+    }
+
+    public GroupLinkageValue(ASN1OctetString jValue, ASN1OctetString value)
+    {
+        this.jValue = jValue;
+        this.value = value;
+        assertValues();
+    }
+
+    private void assertValues()
+    {
+        if (jValue == null || jValue.getOctets().length != 4)
+        {
+            throw new IllegalArgumentException("jValue is null or not four bytes long");
+        }
+
+        if (value == null || value.getOctets().length != 9)
+        {
+            throw new IllegalArgumentException("value is null or not nine bytes long");
+        }
+
     }
 
     public static GroupLinkageValue getInstance(Object src)
@@ -59,4 +82,44 @@ public class GroupLinkageValue
     {
         return ItsUtils.toSequence(jValue, value);
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private ASN1OctetString jValue;
+        private ASN1OctetString value;
+
+        public Builder setJValue(ASN1OctetString jValue)
+        {
+            this.jValue = jValue;
+            return this;
+        }
+
+        public Builder setJValue(byte[] jValue)
+        {
+            return setJValue(new DEROctetString(jValue));
+        }
+
+        public Builder setValue(ASN1OctetString value)
+        {
+            this.value = value;
+            return this;
+        }
+
+        public Builder setValue(byte[] value)
+        {
+            return setValue(new DEROctetString(value));
+        }
+
+        public GroupLinkageValue createGroupLinkageValue()
+        {
+            return new GroupLinkageValue(jValue, value);
+        }
+
+    }
+
 }

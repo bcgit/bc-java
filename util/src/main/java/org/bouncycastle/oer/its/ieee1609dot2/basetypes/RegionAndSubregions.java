@@ -1,8 +1,5 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -18,14 +15,14 @@ public class RegionAndSubregions
     extends ASN1Object
     implements RegionInterface
 {
-    private final Region region;
-    private final SequenceOfUint16 subRegions;
+    private final UINT8 region;
+    private final SequenceOfUint16 subregions;
 
 
-    public RegionAndSubregions(Region region, List<UINT16> subRegions)
+    public RegionAndSubregions(UINT8 region, SequenceOfUint16 subRegions)
     {
         this.region = region;
-        this.subRegions = new SequenceOfUint16(subRegions);
+        this.subregions = subRegions;
     }
 
     private RegionAndSubregions(ASN1Sequence seq)
@@ -35,18 +32,18 @@ public class RegionAndSubregions
             throw new IllegalArgumentException("expected sequence size of 2");
         }
 
-        region = Region.getInstance(seq.getObjectAt(0));
-        subRegions = SequenceOfUint16.getInstance(seq.getObjectAt(1));
+        region = UINT8.getInstance(seq.getObjectAt(0));
+        subregions = SequenceOfUint16.getInstance(seq.getObjectAt(1));
     }
 
-    public Region getRegion()
+    public UINT8 getRegion()
     {
         return region;
     }
 
-    public SequenceOfUint16 getSubRegions()
+    public SequenceOfUint16 getSubregions()
     {
-        return subRegions;
+        return subregions;
     }
 
     public static RegionAndSubregions getInstance(Object o)
@@ -67,30 +64,29 @@ public class RegionAndSubregions
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(region, subRegions);
+        return ItsUtils.toSequence(region, subregions);
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
     }
 
     public static class Builder
     {
 
-        private Region region;
-        private List<UINT16> subRegions;
+        private UINT8 region;
+        private SequenceOfUint16 subRegions;
 
-        public Builder setRegion(Region region)
+        public Builder setRegion(UINT8 region)
         {
             this.region = region;
             return this;
         }
 
-        public Builder setSubRegions(List<UINT16> subRegions)
+        public Builder setSubregions(SequenceOfUint16 subRegions)
         {
             this.subRegions = subRegions;
-            return this;
-        }
-
-        public Builder setSubRegion(UINT16... subRegions)
-        {
-            this.subRegions.addAll(Arrays.asList(subRegions));
             return this;
         }
 

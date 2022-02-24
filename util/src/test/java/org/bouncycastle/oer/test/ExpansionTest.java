@@ -79,6 +79,20 @@ public class ExpansionTest
             }
 
             //
+            // Does the definition have a typename.
+            //
+            if (def.getTypeName() == null)
+            {
+                fail(f.getName() + " has no type name");
+            }
+
+            // Type name and field name in template class must match.
+            if (!def.getTypeName().replace("-", "_").equals(f.getName()))
+            {
+                fail(String.format("type '%s' name does not match field name '%s' in template class %s", def.getTypeName(), f.getName(), f.getDeclaringClass().getName()));
+            }
+
+            //
             // Resolve upper level class.
             //
             String name = f.getName();
@@ -861,13 +875,39 @@ public class ExpansionTest
     }
 
 
-    private static <T> T create(Class<T> type, Element element)
+    public static <T> T create(Class<T> type, Element element)
         throws Exception
     {
-        Method getInstance = type.getMethod("getInstance", Object.class);
-        Object j = getInstance.invoke(null, OERExpander.expandElement(element).iterator().next());
+        Object createdValue;
+        if (type == byte[].class)
+        {
+            if (element.isFixedLength())
+            {
+                createdValue = new byte[element.getLowerBound().intValue()];
+            }
+            else if (element.isUnbounded())
+            {
+                createdValue = new byte[10]; // Unbounded so pick an arbitrary size.
+            }
+            else if (element.getLowerBound() != null && element.getUpperBound() != null)
+            {
+                createdValue = new byte[element.getLowerBound().intValue() + 1];
+            } else
+            {
+                throw new IllegalArgumentException("unhandled type " + type);
+            }
+        }
+        else if (type == String.class)
+        {
+            createdValue = "Test string";
+        }
+        else
+        {
+            Method getInstance = type.getMethod("getInstance", Object.class);
+            createdValue = getInstance.invoke(null, OERExpander.expandElement(element).iterator().next());
+        }
 
-        return type.cast(j);
+        return type.cast(createdValue);
     }
 
 
@@ -889,7 +929,7 @@ public class ExpansionTest
                 }
                 else if (Modifier.isPublic(f.getModifiers()))
                 {
-                    throw new IllegalStateException("Public field " + f.getName() + " that is not static final in "+ f.getDeclaringClass().getName());
+                    throw new IllegalStateException("Public field " + f.getName() + " that is not static final in " + f.getDeclaringClass().getName());
                 }
 
             }

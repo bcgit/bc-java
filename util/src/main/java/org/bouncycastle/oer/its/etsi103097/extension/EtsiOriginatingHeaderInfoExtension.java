@@ -40,9 +40,61 @@ public class EtsiOriginatingHeaderInfoExtension
         }
 
         return null;
-
     }
 
+    public EtsiTs102941CrlRequest getEtsiTs102941CrlRequest()
+    {
+        return EtsiTs102941CrlRequest.getInstance(getContent());
+    }
+
+    public EtsiTs102941DeltaCtlRequest getEtsiTs102941DeltaCtlRequest()
+    {
+        return EtsiTs102941DeltaCtlRequest.getInstance(getContent());
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private ExtId id;
+        private ASN1Encodable encodable;
+
+        public Builder setId(ExtId id)
+        {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setEncodable(ASN1Encodable encodable)
+        {
+            this.encodable = encodable;
+            return this;
+        }
+
+        public Builder setEtsiTs102941CrlRequest(EtsiTs102941CrlRequest value)
+        {
+            this.id = etsiTs102941CrlRequestId;
+            this.encodable = value;
+            return this;
+        }
+
+        public Builder setEtsiTs102941DeltaCtlRequest(EtsiTs102941DeltaCtlRequest value)
+        {
+            this.id = etsiTs102941DeltaCtlRequestId;
+            this.encodable = value;
+            return this;
+        }
+
+        public EtsiOriginatingHeaderInfoExtension createEtsiOriginatingHeaderInfoExtension()
+        {
+            return new EtsiOriginatingHeaderInfoExtension(id, encodable);
+        }
+
+
+    }
 
 
 }

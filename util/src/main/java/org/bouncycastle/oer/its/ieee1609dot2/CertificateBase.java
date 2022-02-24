@@ -1,12 +1,13 @@
 package org.bouncycastle.oer.its.ieee1609dot2;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Certificate;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 /**
  * <pre>
@@ -22,14 +23,14 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 public class CertificateBase
     extends ASN1Object
 {
-    private final ASN1Integer version;
+    private final UINT8 version;
     private final CertificateType type;
     private final IssuerIdentifier issuer;
-    private final ToBeSignedCertificate toBeSignedCertificate;
+    private final ToBeSignedCertificate toBeSigned;
     private final Signature signature;
 
 
-    public CertificateBase(ASN1Integer version,
+    public CertificateBase(UINT8 version,
                            CertificateType type,
                            IssuerIdentifier issuer,
                            ToBeSignedCertificate toBeSignedCertificate,
@@ -38,7 +39,7 @@ public class CertificateBase
         this.version = version;
         this.type = type;
         this.issuer = issuer;
-        this.toBeSignedCertificate = toBeSignedCertificate;
+        this.toBeSigned = toBeSignedCertificate;
         this.signature = signature;
     }
 
@@ -49,10 +50,10 @@ public class CertificateBase
         {
             throw new IllegalArgumentException("expected sequence size of 5");
         }
-        version = ASN1Integer.getInstance(seq.getObjectAt(0));
+        version = UINT8.getInstance(seq.getObjectAt(0));
         type = CertificateType.getInstance(seq.getObjectAt(1));
         issuer = IssuerIdentifier.getInstance(seq.getObjectAt(2));
-        toBeSignedCertificate = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
+        toBeSigned = ToBeSignedCertificate.getInstance(seq.getObjectAt(3));
         signature = OEROptional.getValue(Signature.class, seq.getObjectAt(4));
     }
 
@@ -77,7 +78,7 @@ public class CertificateBase
         return new Builder();
     }
 
-    public ASN1Integer getVersion()
+    public UINT8 getVersion()
     {
         return version;
     }
@@ -92,9 +93,9 @@ public class CertificateBase
         return issuer;
     }
 
-    public ToBeSignedCertificate getToBeSignedCertificate()
+    public ToBeSignedCertificate getToBeSigned()
     {
-        return toBeSignedCertificate;
+        return toBeSigned;
     }
 
     public Signature getSignature()
@@ -115,20 +116,21 @@ public class CertificateBase
             version,
             type,
             issuer,
-            toBeSignedCertificate,
+            toBeSigned,
             OEROptional.getInstance(signature));
     }
 
     public static class Builder
     {
 
-        private ASN1Integer version;
+        private UINT8 version;
         private CertificateType type;
         private IssuerIdentifier issuer;
-        private ToBeSignedCertificate toBeSignedCertificate;
+        private ToBeSignedCertificate toBeSigned;
         private Signature signature;
 
-        public Builder setVersion(ASN1Integer version)
+
+        public Builder setVersion(UINT8 version)
         {
             this.version = version;
             return this;
@@ -146,9 +148,9 @@ public class CertificateBase
             return this;
         }
 
-        public Builder setToBeSignedCertificate(ToBeSignedCertificate toBeSignedCertificate)
+        public Builder setToBeSigned(ToBeSignedCertificate toBeSigned)
         {
-            this.toBeSignedCertificate = toBeSignedCertificate;
+            this.toBeSigned = toBeSigned;
             return this;
         }
 
@@ -158,9 +160,29 @@ public class CertificateBase
             return this;
         }
 
+        public Certificate createCertificate()
+        {
+            return new Certificate(version, type, issuer, toBeSigned, signature);
+        }
+
+        public ExplicitCertificate createExplicitCertificate()
+        {
+            return new ExplicitCertificate(version, issuer, toBeSigned, signature);
+        }
+
+        public ImplicitCertificate createImplicitCertificate()
+        {
+            return new ImplicitCertificate(version, issuer, toBeSigned, signature);
+        }
+
         public CertificateBase createCertificateBase()
         {
-            return new CertificateBase(version, type, issuer, toBeSignedCertificate, signature);
+            return new CertificateBase(version, type, issuer, toBeSigned, signature);
+        }
+
+        public CertificateBase createEtsiTs103097Certificate()
+        {
+            return new EtsiTs103097Certificate(version, issuer, toBeSigned, signature);
         }
     }
 

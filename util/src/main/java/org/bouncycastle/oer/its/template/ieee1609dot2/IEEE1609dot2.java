@@ -2,6 +2,7 @@ package org.bouncycastle.oer.its.template.ieee1609dot2;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.oer.Element;
@@ -23,7 +24,7 @@ public class IEEE1609dot2
      * tlsHandshake          PduFunctionalType ::= 1
      * iso21177ExtendedAuth  PduFunctionalType ::= 2
      */
-    public static final OERDefinition.Builder PduFunctionalType = OERDefinition.integer(0, 255).label("PduFunctionalType");
+    public static final OERDefinition.Builder PduFunctionalType = OERDefinition.integer(0, 255).typeName("PduFunctionalType");
 
 
     /**
@@ -39,7 +40,7 @@ public class IEEE1609dot2
         OERDefinition.extension(),
         OERDefinition.octets(48).label("sha384HashedData"),
         OERDefinition.octets(32).label("reserved")
-    ).label("HashedData");
+    ).typeName("HashedData");
 
     /**
      * MissingCrlIdentifier ::= SEQUENCE {
@@ -52,13 +53,14 @@ public class IEEE1609dot2
         Ieee1609Dot2BaseTypes.HashedId3.label("cracaId"),
         Ieee1609Dot2BaseTypes.CrlSeries.label("crlSeries"),
         OERDefinition.extension()
-    ).label("MissingCrlIdentifier");
+    ).typeName("MissingCrlIdentifier");
 
 
     /**
      * etsiHeaderInfoContributorId         HeaderInfoContributorId ::= 2
      */
     private static final ASN1Integer etsiHeaderInfoContributorId = new ASN1Integer(BigIntegers.TWO);
+    private static final ASN1Encodable[] extensionBlockSwitchKeys = new ASN1Encodable[]{etsiHeaderInfoContributorId};
 
     /**
      * HeaderInfoContributorId ::= INTEGER (0..255)
@@ -66,7 +68,7 @@ public class IEEE1609dot2
      */
 
     public static final OERDefinition.Builder HeaderInfoContributorId = OERDefinition.integer(0, 255)
-        .label("HeaderInfoContributorId").validSwitchValue(etsiHeaderInfoContributorId);
+        .typeName("HeaderInfoContributorId").validSwitchValue(etsiHeaderInfoContributorId);
 
 
     /**
@@ -75,13 +77,18 @@ public class IEEE1609dot2
     public static final Switch ContributedExtensionBlockSwitch = new Switch()
     {
 
+        public ASN1Encodable[] keys()
+        {
+            return extensionBlockSwitchKeys;
+        }
+
         public Element result(SwitchIndexer indexer)
         {
             ASN1Integer type = ASN1Integer.getInstance(indexer.get(0).toASN1Primitive());
 
             if (type.equals(etsiHeaderInfoContributorId))
             {
-                return OERDefinition.seqof(EtsiTs103097ExtensionModule.EtsiOriginatingHeaderInfoExtension).rangeToMAXFrom(1).labelPrefix("extns").build();
+                return OERDefinition.seqof(EtsiTs103097ExtensionModule.EtsiOriginatingHeaderInfoExtension).rangeToMAXFrom(1).label("extns").build();
             }
 
             //
@@ -106,21 +113,21 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder ContributedExtensionBlock = OERDefinition.seq(
-        HeaderInfoContributorId.labelPrefix("contributorId"),
-        OERDefinition.aSwitch(ContributedExtensionBlockSwitch).labelPrefix("Extn")
-    ).label("ContributedExtensionBlock");
+        HeaderInfoContributorId.label("contributorId"),
+        OERDefinition.aSwitch(ContributedExtensionBlockSwitch).label("Extn")
+    ).typeName("ContributedExtensionBlock");
 
 
     /**
      * ContributedExtensionBlocks ::= SEQUENCE (SIZE(1..MAX)) OF ContributedExtensionBlock
      */
     public static final OERDefinition.Builder ContributedExtensionBlocks =
-        OERDefinition.seqof(ContributedExtensionBlock).rangeToMAXFrom(1).label("ContributedExtensionBlocks");
+        OERDefinition.seqof(ContributedExtensionBlock).rangeToMAXFrom(1).typeName("ContributedExtensionBlocks");
 
     /**
      * PreSharedKeyRecipientInfo ::= HashedId8
      */
-    public static final OERDefinition.Builder PreSharedKeyRecipientInfo = Ieee1609Dot2BaseTypes.HashedId8;
+    public static final OERDefinition.Builder PreSharedKeyRecipientInfo = Ieee1609Dot2BaseTypes.HashedId8.typeName("PreSharedKeyRecipientInfo");
 
 
     /**
@@ -134,7 +141,7 @@ public class IEEE1609dot2
         Ieee1609Dot2BaseTypes.EciesP256EncryptedKey.label("eciesNistP256"),
         Ieee1609Dot2BaseTypes.EciesP256EncryptedKey.label("eciesBrainpoolP256r1"),
         OERDefinition.extension()
-    ).label("EncryptedDataEncryptionKey");
+    ).typeName("EncryptedDataEncryptionKey");
 
     /**
      * PKRecipientInfo ::= SEQUENCE {
@@ -145,7 +152,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder PKRecipientInfo = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.HashedId8.label("recipientId"),
         EncryptedDataEncryptionKey.label("encKey")
-    ).label("PKRecipientInfo");
+    ).typeName("PKRecipientInfo");
 
 
     /**
@@ -157,7 +164,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder AesCcmCiphertext = OERDefinition.seq(
         OERDefinition.octets(12).label("nonce"),
         OERDefinition.opaque().label("ccmCiphertext")
-    ).label("AesCcmCiphertext");
+    ).typeName("AesCcmCiphertext");
 
 
     /**
@@ -169,7 +176,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder SymmetricCiphertext = OERDefinition.choice(
         AesCcmCiphertext.label("aes128ccm"),
         OERDefinition.extension()
-    ).label("SymmetricCiphertext");
+    ).typeName("SymmetricCiphertext");
 
 
     /**
@@ -181,7 +188,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder SymmRecipientInfo = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.HashedId8.label("recipientId"),
         SymmetricCiphertext.label("encKey")
-    ).label("SymmRecipientInfo");
+    ).typeName("SymmRecipientInfo");
 
     /**
      * RecipientInfo ::= CHOICE {
@@ -198,14 +205,14 @@ public class IEEE1609dot2
         PKRecipientInfo.label("certRecipInfo"),
         PKRecipientInfo.label("signedDataRecipInfo"),
         PKRecipientInfo.label("rekRecipInfo")
-    ).label("RecipientInfo");
+    ).typeName("RecipientInfo");
 
     /**
      * SequenceOfRecipientInfo ::= SEQUENCE OF RecipientInfo
      */
     public static final OERDefinition.Builder SequenceOfRecipientInfo = OERDefinition.seqof(
         RecipientInfo
-    ).label("SequenceOfRecipientInfo");
+    ).typeName("SequenceOfRecipientInfo");
 
     /**
      * EncryptedData ::= SEQUENCE {
@@ -216,7 +223,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder EncryptedData = OERDefinition.seq(
         SequenceOfRecipientInfo.label("recipients"),
         SymmetricCiphertext.label("ciphertext")
-    ).label("EncryptedData");
+    ).typeName("EncryptedData");
 
 
     /**
@@ -248,7 +255,7 @@ public class IEEE1609dot2
      */
     public static final OERDefinition.Builder EndEntityType =
         OERDefinition.bitString(8).defaultValue(new DERBitString(new byte[]{0}, 0))
-            .label("EndEntityType");
+            .typeName("EndEntityType");
 
     /**
      * SubjectPermissions ::= CHOICE  {
@@ -258,10 +265,10 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder SubjectPermissions = OERDefinition.choice(
-        Ieee1609Dot2BaseTypes.SequenceOfPsidSspRange,
-        OERDefinition.nullValue(),
-        OERDefinition.extension()
-    ).label("SubjectPermissions");
+        Ieee1609Dot2BaseTypes.SequenceOfPsidSspRange.label("explicit"),
+        OERDefinition.nullValue().label("all"),
+        OERDefinition.extension().label("extension")
+    ).typeName("SubjectPermissions");
 
     /**
      * VerificationKeyIndicator ::= CHOICE  {
@@ -271,9 +278,9 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder VerificationKeyIndicator = OERDefinition.choice(
-        Ieee1609Dot2BaseTypes.PublicVerificationKey,
-        Ieee1609Dot2BaseTypes.EccP256CurvePoint,
-        OERDefinition.extension()).label("VerificationKeyIndicator");
+        Ieee1609Dot2BaseTypes.PublicVerificationKey.label("verificationKey"),
+        Ieee1609Dot2BaseTypes.EccP256CurvePoint.label("reconstructionValue"),
+        OERDefinition.extension().label("extension")).typeName("VerificationKeyIndicator");
 
     /**
      * PsidGroupPermissions ::= SEQUENCE  {
@@ -284,16 +291,17 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder PsidGroupPermissions = OERDefinition.seq(
-        SubjectPermissions,
+        SubjectPermissions.label("subjectPermissions"),
         OERDefinition.integer(1).label("minChainLength"),
         OERDefinition.integer(0).label("chainLengthRange"),
-        EndEntityType
-    ).label("PsidGroupPermissions");
+        EndEntityType.label("eeType")
+    ).typeName("PsidGroupPermissions");
 
     /**
      * SequenceOfPsidGroupPermissions ::= SEQUENCE OF PsidGroupPermissions
      */
-    public static final OERDefinition.Builder SequenceOfPsidGroupPermissions = OERDefinition.seqof(PsidGroupPermissions).label("SequenceOfPsidGroupPermissions");
+    public static final OERDefinition.Builder SequenceOfPsidGroupPermissions =
+        OERDefinition.seqof(PsidGroupPermissions).typeName("SequenceOfPsidGroupPermissions");
 
     /**
      * LinkageData ::= SEQUENCE  {
@@ -303,11 +311,11 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder LinkageData = OERDefinition.seq(
-        Ieee1609Dot2BaseTypes.IValue,
-        Ieee1609Dot2BaseTypes.LinkageValue,
-        OERDefinition.optional(Ieee1609Dot2BaseTypes.GroupLinkageValue),
+        Ieee1609Dot2BaseTypes.IValue.label("iCert"),
+        Ieee1609Dot2BaseTypes.LinkageValue.label("linkageValue"),
+        OERDefinition.optional(Ieee1609Dot2BaseTypes.GroupLinkageValue.label("groupLinkageValue")),
         OERDefinition.extension()
-    ).label("LinkageData");
+    ).typeName("LinkageData");
 
     /**
      * CertificateId ::= CHOICE  {
@@ -320,11 +328,12 @@ public class IEEE1609dot2
      */
 
     public static final OERDefinition.Builder CertificateId = OERDefinition.choice(
-        LinkageData,
-        Ieee1609Dot2BaseTypes.Hostname,
+        LinkageData.label("linkageData"),
+        Ieee1609Dot2BaseTypes.Hostname.label("name"),
         OERDefinition.octets(1, 64).label("binaryId"),
-        OERDefinition.nullValue(), OERDefinition.extension()
-    ).label("CertificateId");
+        OERDefinition.nullValue().label("none"),
+        OERDefinition.extension().label("extension")
+    ).typeName("CertificateId");
 
 
     /**
@@ -349,20 +358,20 @@ public class IEEE1609dot2
      */
 
     public static final OERDefinition.Builder ToBeSignedCertificate = OERDefinition.seq(
-        CertificateId.labelPrefix("id"),
-        Ieee1609Dot2BaseTypes.HashedId3.labelPrefix("cracaId"),
-        Ieee1609Dot2BaseTypes.CrlSeries.labelPrefix("crlSeries"),
-        Ieee1609Dot2BaseTypes.ValidityPeriod.labelPrefix("validityPeriod"),
+        CertificateId.label("id"),
+        Ieee1609Dot2BaseTypes.HashedId3.label("cracaId"),
+        Ieee1609Dot2BaseTypes.CrlSeries.label("crlSeries"),
+        Ieee1609Dot2BaseTypes.ValidityPeriod.label("validityPeriod"),
         OERDefinition.optional(
-            Ieee1609Dot2BaseTypes.GeographicRegion.labelPrefix("region"),
-            Ieee1609Dot2BaseTypes.SubjectAssurance.labelPrefix("assuranceLevel"),
-            Ieee1609Dot2BaseTypes.SequenceOfPsidSsp.labelPrefix("appPermissions"),
-            SequenceOfPsidGroupPermissions.labelPrefix("certIssuePermissions"),
-            SequenceOfPsidGroupPermissions.labelPrefix("certRequestPermissions"),
-            OERDefinition.nullValue().labelPrefix("canRequestRollover"),
-            Ieee1609Dot2BaseTypes.PublicEncryptionKey.labelPrefix("encryptionKey")),
-        VerificationKeyIndicator.labelPrefix("verifyKeyIndicator"), OERDefinition.extension()
-    ).label("ToBeSignedCertificate");
+            Ieee1609Dot2BaseTypes.GeographicRegion.label("region"),
+            Ieee1609Dot2BaseTypes.SubjectAssurance.label("assuranceLevel"),
+            Ieee1609Dot2BaseTypes.SequenceOfPsidSsp.label("appPermissions"),
+            SequenceOfPsidGroupPermissions.label("certIssuePermissions"),
+            SequenceOfPsidGroupPermissions.label("certRequestPermissions"),
+            OERDefinition.nullValue().label("canRequestRollover"),
+            Ieee1609Dot2BaseTypes.PublicEncryptionKey.label("encryptionKey")),
+        VerificationKeyIndicator.label("verifyKeyIndicator"), OERDefinition.extension()
+    ).typeName("ToBeSignedCertificate");
     /**
      * IssuerIdentifier ::= CHOICE  {
      * sha256AndDigest         HashedId8,
@@ -371,9 +380,11 @@ public class IEEE1609dot2
      * sha384AndDigest         HashedId8
      * }
      */
-    public static final OERDefinition.Builder IssuerIdentifier = OERDefinition.choice(Ieee1609Dot2BaseTypes.HashedId8, Ieee1609Dot2BaseTypes.HashAlgorithm, OERDefinition.extension(), Ieee1609Dot2BaseTypes.HashedId8).label("IssuerIdentifier");
-
-
+    public static final OERDefinition.Builder IssuerIdentifier = OERDefinition.choice(
+        Ieee1609Dot2BaseTypes.HashedId8.label("sha256AndDigest"),
+        Ieee1609Dot2BaseTypes.HashAlgorithm.label("self"),
+        OERDefinition.extension().label("extension"),
+        Ieee1609Dot2BaseTypes.HashedId8.label("sha384AndDigest")).typeName("IssuerIdentifier");
 
 
     /**
@@ -384,9 +395,10 @@ public class IEEE1609dot2
      * }
      */
     public static final OERDefinition.Builder CertificateType = OERDefinition.enumeration(
-        OERDefinition.enumItem("explicit"),
-        OERDefinition.enumItem("implicit"),
-        OERDefinition.extension()).label("CertificateType");
+            OERDefinition.enumItem("explicit"),
+            OERDefinition.enumItem("implicit"),
+            OERDefinition.extension())
+        .typeName("CertificateType");
 
     private static ASN1Integer explicitOrdinal = new ASN1Integer(BigInteger.ZERO);
     private static ASN1Integer implicitOrdinal = new ASN1Integer(BigInteger.ONE);
@@ -424,16 +436,16 @@ public class IEEE1609dot2
      */
 
     public static final OERDefinition.Builder CertificateBase = OERDefinition.seq(
-        Ieee1609Dot2BaseTypes.UINT8,
-            CertificateType,
-            IssuerIdentifier,
-            ToBeSignedCertificate,
-            OERDefinition.optional(Ieee1609Dot2BaseTypes.Signature))
-        .label("CertificateBase");
+            Ieee1609Dot2BaseTypes.UINT8.label("version"),
+            CertificateType.label("type"),
+            IssuerIdentifier.label("issuer"),
+            ToBeSignedCertificate.label("toBeSigned"),
+            OERDefinition.optional(Ieee1609Dot2BaseTypes.Signature.label("signature"))).label("signature")
+        .typeName("CertificateBase");
     /**
      * Certificate ::= CertificateBase (ImplicitCertificate | ExplicitCertificate)
      */
-    public static final OERDefinition.Builder Certificate = CertificateBase.copy().label("Certificate(CertificateBase)");
+    public static final OERDefinition.Builder Certificate = CertificateBase.copy().typeName("Certificate");
 
 
     /**
@@ -446,8 +458,8 @@ public class IEEE1609dot2
      * })
      */
     public static final OERDefinition.Builder ExplicitCertificate =
-        CertificateBase.label("ExplicitCertificate")
-            .replaceChild(1,CertificateType.validSwitchValue(explicitOrdinal).label("type(explicit)"));
+        CertificateBase.typeName("ExplicitCertificate")
+            .replaceChild(1, CertificateType.validSwitchValue(explicitOrdinal).label("type"));
 
     /**
      * ImplicitCertificate ::= CertificateBase (WITH COMPONENTS {...,
@@ -459,13 +471,13 @@ public class IEEE1609dot2
      * })
      */
     public static final OERDefinition.Builder ImplicitCertificate =
-        CertificateBase.label("ImplicitCertificate")
-            .replaceChild(1,CertificateType.validSwitchValue(implicitOrdinal).label("type(implicit)"));
+        CertificateBase.typeName("ImplicitCertificate")
+            .replaceChild(1, CertificateType.validSwitchValue(implicitOrdinal).label("type"));
 
     /**
      * SequenceOfCertificate ::= SEQUENCE OF Certificate
      */
-    public static final OERDefinition.Builder SequenceOfCertificate = OERDefinition.seqof(Certificate).label("SequenceOfCertificate");
+    public static final OERDefinition.Builder SequenceOfCertificate = OERDefinition.seqof(Certificate).typeName("SequenceOfCertificate");
 
     /**
      * SignerIdentifier ::= CHOICE {
@@ -479,7 +491,7 @@ public class IEEE1609dot2
         Ieee1609Dot2BaseTypes.HashedId8.label("digest"),
         SequenceOfCertificate.label("certificate"),
         OERDefinition.nullValue().label("self"),
-        OERDefinition.extension().label("extension")).label("SignerIdentifier");
+        OERDefinition.extension().label("extension")).typeName("SignerIdentifier");
 
 
     /**
@@ -515,7 +527,7 @@ public class IEEE1609dot2
             ContributedExtensionBlocks.label("contributedExtensions")
 
         )
-    ).label("HeaderInfo");
+    ).typeName("HeaderInfo");
 
 
     /**
@@ -556,7 +568,7 @@ public class IEEE1609dot2
         }).label("tbsData"),
         SignerIdentifier.label("signer"),
         Ieee1609Dot2BaseTypes.Signature.label("signature")
-    ).label("SignedData");
+    ).typeName("SignedData");
 
     /**
      * Ieee1609Dot2Content ::=  CHOICE {
@@ -590,12 +602,12 @@ public class IEEE1609dot2
         }).label("signedData").mayRecurse(true),
         EncryptedData.label("encryptedData"),
         OERDefinition.opaque().label("signedCertificateRequest"),
-        OERDefinition.extension()).label("Ieee1609Dot2Content");
+        OERDefinition.extension()).typeName("Ieee1609Dot2Content");
 
     public static final OERDefinition.Builder CounterSignature = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.UINT8.label("protocolVersion"),
         Ieee1609Dot2Content.label("content")
-    ).label("Ieee1609Dot2Content");
+    ).typeName("CounterSignature");
     /**
      * Ieee1609Dot2Data ::= SEQUENCE {
      * protocolVersion  Uint8(3),
@@ -604,7 +616,7 @@ public class IEEE1609dot2
      */
     public static final OERDefinition.Builder Ieee1609Dot2Data = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.UINT8.validSwitchValue(new ASN1Integer(3)).label("protocolVersion"),
-        Ieee1609Dot2Content.label("content")).label("Ieee1609Dot2Data");
+        Ieee1609Dot2Content.label("content")).typeName("Ieee1609Dot2Data");
     /**
      * SignedDataPayload ::= SEQUENCE {
      * data         Ieee1609Dot2Data OPTIONAL,
@@ -616,7 +628,7 @@ public class IEEE1609dot2
     public static final OERDefinition.Builder SignedDataPayload = OERDefinition.seq(
         OERDefinition.optional(Ieee1609Dot2Data.label("data"),
             HashedData.label("extDataHash")),
-        OERDefinition.extension()).label("SignedDataPayload");
+        OERDefinition.extension()).typeName("SignedDataPayload");
 
     static
     {
@@ -629,6 +641,6 @@ public class IEEE1609dot2
         ToBeSignedData = OERDefinition.seq(
             SignedDataPayload.label("payload"),
             HeaderInfo.label("headerInfo")
-        ).label("ToBeSignedData");
+        ).typeName("ToBeSignedData");
     }
 }

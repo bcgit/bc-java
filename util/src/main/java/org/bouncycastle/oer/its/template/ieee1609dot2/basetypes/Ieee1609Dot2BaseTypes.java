@@ -11,55 +11,56 @@ public class Ieee1609Dot2BaseTypes
     /**
      * Uint3  ::= INTEGER (0..7)
      */
-    public static final OERDefinition.Builder UINT3 = OERDefinition.integer(0, 7).label("UINT3");
+    public static final OERDefinition.Builder UINT3 = OERDefinition.integer(0, 7).typeName("UINT3");
 
     /**
      * Uint8  ::= INTEGER (0..255)
      */
-    public static final OERDefinition.Builder UINT8 = OERDefinition.integer(0, 255).label("UINT8");
+    public static final OERDefinition.Builder UINT8 = OERDefinition.integer(0, 255).typeName("UINT8");
 
     /**
      * Uint16 ::= INTEGER (0..65535)
      */
-    public static final OERDefinition.Builder UINT16 = OERDefinition.integer(0, 65535).label("UINT16");
+    public static final OERDefinition.Builder UINT16 = OERDefinition.integer(0, 65535).typeName("UINT16");
 
     /**
      * Uint32 ::= INTEGER (0..4294967295)
      */
-    public static final OERDefinition.Builder UINT32 = OERDefinition.integer(0, 4294967295L).label("UINT32");
+    public static final OERDefinition.Builder UINT32 = OERDefinition.integer(0, 4294967295L).typeName("UINT32");
 
     /**
      * Uint64 ::= INTEGER (0..18446744073709551615)
      */
     public static final OERDefinition.Builder UINT64 = OERDefinition.integer(BigInteger.ZERO,
-        new BigInteger("18446744073709551615")).label("UINT64");
+        new BigInteger("18446744073709551615")).typeName("UINT64");
 
     /**
      * SequenceOfUint16 ::= SEQUENCE OF Uint16
      */
-    public static final OERDefinition.Builder SequenceOfUint16 = OERDefinition.seqof(UINT16).label("SequenceOfUint16");
+    public static final OERDefinition.Builder SequenceOfUint16 = OERDefinition.seqof(UINT16).typeName("SequenceOfUint16");
 
     /**
      * SequenceOfUint8  ::= SEQUENCE OF Uint8
      */
-    public static final OERDefinition.Builder SequenceOfUint8 = OERDefinition.seqof(UINT8).label("SequenceOfUint8");
+    public static final OERDefinition.Builder SequenceOfUint8 =
+        OERDefinition.seqof(UINT8).typeName("SequenceOfUint8");
 
     //
     // Octet string types
     //
-    public static final OERDefinition.Builder HashedId3 = OERDefinition.octets(3).label("HashId3");
-    public static final OERDefinition.Builder SequenceOfHashedId3 = OERDefinition.seqof(HashedId3).label("SequenceOfHashedId3");
+    public static final OERDefinition.Builder HashedId3 = OERDefinition.octets(3).typeName("HashedId3");
+    public static final OERDefinition.Builder SequenceOfHashedId3 = OERDefinition.seqof(HashedId3).typeName("SequenceOfHashedId3");
 
-    public static final OERDefinition.Builder HashedId8 = OERDefinition.octets(8).label("HashId8");
-    public static final OERDefinition.Builder HashedId10 = OERDefinition.octets(10).label("HashId10");
-    public static final OERDefinition.Builder HashedId32 = OERDefinition.octets(32).label("HashId32");
+    public static final OERDefinition.Builder HashedId8 = OERDefinition.octets(8).typeName("HashedId8");
+    public static final OERDefinition.Builder HashedId10 = OERDefinition.octets(10).typeName("HashedId10");
+    public static final OERDefinition.Builder HashedId32 = OERDefinition.octets(32).typeName("HashedId32");
 
 
     //
     // Time.
     //
-    public static final OERDefinition.Builder Time32 = UINT32.label("Time32");
-    public static final OERDefinition.Builder Time64 = UINT64.label("Time64");
+    public static final OERDefinition.Builder Time32 = UINT32.typeName("Time32");
+    public static final OERDefinition.Builder Time64 = UINT64.typeName("Time64");
 
     /**
      * Duration ::= CHOICE {
@@ -80,7 +81,7 @@ public class Ieee1609Dot2BaseTypes
         UINT16.label("hours"),
         UINT16.label("sixtyHours"),
         UINT16.label("years")
-    ).label("Duration");
+    ).typeName("Duration");
 
 
     /**
@@ -89,7 +90,11 @@ public class Ieee1609Dot2BaseTypes
      * duration  Duration
      * }
      */
-    public static final OERDefinition.Builder ValidityPeriod = OERDefinition.seq(Time32, Duration).label("ValidityPeriod");
+    public static final OERDefinition.Builder ValidityPeriod =
+        OERDefinition.seq(
+            Time32.label("start"),
+            Duration.label("duration")
+        ).typeName("ValidityPeriod");
 
     //
     // Pseudonym Linkage
@@ -98,17 +103,17 @@ public class Ieee1609Dot2BaseTypes
     /**
      * IValue ::= Uint16
      */
-    public static final OERDefinition.Builder IValue = UINT16.copy().label("IValue");
+    public static final OERDefinition.Builder IValue = UINT16.copy().typeName("IValue");
 
     /**
      * Hostname ::= UTF8String (SIZE(0..255))
      */
-    public static final OERDefinition.Builder Hostname = OERDefinition.utf8String(0, 255).label("Hostname");
+    public static final OERDefinition.Builder Hostname = OERDefinition.utf8String(0, 255).typeName("Hostname");
 
     /**
      * LinkageValue ::= OCTET STRING (SIZE(9))
      */
-    public static final OERDefinition.Builder LinkageValue = OERDefinition.octets(9).label("LinkageValue");
+    public static final OERDefinition.Builder LinkageValue = OERDefinition.octets(9).typeName("LinkageValue");
 
     /**
      * GroupLinkageValue ::= SEQUENCE {
@@ -116,17 +121,27 @@ public class Ieee1609Dot2BaseTypes
      * value   OCTET STRING (SIZE(9))
      * }
      */
-    public static final OERDefinition.Builder GroupLinkageValue = OERDefinition.seq(OERDefinition.octets(4), OERDefinition.octets(9)).label("GroupLinkageValue");
+    public static final OERDefinition.Builder GroupLinkageValue = OERDefinition.seq(
+        OERDefinition.octets(4).label("jValue"),
+        OERDefinition.octets(9).label("value")).typeName("GroupLinkageValue");
 
     /**
      * LaId ::= OCTET STRING (SIZE(2))
      */
-    public static final OERDefinition.Builder LaId = OERDefinition.octets(2).label("LaId");
+    public static final OERDefinition.Builder LaId = OERDefinition.octets(2).typeName("LaId");
 
     /**
      * LinkageSeed ::= OCTET STRING (SIZE(16))
      */
-    public static final OERDefinition.Builder LinkageSeed = OERDefinition.octets(16).label("LinkageSeed");
+    public static final OERDefinition.Builder LinkageSeed = OERDefinition.octets(16).typeName("LinkageSeed");
+
+    /**
+     * Point256 doesn't exist in the spec, it is here to support the creation of EccP256CurvePoint
+     */
+    public static final OERDefinition.Builder Point256 = OERDefinition.seq(
+        OERDefinition.octets(32).label("x"),
+        OERDefinition.octets(32).label("y")
+    ).typeName("Point256");
 
 
     //
@@ -145,20 +160,32 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder EccP256CurvePoint = OERDefinition.choice(
-        OERDefinition.octets(32),
-        OERDefinition.nullValue(),
-        OERDefinition.octets(32),
-        OERDefinition.octets(32),
-        OERDefinition.seq(OERDefinition.octets(32),
-            OERDefinition.octets(32))
-    ).label("EccP256CurvePoint");
+        OERDefinition.octets(32).label("x-only"),
+        OERDefinition.nullValue().label("fill"),
+        OERDefinition.octets(32).label("compressed-y-0"),
+        OERDefinition.octets(32).label("compressed-y-1"),
+        Point256.label("uncompressedP256")
+    ).typeName("EccP256CurvePoint");
+
     /**
      * EcdsaP256Signature ::= SEQUENCE {
      * rSig  EccP256CurvePoint,
      * sSig  OCTET STRING (SIZE (32))
      * }
      */
-    public static final OERDefinition.Builder EcdsaP256Signature = OERDefinition.seq(EccP256CurvePoint, OERDefinition.octets(32)).label("EcdsaP256Signature");
+    public static final OERDefinition.Builder EcdsaP256Signature = OERDefinition.seq(
+        EccP256CurvePoint.label("rSig"),
+        OERDefinition.octets(32).label("sSig")
+    ).typeName("EcdsaP256Signature");
+
+    /**
+     * Point384 does not exist in the spec, it is here to support the creation of EccP384CurvePoint.
+     */
+    public static final OERDefinition.Builder Point384 = OERDefinition.seq(
+        OERDefinition.octets(48).label("x"),
+        OERDefinition.octets(48).label("y")
+    ).typeName("Point384");
+
     /**
      * EccP384CurvePoint ::= CHOICE  {
      * x-only          OCTET STRING (SIZE (48)),
@@ -172,15 +199,25 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder EccP384CurvePoint = OERDefinition.choice(
-        OERDefinition.octets(48), OERDefinition.nullValue(), OERDefinition.octets(48), OERDefinition.octets(48), OERDefinition.seq(OERDefinition.octets(48), OERDefinition.octets(48))
-    ).label("EccP384CurvePoint");
+        OERDefinition.octets(48).label("x-only"),
+        OERDefinition.nullValue().label("fill"),
+        OERDefinition.octets(48).label("compressed-y-0"),
+        OERDefinition.octets(48).label("compressed-y-1"),
+        Point384.label("uncompressedP384")
+    ).typeName("EccP384CurvePoint");
+
     /**
      * EcdsaP384Signature ::= SEQUENCE {
      * rSig  EccP384CurvePoint,
      * sSig  OCTET STRING (SIZE (48))
      * }
      */
-    public static final OERDefinition.Builder EcdsaP384Signature = OERDefinition.seq(EccP384CurvePoint, OERDefinition.octets(48)).label("EcdsaP384Signature");
+    public static final OERDefinition.Builder EcdsaP384Signature =
+        OERDefinition.seq(EccP384CurvePoint.label("rSig"),
+            OERDefinition.octets(48).label("sSig")
+        ).typeName("EcdsaP384Signature");
+
+
     /**
      * Signature ::= CHOICE {
      * ecdsaNistP256Signature         EcdsaP256Signature,
@@ -190,11 +227,11 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder Signature = OERDefinition.choice(
-        EcdsaP256Signature,
-        EcdsaP256Signature,
-        OERDefinition.extension(),
-        EcdsaP384Signature
-    ).label("Signature");
+        EcdsaP256Signature.label("ecdsaNistP256Signature"),
+        EcdsaP256Signature.label("ecdsaBrainpoolP256r1Signature"),
+        OERDefinition.extension().label("extension"),
+        EcdsaP384Signature.label("ecdsaBrainpoolP384r1Signature")
+    ).typeName("Signature");
     /**
      * SymmAlgorithm ::= ENUMERATED {
      * aes128Ccm,
@@ -204,7 +241,7 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder SymmAlgorithm = OERDefinition.enumeration(
         OERDefinition.enumItem("aes128Ccm"),
         OERDefinition.extension()
-    ).label("SymmAlgorithm");
+    ).typeName("SymmAlgorithm");
     /**
      * HashAlgorithm ::= ENUMERATED {
      * sha256,
@@ -215,7 +252,7 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder HashAlgorithm = OERDefinition.enumeration(
         OERDefinition.enumItem("sha256"),
         OERDefinition.extension(),
-        OERDefinition.enumItem("sha384")).label("HashAlgorithm");
+        OERDefinition.enumItem("sha384")).typeName("HashAlgorithm");
     /**
      * EciesP256EncryptedKey ::= SEQUENCE {
      * v  EccP256CurvePoint,
@@ -226,7 +263,7 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder EciesP256EncryptedKey = OERDefinition.seq(
         EccP256CurvePoint.copy().label("v"),
         OERDefinition.octets(16).label("c"),
-        OERDefinition.octets(16).label("t")).label("EciesP256EncryptedKey");
+        OERDefinition.octets(16).label("t")).typeName("EciesP256EncryptedKey");
 
 
     /**
@@ -237,9 +274,9 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder BasePublicEncryptionKey = OERDefinition.choice(
-        EccP256CurvePoint,
-        EccP256CurvePoint,
-        OERDefinition.extension()).label("BasePublicEncryptionKey");
+        EccP256CurvePoint.label("eciesNistP256"),
+        EccP256CurvePoint.label("eciesBrainpoolP256r1"),
+        OERDefinition.extension().label("extension")).typeName("BasePublicEncryptionKey");
 
     /**
      * SymmetricEncryptionKey ::= CHOICE {
@@ -250,7 +287,7 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder SymmetricEncryptionKey = OERDefinition.choice(
         OERDefinition.octets(16).label("aes128Ccm"),
         OERDefinition.extension()
-    ).label("SymmetricEncryptionKey");
+    ).typeName("SymmetricEncryptionKey");
 
     /**
      * PublicEncryptionKey ::= SEQUENCE {
@@ -258,7 +295,10 @@ public class Ieee1609Dot2BaseTypes
      * publicKey         BasePublicEncryptionKey
      * }
      */
-    public static final OERDefinition.Builder PublicEncryptionKey = OERDefinition.seq(SymmAlgorithm, BasePublicEncryptionKey).label("PublicEncryptionKey");
+    public static final OERDefinition.Builder PublicEncryptionKey =
+        OERDefinition.seq(SymmAlgorithm.label("supportedSymmAlg"),
+            BasePublicEncryptionKey.label("publicKey")
+        ).typeName("PublicEncryptionKey");
 
     /**
      * EncryptionKey ::= CHOICE {
@@ -267,8 +307,8 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder EncryptionKey = OERDefinition.choice(
-        PublicEncryptionKey.label("public"),
-        SymmetricEncryptionKey.label("symmetric")).label("EncryptionKey");
+        PublicEncryptionKey.label("publicOption"), // "public" clashes with reserved word
+        SymmetricEncryptionKey.label("symmetric")).typeName("EncryptionKey");
 
     /**
      * PublicVerificationKey ::= CHOICE {
@@ -282,15 +322,15 @@ public class Ieee1609Dot2BaseTypes
         EccP256CurvePoint.label("ecdsaNistP256"),
         EccP256CurvePoint.label("ecdsaBrainpoolP256r1"),
         OERDefinition.extension(),
-        EccP384CurvePoint.label("ecdsaBrainpoolP384r1")).label("PublicVerificationKey");
+        EccP384CurvePoint.label("ecdsaBrainpoolP384r1")).typeName("PublicVerificationKey");
     /**
      * Psid ::= INTEGER (0..MAX)
      */
-    public static final OERDefinition.Builder Psid = OERDefinition.integer().rangeToMAXFrom(0).label("Psid");
+    public static final OERDefinition.Builder Psid = OERDefinition.integer().rangeToMAXFrom(0).typeName("Psid");
     /**
      * BitmapSsp ::= OCTET STRING (SIZE(0..31))
      */
-    public static final OERDefinition.Builder BitmapSsp = OERDefinition.octets(0, 31).label("BitmapSsp");
+    public static final OERDefinition.Builder BitmapSsp = OERDefinition.octets(0, 31).typeName("BitmapSsp");
     /**
      * ServiceSpecificPermissions ::= CHOICE {
      * opaque     OCTET STRING (SIZE(0..MAX)),
@@ -301,27 +341,31 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder ServiceSpecificPermissions = OERDefinition.choice(
         OERDefinition.octets().unbounded().label("opaque"),
         OERDefinition.extension(),
-        BitmapSsp).label("ServiceSpecificPermissions");
+        BitmapSsp).typeName("ServiceSpecificPermissions");
     /**
      * PsidSsp ::= SEQUENCE {
      * psid  Psid,
      * ssp   ServiceSpecificPermissions OPTIONAL
      * }
      */
-    public static final OERDefinition.Builder PsidSsp = OERDefinition.seq(Psid, OERDefinition.optional(ServiceSpecificPermissions)).label("PsidSsp");
+    public static final OERDefinition.Builder PsidSsp =
+        OERDefinition.seq(Psid.label("psid"),
+            OERDefinition.optional(ServiceSpecificPermissions.label("ssp"))
+        ).typeName("PsidSsp");
     /**
      * SequenceOfPsidSsp ::= SEQUENCE OF PsidSsp
      */
-    public static final OERDefinition.Builder SequenceOfPsidSsp = OERDefinition.seqof(PsidSsp).label("SequenceOfPsidSsp");
+    public static final OERDefinition.Builder SequenceOfPsidSsp = OERDefinition.seqof(PsidSsp).typeName("SequenceOfPsidSsp");
     /**
      * SequenceOfPsid ::= SEQUENCE OF Psid
      */
-    public static final OERDefinition.Builder SequenceOfPsid = OERDefinition.seqof(Psid).label("SequenceOfPsid");
+    public static final OERDefinition.Builder SequenceOfPsid = OERDefinition.seqof(Psid).typeName("SequenceOfPsid");
     /**
      * SequenceOfOctetString ::=
      * SEQUENCE (SIZE (0..MAX)) OF OCTET STRING (SIZE(0..MAX))
      */
-    public static final OERDefinition.Builder SequenceOfOctetString = OERDefinition.seqof(OERDefinition.octets().rangeToMAXFrom(0)).label("SequenceOfOctetString");
+    public static final OERDefinition.Builder SequenceOfOctetString =
+        OERDefinition.seqof(OERDefinition.octets().rangeToMAXFrom(0)).typeName("SequenceOfOctetString");
     /**
      * BitmapSspRange ::= SEQUENCE {
      * sspValue    OCTET STRING (SIZE(1..32)),
@@ -331,7 +375,7 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder BitmapSspRange = OERDefinition.seq(
         OERDefinition.octets(1, 32).label("sspValue"),
         OERDefinition.octets(1, 32).label("sspBitMask")
-    ).label("BitmapSspRange");
+    ).typeName("BitmapSspRange");
     /**
      * SspRange ::= CHOICE {
      * opaque          SequenceOfOctetString,
@@ -344,14 +388,17 @@ public class Ieee1609Dot2BaseTypes
         SequenceOfOctetString.label("opaque"),
         OERDefinition.nullValue().label("all"),
         OERDefinition.extension(),
-        BitmapSspRange.label("bitmapSspRange")).label("SspRange");
+        BitmapSspRange.label("bitmapSspRange")).typeName("SspRange");
     /**
      * PsidSspRange ::= SEQUENCE {
      * psid      Psid,
      * sspRange  SspRange OPTIONAL
      * }
      */
-    public static final OERDefinition.Builder PsidSspRange = OERDefinition.seq(Psid.label("psid"), OERDefinition.optional(SspRange.label("sspRange"))).label("PsidSspRange");
+    public static final OERDefinition.Builder PsidSspRange = OERDefinition.seq(
+            Psid.label("psid"),
+            OERDefinition.optional(SspRange.label("sspRange")))
+        .typeName("PsidSspRange");
 
     //
     // Crypto Structures
@@ -359,35 +406,44 @@ public class Ieee1609Dot2BaseTypes
     /**
      * SequenceOfPsidSspRange ::= SEQUENCE OF PsidSspRange
      */
-    public static final OERDefinition.Builder SequenceOfPsidSspRange = OERDefinition.seqof(PsidSspRange).label("SequenceOfPsidSspRange");
+    public static final OERDefinition.Builder SequenceOfPsidSspRange = OERDefinition.seqof(PsidSspRange).typeName("SequenceOfPsidSspRange");
     /**
      * SubjectAssurance ::= OCTET STRING (SIZE(1))
      */
-    public static final OERDefinition.Builder SubjectAssurance = OERDefinition.octets(1).label("SubjectAssurance");
+    public static final OERDefinition.Builder SubjectAssurance = OERDefinition.octets(1).typeName("SubjectAssurance");
     /**
      * CrlSeries ::= Uint16
      */
-    public static final OERDefinition.Builder CrlSeries = UINT16.label("CrlSeries");
-    public static final OERDefinition.Builder CountryOnly = UINT16.label("CountryOnly");
+    public static final OERDefinition.Builder CrlSeries = UINT16.typeName("CrlSeries");
+    public static final OERDefinition.Builder CountryOnly = UINT16.typeName("CountryOnly");
     /**
      * CountryAndRegions ::= SEQUENCE {
      * countryOnly  CountryOnly,
      * regions      SequenceOfUint8
      * }
      */
-    public static final OERDefinition.Builder CountryAndRegions = OERDefinition.seq(CountryOnly, OERDefinition.seqof(UINT8)).label("CountryAndRegions");
+    public static final OERDefinition.Builder CountryAndRegions =
+        OERDefinition.seq(
+            CountryOnly.label("countryOnly"),
+            SequenceOfUint8.label("regions")
+        ).typeName("CountryAndRegions");
     /**
      * RegionAndSubregions ::= SEQUENCE {
      * region      Uint8,
      * subregions  SequenceOfUint16
      * }
      */
-    public static final OERDefinition.Builder RegionAndSubregions = OERDefinition.seq(UINT8, OERDefinition.seqof(UINT16)).label("RegionAndSubregions");
+    public static final OERDefinition.Builder RegionAndSubregions =
+        OERDefinition.seq(
+            UINT8.label("region"),
+            SequenceOfUint16.label("subregions")
+        ).typeName("RegionAndSubregions");
 
     /**
      * SequenceOfRegionAndSubregions ::= SEQUENCE OF RegionAndSubregions
      */
-    public static final OERDefinition.Builder SequenceOfRegionAndSubregions = OERDefinition.seqof(RegionAndSubregions).label("SequenceOfRegionAndSubregions");
+    public static final OERDefinition.Builder SequenceOfRegionAndSubregions =
+        OERDefinition.seqof(RegionAndSubregions).typeName("SequenceOfRegionAndSubregions");
 
     /**
      * CountryAndSubregions ::= SEQUENCE {
@@ -395,7 +451,12 @@ public class Ieee1609Dot2BaseTypes
      * regionAndSubregions  SequenceOfRegionAndSubregions
      * }
      */
-    public static final OERDefinition.Builder CountryAndSubregions = OERDefinition.seq(CountryOnly, SequenceOfRegionAndSubregions).label("CountryAndSubregions");
+    public static final OERDefinition.Builder CountryAndSubregions =
+        OERDefinition.seq(
+            CountryOnly.label("country"),
+            SequenceOfRegionAndSubregions.label("regionAndSubregions")
+        ).typeName("CountryAndSubregions");
+
     /**
      * IdentifiedRegion ::= CHOICE {
      * countryOnly           CountryOnly,
@@ -405,14 +466,15 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder IdentifiedRegion = OERDefinition.choice(
-        CountryOnly,
-        CountryAndRegions,
-        CountryAndSubregions,
-        OERDefinition.extension()).label("IdentifiedRegion");
+        CountryOnly.label("countryOnly"),
+        CountryAndRegions.label("countryAndRegions"),
+        CountryAndSubregions.label("countryAndSubregions"),
+        OERDefinition.extension()).typeName("IdentifiedRegion");
+
     /**
      * SequenceOfIdentifiedRegion ::= SEQUENCE OF IdentifiedRegion
      */
-    public static final OERDefinition.Builder SequenceOfIdentifiedRegion = OERDefinition.seqof(IdentifiedRegion).label("SequenceOfIdentifiedRegion");
+    public static final OERDefinition.Builder SequenceOfIdentifiedRegion = OERDefinition.seqof(IdentifiedRegion).typeName("SequenceOfIdentifiedRegion");
     /**
      * OneEightyDegreeInt ::= INTEGER {
      * min          (-1799999999),
@@ -420,9 +482,9 @@ public class Ieee1609Dot2BaseTypes
      * unknown      (1800000001)
      * } (-1799999999..1800000001)
      */
-    public static final OERDefinition.Builder OneEightyDegreeInt = OERDefinition.integer(-1799999999, 1800000001).label("OneEightyDegreeInt");
-    public static final OERDefinition.Builder KnownLongitude = OneEightyDegreeInt.copy().label("KnownLongitude(OneEightyDegreeInt)");
-    public static final OERDefinition.Builder UnknownLongitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(1800000001)).label("UnknownLongitude");
+    public static final OERDefinition.Builder OneEightyDegreeInt = OERDefinition.integer(-1799999999, 1800000001).typeName("OneEightyDegreeInt");
+    public static final OERDefinition.Builder KnownLongitude = OneEightyDegreeInt.copy().typeName("KnownLongitude");
+    public static final OERDefinition.Builder UnknownLongitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(1800000001)).typeName("UnknownLongitude");
     /**
      * NinetyDegreeInt ::= INTEGER {
      * min         (-900000000),
@@ -430,46 +492,63 @@ public class Ieee1609Dot2BaseTypes
      * unknown     (900000001)
      * } (-900000000..900000001)
      */
-    public static final OERDefinition.Builder NinetyDegreeInt = OERDefinition.integer(-900000000, 900000001).label("NinetyDegreeInt");
-    public static final OERDefinition.Builder KnownLatitude = NinetyDegreeInt.copy().label("KnownLatitude(NinetyDegreeInt)");
+    public static final OERDefinition.Builder NinetyDegreeInt = OERDefinition.integer(-900000000, 900000001).typeName("NinetyDegreeInt");
+    public static final OERDefinition.Builder KnownLatitude = NinetyDegreeInt.copy().typeName("KnownLatitude");
     //
     // PSID / ITS-AID
     //
-    public static final OERDefinition.Builder UnknownLatitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(900000001)).label("UnknownLatitude");
-    public static final OERDefinition.Builder Elevation = UINT16.label("Elevation");
-    public static final OERDefinition.Builder Longitude = OneEightyDegreeInt.copy().label("Longitude(OneEightyDegreeInt)");
-    public static final OERDefinition.Builder Latitude = NinetyDegreeInt.copy().label("Latitude(NinetyDegreeInt)");
-    public static final OERDefinition.Builder ThreeDLocation = OERDefinition.seq(Latitude, Longitude, Elevation).label("ThreeDLocation");
+    public static final OERDefinition.Builder UnknownLatitude = OERDefinition.integer().validSwitchValue(new ASN1Integer(900000001)).typeName("UnknownLatitude");
+    public static final OERDefinition.Builder Elevation = UINT16.typeName("Elevation");
+    public static final OERDefinition.Builder Longitude = OneEightyDegreeInt.copy().typeName("Longitude");
+    public static final OERDefinition.Builder Latitude = NinetyDegreeInt.copy().typeName("Latitude");
+    public static final OERDefinition.Builder ThreeDLocation = OERDefinition.seq(
+        Latitude.label("latitude"),
+        Longitude.label("longitude"),
+        Elevation.label("elevation")
+    ).typeName("ThreeDLocation");
     /**
      * TwoDLocation ::= SEQUENCE {
      * latitude   Latitude,
      * longitude  Longitude
      * }
      */
-    public static final OERDefinition.Builder TwoDLocation = OERDefinition.seq(Latitude, Longitude).label("TwoDLocation");
+    public static final OERDefinition.Builder TwoDLocation = OERDefinition.seq(
+        Latitude.label("latitude"),
+        Longitude.label("longitude")
+    ).typeName("TwoDLocation");
+
     /**
      * RectangularRegion ::= SEQUENCE {
      * northWest  TwoDLocation,
      * southEast  TwoDLocation
      * }
      */
-    public static final OERDefinition.Builder RectangularRegion = OERDefinition.seq(TwoDLocation, TwoDLocation).label("RectangularRegion");
+    public static final OERDefinition.Builder RectangularRegion = OERDefinition.seq(
+        TwoDLocation.label("northWest"),
+        TwoDLocation.label("southEast")
+    ).typeName("RectangularRegion");
     /**
      * SequenceOfRectangularRegion ::= SEQUENCE OF RectangularRegion
      */
-    public static final OERDefinition.Builder SequenceOfRectangularRegion = OERDefinition.seqof(RectangularRegion).label("SequenceOfRectangularRegion");
+    public static final OERDefinition.Builder SequenceOfRectangularRegion = OERDefinition.seqof(RectangularRegion).typeName("SequenceOfRectangularRegion");
+
     /**
      * CircularRegion ::= SEQUENCE {
      * center  TwoDLocation,
      * radius  Uint16
      * }
      */
-    public static final OERDefinition.Builder CircularRegion = OERDefinition.seq(TwoDLocation, UINT16).label("CircularRegion");
+    public static final OERDefinition.Builder CircularRegion = OERDefinition.seq(
+        TwoDLocation.label("center"),
+        UINT16.label("radius")
+    ).typeName("CircularRegion");
+
     /**
      * PolygonalRegion ::= SEQUENCE SIZE (3..MAX) OF TwoDLocation
      * -- treated as sequence of.
      */
-    public static final OERDefinition.Builder PolygonalRegion = OERDefinition.seqof(TwoDLocation).rangeToMAXFrom(3).label("PolygonalRegion");
+    public static final OERDefinition.Builder PolygonalRegion = OERDefinition.seqof(TwoDLocation).rangeToMAXFrom(3).typeName("PolygonalRegion");
+
     /**
      * GeographicRegion ::= CHOICE {
      * circularRegion     CircularRegion,
@@ -480,8 +559,10 @@ public class Ieee1609Dot2BaseTypes
      * }
      */
     public static final OERDefinition.Builder GeographicRegion = OERDefinition.choice(
-        CircularRegion,
-        SequenceOfRectangularRegion,
-        PolygonalRegion,
-        SequenceOfIdentifiedRegion, OERDefinition.extension()).label("GeographicRegion");
+        CircularRegion.label("circularRegion"),
+        SequenceOfRectangularRegion.label("rectangularRegion"),
+        PolygonalRegion.label("polygonalRegion"),
+        SequenceOfIdentifiedRegion.label("identifiedRegion"),
+        OERDefinition.extension().label("extension")
+    ).typeName("GeographicRegion");
 }

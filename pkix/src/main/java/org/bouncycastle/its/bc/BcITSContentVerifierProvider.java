@@ -36,12 +36,12 @@ public class BcITSContentVerifierProvider
         this.issuer = issuer;
         this.parentData = issuer.getEncoded();
         ToBeSignedCertificate toBeSignedCertificate =
-            issuer.toASN1Structure().getToBeSignedCertificate();
-        VerificationKeyIndicator vki = toBeSignedCertificate.getVerificationKeyIndicator();
+            issuer.toASN1Structure().getToBeSigned();
+        VerificationKeyIndicator vki = toBeSignedCertificate.getVerifyKeyIndicator();
 
-        if (vki.getValue() instanceof PublicVerificationKey)
+        if (vki.getVerificationKeyIndicator() instanceof PublicVerificationKey)
         {
-            PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getValue());
+            PublicVerificationKey pvi = PublicVerificationKey.getInstance(vki.getVerificationKeyIndicator());
             sigChoice = pvi.getChoice();
 
             switch (pvi.getChoice())
@@ -97,7 +97,7 @@ public class BcITSContentVerifierProvider
 
         if (parentTBSDigest != null)
         {
-            byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getToBeSignedCertificate(), IEEE1609dot2.ToBeSignedCertificate.build());
+            byte[] enc = OEREncoder.toByteArray(issuer.toASN1Structure().getToBeSigned(), IEEE1609dot2.ToBeSignedCertificate.build());
             digest.update(enc, 0, enc.length);
             digest.doFinal(parentTBSDigest, 0);
         }

@@ -120,7 +120,7 @@ public class EciesP256EncryptedKey
             return this;
         }
 
-        public EciesP256EncryptedKey build()
+        public EciesP256EncryptedKey createEciesP256EncryptedKey()
         {
             return new EciesP256EncryptedKey(v, c, t);
         }

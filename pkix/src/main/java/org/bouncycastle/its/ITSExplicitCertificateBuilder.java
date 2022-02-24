@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.its.operator.ECDSAEncoder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OEREncoder;
-import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateBase;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
@@ -51,16 +50,15 @@ public class ITSExplicitCertificateBuilder
     {
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
         
-        tbsBldr.setCertificateId(certificateId);
+        tbsBldr.setId(certificateId);
 
         if (publicEncryptionKey != null)
         {
             tbsBldr.setEncryptionKey(publicEncryptionKey.toASN1Structure());
         }
 
-        tbsBldr.setVerificationKeyIndicator(
-            VerificationKeyIndicator.builder().publicVerificationKey(verificationKey.toASN1Structure())
-                .createVerificationKeyIndicator());
+        tbsBldr.setVerifyKeyIndicator(
+            VerificationKeyIndicator.verificationKey(verificationKey.toASN1Structure()));
 
         ToBeSignedCertificate tbsCertificate = tbsBldr.createToBeSignedCertificate();
 
@@ -68,12 +66,12 @@ public class ITSExplicitCertificateBuilder
         VerificationKeyIndicator verificationKeyIndicator;
         if (signer.isForSelfSigning())
         {
-            verificationKeyIndicator = tbsCertificate.getVerificationKeyIndicator();
+            verificationKeyIndicator = tbsCertificate.getVerifyKeyIndicator();
         }
         else
         {
-            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSignedCertificate();
-            verificationKeyIndicator = signerCert.getVerificationKeyIndicator();
+            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSigned();
+            verificationKeyIndicator = signerCert.getVerifyKeyIndicator();
         }
 
         OutputStream sOut = signer.getOutputStream();
@@ -106,20 +104,21 @@ public class ITSExplicitCertificateBuilder
         }
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
-        IssuerIdentifier.Builder issuerIdentifierBuilder = IssuerIdentifier.builder();
 
         ASN1ObjectIdentifier digestAlg = signer.getDigestAlgorithm().getAlgorithm();
+
+        IssuerIdentifier issuerIdentifier;
 
         if (signer.isForSelfSigning())
         {
 
             if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
             {
-                issuerIdentifierBuilder.self(HashAlgorithm.sha256);
+                issuerIdentifier = IssuerIdentifier.self(HashAlgorithm.sha256);
             }
             else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
             {
-                issuerIdentifierBuilder.self(HashAlgorithm.sha384);
+                issuerIdentifier = IssuerIdentifier.self(HashAlgorithm.sha384);
             }
             else
             {
@@ -132,11 +131,11 @@ public class ITSExplicitCertificateBuilder
             HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
             if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
             {
-                issuerIdentifierBuilder.sha256AndDigest(hashedID);
+                issuerIdentifier = IssuerIdentifier.sha256AndDigest(hashedID);
             }
             else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
             {
-                issuerIdentifierBuilder.sha384AndDigest(hashedID);
+                issuerIdentifier = IssuerIdentifier.sha384AndDigest(hashedID);
             }
             else
             {
@@ -146,9 +145,9 @@ public class ITSExplicitCertificateBuilder
 
         baseBldr.setVersion(version);
         baseBldr.setType(CertificateType.explicit);
-        baseBldr.setIssuer(issuerIdentifierBuilder.createIssuerIdentifier());
+        baseBldr.setIssuer(issuerIdentifier);
 
-        baseBldr.setToBeSignedCertificate(tbsCertificate);
+        baseBldr.setToBeSigned(tbsCertificate);
         baseBldr.setSignature(sig);
 
 
