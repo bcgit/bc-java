@@ -49,7 +49,7 @@ public class ETSIEncryptedData
         {
             throw new IllegalStateException("EtsiTs103097Data-Encrypted did not have encrypted data content");
         }
-        this.encryptedData = EncryptedData.getInstance(content.getContent());
+        this.encryptedData = EncryptedData.getInstance(content.getIeee1609Dot2Content());
     }
 
     ETSIEncryptedData(EncryptedData data)
@@ -60,9 +60,8 @@ public class ETSIEncryptedData
     public byte[] getEncoded()
     {
         return OEREncoder.toByteArray(new EtsiTs103097Data_Encrypted(
-            Ieee1609Dot2Content.builder()
+            Ieee1609Dot2Content
                 .encryptedData(encryptedData)
-                .build()
         ), oerDef);
     }
 

@@ -3,6 +3,7 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -31,12 +32,12 @@ public class GeographicRegion
     public static final int extension = 4;
 
     private final int choice;
-    private final ASN1Encodable region;
+    private final ASN1Encodable geographicRegion;
 
     public GeographicRegion(int choice, ASN1Encodable region)
     {
         this.choice = choice;
-        this.region = region;
+        this.geographicRegion = region;
     }
 
 
@@ -47,26 +48,50 @@ public class GeographicRegion
         switch (choice)
         {
         case circularRegion:
-            region = CircularRegion.getInstance(taggedObject.getObject());
+            geographicRegion = CircularRegion.getInstance(taggedObject.getObject());
             break;
         case rectangularRegion:
-            region = SequenceOfRectangularRegion.getInstance(taggedObject.getObject());
+            geographicRegion = SequenceOfRectangularRegion.getInstance(taggedObject.getObject());
             break;
         case polygonalRegion:
-            region = PolygonalRegion.getInstance(taggedObject.getObject());
+            geographicRegion = PolygonalRegion.getInstance(taggedObject.getObject());
             break;
         case identifiedRegion:
-            region = SequenceOfIdentifiedRegion.getInstance(taggedObject.getObject());
+            geographicRegion = SequenceOfIdentifiedRegion.getInstance(taggedObject.getObject());
             break;
         case extension:
-            region = DEROctetString.getInstance(taggedObject.getObject());
+            geographicRegion = DEROctetString.getInstance(taggedObject.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
-
-
     }
+
+    public static GeographicRegion circularRegion(CircularRegion region)
+    {
+        return new GeographicRegion(circularRegion, region);
+    }
+
+    public static GeographicRegion rectangularRegion(SequenceOfRectangularRegion region)
+    {
+        return new GeographicRegion(rectangularRegion, region);
+    }
+
+    public static GeographicRegion polygonalRegion(PolygonalRegion region)
+    {
+        return new GeographicRegion(polygonalRegion, region);
+    }
+
+    public static GeographicRegion identifiedRegion(SequenceOfIdentifiedRegion region)
+    {
+        return new GeographicRegion(identifiedRegion, region);
+    }
+
+    public static GeographicRegion extension(ASN1OctetString region)
+    {
+        return new GeographicRegion(extension, region);
+    }
+
 
     public static GeographicRegion getInstance(Object o)
     {
@@ -87,13 +112,13 @@ public class GeographicRegion
         return choice;
     }
 
-    public ASN1Encodable getRegion()
+    public ASN1Encodable getGeographicRegion()
     {
-        return region;
+        return geographicRegion;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, region);
+        return new DERTaggedObject(choice, geographicRegion);
     }
 }

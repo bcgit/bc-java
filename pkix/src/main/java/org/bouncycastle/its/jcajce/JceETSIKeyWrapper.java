@@ -59,9 +59,10 @@ public class JceETSIKeyWrapper
             ASN1ObjectIdentifier curveID = ASN1ObjectIdentifier.getInstance(pkInfo.getAlgorithm().getParameters());
 
             EciesP256EncryptedKey key = EciesP256EncryptedKey.builder()
-                .setV(EccP256CurvePoint.builder().createEncodedPoint(Arrays.copyOfRange(wrappedKey, 0, size)))
+                .setV(EccP256CurvePoint.createEncodedPoint(Arrays.copyOfRange(wrappedKey, 0, size)))
                 .setC(Arrays.copyOfRange(wrappedKey, size, size + secretKey.length))
-                .setT(Arrays.copyOfRange(wrappedKey, size + secretKey.length, wrappedKey.length)).build();
+                .setT(Arrays.copyOfRange(wrappedKey, size + secretKey.length, wrappedKey.length))
+                .createEciesP256EncryptedKey();
 
             if (curveID.equals(SECObjectIdentifiers.secp256r1))
             {

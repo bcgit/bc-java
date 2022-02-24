@@ -79,4 +79,37 @@ public class EtsiTs102941CtlRequest
     {
         return new DERSequence(new ASN1Encodable[]{issuerId, OEROptional.getInstance(lastKnownCtlSequence)});
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private HashedId8 issuerId;
+        private ASN1Integer lastKnownCtlSequence;
+
+        public Builder setIssuerId(HashedId8 issuerId)
+        {
+            this.issuerId = issuerId;
+            return this;
+        }
+
+        public Builder setLastKnownCtlSequence(ASN1Integer lastKnownCtlSequence)
+        {
+            this.lastKnownCtlSequence = lastKnownCtlSequence;
+            return this;
+        }
+
+        public EtsiTs102941CtlRequest createEtsiTs102941CtlRequest()
+        {
+            return new EtsiTs102941CtlRequest(issuerId, lastKnownCtlSequence);
+        }
+
+        public EtsiTs102941DeltaCtlRequest createEtsiTs102941DeltaCtlRequest()
+        {
+            return new EtsiTs102941DeltaCtlRequest(issuerId, lastKnownCtlSequence);
+        }
+    }
 }

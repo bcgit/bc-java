@@ -38,6 +38,7 @@ public final class BCSSLParameters
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
     private boolean useCipherSuitesOrder;
+    private int maximumPacketSize = 0;
 
     public BCSSLParameters()
     {
@@ -206,5 +207,20 @@ public final class BCSSLParameters
     public boolean getUseCipherSuitesOrder()
     {
         return useCipherSuitesOrder;
+    }
+
+    public void setMaximumPacketSize(int maximumPacketSize)
+    {
+        if (maximumPacketSize < 0)
+        {
+            throw new IllegalArgumentException("The maximum packet size cannot be negative");
+        }
+
+        this.maximumPacketSize = maximumPacketSize;
+    }
+
+    public int getMaximumPacketSize()
+    {
+        return maximumPacketSize;
     }
 }

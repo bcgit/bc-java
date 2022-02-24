@@ -108,7 +108,7 @@ public class ButterflyParamsOriginal
             return this;
         }
 
-        public ButterflyParamsOriginal build()
+        public ButterflyParamsOriginal createButterflyParamsOriginal()
         {
             return new ButterflyParamsOriginal(signingExpansion, encryptionKey, encryptionExpansion);
         }

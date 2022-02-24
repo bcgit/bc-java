@@ -167,6 +167,13 @@ public class EeEcaCertRequest
             return this;
         }
 
+        public EeEcaCertRequest.Builder setCanonicalId(String canonicalId)
+        {
+            this.canonicalId = new DERIA5String(canonicalId);
+            return this;
+        }
+
+
         public EeEcaCertRequest createEeEcaCertRequest()
         {
             return new EeEcaCertRequest(version, generationTime, type, tbsCert, canonicalId);

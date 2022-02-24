@@ -65,4 +65,33 @@ public class MissingCrlIdentifier
     {
         return crlSeries;
     }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private HashedId3 cracaId;
+        private CrlSeries crlSeries;
+
+        public Builder setCracaId(HashedId3 cracaId)
+        {
+            this.cracaId = cracaId;
+            return this;
+        }
+
+        public Builder setCrlSeries(CrlSeries crlSeries)
+        {
+            this.crlSeries = crlSeries;
+            return this;
+        }
+
+        public MissingCrlIdentifier createMissingCrlIdentifier()
+        {
+            return new MissingCrlIdentifier(cracaId, crlSeries);
+        }
+    }
+
 }

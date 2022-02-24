@@ -39,5 +39,5 @@ public class Ieee1609Dot2Dot1EcaEeInterface
         IEEE1609dot2.ToBeSignedCertificate.label("tbsCert"),
         OERDefinition.optional(OERDefinition.ia5String().label("canonicalId")),
         OERDefinition.extension()
-    ).label("EeEcaCertRequest");
+    ).typeName("EeEcaCertRequest");
 }

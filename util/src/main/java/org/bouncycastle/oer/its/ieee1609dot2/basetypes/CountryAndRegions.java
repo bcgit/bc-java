@@ -1,9 +1,5 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -21,12 +17,12 @@ public class CountryAndRegions
 {
 
     private final CountryOnly countryOnly;
-    private final List<Region> regions;
+    private final SequenceOfUint8 regions;
 
-    public CountryAndRegions(CountryOnly countryOnly, List<Region> regionList)
+    public CountryAndRegions(CountryOnly countryOnly, SequenceOfUint8 regionList)
     {
         this.countryOnly = countryOnly;
-        this.regions = Collections.unmodifiableList(regionList);
+        this.regions = SequenceOfUint8.getInstance(regionList);
     }
 
 
@@ -37,7 +33,7 @@ public class CountryAndRegions
             throw new IllegalArgumentException("expected sequence size of 2");
         }
         countryOnly = CountryOnly.getInstance(sequence.getObjectAt(0));
-        regions = ItsUtils.fillList(Region.class, ASN1Sequence.getInstance(sequence.getObjectAt(1)));
+        regions = SequenceOfUint8.getInstance(sequence.getObjectAt(1));
     }
 
 
@@ -58,14 +54,14 @@ public class CountryAndRegions
 
     }
 
-    public static CountryAndRegionsBuilder builder()
+    public static Builder builder()
     {
-        return new CountryAndRegionsBuilder();
+        return new Builder();
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return ItsUtils.toSequence(countryOnly, ItsUtils.toSequence(regions));
+        return ItsUtils.toSequence(countryOnly, regions);
     }
 
     public CountryOnly getCountryOnly()
@@ -73,42 +69,34 @@ public class CountryAndRegions
         return countryOnly;
     }
 
-    public List<Region> getRegions()
+    public SequenceOfUint8 getRegions()
     {
         return regions;
     }
 
-    public static class CountryAndRegionsBuilder
+    public static class Builder
     {
 
-        private final List<Region> regionList;
+        private SequenceOfUint8 regionList;
         private CountryOnly countryOnly;
 
-        public CountryAndRegionsBuilder()
+        public Builder()
         {
-            regionList = new ArrayList<Region>();
         }
 
-        public CountryAndRegionsBuilder setCountryOnly(CountryOnly countryOnly)
+        public Builder setCountryOnly(CountryOnly countryOnly)
         {
             this.countryOnly = countryOnly;
             return this;
         }
 
-        public CountryAndRegionsBuilder setRegionList(List<Region> regionList)
+        public Builder setRegions(SequenceOfUint8 regionList)
         {
-            this.regionList.addAll(regionList);
+            this.regionList = regionList;
             return this;
         }
 
-        public CountryAndRegionsBuilder addRegion(Region region)
-        {
-
-            this.regionList.add(region);
-            return this;
-        }
-
-        public CountryAndRegions build()
+        public CountryAndRegions createCountryAndRegions()
         {
             return new CountryAndRegions(countryOnly, regionList);
         }
