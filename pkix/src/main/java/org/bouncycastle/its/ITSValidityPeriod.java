@@ -4,6 +4,8 @@ import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Duration;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT16;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ValidityPeriod;
 
 public class ITSValidityPeriod
@@ -37,12 +39,12 @@ public class ITSValidityPeriod
 
         public ITSValidityPeriod plusYears(int years)
         {
-            return new ITSValidityPeriod(startDate, years, Unit.years);
+            return new ITSValidityPeriod(startDate, UINT16.valueOf(years), Unit.years);
         }
 
         public ITSValidityPeriod plusSixtyHours(int periods)
         {
-            return new ITSValidityPeriod(startDate, periods, Unit.sixtyHours);
+            return new ITSValidityPeriod(startDate, UINT16.valueOf(periods), Unit.sixtyHours);
         }
     }
 
@@ -52,18 +54,18 @@ public class ITSValidityPeriod
     }
 
     private final long startDate;
-    private final int duration;
+    private final UINT16 duration;
     private final Unit timeUnit;
 
     public ITSValidityPeriod(ValidityPeriod validityPeriod)
     {
-        this.startDate = validityPeriod.getTime32().getValue().longValue();
+        this.startDate = validityPeriod.getStart().getValue().longValue();
         Duration duration = validityPeriod.getDuration();
-        this.duration = duration.getValue();
+        this.duration = duration.getDuration();
         this.timeUnit = Unit.values()[duration.getChoice()];
     }
 
-    ITSValidityPeriod(long startDate, int duration, Unit timeUnit)
+    ITSValidityPeriod(long startDate, UINT16 duration, Unit timeUnit)
     {
         this.startDate = startDate;
         this.duration = duration;
@@ -78,7 +80,7 @@ public class ITSValidityPeriod
     public ValidityPeriod toASN1Structure()
     {
         return ValidityPeriod.builder()
-            .setTime32(new ASN1Integer(startDate / 1000))
-            .setDuration(new Duration(duration, timeUnit.unitTag)).createValidityPeriod();
+            .setStart(new Time32(startDate / 1000))
+            .setDuration(new Duration(timeUnit.unitTag, duration)).createValidityPeriod();
     }
 }

@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERNull;
@@ -32,12 +33,12 @@ public class CertificateId
     public static final int extension = 4;
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable certificateId;
 
     public CertificateId(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.certificateId = value;
     }
 
     private CertificateId(ASN1TaggedObject asn1TaggedObject)
@@ -46,25 +47,58 @@ public class CertificateId
         switch (choice)
         {
         case linkageData:
-            value = LinkageData.getInstance(asn1TaggedObject.getObject());
+            certificateId = LinkageData.getInstance(asn1TaggedObject.getObject());
             break;
         case name:
-            value = Hostname.getInstance(asn1TaggedObject.getObject());
+            certificateId = Hostname.getInstance(asn1TaggedObject.getObject());
             break;
         case binaryId:
-            value = DEROctetString.getInstance(asn1TaggedObject.getObject());
+            certificateId = DEROctetString.getInstance(asn1TaggedObject.getObject());
             break;
         case none:
-            value = ASN1Null.getInstance(asn1TaggedObject.getObject());
+            certificateId = ASN1Null.getInstance(asn1TaggedObject.getObject());
             break;
         case extension:
-            value = DEROctetString.getInstance(asn1TaggedObject.getObject());
+            certificateId = DEROctetString.getInstance(asn1TaggedObject.getObject());
             break;
-
-
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
+    }
+
+    public static CertificateId linkageData(LinkageData linkageData)
+    {
+        return new CertificateId(CertificateId.linkageData, linkageData);
+    }
+
+    public static CertificateId name(Hostname hostname)
+    {
+        return new CertificateId(CertificateId.name, hostname);
+    }
+
+    public static CertificateId binaryId(ASN1OctetString stream)
+    {
+        return new CertificateId(CertificateId.binaryId, stream);
+    }
+
+    public static CertificateId binaryId(byte[] stream)
+    {
+        return new CertificateId(CertificateId.binaryId, new DEROctetString(stream));
+    }
+
+    public static CertificateId none()
+    {
+        return new CertificateId(CertificateId.none, DERNull.INSTANCE);
+    }
+
+    public static CertificateId extension(ASN1OctetString stream)
+    {
+        return new CertificateId(CertificateId.extension, stream);
+    }
+
+    public static CertificateId extension(byte[] stream)
+    {
+        return new CertificateId(CertificateId.extension, new DEROctetString(stream));
     }
 
     public static CertificateId getInstance(Object o)
@@ -83,14 +117,9 @@ public class CertificateId
 
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value).toASN1Primitive();
+        return new DERTaggedObject(choice, certificateId).toASN1Primitive();
     }
 
     public int getChoice()
@@ -98,70 +127,9 @@ public class CertificateId
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getCertificateId()
     {
-        return value;
+        return certificateId;
     }
-
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable value;
-
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setValue(ASN1Encodable value)
-        {
-            this.value = value;
-            return this;
-        }
-
-        public Builder linkageData(LinkageData data)
-        {
-            this.choice = linkageData;
-            this.value = data;
-            return this;
-        }
-
-        public Builder name(Hostname data)
-        {
-            this.choice = name;
-            this.value = data;
-            return this;
-        }
-
-        public Builder binaryId(DEROctetString data)
-        {
-            this.choice = name;
-            this.value = data;
-            return this;
-        }
-
-        public Builder none()
-        {
-            this.choice = name;
-            this.value = DERNull.INSTANCE;
-            return this;
-        }
-
-        public Builder extension(byte[] data)
-        {
-            this.choice = extension;
-            this.value = new DEROctetString(data);
-            return this;
-        }
-
-        public CertificateId createCertificateId()
-        {
-            return new CertificateId(choice, value);
-        }
-
-    }
-
 
 }

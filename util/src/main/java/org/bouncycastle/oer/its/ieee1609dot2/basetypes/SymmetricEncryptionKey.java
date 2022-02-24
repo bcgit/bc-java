@@ -24,12 +24,12 @@ public class SymmetricEncryptionKey
 
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable symmetricEncryptionKey;
 
     public SymmetricEncryptionKey(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.symmetricEncryptionKey = value;
     }
 
     private SymmetricEncryptionKey(ASN1TaggedObject instance)
@@ -42,11 +42,11 @@ public class SymmetricEncryptionKey
             {
                 throw new IllegalArgumentException("aes128ccm string not 16 bytes");
             }
-            this.value = str;
+            this.symmetricEncryptionKey = str;
         }
         else if (choice == extension)
         {
-            this.value = DEROctetString.getInstance(instance.getObject());
+            this.symmetricEncryptionKey = DEROctetString.getInstance(instance.getObject());
         }
         else
         {
@@ -69,19 +69,42 @@ public class SymmetricEncryptionKey
 
     }
 
+
+    public static SymmetricEncryptionKey aes128ccm(byte[] octetString)
+    {
+        return new SymmetricEncryptionKey(aes128ccm, new DEROctetString(octetString));
+    }
+
+    public static SymmetricEncryptionKey extension(byte[] octetString)
+    {
+        return new SymmetricEncryptionKey(extension, new DEROctetString(octetString));
+    }
+
+
+    public static SymmetricEncryptionKey aes128ccm(ASN1OctetString octetString)
+    {
+        return new SymmetricEncryptionKey(aes128ccm, octetString);
+    }
+
+    public static SymmetricEncryptionKey extension(ASN1OctetString octetString)
+    {
+        return new SymmetricEncryptionKey(extension, octetString);
+    }
+
+
     public int getChoice()
     {
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getSymmetricEncryptionKey()
     {
-        return value;
+        return symmetricEncryptionKey;
     }
 
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, symmetricEncryptionKey);
     }
 }

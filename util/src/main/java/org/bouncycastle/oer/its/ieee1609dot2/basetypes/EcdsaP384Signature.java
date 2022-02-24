@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
 
 /**
@@ -65,6 +66,11 @@ public class EcdsaP384Signature
         return ItsUtils.toSequence(rSig, sSig);
     }
 
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
     public static class Builder
     {
 
@@ -72,16 +78,21 @@ public class EcdsaP384Signature
         private EccP384CurvePoint rSig;
         private ASN1OctetString sSig;
 
-        public Builder setrSig(EccP384CurvePoint rSig)
+        public Builder setRSig(EccP384CurvePoint rSig)
         {
             this.rSig = rSig;
             return this;
         }
 
-        public Builder setsSig(ASN1OctetString sSig)
+        public Builder setSSig(ASN1OctetString sSig)
         {
             this.sSig = sSig;
             return this;
+        }
+
+        public Builder setSSig(byte[] sSig)
+        {
+            return setSSig(new DEROctetString(sSig));
         }
 
         public EcdsaP384Signature createEcdsaP384Signature()

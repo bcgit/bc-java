@@ -21,6 +21,11 @@ public class EtsiTs102941DeltaCtlRequest
         super(sequence);
     }
 
+    public EtsiTs102941DeltaCtlRequest(EtsiTs102941CtlRequest request)
+    {
+        super(request.getIssuerId(), request.getLastKnownCtlSequence());
+    }
+
     public EtsiTs102941DeltaCtlRequest(HashedId8 issuerId, ASN1Integer lastKnownCtlSequence)
     {
         super(issuerId, lastKnownCtlSequence);
@@ -41,35 +46,5 @@ public class EtsiTs102941DeltaCtlRequest
         return null;
 
     }
-
-    public static EtsiTs102941DeltaCtlRequest.Builder builder()
-    {
-        return new Builder();
-    }
-
-    public static class Builder
-    {
-        private HashedId8 issuerId;
-        private ASN1Integer lastKnownCtlSequence;
-
-
-        public Builder setIssuerId(HashedId8 issuerId)
-        {
-            this.issuerId = issuerId;
-            return this;
-        }
-
-        public Builder setLastKnownCtlSequence(ASN1Integer lastKnownCtlSequence)
-        {
-            this.lastKnownCtlSequence = lastKnownCtlSequence;
-            return this;
-        }
-
-        public EtsiTs102941DeltaCtlRequest build()
-        {
-            return new EtsiTs102941DeltaCtlRequest(issuerId, lastKnownCtlSequence);
-        }
-    }
-
 
 }

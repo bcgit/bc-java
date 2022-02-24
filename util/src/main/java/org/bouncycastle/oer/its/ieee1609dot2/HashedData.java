@@ -30,12 +30,12 @@ public class HashedData
 
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable hashedData;
 
     public HashedData(int choice, ASN1Encodable sha256HashedData)
     {
         this.choice = choice;
-        this.value = sha256HashedData;
+        this.hashedData = sha256HashedData;
     }
 
     private HashedData(ASN1TaggedObject dto)
@@ -47,11 +47,51 @@ public class HashedData
         case sha384HashedData:
         case reserved:
             this.choice = dto.getTagNo();
-            this.value = DEROctetString.getInstance(dto.getObject());
+            this.hashedData = DEROctetString.getInstance(dto.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + dto.getTagNo());
         }
+    }
+
+    public static HashedData sha256HashedData(ASN1OctetString sha256HashedData)
+    {
+        return new HashedData(HashedData.sha256HashedData,sha256HashedData);
+    }
+
+    public static HashedData sha256HashedData(byte[] sha256HashedData)
+    {
+        return new HashedData(HashedData.sha256HashedData,new DEROctetString(sha256HashedData));
+    }
+
+    public static HashedData extension(byte[] extension)
+    {
+        return new HashedData(HashedData.extension,new DEROctetString(extension));
+    }
+
+    public static HashedData extension(ASN1OctetString extension)
+    {
+        return new HashedData(HashedData.extension,extension);
+    }
+
+    public static HashedData sha384HashedData(ASN1OctetString sha384HashedData)
+    {
+        return new HashedData(HashedData.sha384HashedData,sha384HashedData);
+    }
+
+    public static HashedData sha384HashedData(byte[] sha384HashedData)
+    {
+        return new HashedData(HashedData.sha384HashedData,new DEROctetString(sha384HashedData));
+    }
+
+    public static HashedData reserved(ASN1OctetString reserved)
+    {
+       return new HashedData(HashedData.reserved,reserved);
+    }
+
+    public static HashedData reserved(byte[] reserved)
+    {
+        return new HashedData(HashedData.reserved,new DEROctetString(reserved));
     }
 
     public static HashedData getInstance(Object o)
@@ -75,55 +115,15 @@ public class HashedData
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getHashedData()
     {
-        return value;
+        return hashedData;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, hashedData);
     }
 
-    public static class Builder
-    {
 
-        private int choice;
-        private ASN1Encodable value;
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setSha256HashedData(ASN1Encodable sha256HashedData)
-        {
-            value = sha256HashedData;
-            return this;
-        }
-
-        public Builder extension(byte[] extension)
-        {
-            value = new DEROctetString(extension);
-            return this;
-        }
-
-        public Builder sha384HashedData(ASN1OctetString sha384HashedData)
-        {
-            value = sha384HashedData;
-            return this;
-        }
-
-        public Builder reserved(ASN1OctetString reserved)
-        {
-            value = reserved;
-            return this;
-        }
-
-        public HashedData createHashedData()
-        {
-            return new HashedData(choice, value);
-        }
-    }
 }

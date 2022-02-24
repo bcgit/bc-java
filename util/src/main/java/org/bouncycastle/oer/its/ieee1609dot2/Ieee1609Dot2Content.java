@@ -31,12 +31,53 @@ public class Ieee1609Dot2Content
     public static final int extension = 4;
 
     private final int choice;
-    private final ASN1Encodable content;
+    private final ASN1Encodable ieee1609Dot2Content;
 
     public Ieee1609Dot2Content(int choice, ASN1Encodable object)
     {
         this.choice = choice;
-        this.content = object;
+        this.ieee1609Dot2Content = object;
+    }
+
+
+    public static Ieee1609Dot2Content unsecuredData(ASN1OctetString value)
+    {
+        return new Ieee1609Dot2Content(unsecuredData, value);
+    }
+
+    public static Ieee1609Dot2Content unsecuredData(byte[] value)
+    {
+        return new Ieee1609Dot2Content(unsecuredData, new DEROctetString(value));
+    }
+
+    public static Ieee1609Dot2Content signedData(SignedData value)
+    {
+        return new Ieee1609Dot2Content(signedData, value);
+    }
+
+    public static Ieee1609Dot2Content encryptedData(EncryptedData value)
+    {
+        return new Ieee1609Dot2Content(encryptedData, value);
+    }
+
+    public static Ieee1609Dot2Content signedCertificateRequest(ASN1OctetString value)
+    {
+        return new Ieee1609Dot2Content(signedCertificateRequest, value);
+    }
+
+    public static Ieee1609Dot2Content signedCertificateRequest(byte[] value)
+    {
+        return new Ieee1609Dot2Content(signedCertificateRequest, new DEROctetString(value));
+    }
+
+    public static Ieee1609Dot2Content extension(ASN1OctetString value)
+    {
+        return new Ieee1609Dot2Content(extension, value);
+    }
+
+    public static Ieee1609Dot2Content extension(byte[] value)
+    {
+        return new Ieee1609Dot2Content(extension, new DEROctetString(value));
     }
 
     private Ieee1609Dot2Content(ASN1TaggedObject to)
@@ -47,13 +88,13 @@ public class Ieee1609Dot2Content
         case unsecuredData:
         case signedCertificateRequest:
         case extension:
-            content = ASN1OctetString.getInstance(to.getObject());
+            ieee1609Dot2Content = ASN1OctetString.getInstance(to.getObject());
             return;
         case signedData:
-            content = SignedData.getInstance(to.getObject());
+            ieee1609Dot2Content = SignedData.getInstance(to.getObject());
             return;
         case encryptedData:
-            content = EncryptedData.getInstance(to.getObject());
+            ieee1609Dot2Content = EncryptedData.getInstance(to.getObject());
             return;
         default:
             throw new IllegalArgumentException("invalid choice value " + to.getTagNo());
@@ -75,14 +116,9 @@ public class Ieee1609Dot2Content
         return null;
     }
 
-    public static Builder builder()
-    {
-        return new Builder();
-    }
-
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, content);
+        return new DERTaggedObject(choice, ieee1609Dot2Content);
     }
 
     public int getChoice()
@@ -90,67 +126,9 @@ public class Ieee1609Dot2Content
         return choice;
     }
 
-    public ASN1Encodable getContent()
+    public ASN1Encodable getIeee1609Dot2Content()
     {
-        return content;
-    }
-
-    public static class Builder
-    {
-        private int choice;
-        private ASN1Encodable object;
-
-        public Builder setChoice(int choice)
-        {
-            this.choice = choice;
-            return this;
-        }
-
-        public Builder setObject(ASN1Encodable object)
-        {
-            this.object = object;
-            return this;
-        }
-
-        public Builder unsecuredData(ASN1OctetString octetString)
-        {
-            this.object = octetString;
-            this.choice = unsecuredData;
-            return this;
-        }
-
-        public Builder signedData(SignedData signedData)
-        {
-            this.object = signedData;
-            this.choice = Ieee1609Dot2Content.signedData;
-            return this;
-        }
-
-        public Builder encryptedData(EncryptedData encryptedData)
-        {
-            this.object = encryptedData;
-            this.choice = Ieee1609Dot2Content.encryptedData;
-            return this;
-        }
-
-        public Builder signedCertificateRequest(ASN1OctetString octetString)
-        {
-            this.object = octetString;
-            this.choice = signedCertificateRequest;
-            return this;
-        }
-
-        public Builder extension(byte[] value)
-        {
-            this.object = new DEROctetString(value);
-            this.choice = extension;
-            return this;
-        }
-
-        public Ieee1609Dot2Content build()
-        {
-            return new Ieee1609Dot2Content(choice, object);
-        }
+        return ieee1609Dot2Content;
     }
 
 }

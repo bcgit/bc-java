@@ -25,12 +25,12 @@ public class EncryptedDataEncryptionKey
     public static final int extension = 2;
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable encryptedDataEncryptionKey;
 
     public EncryptedDataEncryptionKey(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.encryptedDataEncryptionKey = value;
     }
 
     private EncryptedDataEncryptionKey(ASN1TaggedObject ato)
@@ -40,16 +40,15 @@ public class EncryptedDataEncryptionKey
         {
         case eciesNistP256:
         case eciesBrainpoolP256r1:
-            value = EciesP256EncryptedKey.getInstance(ato.getObject());
+            encryptedDataEncryptionKey = EciesP256EncryptedKey.getInstance(ato.getObject());
             break;
         case extension:
-            value = ASN1OctetString.getInstance(ato.getObject());
+            encryptedDataEncryptionKey = ASN1OctetString.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
         }
     }
-
 
     public static EncryptedDataEncryptionKey getInstance(Object o)
     {
@@ -72,14 +71,14 @@ public class EncryptedDataEncryptionKey
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getEncryptedDataEncryptionKey()
     {
-        return value;
+        return encryptedDataEncryptionKey;
     }
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, encryptedDataEncryptionKey);
     }
 
     public static EncryptedDataEncryptionKey eciesNistP256(EciesP256EncryptedKey value)

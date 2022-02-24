@@ -9,13 +9,14 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 public class ITSCertificateBuilder
 {
     protected final ToBeSignedCertificate.Builder tbsCertificateBuilder;
     protected final ITSCertificate issuer;
 
-    protected ASN1Integer version = new ASN1Integer(3);
+    protected UINT8 version = new UINT8(3);
     //  ETSI TS 103 097 V1.4.1 (2020-10) default/constraint - Section 6.
     protected HashedId3 cracaId = new HashedId3(new byte[3]);
     //  ETSI TS 103 097 V1.4.1 (2020-10) default/constraint - Section 6.
@@ -49,7 +50,7 @@ public class ITSCertificateBuilder
      */
     public ITSCertificateBuilder setVersion(int version)
     {
-        this.version = new ASN1Integer(version);
+        this.version = new UINT8(version);
         return this;
     }
 

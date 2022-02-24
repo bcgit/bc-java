@@ -215,73 +215,73 @@ public class HeaderInfo
         private PduFunctionalType pduFunctionalType;
         private ContributedExtensionBlocks contributedExtensions;
 
-        public Builder psid(Psid psid)
+        public Builder setPsid(Psid psid)
         {
             this.psid = psid;
             return this;
         }
 
-        public Builder generationTime(Time64 generationTime)
+        public Builder setGenerationTime(Time64 generationTime)
         {
             this.generationTime = generationTime;
             return this;
         }
 
-        public Builder expiryTime(Time64 expiryTime)
+        public Builder setExpiryTime(Time64 expiryTime)
         {
             this.expiryTime = expiryTime;
             return this;
         }
 
-        public Builder generationLocation(ThreeDLocation generationLocation)
+        public Builder setGenerationLocation(ThreeDLocation generationLocation)
         {
             this.generationLocation = generationLocation;
             return this;
         }
 
-        public Builder p2pcdLearningRequest(HashedId3 p2pcdLearningRequest)
+        public Builder setP2pcdLearningRequest(HashedId3 p2pcdLearningRequest)
         {
             this.p2pcdLearningRequest = p2pcdLearningRequest;
             return this;
         }
 
-        public Builder encryptionKey(EncryptionKey encryptionKey)
+        public Builder setEncryptionKey(EncryptionKey encryptionKey)
         {
             this.encryptionKey = encryptionKey;
             return this;
         }
 
-        public Builder missingCrlIdentifier(MissingCrlIdentifier missingCrlIdentifier)
+        public Builder setMissingCrlIdentifier(MissingCrlIdentifier missingCrlIdentifier)
         {
             this.missingCrlIdentifier = missingCrlIdentifier;
             return this;
         }
 
-        public Builder inlineP2pcdRequest(SequenceOfHashedId3 inlineP2pcdRequest)
+        public Builder setInlineP2pcdRequest(SequenceOfHashedId3 inlineP2pcdRequest)
         {
             this.inlineP2pcdRequest = inlineP2pcdRequest;
             return this;
         }
 
-        public Builder requestedCertificate(Certificate requestedCertificate)
+        public Builder setRequestedCertificate(Certificate requestedCertificate)
         {
             this.requestedCertificate = requestedCertificate;
             return this;
         }
 
-        public Builder pduFunctionalType(PduFunctionalType pduFunctionalType)
+        public Builder setPduFunctionalType(PduFunctionalType pduFunctionalType)
         {
             this.pduFunctionalType = pduFunctionalType;
             return this;
         }
 
-        public Builder contributedExtensions(ContributedExtensionBlocks contributedExtensions)
+        public Builder setContributedExtensions(ContributedExtensionBlocks contributedExtensions)
         {
             this.contributedExtensions = contributedExtensions;
             return this;
         }
 
-        public HeaderInfo build()
+        public HeaderInfo createHeaderInfo()
         {
             return new HeaderInfo(
                 psid,

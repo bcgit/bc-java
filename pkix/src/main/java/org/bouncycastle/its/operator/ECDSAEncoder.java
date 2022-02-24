@@ -26,14 +26,14 @@ public class ECDSAEncoder
         byte[] s;
         if (signature.getChoice() == Signature.ecdsaNistP256Signature || signature.getChoice() == Signature.ecdsaBrainpoolP256r1Signature)
         {
-            EcdsaP256Signature sig = EcdsaP256Signature.getInstance(signature.getValue());
-            r = ASN1OctetString.getInstance(sig.getRSig().getValue()).getOctets();
+            EcdsaP256Signature sig = EcdsaP256Signature.getInstance(signature.getSignature());
+            r = ASN1OctetString.getInstance(sig.getRSig().getEccp256CurvePoint()).getOctets();
             s = sig.getSSig().getOctets();
         }
         else
         {
-            EcdsaP384Signature sig = EcdsaP384Signature.getInstance(signature.getValue());
-            r = ASN1OctetString.getInstance(sig.getRSig().getValue()).getOctets();
+            EcdsaP384Signature sig = EcdsaP384Signature.getInstance(signature.getSignature());
+            r = ASN1OctetString.getInstance(sig.getRSig().getEccP384CurvePoint()).getOctets();
             s = sig.getSSig().getOctets();
         }
 
@@ -55,19 +55,19 @@ public class ECDSAEncoder
         if (curveID.equals(SECObjectIdentifiers.secp256r1))
         {
             return new Signature(Signature.ecdsaNistP256Signature, new EcdsaP256Signature(
-                new EccP256CurvePoint(EccP256CurvePoint.xOnly, new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
+                new EccP256CurvePoint(EccP256CurvePoint.xonly, new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
                 new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(1)).getValue()))));
         }
         if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
         {
             return new Signature(Signature.ecdsaBrainpoolP256r1Signature, new EcdsaP256Signature(
-                new EccP256CurvePoint(EccP256CurvePoint.xOnly, new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
+                new EccP256CurvePoint(EccP256CurvePoint.xonly, new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
                 new DEROctetString(BigIntegers.asUnsignedByteArray(32, ASN1Integer.getInstance(asn1Sig.getObjectAt(1)).getValue()))));
         }
         if (curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
         {
             return new Signature(Signature.ecdsaBrainpoolP384r1Signature, new EcdsaP384Signature(
-                new EccP384CurvePoint(EccP384CurvePoint.xOnly, new DEROctetString(BigIntegers.asUnsignedByteArray(48, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
+                new EccP384CurvePoint(EccP384CurvePoint.xonly, new DEROctetString(BigIntegers.asUnsignedByteArray(48, ASN1Integer.getInstance(asn1Sig.getObjectAt(0)).getValue()))),
                 new DEROctetString(BigIntegers.asUnsignedByteArray(48, ASN1Integer.getInstance(asn1Sig.getObjectAt(1)).getValue()))));
         }
 

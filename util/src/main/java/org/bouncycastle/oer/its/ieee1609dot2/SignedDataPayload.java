@@ -97,7 +97,7 @@ public class SignedDataPayload
             return this;
         }
 
-        public SignedDataPayload build()
+        public SignedDataPayload createSignedDataPayload()
         {
             return new SignedDataPayload(data, extDataHash);
         }

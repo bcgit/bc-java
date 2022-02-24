@@ -30,13 +30,13 @@ public class RecipientInfo
 
 
     private final int choice;
-    private final ASN1Encodable value;
+    private final ASN1Encodable recipientInfo;
 
 
     public RecipientInfo(int choice, ASN1Encodable value)
     {
         this.choice = choice;
-        this.value = value;
+        this.recipientInfo = value;
     }
 
     private RecipientInfo(ASN1TaggedObject instance)
@@ -45,15 +45,15 @@ public class RecipientInfo
         switch (choice)
         {
         case pskRecipInfo:
-            value = PreSharedKeyRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = PreSharedKeyRecipientInfo.getInstance(instance.getObject());
             break;
         case symmRecipInfo:
-            value = SymmRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = SymmRecipientInfo.getInstance(instance.getObject());
             break;
         case certRecipInfo:
         case signedDataRecipInfo:
         case rekRecipInfo:
-            value = PKRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = PKRecipientInfo.getInstance(instance.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
@@ -81,9 +81,9 @@ public class RecipientInfo
         return choice;
     }
 
-    public ASN1Encodable getValue()
+    public ASN1Encodable getRecipientInfo()
     {
-        return value;
+        return recipientInfo;
     }
 
 
@@ -116,6 +116,6 @@ public class RecipientInfo
     @Override
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERTaggedObject(choice, value);
+        return new DERTaggedObject(choice, recipientInfo);
     }
 }
