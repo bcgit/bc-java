@@ -42,6 +42,11 @@ public class HandshakeType
     public static final short key_update = 24;
     public static final short message_hash = 254;
 
+    /*
+     * RFC 8879 
+     */
+    public static final short compressed_certificate = 25;
+
     public static String getName(short handshakeType)
     {
         switch (handshakeType)
@@ -86,6 +91,8 @@ public class HandshakeType
             return "key_update";
         case message_hash:
             return "message_hash";
+        case compressed_certificate:
+            return "compressed_certificate";
         default:
             return "UNKNOWN";
         }
@@ -120,6 +127,7 @@ public class HandshakeType
         case encrypted_extensions:
         case key_update:
         case message_hash:
+        case compressed_certificate:
             return true;
         default:
             return false;
