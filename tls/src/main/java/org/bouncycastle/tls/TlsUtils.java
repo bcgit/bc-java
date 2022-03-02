@@ -552,6 +552,15 @@ public class TlsUtils
         }
     }
 
+    public static void writeUint16ArrayWithUint8Length(int[] uints, byte[] buf, int offset)
+        throws IOException
+    {
+        int length = 2 * uints.length;
+        checkUint8(length);
+        writeUint8(length, buf, offset);
+        writeUint16Array(uints, buf, offset + 1);
+    }
+
     public static void writeUint16ArrayWithUint16Length(int[] uints, OutputStream output)
         throws IOException
     {
@@ -667,6 +676,29 @@ public class TlsUtils
         return readUint16(buf, 0);
     }
 
+    public static int[] decodeUint16ArrayWithUint8Length(byte[] buf) throws IOException
+    {
+        if (buf == null)
+        {
+            throw new IllegalArgumentException("'buf' cannot be null");
+        }
+
+        int length = readUint8(buf, 0);
+        if (buf.length != (length + 1) || (length & 1) != 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int count = length / 2, pos = 1;
+        int[] uints = new int[count];
+        for (int i = 0; i < count; ++i)
+        {
+            uints[i] = readUint16(buf, pos);
+            pos += 2;
+        }
+        return uints;
+    }
+
     public static long decodeUint32(byte[] buf) throws IOException
     {
         if (buf == null)
@@ -730,6 +762,14 @@ public class TlsUtils
         byte[] encoding = new byte[2];
         writeUint16(uint, encoding, 0);
         return encoding;
+    }
+
+    public static byte[] encodeUint16ArrayWithUint8Length(int[] uints) throws IOException
+    {
+        int length = 2 * uints.length;
+        byte[] result = new byte[1 + length];
+        writeUint16ArrayWithUint8Length(uints, result, 0);
+        return result;
     }
 
     public static byte[] encodeUint16ArrayWithUint16Length(int[] uints) throws IOException
@@ -5738,6 +5778,7 @@ public class TlsUtils
             }
         }
         case ExtensionType.signature_algorithms:
+        case ExtensionType.compress_certificate:
         case ExtensionType.certificate_authorities:
         case ExtensionType.signature_algorithms_cert:
         {
