@@ -105,6 +105,11 @@ public class ExtensionType
     public static final int cached_info = 25;
 
     /*
+     * RFC 8879
+     */
+    public static final int compress_certificate = 27;
+
+    /*
      * RFC 8449
      */
     public static final int record_size_limit = 28;
@@ -189,6 +194,8 @@ public class ExtensionType
             return "token_binding";
         case cached_info:
             return "cached_info";
+        case compress_certificate:
+            return "compress_certificate";
         case record_size_limit:
             return "record_size_limit";
         case session_ticket:
@@ -255,6 +262,7 @@ public class ExtensionType
         case extended_master_secret:
         case token_binding:
         case cached_info:
+        case compress_certificate:
         case record_size_limit:
         case session_ticket:
         case pre_shared_key:
