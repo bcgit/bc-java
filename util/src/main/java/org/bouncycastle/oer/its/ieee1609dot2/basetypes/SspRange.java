@@ -27,8 +27,7 @@ public class SspRange
 
     public static final int opaque = 0;
     public static final int all = 1;
-    public static final int extension = 2;
-    public static final int bitmapSspRange = 3;
+    public static final int bitmapSspRange = 2;
 
     private final int choice;
     private final ASN1Encodable sspRange;
@@ -43,15 +42,6 @@ public class SspRange
         return new SspRange(all, DERNull.INSTANCE);
     }
 
-    public static SspRange extension(ASN1OctetString ext)
-    {
-        return new SspRange(extension, ext);
-    }
-
-    public static SspRange extension(byte[] ext)
-    {
-        return new SspRange(extension, new DEROctetString(ext));
-    }
 
     public static SspRange bitmapSspRange(BitmapSspRange ext)
     {
@@ -66,11 +56,10 @@ public class SspRange
         {
         case opaque:
         case all:
-        case extension:
         case bitmapSspRange:
             break;
         default:
-            throw new IllegalArgumentException("invalid choice value 5");
+            throw new IllegalArgumentException("invalid choice value "+choice);
         }
 
 

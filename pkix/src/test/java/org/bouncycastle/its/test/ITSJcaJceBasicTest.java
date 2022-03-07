@@ -30,26 +30,25 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.its.ieee1609dot2.Certificate;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BitmapSsp;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.EndEntityType;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Hostname;
 import org.bouncycastle.oer.its.ieee1609dot2.IssuerIdentifier;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
 import org.bouncycastle.oer.its.ieee1609dot2.PsidGroupPermissions;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSspRange;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfPsidGroupPermissions;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSspRange;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ServiceSpecificPermissions;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SspRange;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SubjectAssurance;
 import org.bouncycastle.oer.its.ieee1609dot2.SubjectPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BitmapSsp;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Hostname;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSspRange;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSspRange;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ServiceSpecificPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SubjectAssurance;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -131,17 +130,17 @@ public class ITSJcaJceBasicTest
                     SubjectPermissions.explicit(
                         SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
-                                .setPsid(36).setSspRange(SspRange.extension(Hex.decode("0301fffc03ff0003"))).createPsidSspRange())
+                                .setPsid(36).createPsidSspRange())
                             .add(PsidSspRange.builder()
-                                .setPsid(37).setSspRange(SspRange.extension(Hex.decode("0401FFFFFF04FF000000"))).createPsidSspRange())
+                                .setPsid(37).createPsidSspRange())
                             .add(PsidSspRange.builder()
-                                .setPsid(137).setSspRange(SspRange.extension(Hex.decode("0201E002FF1F"))).createPsidSspRange())
+                                .setPsid(137).createPsidSspRange())
                             .add(PsidSspRange.builder()
-                                .setPsid(138).setSspRange(SspRange.extension(Hex.decode("0201C002FF3F"))).createPsidSspRange())
+                                .setPsid(138).createPsidSspRange())
                             .add(PsidSspRange.builder()
-                                .setPsid(139).setSspRange(SspRange.extension(Hex.decode("0601000000FFF806FF0000000007"))).createPsidSspRange())
+                                .setPsid(139).createPsidSspRange())
                             .add(PsidSspRange.builder()
-                                .setPsid(140).setSspRange(SspRange.extension(Hex.decode("0401FFFFE004FF00001F"))).createPsidSspRange())
+                                .setPsid(140).createPsidSspRange())
                             .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
                             .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
                             .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
@@ -161,8 +160,7 @@ public class ITSJcaJceBasicTest
                     .explicit(SequenceOfPsidSspRange.builder()
                         .add(PsidSspRange.builder()
                             .setPsid(623)
-                            .setSspRange(
-                                SspRange.extension(Hex.decode("0201FE02FF01"))).createPsidSspRange())
+                            .createPsidSspRange())
                         .build())
                     )
                 .setMinChainLength(1)
@@ -226,17 +224,17 @@ public class ITSJcaJceBasicTest
                         SubjectPermissions.explicit(
                             SequenceOfPsidSspRange.builder()
                                 .add(PsidSspRange.builder()
-                                    .setPsid(36).setSspRange(SspRange.extension(Hex.decode("0301fffc03ff0003"))).createPsidSspRange())
+                                    .setPsid(36).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(37).setSspRange(SspRange.extension(Hex.decode("0401FFFFFF04FF000000"))).createPsidSspRange())
+                                    .setPsid(37).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(137).setSspRange(SspRange.extension(Hex.decode("0201E002FF1F"))).createPsidSspRange())
+                                    .setPsid(137).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(138).setSspRange(SspRange.extension(Hex.decode("0201C002FF3F"))).createPsidSspRange())
+                                    .setPsid(138).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(139).setSspRange(SspRange.extension(Hex.decode("0601000000FFF806FF0000000007"))).createPsidSspRange())
+                                    .setPsid(139).createPsidSspRange())
                                 .add(PsidSspRange.builder()
-                                    .setPsid(140).setSspRange(SspRange.extension(Hex.decode("0401FFFFE004FF00001F"))).createPsidSspRange())
+                                    .setPsid(140).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(141).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(96).createPsidSspRange())
                                 .add(PsidSspRange.builder().setPsid(97).createPsidSspRange())
@@ -257,8 +255,7 @@ public class ITSJcaJceBasicTest
                         .explicit(SequenceOfPsidSspRange.builder()
                             .add(PsidSspRange.builder()
                                 .setPsid(623)
-                                .setSspRange(
-                                    SspRange.extension(Hex.decode("0201FE02FF01"))).createPsidSspRange())
+                                .createPsidSspRange())
                             .build())
                         )
                     .setMinChainLength(1)

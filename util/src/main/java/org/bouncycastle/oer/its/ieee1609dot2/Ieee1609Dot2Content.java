@@ -28,7 +28,7 @@ public class Ieee1609Dot2Content
     public static final int signedData = 1;
     public static final int encryptedData = 2;
     public static final int signedCertificateRequest = 3;
-    public static final int extension = 4;
+
 
     private final int choice;
     private final ASN1Encodable ieee1609Dot2Content;
@@ -40,7 +40,7 @@ public class Ieee1609Dot2Content
     }
 
 
-    public static Ieee1609Dot2Content unsecuredData(ASN1OctetString value)
+    public static Ieee1609Dot2Content unsecuredData(Opaque value)
     {
         return new Ieee1609Dot2Content(unsecuredData, value);
     }
@@ -60,7 +60,7 @@ public class Ieee1609Dot2Content
         return new Ieee1609Dot2Content(encryptedData, value);
     }
 
-    public static Ieee1609Dot2Content signedCertificateRequest(ASN1OctetString value)
+    public static Ieee1609Dot2Content signedCertificateRequest(Opaque value)
     {
         return new Ieee1609Dot2Content(signedCertificateRequest, value);
     }
@@ -70,15 +70,7 @@ public class Ieee1609Dot2Content
         return new Ieee1609Dot2Content(signedCertificateRequest, new DEROctetString(value));
     }
 
-    public static Ieee1609Dot2Content extension(ASN1OctetString value)
-    {
-        return new Ieee1609Dot2Content(extension, value);
-    }
 
-    public static Ieee1609Dot2Content extension(byte[] value)
-    {
-        return new Ieee1609Dot2Content(extension, new DEROctetString(value));
-    }
 
     private Ieee1609Dot2Content(ASN1TaggedObject to)
     {
@@ -87,8 +79,7 @@ public class Ieee1609Dot2Content
         {
         case unsecuredData:
         case signedCertificateRequest:
-        case extension:
-            ieee1609Dot2Content = ASN1OctetString.getInstance(to.getObject());
+            ieee1609Dot2Content = Opaque.getInstance(to.getObject());
             return;
         case signedData:
             ieee1609Dot2Content = SignedData.getInstance(to.getObject());

@@ -11,8 +11,9 @@ import org.bouncycastle.its.operator.ITSContentVerifierProvider;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OERInputStream;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Signed;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSigned;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
+import org.bouncycastle.oer.its.ieee1609dot2.Opaque;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.template.etsi103097.EtsiTs103097Module;
@@ -24,6 +25,12 @@ public class ETSISignedData
     private final SignedData signedData;
 
     private static final Element oerDef = EtsiTs103097Module.EtsiTs103097Data_Signed.build();
+
+    public ETSISignedData(Opaque opaque)
+        throws IOException
+    {
+        this(opaque.getInputStream());
+    }
 
     public ETSISignedData(byte[] oerEncoded)
         throws IOException
@@ -45,7 +52,7 @@ public class ETSISignedData
         }
         ASN1Encodable asn1 = oerIn.parse(oerDef);
 
-        Ieee1609Dot2Content content = EtsiTs103097Data_Signed.getInstance(asn1).getContent();
+        Ieee1609Dot2Content content = EtsiTs103097DataSigned.getInstance(asn1).getContent();
         if (content.getChoice() != Ieee1609Dot2Content.signedData)
         {
             throw new IllegalStateException("EtsiTs103097Data-Signed did not have signed data content");
@@ -54,7 +61,7 @@ public class ETSISignedData
 
     }
 
-    public ETSISignedData(EtsiTs103097Data_Signed etsiTs103097Data_signed)
+    public ETSISignedData(EtsiTs103097DataSigned etsiTs103097Data_signed)
     {
         Ieee1609Dot2Content content = etsiTs103097Data_signed.getContent();
         if (content.getChoice() != Ieee1609Dot2Content.signedData)
@@ -64,7 +71,7 @@ public class ETSISignedData
         this.signedData = SignedData.getInstance(etsiTs103097Data_signed.getContent());
     }
 
-    ETSISignedData(SignedData signedData)
+    public ETSISignedData(SignedData signedData)
     {
         this.signedData = signedData;
     }
@@ -92,10 +99,14 @@ public class ETSISignedData
 
     public byte[] getEncoded()
     {
-        return OEREncoder.toByteArray(new EtsiTs103097Data_Signed(
+        return OEREncoder.toByteArray(new EtsiTs103097DataSigned(
             Ieee1609Dot2Content
                 .signedData(signedData)
         ), EtsiTs103097Module.EtsiTs103097Data_Signed.build());
     }
 
+    public SignedData getSignedData()
+    {
+        return signedData;
+    }
 }

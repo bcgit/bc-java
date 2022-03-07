@@ -24,9 +24,8 @@ public class HashedData
     implements ASN1Choice
 {
     public static final int sha256HashedData = 0;
-    public static final int extension = 1;
-    public static final int sha384HashedData = 2;
-    public static final int reserved = 3;
+    public static final int sha384HashedData = 1;
+    public static final int reserved = 2;
 
 
     private final int choice;
@@ -43,7 +42,6 @@ public class HashedData
         switch (dto.getTagNo())
         {
         case sha256HashedData:
-        case extension:
         case sha384HashedData:
         case reserved:
             this.choice = dto.getTagNo();
@@ -62,16 +60,6 @@ public class HashedData
     public static HashedData sha256HashedData(byte[] sha256HashedData)
     {
         return new HashedData(HashedData.sha256HashedData,new DEROctetString(sha256HashedData));
-    }
-
-    public static HashedData extension(byte[] extension)
-    {
-        return new HashedData(HashedData.extension,new DEROctetString(extension));
-    }
-
-    public static HashedData extension(ASN1OctetString extension)
-    {
-        return new HashedData(HashedData.extension,extension);
     }
 
     public static HashedData sha384HashedData(ASN1OctetString sha384HashedData)

@@ -8,6 +8,7 @@ public class RegressionTest
     public static Test[] tests = {
         new ExpansionTest(),
         new ExtensionTest(),
+        
     };
 
     public static void main(String[] args)

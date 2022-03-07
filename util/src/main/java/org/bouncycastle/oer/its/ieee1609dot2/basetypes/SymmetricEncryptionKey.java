@@ -20,7 +20,7 @@ public class SymmetricEncryptionKey
     implements ASN1Choice
 {
     public static final int aes128ccm = 0;
-    public static final int extension = 1;
+
 
 
     private final int choice;
@@ -43,10 +43,6 @@ public class SymmetricEncryptionKey
                 throw new IllegalArgumentException("aes128ccm string not 16 bytes");
             }
             this.symmetricEncryptionKey = str;
-        }
-        else if (choice == extension)
-        {
-            this.symmetricEncryptionKey = DEROctetString.getInstance(instance.getObject());
         }
         else
         {
@@ -75,20 +71,12 @@ public class SymmetricEncryptionKey
         return new SymmetricEncryptionKey(aes128ccm, new DEROctetString(octetString));
     }
 
-    public static SymmetricEncryptionKey extension(byte[] octetString)
-    {
-        return new SymmetricEncryptionKey(extension, new DEROctetString(octetString));
-    }
+
 
 
     public static SymmetricEncryptionKey aes128ccm(ASN1OctetString octetString)
     {
         return new SymmetricEncryptionKey(aes128ccm, octetString);
-    }
-
-    public static SymmetricEncryptionKey extension(ASN1OctetString octetString)
-    {
-        return new SymmetricEncryptionKey(extension, octetString);
     }
 
 

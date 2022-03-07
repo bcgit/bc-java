@@ -1,5 +1,7 @@
 package org.bouncycastle.its.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -10,17 +12,29 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.its.ETSIEncryptedData;
 import org.bouncycastle.its.ETSIEncryptedDataBuilder;
 import org.bouncycastle.its.ETSIRecipientID;
 import org.bouncycastle.its.ETSIRecipientInfo;
 import org.bouncycastle.its.ETSIRecipientInfoBuilder;
+import org.bouncycastle.its.ETSISignedData;
 import org.bouncycastle.its.jcajce.JcaETSIDataDecryptor;
 import org.bouncycastle.its.jcajce.JceETSIDataEncryptor;
 import org.bouncycastle.its.jcajce.JceETSIKeyWrapper;
 import org.bouncycastle.its.operator.ETSIDataDecryptor;
 import org.bouncycastle.its.operator.ETSIDataEncryptor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.oer.Element;
+import org.bouncycastle.oer.OERInputStream;
+import org.bouncycastle.oer.OEROutputStream;
+import org.bouncycastle.oer.its.etsi102941.EtsiTs102941Data;
+import org.bouncycastle.oer.its.etsi102941.InnerEcRequest;
+import org.bouncycastle.oer.its.etsi102941.InnerEcRequestSignedForPop;
+import org.bouncycastle.oer.its.ieee1609dot2.Opaque;
+import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941MessagesCa;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesEnrolment;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -30,12 +44,58 @@ public class ETSIEncryptedDataTest
     extends TestCase
 {
 
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
+    }
+
+    public void testSanityWithExtendedSequence()
+        throws Exception
+    {
+
+        byte[] msg = Hex.decode(
+            "01800381004003805d000c455453492d4954532d30303101008083353fbe8fbbb3fb418629340974964cc7be734b12f" +
+                "c3570ed10693a762b60acd87c810c455453492d4954532d3030311d706e598400788301028000fa80017c00010180020" +
+                "26f81030201c04002026f0001c134cfcf5be08280802889cf493cd1e016f16c558248180e5eba3e2f80562218d570fc8" +
+                "1d9d9207b4ca568a7406cbce1937086c27bfd9a5833cbf51e50eea2e5ccaee4e7a83245ea32");
+        OERInputStream i = new OERInputStream(new ByteArrayInputStream(msg));
+        ASN1Encodable ienc = i.parse(EtsiTs102941MessagesCa.EtsiTs102941Data.build());
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OEROutputStream out = new OEROutputStream(bos);
+
+        out.write(ienc, EtsiTs102941MessagesCa.EtsiTs102941Data.build());
+
+        byte[] v = bos.toByteArray();
+        assertTrue(Arrays.areEqual(msg, v));
+
+    }
+
+
+    public void testRoundTripWithChoiceExtension()
+        throws Exception
+    {
+        // Encoding / decoding sanity test using external data that has a choice with
+        // a value selected in the extension list.
+
+        byte[] content = Hex.decode(
+            "000C455453492D4954532D30303101008083353FBE8FBBB3FB418629340974964CC7BE734B12FC3570ED10693A762B60A" +
+                "CD87C810C455453492D4954532D3030311D706E598400788301028000FA80017C0001018002026F81030201C0");
+        OERInputStream in = new OERInputStream(new ByteArrayInputStream(content));
+        Element def = EtsiTs102941TypesEnrolment.InnerEcRequest.build();
+        ASN1Encodable encodable = in.parse(def);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OEROutputStream oerOutputStream = new OEROutputStream(bos);
+        oerOutputStream.write(encodable, def);
+        oerOutputStream.flush();
+        oerOutputStream.close();
+        assertTrue(Arrays.areEqual(content, bos.toByteArray()));
+
     }
 
 
@@ -73,9 +133,52 @@ public class ETSIEncryptedDataTest
             Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")
         ).provider("BC").build();
 
-        info.getContent(dec); // Will fail on bad tag otherwise
+        byte[] content = info.getContent(dec); // Will fail on bad tag otherwise
 
         assertEquals("d311371e8373bea1027e6ae573d6f1dd", Hex.toHexString(dec.getKey()));
+
+        ETSISignedData signedData = new ETSISignedData(content);
+
+        //
+        //
+        // signedData.signatureValid(...)
+
+
+        Opaque value = Opaque.getInstance(
+            signedData
+                .getSignedData()
+                .getTbsData()
+                .getPayload()
+                .getData()
+                .getContent()
+                .getIeee1609Dot2Content());
+
+        EtsiTs102941Data data = Opaque.getValue(EtsiTs102941Data.class, EtsiTs102941MessagesCa.EtsiTs102941Data.build(), value);
+
+        InnerEcRequestSignedForPop innerEcRequestSignedForPop = InnerEcRequestSignedForPop.getInstance(data.getContent().getEtsiTs102941DataContent());
+
+        ETSISignedData innerDataSigned = new ETSISignedData(
+            SignedData.getInstance(
+                innerEcRequestSignedForPop.getContent().getIeee1609Dot2Content()
+            ));
+
+        //
+        //
+        // innerDataSigned.signatureValid(...)
+        //
+
+
+        Opaque innerEcOpaque = Opaque.getInstance(
+            innerDataSigned
+                .getSignedData()
+                .getTbsData()
+                .getPayload()
+                .getData()
+                .getContent()
+                .getIeee1609Dot2Content());
+
+        InnerEcRequest request = Opaque.getValue(InnerEcRequest.class, EtsiTs102941TypesEnrolment.InnerEcRequest.build(), innerEcOpaque);
+        assertTrue(Arrays.areEqual(request.getItsId().getOctets(), Hex.decode("455453492d4954532d303031")));
     }
 
     public void testEncryptionNist()

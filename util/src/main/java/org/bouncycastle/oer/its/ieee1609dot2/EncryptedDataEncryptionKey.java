@@ -22,7 +22,7 @@ public class EncryptedDataEncryptionKey
 {
     public static final int eciesNistP256 = 0;
     public static final int eciesBrainpoolP256r1 = 1;
-    public static final int extension = 2;
+
 
     private final int choice;
     private final ASN1Encodable encryptedDataEncryptionKey;
@@ -41,9 +41,6 @@ public class EncryptedDataEncryptionKey
         case eciesNistP256:
         case eciesBrainpoolP256r1:
             encryptedDataEncryptionKey = EciesP256EncryptedKey.getInstance(ato.getObject());
-            break;
-        case extension:
-            encryptedDataEncryptionKey = ASN1OctetString.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + ato.getTagNo());
@@ -91,9 +88,5 @@ public class EncryptedDataEncryptionKey
         return new EncryptedDataEncryptionKey(eciesBrainpoolP256r1, value);
     }
 
-    public static EncryptedDataEncryptionKey extension(ASN1OctetString value)
-    {
-        return new EncryptedDataEncryptionKey(extension, value);
-    }
 
 }

@@ -131,4 +131,28 @@ public class Duration
     {
         return duration;
     }
+
+    @Override
+    public String toString()
+    {
+        switch (choice)
+        {
+        case microseconds:
+            return duration.value + "uS";
+        case milliseconds:
+            return duration.value + "mS";
+        case seconds:
+            return duration.value + " seconds";
+        case minutes:
+            return duration.value + " minute";
+        case hours:
+            return duration.value + " hours";
+        case sixtyHours:
+            return duration.value + " sixty hours";
+        case years:
+            return duration.value + " years";
+        default:
+            return duration.value + " unknown choice";
+        }
+    }
 }

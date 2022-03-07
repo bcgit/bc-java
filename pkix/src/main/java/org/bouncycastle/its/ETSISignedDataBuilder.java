@@ -14,6 +14,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.HashedData;
 import org.bouncycastle.oer.its.ieee1609dot2.HeaderInfo;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Data;
+import org.bouncycastle.oer.its.ieee1609dot2.Opaque;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.SignedDataPayload;
@@ -68,7 +69,7 @@ public class ETSISignedDataBuilder
         this.data = Ieee1609Dot2Data.builder()
             .setProtocolVersion(new UINT8(3))
             .setContent(Ieee1609Dot2Content
-                .unsecuredData(new DEROctetString(data))).createEtsiTs103097Data();
+                .unsecuredData( new Opaque(data))).createEtsiTs103097Data();
         return this;
     }
 

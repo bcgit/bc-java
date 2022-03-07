@@ -98,4 +98,12 @@ public class ValidityPeriod
             return new ValidityPeriod(start, duration);
         }
     }
+
+    @Override
+    public String toString()
+    {
+        return "ValidityPeriod[" +
+            start +
+            " " + duration+"]";
+    }
 }

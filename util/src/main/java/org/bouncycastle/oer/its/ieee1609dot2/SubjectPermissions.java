@@ -29,7 +29,6 @@ public class SubjectPermissions
 
     public static final int explicit = 0;
     public static final int all = 1;
-    public static final int extension = 2;
 
     private final ASN1Encodable subjectPermissions;
     private final int choice;
@@ -50,10 +49,7 @@ public class SubjectPermissions
         return new SubjectPermissions(all, DERNull.INSTANCE);
     }
 
-    public static SubjectPermissions extension(ASN1OctetString permission)
-    {
-        return new SubjectPermissions(extension, permission);
-    }
+
 
     private SubjectPermissions(ASN1TaggedObject ato)
     {
@@ -66,9 +62,6 @@ public class SubjectPermissions
             break;
         case all:
             subjectPermissions = ASN1Null.getInstance(ato.getObject());
-            break;
-        case extension:
-            subjectPermissions = DEROctetString.getInstance(ato.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);

@@ -17,7 +17,6 @@ public class CertificateType
 {
     public static final CertificateType explicit = new CertificateType(BigInteger.ZERO);
     public static final CertificateType implicit = new CertificateType(BigInteger.ONE);
-    public static final CertificateType extension = new CertificateType(BigIntegers.TWO);
 
     public CertificateType(BigInteger ordinal)
     {
@@ -47,7 +46,7 @@ public class CertificateType
 
     protected void assertValues()
     {
-        if (getValue().compareTo(BigInteger.ZERO) < 0 || getValue().compareTo(BigIntegers.TWO) > 0)
+        if (getValue().compareTo(BigInteger.ZERO) < 0 || getValue().compareTo(BigIntegers.ONE) > 0)
         {
             throw new IllegalArgumentException("invalid enumeration value " + getValue());
         }

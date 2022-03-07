@@ -1,13 +1,14 @@
 package org.bouncycastle.oer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -63,7 +64,7 @@ public class OEROutputStream
             return;
         }
 
-        oerElement = Element.expandDeferredDefinition(oerElement);
+        //oerElement = Element.expandDeferredDefinition(oerElement, );
 
         encodable = encodable.toASN1Primitive();
 
@@ -81,9 +82,32 @@ public class OEROutputStream
             int j = 7;
             int mask = 0;
 
+            //
+            // Does the extension bit in the preamble need to exist and does it need to be set?
+            //
+            boolean extensionDefined = false;
             if (oerElement.isExtensionsInDefinition())
             {
-                if (oerElement.hasPopulatedExtension())
+                for (int t = 0; t < oerElement.getChildren().size(); t++)
+                {
+                    Element e = oerElement.getChildren().get(t);
+                    if (e.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                    {
+                        break; // Can support extensions but doesn't have any defined.
+                    }
+
+                    if ((e.getBlock() > 0 && t < seq.size()))
+                    {
+                        if (!OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                        {
+                            // Can support extensions and one or more have been defined.
+                            extensionDefined = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (extensionDefined)
                 {
                     mask |= bits[j];
                 }
@@ -91,12 +115,32 @@ public class OEROutputStream
             }
 
             //
-            // Write optional bit mask.
+            // Write optional bit mask for block 0.
             //
-
             for (int t = 0; t < oerElement.getChildren().size(); t++)
             {
                 Element childOERDescription = oerElement.getChildren().get(t);
+                if (childOERDescription.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                {
+                    // We don't encode these, they are marker when the possibility of an extension is indicated but no actual extensions
+                    // are defined as yet.
+                    continue;
+                }
+
+                if (childOERDescription.getBlock() > 0)
+                {
+                    // We are heading into extensions now so stop here and write out the values
+                    // for block 0.
+                    break;
+                }
+
+                childOERDescription = Element.expandDeferredDefinition(childOERDescription, oerElement);
+                if (oerElement.getaSwitch() != null)
+                {
+                    childOERDescription = oerElement.getaSwitch().result(new SwitchIndexer.Asn1SequenceIndexer(seq));
+                    childOERDescription = Element.expandDeferredDefinition(childOERDescription, oerElement);
+                }
+
 
                 if (j < 0)
                 {
@@ -104,7 +148,6 @@ public class OEROutputStream
                     j = 7;
                     mask = 0;
                 }
-
 
                 ASN1Encodable asn1EncodableChild = seq.getObjectAt(t);
 
@@ -137,8 +180,6 @@ public class OEROutputStream
                                 mask |= bits[j];
                             }
                         }
-
-
                     }
                     else
                     {
@@ -155,14 +196,28 @@ public class OEROutputStream
             {
                 out.write(mask);
             }
+
+
+            List<Element> childElements = oerElement.getChildren();
             //
-            // Write the values
+            // Write the values for block 0.
             //
-            for (int t = 0; t < oerElement.getChildren().size(); t++)
+            int t;
+            for (t = 0; t < childElements.size(); t++)
             {
-                ASN1Encodable child = seq.getObjectAt(t);
                 Element childOERElement = oerElement.getChildren().get(t);
 
+                if (childOERElement.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                {
+                    continue;
+                }
+
+                if (childOERElement.getBlock() > 0)
+                {
+                    break;
+                }
+
+                ASN1Encodable child = seq.getObjectAt(t);
 
                 if (childOERElement.getaSwitch() != null)
                 {
@@ -177,6 +232,66 @@ public class OEROutputStream
                     }
                 }
                 write(child, childOERElement);
+            }
+
+            //
+            // Extensions.
+            //
+
+            if (extensionDefined)
+            {
+
+                // Form presence bitmap 16.4.3
+                int start = t;
+                ByteArrayOutputStream presensceList = new ByteArrayOutputStream();
+                j = 7;
+                mask = 0;
+                for (int i = start; i < childElements.size(); i++)
+                {
+                    if (j < 0)
+                    {
+                        presensceList.write(mask);
+                        j = 7;
+                        mask = 0;
+                    }
+
+                    if (i < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(i)))
+                    {
+                        mask |= bits[j];
+                    }
+                    else
+                    {
+                        System.out.println();
+                    }
+                    j--;
+                }
+
+                if (j != 7)
+                {
+                    // Write the final set of bits.
+                    presensceList.write(mask);
+                }
+
+                encodeLength(presensceList.size() + 1); // +1 = initial octet
+                if (j == 7)
+                {
+                    write(0);
+                }
+                else
+                {
+                    write(j + 1);
+                }// Initial octet 16.4.2
+                write(presensceList.toByteArray());
+
+                // Open encode the actual values.
+                for (; t < childElements.size(); t++)
+                {
+                    // 16.5.2 Extension Addition Groups are not supported.
+                    if (t < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                    {
+                        writePlainType(seq.getObjectAt(t), childElements.get(t));
+                    }
+                }
             }
             out.flush();
             debugPrint(oerElement.appendLabel(""));
@@ -203,10 +318,12 @@ public class OEROutputStream
             }
 
 
+            Element encodingElement = Element.expandDeferredDefinition(oerElement.getFirstChid(), oerElement);
+
             while (e.hasMoreElements())
             {
                 Object o = e.nextElement();
-                write((ASN1Encodable)o, oerElement.getFirstChid());
+                write((ASN1Encodable)o, encodingElement);
             }
             out.flush();
             debugPrint(oerElement.appendLabel(""));
@@ -274,7 +391,18 @@ public class OEROutputStream
 
             // Save the header.
             bb.writeAndClear(out);
-            write(valueToWrite, oerElement.getChildren().get(tag));
+
+            Element val = oerElement.getChildren().get(tag);
+            val = Element.expandDeferredDefinition(val, oerElement);
+
+            if (val.getBlock() > 0)
+            {
+                writePlainType(valueToWrite, val);
+            }
+            else
+            {
+                write(valueToWrite, val);
+            }
             out.flush();
             break;
         }
@@ -293,7 +421,7 @@ public class OEROutputStream
             for (Iterator it = oerElement.getChildren().iterator(); it.hasNext(); )
             {
                 Element child = (Element)it.next();
-                child = Element.expandDeferredDefinition(child);
+                child = Element.expandDeferredDefinition(child, oerElement);
 
                 //
                 // This by default is canonical OER, see NOTE 1 and NOTE 2, 11.14
@@ -575,6 +703,20 @@ public class OEROutputStream
         throws IOException
     {
         out.write(b);
+    }
+
+
+    public void writePlainType(ASN1Encodable value, Element e)
+        throws IOException
+    {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OEROutputStream oerOutputStream = new OEROutputStream(bos);
+        oerOutputStream.write(value, e);
+        oerOutputStream.flush();
+        oerOutputStream.close();
+
+        encodeLength(bos.size());
+        write(bos.toByteArray());
     }
 
 

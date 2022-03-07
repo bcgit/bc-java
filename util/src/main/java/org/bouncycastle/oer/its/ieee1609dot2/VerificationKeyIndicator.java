@@ -26,7 +26,7 @@ public class VerificationKeyIndicator
 {
     public static final int verificationKey = 0;
     public static final int reconstructionValue = 1;
-    public static final int extension = 2;
+
 
     private final int choice;
     private final ASN1Encodable verificationKeyIndicator;
@@ -48,9 +48,7 @@ public class VerificationKeyIndicator
         case reconstructionValue:
             verificationKeyIndicator = EccP256CurvePoint.getInstance(ato.getObject());
             break;
-        case extension:
-            verificationKeyIndicator = DEROctetString.getInstance(ato.getObject());
-            break;
+
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
 
@@ -67,17 +65,6 @@ public class VerificationKeyIndicator
     {
         return new VerificationKeyIndicator(reconstructionValue, value);
     }
-
-    public static VerificationKeyIndicator extension(ASN1OctetString string)
-    {
-        return new VerificationKeyIndicator(extension, string);
-    }
-
-    public static VerificationKeyIndicator extension(byte[] string)
-    {
-        return new VerificationKeyIndicator(extension, new DEROctetString(string));
-    }
-
 
     public static VerificationKeyIndicator getInstance(Object src)
     {

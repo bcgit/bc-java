@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OEREncoder;
 import org.bouncycastle.oer.OERInputStream;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
 import org.bouncycastle.oer.its.ieee1609dot2.EncryptedData;
 import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
 import org.bouncycastle.oer.its.ieee1609dot2.RecipientInfo;
@@ -44,7 +44,7 @@ public class ETSIEncryptedData
         }
         ASN1Encodable asn1 = oerIn.parse(oerDef);
 
-        Ieee1609Dot2Content content = EtsiTs103097Data_Encrypted.getInstance(asn1).getContent();
+        Ieee1609Dot2Content content = EtsiTs103097DataEncrypted.getInstance(asn1).getContent();
         if (content.getChoice() != Ieee1609Dot2Content.encryptedData)
         {
             throw new IllegalStateException("EtsiTs103097Data-Encrypted did not have encrypted data content");
@@ -59,7 +59,7 @@ public class ETSIEncryptedData
 
     public byte[] getEncoded()
     {
-        return OEREncoder.toByteArray(new EtsiTs103097Data_Encrypted(
+        return OEREncoder.toByteArray(new EtsiTs103097DataEncrypted(
             Ieee1609Dot2Content
                 .encryptedData(encryptedData)
         ), oerDef);

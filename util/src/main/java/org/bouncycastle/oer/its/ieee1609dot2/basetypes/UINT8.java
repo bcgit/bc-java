@@ -46,6 +46,7 @@ public class UINT8
         return null;
     }
 
+
     @Override
     protected void assertLimit()
     {

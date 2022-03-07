@@ -24,8 +24,7 @@ public class PublicVerificationKey
 
     public final static int ecdsaNistP256 = 0;
     public final static int ecdsaBrainpoolP256r1 = 1;
-    public final static int extension = 2;
-    public final static int ecdsaBrainpoolP384r1 = 3;
+    public final static int ecdsaBrainpoolP384r1 = 2;
 
     private final int choice;
     private final ASN1Encodable publicVerificationKey;
@@ -46,9 +45,6 @@ public class PublicVerificationKey
         case ecdsaBrainpoolP256r1:
             publicVerificationKey = EccP256CurvePoint.getInstance(taggedObject.getObject());
             return;
-        case extension:
-            publicVerificationKey = DEROctetString.getInstance(taggedObject.getObject());
-            return;
         case ecdsaBrainpoolP384r1:
             publicVerificationKey = EccP384CurvePoint.getInstance(taggedObject.getObject());
             return;
@@ -66,11 +62,6 @@ public class PublicVerificationKey
     public static PublicVerificationKey ecdsaBrainpoolP256r1(EccP256CurvePoint point)
     {
         return new PublicVerificationKey(ecdsaBrainpoolP256r1, point);
-    }
-
-    public static PublicVerificationKey extension(ASN1OctetString point)
-    {
-        return new PublicVerificationKey(extension, point);
     }
 
     public static PublicVerificationKey ecdsaBrainpoolP384r1(EccP384CurvePoint point)

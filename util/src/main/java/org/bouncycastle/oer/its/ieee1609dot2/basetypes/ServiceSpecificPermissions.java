@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.oer.its.ieee1609dot2.Opaque;
 
 /**
  * ServiceSpecificPermissions ::= CHOICE {
@@ -22,8 +23,7 @@ public class ServiceSpecificPermissions
 {
 
     public static final int opaque = 0;
-    public static final int extension = 1;
-    public static final int bitmapSsp = 2;
+    public static final int bitmapSsp = 1;
 
     private final int choice;
     private final ASN1Encodable serviceSpecificPermissions;
@@ -40,8 +40,7 @@ public class ServiceSpecificPermissions
         switch (choice)
         {
         case opaque:
-        case extension:
-            serviceSpecificPermissions = DEROctetString.getInstance(sto.getObject());
+            serviceSpecificPermissions = Opaque.getInstance(sto.getObject());
             return;
         case bitmapSsp:
             serviceSpecificPermissions = BitmapSsp.getInstance(sto.getObject());
@@ -77,11 +76,6 @@ public class ServiceSpecificPermissions
         return new ServiceSpecificPermissions(opaque, new DEROctetString(octetString));
     }
 
-
-    public static ServiceSpecificPermissions extension(ASN1OctetString octetString)
-    {
-        return new ServiceSpecificPermissions(extension, octetString);
-    }
 
     public static ServiceSpecificPermissions bitmapSsp(BitmapSsp ssp)
     {

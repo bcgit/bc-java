@@ -20,7 +20,6 @@ public class SymmetricCiphertext
     implements ASN1Choice
 {
     public static final int aes128ccm = 0;
-    public static final int extension = 1;
 
     private final int choice;
     private final ASN1Encodable symmetricCiphertext;
@@ -40,9 +39,6 @@ public class SymmetricCiphertext
         case aes128ccm:
             symmetricCiphertext = AesCcmCiphertext.getInstance(ato.getObject());
             break;
-        case extension:
-            symmetricCiphertext = ASN1OctetString.getInstance(ato.getObject());
-            break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -53,15 +49,7 @@ public class SymmetricCiphertext
         return new SymmetricCiphertext(aes128ccm, ciphertext);
     }
 
-    public static SymmetricCiphertext extension(ASN1OctetString ciphertext)
-    {
-        return new SymmetricCiphertext(extension, ciphertext);
-    }
 
-    public static SymmetricCiphertext extension(byte[] ciphertext)
-    {
-        return new SymmetricCiphertext(extension, new DEROctetString(ciphertext));
-    }
 
     public static SymmetricCiphertext getInstance(Object o)
     {
