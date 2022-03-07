@@ -11,8 +11,8 @@ import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSignedExternalPayload
 
 /**
  * EcSignature::= CHOICE {
- * encryptedEcSignature 	EtsiTs103097Data-Encrypted{EtsiTs103097Data-SignedExternalPayload},
- * ecSignature           EtsiTs103097Data-SignedExternalPayload
+ * encryptedEcSignature EtsiTs103097Data-Encrypted{EtsiTs103097Data-SignedExternalPayload},
+ * ecSignature EtsiTs103097Data-SignedExternalPayload
  * }
  */
 public class EcSignature

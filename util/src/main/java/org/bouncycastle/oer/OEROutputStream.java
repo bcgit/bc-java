@@ -259,10 +259,6 @@ public class OEROutputStream
                     {
                         mask |= bits[j];
                     }
-                    else
-                    {
-                        System.out.println();
-                    }
                     j--;
                 }
 

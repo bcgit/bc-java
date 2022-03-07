@@ -155,7 +155,7 @@ public class EtsiTs102941TrustLists
 
     /**
      * CtlCommand ::= CHOICE {
-     * add 	  CtlEntry,
+     * add CtlEntry,
      * delete  CtlDelete,
      * ...
      * }
