@@ -638,6 +638,7 @@ public class OERInputStream
                 throw new EOFException("did not read all bytes of length definition");
             }
 
+            // -DM Hex.toHexString
             debugPrint("Len (Long Form): " + (byteVal & 0x7F) + " actual len: " + Hex.toHexString(lengthInt));
 
             return new LengthInfo(BigIntegers.fromUnsignedByteArray(lengthInt), false);

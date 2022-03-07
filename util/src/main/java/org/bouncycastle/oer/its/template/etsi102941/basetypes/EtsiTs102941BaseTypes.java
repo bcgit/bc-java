@@ -18,11 +18,11 @@ public class EtsiTs102941BaseTypes
 
     /**
      * CertificateSubjectAttributes ::= SEQUENCE {
-     * id 			CertificateId OPTIONAL,
-     * validityPeriod        ValidityPeriod OPTIONAL,
-     * region                GeographicRegion OPTIONAL,
-     * assuranceLevel        SubjectAssurance OPTIONAL,
-     * appPermissions        SequenceOfPsidSsp OPTIONAL,
+     * id                   CertificateId OPTIONAL,
+     * validityPeriod       ValidityPeriod OPTIONAL,
+     * region               GeographicRegion OPTIONAL,
+     * assuranceLevel       SubjectAssurance OPTIONAL,
+     * appPermissions       SequenceOfPsidSsp OPTIONAL,
      * certIssuePermissions  SequenceOfPsidGroupPermissions OPTIONAL,
      * ...
      * }(WITH COMPONENTS { ..., appPermissions PRESENT} |
@@ -42,8 +42,8 @@ public class EtsiTs102941BaseTypes
 
     /**
      * EcSignature::= CHOICE {
-     * encryptedEcSignature 	EtsiTs103097Data-Encrypted{EtsiTs103097Data-SignedExternalPayload},
-     * ecSignature           EtsiTs103097Data-SignedExternalPayload
+     * encryptedEcSignature EtsiTs103097Data-Encrypted{EtsiTs103097Data-SignedExternalPayload},
+     * ecSignature   EtsiTs103097Data-SignedExternalPayload
      * }
      */
     public static final OERDefinition.Builder EcSignature = OERDefinition.choice(
@@ -53,8 +53,8 @@ public class EtsiTs102941BaseTypes
 
     /**
      * PublicKeys ::= SEQUENCE {
-     * verificationKey       PublicVerificationKey,
-     * encryptionKey         PublicEncryptionKey OPTIONAL
+     * verificationKey PublicVerificationKey,
+     * encryptionKey   PublicEncryptionKey OPTIONAL
      * }
      */
     public static final OERDefinition.Builder PublicKeys = OERDefinition.seq(
