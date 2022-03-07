@@ -20,6 +20,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_certificate_authorities = Integers.valueOf(ExtensionType.certificate_authorities);
     public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
     public static final Integer EXT_client_certificate_url = Integers.valueOf(ExtensionType.client_certificate_url);
+    public static final Integer EXT_compress_certificate = Integers.valueOf(ExtensionType.compress_certificate);
     public static final Integer EXT_cookie = Integers.valueOf(ExtensionType.cookie);
     public static final Integer EXT_early_data = Integers.valueOf(ExtensionType.early_data);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
@@ -83,6 +84,11 @@ public class TlsExtensionsUtils
     public static void addClientCertificateURLExtension(Hashtable extensions)
     {
         extensions.put(EXT_client_certificate_url, createClientCertificateURLExtension());
+    }
+
+    public static void addCompressCertificateExtension(Hashtable extensions, int[] algorithms) throws IOException
+    {
+        extensions.put(EXT_compress_certificate, createCompressCertificateExtension(algorithms));
     }
 
     public static void addCookieExtension(Hashtable extensions, byte[] cookie) throws IOException
@@ -303,6 +309,13 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_type);
         return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
+    }
+
+    public static int[] getCompressCertificateExtension(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_compress_certificate);
+        return extensionData == null ? null : readCompressCertificateExtension(extensionData);
     }
 
     public static byte[] getCookieExtension(Hashtable extensions)
@@ -597,6 +610,16 @@ public class TlsExtensionsUtils
     public static byte[] createClientCertificateURLExtension()
     {
         return createEmptyExtensionData();
+    }
+
+    public static byte[] createCompressCertificateExtension(int[] algorithms) throws IOException
+    {
+        if (TlsUtils.isNullOrEmpty(algorithms) || algorithms.length > 127)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return TlsUtils.encodeUint16ArrayWithUint8Length(algorithms);
     }
 
     public static byte[] createCookieExtension(byte[] cookie) throws IOException
@@ -1042,6 +1065,16 @@ public class TlsExtensionsUtils
     public static boolean readClientCertificateURLExtension(byte[] extensionData) throws IOException
     {
         return readEmptyExtensionData(extensionData);
+    }
+
+    public static int[] readCompressCertificateExtension(byte[] extensionData) throws IOException
+    {
+        int[] algorithms = TlsUtils.decodeUint16ArrayWithUint8Length(extensionData);
+        if (algorithms.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return algorithms;
     }
 
     public static byte[] readCookieExtension(byte[] extensionData) throws IOException
