@@ -132,6 +132,13 @@ class ProvAlgorithmChecker
         return null;
     }
 
+    // required for Java 7 and earlier.
+    public void check(Certificate cert)
+        throws CertPathValidatorException
+    {
+        this.check(cert, Collections.<String>emptySet());
+    }
+    
     @Override
     public void check(Certificate cert, Collection<String> unresolvedCritExts) throws CertPathValidatorException
     {
