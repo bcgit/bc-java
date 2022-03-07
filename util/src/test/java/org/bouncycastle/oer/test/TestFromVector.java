@@ -5,8 +5,7 @@ import java.io.ByteArrayInputStream;
 
 import junit.framework.TestCase;
 import org.bouncycastle.oer.OERInputStream;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted;
-import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Data;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -29,7 +28,7 @@ public class TestFromVector extends TestCase
 
         OERInputStream in = new OERInputStream(new ByteArrayInputStream(item));
 
-        EtsiTs103097Data_Encrypted data =  EtsiTs103097Data_Encrypted.getInstance(in.parse(IEEE1609dot2.Ieee1609Dot2Data.build()));
+        EtsiTs103097DataEncrypted data = EtsiTs103097DataEncrypted.getInstance(in.parse(IEEE1609dot2.Ieee1609Dot2Data.build()));
 
         System.out.println();
 

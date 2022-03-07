@@ -25,6 +25,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.ContributedExtensionBlock;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.GroupLinkageValue;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point256;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point384;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941MessagesCa;
 import org.bouncycastle.oer.its.template.etsi103097.EtsiTs103097Module;
 import org.bouncycastle.oer.its.template.etsi103097.extension.EtsiTs103097ExtensionModule;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
@@ -56,6 +57,8 @@ public class TestBuilders
         HashMap<String, String[]> typeMapFlat = new HashMap<String, String[]>();
         {
             List<Field> items = extractFields(
+                EtsiTs102941MessagesCa.class,
+
                 Ieee1609Dot2Dot1EcaEeInterface.class,
                 Ieee1609Dot2Dot1EeRaInterface.class,
                 EtsiTs103097ExtensionModule.class,
@@ -67,7 +70,8 @@ public class TestBuilders
                 OERDefinition.Builder builder = (OERDefinition.Builder)f.get(null);
                 Element def = builder.build();
 
-                String name = getTypeName(f, null);
+
+                String name = getTypeName(f, def.getTypeName());
                 if (typeMapFlat.containsKey(f.getName()))
                 {
                     // If it is here then we probably have a duplicate definition for the same thing.
@@ -137,7 +141,7 @@ public class TestBuilders
             //
             // Resolve upper level class.
             //
-            String name = f.getName();
+            String name = def.getTypeName(); //  f.getName();
             String pack = f.getDeclaringClass().getPackage().getName();
             pack = pack.replace("template.", "");
             String upperLevelClassName = (pack + "." + name).replace("/", ".");
@@ -248,6 +252,15 @@ public class TestBuilders
 
                 for (Element option : def.getChildren())
                 {
+                    //
+                    // EXTENSTION is used as a marker when the type defines the possibility of an extension
+                    // but does not actually define any extensions.
+                    //
+                    if (option.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                    {
+                        continue;
+                    }
+
                     Field field = null;
                     Class target = upperLevelClass;
                     do

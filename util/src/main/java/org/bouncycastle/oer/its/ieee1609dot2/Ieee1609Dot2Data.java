@@ -8,12 +8,13 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ItsUtils;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Encrypted_Unicast;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Signed;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_SignedAndEncrypted;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_SignedExternalPayload;
-import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data_Unsecured;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncryptedUnicast;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSigned;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSignedAndEncrypted;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSignedAndEncryptedUnicast;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataSignedExternalPayload;
+import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataUnsecured;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 
 /**
@@ -115,35 +116,43 @@ public class Ieee1609Dot2Data
             return new EtsiTs103097Data(protocolVersion, content);
         }
 
-        public EtsiTs103097Data_Unsecured createEtsiTs103097Data_Unsecured()
+
+        public EtsiTs103097DataSigned createEtsiTs103097DataSigned()
         {
-            return new EtsiTs103097Data_Unsecured(content);
+            return new EtsiTs103097DataSigned(content);
         }
 
-        public EtsiTs103097Data_Signed createEtsiTs103097Data_Signed()
+        public EtsiTs103097DataSignedExternalPayload createEtsiTs103097DataSignedExternalPayload()
         {
-            return new EtsiTs103097Data_Signed(content);
+            return new EtsiTs103097DataSignedExternalPayload(content);
         }
 
-        public EtsiTs103097Data_SignedExternalPayload createEtsiTs103097Data_SignedExternalPayload()
+        public EtsiTs103097DataEncrypted createEtsiTs103097DataEncrypted()
         {
-            return new EtsiTs103097Data_SignedExternalPayload(content);
+            return new EtsiTs103097DataEncrypted(content);
         }
 
-        public EtsiTs103097Data_Encrypted createEtsiTs103097Data_Encrypted()
+        public EtsiTs103097DataSignedAndEncrypted createEtsiTs103097DataSignedAndEncrypted()
         {
-            return new EtsiTs103097Data_Encrypted(content);
+            return new EtsiTs103097DataSignedAndEncrypted(content);
         }
 
-        public EtsiTs103097Data_SignedAndEncrypted createEtsiTs103097Data_SignedAndEncrypted()
+        public EtsiTs103097DataEncryptedUnicast createEtsiTs103097DataEncryptedUnicast()
         {
-            return new EtsiTs103097Data_SignedAndEncrypted(content);
+            return new EtsiTs103097DataEncryptedUnicast(content);
         }
 
-        public EtsiTs103097Data_Encrypted_Unicast createEtsiTs103097Data_Encrypted_Unicast()
+        public EtsiTs103097DataSignedAndEncryptedUnicast createEtsiTs103097DataSignedAndEncryptedUnicast()
         {
-            return new EtsiTs103097Data_Encrypted_Unicast(content);
+            return new EtsiTs103097DataSignedAndEncryptedUnicast(content);
         }
+
+        public EtsiTs103097DataUnsecured createEtsiTs103097DataUnsecured()
+        {
+            return new EtsiTs103097DataUnsecured(content);
+        }
+
+
     }
 
 }

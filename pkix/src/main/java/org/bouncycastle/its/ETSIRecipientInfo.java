@@ -59,7 +59,7 @@ public class ETSIRecipientInfo
         // [ephemeral public key][encrypted key][tag]
         byte[] wrappedKey = Arrays.concatenate(point.getEncodedPoint(), key.getC().getOctets(), key.getT().getOctets());
 
-        return ddec.decrypt(wrappedKey, act.getCcmCiphertext().getOctets(), act.getNonce().getOctets());
+        return ddec.decrypt(wrappedKey, act.getCcmCiphertext().getContent(), act.getNonce().getOctets());
     }
 
 

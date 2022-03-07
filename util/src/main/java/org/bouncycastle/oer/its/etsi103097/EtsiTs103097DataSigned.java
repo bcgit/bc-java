@@ -20,28 +20,28 @@ import org.bouncycastle.oer.its.ieee1609dot2.Ieee1609Dot2Content;
  * })
  * })
  */
-public class EtsiTs103097Data_Signed
+public class EtsiTs103097DataSigned
     extends EtsiTs103097Data
 {
-    public EtsiTs103097Data_Signed(Ieee1609Dot2Content content)
+    public EtsiTs103097DataSigned(Ieee1609Dot2Content content)
     {
         super(content);
     }
 
-    protected EtsiTs103097Data_Signed(ASN1Sequence src)
+    protected EtsiTs103097DataSigned(ASN1Sequence src)
     {
         super(src);
     }
 
-    public static EtsiTs103097Data_Signed getInstance(Object o)
+    public static EtsiTs103097DataSigned getInstance(Object o)
     {
-        if (o instanceof EtsiTs103097Data_Signed)
+        if (o instanceof EtsiTs103097DataSigned)
         {
-            return (EtsiTs103097Data_Signed)o;
+            return (EtsiTs103097DataSigned)o;
         }
         if (o != null)
         {
-            return new EtsiTs103097Data_Signed(ASN1Sequence.getInstance(o));
+            return new EtsiTs103097DataSigned(ASN1Sequence.getInstance(o));
         }
         return null;
     }

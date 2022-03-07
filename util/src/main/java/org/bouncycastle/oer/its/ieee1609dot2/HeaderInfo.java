@@ -51,9 +51,9 @@ public class HeaderInfo
 
     private HeaderInfo(ASN1Sequence sequence)
     {
-        if (sequence.size() != 11)
+        if (sequence.size() != 11 && sequence.size() != 7)
         {
-            throw new IllegalArgumentException("expected sequence size of 11");
+            throw new IllegalArgumentException("expected sequence size of 11 or 7");
         }
 
         Iterator<ASN1Encodable> it = sequence.iterator();
@@ -65,11 +65,20 @@ public class HeaderInfo
         p2pcdLearningRequest = OEROptional.getValue(HashedId3.class, it.next());
         missingCrlIdentifier = OEROptional.getValue(MissingCrlIdentifier.class, it.next());
         encryptionKey = OEROptional.getValue(EncryptionKey.class, it.next());
-        inlineP2pcdRequest = OEROptional.getValue(SequenceOfHashedId3.class, it.next());
-        requestedCertificate = OEROptional.getValue(Certificate.class, it.next());
-        pduFunctionalType = OEROptional.getValue(PduFunctionalType.class, it.next());
-        contributedExtensions = OEROptional.getValue(ContributedExtensionBlocks.class, it.next());
-
+        if (sequence.size() > 7)
+        {
+            inlineP2pcdRequest = OEROptional.getValue(SequenceOfHashedId3.class, it.next());
+            requestedCertificate = OEROptional.getValue(Certificate.class, it.next());
+            pduFunctionalType = OEROptional.getValue(PduFunctionalType.class, it.next());
+            contributedExtensions = OEROptional.getValue(ContributedExtensionBlocks.class, it.next());
+        }
+        else
+        {
+            inlineP2pcdRequest = null;
+            requestedCertificate = null;
+            pduFunctionalType = null;
+            contributedExtensions = null;
+        }
     }
 
     /**

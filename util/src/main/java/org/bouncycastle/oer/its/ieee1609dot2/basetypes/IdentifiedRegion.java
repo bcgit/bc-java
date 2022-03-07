@@ -26,7 +26,6 @@ public class IdentifiedRegion
     public static final int countryOnly = 0;
     public static final int countryAndRegions = 1;
     public static final int countryAndSubregions = 2;
-    public static final int extension = 3;
 
     private final int choice;
     private final ASN1Encodable identifiedRegion;
@@ -52,9 +51,6 @@ public class IdentifiedRegion
         case countryAndSubregions:
             identifiedRegion = CountryAndSubregions.getInstance(ato.getObject());
             break;
-        case extension:
-            identifiedRegion = DEROctetString.getInstance(ato.getObject());
-            break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -75,10 +71,6 @@ public class IdentifiedRegion
         return new IdentifiedRegion(IdentifiedRegion.countryAndSubregions, countryAndSubregions);
     }
 
-    public static IdentifiedRegion extension(ASN1OctetString value)
-    {
-        return new IdentifiedRegion(IdentifiedRegion.extension, value);
-    }
 
     public static IdentifiedRegion getInstance(Object o)
     {

@@ -1,6 +1,7 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
 import java.math.BigInteger;
+import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Integer;
 
@@ -65,4 +66,9 @@ public class Time32
         return (getValue().longValue() * 1000L) + etsiEpochMillis;
     }
 
+    @Override
+    public String toString()
+    {
+        return new Date(toUnixMillis()).toString();
+    }
 }

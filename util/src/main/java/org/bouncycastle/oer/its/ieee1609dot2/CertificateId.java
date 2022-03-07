@@ -30,7 +30,6 @@ public class CertificateId
     public static final int name = 1;
     public static final int binaryId = 2;
     public static final int none = 3;
-    public static final int extension = 4;
 
     private final int choice;
     private final ASN1Encodable certificateId;
@@ -58,9 +57,7 @@ public class CertificateId
         case none:
             certificateId = ASN1Null.getInstance(asn1TaggedObject.getObject());
             break;
-        case extension:
-            certificateId = DEROctetString.getInstance(asn1TaggedObject.getObject());
-            break;
+
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -89,16 +86,6 @@ public class CertificateId
     public static CertificateId none()
     {
         return new CertificateId(CertificateId.none, DERNull.INSTANCE);
-    }
-
-    public static CertificateId extension(ASN1OctetString stream)
-    {
-        return new CertificateId(CertificateId.extension, stream);
-    }
-
-    public static CertificateId extension(byte[] stream)
-    {
-        return new CertificateId(CertificateId.extension, new DEROctetString(stream));
     }
 
     public static CertificateId getInstance(Object o)

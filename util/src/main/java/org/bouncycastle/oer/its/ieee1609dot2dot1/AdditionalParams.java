@@ -5,7 +5,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 
@@ -27,7 +26,7 @@ public class AdditionalParams
     public static final int unified = 1;
     public static final int compactUnified = 2;
     public static final int encryptionKey = 3;
-    public static final int extension = 4;
+
 
     protected final int choice;
     protected final ASN1Encodable additionalParams;
@@ -47,9 +46,7 @@ public class AdditionalParams
         case encryptionKey:
             this.additionalParams = PublicEncryptionKey.getInstance(additionalParams);
             break;
-        case extension:
-            this.additionalParams = DEROctetString.getInstance(additionalParams);
-            break;
+
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -97,12 +94,6 @@ public class AdditionalParams
     {
         return new AdditionalParams(encryptionKey, pek);
     }
-
-    public static AdditionalParams extension(DEROctetString st)
-    {
-        return new AdditionalParams(extension, st);
-    }
-
 
     public int getChoice()
     {

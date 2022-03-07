@@ -30,7 +30,7 @@ public class OERExpander
 {
 
 
-    public static Map<Element, Set<Element>> choiceOptionsAlreadySelected = new HashMap<Element, Set<Element>>();
+    public static Map<String, Set<String>> choiceOptionsAlreadySelected = new HashMap<String, Set<String>>();
     private int depth;
     private int maxDepth = 20;
 
@@ -79,7 +79,7 @@ public class OERExpander
 
 
             // Deal with deferred definitions.
-            e = Element.expandDeferredDefinition(e);
+            e = Element.expandDeferredDefinition(e, null); // TODO fix
 
             switch (e.getBaseType())
             {
@@ -146,7 +146,7 @@ public class OERExpander
             this.def = def;
         }
 
-        @Override
+
         public boolean isFinished(int tick)
         {
             if (lastPopulate == null)
@@ -156,7 +156,6 @@ public class OERExpander
             return lastPopulate.isFinished(tick);
         }
 
-        @Override
         public ASN1Encodable populate(int tick, final ASN1Encodable[] priorValues)
         {
             ArrayOfAsn1 key = new ArrayOfAsn1(priorValues);
@@ -166,7 +165,7 @@ public class OERExpander
             {
                 lastPopulate = makePopulate(def.getaSwitch().result(new SwitchIndexer()
                 {
-                    @Override
+
                     public ASN1Encodable get(int index)
                     {
                         return priorValues[index];
@@ -202,7 +201,6 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             for (Populate p : script)
@@ -216,7 +214,6 @@ public class OERExpander
             return true;
         }
 
-        @Override
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
 
@@ -236,7 +233,6 @@ public class OERExpander
         implements Populate
     {
 
-        @Override
         public String toString()
         {
             return "ChoicePopulate{" +
@@ -258,19 +254,24 @@ public class OERExpander
             for (int choice = 0; choice < children.size(); choice++)
             {
                 Element e = children.get(choice);
-                e = Element.expandDeferredDefinition(e);
+                if (e.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                {
+                    continue;
+                }
+
+                e = Element.expandDeferredDefinition(e, def);
 
                 if (e.isMayRecurse())
                 {
-                    if (!choiceOptionsAlreadySelected.containsKey(def))
+                    if (!choiceOptionsAlreadySelected.containsKey(def.toString()))
                     {
-                        HashSet<Element> set = new HashSet<Element>();
-                        set.add(e);
-                        choiceOptionsAlreadySelected.put(def, set);
+                        HashSet<String> set = new HashSet<String>();
+                        set.add(e.toString());
+                        choiceOptionsAlreadySelected.put(def.toString(), set);
                     }
                     else
                     {
-                        if (choiceOptionsAlreadySelected.get(def).contains(e))
+                        if (choiceOptionsAlreadySelected.get(def.toString()).contains(e.toString()))
                         {
                             continue;
                         }
@@ -292,7 +293,6 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             for (Populate p : script)
@@ -306,7 +306,7 @@ public class OERExpander
             return cnt == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (cnt >= script.size())
@@ -341,18 +341,22 @@ public class OERExpander
             {
                 for (Element e : def.getChildren())
                 {
+                    if (e.getBaseType() == OERDefinition.BaseType.EXTENSION)
+                    {
+                        continue;
+                    }
                     script.add(new ASN1Enumerated(i++));
                 }
             }
         }
 
-        @Override
+
         public boolean isFinished(int tick)
         {
             return cnt >= script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (cnt > script.size() - 1)
@@ -393,7 +397,6 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             for (Populate p : script)
@@ -407,7 +410,7 @@ public class OERExpander
             return cnt == 1;
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (cnt > 0)
@@ -539,13 +542,12 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             return cnt == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (cnt >= script.size())
@@ -592,13 +594,12 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             return ctr == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (ctr > script.size() - 1)
@@ -626,13 +627,13 @@ public class OERExpander
 
         }
 
-        @Override
+
         public boolean isFinished(int tick)
         {
             return ctr == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (ctr > script.size() - 1)
@@ -692,13 +693,13 @@ public class OERExpander
 
         }
 
-        @Override
+
         public boolean isFinished(int tick)
         {
             return ctr == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (ctr >= script.size())
@@ -729,13 +730,12 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             return ctr == script.size();
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (ctr >= script.size())
@@ -760,13 +760,12 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             return true;
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             return DERNull.INSTANCE;
@@ -788,13 +787,12 @@ public class OERExpander
         }
 
 
-        @Override
         public boolean isFinished(int tick)
         {
             return true;
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             return value;
@@ -817,13 +815,13 @@ public class OERExpander
             this.source = source;
         }
 
-        @Override
+
         public boolean isFinished(int tick)
         {
             return source.isFinished(tick) && ctr == 2;
         }
 
-        @Override
+
         public ASN1Encodable populate(int tick, ASN1Encodable[] priorValues)
         {
             if (ctr == 2)
@@ -862,7 +860,7 @@ public class OERExpander
             }
         }
 
-        @Override
+
         public boolean equals(Object o)
         {
             if (this == o)
@@ -880,7 +878,7 @@ public class OERExpander
             return z;
         }
 
-        @Override
+
         public int hashCode()
         {
             return Arrays.hashCode(values);

@@ -229,8 +229,9 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder Signature = OERDefinition.choice(
         EcdsaP256Signature.label("ecdsaNistP256Signature"),
         EcdsaP256Signature.label("ecdsaBrainpoolP256r1Signature"),
-        OERDefinition.extension().label("extension"),
-        EcdsaP384Signature.label("ecdsaBrainpoolP384r1Signature")
+        OERDefinition.extension(
+            EcdsaP384Signature.label("ecdsaBrainpoolP384r1Signature")
+        )
     ).typeName("Signature");
     /**
      * SymmAlgorithm ::= ENUMERATED {
@@ -251,8 +252,9 @@ public class Ieee1609Dot2BaseTypes
      */
     public static final OERDefinition.Builder HashAlgorithm = OERDefinition.enumeration(
         OERDefinition.enumItem("sha256"),
-        OERDefinition.extension(),
-        OERDefinition.enumItem("sha384")).typeName("HashAlgorithm");
+        OERDefinition.extension(
+            OERDefinition.enumItem("sha384")
+        )).typeName("HashAlgorithm");
     /**
      * EciesP256EncryptedKey ::= SEQUENCE {
      * v  EccP256CurvePoint,
@@ -276,7 +278,8 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder BasePublicEncryptionKey = OERDefinition.choice(
         EccP256CurvePoint.label("eciesNistP256"),
         EccP256CurvePoint.label("eciesBrainpoolP256r1"),
-        OERDefinition.extension().label("extension")).typeName("BasePublicEncryptionKey");
+        OERDefinition.extension()
+    ).typeName("BasePublicEncryptionKey");
 
     /**
      * SymmetricEncryptionKey ::= CHOICE {
@@ -321,8 +324,8 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder PublicVerificationKey = OERDefinition.choice(
         EccP256CurvePoint.label("ecdsaNistP256"),
         EccP256CurvePoint.label("ecdsaBrainpoolP256r1"),
-        OERDefinition.extension(),
-        EccP384CurvePoint.label("ecdsaBrainpoolP384r1")).typeName("PublicVerificationKey");
+        OERDefinition.extension(
+            EccP384CurvePoint.label("ecdsaBrainpoolP384r1"))).typeName("PublicVerificationKey");
     /**
      * Psid ::= INTEGER (0..MAX)
      */
@@ -340,8 +343,9 @@ public class Ieee1609Dot2BaseTypes
      */
     public static final OERDefinition.Builder ServiceSpecificPermissions = OERDefinition.choice(
         OERDefinition.octets().unbounded().label("opaque"),
-        OERDefinition.extension(),
-        BitmapSsp).typeName("ServiceSpecificPermissions");
+        OERDefinition.extension(
+            BitmapSsp)
+    ).typeName("ServiceSpecificPermissions");
     /**
      * PsidSsp ::= SEQUENCE {
      * psid  Psid,
@@ -387,8 +391,9 @@ public class Ieee1609Dot2BaseTypes
     public static final OERDefinition.Builder SspRange = OERDefinition.choice(
         SequenceOfOctetString.label("opaque"),
         OERDefinition.nullValue().label("all"),
-        OERDefinition.extension(),
-        BitmapSspRange.label("bitmapSspRange")).typeName("SspRange");
+        OERDefinition.extension(
+            BitmapSspRange.label("bitmapSspRange")
+        )).typeName("SspRange");
     /**
      * PsidSspRange ::= SEQUENCE {
      * psid      Psid,
@@ -469,7 +474,8 @@ public class Ieee1609Dot2BaseTypes
         CountryOnly.label("countryOnly"),
         CountryAndRegions.label("countryAndRegions"),
         CountryAndSubregions.label("countryAndSubregions"),
-        OERDefinition.extension()).typeName("IdentifiedRegion");
+        OERDefinition.extension()
+    ).typeName("IdentifiedRegion");
 
     /**
      * SequenceOfIdentifiedRegion ::= SEQUENCE OF IdentifiedRegion
@@ -563,6 +569,6 @@ public class Ieee1609Dot2BaseTypes
         SequenceOfRectangularRegion.label("rectangularRegion"),
         PolygonalRegion.label("polygonalRegion"),
         SequenceOfIdentifiedRegion.label("identifiedRegion"),
-        OERDefinition.extension().label("extension")
+        OERDefinition.extension()
     ).typeName("GeographicRegion");
 }

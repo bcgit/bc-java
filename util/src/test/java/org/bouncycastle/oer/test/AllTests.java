@@ -35,6 +35,7 @@ public class AllTests
         
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(TestBuilders.class);
+        suite.addTestSuite(OERExtensionTest.class);
         
         return new BCTestSetup(suite);
     }
