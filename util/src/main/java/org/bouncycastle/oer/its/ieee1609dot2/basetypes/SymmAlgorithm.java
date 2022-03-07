@@ -15,7 +15,6 @@ public class SymmAlgorithm
     extends ASN1Enumerated
 {
     public static final SymmAlgorithm aes128Ccm = new SymmAlgorithm(BigInteger.ZERO);
-    public static final SymmAlgorithm extension = new SymmAlgorithm(BigInteger.ONE);
 
     public SymmAlgorithm(BigInteger ordinal)
     {
@@ -34,7 +33,6 @@ public class SymmAlgorithm
         switch (BigIntegers.intValueExact(getValue()))
         {
         case 0:
-        case 1:
             return;
         }
         throw new IllegalArgumentException("invalid enumeration value " + getValue());

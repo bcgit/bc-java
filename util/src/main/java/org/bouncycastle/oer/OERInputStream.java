@@ -1,6 +1,7 @@
 package org.bouncycastle.oer;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -31,9 +33,11 @@ public class OERInputStream
 {
 
     private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
+    private static final int[] bitsR = new int[]{128, 64, 32, 16, 8, 4, 2, 1};
     protected PrintWriter debugOutput = null;
-
     private int maxByteAllocation = 1024 * 1024;
+    protected PrintWriter debugStream = null;
+
 
     /**
      * Root decoder of OER streaming data.
@@ -58,6 +62,22 @@ public class OERInputStream
         this.maxByteAllocation = maxByteAllocation;
     }
 
+    /**
+     * Decode byte array.
+     *
+     * @param src     The src
+     * @param element The definition
+     * @return Asn1Encodable instance
+     * @throws IOException
+     */
+    public static ASN1Encodable parse(byte[] src, Element element)
+        throws IOException
+    {
+        OERInputStream in = new OERInputStream(new ByteArrayInputStream(src));
+        return in.parse(element);
+    }
+
+
     private int countOptionalChildTypes(Element element)
     {
         int optionalElements = 0;
@@ -74,14 +94,19 @@ public class OERInputStream
         throws IOException
     {
 
+
         switch (element.getBaseType())
         {
+
+        case OPAQUE:
+            ElementSupplier es = element.resolveSupplier();
+            return parse(new Element(es.build(), element));
 
         case Switch:
             throw new IllegalStateException("A switch element should only be found within a sequence.");
 
         case Supplier:
-            return parse(element.getElementSupplier().build());
+            return parse(new Element(element.getElementSupplier().build(), element));
 
         case SEQ_OF:
         {
@@ -101,7 +126,7 @@ public class OERInputStream
             int j = BigIntegers.fromUnsignedByteArray(lenEnc).intValue();
 
 
-            debugPrint(element.appendLabel("(len = " + j + ")"));
+            debugPrint(element + ("(len = " + j + ")"));
 
             ASN1EncodableVector avec = new ASN1EncodableVector();
 
@@ -112,7 +137,7 @@ public class OERInputStream
 
             for (int n = 0; n < j; n++)
             {
-                Element def = Element.expandDeferredDefinition(element.getChildren().get(0));
+                Element def = Element.expandDeferredDefinition(element.getChildren().get(0), element);
                 avec.add(parse(def));
             }
             return new DERSequence(avec);
@@ -120,50 +145,74 @@ public class OERInputStream
 
         case SEQ:
         {
-            Sequence sequence = sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.isExtensionsInDefinition());
-            debugPrint(element.appendLabel(sequence.toString()));
-
+            Sequence sequence = new Sequence(in, element);//  sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.isExtensionsInDefinition());
+            debugPrint(element + (sequence.toString()));
             ASN1EncodableVector avec = new ASN1EncodableVector();
+            List<Element> children = element.getChildren();
+            int t = 0;
 
-            for (int t = 0; t < element.getChildren().size(); t++)
+            //
+            // Read root block of sequence.
+            //
+            int optionalPos = 0;
+            for (t = 0; t < children.size(); t++)
             {
-                Element child = element.getChildren().get(t);
-                child = Element.expandDeferredDefinition(child);
+                Element child = children.get(t);
 
-                if (child.isExplicit())
+                if (child.getBaseType() == OERDefinition.BaseType.EXTENSION)
                 {
-//                    debugPrint(child.appendLabel("E[" + t + "]"));
+                    // We don't encode these, they are marker when the possibility of an extension is indicated but no actual extensions
+                    // are defined as yet.
+                    continue;
+                }
 
-                    if (child.getaSwitch() != null)
+                if (child.getBlock() > 0)
+                {
+                    // We have exited the root block, so we need to break this loop.
+                    break;
+                }
+
+                child = Element.expandDeferredDefinition(child, element);
+
+                Element resolvedChild;
+                if (child.getaSwitch() != null)
+                {
+                    resolvedChild = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                    if (resolvedChild.getParent() != element)
                     {
-                        child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
+                        resolvedChild = new Element(resolvedChild, element);
                     }
-
-                    avec.add(parse(child));
                 }
                 else
                 {
-                    if (sequence.hasOptional(element.optionalOrDefaultChildrenInOrder().indexOf(child)))
-                    {
-                        if (child.getaSwitch() != null)
-                        {
-                            child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
-                        }
-                        //  debugPrint(child.appendLabel("O[" + t + "]"));
-                        avec.add(OEROptional.getInstance(parse(child)));
+                    resolvedChild = child;
+                }
 
+                if (sequence.valuePresent == null)
+                {
+                    // Sequence with no optionals and no extensions defined.
+                    avec.add(parse(resolvedChild));
+                }
+                else
+                {
+
+                    if (sequence.valuePresent[t])
+                    {
+                        if (resolvedChild.isExplicit())
+                        {
+                            avec.add(parse(resolvedChild));
+                        }
+                        else
+                        {
+                            // Optional and present
+                            avec.add(OEROptional.getInstance(parse(resolvedChild)));
+                        }
                     }
                     else
                     {
-                        if (child.getaSwitch() != null)
-                        {
-                            child = child.getaSwitch().result(new SwitchIndexer.Asn1EncodableVectorIndexer(avec));
-                        }
-
-                        if (child.getDefaultValue() != null)
+                        if (resolvedChild.getDefaultValue() != null)
                         {
                             avec.add(child.getDefaultValue());
-                            debugPrint("Using default.");
                         }
                         else
                         {
@@ -171,19 +220,88 @@ public class OERInputStream
                         }
                     }
                 }
-
             }
+
+            //
+            // We have and extension block
+            //
+            if (sequence.extensionFlagSet)
+            {
+                int l = readLength().intLength();
+                byte[] rawPresenceList = allocateArray(l);
+                if (Streams.readFully(in, rawPresenceList) != rawPresenceList.length)
+                {
+                    throw new IOException("did not fully read presence list.");
+                }
+
+                int presenceIndex = 8;
+                int stop = rawPresenceList.length * 8 - rawPresenceList[0];
+
+
+                for (; t < children.size() || presenceIndex < stop; t++)
+                {
+                    Element child = t < children.size() ? children.get(t) : null;
+
+                    if (child == null)
+                    {
+                        // Extensions that we do not
+                        // have a definition for need to be consumed and discarded.
+                        if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
+                        {
+                            // skip.
+                            int len = readLength().intLength();
+                            while (--len >= 0)
+                            {
+                                in.read();
+                            }
+
+
+                        }
+                    }
+                    else
+                    {
+                        if (presenceIndex < stop &&
+                            (rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
+                        {
+                            avec.add(parseOpenType(child));
+                        }
+                        else
+                        {
+                            if (child.isExplicit())
+                            {
+                                throw new IOException("extension is marked as explicit but is not defined in presence list");
+                            }
+                            else
+                            {
+                                avec.add(OEROptional.ABSENT);
+                            }
+                        }
+                    }
+                    presenceIndex++;
+                }
+            }
+
             return new DERSequence(avec);
         }
 
         case CHOICE:
         {
             Choice choice = choice();
-            debugPrint(element.appendLabel(choice.toString()));
+            debugPrint(choice.toString() + " " + choice.tag);
             if (choice.isContextSpecific())
             {
-                Element choiceDef = Element.expandDeferredDefinition(element.getChildren().get(choice.getTag()));
-                return new DERTaggedObject(choice.tag, parse(choiceDef));
+                Element choiceDef = Element.expandDeferredDefinition(element.getChildren().get(choice.getTag()), element);
+
+                if (choiceDef.getBlock() > 0)
+                {
+                    debugPrint("Chosen (Ext): " + choiceDef);
+                    return new DERTaggedObject(choice.tag, parseOpenType(choiceDef));
+                }
+                else
+                {
+                    debugPrint("Chosen: " + choiceDef);
+                    return new DERTaggedObject(choice.tag, parse(choiceDef));
+                }
             }
             else if (choice.isApplicationTagClass())
             {
@@ -205,7 +323,7 @@ public class OERInputStream
         case ENUM:
         {
             BigInteger bi = enumeration();
-            debugPrint(element.appendLabel("ENUM(" + bi + ") = " + element.getChildren().get(bi.intValue()).getLabel()));
+            debugPrint(element + ("ENUM(" + bi + ") = " + element.getChildren().get(bi.intValue()).getLabel()));
             return new ASN1Enumerated(bi);
         }
         case INT:
@@ -271,7 +389,7 @@ public class OERInputStream
 
             if (debugOutput != null)
             {
-                debugPrint(element.appendLabel("INTEGER(" + data.length + " " + bi.toString(16) + ")"));
+                debugPrint(element + ("INTEGER byteLen= " + data.length + " hex= " + bi.toString(16) + ")"));
             }
 
             return new ASN1Integer(bi);
@@ -304,7 +422,8 @@ public class OERInputStream
             if (debugOutput != null)
             {
                 // -DM Hex.toHexString
-                debugPrint(element.appendLabel("OCTET STRING (" + data.length + ") = " + Hex.toHexString(data, 0, Math.min(data.length, 32))));
+                int l = Math.min(data.length, 32);
+                debugPrint(element + ("OCTET STRING (" + data.length + ") = " + Hex.toHexString(data, 0, l) + " " + ((data.length > 32) ? "..." : "")));
             }
 
             return new DEROctetString(data);
@@ -347,7 +466,7 @@ public class OERInputStream
             String content = Strings.fromUTF8ByteArray(data);
             if (debugOutput != null)
             {
-                debugPrint(element.appendLabel("UTF8 String (" + data.length + ") = " + content));
+                debugPrint(element + ("UTF8 String (" + data.length + ") = " + content));
             }
             return new DERUTF8String(content);
         }
@@ -383,14 +502,14 @@ public class OERInputStream
                         b <<= 1;
                     }
                 }
-                debugPrint(element.appendLabel(sb.toString()));
+                debugPrint(element + (sb.toString()));
             }
 
             return new DERBitString(data);
 
         }
         case NULL:
-            debugPrint(element.appendLabel("NULL"));
+            debugPrint(element + ("NULL"));
             return DERNull.INSTANCE;
 
         case EXTENSION:
@@ -413,7 +532,7 @@ public class OERInputStream
 
     private ASN1Encodable absent(Element child)
     {
-        debugPrint(child.appendLabel("Absent"));
+        debugPrint(child + ("Absent"));
         return OEROptional.ABSENT;
     }
 
@@ -505,17 +624,21 @@ public class OERInputStream
 
         if ((byteVal & 0x80) == 0) // short form 8.6.4
         {
+            debugPrint("Len (Short form): " + (byteVal & 0x7F));
             return new LengthInfo(BigInteger.valueOf(byteVal & 0x7F), true);
         }
         else
         {
             // Long form 8.6.5
 
+
             byte[] lengthInt = new byte[(byteVal & 0x7F)];
             if (Streams.readFully(this, lengthInt) != lengthInt.length)
             {
                 throw new EOFException("did not read all bytes of length definition");
             }
+
+            debugPrint("Len (Long Form): " + (byteVal & 0x7F) + " actual len: " + Hex.toHexString(lengthInt));
 
             return new LengthInfo(BigIntegers.fromUnsignedByteArray(lengthInt), false);
         }
@@ -557,18 +680,32 @@ public class OERInputStream
     }
 
 
-    public Sequence sequence(int expectedOptional, boolean hasOptionalChildren, boolean hasExtension)
+    protected ASN1Encodable parseOpenType(Element e)
         throws IOException
     {
-        return new Sequence(this, expectedOptional, hasOptionalChildren, hasExtension);
+        int len = readLength().intLength();
+        byte[] openTypeRaw = allocateArray(len);
+        if (Streams.readFully(in, openTypeRaw) != openTypeRaw.length)
+        {
+            throw new IOException("did not fully read open type as raw bytes");
+        }
+        OERInputStream oerIn = null;
+        try
+        {
+            ByteArrayInputStream bin = new ByteArrayInputStream(openTypeRaw);
+            oerIn = new OERInputStream(bin);
+            return oerIn.parse(e);
+        }
+        finally
+        {
+            if (oerIn != null)
+            {
+                oerIn.close();
+            }
+        }
+
     }
 
-//    public OERInputStream sequence(int expectedOptional, boolean hasExtension, boolean hasOptionalChildren, OERHandler handler)
-//        throws Exception
-//    {
-//        handler.handle(new Sequence(this, expectedOptional, hasOptionalChildren, hasExtension));
-//        return this;
-//    }
 
     public Choice choice()
         throws IOException
@@ -576,12 +713,6 @@ public class OERInputStream
         return new Choice(this);
     }
 
-//    public OERInputStream choice(OERHandler handler)
-//        throws Exception
-//    {
-//        handler.handle(new Choice(this));
-//        return this;
-//    }
 
     protected void debugPrint(String what)
     {
@@ -727,62 +858,131 @@ public class OERInputStream
     public static class Sequence
         extends OERInputStream
     {
-        final int preamble;
-        private final boolean[] optionalPresent;
+        private final int preamble;
+        private final boolean[] valuePresent;
         private final boolean extensionFlagSet;
 
-        public Sequence(InputStream src, int expectedOptional, boolean hasDefaults, boolean extension)
+        public Sequence(InputStream src, Element element)
             throws IOException
         {
             super(src);
-
-
-            if (expectedOptional == 0 && !extension && !hasDefaults)
+            if (element.hasPopulatedExtension() || element.getOptionals() > 0 || element.hasDefaultChildren())
+            {
+                preamble = in.read();
+                if (preamble < 0)
+                {
+                    throw new EOFException("expecting preamble byte of sequence");
+                }
+                // We expect extensions AND the Extension bit (7) is set.
+                extensionFlagSet = element.hasPopulatedExtension() && ((preamble & 0x80) == 0x80);
+            }
+            else
             {
                 preamble = 0;
-                optionalPresent = new boolean[0];
                 extensionFlagSet = false;
+                valuePresent = null;
                 return;
             }
 
+            valuePresent = new boolean[element.getChildren().size()];
 
-            preamble = src.read();
-            if (preamble < 0)
-            {
-                throw new EOFException("expecting preamble byte of sequence");
-            }
 
-            // We expect extensions AND the Extension bit (7) is set.
-            extensionFlagSet = extension && ((preamble & 0x80) == 0x80);
-
-            //
-            // Load a boolean array, where true = optional is present otherwise false.
-            // This is done by inspecting a sequence of bits starting from bit 6 if we expect extension or 7 if we do not
-            // of the preamble
-            // and testing the subsequent expectedOptional number of bits.
-            int j = extension ? 6 : 7;
-            optionalPresent = new boolean[expectedOptional];
+            int block = 0;
+            int j = element.hasPopulatedExtension() ? 6 /* After extension present bit */ : 7 /* no extension bit */;
             int mask = preamble;
-            for (int t = 0; t < optionalPresent.length; t++)
+            int presentIndex = 0;
+            for (Element child : element.getChildren())
             {
-                if (j < 0)
+                if (child.getBaseType() == OERDefinition.BaseType.EXTENSION)
                 {
-                    mask = src.read();
-                    if (mask < 0)
-                    {
-                        throw new EOFException("expecting mask byte sequence");
-                    }
-                    j = 7;
+                    continue;
                 }
-                optionalPresent[t] = (mask & bits[j]) > 0;
-                j--;
+
+                if (child.getBlock() != block)
+                {
+                    // Shifted into an extension block
+                    // We need to exit here because we need to read content before picking up
+                    // the extension block.
+                    break;
+                }
+
+                if (child.isExplicit())
+                {
+                    valuePresent[presentIndex++] = true;
+                }
+                else
+                {
+                    // Optional.
+                    if (j < 0)
+                    {
+                        mask = src.read();
+                        if (mask < 0)
+                        {
+                            throw new EOFException("expecting mask byte sequence");
+                        }
+                        j = 7;
+                    }
+                    valuePresent[presentIndex++] = (mask & bits[j]) > 0;
+                    j--;
+                }
+
             }
+
 
         }
 
+
+//        public Sequence(InputStream src, int expectedOptional, boolean hasDefaults, boolean extension)
+//            throws IOException
+//        {
+//            super(src);
+//
+//
+//            if (expectedOptional == 0 && !extension && !hasDefaults)
+//            {
+//                preamble = 0;
+//                optionalPresent = new boolean[0];
+//                extensionFlagSet = false;
+//                return;
+//            }
+//
+//            preamble = src.read();
+//            if (preamble < 0)
+//            {
+//                throw new EOFException("expecting preamble byte of sequence");
+//            }
+//
+//            // We expect extensions AND the Extension bit (7) is set.
+//            extensionFlagSet = extension && ((preamble & 0x80) == 0x80);
+//
+//            //
+//            // Load a boolean array, where true = optional is present otherwise false.
+//            // This is done by inspecting a sequence of bits starting from bit 6 if we expect extension or 7 if we do not
+//            // of the preamble
+//            // and testing the subsequent expectedOptional number of bits.
+//            int j = extension ? 6 : 7;
+//            optionalPresent = new boolean[expectedOptional];
+//            int mask = preamble;
+//            for (int t = 0; t < optionalPresent.length; t++)
+//            {
+//                if (j < 0)
+//                {
+//                    mask = src.read();
+//                    if (mask < 0)
+//                    {
+//                        throw new EOFException("expecting mask byte sequence");
+//                    }
+//                    j = 7;
+//                }
+//                optionalPresent[t] = (mask & bits[j]) > 0;
+//                j--;
+//            }
+//
+//        }
+
         public boolean hasOptional(int index)
         {
-            return optionalPresent[index];
+            return valuePresent[index];
         }
 
         public boolean hasExtension()
@@ -796,15 +996,23 @@ public class OERInputStream
             StringBuilder sb = new StringBuilder();
             sb.append("SEQ(");
             sb.append(hasExtension() ? "Ext " : "");
-            for (int t = 0; t < optionalPresent.length; t++)
+
+            if (valuePresent == null)
             {
-                if (optionalPresent[t])
+                sb.append("*");
+            }
+            else
+            {
+                for (int t = 0; t < valuePresent.length; t++)
                 {
-                    sb.append("1");
-                }
-                else
-                {
-                    sb.append("0");
+                    if (valuePresent[t])
+                    {
+                        sb.append("1");
+                    }
+                    else
+                    {
+                        sb.append("0");
+                    }
                 }
             }
             sb.append(")");
@@ -826,7 +1034,7 @@ public class OERInputStream
 
         private int intLength()
         {
-            return length.intValue();
+            return BigIntegers.intValueExact(length);
         }
     }
 

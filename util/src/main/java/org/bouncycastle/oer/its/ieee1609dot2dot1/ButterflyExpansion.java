@@ -21,7 +21,6 @@ public class ButterflyExpansion
     implements ASN1Choice
 {
     public static final int aes128 = 0;
-    public static final int extension = 1;
 
     protected final int choice;
     protected final ASN1Encodable butterflyExpansion;
@@ -37,7 +36,7 @@ public class ButterflyExpansion
         choice = ato.getTagNo();
         switch (choice)
         {
-        case extension:
+
         case aes128:
             this.butterflyExpansion = DEROctetString.getInstance(ato.getObject());
             break;
@@ -73,17 +72,6 @@ public class ButterflyExpansion
     public static ButterflyExpansion aes128(ASN1OctetString value)
     {
         return aes128(value.getOctets());
-    }
-
-
-    public static ButterflyExpansion extension(byte[] value)
-    {
-        return new ButterflyExpansion(extension, new DEROctetString(value));
-    }
-
-    public static ButterflyExpansion extension(ASN1OctetString value)
-    {
-        return new ButterflyExpansion(extension, value);
     }
 
 

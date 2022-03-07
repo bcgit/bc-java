@@ -21,7 +21,6 @@ public class BasePublicEncryptionKey
 {
     public static final int eciesNistP256 = 0;
     public static final int eciesBrainpoolP256r1 = 1;
-    public static final int extension = 2;
 
     private final int choice;
     private final ASN1Encodable basePublicEncryptionKey;
@@ -34,9 +33,6 @@ public class BasePublicEncryptionKey
         case eciesNistP256:
         case eciesBrainpoolP256r1:
             basePublicEncryptionKey = EccP256CurvePoint.getInstance(dto.getObject());
-            break;
-        case extension:
-            basePublicEncryptionKey = DEROctetString.getInstance(dto.getObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + dto.getTagNo());
@@ -72,12 +68,6 @@ public class BasePublicEncryptionKey
     {
         return new BasePublicEncryptionKey(eciesBrainpoolP256r1, point);
     }
-
-    public static BasePublicEncryptionKey extension(DEROctetString ext)
-    {
-        return new BasePublicEncryptionKey(extension, ext);
-    }
-
 
     public int getChoice()
     {

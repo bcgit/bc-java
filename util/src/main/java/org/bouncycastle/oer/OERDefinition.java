@@ -3,9 +3,11 @@ package org.bouncycastle.oer;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -25,6 +27,11 @@ public class OERDefinition
         new BigInteger[]{new BigInteger("-2147483648"), new BigInteger("2147483647")},
         new BigInteger[]{new BigInteger("-9223372036854775808"), new BigInteger("9223372036854775807")},
     };
+
+    public static Builder bool()
+    {
+        return new Builder(BaseType.BOOLEAN);
+    }
 
     public static Builder integer()
     {
@@ -143,7 +150,7 @@ public class OERDefinition
 
     public static Builder opaque()
     {
-        return new Builder(BaseType.OCTET_STRING).unbounded();
+        return new Builder(BaseType.OPAQUE);
     }
 
     public static List<Object> optional(Object... items)
@@ -151,10 +158,16 @@ public class OERDefinition
         return new OptionalList(Arrays.asList(items));
     }
 
-    public static Builder extension()
+    public static ExtensionList extension(Object... items)
     {
-        return new Builder(BaseType.EXTENSION).label("extension").typeName("OCTET STRING");
+        return new ExtensionList(1, Arrays.asList(items));
     }
+
+    public static ExtensionList extension(int block, Object... items)
+    {
+        return new ExtensionList(block, Arrays.asList(items));
+    }
+
 
     public static Builder deferred(ElementSupplier elementSupplier)
     {
@@ -164,19 +177,14 @@ public class OERDefinition
 
     public enum BaseType
     {
-        SEQ, SEQ_OF, CHOICE, ENUM, INT, OCTET_STRING,
+        SEQ, SEQ_OF, CHOICE, ENUM, INT, OCTET_STRING, OPAQUE,
         UTF8_STRING, BIT_STRING, NULL, EXTENSION, ENUM_ITEM, BOOLEAN, IS0646String, PrintableString, NumericString,
         BMPString, UniversalString, IA5String, VisibleString, Switch, Supplier
     }
 
     public interface ItemProvider
     {
-        Builder exitingChild(int index, Builder existingChild);
-    }
-
-    public interface ElementSupplier
-    {
-        Element build();
+        Builder existingChild(int index, Builder existingChild);
     }
 
 
@@ -197,6 +205,8 @@ public class OERDefinition
         protected ArrayList<ASN1Encodable> validSwitchValues = new ArrayList<ASN1Encodable>();
         protected ElementSupplier elementSupplier;
         protected boolean mayRecurse;
+        protected Map<String, ElementSupplier> supplierMap = new HashMap<String, ElementSupplier>();
+        protected int block;
 
         public Builder(BaseType baseType)
         {
@@ -205,7 +215,7 @@ public class OERDefinition
 
         private final ItemProvider defaultItemProvider = new ItemProvider()
         {
-            public Builder exitingChild(int index, Builder existingChild)
+            public Builder existingChild(int index, Builder existingChild)
             {
                 return existingChild.copy(defaultItemProvider);
             }
@@ -218,7 +228,7 @@ public class OERDefinition
             for (Iterator it = children.iterator(); it.hasNext(); )
             {
                 Builder child = (Builder)it.next();
-                b.children.add(provider.exitingChild(t++, child));
+                b.children.add(provider.existingChild(t++, child));
             }
             b.explicit = explicit;
             b.label = label;
@@ -232,6 +242,15 @@ public class OERDefinition
             b.elementSupplier = elementSupplier;
             b.mayRecurse = mayRecurse;
             b.typeName = typeName;
+            b.supplierMap = new HashMap<String, ElementSupplier>(supplierMap);
+            b.block = block;
+            return b;
+        }
+
+        protected Builder block(int block)
+        {
+            Builder b = copy();
+            b.block = block;
             return b;
         }
 
@@ -246,6 +265,21 @@ public class OERDefinition
             b.elementSupplier = elementSupplier;
             return b;
         }
+
+
+//        public Builder reifyOpaque(String dotPath, ElementSupplier es)
+//        {
+//            Builder b = this.copy();
+//            b.supplierMap.put(dotPath, es);
+//            return b;
+//        }
+//
+//        public Builder reifyOpaque(String dotPath, Builder es)
+//        {
+//            Builder b = this.copy();
+//            b.supplierMap.put(dotPath, new DeferredElementSupplier(es));
+//            return b;
+//        }
 
         public Builder validSwitchValue(ASN1Encodable... values)
         {
@@ -336,9 +370,63 @@ public class OERDefinition
             {
                 return new Builder((BaseType)item).explicit(explicit);
             }
+            else if (item instanceof String)
+            {
+                return OERDefinition.enumItem((String)item);
+            }
 
             throw new IllegalStateException("Unable to wrap item in builder");
         }
+
+        protected void addExtensions(Builder b, ExtensionList extensionList)
+        {
+            if (extensionList.isEmpty())
+            {
+                Builder stub = new OERDefinition.Builder(BaseType.EXTENSION);
+                stub.block = extensionList.block;
+                b.children.add(stub);
+                return;
+            }
+
+
+            for (Iterator it = ((List)extensionList).iterator(); it.hasNext(); )
+            {
+                Object item = it.next();
+                if (item instanceof OptionalList)
+                {
+                    // Optionals within extension
+                    addOptionals(b, extensionList.block, (OptionalList)item);
+                }
+                else
+                {
+                    //
+                    // explicit items.
+                    //
+                    Builder wrapped = wrap(true, item);
+                    wrapped.block = extensionList.block;
+                    b.children.add(wrapped);
+                }
+            }
+        }
+
+        protected void addOptionals(Builder b, int block, OptionalList optionalList)
+        {
+            for (Iterator it = ((List)optionalList).iterator(); it.hasNext(); )
+            {
+                Object o = it.next();
+                if (o instanceof ExtensionList)
+                {
+                    addExtensions(b, (ExtensionList)o);
+                }
+                else
+                {
+                    Builder wrapped = wrap(false, o);
+                    wrapped.block = block;
+                    b.children.add(wrapped);
+                }
+            }
+        }
+
 
         public Builder items(Object... items)
         {
@@ -347,19 +435,27 @@ public class OERDefinition
             for (int i = 0; i != items.length; i++)
             {
                 Object item = items[i];
-                if (item instanceof OptionalList)
+                if (item instanceof ExtensionList)
                 {
-                    for (Iterator it = ((List)item).iterator(); it.hasNext(); )
-                    {
-                        b.children.add(wrap(false, it.next()));
-                    }
+                    addExtensions(b, (ExtensionList)item);
+                }
+                else if (item instanceof OptionalList)
+                {
+                    addOptionals(b, b.block, (OptionalList)item);
                 }
                 else
                 {
-
+                    //
+                    // Items at this level are in the original non-extended set
+                    // They don't set a block on the wrapped object.
+                    // It stays at zero
+                    //
                     if (item.getClass().isArray())
                     {
-                        items((Object[])item);
+                        for (int t = 0; t < ((Object[])item).length; t++)
+                        {
+                            b.children.add(wrap(true, ((Object[])item)[t]));
+                        }
                     }
                     else
                     {
@@ -389,6 +485,7 @@ public class OERDefinition
             List<Element> children = new ArrayList<Element>();
             boolean hasExtensions = false;
 
+            // Duplicate check for enums.
             if (baseType == BaseType.ENUM)
             {
                 int ordinal = 0;
@@ -413,31 +510,30 @@ public class OERDefinition
                 }
             }
 
-            for (Iterator it = this.children.iterator(); it.hasNext(); )
+            int optionals = 0;
+            boolean defaultValuesInChildren = false;
+            // TODO combine with something
+            for (Builder child : this.children)
             {
-                Builder b = (Builder)it.next();
 
-                if (!hasExtensions && b.baseType == BaseType.EXTENSION)
+                if (!hasExtensions && child.block > 0)
                 {
                     hasExtensions = true;
-                    if (b.children.isEmpty())
-                    {
-                        //
-                        // There was an extension point but it was empty.
-                        // So drop it from the list of children.
-                        //
-                        if (this.baseType != BaseType.CHOICE && this.baseType != BaseType.ENUM)
-                        {
-                            continue;
-                        }
-                    }
                 }
 
-                children.add(b.build());
+                // count number of optionals.
+                if (!child.explicit)
+                {
+                    optionals++;
+                }
+
+                if (!defaultValuesInChildren && child.defaultValue != null)
+                {
+                    defaultValuesInChildren = true;
+                }
+
+                children.add(child.build());
             }
-
-
-
 
             return new Element(
                 baseType,
@@ -453,7 +549,10 @@ public class OERDefinition
                 validSwitchValues.isEmpty() ? null : validSwitchValues,
                 elementSupplier,
                 mayRecurse,
-                typeName);
+                typeName,
+                supplierMap.isEmpty() ? null : supplierMap,
+                block,
+                optionals, defaultValuesInChildren);
 
         }
 
@@ -509,7 +608,7 @@ public class OERDefinition
         {
             return this.copy(new ItemProvider()
             {
-                public Builder exitingChild(int _index, Builder existingChild)
+                public Builder existingChild(int _index, Builder existingChild)
                 {
                     return index == _index ? newItem : existingChild;
                 }
@@ -578,9 +677,21 @@ public class OERDefinition
     private static class OptionalList
         extends ArrayList<Object>
     {
-
         public OptionalList(List<Object> asList)
         {
+            addAll(asList);
+        }
+    }
+
+
+    private static class ExtensionList
+        extends ArrayList<Object>
+    {
+        protected final int block;
+
+        public ExtensionList(int block, List<Object> asList)
+        {
+            this.block = block;
             addAll(asList);
         }
     }

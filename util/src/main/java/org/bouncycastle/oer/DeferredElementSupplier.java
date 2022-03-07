@@ -1,7 +1,7 @@
 package org.bouncycastle.oer;
 
 public class DeferredElementSupplier
-    implements OERDefinition.ElementSupplier
+    implements ElementSupplier
 {
 
     private final OERDefinition.Builder src;
@@ -12,7 +12,7 @@ public class DeferredElementSupplier
         this.src = src;
     }
 
-    @Override
+
     public Element build()
     {
         synchronized (this)

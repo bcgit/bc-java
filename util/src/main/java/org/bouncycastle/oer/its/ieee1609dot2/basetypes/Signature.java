@@ -24,8 +24,7 @@ public class Signature
 {
     public static final int ecdsaNistP256Signature = 0;
     public static final int ecdsaBrainpoolP256r1Signature = 1;
-    public static final int ecdsaBrainpoolP384r1Signature = 3;
-    private static final int extension = 2;
+    public static final int ecdsaBrainpoolP384r1Signature = 2;
     private final int choice;
     private final ASN1Encodable signature;
 
@@ -50,10 +49,6 @@ public class Signature
         return new Signature(ecdsaBrainpoolP384r1Signature, v);
     }
 
-    public static Signature extension(DEROctetString octetString)
-    {
-        return new Signature(extension, octetString);
-    }
 
 
     private Signature(ASN1TaggedObject ato)
@@ -64,9 +59,6 @@ public class Signature
         case ecdsaNistP256Signature:
         case ecdsaBrainpoolP256r1Signature:
             signature = EcdsaP256Signature.getInstance(ato.getObject());
-            break;
-        case extension:
-            signature = DEROctetString.getInstance(ato.getObject());
             break;
         case ecdsaBrainpoolP384r1Signature:
             signature = EcdsaP384Signature.getInstance(ato.getObject());

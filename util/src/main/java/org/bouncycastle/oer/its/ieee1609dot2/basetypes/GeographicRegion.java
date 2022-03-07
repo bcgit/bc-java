@@ -29,7 +29,6 @@ public class GeographicRegion
     public static final int rectangularRegion = 1;
     public static final int polygonalRegion = 2;
     public static final int identifiedRegion = 3;
-    public static final int extension = 4;
 
     private final int choice;
     private final ASN1Encodable geographicRegion;
@@ -59,9 +58,6 @@ public class GeographicRegion
         case identifiedRegion:
             geographicRegion = SequenceOfIdentifiedRegion.getInstance(taggedObject.getObject());
             break;
-        case extension:
-            geographicRegion = DEROctetString.getInstance(taggedObject.getObject());
-            break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -85,11 +81,6 @@ public class GeographicRegion
     public static GeographicRegion identifiedRegion(SequenceOfIdentifiedRegion region)
     {
         return new GeographicRegion(identifiedRegion, region);
-    }
-
-    public static GeographicRegion extension(ASN1OctetString region)
-    {
-        return new GeographicRegion(extension, region);
     }
 
 

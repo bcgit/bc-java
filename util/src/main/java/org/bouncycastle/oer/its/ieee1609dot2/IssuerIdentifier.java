@@ -28,8 +28,7 @@ public class IssuerIdentifier
 
     public static final int sha256AndDigest = 0;
     public static final int self = 1;
-    public static final int extension = 2;
-    public static final int sha384AndDigest = 3;
+    public static final int sha384AndDigest = 2;
 
     private final int choice;
     private final ASN1Encodable issuerIdentifier;
@@ -45,15 +44,6 @@ public class IssuerIdentifier
         return new IssuerIdentifier(self, data);
     }
 
-    public static IssuerIdentifier extension(ASN1OctetString data)
-    {
-        return new IssuerIdentifier(extension, data);
-    }
-
-    public static IssuerIdentifier extension(byte[] data)
-    {
-        return new IssuerIdentifier(extension, new DEROctetString(data));
-    }
 
     public static IssuerIdentifier sha384AndDigest(HashedId8 data)
     {
@@ -78,9 +68,6 @@ public class IssuerIdentifier
             break;
         case self: // self HashAlgorithm
             issuerIdentifier = HashAlgorithm.getInstance(o);
-            break;
-        case extension: // sha384AndDigest  HashedId8
-            issuerIdentifier = DEROctetString.getInstance(o);
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);

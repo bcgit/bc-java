@@ -22,9 +22,9 @@ public class AesCcmCiphertext
     extends ASN1Object
 {
     private final ASN1OctetString nonce;
-    private final ASN1OctetString ccmCiphertext;
+    private final Opaque ccmCiphertext;
 
-    public AesCcmCiphertext(ASN1OctetString nonce, ASN1OctetString opaque)
+    public AesCcmCiphertext(ASN1OctetString nonce, Opaque opaque)
     {
         this.nonce = nonce;
         this.ccmCiphertext = opaque;
@@ -38,7 +38,7 @@ public class AesCcmCiphertext
         }
         Iterator<ASN1Encodable> it = seq.iterator();
         nonce = ASN1OctetString.getInstance(it.next());
-        ccmCiphertext = ASN1OctetString.getInstance(it.next());
+        ccmCiphertext = Opaque.getInstance(it.next());
     }
 
     public static AesCcmCiphertext getInstance(Object o)
@@ -60,7 +60,7 @@ public class AesCcmCiphertext
         return nonce;
     }
 
-    public ASN1OctetString getCcmCiphertext()
+    public Opaque getCcmCiphertext()
     {
         return ccmCiphertext;
     }
@@ -79,7 +79,7 @@ public class AesCcmCiphertext
     {
 
         private ASN1OctetString nonce;
-        private ASN1OctetString opaque;
+        private Opaque opaque;
 
         public Builder setNonce(ASN1OctetString nonce)
         {
@@ -92,7 +92,7 @@ public class AesCcmCiphertext
             return setNonce(new DEROctetString(nonce));
         }
         
-        public Builder setCcmCiphertext(ASN1OctetString opaque)
+        public Builder setCcmCiphertext(Opaque opaque)
         {
             this.opaque = opaque;
             return this;
@@ -100,7 +100,7 @@ public class AesCcmCiphertext
 
         public Builder setCcmCiphertext(byte[] opaque)
         {
-            return setCcmCiphertext(new DEROctetString(opaque));
+            return setCcmCiphertext(new Opaque(opaque));
         }
 
         public AesCcmCiphertext createAesCcmCiphertext()

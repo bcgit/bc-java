@@ -78,7 +78,6 @@ public class SignerIdentifier
     public static final int digest = 0;
     public static final int certificate = 1;
     public static final int self = 2;
-    public static final int extension = 3;
 
 
     private final int choice;
@@ -106,9 +105,7 @@ public class SignerIdentifier
         case self:
             signerIdentifier = DERNull.getInstance(ato.getObject());
             break;
-        case extension:
-            signerIdentifier = ASN1OctetString.getInstance(ato.getObject());
-            break;
+
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
         }
@@ -150,16 +147,6 @@ public class SignerIdentifier
     public static SignerIdentifier self()
     {
         return new SignerIdentifier(self, DERNull.INSTANCE);
-    }
-
-    public static SignerIdentifier extension(ASN1OctetString extension)
-    {
-        return new SignerIdentifier(SignerIdentifier.extension, extension);
-    }
-
-    public static SignerIdentifier extension(byte[] extension)
-    {
-        return new SignerIdentifier(SignerIdentifier.extension, new DEROctetString(extension));
     }
 
 

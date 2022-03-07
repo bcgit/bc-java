@@ -17,8 +17,7 @@ public class HashAlgorithm
 {
 
     public static final HashAlgorithm sha256 = new HashAlgorithm(BigInteger.ZERO);
-    public static final HashAlgorithm extension = new HashAlgorithm(BigInteger.ONE);
-    public static final HashAlgorithm sha384 = new HashAlgorithm(BigIntegers.TWO);
+    public static final HashAlgorithm sha384 = new HashAlgorithm(BigIntegers.ONE);
 
 
     public HashAlgorithm(BigInteger integer)
@@ -55,7 +54,6 @@ public class HashAlgorithm
         {
         case 0:
         case 1:
-        case 2:
             return;
         }
 

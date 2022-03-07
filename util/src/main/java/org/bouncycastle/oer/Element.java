@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 
@@ -23,11 +24,19 @@ public class Element
     private final BigInteger enumValue;
     private final ASN1Encodable defaultValue;
     private final Switch aSwitch;
+    private final boolean defaultValuesInChildren;
     private List<Element> optionalChildrenInOrder;
     private List<ASN1Encodable> validSwitchValues;
-    private final OERDefinition.ElementSupplier elementSupplier;
+    private final ElementSupplier elementSupplier;
     private final boolean mayRecurse;
     private final String typeName;
+    private final Map<String, ElementSupplier> supplierMap;
+    private Element parent;
+    private final int optionals;
+    /**
+     * This element is in the extension area of another element.
+     */
+    private final int block;
 
     public Element(
         OERDefinition.BaseType baseType,
@@ -39,8 +48,8 @@ public class Element
         boolean extensionsInDefinition,
         BigInteger enumValue, ASN1Encodable defaultValue, Switch aSwitch,
         List<ASN1Encodable> switchValues,
-        OERDefinition.ElementSupplier elementSupplier,
-        boolean mayRecurse, String typeName)
+        ElementSupplier elementSupplier,
+        boolean mayRecurse, String typeName, Map<String, ElementSupplier> supplierMap, int block, int optionals, boolean defaultValuesInChildren)
     {
         this.baseType = baseType;
         this.children = children;
@@ -56,19 +65,68 @@ public class Element
         this.elementSupplier = elementSupplier;
         this.mayRecurse = mayRecurse;
         this.typeName = typeName;
+        this.block = block;
+        this.optionals = optionals;
+        this.defaultValuesInChildren = defaultValuesInChildren;
+        if (supplierMap == null)
+        {
+            this.supplierMap = Collections.emptyMap();
+        }
+        else
+        {
+            this.supplierMap = supplierMap;
+        }
+
+        for (Element e : children)
+        {
+            e.parent = this;
+        }
     }
+
+    public Element(Element element, Element parent)
+    {
+        this.baseType = element.baseType;
+        this.children = new ArrayList<Element>(element.children);
+        this.explicit = element.explicit;
+        this.label = element.label;
+        this.lowerBound = element.lowerBound;
+        this.upperBound = element.upperBound;
+        this.extensionsInDefinition = element.extensionsInDefinition;
+        this.enumValue = element.enumValue;
+        this.defaultValue = element.defaultValue;
+        this.aSwitch = element.aSwitch;
+        this.validSwitchValues = element.validSwitchValues;
+        this.elementSupplier = element.elementSupplier;
+        this.mayRecurse = element.mayRecurse;
+        this.typeName = element.typeName;
+        this.supplierMap = element.supplierMap;
+        this.parent = parent;
+        this.block = element.block;
+        this.optionals = element.optionals;
+        this.defaultValuesInChildren = element.defaultValuesInChildren;
+        for (Element e : this.children)
+        {
+            e.parent = this;
+        }
+    }
+
 
     /**
      * Expands the definition if the element holds an element supplier.
      *
-     * @param e The element.
+     * @param e      The element.
+     * @param parent
      * @return the expanded definition or the passed in element if it has no supplier.
      */
-    public static Element expandDeferredDefinition(Element e)
+    public static Element expandDeferredDefinition(Element e, Element parent)
     {
         if (e.elementSupplier != null)
         {
-            return e.elementSupplier.build();
+            e = e.elementSupplier.build();
+            if (e.getParent() != parent)
+            {
+                e = new Element(e, parent);
+            }
         }
         return e;
     }
@@ -174,28 +232,12 @@ public class Element
 
     public boolean hasPopulatedExtension()
     {
-        for (Iterator it = getChildren().iterator(); it.hasNext(); )
-        {
-            Element child = (Element)it.next();
-            if (child.getBaseType() == OERDefinition.BaseType.EXTENSION)
-            {
-                return true;
-            }
-        }
-        return false;
+        return this.extensionsInDefinition;
     }
 
     public boolean hasDefaultChildren()
     {
-        for (Iterator it = getChildren().iterator(); it.hasNext(); )
-        {
-            Element child = (Element)it.next();
-            if (child.getDefaultValue() != null)
-            {
-                return true;
-            }
-        }
-        return false;
+        return defaultValuesInChildren;
     }
 
     public ASN1Encodable getDefaultValue()
@@ -217,9 +259,7 @@ public class Element
     @Override
     public String toString()
     {
-        return "Element{" +
-            "label='" + getLabel() + '\'' +
-            '}';
+        return "[" + typeName + " " + baseType.name() + " '" + getLabel() + "']";
     }
 
     public OERDefinition.BaseType getBaseType()
@@ -278,7 +318,7 @@ public class Element
         return validSwitchValues;
     }
 
-    public OERDefinition.ElementSupplier getElementSupplier()
+    public ElementSupplier getElementSupplier()
     {
         return elementSupplier;
     }
@@ -293,6 +333,16 @@ public class Element
         return typeName;
     }
 
+    public int getOptionals()
+    {
+        return optionals;
+    }
+
+    public int getBlock()
+    {
+        return block;
+    }
+
     public String getDerivedTypeName()
     {
 
@@ -305,4 +355,161 @@ public class Element
 
     }
 
+    public ElementSupplier resolveSupplier()
+    {
+        if (supplierMap.containsKey(label))
+        {
+            return supplierMap.get(label);
+        }
+
+        if (parent != null)
+        {
+            return parent.resolveSupplier(label);
+        }
+
+        throw new IllegalStateException("unable to resolve: " + label);
+    }
+
+    protected ElementSupplier resolveSupplier(String name)
+    {
+        name = label + "." + name;
+        if (supplierMap.containsKey(name))
+        {
+            return supplierMap.get(name);
+        }
+
+        if (parent != null)
+        {
+            return parent.resolveSupplier(name);
+        }
+
+        throw new IllegalStateException("unable to resolve: " + name);
+
+    }
+
+    public Element getParent()
+    {
+        return parent;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        Element element = (Element)o;
+
+        if (explicit != element.explicit)
+        {
+            return false;
+        }
+        if (extensionsInDefinition != element.extensionsInDefinition)
+        {
+            return false;
+        }
+        if (defaultValuesInChildren != element.defaultValuesInChildren)
+        {
+            return false;
+        }
+        if (mayRecurse != element.mayRecurse)
+        {
+            return false;
+        }
+        if (optionals != element.optionals)
+        {
+            return false;
+        }
+        if (block != element.block)
+        {
+            return false;
+        }
+        if (baseType != element.baseType)
+        {
+            return false;
+        }
+        if (children != null ? !children.equals(element.children) : element.children != null)
+        {
+            return false;
+        }
+        if (label != null ? !label.equals(element.label) : element.label != null)
+        {
+            return false;
+        }
+        if (lowerBound != null ? !lowerBound.equals(element.lowerBound) : element.lowerBound != null)
+        {
+            return false;
+        }
+        if (upperBound != null ? !upperBound.equals(element.upperBound) : element.upperBound != null)
+        {
+            return false;
+        }
+        if (enumValue != null ? !enumValue.equals(element.enumValue) : element.enumValue != null)
+        {
+            return false;
+        }
+        if (defaultValue != null ? !defaultValue.equals(element.defaultValue) : element.defaultValue != null)
+        {
+            return false;
+        }
+        if (aSwitch != null ? !aSwitch.equals(element.aSwitch) : element.aSwitch != null)
+        {
+            return false;
+        }
+        if (optionalChildrenInOrder != null ? !optionalChildrenInOrder.equals(element.optionalChildrenInOrder) : element.optionalChildrenInOrder != null)
+        {
+            return false;
+        }
+        if (validSwitchValues != null ? !validSwitchValues.equals(element.validSwitchValues) : element.validSwitchValues != null)
+        {
+            return false;
+        }
+        if (elementSupplier != null ? !elementSupplier.equals(element.elementSupplier) : element.elementSupplier != null)
+        {
+            return false;
+        }
+        if (typeName != null ? !typeName.equals(element.typeName) : element.typeName != null)
+        {
+            return false;
+        }
+        return supplierMap != null ? !supplierMap.equals(element.supplierMap) : element.supplierMap != null;
+
+//        {
+//            return false;
+//        }
+//        return parent != null ? parent.equals(element.parent) : element.parent == null;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = baseType != null ? baseType.hashCode() : 0;
+        result = 31 * result + (children != null ? children.hashCode() : 0);
+        result = 31 * result + (explicit ? 1 : 0);
+        result = 31 * result + (label != null ? label.hashCode() : 0);
+        result = 31 * result + (lowerBound != null ? lowerBound.hashCode() : 0);
+        result = 31 * result + (upperBound != null ? upperBound.hashCode() : 0);
+        result = 31 * result + (extensionsInDefinition ? 1 : 0);
+        result = 31 * result + (enumValue != null ? enumValue.hashCode() : 0);
+        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
+        result = 31 * result + (aSwitch != null ? aSwitch.hashCode() : 0);
+        result = 31 * result + (defaultValuesInChildren ? 1 : 0);
+        result = 31 * result + (optionalChildrenInOrder != null ? optionalChildrenInOrder.hashCode() : 0);
+        result = 31 * result + (validSwitchValues != null ? validSwitchValues.hashCode() : 0);
+        result = 31 * result + (elementSupplier != null ? elementSupplier.hashCode() : 0);
+        result = 31 * result + (mayRecurse ? 1 : 0);
+        result = 31 * result + (typeName != null ? typeName.hashCode() : 0);
+        result = 31 * result + (supplierMap != null ? supplierMap.hashCode() : 0);
+        // Causes recursion.
+        //   result = 31 * result + (parent != this ?  (parent != null ? parent.hashCode() : 0):0);
+        result = 31 * result + optionals;
+        result = 31 * result + block;
+        return result;
+    }
 }
