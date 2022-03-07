@@ -16,7 +16,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ValidityPeriod;
 
 /**
  * CertificateSubjectAttributes ::= SEQUENCE {
- * id 			CertificateId OPTIONAL,
+ * id CertificateId OPTIONAL,
  * validityPeriod        ValidityPeriod OPTIONAL,
  * region                GeographicRegion OPTIONAL,
  * assuranceLevel        SubjectAssurance OPTIONAL,
