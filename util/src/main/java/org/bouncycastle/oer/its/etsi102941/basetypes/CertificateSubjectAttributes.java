@@ -58,10 +58,10 @@ public class CertificateSubjectAttributes
     {
         if (sequence.size() != 6)
         {
-            throw new IllegalArgumentException("expecting sequence size of 6");
+            throw new IllegalArgumentException("expected sequence size of 6");
         }
 
-        id = CertificateId.getInstance(sequence.getObjectAt(0));
+        id = OEROptional.getValue(CertificateId.class, sequence.getObjectAt(0));
         validityPeriod = OEROptional.getValue(ValidityPeriod.class, sequence.getObjectAt(1));
         region = OEROptional.getValue(GeographicRegion.class, sequence.getObjectAt(2));
         assuranceLevel = OEROptional.getValue(SubjectAssurance.class, sequence.getObjectAt(3));
@@ -123,6 +123,7 @@ public class CertificateSubjectAttributes
             OEROptional.getInstance(validityPeriod),
             OEROptional.getInstance(region),
             OEROptional.getInstance(assuranceLevel),
+            OEROptional.getInstance(appPermissions),
             OEROptional.getInstance(certIssuePermissions)
         });
     }

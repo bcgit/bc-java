@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.oer.its.etsi102941.InnerEcRequestSignedForPop;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Data;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncryptedUnicast;
@@ -152,6 +153,10 @@ public class Ieee1609Dot2Data
             return new EtsiTs103097DataUnsecured(content);
         }
 
+        public InnerEcRequestSignedForPop createInnerEcRequestSignedForPop()
+        {
+            return new InnerEcRequestSignedForPop(content);
+        }
 
     }
 

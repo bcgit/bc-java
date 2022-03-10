@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -20,12 +21,19 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OERDefinition;
 import org.bouncycastle.oer.SwitchIndexer;
+import org.bouncycastle.oer.its.etsi102941.DeltaCtl;
 import org.bouncycastle.oer.its.etsi103097.extension.Extension;
 import org.bouncycastle.oer.its.ieee1609dot2.ContributedExtensionBlock;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.GroupLinkageValue;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point256;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point384;
-import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941MessagesCa;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TrustLists;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesAuthorization;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesAuthorizationValidation;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesCaManagement;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesEnrolment;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesLinkCertificate;
+import org.bouncycastle.oer.its.template.etsi102941.basetypes.EtsiTs102941BaseTypes;
 import org.bouncycastle.oer.its.template.etsi103097.EtsiTs103097Module;
 import org.bouncycastle.oer.its.template.etsi103097.extension.EtsiTs103097ExtensionModule;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
@@ -56,15 +64,7 @@ public class TestBuilders
 
         HashMap<String, String[]> typeMapFlat = new HashMap<String, String[]>();
         {
-            List<Field> items = extractFields(
-                EtsiTs102941MessagesCa.class,
-
-                Ieee1609Dot2Dot1EcaEeInterface.class,
-                Ieee1609Dot2Dot1EeRaInterface.class,
-                EtsiTs103097ExtensionModule.class,
-                EtsiTs103097Module.class,
-                Ieee1609Dot2BaseTypes.class,
-                IEEE1609dot2.class);
+            List<Field> items = extractFields(EtsiTs102941BaseTypes.class, EtsiTs102941TypesAuthorization.class, EtsiTs102941TrustLists.class, EtsiTs102941TypesAuthorizationValidation.class, EtsiTs102941TypesCaManagement.class, EtsiTs102941TypesEnrolment.class, EtsiTs102941TypesLinkCertificate.class, Ieee1609Dot2Dot1EcaEeInterface.class, Ieee1609Dot2Dot1EeRaInterface.class, EtsiTs103097ExtensionModule.class, EtsiTs103097Module.class, Ieee1609Dot2BaseTypes.class, IEEE1609dot2.class);
             for (Field f : items)
             {
                 OERDefinition.Builder builder = (OERDefinition.Builder)f.get(null);
@@ -104,6 +104,10 @@ public class TestBuilders
             OERDefinition.BaseType.NULL.name(),
             new String[]{DERNull.class.getName()});
 
+        typeMapFlat.put(
+            OERDefinition.BaseType.BOOLEAN.name(),
+            new String[]{ASN1Boolean.class.getName()});
+
         typeMapFlat.put(OERDefinition.BaseType.Switch.name(), new String[]{ASN1Encodable.class.getName()});
 
         HashMap<Class, Runnable> specificTesters = new HashMap<Class, Runnable>();
@@ -111,13 +115,7 @@ public class TestBuilders
         loadSpecificTesters(specificTesters);
 
 
-        List<Field> items = extractFields(
-            Ieee1609Dot2Dot1EcaEeInterface.class,
-            Ieee1609Dot2Dot1EeRaInterface.class,
-            EtsiTs103097ExtensionModule.class,
-            EtsiTs103097Module.class,
-            Ieee1609Dot2BaseTypes.class,
-            IEEE1609dot2.class);
+        List<Field> items = extractFields(EtsiTs102941TypesAuthorization.class, EtsiTs102941TrustLists.class, EtsiTs102941TypesAuthorizationValidation.class, EtsiTs102941TypesCaManagement.class, EtsiTs102941TypesEnrolment.class, EtsiTs102941TypesLinkCertificate.class, Ieee1609Dot2Dot1EcaEeInterface.class, Ieee1609Dot2Dot1EeRaInterface.class, EtsiTs103097ExtensionModule.class, EtsiTs103097Module.class, Ieee1609Dot2BaseTypes.class, IEEE1609dot2.class);
         for (Field f : items)
         {
 
@@ -325,6 +323,12 @@ public class TestBuilders
                             {
                                 String l = expandedOption.getLabel();
 
+                                if (upperLevelClass == DeltaCtl.class && l.equalsIgnoreCase("isFullCtl"))
+                                {
+                                    continue;
+                                }
+
+
                                 String setter;
 
                                 if (dups.get(l))
@@ -396,6 +400,7 @@ public class TestBuilders
                                 // Build an instance with that value set.
                                 // Check it is actually set.
                                 //
+
 
                                 if (specificTesters.containsKey(upperLevelClass))
                                 {
@@ -585,10 +590,13 @@ public class TestBuilders
     private void handleChoice(HashMap<String, String[]> typeMapFlat, Element def, String upperLevelClassName, Class upperLevelClass)
         throws Exception
     {
+
         if (!ASN1Choice.class.isAssignableFrom(upperLevelClass))
         {
             fail(upperLevelClassName + " is not instance of ASN1Choice");
         }
+
+        printMissingChoiceMethods(typeMapFlat, upperLevelClass, def);
 
         for (Element options : def.getChildren())
         {
@@ -793,6 +801,143 @@ public class TestBuilders
 
         }
     }
+
+
+    private static void printMissingChoiceMethods(HashMap<String, String[]> typeMapFlat, Class upperLevelClass, Element def)
+    {
+
+
+        for (Element options : def.getChildren())
+        {
+
+            if (options.getBaseType() == OERDefinition.BaseType.EXTENSION)
+            {
+                continue;
+            }
+
+            String label = options.getLabel().replace("-", "");
+//            label = cleanLabel(label,false);
+
+            Field field = null;
+
+            // Caseless field search.
+            for (Field f : upperLevelClass.getFields())
+            {
+                if (f.getName().equalsIgnoreCase(label))
+                {
+                    field = f;
+                    break;
+                }
+            }
+
+            // check for Option field, eg public static final int name = 0;
+            if (field == null)
+            {
+                continue;
+            }
+
+            int mod = field.getModifiers();
+            if (Modifier.isFinal(mod) && Modifier.isStatic(mod) && Modifier.isPublic(mod))
+            {
+
+                if (options.getElementSupplier() != null)
+                {
+                    options = options.getElementSupplier().build();
+                }
+
+                String[] expectedTypes = typeMapFlat.get(options.getDerivedTypeName());
+
+                for (String expectedType : expectedTypes)
+                {
+
+                    //
+                    // Test for creator method's single parameter type.
+                    //
+                    Class expectedParamType;
+                    try
+                    {
+                        expectedParamType = Class.forName(expectedType);
+                    }
+                    catch (Exception ex)
+                    {
+                        continue;
+                    }
+
+                    //
+                    //  Look for static method that creates the choice but for that value.
+                    // eg public static MyChoice theOption(TheOption value)
+                    //
+                    Method creator = null;
+
+                    if (expectedParamType.equals(DERNull.class))
+                    {
+                        for (Method m : upperLevelClass.getMethods())
+                        {
+                            if (m.getParameterTypes().length == 0)
+                            {
+                                if (m.getName().equalsIgnoreCase(label))
+                                {
+                                    creator = m;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (Method m : upperLevelClass.getMethods())
+                        {
+                            if (m.getParameterTypes().length == 1 && m.getParameterTypes()[0] == expectedParamType)
+                            {
+                                if (m.getName().equalsIgnoreCase(label))
+                                {
+                                    creator = m;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    String clName = upperLevelClass.getName();
+                    if (clName.lastIndexOf(".") > -1)
+                    {
+                        clName = clName.substring(clName.lastIndexOf(".") + 1);
+                    }
+
+
+                    if (creator == null)
+                    {
+                        if (expectedParamType.equals(DERNull.class))
+                        {
+                            System.out.println("public static " + clName + " " + label + "()\n{\n" +
+                                "return new " + clName + "(" + clName + "." + label + ", DERNull.INSTANCE);\n" +
+                                "}\n");
+
+                        }
+                        else
+                        {
+
+                            String exName = expectedParamType.getName();
+                            if (exName.lastIndexOf(".") > 0)
+                            {
+                                exName = exName.substring(exName.lastIndexOf(".") + 1);
+                            }
+
+                            System.out.println("public static " + clName + " " + label + "(" + exName + " " + label + ")\n{\n" +
+                                "return new " + clName + "(" + clName + "." + label + "," + label + " );\n" +
+                                "}\n");
+                        }
+
+                    }
+
+
+                }
+            }
+        }
+
+
+    }
+
 
     private static Method findMethodEndsWithIgnoreCase(Class cl, String name)
     {

@@ -64,7 +64,7 @@ public class EtsiTs102941TypesEnrolment
         EnrolmentResponseCode.label("responseCode"),
         OERDefinition.optional(EtsiTs103097Module.EtsiTs103097Certificate.label("certificate")),
         OERDefinition.extension()
-    );
+    ).typeName("InnerEcResponse");
 
     /**
      * InnerEcRequest ::= SEQUENCE {
@@ -87,8 +87,7 @@ public class EtsiTs102941TypesEnrolment
      * InnerEcRequestSignedForPop::= EtsiTs103097Data-Signed{InnerEcRequest}
      */
     public static final OERDefinition.Builder InnerEcRequestSignedForPop =
-        EtsiTs103097Data_Signed;
-//            .replaceOpaque(new String[]{"content","unsecuredData"}
-//    ,InnerEcRequest);
+        EtsiTs103097Data_Signed.typeName("InnerEcRequestSignedForPop");
+
 
 }

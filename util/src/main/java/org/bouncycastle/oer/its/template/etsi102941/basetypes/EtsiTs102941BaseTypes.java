@@ -59,12 +59,12 @@ public class EtsiTs102941BaseTypes
      */
     public static final OERDefinition.Builder PublicKeys = OERDefinition.seq(
         Ieee1609Dot2BaseTypes.PublicVerificationKey.label("verificationKey"),
-        OERDefinition.optional(Ieee1609Dot2BaseTypes.PublicVerificationKey.label("encryptionKey"))
+        OERDefinition.optional(Ieee1609Dot2BaseTypes.PublicEncryptionKey.label("encryptionKey"))
     ).typeName("PublicKeys");
 
     /**
      * Version ::= INTEGER {v1(1)}
      */
-    public static final OERDefinition.Builder Version = OERDefinition.integer(0,255);
+    public static final OERDefinition.Builder Version = OERDefinition.integer(0, 255).typeName("Version");
 
 }
