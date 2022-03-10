@@ -74,7 +74,7 @@ public class EtsiTs102941TypesAuthorizationValidation
     public static final OERDefinition.Builder AuthorizationValidationResponse = OERDefinition.seq(
         OERDefinition.octets(16).label("requestHash"),
         AuthorizationValidationResponseCode.label("responseCode"),
-        EtsiTs102941BaseTypes.CertificateSubjectAttributes.label("confirmedSubjectAttributes"),
+        OERDefinition.optional(EtsiTs102941BaseTypes.CertificateSubjectAttributes.label("confirmedSubjectAttributes")),
         OERDefinition.extension()
     ).typeName("AuthorizationValidationResponse");
 

@@ -12,7 +12,7 @@ public class EtsiTs102941TypesCaManagement
      * ...
      * }
      */
-    public static OERDefinition.Builder CaCertificateRequest = OERDefinition.seq(
+    public static final OERDefinition.Builder CaCertificateRequest = OERDefinition.seq(
         EtsiTs102941BaseTypes.PublicKeys.label("publicKeys"),
         EtsiTs102941BaseTypes.CertificateSubjectAttributes.label("requestedSubjectAttributes")
     ).typeName("CaCertificateRequest");

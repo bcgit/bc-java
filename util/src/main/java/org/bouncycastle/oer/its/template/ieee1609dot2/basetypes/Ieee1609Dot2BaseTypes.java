@@ -49,11 +49,18 @@ public class Ieee1609Dot2BaseTypes
     // Octet string types
     //
     public static final OERDefinition.Builder HashedId3 = OERDefinition.octets(3).typeName("HashedId3");
-    public static final OERDefinition.Builder SequenceOfHashedId3 = OERDefinition.seqof(HashedId3).typeName("SequenceOfHashedId3");
-
     public static final OERDefinition.Builder HashedId8 = OERDefinition.octets(8).typeName("HashedId8");
     public static final OERDefinition.Builder HashedId10 = OERDefinition.octets(10).typeName("HashedId10");
     public static final OERDefinition.Builder HashedId32 = OERDefinition.octets(32).typeName("HashedId32");
+
+
+    public static final OERDefinition.Builder SequenceOfHashedId3 = OERDefinition.seqof(HashedId3).typeName("SequenceOfHashedId3");
+
+    // Not actually in this module but redeclared elsewhere inline, this is here to standardize this type.
+    public static final OERDefinition.Builder SequenceOfHashedId8 = OERDefinition.seqof(HashedId8).typeName("SequenceOfHashedId8");
+
+
+
 
 
     //

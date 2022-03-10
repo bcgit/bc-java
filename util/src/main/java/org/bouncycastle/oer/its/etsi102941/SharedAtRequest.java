@@ -9,79 +9,79 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.its.etsi102941.basetypes.CertificateFormat;
 import org.bouncycastle.oer.its.etsi102941.basetypes.CertificateSubjectAttributes;
-import org.bouncycastle.oer.its.etsi102941.basetypes.PublicKeys;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 
 /**
- * InnerEcRequest ::= SEQUENCE {
- * itsId                                 OCTET STRING,
- * certificateFormat                     CertificateFormat,
- * publicKeys                            PublicKeys,
- * requestedSubjectAttributes            CertificateSubjectAttributes (WITH COMPONENTS{..., certIssuePermissions ABSENT}),
+ * SharedAtRequest ::= SEQUENCE {
+ * eaId                          HashedId8,
+ * keyTag                        OCTET STRING (SIZE(16)),
+ * certificateFormat             CertificateFormat,
+ * requestedSubjectAttributes    CertificateSubjectAttributes (WITH COMPONENTS{..., certIssuePermissions ABSENT}),
  * ...
  * }
  */
-public class InnerEcRequest
+public class SharedAtRequest
     extends ASN1Object
 {
-    private final ASN1OctetString itsId;
+
+    private final HashedId8 eaId;
+    private final ASN1OctetString keyTag;
     private final CertificateFormat certificateFormat;
-    private final PublicKeys publicKeys;
     private final CertificateSubjectAttributes requestedSubjectAttributes;
 
-    public InnerEcRequest(
-        ASN1OctetString itsId,
+    public SharedAtRequest(
+        HashedId8 eaId,
+        ASN1OctetString keyTag,
         CertificateFormat certificateFormat,
-        PublicKeys publicKeys,
         CertificateSubjectAttributes requestedSubjectAttributes)
     {
-        this.itsId = itsId;
+        this.eaId = eaId;
+        this.keyTag = keyTag;
         this.certificateFormat = certificateFormat;
-        this.publicKeys = publicKeys;
         this.requestedSubjectAttributes = requestedSubjectAttributes;
     }
 
-    private InnerEcRequest(ASN1Sequence seq)
+    private SharedAtRequest(ASN1Sequence seq)
     {
         if (seq.size() != 4)
         {
             throw new IllegalArgumentException("expected sequence size of 4");
         }
 
-        itsId = ASN1OctetString.getInstance(seq.getObjectAt(0));
-        certificateFormat = CertificateFormat.getInstance(seq.getObjectAt(1));
-        publicKeys = PublicKeys.getInstance(seq.getObjectAt(2));
+        eaId = HashedId8.getInstance(seq.getObjectAt(0));
+        keyTag = ASN1OctetString.getInstance(seq.getObjectAt(1));
+        certificateFormat = CertificateFormat.getInstance(seq.getObjectAt(2));
         requestedSubjectAttributes = CertificateSubjectAttributes.getInstance(seq.getObjectAt(3));
     }
 
-    public static InnerEcRequest getInstance(Object o)
+    public static SharedAtRequest getInstance(Object o)
     {
-        if (o instanceof InnerEcRequest)
+        if (o instanceof SharedAtRequest)
         {
-            return (InnerEcRequest)o;
+            return (SharedAtRequest)o;
         }
 
         if (o != null)
         {
-            return new InnerEcRequest(ASN1Sequence.getInstance(o));
+            return new SharedAtRequest(ASN1Sequence.getInstance(o));
         }
 
         return null;
     }
 
-
-    public ASN1OctetString getItsId()
+    public HashedId8 getEaId()
     {
-        return itsId;
+        return eaId;
+    }
+
+    public ASN1OctetString getKeyTag()
+    {
+        return keyTag;
     }
 
     public CertificateFormat getCertificateFormat()
     {
         return certificateFormat;
-    }
-
-    public PublicKeys getPublicKeys()
-    {
-        return publicKeys;
     }
 
     public CertificateSubjectAttributes getRequestedSubjectAttributes()
@@ -91,7 +91,7 @@ public class InnerEcRequest
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{itsId, certificateFormat, publicKeys, requestedSubjectAttributes});
+        return new DERSequence(new ASN1Encodable[]{eaId, keyTag, certificateFormat, requestedSubjectAttributes});
     }
 
     public static Builder builder()
@@ -101,20 +101,26 @@ public class InnerEcRequest
 
     public static class Builder
     {
-        private ASN1OctetString itsId;
+        private HashedId8 eaId;
+        private ASN1OctetString keyTag;
         private CertificateFormat certificateFormat;
-        private PublicKeys publicKeys;
         private CertificateSubjectAttributes requestedSubjectAttributes;
 
-        public Builder setItsId(ASN1OctetString itsId)
+        public Builder setEaId(HashedId8 eaId)
         {
-            this.itsId = itsId;
+            this.eaId = eaId;
             return this;
         }
 
-        public Builder setItsId(byte[] itsId)
+        public Builder setKeyTag(ASN1OctetString keyTag)
         {
-            this.itsId = new DEROctetString(itsId);
+            this.keyTag = keyTag;
+            return this;
+        }
+
+        public Builder setKeyTag(byte[] keyTag)
+        {
+            this.keyTag = new DEROctetString(keyTag);
             return this;
         }
 
@@ -124,21 +130,16 @@ public class InnerEcRequest
             return this;
         }
 
-        public Builder setPublicKeys(PublicKeys publicKeys)
-        {
-            this.publicKeys = publicKeys;
-            return this;
-        }
-
         public Builder setRequestedSubjectAttributes(CertificateSubjectAttributes requestedSubjectAttributes)
         {
             this.requestedSubjectAttributes = requestedSubjectAttributes;
             return this;
         }
 
-        public InnerEcRequest createInnerEcRequest()
+
+        public SharedAtRequest createSharedAtRequest()
         {
-            return new InnerEcRequest(itsId, certificateFormat, publicKeys, requestedSubjectAttributes);
+            return new SharedAtRequest(eaId, keyTag, certificateFormat, requestedSubjectAttributes);
         }
     }
 

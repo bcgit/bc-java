@@ -28,7 +28,13 @@ import org.bouncycastle.oer.OERInputStream;
 import org.bouncycastle.oer.OEROutputStream;
 import org.bouncycastle.oer.its.ieee1609dot2.ContributedExtensionBlocks;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PolygonalRegion;
-import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941MessagesCa;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TrustLists;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesAuthorization;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesAuthorizationValidation;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesCaManagement;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesEnrolment;
+import org.bouncycastle.oer.its.template.etsi102941.EtsiTs102941TypesLinkCertificate;
+import org.bouncycastle.oer.its.template.etsi102941.basetypes.EtsiTs102941BaseTypes;
 import org.bouncycastle.oer.its.template.etsi103097.EtsiTs103097Module;
 import org.bouncycastle.oer.its.template.etsi103097.extension.EtsiTs103097ExtensionModule;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
@@ -54,45 +60,14 @@ public class ExpansionTest
         throws Exception
     {
 
-        /*
-        {
-
-            Element def = IEEE1609dot2.ToBeSignedCertificate.build();
-            Set<ASN1Encodable> enc = OERExpander.expandElement(def);
-            int t=0;
-            for (ASN1Encodable e : enc)
-            {
-                ToBeSignedCertificate target = ToBeSignedCertificate.getInstance(e);
-
-                ByteArrayOutputStream encoded = new ByteArrayOutputStream();
-                OEROutputStream oos = new OEROutputStream(encoded);
-                oos.write(target, def);
-                oos.flush();
-                oos.close();
-
-                ByteArrayInputStream bin = new ByteArrayInputStream(encoded.toByteArray());
-                OERInputStream oin = new OERInputStream(bin);
-//                OERInputStream oin = new OERInputStream(new PrintingInputStream(bin))
-//                {
-//                    {
-//                        debugOutput = new PrintWriter(System.out);
-//                    }
-//                };
-                ASN1Encodable recreated = oin.parse(def);
-                Object recreatedTarget = ToBeSignedCertificate.getInstance(recreated);
-
-                if (!target.equals(recreatedTarget))
-                {
-                    System.out.println();
-                }
-            }
-
-
-        }
-*/
-
         List<Field> items = extractFields(
-            EtsiTs102941MessagesCa.class,
+            EtsiTs102941BaseTypes.class,
+            EtsiTs102941TypesAuthorization.class,
+            EtsiTs102941TrustLists.class,
+            EtsiTs102941TypesAuthorizationValidation.class,
+            EtsiTs102941TypesCaManagement.class,
+            EtsiTs102941TypesEnrolment.class,
+            EtsiTs102941TypesLinkCertificate.class,
             Ieee1609Dot2Dot1EcaEeInterface.class,
             Ieee1609Dot2Dot1EeRaInterface.class,
             EtsiTs103097ExtensionModule.class,
@@ -263,8 +238,19 @@ public class ExpansionTest
                 returnTypeName = name.substring(10);
             }
 
-
-            String getter = Strings.toLowerCase(returnTypeName).endsWith("s") ? "get" + returnTypeName : "get" + returnTypeName + "s";
+            String getter;
+            if (Strings.toLowerCase(returnTypeName).endsWith("s"))
+            {
+                getter = "get" + returnTypeName;
+            }
+            else if (Strings.toLowerCase(returnTypeName).endsWith("y"))
+            {
+                getter = "get" + returnTypeName.substring(0, returnTypeName.length() - 1) + "ies";
+            }
+            else
+            {
+                getter = "get" + returnTypeName + "s";
+            }
 
 
             Class returnType = ExpansionCaveats.getSequenceOfReturnType(returnTypeName);
@@ -575,7 +561,15 @@ public class ExpansionTest
                 fail(upperLevelClass.getName() + ": field " + f.getName() + " is not final.");
             }
 
-            String getter = "get" + f.getName().substring(0, 1).toUpperCase() + f.getName().substring(1);
+            String fName = f.getName();
+            if (fName.startsWith("_"))
+            {
+                fName = fName.substring(1);
+            }
+
+            String getter = "get" + fName.substring(0, 1).toUpperCase() + fName.substring(1);
+
+
             Method getterMethod = null;
             try
             {
@@ -646,7 +640,12 @@ public class ExpansionTest
         {
             index++;
 
-            String itemName = child.getLabel();
+            if (child.getBaseType() == OERDefinition.BaseType.EXTENSION)
+            {
+                continue;
+            }
+
+            String itemName = child.getLabel().replace("-", "_");
             if (child.getBaseType() == OERDefinition.BaseType.EXTENSION)
             {
                 continue;

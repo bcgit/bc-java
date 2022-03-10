@@ -47,10 +47,23 @@ public class EcSignature
             return;
         }
 
-        throw new IllegalArgumentException("Unknown tag " + choice);
-
-
+        throw new IllegalArgumentException("invalid choice value " + choice);
     }
+
+    public static EcSignature getInstance(Object o)
+    {
+        if (o instanceof EcSignature)
+        {
+            return (EcSignature)o;
+        }
+        if (o != null)
+        {
+            return new EcSignature(ASN1TaggedObject.getInstance(o));
+        }
+
+        return null;
+    }
+
 
     public int getChoice()
     {

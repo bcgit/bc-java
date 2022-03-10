@@ -10,7 +10,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT8;
 public class Version
     extends ASN1Object
 {
-    BigInteger version;
+    private final BigInteger version;
 
     public Version(BigInteger value)
     {
@@ -30,6 +30,11 @@ public class Version
     protected Version(ASN1Integer integer)
     {
         this.version = integer.getValue();
+    }
+
+    public BigInteger getVersion()
+    {
+        return version;
     }
 
     public static Version getInstance(Object o)
