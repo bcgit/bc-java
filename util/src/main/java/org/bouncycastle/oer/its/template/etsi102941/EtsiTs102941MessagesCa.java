@@ -96,20 +96,19 @@ public class EtsiTs102941MessagesCa
 
     public static final OERDefinition.Builder EtsiTs102941DataContent = OERDefinition.choice(
         EtsiTs102941TypesEnrolment.InnerEcRequestSignedForPop.label("enrolmentRequest"),
-        EtsiTs102941TypesEnrolment.InnerEcResponse.label("enrolmentResponse")
-        // TODO not implemented
-//        EtsiTs102941TypesAuthorization.InnerAtRequest.label("authorizationRequest"),
-//        EtsiTs102941TypesAuthorization.InnerAtResponse.label("authorizationResponse"),
-//        EtsiTs102941TrustLists.ToBeSignedCrl.label("certificateRevocationList"),
-//        EtsiTs102941TrustLists.ToBeSignedTlmCtl.label("certificateTrustListTlm"),
-//        EtsiTs102941TrustLists.ToBeSignedRcaCtl.label("certificateTrustListRca"),
-//        EtsiTs102941TypesAuthorizationValidation.AuthorizationValidationRequest.label("authorizationValidationRequest"),
-//        EtsiTs102941TypesAuthorizationValidation.AuthorizationValidationResponse.label("authorizationValidationResponse"),
-//        EtsiTs102941TypesCaManagement.CaCertificateRequest.label("caCertificateRequest"),
-//        OERDefinition.extension(
-//            EtsiTs102941TypesLinkCertificate.ToBeSignedLinkCertificateTlm.label("linkCertificateTlm"),
-//            EtsiTs102941TypesLinkCertificate.ToBeSignedLinkCertificateRca.label("singleSignedLinkCertificateRca"),
-//            RcaSingleSignedLinkCertificateMessage.label("doubleSignedlinkCertificateRca"))
+        EtsiTs102941TypesEnrolment.InnerEcResponse.label("enrolmentResponse"),
+        EtsiTs102941TypesAuthorization.InnerAtRequest.label("authorizationRequest"),
+        EtsiTs102941TypesAuthorization.InnerAtResponse.label("authorizationResponse"),
+        EtsiTs102941TrustLists.ToBeSignedCrl.label("certificateRevocationList"),
+        EtsiTs102941TrustLists.ToBeSignedTlmCtl.label("certificateTrustListTlm"),
+        EtsiTs102941TrustLists.ToBeSignedRcaCtl.label("certificateTrustListRca"),
+        EtsiTs102941TypesAuthorizationValidation.AuthorizationValidationRequest.label("authorizationValidationRequest"),
+        EtsiTs102941TypesAuthorizationValidation.AuthorizationValidationResponse.label("authorizationValidationResponse"),
+        EtsiTs102941TypesCaManagement.CaCertificateRequest.label("caCertificateRequest"),
+        OERDefinition.extension(
+            EtsiTs102941TypesLinkCertificate.ToBeSignedLinkCertificateTlm.label("linkCertificateTlm"),
+            EtsiTs102941TypesLinkCertificate.ToBeSignedLinkCertificateRca.label("singleSignedLinkCertificateRca"),
+            RcaSingleSignedLinkCertificateMessage.label("doubleSignedlinkCertificateRca"))
     ).typeName("EtsiTs102941DataContent");
 
     /**

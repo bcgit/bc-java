@@ -7,6 +7,11 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * CertificateFormat::= INTEGER {
+ * ts103097v131 (1)
+ * }(1..255)
+ */
 public class CertificateFormat
     extends ASN1Object
 {
@@ -25,6 +30,11 @@ public class CertificateFormat
     private CertificateFormat(ASN1Integer format)
     {
         this(format.getValue());
+    }
+
+    public int getFormat()
+    {
+        return format;
     }
 
     public static CertificateFormat getInstance(Object o)

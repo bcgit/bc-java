@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -524,6 +525,12 @@ public class OERInputStream
             // -DM Hex.toHexString
             debugPrint("ext " + li.intLength() + " " + Hex.toHexString(value));
             return new DEROctetString(value);
+        case BOOLEAN:
+            if (read() == 0)
+            {
+                return ASN1Boolean.FALSE;
+            }
+            return ASN1Boolean.TRUE;
         }
 
 
@@ -933,53 +940,7 @@ public class OERInputStream
         }
 
 
-//        public Sequence(InputStream src, int expectedOptional, boolean hasDefaults, boolean extension)
-//            throws IOException
-//        {
-//            super(src);
-//
-//
-//            if (expectedOptional == 0 && !extension && !hasDefaults)
-//            {
-//                preamble = 0;
-//                optionalPresent = new boolean[0];
-//                extensionFlagSet = false;
-//                return;
-//            }
-//
-//            preamble = src.read();
-//            if (preamble < 0)
-//            {
-//                throw new EOFException("expecting preamble byte of sequence");
-//            }
-//
-//            // We expect extensions AND the Extension bit (7) is set.
-//            extensionFlagSet = extension && ((preamble & 0x80) == 0x80);
-//
-//            //
-//            // Load a boolean array, where true = optional is present otherwise false.
-//            // This is done by inspecting a sequence of bits starting from bit 6 if we expect extension or 7 if we do not
-//            // of the preamble
-//            // and testing the subsequent expectedOptional number of bits.
-//            int j = extension ? 6 : 7;
-//            optionalPresent = new boolean[expectedOptional];
-//            int mask = preamble;
-//            for (int t = 0; t < optionalPresent.length; t++)
-//            {
-//                if (j < 0)
-//                {
-//                    mask = src.read();
-//                    if (mask < 0)
-//                    {
-//                        throw new EOFException("expecting mask byte sequence");
-//                    }
-//                    j = 7;
-//                }
-//                optionalPresent[t] = (mask & bits[j]) > 0;
-//                j--;
-//            }
-//
-//        }
+
 
         public boolean hasOptional(int index)
         {

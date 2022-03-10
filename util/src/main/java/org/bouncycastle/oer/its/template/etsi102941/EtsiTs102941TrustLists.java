@@ -20,11 +20,7 @@ public class EtsiTs102941TrustLists
         OERDefinition.seqof(CrlEntry).typeName("SequenceOfCrlEntry");
 
 
-    /**
-     * SEQUENCE OF HashId8,
-     */
-    public static final OERDefinition.Builder SequenceOfHashId8 =
-        OERDefinition.seqof(HashedId8).typeName("SequenceOfHashId8");
+
 
 
     /**
@@ -64,7 +60,7 @@ public class EtsiTs102941TrustLists
      */
     public static final OERDefinition.Builder DcEntry = OERDefinition.seq(
         Url.label("url"),
-        SequenceOfHashId8.label("cert")
+        Ieee1609Dot2BaseTypes.SequenceOfHashedId8.label("cert")
     ).typeName("DcEntry");
 
     /**
@@ -164,7 +160,7 @@ public class EtsiTs102941TrustLists
         CtlEntry.label("add"),
         CtlDelete.label("delete"),
         OERDefinition.extension()
-    );
+    ).typeName("CtlCommand");
 
     /**
      * SEQUENCE OF CtlCommand

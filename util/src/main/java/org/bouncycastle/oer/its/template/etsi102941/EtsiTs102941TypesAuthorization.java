@@ -93,7 +93,7 @@ public class EtsiTs102941TypesAuthorization
     public static final OERDefinition.Builder InnerAtResponse = OERDefinition.seq(
         OERDefinition.octets(16).label("requestHash"),
         AuthorizationResponseCode.label("responseCode"),
-        EtsiTs103097Module.EtsiTs103097Certificate.label("certificate"),
+        OERDefinition.optional(EtsiTs103097Module.EtsiTs103097Certificate.label("certificate")),
         OERDefinition.extension()
     ).typeName("InnerAtResponse");
 

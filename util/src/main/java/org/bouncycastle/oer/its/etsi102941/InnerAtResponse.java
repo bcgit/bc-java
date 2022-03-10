@@ -10,63 +10,64 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Certificate;
 
-
 /**
- * InnerEcResponse ::= SEQUENCE {
- * requestHash                           OCTET STRING (SIZE(16)),
- * responseCode                          EnrolmentResponseCode,
- * certificate                           EtsiTs103097Certificate OPTIONAL,
+ * InnerAtResponse ::= SEQUENCE {
+ * requestHash                   OCTET STRING (SIZE(16)),
+ * responseCode                  AuthorizationResponseCode,
+ * certificate                   EtsiTs103097Certificate OPTIONAL,
  * ...
  * }
  * (WITH COMPONENTS { responseCode (ok), certificate PRESENT }
  * | WITH COMPONENTS { responseCode (ALL EXCEPT ok), certificate ABSENT }
  * )
  */
-public class InnerEcResponse
+public class InnerAtResponse
     extends ASN1Object
 {
     private final ASN1OctetString requestHash;
-    private final EnrolmentResponseCode responseCode;
+    private final AuthorizationResponseCode responseCode;
     private final EtsiTs103097Certificate certificate;
 
-    public InnerEcResponse(ASN1OctetString requestHash, EnrolmentResponseCode responseCode, EtsiTs103097Certificate certificate)
+    public InnerAtResponse(ASN1OctetString requestHash, AuthorizationResponseCode responseCode, EtsiTs103097Certificate certificate)
     {
         this.requestHash = requestHash;
         this.responseCode = responseCode;
         this.certificate = certificate;
     }
 
-    private InnerEcResponse(ASN1Sequence sequence)
+    private InnerAtResponse(ASN1Sequence seq)
     {
-        if (sequence.size() != 3)
+        if (seq.size() != 3)
         {
             throw new IllegalArgumentException("expected sequence size of 3");
         }
-        requestHash = ASN1OctetString.getInstance(sequence.getObjectAt(0));
-        responseCode = EnrolmentResponseCode.getInstance(sequence.getObjectAt(1));
-        certificate = OEROptional.getValue(EtsiTs103097Certificate.class, sequence.getObjectAt(2));
+        requestHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        responseCode = AuthorizationResponseCode.getInstance(seq.getObjectAt(1));
+        certificate = OEROptional.getValue(EtsiTs103097Certificate.class, seq.getObjectAt(2));
     }
 
-    public static InnerEcResponse getInstance(Object o)
+    public static InnerAtResponse getInstance(Object o)
     {
-        if (o instanceof InnerEcResponse)
+        if (o instanceof InnerAtResponse)
         {
-            return (InnerEcResponse)o;
+            return (InnerAtResponse)o;
         }
 
         if (o != null)
         {
-            return new InnerEcResponse(ASN1Sequence.getInstance(o));
+            return new InnerAtResponse(ASN1Sequence.getInstance(o));
         }
+
         return null;
     }
+
 
     public ASN1OctetString getRequestHash()
     {
         return requestHash;
     }
 
-    public EnrolmentResponseCode getResponseCode()
+    public AuthorizationResponseCode getResponseCode()
     {
         return responseCode;
     }
@@ -78,9 +79,7 @@ public class InnerEcResponse
 
     public ASN1Primitive toASN1Primitive()
     {
-        return new DERSequence(new ASN1Encodable[]{
-            requestHash, responseCode, OEROptional.getInstance(certificate)
-        });
+        return new DERSequence(new ASN1Encodable[]{requestHash, responseCode, OEROptional.getInstance(certificate)});
     }
 
     public static Builder builder()
@@ -91,7 +90,7 @@ public class InnerEcResponse
     public static class Builder
     {
         private ASN1OctetString requestHash;
-        private EnrolmentResponseCode responseCode;
+        private AuthorizationResponseCode responseCode;
         private EtsiTs103097Certificate certificate;
 
         public Builder setRequestHash(ASN1OctetString requestHash)
@@ -106,8 +105,7 @@ public class InnerEcResponse
             return this;
         }
 
-
-        public Builder setResponseCode(EnrolmentResponseCode responseCode)
+        public Builder setResponseCode(AuthorizationResponseCode responseCode)
         {
             this.responseCode = responseCode;
             return this;
@@ -119,10 +117,10 @@ public class InnerEcResponse
             return this;
         }
 
-        public InnerEcResponse createInnerEcResponse()
+        public InnerAtResponse createInnerAtResponse()
         {
-            return new InnerEcResponse(requestHash, responseCode, certificate);
+            return new InnerAtResponse(requestHash, responseCode, certificate);
         }
-
     }
+
 }
