@@ -112,7 +112,7 @@ public class BcDefaultTlsCredentialedAgreement
         public TlsSecret generateAgreement(TlsCertificate peerCertificate) throws IOException
         {
             ECPublicKeyParameters peerPublicKey = BcTlsCertificate.convert(crypto, peerCertificate).getPubKeyEC();
-            return BcTlsECDomain.calculateBasicAgreement(crypto, privateKey, peerPublicKey);
+            return BcTlsECDomain.calculateECDHAgreement(crypto, privateKey, peerPublicKey);
         }
 
         public Certificate getCertificate()
