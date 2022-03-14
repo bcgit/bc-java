@@ -124,7 +124,7 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier cryptlib_algorithm_blowfish_OFB = cryptlib_algorithm.branch("1.4");
 
     //
-    // Blake2b
+    // Blake2b/Blake2s
     //
     ASN1ObjectIdentifier blake2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.1722.12.2");
 
@@ -137,6 +137,10 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier id_blake2s160 = blake2.branch("2.5");
     ASN1ObjectIdentifier id_blake2s224 = blake2.branch("2.7");
     ASN1ObjectIdentifier id_blake2s256 = blake2.branch("2.8");
+
+    ASN1ObjectIdentifier blake3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.1722.12.2.3");
+
+    ASN1ObjectIdentifier blake3_256 = blake3.branch("8");
 
     //
     // Scrypt
