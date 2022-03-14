@@ -92,6 +92,8 @@ public class DigestTest
         { UAObjectIdentifiers.dstu7564digest_384.getId(), "72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
         { "DSTU7564-512", "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
         { UAObjectIdentifiers.dstu7564digest_512.getId(), "9e5be7daf7b68b49d2ecbd04c7a5b3af72945012b0820c3132846ddc90da511f80bb7b70abd0cb1ab8df785d600c187b9d0ac567e8b6f76fde8a0b417a2ebf88" },
+        { "BLAKE3-256", "6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85" },
+        { MiscObjectIdentifiers.blake3_256.getId(), "6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85" },
     };
     
     public String getName()

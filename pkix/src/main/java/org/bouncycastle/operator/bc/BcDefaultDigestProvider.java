@@ -7,6 +7,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -15,6 +16,7 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.Blake3Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
 import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
@@ -202,6 +204,13 @@ public class BcDefaultDigestProvider
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
                 return new SM3Digest();
+            }
+        });
+        table.put(MiscObjectIdentifiers.blake3_256, new BcDigestProvider()
+        {
+            public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+            {
+                return new Blake3Digest(256);
             }
         });
 
