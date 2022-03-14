@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -47,6 +48,7 @@ public class MessageDigestUtils
         digestOidMap.put(NISTObjectIdentifiers.id_shake128, "SHAKE128");
         digestOidMap.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
         digestOidMap.put(GMObjectIdentifiers.sm3, "SM3");
+        digestOidMap.put(MiscObjectIdentifiers.blake3_256, "BLAKE3-256");
 
         digestAlgIdMap.put("SHA-1", new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
         digestAlgIdMap.put("SHA-224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224));
@@ -57,6 +59,7 @@ public class MessageDigestUtils
         digestAlgIdMap.put("SHA3-256", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256));
         digestAlgIdMap.put("SHA3-384", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_384));
         digestAlgIdMap.put("SHA3-512", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_512));
+        digestAlgIdMap.put("BLAKE3-256", new AlgorithmIdentifier(MiscObjectIdentifiers.blake3_256));
     }
 
     /**
