@@ -278,7 +278,7 @@ public class Blake3Digest
      *
      * @param pSource the source digest.
      */
-    private Blake3Digest(final Blake3Digest pSource)
+    public Blake3Digest(final Blake3Digest pSource)
     {
         /* Copy default digest length */
         theDigestLen = pSource.theDigestLen;
