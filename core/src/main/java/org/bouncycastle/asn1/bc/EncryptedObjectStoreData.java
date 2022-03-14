@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -26,7 +27,7 @@ public class EncryptedObjectStoreData
     public EncryptedObjectStoreData(AlgorithmIdentifier encryptionAlgorithm, byte[] encryptedContent)
     {
         this.encryptionAlgorithm = encryptionAlgorithm;
-        this.encryptedContent = new DEROctetString(encryptedContent);
+        this.encryptedContent = new DEROctetString(Arrays.clone(encryptedContent));
     }
 
     private EncryptedObjectStoreData(ASN1Sequence seq)

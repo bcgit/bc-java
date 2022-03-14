@@ -49,7 +49,7 @@ public class GOST28147Parameters
         byte[] iv,
         ASN1ObjectIdentifier paramSet)
     {
-        this.iv = new DEROctetString(iv);
+        this.iv = new DEROctetString(Arrays.clone(iv));
         this.paramSet = paramSet;
     }
 

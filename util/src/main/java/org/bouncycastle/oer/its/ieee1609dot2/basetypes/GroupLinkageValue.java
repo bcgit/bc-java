@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -101,7 +102,7 @@ public class GroupLinkageValue
 
         public Builder setJValue(byte[] jValue)
         {
-            return setJValue(new DEROctetString(jValue));
+            return setJValue(new DEROctetString(Arrays.clone(jValue)));
         }
 
         public Builder setValue(ASN1OctetString value)
@@ -112,7 +113,7 @@ public class GroupLinkageValue
 
         public Builder setValue(byte[] value)
         {
-            return setValue(new DEROctetString(value));
+            return setValue(new DEROctetString(Arrays.clone(value)));
         }
 
         public GroupLinkageValue createGroupLinkageValue()

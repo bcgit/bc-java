@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 /** 
  * <a href="https://tools.ietf.org/html/rfc5652#section-7">RFC 5652</a> DigestedData object.
@@ -37,7 +38,7 @@ public class DigestedData
         this.version = new ASN1Integer(0);
         this.digestAlgorithm = digestAlgorithm;
         this.encapContentInfo = encapContentInfo;
-        this.digest = new DEROctetString(digest);
+        this.digest = new DEROctetString(Arrays.clone(digest));
     }
 
     private DigestedData(
@@ -123,6 +124,6 @@ public class DigestedData
 
     public byte[] getDigest()
     {
-        return digest.getOctets();
+        return Arrays.clone(digest.getOctets());
     }
 }

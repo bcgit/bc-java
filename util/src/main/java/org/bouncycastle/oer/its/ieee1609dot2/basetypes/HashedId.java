@@ -18,7 +18,7 @@ public class HashedId
 
     public byte[] getHashBytes()
     {
-        return id;
+        return Arrays.clone(id);
     }
 
     public ASN1Primitive toASN1Primitive()
