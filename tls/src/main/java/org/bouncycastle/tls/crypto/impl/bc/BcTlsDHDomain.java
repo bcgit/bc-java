@@ -46,7 +46,7 @@ public class BcTlsDHDomain implements TlsDHDomain
         return crypto.adoptLocalSecret(secret);
     }
 
-    public static DHParameters getParameters(TlsDHConfig dhConfig)
+    public static DHParameters getDomainParameters(TlsDHConfig dhConfig)
     {
         DHGroup dhGroup = TlsDHUtils.getDHGroup(dhConfig);
         if (dhGroup == null)
@@ -58,19 +58,19 @@ public class BcTlsDHDomain implements TlsDHDomain
     }
 
     protected BcTlsCrypto crypto;
-    protected TlsDHConfig dhConfig;
-    protected DHParameters dhParameters;
+    protected TlsDHConfig config;
+    protected DHParameters domainParameters;
 
     public BcTlsDHDomain(BcTlsCrypto crypto, TlsDHConfig dhConfig)
     {
         this.crypto = crypto;
-        this.dhConfig = dhConfig;
-        this.dhParameters = getParameters(dhConfig);
+        this.config = dhConfig;
+        this.domainParameters = getDomainParameters(dhConfig);
     }
 
     public BcTlsSecret calculateDHAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
     {
-        return calculateDHAgreement(crypto, privateKey, publicKey, dhConfig.isPadded());
+        return calculateDHAgreement(crypto, privateKey, publicKey, config.isPadded());
     }
 
     public TlsAgreement createDH()
@@ -80,7 +80,7 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public BigInteger decodeParameter(byte[] encoding) throws IOException
     {
-        if (dhConfig.isPadded() && getValueLength(dhParameters) != encoding.length)
+        if (config.isPadded() && getValueLength(domainParameters) != encoding.length)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -99,7 +99,7 @@ public class BcTlsDHDomain implements TlsDHDomain
         {
             BigInteger y = decodeParameter(encoding);
 
-            return new DHPublicKeyParameters(y, dhParameters);
+            return new DHPublicKeyParameters(y, domainParameters);
         }
         catch (RuntimeException e)
         {
@@ -107,20 +107,20 @@ public class BcTlsDHDomain implements TlsDHDomain
         }
     }
 
-    public byte[] encodeParameter(BigInteger x) throws IOException
+    public byte[] encodeParameter(BigInteger x)
     {
-        return encodeValue(dhParameters, dhConfig.isPadded(), x);
+        return encodeValue(domainParameters, config.isPadded(), x);
     }
 
-    public byte[] encodePublicKey(DHPublicKeyParameters publicKey) throws IOException
+    public byte[] encodePublicKey(DHPublicKeyParameters publicKey)
     {
-        return encodeValue(dhParameters, true, publicKey.getY());
+        return encodeValue(domainParameters, true, publicKey.getY());
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         DHBasicKeyPairGenerator keyPairGenerator = new DHBasicKeyPairGenerator();
-        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getSecureRandom(), dhParameters));
+        keyPairGenerator.init(new DHKeyGenerationParameters(crypto.getSecureRandom(), domainParameters));
         return keyPairGenerator.generateKeyPair();
     }
 }
