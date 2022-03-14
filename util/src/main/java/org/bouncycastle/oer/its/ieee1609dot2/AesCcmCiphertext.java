@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -89,7 +90,7 @@ public class AesCcmCiphertext
 
         public Builder setNonce(byte[] nonce)
         {
-            return setNonce(new DEROctetString(nonce));
+            return setNonce(new DEROctetString(Arrays.clone(nonce)));
         }
         
         public Builder setCcmCiphertext(Opaque opaque)

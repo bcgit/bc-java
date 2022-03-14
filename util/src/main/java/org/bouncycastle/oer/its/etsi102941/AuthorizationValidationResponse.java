@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.etsi102941.basetypes.CertificateSubjectAttributes;
+import org.bouncycastle.util.Arrays;
 
 /**
  * AuthorizationValidationResponse ::= SEQUENCE {
@@ -104,7 +105,7 @@ public class AuthorizationValidationResponse
 
         public Builder setRequestHash(byte[] requestHash)
         {
-            this.requestHash = new DEROctetString(requestHash);
+            this.requestHash = new DEROctetString(Arrays.clone(requestHash));
             return this;
         }
 
