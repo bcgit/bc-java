@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.util.Arrays;
 
 /**
  * EcdsaP384Signature ::= SEQUENCE {
@@ -92,7 +93,7 @@ public class EcdsaP384Signature
 
         public Builder setSSig(byte[] sSig)
         {
-            return setSSig(new DEROctetString(sSig));
+            return setSSig(new DEROctetString(Arrays.clone(sSig)));
         }
 
         public EcdsaP384Signature createEcdsaP384Signature()

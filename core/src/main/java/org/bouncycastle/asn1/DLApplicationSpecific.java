@@ -2,6 +2,8 @@ package org.bouncycastle.asn1;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * A DER encoding version of an application specific object.
  * 
@@ -20,7 +22,7 @@ public class DLApplicationSpecific
      */
     public DLApplicationSpecific(int tagNo, byte[] contentsOctets)
     {
-        super(new DLTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(contentsOctets)));
+        super(new DLTaggedObject(false, BERTags.APPLICATION, tagNo, new DEROctetString(Arrays.clone(contentsOctets))));
     }
 
     /**

@@ -89,7 +89,7 @@ public class EccP384CurvePoint
 
     public static EccP384CurvePoint xOnly(byte[] value)
     {
-        return new EccP384CurvePoint(xonly, new DEROctetString(value));
+        return new EccP384CurvePoint(xonly, new DEROctetString(Arrays.clone(value)));
     }
 
     public static EccP384CurvePoint fill()
@@ -109,12 +109,12 @@ public class EccP384CurvePoint
 
     public static EccP384CurvePoint compressedY0(byte[] octetString)
     {
-        return new EccP384CurvePoint(compressedY0, new DEROctetString(octetString));
+        return new EccP384CurvePoint(compressedY0, new DEROctetString(Arrays.clone(octetString)));
     }
 
     public static EccP384CurvePoint compressedY1(byte[] octetString)
     {
-        return new EccP384CurvePoint(compressedY1, new DEROctetString(octetString));
+        return new EccP384CurvePoint(compressedY1, new DEROctetString(Arrays.clone(octetString)));
     }
 
     public static EccP384CurvePoint uncompressedP384(Point384 point384)
