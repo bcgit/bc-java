@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.oer.its.ItsUtils;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -95,13 +96,13 @@ public class BitmapSspRange
 
         public Builder setSspValue(byte[] sspValue)
         {
-            this.sspValue = new DEROctetString(sspValue);
+            this.sspValue = new DEROctetString(Arrays.clone(sspValue));
             return this;
         }
 
         public Builder setSspBitMask(byte[] sspBitmask)
         {
-            this.sspBitMask = new DEROctetString(sspBitmask);
+            this.sspBitMask = new DEROctetString(Arrays.clone(sspBitmask));
             return this;
         }
 

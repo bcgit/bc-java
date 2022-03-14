@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -161,7 +162,7 @@ public class AuthorityKeyIdentifier
         GeneralNames            name,
         BigInteger              serialNumber)
     {
-        this.keyidentifier = (keyIdentifier != null) ? new DEROctetString(keyIdentifier) : null;
+        this.keyidentifier = (keyIdentifier != null) ? new DEROctetString(Arrays.clone(keyIdentifier)) : null;
         this.certissuer = name;
         this.certserno = (serialNumber != null) ? new ASN1Integer(serialNumber) : null;
     }
