@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.util.Arrays;
 
 public class PKIHeaderBuilder
 {
@@ -78,7 +79,7 @@ public class PKIHeaderBuilder
 
     public PKIHeaderBuilder setSenderKID(byte[] kid)
     {
-        return setSenderKID(kid == null ? null : new DEROctetString(kid));
+        return setSenderKID(kid == null ? null : createClonedOctetString(kid));
     }
 
     public PKIHeaderBuilder setSenderKID(ASN1OctetString kid)
@@ -90,7 +91,7 @@ public class PKIHeaderBuilder
 
     public PKIHeaderBuilder setRecipKID(byte[] kid)
     {
-        return setRecipKID(kid == null ? null : new DEROctetString(kid));
+        return setRecipKID(kid == null ? null : createClonedOctetString(kid));
     }
 
     public PKIHeaderBuilder setRecipKID(ASN1OctetString kid)
@@ -102,7 +103,7 @@ public class PKIHeaderBuilder
 
     public PKIHeaderBuilder setTransactionID(byte[] tid)
     {
-        return setTransactionID(tid == null ? null : new DEROctetString(tid));
+        return setTransactionID(tid == null ? null : createClonedOctetString(tid));
     }
 
     public PKIHeaderBuilder setTransactionID(ASN1OctetString tid)
@@ -114,7 +115,7 @@ public class PKIHeaderBuilder
 
     public PKIHeaderBuilder setSenderNonce(byte[] nonce)
     {
-        return setSenderNonce(nonce == null ? null : new DEROctetString(nonce));
+        return setSenderNonce(nonce == null ? null : createClonedOctetString(nonce));
     }
 
     public PKIHeaderBuilder setSenderNonce(ASN1OctetString nonce)
@@ -126,7 +127,7 @@ public class PKIHeaderBuilder
 
     public PKIHeaderBuilder setRecipNonce(byte[] nonce)
     {
-        return setRecipNonce(nonce == null ? null : new DEROctetString(nonce));
+        return setRecipNonce(nonce == null ? null : createClonedOctetString(nonce));
     }
 
     public PKIHeaderBuilder setRecipNonce(ASN1OctetString nonce)
@@ -235,5 +236,10 @@ public class PKIHeaderBuilder
         {
             v.add(new DERTaggedObject(true, tagNo, obj));
         }
+    }
+
+    private DEROctetString createClonedOctetString(byte[] value)
+    {
+        return new DEROctetString(Arrays.clone(value));
     }
 }
