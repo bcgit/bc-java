@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.its.etsi102941.basetypes.EcSignature;
 import org.bouncycastle.oer.its.etsi102941.basetypes.PublicKeys;
+import org.bouncycastle.util.Arrays;
 
 /**
  * InnerAtRequest ::= SEQUENCE {
@@ -120,7 +121,7 @@ public class InnerAtRequest
 
         public Builder setHmacKey(byte[] hmacKey)
         {
-            this.hmacKey = new DEROctetString(hmacKey);
+            this.hmacKey = new DEROctetString(Arrays.clone(hmacKey));
             return this;
         }
 

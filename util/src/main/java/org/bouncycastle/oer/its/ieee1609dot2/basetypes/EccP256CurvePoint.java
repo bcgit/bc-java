@@ -77,7 +77,7 @@ public class EccP256CurvePoint
 
     public static EccP256CurvePoint xOnly(byte[] value)
     {
-        return new EccP256CurvePoint(xonly, new DEROctetString(value));
+        return new EccP256CurvePoint(xonly, new DEROctetString(Arrays.clone(value)));
     }
 
 
@@ -98,12 +98,12 @@ public class EccP256CurvePoint
 
     public static EccP256CurvePoint compressedY0(byte[] octetString)
     {
-        return new EccP256CurvePoint(compressedY0, new DEROctetString(octetString));
+        return new EccP256CurvePoint(compressedY0, new DEROctetString(Arrays.clone(octetString)));
     }
 
     public static EccP256CurvePoint compressedY1(byte[] octetString)
     {
-        return new EccP256CurvePoint(compressedY1, new DEROctetString(octetString));
+        return new EccP256CurvePoint(compressedY1, new DEROctetString(Arrays.clone(octetString)));
     }
 
 

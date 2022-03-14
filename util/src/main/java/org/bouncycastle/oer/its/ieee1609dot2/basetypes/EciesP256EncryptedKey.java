@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 /**
  * EciesP256EncryptedKey ::= SEQUENCE {
@@ -103,7 +104,7 @@ public class EciesP256EncryptedKey
 
         public Builder setC(byte[] c)
         {
-            this.c = new DEROctetString(c);
+            this.c = new DEROctetString(Arrays.clone(c));
             return this;
         }
 
@@ -116,7 +117,7 @@ public class EciesP256EncryptedKey
 
         public Builder setT(byte[] t)
         {
-            this.t = new DEROctetString(t);
+            this.t = new DEROctetString(Arrays.clone(t));
             return this;
         }
 

@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Generator for X.509 extensions
@@ -111,7 +112,7 @@ public class ExtensionsGenerator
         else
         {
             extOrdering.addElement(oid);
-            extensions.put(oid, new Extension(oid, critical, new DEROctetString(value)));
+            extensions.put(oid, new Extension(oid, critical, new DEROctetString(Arrays.clone(value))));
         }
     }
 

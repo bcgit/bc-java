@@ -32,7 +32,7 @@ public class IDEACBCPar
     public IDEACBCPar(
         byte[]  iv)
     {
-        this.iv = new DEROctetString(iv);
+        this.iv = new DEROctetString(Arrays.clone(iv));
     }
 
     private IDEACBCPar(

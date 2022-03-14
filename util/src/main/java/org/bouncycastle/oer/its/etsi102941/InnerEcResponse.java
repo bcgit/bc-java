@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.oer.OEROptional;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097Certificate;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -102,7 +103,7 @@ public class InnerEcResponse
 
         public Builder setRequestHash(byte[] requestHash)
         {
-            this.requestHash = new DEROctetString(requestHash);
+            this.requestHash = new DEROctetString(Arrays.clone(requestHash));
             return this;
         }
 

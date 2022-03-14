@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.util.Arrays;
 
 /**
  * <pre>
@@ -59,7 +60,7 @@ public class HashedData
 
     public static HashedData sha256HashedData(byte[] sha256HashedData)
     {
-        return new HashedData(HashedData.sha256HashedData,new DEROctetString(sha256HashedData));
+        return new HashedData(HashedData.sha256HashedData,new DEROctetString(Arrays.clone(sha256HashedData)));
     }
 
     public static HashedData sha384HashedData(ASN1OctetString sha384HashedData)
@@ -69,7 +70,7 @@ public class HashedData
 
     public static HashedData sha384HashedData(byte[] sha384HashedData)
     {
-        return new HashedData(HashedData.sha384HashedData,new DEROctetString(sha384HashedData));
+        return new HashedData(HashedData.sha384HashedData,new DEROctetString(Arrays.clone(sha384HashedData)));
     }
 
     public static HashedData reserved(ASN1OctetString reserved)
@@ -79,7 +80,7 @@ public class HashedData
 
     public static HashedData reserved(byte[] reserved)
     {
-        return new HashedData(HashedData.reserved,new DEROctetString(reserved));
+        return new HashedData(HashedData.reserved, new DEROctetString(Arrays.clone(reserved)));
     }
 
     public static HashedData getInstance(Object o)
