@@ -657,7 +657,7 @@ public class PGPSignature
         // merge unhashed subpackets
         SignatureSubpacket[] sig1Unhashed = sig1.getUnhashedSubPackets().packets;
         SignatureSubpacket[] sig2Unhashed = sig2.getUnhashedSubPackets().packets;
-        List<SignatureSubpacket> merged = new ArrayList<>(java.util.Arrays.asList(sig1Unhashed));
+        List<SignatureSubpacket> merged = new ArrayList<SignatureSubpacket>(java.util.Arrays.asList(sig1Unhashed));
 
         for (SignatureSubpacket subpacket : sig2Unhashed) {
             boolean found = false;
