@@ -10,7 +10,6 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -24,9 +23,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class PGPPublicKeyMergeTest
     extends SimpleTest
 {
-
-    private static final KeyFingerPrintCalculator fpc = new BcKeyFingerprintCalculator();
-
     private static final String CERT_1_BASE = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
         "\n" +
         "mQENBFpR6SYBCADHOPHgWgYXScJT2UnxolWTPxf3WN20T9XWMIbK3aefLkTfoQE0\n" +
