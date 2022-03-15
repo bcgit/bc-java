@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.Packet;
@@ -32,7 +34,7 @@ public class PGPPublicKeyRing
     List keys;
 
     public PGPPublicKeyRing(
-        byte[]    encoding,
+        byte[] encoding,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException
     {
@@ -80,7 +82,7 @@ public class PGPPublicKeyRing
     }
 
     public PGPPublicKeyRing(
-        InputStream    in,
+        InputStream in,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException
     {
@@ -93,11 +95,11 @@ public class PGPPublicKeyRing
         {
             throw new IOException(
                 "public key ring doesn't start with public key tag: " +
-                "tag 0x" + Integer.toHexString(initialTag));
+                    "tag 0x" + Integer.toHexString(initialTag));
         }
 
         PublicKeyPacket pubPk = readPublicKeyPacket(pIn);
-        TrustPacket     trustPk = readOptionalTrustPacket(pIn);
+        TrustPacket trustPk = readOptionalTrustPacket(pIn);
 
         // direct signatures and revocations
         List keySigs = readSignaturesAndTrust(pIn);
@@ -125,14 +127,14 @@ public class PGPPublicKeyRing
 
     /**
      * Return the first public key in the ring.
-     * 
+     *
      * @return PGPPublicKey
      */
     public PGPPublicKey getPublicKey()
     {
         return (PGPPublicKey)keys.get(0);
     }
-    
+
     /**
      * Return the public key referred to by the passed in keyID if it
      * is present.
@@ -141,18 +143,18 @@ public class PGPPublicKeyRing
      * @return PGPPublicKey with matching keyID, null if it is not present.
      */
     public PGPPublicKey getPublicKey(
-        long        keyID)
-    {    
+        long keyID)
+    {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
-            
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+
             if (keyID == k.getKeyID())
             {
                 return k;
             }
         }
-    
+
         return null;
     }
 
@@ -167,7 +169,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getFingerprint()))
             {
@@ -190,7 +192,7 @@ public class PGPPublicKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             Iterator sigIt = k.getSignaturesForKeyID(keyID);
 
@@ -205,7 +207,7 @@ public class PGPPublicKeyRing
 
     /**
      * Return an iterator containing all the public keys.
-     * 
+     *
      * @return Iterator
      */
     public Iterator<PGPPublicKey> getPublicKeys()
@@ -221,13 +223,13 @@ public class PGPPublicKeyRing
         return getPublicKeys();
     }
 
-    public byte[] getEncoded() 
+    public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
         this.encode(bOut);
-        
+
         return bOut.toByteArray();
     }
 
@@ -241,7 +243,7 @@ public class PGPPublicKeyRing
     public byte[] getEncoded(boolean forTransfer)
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         this.encode(bOut, forTransfer);
 
@@ -249,7 +251,7 @@ public class PGPPublicKeyRing
     }
 
     public void encode(
-        OutputStream    outStream)
+        OutputStream outStream)
         throws IOException
     {
         encode(outStream, false);
@@ -258,43 +260,43 @@ public class PGPPublicKeyRing
     /**
      * Encode the key ring to outStream, with trust packets stripped out if forTransfer is true.
      *
-     * @param outStream stream to write the key encoding to.
+     * @param outStream   stream to write the key encoding to.
      * @param forTransfer if the purpose of encoding is to send key to other users.
      * @throws IOException in case of encoding error.
      */
     public void encode(
-        OutputStream    outStream,
-        boolean         forTransfer)
+        OutputStream outStream,
+        boolean forTransfer)
         throws IOException
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey    k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             k.encode(outStream, forTransfer);
         }
     }
-    
+
     /**
      * Returns a new key ring with the public key passed in
      * either added or replacing an existing one.
-     * 
+     *
      * @param pubRing the public key ring to be modified
-     * @param pubKey the public key to be inserted.
+     * @param pubKey  the public key to be inserted.
      * @return a new keyRing
      */
     public static PGPPublicKeyRing insertPublicKey(
-        PGPPublicKeyRing  pubRing,
-        PGPPublicKey      pubKey)
+        PGPPublicKeyRing pubRing,
+        PGPPublicKey pubKey)
     {
-        List       keys = new ArrayList(pubRing.keys);
-        boolean    found = false;
-        boolean    masterFound = false;
+        List keys = new ArrayList(pubRing.keys);
+        boolean found = false;
+        boolean masterFound = false;
 
-        for (int i = 0; i != keys.size();i++)
+        for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey   key = (PGPPublicKey)keys.get(i);
-            
+            PGPPublicKey key = (PGPPublicKey)keys.get(i);
+
             if (key.getKeyID() == pubKey.getKeyID())
             {
                 found = true;
@@ -322,41 +324,41 @@ public class PGPPublicKeyRing
                 keys.add(pubKey);
             }
         }
-        
+
         return new PGPPublicKeyRing(keys);
     }
-    
+
     /**
      * Returns a new key ring with the public key passed in
      * removed from the key ring.
-     * 
+     *
      * @param pubRing the public key ring to be modified
-     * @param pubKey the public key to be removed.
+     * @param pubKey  the public key to be removed.
      * @return a new keyRing, null if pubKey is not found.
      */
     public static PGPPublicKeyRing removePublicKey(
-        PGPPublicKeyRing  pubRing,
-        PGPPublicKey      pubKey)
+        PGPPublicKeyRing pubRing,
+        PGPPublicKey pubKey)
     {
-        List       keys = new ArrayList(pubRing.keys);
-        boolean    found = false;
-        
-        for (int i = 0; i < keys.size();i++)
+        List keys = new ArrayList(pubRing.keys);
+        boolean found = false;
+
+        for (int i = 0; i < keys.size(); i++)
         {
-            PGPPublicKey   key = (PGPPublicKey)keys.get(i);
-            
+            PGPPublicKey key = (PGPPublicKey)keys.get(i);
+
             if (key.getKeyID() == pubKey.getKeyID())
             {
                 found = true;
                 keys.remove(i);
             }
         }
-        
+
         if (!found)
         {
             return null;
         }
-        
+
         return new PGPPublicKeyRing(keys);
     }
 
@@ -382,5 +384,86 @@ public class PGPPublicKeyRing
         List sigList = readSignaturesAndTrust(in);
 
         return new PGPPublicKey(pk, kTrust, sigList, fingerPrintCalculator);
+    }
+
+    /**
+     * Join two copies of the same certificate.
+     * The certificates must have the same primary key, but may carry different subkeys, user-ids and signatures.
+     * The resulting certificate will carry the sum of both certificates subkeys, user-ids and signatures.
+     * <p>
+     * This method will ignore trust packets on the second copy of the certificate and instead
+     * copy the local certificate's trust packets to the joined certificate.
+     *
+     * @param first                 local copy of the certificate
+     * @param second                remote copy of the certificate (e.g. from a key server)
+     * @param fingerPrintCalculator fingerprint calculator
+     * @return joined certificate
+     * @throws PGPException
+     * @throws IOException
+     */
+    public static PGPPublicKeyRing join(
+        PGPPublicKeyRing first,
+        PGPPublicKeyRing second)
+        throws PGPException
+    {
+        return join(first, second, false, false);
+    }
+
+    /**
+     * Join two copies of the same certificate.
+     * The certificates must have the same primary key, but may carry different subkeys, user-ids and signatures.
+     * The resulting certificate will carry the sum of both certificates subkeys, user-ids and signatures.
+     * <p>
+     * For each subkey holds: If joinTrustPackets is set to true and the second key is carrying a trust packet,
+     * the trust packet will be copied to the joined key.
+     * Otherwise, the joined key will carry the trust packet of the local copy.
+     *
+     * @param first                      local copy of the certificate
+     * @param second                     remote copy of the certificate (e.g. from a key server)
+     * @param joinTrustPackets           if true, trust packets from the second certificate copy will be carried over into the joined certificate
+     * @param allowSubkeySigsOnNonSubkey if true, the resulting joined certificate may carry subkey signatures on its primary key
+     * @return joined certificate
+     * @throws PGPException
+     * @throws IOException
+     */
+    public static PGPPublicKeyRing join(
+        PGPPublicKeyRing first,
+        PGPPublicKeyRing second,
+        boolean joinTrustPackets,
+        boolean allowSubkeySigsOnNonSubkey)
+        throws PGPException
+    {
+        if (!Arrays.areEqual(first.getPublicKey().getFingerprint(), second.getPublicKey().getFingerprint()))
+        {
+            throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
+        }
+
+        Set<Long> secondKeys = new HashSet<>();
+        for (PGPPublicKey key : second)
+        {
+            secondKeys.add(key.getKeyID());
+        }
+
+        List<PGPPublicKey> merged = new ArrayList<>();
+        for (PGPPublicKey key : first)
+        {
+            PGPPublicKey copy = second.getPublicKey(key.getKeyID());
+            if (copy != null)
+            {
+                merged.add(PGPPublicKey.join(key, copy, joinTrustPackets, allowSubkeySigsOnNonSubkey));
+                secondKeys.remove(key.getKeyID());
+            }
+            else
+            {
+                merged.add(key);
+            }
+        }
+
+        for (long additionalKeyId : secondKeys)
+        {
+            merged.add(second.getPublicKey(additionalKeyId));
+        }
+
+        return new PGPPublicKeyRing(merged);
     }
 }
