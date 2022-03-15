@@ -1134,4 +1134,177 @@ public class PGPPublicKey
 
         return returnKey;
     }
+
+    /**
+     * Merge this the given local public key with another, potentially fresher copy.
+     * The resulting {@link PGPPublicKey} contains the sum of both keys user-ids and signatures.
+     *
+     * If joinTrustPackets is set to true and the copy carries a trust packet,
+     * the joined key will copy the trust-packet from the copy.
+     * Otherwise, it will carry the trust packet of the local key.
+     *
+     * @param key local public key
+     * @param copy copy of the public key (e.g. from a key server)
+     * @param joinTrustPackets if true, trust packets from the copy are copied over into the resulting key
+     * @param allowSubkeySigsOnNonSubkey if true, subkey signatures on the copy will be present in the merged key, even if key was not a subkey before.
+     * @param fingerPrintCalculator fingerprint calculator
+     * @return joined key
+     * @throws IOException
+     * @throws PGPException
+     */
+    public static PGPPublicKey join(
+            PGPPublicKey key,
+            PGPPublicKey copy,
+            boolean joinTrustPackets,
+            boolean allowSubkeySigsOnNonSubkey,
+            KeyFingerPrintCalculator fingerPrintCalculator)
+            throws IOException, PGPException
+    {
+        if (key.getKeyID() != copy.getKeyID())
+        {
+            throw new IllegalArgumentException("Key-ID mismatch.");
+        }
+
+        TrustPacket trustPk = key.trustPk;
+        List<PGPSignature> keySigs = new ArrayList(key.keySigs);
+        List ids = new ArrayList(key.ids);
+        List idTrusts = new ArrayList(key.idTrusts);
+        List<List<PGPSignature>> idSigs = new ArrayList(key.idSigs);
+        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<>(key.subSigs);
+
+        if (joinTrustPackets)
+        {
+            if (copy.trustPk != null)
+            {
+                trustPk = copy.trustPk;
+            }
+        }
+
+        // key signatures
+        for (PGPSignature keySig : copy.keySigs)
+        {
+            boolean found = false;
+            for (int i = 0; i < keySigs.size(); i++)
+            {
+                PGPSignature existingKeySig = keySigs.get(i);
+                if (PGPSignature.isSignatureEncodingEqual(existingKeySig, keySig))
+                {
+                    found = true;
+                    // join existing sig with copy to apply modifications in unhashed subpackets
+                    existingKeySig = PGPSignature.join(existingKeySig, keySig);
+                    keySigs.remove(i);
+                    keySigs.add(i, existingKeySig);
+                    break;
+                }
+            }
+            if (found)
+            {
+                break;
+            }
+            keySigs.add(keySig);
+        }
+
+        // user-ids and id sigs
+        for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
+        {
+            Object copyId = copy.ids.get(idIdx);
+            List<PGPSignature> copyIdSigs = new ArrayList<>(copy.idSigs.get(idIdx));
+            TrustPacket copyTrust = copy.idTrusts.get(idIdx);
+
+            int existingIdIndex = -1;
+            for (int i = 0; i < ids.size(); i++)
+            {
+                Object existingId = ids.get(i);
+                if (existingId.equals(copyId))
+                {
+                    existingIdIndex = i;
+                    break;
+                }
+            }
+
+            // new user-id
+            if (existingIdIndex == -1)
+            {
+                ids.add(copyId);
+                idSigs.add(copyIdSigs);
+                if (joinTrustPackets)
+                {
+                    idTrusts.add(copyTrust);
+                } else
+                {
+                    idTrusts.add(null);
+                }
+                continue;
+            }
+
+            // existing user-id
+            if (joinTrustPackets && copyTrust != null)
+            {
+                TrustPacket existingTrust = (TrustPacket) idTrusts.get(existingIdIndex);
+                if (existingTrust == null || Arrays.areEqual(copyTrust.getEncoded(), existingTrust.getEncoded()))
+                {
+                    idTrusts.remove(existingIdIndex);
+                    idTrusts.add(existingIdIndex, copyTrust);
+                }
+            }
+
+            List<PGPSignature> existingIdSigs = idSigs.get(existingIdIndex);
+            for (PGPSignature newSig : copyIdSigs)
+            {
+                boolean found = false;
+                for (int i = 0; i < existingIdSigs.size(); i++)
+                {
+                    PGPSignature existingSig = existingIdSigs.get(i);
+                    if (PGPSignature.isSignatureEncodingEqual(newSig, existingSig))
+                    {
+                        found = true;
+                        // join existing sig with copy to apply modifications in unhashed subpackets
+                        existingSig = PGPSignature.join(existingSig, newSig);
+                        existingIdSigs.remove(i);
+                        existingIdSigs.add(i, existingSig);
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    existingIdSigs.add(newSig);
+                }
+            }
+        }
+
+        // subSigs
+        if (copy.subSigs != null) {
+            if (subSigs == null && allowSubkeySigsOnNonSubkey)
+            {
+                subSigs = new ArrayList<>(copy.subSigs);
+            } else {
+                for (PGPSignature copySubSig : copy.subSigs)
+                {
+                    boolean found = false;
+                    for (int i = 0; i < subSigs.size(); i++)
+                    {
+                        PGPSignature existingSubSig = subSigs.get(i);
+                        if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                        {
+                            found = true;
+                            // join existing sig with copy to apply modifications in unhashed subpackets
+                            existingSubSig = PGPSignature.join(existingSubSig, copySubSig);
+                            subSigs.remove(i);
+                            subSigs.add(i, existingSubSig);
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        subSigs.add(copySubSig);
+                    }
+                }
+            }
+        }
+
+        PGPPublicKey merged = new PGPPublicKey(key.publicPk, trustPk, keySigs, ids, idTrusts, idSigs, fingerPrintCalculator);
+        merged.subSigs = subSigs;
+
+        return merged;
+    }
 }
