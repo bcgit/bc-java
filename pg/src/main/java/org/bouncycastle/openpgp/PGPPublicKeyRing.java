@@ -7,8 +7,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.Packet;
@@ -382,5 +384,90 @@ public class PGPPublicKeyRing
         List sigList = readSignaturesAndTrust(in);
 
         return new PGPPublicKey(pk, kTrust, sigList, fingerPrintCalculator);
+    }
+
+    /**
+     * Join two copies of the same certificate.
+     * The certificates must have the same primary key, but may carry different subkeys, user-ids and signatures.
+     * The resulting certificate will carry the sum of both certificates subkeys, user-ids and signatures.
+     *
+     * This method will ignore trust packets on the second copy of the certificate and instead
+     * copy the local certificate's trust packets to the joined certificate.
+     *
+     * @param first local copy of the certificate
+     * @param second remote copy of the certificate (e.g. from a key server)
+     * @param fingerPrintCalculator fingerprint calculator
+     * @return joined certificate
+     *
+     * @throws PGPException
+     * @throws IOException
+     */
+    public static PGPPublicKeyRing join(
+            PGPPublicKeyRing first,
+            PGPPublicKeyRing second,
+            KeyFingerPrintCalculator fingerPrintCalculator)
+            throws PGPException, IOException
+    {
+        return join(first, second, false, false, fingerPrintCalculator);
+    }
+
+    /**
+     * Join two copies of the same certificate.
+     * The certificates must have the same primary key, but may carry different subkeys, user-ids and signatures.
+     * The resulting certificate will carry the sum of both certificates subkeys, user-ids and signatures.
+     *
+     * For each subkey holds: If joinTrustPackets is set to true and the second key is carrying a trust packet,
+     * the trust packet will be copied to the joined key.
+     * Otherwise, the joined key will carry the trust packet of the local copy.
+     *
+     * @param first local copy of the certificate
+     * @param second remote copy of the certificate (e.g. from a key server)
+     * @param joinTrustPackets if true, trust packets from the second certificate copy will be carried over into the joined certificate
+     * @param allowSubkeySigsOnNonSubkey if true, the resulting joined certificate may carry subkey signatures on its primary key
+     * @param fingerPrintCalculator fingerprint calculator
+     * @return joined certificate
+     *
+     * @throws PGPException
+     * @throws IOException
+     */
+    public static PGPPublicKeyRing join(
+            PGPPublicKeyRing first,
+            PGPPublicKeyRing second,
+            boolean joinTrustPackets,
+            boolean allowSubkeySigsOnNonSubkey,
+            KeyFingerPrintCalculator fingerPrintCalculator)
+            throws PGPException, IOException
+    {
+        if (!Arrays.areEqual(first.getPublicKey().getFingerprint(), second.getPublicKey().getFingerprint()))
+        {
+            throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
+        }
+
+        Set<Long> secondKeys = new HashSet<>();
+        for (PGPPublicKey key : second)
+        {
+            secondKeys.add(key.getKeyID());
+        }
+
+        List<PGPPublicKey> merged = new ArrayList<>();
+        for (PGPPublicKey key : first)
+        {
+            PGPPublicKey copy = second.getPublicKey(key.getKeyID());
+            if (copy != null)
+            {
+                merged.add(PGPPublicKey.join(key, copy, joinTrustPackets, allowSubkeySigsOnNonSubkey, fingerPrintCalculator));
+                secondKeys.remove(key.getKeyID());
+            } else
+            {
+                merged.add(key);
+            }
+        }
+
+        for (long additionalKeyId : secondKeys)
+        {
+            merged.add(second.getPublicKey(additionalKeyId));
+        }
+
+        return new PGPPublicKeyRing(merged);
     }
 }
