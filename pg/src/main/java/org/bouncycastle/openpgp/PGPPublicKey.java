@@ -1228,7 +1228,7 @@ public class PGPPublicKey
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
         {
             Object copyId = copy.ids.get(idIdx);
-            List<PGPSignature> copyIdSigs = new ArrayList<>(copy.idSigs.get(idIdx));
+            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>(copy.idSigs.get(idIdx));
             TrustPacket copyTrust = copy.idTrusts.get(idIdx);
 
             int existingIdIndex = -1;
@@ -1298,7 +1298,7 @@ public class PGPPublicKey
         {
             if (subSigs == null && allowSubkeySigsOnNonSubkey)
             {
-                subSigs = new ArrayList<>(copy.subSigs);
+                subSigs = new ArrayList<PGPSignature>(copy.subSigs);
             }
             else
             {
