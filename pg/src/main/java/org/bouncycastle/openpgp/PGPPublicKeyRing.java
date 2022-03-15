@@ -438,13 +438,13 @@ public class PGPPublicKeyRing
             throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
         }
 
-        Set<Long> secondKeys = new HashSet<>();
+        Set<Long> secondKeys = new HashSet<Long>();
         for (PGPPublicKey key : second)
         {
             secondKeys.add(key.getKeyID());
         }
 
-        List<PGPPublicKey> merged = new ArrayList<>();
+        List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
         for (PGPPublicKey key : first)
         {
             PGPPublicKey copy = second.getPublicKey(key.getKeyID());
