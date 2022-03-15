@@ -1190,7 +1190,7 @@ public class PGPPublicKey
         List ids = new ArrayList(key.ids);
         List idTrusts = new ArrayList(key.idTrusts);
         List<List<PGPSignature>> idSigs = new ArrayList(key.idSigs);
-        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<>(key.subSigs);
+        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<PGPSignature>(key.subSigs);
 
         if (joinTrustPackets)
         {
