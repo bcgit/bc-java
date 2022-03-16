@@ -309,10 +309,13 @@ public class DTLSServerProtocol
                 clientMessage = handshake.receiveMessageDelayedDigest(HandshakeType.certificate_verify);
                 byte[] certificateVerifyBody = clientMessage.getBody();
                 processCertificateVerify(state, certificateVerifyBody, handshake.getHandshakeHash());
+                handshake.prepareToFinish();
                 handshake.updateHandshakeMessagesDigest(clientMessage);
             }
-
-            handshake.prepareToFinish();
+            else
+            {
+                handshake.prepareToFinish();
+            }
         }
 
         // NOTE: Calculated exclusive of the actual Finished message from the client
