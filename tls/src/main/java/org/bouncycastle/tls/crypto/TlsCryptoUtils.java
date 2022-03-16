@@ -75,6 +75,24 @@ public abstract class TlsCryptoUtils
         }
     }
 
+    public static int getHashInternalSize(int cryptoHashAlgorithm)
+    {
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.md5:
+        case CryptoHashAlgorithm.sha1:
+        case CryptoHashAlgorithm.sha224:
+        case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sm3:
+            return 64;
+        case CryptoHashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha512:
+            return 128;
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
     public static int getHashOutputSize(int cryptoHashAlgorithm)
     {
         switch (cryptoHashAlgorithm)
