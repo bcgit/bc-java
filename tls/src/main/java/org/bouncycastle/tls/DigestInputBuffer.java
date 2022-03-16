@@ -15,7 +15,7 @@ class DigestInputBuffer extends ByteArrayOutputStream
         d.update(this.buf, 0, count);
     }
 
-    void copyTo(OutputStream output) throws IOException
+    void copyInputTo(OutputStream output) throws IOException
     {
         // NOTE: Copy data since the output here may be under control of external code.
         Streams.pipeAll(new ByteArrayInputStream(buf, 0, count), output);

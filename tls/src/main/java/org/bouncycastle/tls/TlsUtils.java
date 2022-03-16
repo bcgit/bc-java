@@ -2332,7 +2332,7 @@ public class TlsUtils
             output.write(extraSignatureInput);
         }
 
-        buf.copyTo(output);
+        buf.copyInputTo(output);
 
         output.close();
     }
