@@ -33,15 +33,6 @@ class DeferredHash
         this.sealed = false;
     }
 
-    private DeferredHash(TlsContext context, Hashtable hashes)
-    {
-        this.context = context;
-        this.buf = null;
-        this.hashes = hashes;
-        this.forceBuffering = false;
-        this.sealed = true;
-    }
-
     public void copyBufferTo(OutputStream output)
         throws IOException
     {
@@ -106,7 +97,7 @@ class DeferredHash
         checkStopBuffering();
     }
 
-    public TlsHandshakeHash stopTracking()
+    public void stopTracking()
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
@@ -126,7 +117,11 @@ class DeferredHash
             break;
         }
         }
-        return new DeferredHash(context, newHashes);
+
+        this.buf = null;
+        this.hashes = newHashes;
+        this.forceBuffering = false;
+        this.sealed = true;
     }
 
     public TlsHash forkPRFHash()
