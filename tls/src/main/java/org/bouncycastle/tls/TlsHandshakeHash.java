@@ -21,7 +21,7 @@ public interface TlsHandshakeHash
 
     void sealHashAlgorithms();
 
-    TlsHandshakeHash stopTracking();
+    void stopTracking();
 
     TlsHash forkPRFHash();
 

@@ -153,11 +153,9 @@ class DTLSReliableHandshake
         return handshakeHash;
     }
 
-    TlsHandshakeHash prepareToFinish()
+    void prepareToFinish()
     {
-        TlsHandshakeHash result = handshakeHash;
-        this.handshakeHash = handshakeHash.stopTracking();
-        return result;
+        handshakeHash.stopTracking();
     }
 
     void sendMessage(short msg_type, byte[] body)
@@ -183,77 +181,64 @@ class DTLSReliableHandshake
         updateHandshakeMessagesDigest(message);
     }
 
+    Message receiveMessage()
+        throws IOException
+    {
+        Message message = implReceiveMessage();
+        updateHandshakeMessagesDigest(message);
+        return message;
+    }
+
     byte[] receiveMessageBody(short msg_type)
         throws IOException
     {
-        Message message = receiveMessage();
+        Message message = implReceiveMessage();
         if (message.getType() != msg_type)
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
+        updateHandshakeMessagesDigest(message);
         return message.getBody();
     }
 
-    Message receiveMessage()
+    Message receiveMessageDelayedDigest(short msg_type)
         throws IOException
     {
-        long currentTimeMillis = System.currentTimeMillis();
-
-        if (null == resendTimeout)
+        Message message = implReceiveMessage();
+        if (message.getType() != msg_type)
         {
-            resendMillis = INITIAL_RESEND_MILLIS;
-            resendTimeout = new Timeout(resendMillis, currentTimeMillis);
-
-            prepareInboundFlight(new Hashtable());
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        byte[] buf = null;
+        return message;
+    }
 
-        for (;;)
+    void updateHandshakeMessagesDigest(Message message)
+        throws IOException
+    {
+        short msg_type = message.getType();
+        switch (msg_type)
         {
-            if (recordLayer.isClosed())
-            {
-                throw new TlsFatalAlert(AlertDescription.user_canceled);
-            }
+        case HandshakeType.hello_request:
+        case HandshakeType.hello_verify_request:
+        case HandshakeType.key_update:
+            break;
 
-            Message pending = getPendingMessage();
-            if (pending != null)
-            {
-                return pending;
-            }
-
-            if (Timeout.hasExpired(handshakeTimeout, currentTimeMillis))
-            {
-                throw new TlsTimeoutException("Handshake timed out");
-            }
-
-            int waitMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
-            waitMillis = Timeout.constrainWaitMillis(waitMillis, resendTimeout, currentTimeMillis);
-
-            // NOTE: Ensure a finite wait, of at least 1ms
-            if (waitMillis < 1)
-            {
-                waitMillis = 1;
-            }
-
-            int receiveLimit = recordLayer.getReceiveLimit();
-            if (buf == null || buf.length < receiveLimit)
-            {
-                buf = new byte[receiveLimit];
-            }
-
-            int received = recordLayer.receive(buf, 0, receiveLimit, waitMillis);
-            if (received < 0)
-            {
-                resendOutboundFlight();
-            }
-            else
-            {
-                processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
-            }
-
-            currentTimeMillis = System.currentTimeMillis();
+        // TODO[dtls13] Not included in the transcript for (D)TLS 1.3+
+        case HandshakeType.new_session_ticket:
+        default:
+        {
+            byte[] body = message.getBody();
+            byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
+            TlsUtils.writeUint8(msg_type, buf, 0);
+            TlsUtils.writeUint24(body.length, buf, 1);
+            TlsUtils.writeUint16(message.getSeq(), buf, 4);
+            TlsUtils.writeUint24(0, buf, 6);
+            TlsUtils.writeUint24(body.length, buf, 9);
+            handshakeHash.update(buf, 0, buf.length);
+            handshakeHash.update(body, 0, body.length);
+        }
         }
     }
 
@@ -324,10 +309,72 @@ class DTLSReliableHandshake
             if (body != null)
             {
                 previousInboundFlight = null;
-                return updateHandshakeMessagesDigest(new Message(next_receive_seq++, next.getMsgType(), body));
+                return new Message(next_receive_seq++, next.getMsgType(), body);
             }
         }
         return null;
+    }
+
+    private Message implReceiveMessage()
+        throws IOException
+    {
+        long currentTimeMillis = System.currentTimeMillis();
+
+        if (null == resendTimeout)
+        {
+            resendMillis = INITIAL_RESEND_MILLIS;
+            resendTimeout = new Timeout(resendMillis, currentTimeMillis);
+
+            prepareInboundFlight(new Hashtable());
+        }
+
+        byte[] buf = null;
+
+        for (;;)
+        {
+            if (recordLayer.isClosed())
+            {
+                throw new TlsFatalAlert(AlertDescription.user_canceled);
+            }
+
+            Message pending = getPendingMessage();
+            if (pending != null)
+            {
+                return pending;
+            }
+
+            if (Timeout.hasExpired(handshakeTimeout, currentTimeMillis))
+            {
+                throw new TlsTimeoutException("Handshake timed out");
+            }
+
+            int waitMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
+            waitMillis = Timeout.constrainWaitMillis(waitMillis, resendTimeout, currentTimeMillis);
+
+            // NOTE: Ensure a finite wait, of at least 1ms
+            if (waitMillis < 1)
+            {
+                waitMillis = 1;
+            }
+
+            int receiveLimit = recordLayer.getReceiveLimit();
+            if (buf == null || buf.length < receiveLimit)
+            {
+                buf = new byte[receiveLimit];
+            }
+
+            int received = recordLayer.receive(buf, 0, receiveLimit, waitMillis);
+            if (received < 0)
+            {
+                resendOutboundFlight();
+            }
+            else
+            {
+                processRecord(MAX_RECEIVE_AHEAD, recordLayer.getReadEpoch(), buf, 0, received);
+            }
+
+            currentTimeMillis = System.currentTimeMillis();
+        }
     }
 
     private void prepareInboundFlight(Hashtable nextFlight)
@@ -425,36 +472,6 @@ class DTLSReliableHandshake
 
         resendMillis = backOff(resendMillis);
         resendTimeout = new Timeout(resendMillis);
-    }
-
-    private Message updateHandshakeMessagesDigest(Message message)
-        throws IOException
-    {
-        short msg_type = message.getType();
-        switch (msg_type)
-        {
-        case HandshakeType.hello_request:
-        case HandshakeType.hello_verify_request:
-        case HandshakeType.key_update:
-            break;
-
-        // TODO[dtls13] Not included in the transcript for (D)TLS 1.3+
-        case HandshakeType.new_session_ticket:
-        default:
-        {
-            byte[] body = message.getBody();
-            byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
-            TlsUtils.writeUint8(msg_type, buf, 0);
-            TlsUtils.writeUint24(body.length, buf, 1);
-            TlsUtils.writeUint16(message.getSeq(), buf, 4);
-            TlsUtils.writeUint24(0, buf, 6);
-            TlsUtils.writeUint24(body.length, buf, 9);
-            handshakeHash.update(buf, 0, buf.length);
-            handshakeHash.update(body, 0, body.length);
-        }
-        }
-
-        return message;
     }
 
     private void writeMessage(Message message)
