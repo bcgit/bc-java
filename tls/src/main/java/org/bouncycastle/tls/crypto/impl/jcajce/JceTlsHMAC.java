@@ -1,14 +1,13 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.InvalidKeyException;
-import java.util.Hashtable;
 
 import javax.crypto.Mac;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsHMAC;
-import org.bouncycastle.util.Integers;
 
 /**
  * Wrapper class for a JCE MAC based on HMAC to provide the necessary operations for TLS.
@@ -16,54 +15,22 @@ import org.bouncycastle.util.Integers;
 public class JceTlsHMAC
     implements TlsHMAC
 {
-    private static final Hashtable internalBlockSizes = new Hashtable();
-
-    static
-    {
-        internalBlockSizes.put("HmacMD5", Integers.valueOf(64));
-        internalBlockSizes.put("HmacSHA1", Integers.valueOf(64));
-        internalBlockSizes.put("HmacSHA256", Integers.valueOf(64));
-        internalBlockSizes.put("HmacSHA384", Integers.valueOf(128));
-        internalBlockSizes.put("HmacSHA512", Integers.valueOf(128));
-    }
-
     private final Mac hmac;
     private final String algorithm;
-    private final Integer internalBlockSize;
+    private final int internalBlockSize;
 
     /**
      * Base constructor.
      *
+     * @param cryptoHashAlgorithm the hash algorithm underlying the MAC implementation
      * @param hmac MAC implementation.
      * @param algorithm algorithm name to use for keys and to get the internal block size.
      */
-    public JceTlsHMAC(Mac hmac, String algorithm)
-    {
-        this(hmac, algorithm, getInternalBlockSize(algorithm));
-    }
-
-    private static int getInternalBlockSize(String algorithm)
-    {
-        if (!internalBlockSizes.containsKey(algorithm))
-        {
-            throw new IllegalArgumentException("HMAC " + algorithm + " unknown");
-        }
-
-        return ((Integer)internalBlockSizes.get(algorithm)).intValue();
-    }
-
-    /**
-     * Base constructor specifying the internal block size.
-     *
-     * @param hmac MAC implementation.
-     * @param algorithm algorithm name to use for keys and to get the internal block size.
-     * @param internalBlockSize internal block size of the message digest underlying the HMAC.
-     */
-    public JceTlsHMAC(Mac hmac, String algorithm, int internalBlockSize)
+    public JceTlsHMAC(int cryptoHashAlgorithm, Mac hmac, String algorithm)
     {
         this.hmac = hmac;
         this.algorithm = algorithm;
-        this.internalBlockSize = Integers.valueOf(internalBlockSize);
+        this.internalBlockSize = TlsCryptoUtils.getHashInternalSize(cryptoHashAlgorithm);
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
@@ -102,7 +69,7 @@ public class JceTlsHMAC
 
     public int getInternalBlockSize()
     {
-        return internalBlockSize.intValue();
+        return internalBlockSize;
     }
 
     public int getMacLength()
