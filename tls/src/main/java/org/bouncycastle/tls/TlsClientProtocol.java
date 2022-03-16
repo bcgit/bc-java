@@ -637,7 +637,7 @@ public class TlsClientProtocol
                     this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                 }
 
-                this.handshakeHash = handshakeHash.stopTracking();
+                handshakeHash.stopTracking();
 
                 sendChangeCipherSpec();
                 sendFinishedMessage();
