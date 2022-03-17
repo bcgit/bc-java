@@ -35,7 +35,6 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SessionParameters;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsDHUtils;
@@ -45,7 +44,6 @@ import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.DHGroup;
-import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -711,35 +709,13 @@ class ProvTlsServer
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), clientCertificate);
 
-            TlsCertificate ee = clientCertificate.getCertificateAt(0);
-
             /*
-             * TODO[jsse] Need a less kludgy approach here, or maybe we only need a dummy value for
-             * 'authType' anyway?
+             * We never try to continue the handshake with an untrusted client certificate (although it could
+             * be an option if we only "want" client-auth, rather than "need".
+             * 
+             * NOTE: The 'authType' parameter is a dummy value not used by trust managers.
              */
-            short signatureAlgorithm;
-            if (ee.supportsSignatureAlgorithm(SignatureAlgorithm.ed25519))
-            {
-                signatureAlgorithm = SignatureAlgorithm.ed25519;
-            }
-            else if (ee.supportsSignatureAlgorithm(SignatureAlgorithm.ed448))
-            {
-                signatureAlgorithm = SignatureAlgorithm.ed448;
-            }
-            else
-            {
-                signatureAlgorithm = ee.getLegacySignatureAlgorithm();
-            }
-
-            if (signatureAlgorithm < 0)
-            {
-                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
-            }
-
-            String authType = JsseUtils.getAuthTypeClient(signatureAlgorithm);
-
-            // NOTE: We never try to continue the handshake with an untrusted client certificate
-            manager.checkClientTrusted(chain, authType);
+            manager.checkClientTrusted(chain, "TLS-client-auth");
         }
     }
 

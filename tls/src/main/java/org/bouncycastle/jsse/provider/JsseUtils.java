@@ -51,7 +51,6 @@ import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
@@ -269,42 +268,6 @@ abstract class JsseUtils
         }
 
         return applicationProtocol.getUtf8Decoding();
-    }
-
-    static String getAuthTypeClient(short signatureAlgorithm)
-    {
-        /*
-         * For use with checkClientTrusted calls on a trust manager.
-         * "Determined by the actual certificate used" according to JSSE Standard Names, but in
-         * practice trust managers only require the authType to be a non-null, non-empty String.
-         */
-
-        switch (signatureAlgorithm)
-        {
-        case SignatureAlgorithm.rsa:
-            return "RSA";
-        case SignatureAlgorithm.dsa:
-            return "DSA";
-        case SignatureAlgorithm.ecdsa:
-        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
-        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
-        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
-            return "EC";
-        case SignatureAlgorithm.ed25519:
-            return "Ed25519";
-        case SignatureAlgorithm.ed448:
-            return "Ed448";
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
-            return "RSA";
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return "RSASSA-PSS";
-        default:
-            throw new IllegalArgumentException();
-        }
     }
 
     static String getAuthTypeServer(int keyExchangeAlgorithm)
