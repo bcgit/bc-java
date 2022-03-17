@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -224,13 +225,15 @@ public class ArmoredInputStream
 
         if (headerFound)
         {
-            StringBuffer    buf = new StringBuffer("-");
             boolean         eolReached = false;
             boolean         crLf = false;
-            
+
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            buf.write('-');
+
             if (restart)    // we've had to look ahead two '-'
             {
-                buf.append('-');
+                buf.write('-');
             }
             
             while ((c = in.read()) >= 0)
@@ -249,7 +252,7 @@ public class ArmoredInputStream
                 }
                 if (c == '\r' || (last != '\r' && c == '\n'))
                 {
-                    String line = buf.toString();
+                    String line = Strings.fromUTF8ByteArray(buf.toByteArray());
                     if (line.trim().length() == 0)
                     {
                         break;
@@ -259,12 +262,12 @@ public class ArmoredInputStream
                         throw new IOException("invalid armor header");
                     }
                     headerList.add(line);
-                    buf.setLength(0);
+                    buf.reset();
                 }
 
                 if (c != '\n' && c != '\r')
                 {
-                    buf.append((char)c);
+                    buf.write(c);
                     eolReached = false;
                 }
                 else
