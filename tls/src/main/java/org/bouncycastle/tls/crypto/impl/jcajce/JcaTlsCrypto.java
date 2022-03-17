@@ -241,7 +241,16 @@ public class JcaTlsCrypto
 
     public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
     {
-        return createHMAC(getHMACAlgorithmName(cryptoHashAlgorithm));
+        String hmacName = getHMACAlgorithmName(cryptoHashAlgorithm);
+
+        try
+        {
+            return new JceTlsHMAC(cryptoHashAlgorithm, helper.createMac(hmacName), hmacName);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new RuntimeException("cannot create HMAC: " + hmacName, e);
+        }
     }
 
     protected TlsHMAC createHMAC_SSL(int macAlgorithm)
@@ -773,24 +782,6 @@ public class JcaTlsCrypto
         throws GeneralSecurityException
     {
         return new JceBlockCipherWithCBCImplicitIVImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
-    }
-
-    /**
-     * If you want to create your own versions of HMACs, override this method.
-     *
-     * @param hmacName the name of the HMAC required.
-     * @return a HMAC calculator.
-     */
-    protected TlsHMAC createHMAC(String hmacName)
-    {
-        try
-        {
-            return new JceTlsHMAC(helper.createMac(hmacName), hmacName);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new RuntimeException("cannot create HMAC: " + hmacName, e);
-        }
     }
 
     /**

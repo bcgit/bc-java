@@ -1450,7 +1450,7 @@ public class TlsServerProtocol
 
         TlsUtils.verifyCertificateVerifyClient(tlsServerContext, certificateRequest, certificateVerify, handshakeHash);
 
-        this.handshakeHash = handshakeHash.stopTracking();
+        handshakeHash.stopTracking();
     }
 
     protected ClientHello receiveClientHelloMessage(ByteArrayInputStream buf)
@@ -1485,7 +1485,7 @@ public class TlsServerProtocol
 
         if (!expectCertificateVerifyMessage())
         {
-            this.handshakeHash = handshakeHash.stopTracking();
+            handshakeHash.stopTracking();
         }
     }
 
