@@ -305,10 +305,7 @@ public class ArmoredOutputStream
         out.write(':');
         out.write(' ');
 
-        for (int i = 0; i != value.length(); i++)
-        {
-            out.write(value.charAt(i));
-        }
+        out.write(Strings.toUTF8ByteArray(value));
 
         for (int i = 0; i != nl.length(); i++)
         {
