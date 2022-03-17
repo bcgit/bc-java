@@ -122,7 +122,7 @@ public class JcaPKIXIdentityBuilder
     private void checkFile(File file)
         throws IOException
     {
-        if (file.canRead())
+        if (!file.canRead())
         {
             if (file.exists())
             {
