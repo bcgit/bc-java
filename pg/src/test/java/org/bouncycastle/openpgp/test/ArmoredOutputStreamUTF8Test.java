@@ -20,7 +20,7 @@ public class ArmoredOutputStreamUTF8Test
 
     public String getName()
     {
-        return ArmoredOutputStreamUTF8Test.class.getSimpleName();
+        return "ArmoredOutputStreamUTF8Test";
     }
 
     public void performTest()
