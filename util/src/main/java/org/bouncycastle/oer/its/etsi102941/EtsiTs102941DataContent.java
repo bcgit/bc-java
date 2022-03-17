@@ -51,7 +51,6 @@ public class EtsiTs102941DataContent
     private final int choice;
     private final ASN1Encodable etsiTs102941DataContent;
 
-
     public EtsiTs102941DataContent(int choice, ASN1Encodable etsiTs102941DataContent)
     {
         this.choice = choice;
@@ -70,7 +69,27 @@ public class EtsiTs102941DataContent
         case enrolmentResponse:
             etsiTs102941DataContent = InnerEcResponse.getInstance(asn1TaggedObject.getObject());
             return;
-
+        case authorizationRequest:
+            etsiTs102941DataContent = InnerAtRequest.getInstance(asn1TaggedObject.getObject());
+            return;
+        case authorizationResponse:
+            etsiTs102941DataContent = InnerAtResponse.getInstance(asn1TaggedObject.getObject());
+            return;
+        case certificateTrustListTlm:
+            etsiTs102941DataContent = ToBeSignedTlmCtl.getInstance(asn1TaggedObject.getObject());
+            return;
+        case certificateTrustListRca:
+            etsiTs102941DataContent = ToBeSignedRcaCtl.getInstance(asn1TaggedObject.getObject());
+            return;
+        case authorizationValidationRequest:
+            etsiTs102941DataContent = AuthorizationValidationRequest.getInstance(asn1TaggedObject.getObject());
+            return;
+        case authorizationValidationResponse:
+            etsiTs102941DataContent = AuthorizationValidationResponse.getInstance(asn1TaggedObject.getObject());
+            return;
+        case caCertificateRequest:
+            etsiTs102941DataContent = CaCertificateRequest.getInstance(asn1TaggedObject.getObject());
+            return;
         //
         // This is incomplete
         //
