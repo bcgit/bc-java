@@ -191,9 +191,10 @@ public class BcTlsCrypto
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
-        Digest digest = createDigest(CryptoHashAlgorithm.sha256);
+        int cryptoHashAlgorithm = CryptoHashAlgorithm.sha256;
+        Digest digest = createDigest(cryptoHashAlgorithm);
 
-        byte[] seed = new byte[digest.getDigestSize()];
+        byte[] seed = new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)];
         getSecureRandom().nextBytes(seed);
 
         DigestRandomGenerator nonceGen = new DigestRandomGenerator(digest);
@@ -239,7 +240,20 @@ public class BcTlsCrypto
 
     public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
     {
-        return true;
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.md5:
+        case CryptoHashAlgorithm.sha1:
+        case CryptoHashAlgorithm.sha224:
+        case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sm3:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)

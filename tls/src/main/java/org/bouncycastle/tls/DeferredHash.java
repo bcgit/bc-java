@@ -33,15 +33,6 @@ class DeferredHash
         this.sealed = false;
     }
 
-    private DeferredHash(TlsContext context, Hashtable hashes)
-    {
-        this.context = context;
-        this.buf = null;
-        this.hashes = hashes;
-        this.forceBuffering = false;
-        this.sealed = true;
-    }
-
     public void copyBufferTo(OutputStream output)
         throws IOException
     {
@@ -51,7 +42,7 @@ class DeferredHash
             throw new IllegalStateException("Not buffering");
         }
 
-        buf.copyTo(output);
+        buf.copyInputTo(output);
     }
 
     public void forceBuffering()
@@ -106,7 +97,7 @@ class DeferredHash
         checkStopBuffering();
     }
 
-    public TlsHandshakeHash stopTracking()
+    public void stopTracking()
     {
         SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
@@ -116,8 +107,8 @@ class DeferredHash
         case PRFAlgorithm.ssl_prf_legacy:
         case PRFAlgorithm.tls_prf_legacy:
         {
-            cloneHash(newHashes, HashAlgorithm.md5);
-            cloneHash(newHashes, HashAlgorithm.sha1);
+            cloneHash(newHashes, CryptoHashAlgorithm.md5);
+            cloneHash(newHashes, CryptoHashAlgorithm.sha1);
             break;
         }
         default:
@@ -126,7 +117,11 @@ class DeferredHash
             break;
         }
         }
-        return new DeferredHash(context, newHashes);
+
+        this.buf = null;
+        this.hashes = newHashes;
+        this.forceBuffering = false;
+        this.sealed = true;
     }
 
     public TlsHash forkPRFHash()
@@ -141,7 +136,9 @@ class DeferredHash
         case PRFAlgorithm.ssl_prf_legacy:
         case PRFAlgorithm.tls_prf_legacy:
         {
-            prfHash = new CombinedHash(context, cloneHash(HashAlgorithm.md5), cloneHash(HashAlgorithm.sha1));
+            TlsHash md5Hash = cloneHash(CryptoHashAlgorithm.md5);
+            TlsHash sha1Hash = cloneHash(CryptoHashAlgorithm.sha1);
+            prfHash = new CombinedHash(context, md5Hash, sha1Hash);
             break;
         }
         default:
@@ -161,21 +158,21 @@ class DeferredHash
 
     public byte[] getFinalHash(int cryptoHashAlgorithm)
     {
-        TlsHash d = (TlsHash)hashes.get(box(cryptoHashAlgorithm));
-        if (d == null)
+        TlsHash hash = (TlsHash)hashes.get(box(cryptoHashAlgorithm));
+        if (hash == null)
         {
             throw new IllegalStateException("CryptoHashAlgorithm." + cryptoHashAlgorithm + " is not being tracked");
         }
 
         checkStopBuffering();
 
-        d = d.cloneHash();
+        hash = hash.cloneHash();
         if (buf != null)
         {
-            buf.updateDigest(d);
+            buf.updateDigest(hash);
         }
 
-        return d.calculateHash();
+        return hash.calculateHash();
     }
 
     public void update(byte[] input, int inOff, int len)

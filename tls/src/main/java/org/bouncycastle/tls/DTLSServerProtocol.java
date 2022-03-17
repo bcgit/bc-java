@@ -304,12 +304,17 @@ public class DTLSServerProtocol
          * parameters).
          */
         {
-            TlsHandshakeHash certificateVerifyHash = handshake.prepareToFinish();
-
             if (expectCertificateVerifyMessage(state))
             {
-                byte[] certificateVerifyBody = handshake.receiveMessageBody(HandshakeType.certificate_verify);
-                processCertificateVerify(state, certificateVerifyBody, certificateVerifyHash);
+                clientMessage = handshake.receiveMessageDelayedDigest(HandshakeType.certificate_verify);
+                byte[] certificateVerifyBody = clientMessage.getBody();
+                processCertificateVerify(state, certificateVerifyBody, handshake.getHandshakeHash());
+                handshake.prepareToFinish();
+                handshake.updateHandshakeMessagesDigest(clientMessage);
+            }
+            else
+            {
+                handshake.prepareToFinish();
             }
         }
 
