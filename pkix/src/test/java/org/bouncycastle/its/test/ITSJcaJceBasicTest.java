@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.its.ITSCertificate;
 import org.bouncycastle.its.ITSExplicitCertificateBuilder;
 import org.bouncycastle.its.ITSImplicitCertificateBuilder;
+import org.bouncycastle.its.ITSPublicVerificationKey;
 import org.bouncycastle.its.ITSValidityPeriod;
 import org.bouncycastle.its.jcajce.JcaITSContentSigner;
 import org.bouncycastle.its.jcajce.JcaITSContentVerifierProvider;
@@ -45,6 +46,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Hostname;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSspRange;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSspRange;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ServiceSpecificPermissions;
@@ -289,6 +291,12 @@ public class ITSJcaJceBasicTest
         ITSCertificate caCert = loadCertificate(ca);
         JcaITSContentVerifierProvider provider = new JcaITSContentVerifierProvider.Builder().setProvider("BC").build(caCert);
         boolean valid = caCert.isSignatureValid(provider);
+        TestCase.assertTrue(valid);
+
+        ToBeSignedCertificate toBeSignedCertificate = caCert.toASN1Structure().getToBeSigned();
+        VerificationKeyIndicator vki = toBeSignedCertificate.getVerifyKeyIndicator();
+        provider = new JcaITSContentVerifierProvider.Builder().setProvider("BC").build(new ITSPublicVerificationKey((PublicVerificationKey)vki.getVerificationKeyIndicator()));
+        valid = caCert.isSignatureValid(provider);
         TestCase.assertTrue(valid);
     }
 
