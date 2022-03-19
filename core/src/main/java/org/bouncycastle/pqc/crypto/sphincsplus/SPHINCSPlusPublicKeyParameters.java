@@ -37,6 +37,6 @@ public class SPHINCSPlusPublicKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters())), pk.seed, pk.root);
+        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters()).intValue()), pk.seed, pk.root);
     }
 }

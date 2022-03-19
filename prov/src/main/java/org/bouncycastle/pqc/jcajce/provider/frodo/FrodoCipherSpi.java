@@ -19,25 +19,17 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.ARIAEngine;
-import org.bouncycastle.crypto.engines.CamelliaEngine;
-import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
-import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
-import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
-
-import static org.bouncycastle.pqc.jcajce.provider.util.WrapUtil.getWrapper;
+import org.bouncycastle.util.Exceptions;
 
 class FrodoCipherSpi
         extends CipherSpi
@@ -109,7 +101,7 @@ class FrodoCipherSpi
             }
             catch (Exception e)
             {
-                throw new IllegalStateException(e.toString(), e);
+                throw Exceptions.illegalStateException(e.toString(), e);
             }
         }
 
@@ -126,7 +118,7 @@ class FrodoCipherSpi
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException(e.getMessage(), e);
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 
@@ -245,7 +237,7 @@ class FrodoCipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
+            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
 
@@ -290,7 +282,7 @@ class FrodoCipherSpi
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getInputSize()));
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
+            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secret);
 

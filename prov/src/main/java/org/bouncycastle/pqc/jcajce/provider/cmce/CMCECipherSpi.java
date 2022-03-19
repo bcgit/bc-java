@@ -27,9 +27,9 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMExtractor;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
-
-import static org.bouncycastle.pqc.jcajce.provider.util.WrapUtil.getWrapper;
+import org.bouncycastle.util.Exceptions;
 
 class CMCECipherSpi
     extends CipherSpi
@@ -100,7 +100,7 @@ class CMCECipherSpi
             }
             catch (Exception e)
             {
-                throw new IllegalStateException(e.toString(), e);
+                throw Exceptions.illegalStateException(e.toString(), e);
             }
         }
 
@@ -117,7 +117,7 @@ class CMCECipherSpi
         }
         catch (InvalidAlgorithmParameterException e)
         {
-            throw new IllegalArgumentException(e.getMessage(), e);
+            throw Exceptions.illegalArgumentException(e.getMessage(), e);
         }
     }
 
@@ -236,7 +236,7 @@ class CMCECipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
+            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
 
@@ -281,7 +281,7 @@ class CMCECipherSpi
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getInputSize()));
 
-            Wrapper kWrap = getWrapper(kemParameterSpec.getKeyAlgorithmName());
+            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
             KeyParameter keyParameter = new KeyParameter(secret);
 
