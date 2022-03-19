@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class ArmoredOutputStreamUTF8Test
@@ -32,12 +33,12 @@ public class ArmoredOutputStreamUTF8Test
         ArmoredOutputStream armorOut = new ArmoredOutputStream(out);
         armorOut.setHeader("Comment", utf8WithUmlauts);
 
-        armorOut.write("Foo\nBar".getBytes(utf8));
+        armorOut.write(Strings.toUTF8ByteArray("Foo\nBar"));
 
         armorOut.close();
 
         String armoredOutput = out.toString();
-        ByteArrayInputStream bytesIn = new ByteArrayInputStream(armoredOutput.getBytes(utf8));
+        ByteArrayInputStream bytesIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armoredOutput));
         ArmoredInputStream armorIn = new ArmoredInputStream(bytesIn);
         String[] header = armorIn.getArmorHeaders();
 

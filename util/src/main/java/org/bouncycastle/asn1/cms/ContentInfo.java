@@ -161,6 +161,6 @@ public class ContentInfo
             }
         }
 
-        return isDefiniteLength ? new DLSequence(v) : new BERSequence(v);
+        return isDefiniteLength ? (ASN1Primitive)new DLSequence(v) : (ASN1Primitive)new BERSequence(v);
     }
 }
