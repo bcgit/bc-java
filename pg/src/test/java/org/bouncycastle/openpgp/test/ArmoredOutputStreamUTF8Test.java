@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -12,8 +11,6 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ArmoredOutputStreamUTF8Test
     extends SimpleTest
 {
-    private static final Charset utf8 = Charset.forName("UTF8");
-
     public static void main(String[] args)
     {
         runTest(new ArmoredOutputStreamUTF8Test());
