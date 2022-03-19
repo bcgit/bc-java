@@ -50,11 +50,11 @@ public class SPHINCSPlusPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters())), Arrays.concatenate(sk.seed, sk.prf, pk.seed, pk.root));
+        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters()).intValue()), Arrays.concatenate(sk.seed, sk.prf, pk.seed, pk.root));
     }
 
     public byte[] getEncodedPublicKey()
     {
-        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters())), pk.seed, pk.root);
+        return Arrays.concatenate(Pack.intToBigEndian(SPHINCSPlusParameters.getID(getParameters()).intValue()), pk.seed, pk.root);
     }
 }

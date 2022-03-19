@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -76,7 +77,7 @@ public class KeyPairGeneratorSpi
 
             curveName = ((ECNamedCurveGenParameterSpec)params).getName();
 
-            ECDomainParameters ecP = ECGOST3410NamedCurves.getByName(curveName);
+            X9ECParameters ecP = ECGOST3410NamedCurves.getByNameX9(curveName);
             if (ecP == null)
             {
                 throw new InvalidAlgorithmParameterException("unknown curve name: " + curveName);
