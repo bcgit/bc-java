@@ -72,6 +72,16 @@ public abstract class SimpleTest
     }
 
     protected void isEquals(
+        boolean a,
+        boolean b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+        }
+    }
+
+    protected void isEquals(
         String message,
         boolean a,
         boolean b)
