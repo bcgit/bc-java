@@ -142,8 +142,8 @@ public class RSAKeyPairGenerator
             qInv = BigIntegers.modOddInverse(p, q);
 
             result = new AsymmetricCipherKeyPair(
-                new RSAKeyParameters(false, n, e),
-                new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv));
+                new RSAKeyParameters(false, n, e, true),
+                new RSAPrivateCrtKeyParameters(n, e, d, p, q, dP, dQ, qInv, true));
         }
 
         return result;

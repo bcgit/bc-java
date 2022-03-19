@@ -67,8 +67,8 @@ public class EC5Util
                 c_25519.getA().toBigInteger(),
                 c_25519.getB().toBigInteger(),
                 c_25519.getOrder(),
-                c_25519.getCofactor()
-                ), c_25519);
+                c_25519.getCofactor(),
+                true), c_25519);
 
             return map;
         }

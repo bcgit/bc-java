@@ -44,7 +44,7 @@ public class X962NamedCurves
                 fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFF"),
                 fromHex("fffffffffffffffffffffffffffffffefffffffffffffffc"),
                 fromHex("64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -70,7 +70,7 @@ public class X962NamedCurves
                 fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFF"),
                 fromHex("fffffffffffffffffffffffffffffffefffffffffffffffc"),
                 fromHex("cc22d6dfb95c6b25e49c0d6364a4e5980c393aa21668d953"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -96,7 +96,7 @@ public class X962NamedCurves
                 fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFF"),
                 fromHex("fffffffffffffffffffffffffffffffefffffffffffffffc"),
                 fromHex("22123dc2395a05caa7423daeccc94760a7d462256bd56916"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -122,7 +122,7 @@ public class X962NamedCurves
                 new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"),
                 fromHex("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc"),
                 fromHex("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -148,7 +148,7 @@ public class X962NamedCurves
                 new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"),
                 fromHex("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc"),
                 fromHex("617fab6832576cbbfed50d99f0249c3fee58b94ba0038c7ae84c8c832f2c"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -174,7 +174,7 @@ public class X962NamedCurves
                 new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"),
                 fromHex("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc"),
                 fromHex("255705fa2a306654b1f4cb03d6a750a30c250102d4988717d9ba15ab6d3e"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -200,7 +200,7 @@ public class X962NamedCurves
                 new BigInteger("115792089210356248762697446949407573530086143415290314195533631308867097853951"),
                 fromHex("ffffffff00000001000000000000000000000000fffffffffffffffffffffffc"),
                 fromHex("5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b"),
-                n, h));
+                n, h, true));
         }
 
         protected X9ECParameters createParameters()
