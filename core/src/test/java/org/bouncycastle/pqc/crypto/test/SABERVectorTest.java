@@ -87,14 +87,14 @@ public class SABERVectorTest
                 {
                     if (buf.size() > 0)
                     {
-                        String count = buf.get("count");
+                        String count = (String)buf.get("count");
                         System.out.println("test case: " + count);
 
-                        byte[] seed = Hex.decode(buf.get("seed")); // seed for SABER secure random
-                        byte[] pk = Hex.decode(buf.get("pk"));     // public key
-                        byte[] sk = Hex.decode(buf.get("sk"));     // private key
-                        byte[] ct = Hex.decode(buf.get("ct"));     // ciphertext
-                        byte[] ss = Hex.decode(buf.get("ss"));     // session key
+                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for SABER secure random
+                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
+                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
+                        byte[] ct = Hex.decode((String)buf.get("ct"));     // ciphertext
+                        byte[] ss = Hex.decode((String)buf.get("ss"));     // session key
 
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
                         SABERParameters parameters = params[fileIndex];

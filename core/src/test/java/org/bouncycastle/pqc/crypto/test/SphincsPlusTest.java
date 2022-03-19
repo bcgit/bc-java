@@ -48,7 +48,7 @@ public class SphincsPlusTest
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
-            if ( full || name.contains("-128s-") || name.contains("-128f-"))
+            if (full || name.indexOf("-128s-") >= 0 || name.indexOf("-128f-") >= 0)
             {
                 InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
                 BufferedReader bin = new BufferedReader(new InputStreamReader(src));
