@@ -48,7 +48,7 @@ public class GMNamedCurves
             BigInteger n = fromHex("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -73,7 +73,7 @@ public class GMNamedCurves
             BigInteger n = fromHex("BDB6F4FE3E8B1D9E0DA8C0D40FC962195DFAE76F56564677");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
