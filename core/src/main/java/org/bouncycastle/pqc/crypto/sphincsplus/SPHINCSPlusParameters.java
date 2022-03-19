@@ -179,6 +179,6 @@ public class SPHINCSPlusParameters
 
     public byte[] getEncoded()
     {
-        return Pack.intToBigEndian(getID(this));
+        return Pack.intToBigEndian(getID(this).intValue());
     }
 }

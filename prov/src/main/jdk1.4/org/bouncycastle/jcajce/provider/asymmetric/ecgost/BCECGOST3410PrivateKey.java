@@ -138,7 +138,7 @@ public class BCECGOST3410PrivateKey
         if (params.isNamedCurve())
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
-            ECDomainParameters   ecP = ECGOST3410NamedCurves.getByOID(oid);
+            X9ECParameters   ecP = ECGOST3410NamedCurves.getByOIDX9(oid);
 
             ecSpec = new ECNamedCurveParameterSpec(
                                         ECUtil.getCurveName(oid),

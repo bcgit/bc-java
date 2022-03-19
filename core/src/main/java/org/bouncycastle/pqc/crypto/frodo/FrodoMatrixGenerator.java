@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 abstract class FrodoMatrixGenerator
@@ -109,9 +110,8 @@ abstract class FrodoMatrixGenerator
             }
             catch (InvalidCipherTextException e)
             {
-                throw new IllegalStateException(e.toString(), e);
+                throw Exceptions.illegalStateException(e.toString(), e);
             }
-
         }
     }
 }

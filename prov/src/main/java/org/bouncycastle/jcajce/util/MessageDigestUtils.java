@@ -72,7 +72,7 @@ public class MessageDigestUtils
     {
         if (digestAlgIdMap.containsKey(digestName))
         {
-            return digestAlgIdMap.get(digestName);
+            return (AlgorithmIdentifier)digestAlgIdMap.get(digestName);
         }
         throw new IllegalArgumentException("unknown digest: " + digestName);
     }

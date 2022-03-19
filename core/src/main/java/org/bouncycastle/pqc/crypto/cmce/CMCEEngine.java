@@ -1688,8 +1688,9 @@ class CMCEEngine
 
         for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)
         {
-            for (int polyIndex : poly)
+            for (int j = 0; j != poly.length; j++)
             {
+                int polyIndex = poly[j];
                 if (polyIndex == 0 && GFBITS == 12)
                 {
                     prod[i - SYS_T] ^= (gf.gf_mul(prod[i], (short)2));
