@@ -43,8 +43,9 @@ public class ArmoredOutputStreamUTF8Test
 
         String[] lines = armoredOutput.split("\n");
         String comment = null;
-        for (String line : lines)
+        for (int i = 0; i != lines.length; i++)
         {
+            String line = lines[i];
             if (line.startsWith("Comment: "))
             {
                 comment = line.substring("Comment: ".length());

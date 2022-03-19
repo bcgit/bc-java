@@ -426,7 +426,7 @@ public class PGPSecretKeyRing
             List<PGPSecretKey> newList = new ArrayList<PGPSecretKey>(secretRing.keys.size());
             for (Iterator<PGPSecretKey> it = secretRing.getSecretKeys(); it.hasNext(); )
             {
-                PGPSecretKey sk = it.next();
+                PGPSecretKey sk = (PGPSecretKey)it.next();
                 if (sk.getKeyID() == publicKey.getKeyID())
                 {
                     sk = PGPSecretKey.replacePublicKey(secretKey, publicKey);
@@ -443,7 +443,7 @@ public class PGPSecretKeyRing
 
             for (Iterator<PGPPublicKey> it = secretRing.getExtraPublicKeys(); it.hasNext(); )
             {
-                PGPPublicKey pk = it.next();
+                PGPPublicKey pk = (PGPPublicKey)it.next();
                 if (pk.getKeyID() == publicKey.getKeyID())
                 {
                     extras.add(publicKey);

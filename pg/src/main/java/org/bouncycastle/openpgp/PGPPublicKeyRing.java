@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
+import org.bouncycastle.util.Longs;
 
 /**
  * Class to hold a single master public key and its subkeys.
@@ -396,8 +397,7 @@ public class PGPPublicKeyRing
      *
      * @param first                 local copy of the certificate
      * @param second                remote copy of the certificate (e.g. from a key server)
-     * @param fingerPrintCalculator fingerprint calculator
-     * @return joined certificate
+     * @return joined key ring
      * @throws PGPException
      * @throws IOException
      */
@@ -439,19 +439,21 @@ public class PGPPublicKeyRing
         }
 
         Set<Long> secondKeys = new HashSet<Long>();
-        for (PGPPublicKey key : second)
+        for (Iterator it = second.iterator(); it.hasNext();)
         {
-            secondKeys.add(key.getKeyID());
+            PGPPublicKey key = (PGPPublicKey)it.next();
+            secondKeys.add(Longs.valueOf(key.getKeyID()));
         }
 
         List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
-        for (PGPPublicKey key : first)
+        for (Iterator it = first.iterator(); it.hasNext();)
         {
+            PGPPublicKey key = (PGPPublicKey)it.next();
             PGPPublicKey copy = second.getPublicKey(key.getKeyID());
             if (copy != null)
             {
                 merged.add(PGPPublicKey.join(key, copy, joinTrustPackets, allowSubkeySigsOnNonSubkey));
-                secondKeys.remove(key.getKeyID());
+                secondKeys.remove(Longs.valueOf(key.getKeyID()));
             }
             else
             {
@@ -459,8 +461,9 @@ public class PGPPublicKeyRing
             }
         }
 
-        for (long additionalKeyId : secondKeys)
+        for (Iterator it = secondKeys.iterator(); it.hasNext();)
         {
+            long additionalKeyId = ((Long)it.next()).longValue();
             merged.add(second.getPublicKey(additionalKeyId));
         }
 

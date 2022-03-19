@@ -9,7 +9,7 @@ import org.bouncycastle.util.Strings;
  * Regexp Packet - RFC 4880 5.2.3.14. Note: the RFC says the byte encoding is to be null terminated.
  */
 public class RegularExpression
-        extends SignatureSubpacket
+    extends SignatureSubpacket
 {
     public RegularExpression(
             boolean critical,
