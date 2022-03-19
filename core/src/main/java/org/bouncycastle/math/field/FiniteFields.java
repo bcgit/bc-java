@@ -2,6 +2,8 @@ package org.bouncycastle.math.field;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.BigIntegers;
+
 public abstract class FiniteFields
 {
     static final FiniteField GF_2 = new PrimeField(BigInteger.valueOf(2));
@@ -39,7 +41,7 @@ public abstract class FiniteFields
 
         if (bitLength < 3)
         {
-            switch (characteristic.intValue())
+            switch (BigIntegers.intValueExact(characteristic))
             {
             case 2:
                 return GF_2;
