@@ -48,7 +48,7 @@ public class ANSSINamedCurves
             BigInteger n = fromHex("F1FD178C0B3AD58F10126DE8CE42435B53DC67E140D2BF941FFDD459C6D655E1");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()

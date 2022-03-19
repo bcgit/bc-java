@@ -51,7 +51,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD94"),
                 fromHex("A6"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -81,7 +81,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("8000000000000000000000000000000000000000000000000000000000000C96"),
                 fromHex("3E1AF419A269A5F866A7D3C25C3DF80AE979259373FF2B182F49D4CE7E1BBC8B"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -111,7 +111,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("9B9F605F5A858107AB1EC85E6B41C8AACF846E86789051D37998F7B9022D7598"),
                 fromHex("805A"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -141,7 +141,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("9B9F605F5A858107AB1EC85E6B41C8AACF846E86789051D37998F7B9022D7598"),
                 fromHex("805A"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -171,7 +171,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("C2173F1513981673AF4892C23035A27CE25E2013BF95AA33B22C656F277E7335"),
                 fromHex("295F9BAE7428ED9CCC20E7C359A9D41A22FCCD9108E17BF7BA9337A6F8AE9513"),
-                mod_q, ECConstants.FOUR));
+                mod_q, ECConstants.FOUR, true));
         }
 
         protected X9ECParameters createParameters()
@@ -201,7 +201,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDC4"),
                 fromHex("E8C2505DEDFC86DDC1BD0B2B6667F1DA34B82574761CB0E879BD081CFD0B6265EE3CB090F30D27614CB4574010DA90DD862EF9D4EBEE4761503190785A71C760"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -231,7 +231,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006C"),
                 fromHex("687D1B459DC841457E3E06CF6F5E2517B97C7D614AF138BCBF85DC806C4B289F3E965D2DB1416D217F8B276FAD1AB69C50F78BEE1FA3106EFB8CCBC7C5140116"),
-                mod_q, ECConstants.ONE));
+                mod_q, ECConstants.ONE, true));
         }
 
         protected X9ECParameters createParameters()
@@ -261,7 +261,7 @@ public class ECGOST3410NamedCurves
                 mod_p,
                 fromHex("DC9203E514A721875485A529D2C722FB187BC8980EB866644DE41C68E143064546E861C0E2C9EDD92ADE71F46FCF50FF2AD97F951FDA9F2A2EB6546F39689BD3"),
                 fromHex("B4C4EE28CEBC6C2C8AC12952CF37F16AC7EFB6A9F69F4B57FFDA2E4F0DE5ADE038CBC2FFF719D2C18DE0284B8BFEF3B52B8CC7A5F5BF0A3C8D2319A5312557E1"),
-                mod_q, ECConstants.FOUR));
+                mod_q, ECConstants.FOUR, true));
         }
 
         protected X9ECParameters createParameters()

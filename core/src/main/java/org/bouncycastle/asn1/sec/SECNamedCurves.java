@@ -55,7 +55,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("DB7C2ABF62E35E7628DFAC6561C5");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -84,7 +84,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("36DF0AAFD8B8D7597CA10520D04B");
             BigInteger h = BigInteger.valueOf(4);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -113,7 +113,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFE0000000075A30D1B9038A115");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -142,7 +142,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("3FFFFFFF7FFFFFFFBE0024720613B5A3");
             BigInteger h = BigInteger.valueOf(4);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -185,7 +185,7 @@ public class SECNamedCurves
                     new BigInteger("96341f1138933bc2f503fd44", 16),
                     176));
 
-            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
+            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h, true), glv);
         }
 
         protected X9ECParameters createParameters()
@@ -214,7 +214,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000001F4C8F927AED3CA752257");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -243,7 +243,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("0100000000000000000000351EE786A818F3A1A16B");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -286,7 +286,7 @@ public class SECNamedCurves
                     new BigInteger("b3fb3400dec5c4adceb8655d4c94", 16),
                     208));
 
-            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
+            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h, true), glv);
         }
 
         protected X9ECParameters createParameters()
@@ -315,7 +315,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -358,7 +358,7 @@ public class SECNamedCurves
                     new BigInteger("b8adf1378a6eb73409fa6c9c637ba7f5", 16),
                     240));
 
-            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
+            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h, true), glv);
         }
 
         protected X9ECParameters createParameters()
@@ -387,7 +387,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFF16A2E0B8F03E13DD29455C5C2A3D");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -430,7 +430,7 @@ public class SECNamedCurves
                     new BigInteger("e4437ed6010e88286f547fa90abfe4c42212", 16),
                     272));
 
-            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h), glv);
+            return configureCurveGLV(new ECCurve.Fp(p, a, b, n, h, true), glv);
         }
 
         protected X9ECParameters createParameters()
@@ -459,7 +459,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -488,7 +488,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()
@@ -518,7 +518,7 @@ public class SECNamedCurves
             BigInteger n = fromHex("01FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFA51868783BF2F966B7FCC0148F709A5D03BB5C9B8899C47AEBB6FB71E91386409");
             BigInteger h = BigInteger.valueOf(1);
 
-            return configureCurve(new ECCurve.Fp(p, a, b, n, h));
+            return configureCurve(new ECCurve.Fp(p, a, b, n, h, true));
         }
 
         protected X9ECParameters createParameters()

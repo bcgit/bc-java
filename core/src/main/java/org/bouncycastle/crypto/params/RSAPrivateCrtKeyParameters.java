@@ -16,6 +16,19 @@ public class RSAPrivateCrtKeyParameters
      * 
      */
     public RSAPrivateCrtKeyParameters(
+         BigInteger  modulus,
+         BigInteger  publicExponent,
+         BigInteger  privateExponent,
+         BigInteger  p,
+         BigInteger  q,
+         BigInteger  dP,
+         BigInteger  dQ,
+         BigInteger  qInv)
+     {
+         this(modulus, publicExponent, privateExponent, p, q, dP, dQ, qInv, false);
+     }
+
+    public RSAPrivateCrtKeyParameters(
         BigInteger  modulus,
         BigInteger  publicExponent,
         BigInteger  privateExponent,
@@ -23,9 +36,10 @@ public class RSAPrivateCrtKeyParameters
         BigInteger  q,
         BigInteger  dP,
         BigInteger  dQ,
-        BigInteger  qInv)
+        BigInteger  qInv,
+        boolean     isInternal)
     {
-        super(true, modulus, privateExponent);
+        super(true, modulus, privateExponent, isInternal);
 
         this.e = publicExponent;
         this.p = p;
