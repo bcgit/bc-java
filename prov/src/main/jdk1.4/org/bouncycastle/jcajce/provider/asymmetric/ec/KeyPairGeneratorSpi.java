@@ -178,7 +178,7 @@ public abstract class KeyPairGeneratorSpi
         {
             if (!initialised)
             {
-                throw new IllegalStateException("EC Key Pair Generator not initialised");
+                initialize(strength, new SecureRandom());
             }
 
             AsymmetricCipherKeyPair     pair = engine.generateKeyPair();
