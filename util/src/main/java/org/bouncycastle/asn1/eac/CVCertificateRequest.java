@@ -36,9 +36,9 @@ public class CVCertificateRequest
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
 
-            initCertBody(ASN1ApplicationSpecific.getInstance(seq.getObjectAt(0)));
+            initCertBody((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(seq.getObjectAt(0)));
 
-            outerSignature = ASN1ApplicationSpecific.getInstance(seq.getObjectAt(seq.size() - 1)).getContents();
+            outerSignature = ((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(seq.getObjectAt(seq.size() - 1))).getContents();
         }
         else
         {
@@ -55,7 +55,7 @@ public class CVCertificateRequest
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
             for (Enumeration en = seq.getObjects(); en.hasMoreElements();)
             {
-                ASN1ApplicationSpecific obj = ASN1ApplicationSpecific.getInstance(en.nextElement());
+                ASN1ApplicationSpecific obj = (ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(en.nextElement());
                 switch (obj.getApplicationTag())
                 {
                 case EACTags.CERTIFICATE_CONTENT_TEMPLATE:
@@ -91,7 +91,7 @@ public class CVCertificateRequest
         {
             try
             {
-                return new CVCertificateRequest(ASN1ApplicationSpecific.getInstance(obj));
+                return new CVCertificateRequest((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(obj));
             }
             catch (IOException e)
             {
