@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.util.Iterator;
 
@@ -11,6 +10,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -852,7 +852,7 @@ public class PGPPublicKeyMergeTest
     @Override
     public String getName()
     {
-        return PGPPublicKeyMergeTest.class.getSimpleName();
+        return "PGPPublicKeyMergeTest";
     }
 
     @Override
@@ -934,11 +934,11 @@ public class PGPPublicKeyMergeTest
         isEquals(3, count((Iterator)allUserIds.getPublicKey().getUserIDs()));
         Iterator<String> userIds = allUserIds.getPublicKey().getUserIDs();
         isEquals("first user-id self-sig count; " + firstUserIdSelfSigs,
-            firstUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID(userIds.next())));
+            firstUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID((String)userIds.next())));
         isEquals("second user-id self-sig count: " + secondUserIdSelfSigs,
-            secondUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID(userIds.next())));
+            secondUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID((String)userIds.next())));
         isEquals("third user-id self-sig count: " + thirdUserIdSelfSigs,
-            thirdUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID(userIds.next())));
+            thirdUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID((String)userIds.next())));
     }
 
     public void mergeAllUserIdsInOrderYieldsAllUserIds()
@@ -1075,10 +1075,10 @@ public class PGPPublicKeyMergeTest
 
         isEquals("base has 1 user-id", 1, count((Iterator)base.getPublicKey().getUserIDs()));
         String userId = (String)base.getPublicKey().getUserIDs().next();
-        isEquals("base has 1 signature on user-id", 1, count((Iterator)base.getPublicKey().getSignaturesForID(userId)));
+        isEquals("base has 1 signature on user-id", 1, count((Iterator)base.getPublicKey().getSignaturesForID((String)userId)));
 
         isEquals("signed cert has 1 user-id", 1, count((Iterator)cert2SignsBase.getPublicKey().getUserIDs()));
-        isEquals("signed cert has 1 self-sig and 1 certification", 2, count((Iterator)cert2SignsBase.getPublicKey().getSignaturesForID(userId)));
+        isEquals("signed cert has 1 self-sig and 1 certification", 2, count((Iterator)cert2SignsBase.getPublicKey().getSignaturesForID((String)userId)));
 
         PGPPublicKeyRing merged = PGPPublicKeyRing.join(base, cert2SignsBase);
 
@@ -1104,10 +1104,10 @@ public class PGPPublicKeyMergeTest
 
         isEquals("base has 1 user-id", 1, count((Iterator)base.getPublicKey().getUserIDs()));
         String userId = (String)base.getPublicKey().getUserIDs().next();
-        isEquals("base has 1 signature on user-id", 1, count((Iterator)base.getPublicKey().getSignaturesForID(userId)));
+        isEquals("base has 1 signature on user-id", 1, count((Iterator)base.getPublicKey().getSignaturesForID((String)userId)));
 
         isEquals("signed cert has 1 user-id", 1, count((Iterator)cert3SignsBase.getPublicKey().getUserIDs()));
-        isEquals("signed cert has 1 self-sig and 1 certifications", 2, count((Iterator)cert3SignsBase.getPublicKey().getSignaturesForID(userId)));
+        isEquals("signed cert has 1 self-sig and 1 certifications", 2, count((Iterator)cert3SignsBase.getPublicKey().getSignaturesForID((String)userId)));
 
         PGPPublicKeyRing merged = PGPPublicKeyRing.join(base, cert3SignsBase);
 
@@ -1156,17 +1156,17 @@ public class PGPPublicKeyMergeTest
 
         Iterator<String> userIds = finalMerge.getPublicKey().getUserIDs();
         isEquals("there should be two certifications from each cert on the first UID",
-            4, count((Iterator)finalMerge.getPublicKey().getSignaturesForID(userIds.next())) - firstUserIdSelfSigs);
+            4, count((Iterator)finalMerge.getPublicKey().getSignaturesForID((String)userIds.next())) - firstUserIdSelfSigs);
         isEquals("there should be one certification from each cert on the second UID",
-            2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID(userIds.next())) - secondUserIdSelfSigs);
+            2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID((String)userIds.next())) - secondUserIdSelfSigs);
         isEquals("there should be one certification from each cert on the third UID",
-            2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID(userIds.next())) - thirdUserIdSelfSigs);
+            2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID((String)userIds.next())) - thirdUserIdSelfSigs);
     }
 
     private PGPPublicKeyRing readCert(String encodedCertificate)
         throws IOException
     {
-        ByteArrayInputStream bytesIn = new ByteArrayInputStream(encodedCertificate.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bytesIn = new ByteArrayInputStream(Strings.toByteArray(encodedCertificate));
         ArmoredInputStream armorIn = new ArmoredInputStream(bytesIn);
 
         return new PGPPublicKeyRing(armorIn, new BcKeyFingerprintCalculator());
