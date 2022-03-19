@@ -16,6 +16,7 @@ import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -405,6 +406,28 @@ public class PGPSignatureSubpacketVector
     {
         Exportable exportable = getExportable();
         return exportable == null || exportable.isExportable();
+    }
+
+    public PolicyURI getPolicyURI()
+    {
+        SignatureSubpacket p = getSubpacket(SignatureSubpacketTags.POLICY_URL);
+        if (p == null)
+        {
+            return null;
+        }
+        return new PolicyURI(p.isCritical(), p.isLongLength(), p.getData());
+    }
+
+    public PolicyURI[] getPolicyURIs()
+    {
+        SignatureSubpacket[] subpackets = getSubpackets(SignatureSubpacketTags.POLICY_URL);
+        PolicyURI[] policyURIS = new PolicyURI[subpackets.length];
+        for (int i = 0; i < subpackets.length; i++)
+        {
+            SignatureSubpacket p = subpackets[i];
+            policyURIS[i] = new PolicyURI(p.isCritical(), p.isLongLength(), p.getData());
+        }
+        return policyURIS;
     }
 
     public RegularExpression getRegularExpression()

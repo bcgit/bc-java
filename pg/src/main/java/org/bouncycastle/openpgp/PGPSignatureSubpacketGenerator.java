@@ -16,6 +16,7 @@ import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.Revocable;
@@ -190,6 +191,11 @@ public class PGPSignatureSubpacketGenerator
     {
         packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
             algorithms));
+    }
+
+    public void addPolicyURI(boolean isCritical, String policyUri)
+    {
+        packets.add(new PolicyURI(isCritical, policyUri));
     }
 
     /**
