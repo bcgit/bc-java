@@ -323,7 +323,7 @@ public class CertificateBody
         }
         else if (obj != null)
         {
-            return new CertificateBody(ASN1ApplicationSpecific.getInstance(obj));
+            return new CertificateBody((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(obj));
         }
 
         return null;
