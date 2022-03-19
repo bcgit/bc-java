@@ -1201,12 +1201,13 @@ public class PGPPublicKey
         }
 
         // key signatures
-        for (PGPSignature keySig : copy.keySigs)
+        for (Iterator it = copy.keySigs.iterator(); it.hasNext();)
         {
+            PGPSignature keySig = (PGPSignature)it.next();
             boolean found = false;
             for (int i = 0; i < keySigs.size(); i++)
             {
-                PGPSignature existingKeySig = keySigs.get(i);
+                PGPSignature existingKeySig = (PGPSignature)keySigs.get(i);
                 if (PGPSignature.isSignatureEncodingEqual(existingKeySig, keySig))
                 {
                     found = true;
@@ -1228,8 +1229,8 @@ public class PGPPublicKey
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
         {
             Object copyId = copy.ids.get(idIdx);
-            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>(copy.idSigs.get(idIdx));
-            TrustPacket copyTrust = copy.idTrusts.get(idIdx);
+            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>((List<PGPSignature>)copy.idSigs.get(idIdx));
+            TrustPacket copyTrust = (TrustPacket)copy.idTrusts.get(idIdx);
 
             int existingIdIndex = -1;
             for (int i = 0; i < ids.size(); i++)
@@ -1269,13 +1270,14 @@ public class PGPPublicKey
                 }
             }
 
-            List<PGPSignature> existingIdSigs = idSigs.get(existingIdIndex);
-            for (PGPSignature newSig : copyIdSigs)
+            List<PGPSignature> existingIdSigs = (List<PGPSignature>)idSigs.get(existingIdIndex);
+            for (Iterator it = copyIdSigs.iterator(); it.hasNext();)
             {
+                PGPSignature newSig = (PGPSignature)it.next();
                 boolean found = false;
                 for (int i = 0; i < existingIdSigs.size(); i++)
                 {
-                    PGPSignature existingSig = existingIdSigs.get(i);
+                    PGPSignature existingSig = (PGPSignature)existingIdSigs.get(i);
                     if (PGPSignature.isSignatureEncodingEqual(newSig, existingSig))
                     {
                         found = true;
@@ -1302,12 +1304,13 @@ public class PGPPublicKey
             }
             else
             {
-                for (PGPSignature copySubSig : copy.subSigs)
+                for (Iterator it = copy.subSigs.iterator(); it.hasNext();)
                 {
+                    PGPSignature copySubSig = (PGPSignature)it.next();
                     boolean found = false;
                     for (int i = 0; i < subSigs.size(); i++)
                     {
-                        PGPSignature existingSubSig = subSigs.get(i);
+                        PGPSignature existingSubSig = (PGPSignature)subSigs.get(i);
                         if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                         {
                             found = true;

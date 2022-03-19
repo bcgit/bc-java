@@ -667,11 +667,14 @@ public class PGPSignature
         SignatureSubpacket[] sig2Unhashed = sig2.getUnhashedSubPackets().packets;
         List<SignatureSubpacket> merged = new ArrayList<SignatureSubpacket>(java.util.Arrays.asList(sig1Unhashed));
 
-        for (SignatureSubpacket subpacket : sig2Unhashed)
+        for (int i = 0; i != sig2Unhashed.length; i++)
         {
+            SignatureSubpacket subpacket = sig2Unhashed[i];
             boolean found = false;
-            for (SignatureSubpacket existing : sig1Unhashed)
+            for (int j = 0; j != sig1Unhashed.length; j++)
             {
+                SignatureSubpacket existing = sig1Unhashed[j];
+
                 if (subpacket.equals(existing))
                 {
                     found = true;
@@ -684,7 +687,7 @@ public class PGPSignature
             }
         }
 
-        SignatureSubpacket[] unhashed = merged.toArray(new SignatureSubpacket[0]);
+        SignatureSubpacket[] unhashed = (SignatureSubpacket[])merged.toArray(new SignatureSubpacket[0]);
         return new PGPSignature(
             new SignaturePacket(
                 sig1.getSignatureType(),
