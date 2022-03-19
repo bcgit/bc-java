@@ -49,7 +49,7 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.70";
+    private static String info = "BouncyCastle Security Provider v1.71";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -105,7 +105,7 @@ public final class BouncyCastleProvider extends Provider
     {
         "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224",
         "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b", "Blake2s", "DSTU7564",
-        "Haraka"
+        "Haraka", "Blake3"
     };
 
     /*
@@ -133,7 +133,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.70, info);
+        super(PROVIDER_NAME, 1.71, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
