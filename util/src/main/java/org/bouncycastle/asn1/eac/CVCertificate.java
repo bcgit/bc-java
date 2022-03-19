@@ -160,7 +160,7 @@ public class CVCertificate
         {
             try
             {
-                return new CVCertificate(ASN1ApplicationSpecific.getInstance(obj));
+                return new CVCertificate((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(obj));
             }
             catch (IOException e)
             {
