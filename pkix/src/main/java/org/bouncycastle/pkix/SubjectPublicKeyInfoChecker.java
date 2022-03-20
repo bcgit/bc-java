@@ -2,6 +2,11 @@ package org.bouncycastle.pkix;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Security;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -17,8 +22,11 @@ import org.bouncycastle.asn1.x9.X9FieldID;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.math.Primes;
-import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
+/**
+ * A checker for vetting subject public keys based on the direct checking of the ASN.1
+ */
 public class SubjectPublicKeyInfoChecker
 {
     private static final Cache validatedQs = new Cache();
@@ -173,6 +181,29 @@ public class SubjectPublicKeyInfoChecker
         }
     }
 
+    /**
+     * Enable the specified override property for the current thread only.
+     *
+     * @param propertyName the property name for the override.
+     * @param enable true if the override should be enabled, false if it should be disabled.
+     * @return true if the override was already set true, false otherwise.
+     */
+    public static boolean setThreadOverride(String propertyName, boolean enable)
+    {
+        return Properties.setThreadOverride(propertyName, enable);
+    }
+
+    /**
+     * Remove any value for the specified override property for the current thread only.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the override was already set true in thread local, false otherwise.
+     */
+    public static boolean removeThreadOverride(String propertyName)
+    {
+        return Properties.removeThreadOverride(propertyName);
+    }
+
     private static class Cache
     {
         private final Map<BigInteger, Boolean> values = new WeakHashMap<BigInteger, Boolean>();
@@ -204,6 +235,142 @@ public class SubjectPublicKeyInfoChecker
             {
                 preserve[i] = null;
             }
+        }
+    }
+
+    private static class Properties
+    {
+        private Properties()
+        {
+        }
+
+        private static final ThreadLocal threadProperties = new ThreadLocal();
+
+        /**
+         * Return whether a particular override has been set to true.
+         *
+         * @param propertyName the property name for the override.
+         * @return true if the property is set to "true", false otherwise.
+         */
+        static boolean isOverrideSet(String propertyName)
+        {
+            try
+            {
+                return isSetTrue(getPropertyValue(propertyName));
+            }
+            catch (AccessControlException e)
+            {
+                return false;
+            }
+        }
+
+        static boolean setThreadOverride(String propertyName, boolean enable)
+        {
+            boolean isSet = isOverrideSet(propertyName);
+
+            Map localProps = (Map)threadProperties.get();
+            if (localProps == null)
+            {
+                localProps = new HashMap();
+
+                threadProperties.set(localProps);
+            }
+
+            localProps.put(propertyName, enable ? "true" : "false");
+
+            return isSet;
+        }
+
+        static boolean removeThreadOverride(String propertyName)
+        {
+            Map localProps = (Map)threadProperties.get();
+            if (localProps != null)
+            {
+                String p = (String)localProps.remove(propertyName);
+                if (p != null)
+                {
+                    if (localProps.isEmpty())
+                    {
+                        threadProperties.remove();
+                    }
+
+                    return "true".equals(Strings.toLowerCase(p));
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Return propertyName as an integer, defaultValue used if not defined.
+         *
+         * @param propertyName name of property.
+         * @param defaultValue integer to return if property not defined.
+         * @return value of property, or default if not found, as an int.
+         */
+        static int asInteger(String propertyName, int defaultValue)
+        {
+            String p = getPropertyValue(propertyName);
+
+            if (p != null)
+            {
+                return Integer.parseInt(p);
+            }
+
+            return defaultValue;
+        }
+
+        /**
+         * Return the String value of the property propertyName. Property valuation
+         * starts with java.security, then thread local, then system properties.
+         *
+         * @param propertyName name of property.
+         * @return value of property as a String, null if not defined.
+         */
+        static String getPropertyValue(final String propertyName)
+        {
+            String val = (String)AccessController.doPrivileged(new PrivilegedAction()
+            {
+                public Object run()
+                {
+                    return Security.getProperty(propertyName);
+                }
+            });
+            if (val != null)
+            {
+                return val;
+            }
+
+            Map localProps = (Map)threadProperties.get();
+            if (localProps != null)
+            {
+                String p = (String)localProps.get(propertyName);
+                if (p != null)
+                {
+                    return p;
+                }
+            }
+
+            return (String)AccessController.doPrivileged(new PrivilegedAction()
+            {
+                public Object run()
+                {
+                    return System.getProperty(propertyName);
+                }
+            });
+        }
+
+        private static boolean isSetTrue(String p)
+        {
+            if (p == null || p.length() != 4)
+            {
+                return false;
+            }
+
+            return (p.charAt(0) == 't' || p.charAt(0) == 'T')
+                && (p.charAt(1) == 'r' || p.charAt(1) == 'R')
+                && (p.charAt(2) == 'u' || p.charAt(2) == 'U')
+                && (p.charAt(3) == 'e' || p.charAt(3) == 'E');
         }
     }
 }
