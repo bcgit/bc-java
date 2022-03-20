@@ -10,6 +10,9 @@ import org.bouncycastle.util.Arrays;
 /**
  * SP 800-56C Hybrid Value spec, to allow the secret in a key agreement to be
  * created as "Z | T" where T is some other secret value as described in Section 2.
+ * <p>
+ * Get methods throw IllegalStateException if destroy() is called.
+ * </p>
  */
 public class HybridValueParameterSpec
     implements AlgorithmParameterSpec, Destroyable
@@ -56,6 +59,12 @@ public class HybridValueParameterSpec
         return baseSpec;
     }
 
+    /**
+     * Return true if the destroy() method is called and the contents are
+     * erased.
+     *
+     * @return true if destroyed, false otherwise.
+     */
     public boolean isDestroyed()
     {
         return this.hasBeenDestroyed.get();
