@@ -297,6 +297,26 @@ class ProvSSLContextSpi
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA", CipherSuite.TLS_RSA_WITH_NULL_SHA);
         addCipherSuite(cs, "TLS_RSA_WITH_NULL_SHA256", CipherSuite.TLS_RSA_WITH_NULL_SHA256);
 
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_128_CBC_SHA", CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_256_CBC_SHA", CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256);
+        addCipherSuite(cs, "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA", CipherSuite.TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDH_anon_WITH_AES_128_CBC_SHA", CipherSuite.TLS_ECDH_anon_WITH_AES_128_CBC_SHA);
+        addCipherSuite(cs, "TLS_ECDH_anon_WITH_AES_256_CBC_SHA", CipherSuite.TLS_ECDH_anon_WITH_AES_256_CBC_SHA);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_ARIA_128_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_ARIA_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_ARIA_256_CBC_SHA384", CipherSuite.TLS_DH_anon_WITH_ARIA_256_CBC_SHA384);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_ARIA_128_GCM_SHA256", CipherSuite.TLS_DH_anon_WITH_ARIA_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_ARIA_256_GCM_SHA384", CipherSuite.TLS_DH_anon_WITH_ARIA_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384", CipherSuite.TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_128_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_AES_128_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_256_CBC_SHA256", CipherSuite.TLS_DH_anon_WITH_AES_256_CBC_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_128_GCM_SHA256", CipherSuite.TLS_DH_anon_WITH_AES_128_GCM_SHA256);
+        addCipherSuite(cs, "TLS_DH_anon_WITH_AES_256_GCM_SHA384", CipherSuite.TLS_DH_anon_WITH_AES_256_GCM_SHA384);
+
         return Collections.unmodifiableMap(cs);
     }
 

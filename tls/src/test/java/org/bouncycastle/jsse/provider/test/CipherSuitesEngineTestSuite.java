@@ -31,7 +31,8 @@ public class CipherSuitesEngineTestSuite
                  * TODO[jsse] jdk.tls.disabledAlgorithms default value doesn't permit these. Perhaps
                  * we could modify that security property when running this test suite.
                  */
-                return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_");
+                return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_")
+                        || cipherSuite.contains("_anon_");
             }
 
             public boolean isPermitted(String cipherSuite)
