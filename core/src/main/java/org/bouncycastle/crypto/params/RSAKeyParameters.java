@@ -76,8 +76,8 @@ public class RSAKeyParameters
 
         int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 15360);
 
-        int qBitLength = modulus.bitLength();
-        if (maxBitLength < qBitLength)
+        int modBitLength = modulus.bitLength();
+        if (maxBitLength < modBitLength)
         {
             throw new IllegalArgumentException("modulus value out of range");
         }
