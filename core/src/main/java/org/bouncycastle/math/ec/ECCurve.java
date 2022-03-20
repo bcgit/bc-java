@@ -716,8 +716,8 @@ public abstract class ECCurve
                 {
                     throw new IllegalArgumentException("Fp q value out of range");
                 }
-                // TODO: need to fix ECPointsTest
-                if (/* Primes.hasAnySmallFactors(q) ||*/ !Primes.isMRProbablePrime(
+
+                if (Primes.hasAnySmallFactors(q) || !Primes.isMRProbablePrime(
                     q, CryptoServicesRegistrar.getSecureRandom(), getNumberOfIterations(qBitLength, certainty)))
                 {
                     throw new IllegalArgumentException("Fp q value not prime");
