@@ -362,10 +362,10 @@ class ProvX509KeyManagerSimple
 
         public int compareTo(Match that)
         {
-            int cmp = Boolean.compare(that.isValid(), this.isValid());
+            int cmp = (that.isValid() == this.isValid()) ? 0 : (that.isValid() ? 1 : -1);
             if (cmp == 0)
             {
-                cmp = Integer.compare(this.keyTypeIndex, that.keyTypeIndex);
+                cmp = this.keyTypeIndex < that.keyTypeIndex ? -1 : (this.keyTypeIndex == that.keyTypeIndex ? 0 : 1);
                 if (cmp == 0)
                 {
                     cmp = this.quality.compareTo(that.quality);
