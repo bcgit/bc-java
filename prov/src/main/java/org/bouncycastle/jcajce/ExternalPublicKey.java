@@ -13,6 +13,11 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Wrapper class which returns an "ExternalValue" for the public key encoding. In this case
+ * the key encoding is a hash and the actual key needs to be looked up somewhere else. Useful
+ * for where the public keys are really large but it's required to keep certificates small.
+ */
 public class ExternalPublicKey
     implements PublicKey
 {
