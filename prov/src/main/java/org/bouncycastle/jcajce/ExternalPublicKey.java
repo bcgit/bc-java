@@ -25,6 +25,13 @@ public class ExternalPublicKey
     private final AlgorithmIdentifier digestAlg;
     private final byte[] digest;
 
+    /**
+     * Base constructor with fundamental contents.
+     *
+     * @param location location URI for the actual public key.
+     * @param digestAlg hashing algorithm used to hash the actual public key encoding.
+     * @param digest digest of the actual public key.
+     */
     public ExternalPublicKey(GeneralName location, AlgorithmIdentifier digestAlg, byte[] digest)
     {
         this.location = location;
@@ -32,26 +39,53 @@ public class ExternalPublicKey
         this.digest = Arrays.clone(digest);
     }
 
+    /**
+     * Helper constructor with JCA contents.
+     *
+     * @param key the public key we are externalising.
+     * @param location location URI for the actual public key.
+     * @param digest digest to use for hashing the key.
+     */
     public ExternalPublicKey(PublicKey key, GeneralName location, MessageDigest digest)
     {
         this(location, MessageDigestUtils.getDigestAlgID(digest.getAlgorithm()), digest.digest(key.getEncoded()));
     }
 
+    /**
+     * Base constructor with ASN.1 structure.
+     *
+     * @param extKey structure with location, hashing algorithm and hash for the public key.
+     */
     public ExternalPublicKey(ExternalValue extKey)
     {
         this(extKey.getLocation(), extKey.getHashAlg(), extKey.getHashVal().getBytes());
     }
 
+    /**
+     * Return "ExternalKey"
+     *
+     * @return  "ExternalKey"
+     */
     public String getAlgorithm()
     {
         return "ExternalKey";
     }
 
+    /**
+     * Return "X.509" (DER encoded SubjectPublicKeyInfo)
+     *
+     * @return  "X.509"
+     */
     public String getFormat()
     {
         return "X.509";
     }
 
+    /**
+     * Return a SubjectPublicKeyInfo structure containing an ExternalValue encoding for the key.
+     *
+     * @return a DER encoding of SubjectPublicKeyInfo containing an ExternalValue structure.
+     */
     public byte[] getEncoded()
     {
         try
