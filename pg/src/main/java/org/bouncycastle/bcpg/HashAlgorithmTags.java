@@ -1,7 +1,5 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.util.Strings;
-
 /**
  * basic tags for hash algorithms
  */
