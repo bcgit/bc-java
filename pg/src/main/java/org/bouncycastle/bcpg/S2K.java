@@ -32,6 +32,10 @@ public class S2K
      * Salted and iterated key generation. Multiple iterations of a hash function, with a salt
      */
     public static final int SALTED_AND_ITERATED = 3;
+    /**
+     * Memory-hard, salted key generation using Argon2 hash algorithm.
+     */
+    public static final int ARGON_2 = 4;
 
     public static final int GNU_DUMMY_S2K = 101;
 
