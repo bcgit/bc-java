@@ -2,9 +2,8 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.security.SecureRandom;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
 /**
@@ -118,11 +117,14 @@ public class NISTSecureRandom
     {
         try
         {
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            AESEngine cipher = new AESEngine();
 
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
+            cipher.init(true, new KeyParameter(key));
 
-            cipher.doFinal(ctr, 0, ctr.length, buffer, startPosition);
+            for (int i = 0; i != ctr.length; i += 16)
+            {
+                cipher.processBlock(ctr, i, buffer, startPosition + i);
+            }
         }
         catch (Throwable ex)
         {
