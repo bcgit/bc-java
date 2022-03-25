@@ -2,9 +2,14 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Random;
+import java.util.Set;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.math.Primes;
 import org.bouncycastle.math.ec.endo.ECEndomorphism;
 import org.bouncycastle.math.ec.endo.GLVEndomorphism;
 import org.bouncycastle.math.field.FiniteField;
@@ -12,6 +17,7 @@ import org.bouncycastle.math.field.FiniteFields;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 
 /**
  * base class for an elliptic curve
@@ -351,9 +357,11 @@ public abstract class ECCurve
     }
 
     /**
-     * Sets the default <code>ECMultiplier</code>, unless already set. 
+     * Sets the default <code>ECMultiplier</code>, unless already set.
+     * 
+     * We avoid synchronizing for performance reasons, so there is no uniqueness guarantee.
      */
-    public synchronized ECMultiplier getMultiplier()
+    public ECMultiplier getMultiplier()
     {
         if (this.multiplier == null)
         {
@@ -666,6 +674,7 @@ public abstract class ECCurve
     public static class Fp extends AbstractFp
     {
         private static final int FP_DEFAULT_COORDS = ECCurve.COORD_JACOBIAN_MODIFIED;
+        private static final Set<BigInteger> knownQs = Collections.synchronizedSet(new HashSet<BigInteger>());
 
         BigInteger q, r;
         ECPoint.Fp infinity;
@@ -680,9 +689,42 @@ public abstract class ECCurve
 
         public Fp(BigInteger q, BigInteger a, BigInteger b, BigInteger order, BigInteger cofactor)
         {
+            this(q, a, b, order, cofactor, false);
+        }
+
+        public Fp(BigInteger q, BigInteger a, BigInteger b, BigInteger order, BigInteger cofactor, boolean isInternal)
+        {
             super(q);
 
-            this.q = q;
+            if (isInternal)
+            {
+                this.q = q;
+                knownQs.add(q);
+            }
+            else if (knownQs.contains(q))
+            {
+                this.q = q;
+            }
+            else
+            {
+                int maxBitLength = Properties.asInteger("org.bouncycastle.ec.fp_max_size", 1042); // 2 * 521
+                int certainty = Properties.asInteger("org.bouncycastle.ec.fp_certainty", 100);
+
+                int qBitLength = q.bitLength();
+                if (maxBitLength < qBitLength)
+                {
+                    throw new IllegalArgumentException("Fp q value out of range");
+                }
+
+                if (Primes.hasAnySmallFactors(q) || !Primes.isMRProbablePrime(
+                    q, CryptoServicesRegistrar.getSecureRandom(), ECCurve.getNumberOfIterations(qBitLength, certainty)))
+                {
+                    throw new IllegalArgumentException("Fp q value not prime");
+                }
+
+                this.q = q;
+            }
+
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
 
@@ -913,7 +955,7 @@ public abstract class ECCurve
                 y = this.getB().sqrt();
             }
             else
-            {
+            { 
                 ECFieldElement beta = x.square().invert().multiply(this.getB()).add(this.getA()).add(x);
                 ECFieldElement z = solveQuadraticEquation(beta);
                 if (z != null)
@@ -1216,8 +1258,8 @@ public abstract class ECCurve
             this.cofactor = cofactor;
 
             this.infinity = new ECPoint.F2m(this, null, null);
-            this.a = fromBigInteger(a);
-            this.b = fromBigInteger(b);
+            this.a = this.fromBigInteger(a);
+            this.b = this.fromBigInteger(b);
             this.coord = F2M_DEFAULT_COORDS;
         }
 
@@ -1386,6 +1428,38 @@ public abstract class ECCurve
                     return createRawPoint(X, Y);
                 }
             };
+        }
+    }
+
+    static int getNumberOfIterations(int bits, int certainty)
+    {
+        /*
+         * NOTE: We enforce a minimum 'certainty' of 100 for bits >= 1024 (else 80). Where the
+         * certainty is higher than the FIPS 186-4 tables (C.2/C.3) cater to, extra iterations
+         * are added at the "worst case rate" for the excess.
+         */
+        if (bits >= 1536)
+        {
+            return  certainty <= 100 ? 3
+                :   certainty <= 128 ? 4
+                :   4 + (certainty - 128 + 1) / 2;
+        }
+        else if (bits >= 1024)
+        {
+            return  certainty <= 100 ? 4
+                :   certainty <= 112 ? 5
+                :   5 + (certainty - 112 + 1) / 2;
+        }
+        else if (bits >= 512)
+        {
+            return  certainty <= 80  ? 5
+                :   certainty <= 100 ? 7
+                :   7 + (certainty - 100 + 1) / 2;
+        }
+        else
+        {
+            return  certainty <= 80  ? 40
+                :   40 + (certainty - 80 + 1) / 2;
         }
     }
 }
