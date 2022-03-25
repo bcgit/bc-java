@@ -1,4 +1,4 @@
-package org.bouncycastle.jce.spec;
+package org.bouncycastle.jcajce.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
 
