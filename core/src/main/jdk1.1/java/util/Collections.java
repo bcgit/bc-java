@@ -383,4 +383,123 @@ public class Collections
             return c.toString();
         }
     }
+
+    public static Set synchronizedSet(Set set)
+    {
+        return new SyncSet(set);
+    }
+
+    static class SyncSet implements Set
+    {
+        private Set base;
+
+        SyncSet(Set base)
+        {
+            this.base = base;
+        }
+
+        public int size()
+        {
+            synchronized (base)
+            {
+                return base.size();
+            }
+        }
+
+        public boolean isEmpty()
+        {
+            synchronized (base)
+            {
+                return base.isEmpty();
+            }
+        }
+
+        public boolean contains(Object o)
+        {
+            synchronized (base)
+            {
+                return base.contains(o);
+            }
+        }
+
+        public Iterator iterator()
+        {
+            synchronized (base)
+            {
+                return new ArrayList(base).iterator();
+            }
+        }
+
+        public Object[] toArray()
+        {
+            synchronized (base)
+            {
+                return base.toArray();
+            }
+        }
+
+        public boolean add(Object o)
+        {
+            synchronized (base)
+            {
+                return base.add(o);
+            }
+        }
+
+        public boolean remove(Object o)
+        {
+            synchronized (base)
+            {
+                return base.remove(o);
+            }
+        }
+
+        public boolean addAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.addAll(collection);
+            }
+        }
+
+        public void clear()
+        {
+            synchronized (base)
+            {
+                base.clear();
+            }
+        }
+
+        public boolean removeAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.removeAll(collection);
+            }
+        }
+
+        public boolean retainAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.retainAll(collection);
+            }
+        }
+
+        public boolean containsAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.containsAll(collection);
+            }
+        }
+
+        public Object[] toArray(Object[] objects)
+        {
+            synchronized (base)
+            {
+                return base.toArray(objects);
+            }
+        }
+    }
 }
