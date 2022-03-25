@@ -105,6 +105,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/crypto/CryptoServicesPermission.java
     rm -rf org/bouncycastle/crypto/tls/test
     rm -rf org/bouncycastle/crypto/digests/Blake3Digest.java
+    rm -rf org/bouncycastle/jcajce/provider/digest/Blake3.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/SPHINCSPlus.java
     rm -rf org/bouncycastle/crypto/macs/Blake3Mac.java
     rm -rf org/bouncycastle/crypto/test/Blake3Test.java
     rm -rf org/bouncycastle/crypto/test/SimpleTestTest.java
@@ -122,6 +124,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/EdEC.java
     rm -rf org/bouncycastle/jcajce/provider/config/ProviderConfigurationPermission.java
     rm -rf org/bouncycastle/jcajce/provider/test
+    rm -rf org/bouncycastle/asn1/misc/test/CMPUpdates16Test.java
     rm org/bouncycastle/jcajce/BCFKSStoreParameter.java
     rm -rf org/bouncycastle/jce/provider/test/ECDSA5Test.java
     rm -rf org/bouncycastle/jce/provider/test/CRL5Test.java
@@ -220,11 +223,15 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/cms/test
     rm org/bouncycastle/cms/jcajce/JceAADStream.java
     rm org/bouncycastle/jcajce/provider/keystore/util/ParameterUtil.java
+    rm -rf org/bouncycastle/pqc/crypto/*/CMCEVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
     rm -rf org/bouncycastle/pkix/jcajce/X509*
     rm -rf org/bouncycastle/pkix/jcajce/RFC3280*
     rm -rf org/bouncycastle/pkix/jcajce/Revocation*
     rm -rf org/bouncycastle/pkix/test/Revocation*
     rm -rf org/bouncycastle/pkix/test/TestUtil*
+    rm org/bouncycastle/pkix/test/CheckerTest.java
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
     rm -rf org/bouncycastle/mime/
     rm -rf org/bouncycastle/its/
@@ -357,6 +364,7 @@ javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/li
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/io/*/*.java 
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/math/*/*.java 
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/*/*.java  pqc/crypto/*/*/*.java
+javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/en*/*.java
 javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */u*/*.java )
 
         cp ../../../../core/src/test/resources/org/bouncycastle/crypto/test/*.txt classes/org/bouncycastle/crypto/test/
@@ -597,6 +605,7 @@ then
     PATH=$JDK11PATH/bin:$PATH
     export PATH
 
+
     rm -rf src/java
     rm -rf src/org/bouncycastle/jce
     rm -rf src/org/bouncycastle/ocsp
@@ -619,6 +628,7 @@ then
     rm -f src/org/bouncycastle/openpgp/test/DSA2Test.java
     rm -f src/org/bouncycastle/openpgp/test/PGPUnicodeTest.java
     rm -f src/org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
+    rm  src/org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
     rm -f src/org/bouncycastle/openpgp/examples/DSAElGamalKeyRingGenerator.java
 
     find src -name AllTests.java -exec rm {} \;
@@ -638,6 +648,15 @@ then
 
     echo "compiling"
 
+
+    for i in src/org/bouncycastle/pqc/jcajce/provider/*/*.java  src/org/bouncycastle/pqc/crypto/*/*.java  src/org/bouncycastle/openpgp/test/*.java
+    do
+ed $i <<%%
+g/.Override/d
+w
+q
+%%
+    done
 
     ed src/org/bouncycastle/gpg/SExpression.java <<%
 g/\.\.\. /s//[]/

@@ -118,6 +118,17 @@ g/private final AlgorithmIdentifier prf;/s/final//
 w
 q
 %
+p
+
+for i in org/bouncycastle/asn1/cmp/*.java org/bouncycastle/pqc/crypto/util/SecretWithEncapsulationImpl.java org/bouncycastle/jcajce/provider/asymmetric/ec/IESKEMCipher.java  org/bouncycastle/jcajce/ExternalPublicKey.java org/bouncycastle/jcajce/spec/*.java
+do
+ed $i <<%
+g/private final/s/final//
+w
+q
+%
+done
+
 
 ed org/bouncycastle/asn1/x9/X9ECPoint.java <<%
 g/private final ASN1OctetString encoding;/s/final//

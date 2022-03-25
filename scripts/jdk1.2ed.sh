@@ -1,6 +1,15 @@
 #
 # JDK 1.2 edits
 
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/crypto/*/*.java  org/bouncycastle/openpgp/test/*.java
+do
+ed $i <<%%
+g/.Override/d
+w
+q
+%%
+done
+
 ed org/bouncycastle/crypto/util/DERMacData.java <<%
 g/private final String enc;/s/final//
 g/private final int ordinal;/s/final//
