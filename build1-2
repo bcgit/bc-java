@@ -78,6 +78,9 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/HSS*
     rm -rf org/bouncycastle/pqc/crypto/*/EncryptionKey*
     rm -rf org/bouncycastle/pqc/crypto/*/BitStringT*
+    rm -rf org/bouncycastle/pqc/crypto/*/CMCEVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
@@ -85,6 +88,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/util/utiltest
     rm -rf org/bouncycastle/mail
     rm -rf org/bouncycastle/mime
+    rm org/bouncycastle/pkix/test/CheckerTest.java
     rm org/bouncycastle/pkix/jcajce/Revocation*.java
     rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
     rm org/bouncycastle/pkix/jcajce/RFC3280*.java
@@ -184,6 +188,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
     rm  org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
+    rm  org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
 
     sh ../../scripts/jdk1.2ed.sh
 

@@ -31,6 +31,18 @@ public class Properties
             return "true".equalsIgnoreCase(p);
     }
 
+    public static int asInteger(String propertyName, int defaultValue)
+    {
+        String p = getPropertyValue(propertyName);
+
+        if (p != null)
+        {
+            return Integer.parseInt(p);
+        }
+
+        return defaultValue;
+    }
+
     public static BigInteger asBigInteger(String propertyName)
     {
         String p = getPropertyValue(propertyName);
