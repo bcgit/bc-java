@@ -2,12 +2,20 @@ package java.util;
 
 public class Collections
 {
-    public static List EMPTY_LIST = new UnmodifiableList(new ArrayList());
-
-    public static Set EMPTY_SET = new UnmodifiableSet(new HashSet());
+    public static final List EMPTY_LIST = unmodifiableList(new ArrayList());
+    public static final Set EMPTY_SET = unmodifiableSet(new HashSet());
 
     private Collections()
     {
+    }
+
+    public static Set singleton(Object o)
+    {
+        Set rv = new HashSet();
+
+        rv.add(o);
+
+        return rv;
     }
 
     public static Collection unmodifiableCollection(Collection c)
@@ -119,15 +127,6 @@ public class Collections
         return new UnmodifiableSet(s);
     }
 
-    public static Set singleton(Object o)
-    {
-        Set rv = new HashSet();
-
-        rv.add(o);
-
-        return rv;
-    }
-
     static class UnmodifiableSet
         extends UnmodifiableCollection
         implements Set
@@ -145,88 +144,6 @@ public class Collections
         public int hashCode()
         {
             return c.hashCode();
-        }
-    }
-
-    public static Map unmodifiableMap(Map map)
-    {
-        return new UnmodifiableMap(map);
-    }
-
-    static class UnmodifiableMap
-        implements Map
-    {
-        private Map map;
-
-        UnmodifiableMap(Map map)
-        {
-            this.map = map;
-        }
-
-        public int size()
-        {
-            return map.size();
-        }
-
-        public boolean isEmpty()
-        {
-            return map.isEmpty();
-        }
-
-        public boolean containsKey(Object key)
-            throws ClassCastException, NullPointerException
-        {
-            return map.containsKey(key);
-        }
-
-        public boolean containsValue(Object value)
-        {
-            return map.containsValue(value);
-        }
-
-        public Object get(Object key)
-            throws ClassCastException, NullPointerException
-        {
-            return map.get(key);
-        }
-
-        public Object put(Object key, Object value)
-            throws RuntimeException, ClassCastException, IllegalArgumentException, NullPointerException
-        {
-            throw new RuntimeException("unsupported operation - map unmodifiable");
-        }
-
-        public Object remove(Object key)
-            throws RuntimeException
-        {
-            throw new RuntimeException("unsupported operation - map unmodifiable");
-        }
-
-        public void putAll(Map t)
-            throws RuntimeException, ClassCastException, IllegalArgumentException, NullPointerException
-        {
-            throw new RuntimeException("unsupported operation - map unmodifiable");
-        }
-
-        public void clear()
-            throws RuntimeException
-        {
-            throw new RuntimeException("unsupported operation - map unmodifiable");
-        }
-
-        public Set keySet()
-        {
-            return map.keySet();
-        }
-
-        public Collection values()
-        {
-            return map.values();
-        }
-
-        public Set entrySet()
-        {
-            return map.entrySet();
         }
     }
 
@@ -372,5 +289,215 @@ public class Collections
                 return i.next();
             }
         };
+    }
+
+    public static Map unmodifiableMap(Map s)
+    {
+        return new UnmodifiableMap(s);
+    }
+
+    static class UnmodifiableMap
+        implements Map
+    {
+        private Map c;
+
+        UnmodifiableMap(Map map)
+        {
+            this.c = map;
+        }
+
+        public int size()
+        {
+            return c.size();
+        }
+
+        public boolean isEmpty()
+        {
+            return c.isEmpty();
+        }
+
+        public boolean containsKey(Object o)
+        {
+            return c.containsKey(o);
+        }
+
+        public boolean containsValue(Object o)
+        {
+            return c.containsValue(o);
+        }
+
+        public Object get(Object o)
+        {
+            return c.get(o);
+        }
+
+        public Object put(Object o, Object o2)
+        {
+            throw new RuntimeException();
+        }
+
+        public Object remove(Object o)
+        {
+            throw new RuntimeException();
+        }
+
+        public void putAll(Map map)
+        {
+            throw new RuntimeException();
+        }
+
+        public void clear()
+        {
+            throw new RuntimeException();
+        }
+
+        public Set keySet()
+        {
+            return Collections.unmodifiableSet(c.keySet());
+        }
+
+        public Collection values()
+        {
+            return new UnmodifiableCollection(c.values());
+        }
+
+        public Set entrySet()
+        {
+            return Collections.unmodifiableSet(c.entrySet());
+        }
+
+        public boolean equals(Object o)
+        {
+            return c.equals(o);
+        }
+
+        public int hashCode()
+        {
+            return c.hashCode();
+        }
+
+        public String toString()
+        {
+            return c.toString();
+        }
+    }
+
+    public static Set synchronizedSet(Set set)
+    {
+        return new SyncSet(set);
+    }
+
+    static class SyncSet implements Set
+    {
+        private Set base;
+
+        SyncSet(Set base)
+        {
+            this.base = base;
+        }
+
+        public int size()
+        {
+            synchronized (base)
+            {
+                return base.size();
+            }
+        }
+
+        public boolean isEmpty()
+        {
+            synchronized (base)
+            {
+                return base.isEmpty();
+            }
+        }
+
+        public boolean contains(Object o)
+        {
+            synchronized (base)
+            {
+                return base.contains(o);
+            }
+        }
+
+        public Iterator iterator()
+        {
+            synchronized (base)
+            {
+                return new ArrayList(base).iterator();
+            }
+        }
+
+        public Object[] toArray()
+        {
+            synchronized (base)
+            {
+                return base.toArray();
+            }
+        }
+
+        public boolean add(Object o)
+        {
+            synchronized (base)
+            {
+                return base.add(o);
+            }
+        }
+
+        public boolean remove(Object o)
+        {
+            synchronized (base)
+            {
+                return base.remove(o);
+            }
+        }
+
+        public boolean addAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.addAll(collection);
+            }
+        }
+
+        public void clear()
+        {
+            synchronized (base)
+            {
+                base.clear();
+            }
+        }
+
+        public boolean removeAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.removeAll(collection);
+            }
+        }
+
+        public boolean retainAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.retainAll(collection);
+            }
+        }
+
+        public boolean containsAll(Collection collection)
+        {
+            synchronized (base)
+            {
+                return base.containsAll(collection);
+            }
+        }
+
+        public Object[] toArray(Object[] objects)
+        {
+            synchronized (base)
+            {
+                return base.toArray(objects);
+            }
+        }
     }
 }
