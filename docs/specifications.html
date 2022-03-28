@@ -435,13 +435,30 @@ Classes for generating Diffie-Hellman parameters can be found in the
 
 <h4>Key Encapsulation Mechanisms</h4>
 <p>
-The base class is <b>KeyEncapsulation</b> and has the following
+The first set have a base class <b>KeyEncapsulation</b> with the following
 sub-classes
 </p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
+<thead>
 <tr><th>Name</th><th>Notes</th></tr>
+</thead>
+<tbody>
 <tr><td><b>RSAKeyEncapsulation</b></td><td>RSA-KEM from ISO 18033-2</td></tr>
 <tr><td><b>PKCS5S2ParametersGenerator</b></td><td>ECIES-KEM from ISO 18033-2</td></tr>
+</tbody>
+</table>
+<p>
+The second, post-quantum set use <b>EncapsulatdSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b>.
+</p>
+<table cellpadding=5 cellspacing=0 border=1 width=80%>
+<thead>
+<tr><th>Name</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><b>CMCEKEMGenerator, CMCEKEMExtractor</b></td><td>Class McEliece (NIST Alternate Candidate)</td></tr>
+<tr><td><b>FrodoKEMGenerator, FrodoKEMExtractor</b></td><td>FrodoKEM (NIST Alternate Candidate)</td></tr>
+<tr><td><b>SABERKEMGenerator, SABERKEMExtractor</b></td><td>SABER (NIST Finalist)</td></tr>
+</tbody>
 </table>
 
 <h4>Signers</h4>
@@ -736,6 +753,24 @@ Note: with basic "DH" only the basic algorithm fits in with the JCE API, if
 you're using long-term public keys you may want to look at the light-weight
 API, there are also additional JCE support classes for UserKeyingMaterial and MQVParameters in the <b>org.bouncycastle.jcajce.spec</b> package.
 </p>
+<h4>Key Encapsulation Mechanisms</h4>
+
+<table cellpadding=5 cellspacing=0 border=1 width=80%>
+<thead>
+<tr><th>Name</th><th>ParameterSpec Class</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><b>CMCE</b></td><td>CMCEParameterSpec</td><td>Class McEliece (NIST Alternate Candidate)</td></tr>
+<tr><td><b>Frodo</b></td><td>FrodoParameterSpec</td><td>FrodoKEM (NIST Alternate Candidate)</td></tr>
+<tr><td><b>SABER</b></td><td>SABERParameterSpec</td><td>SABER (NIST Finalist)</td></tr>
+</tbody>
+</table>
+<p>
+If used for key wrapping via the Cipher class, you will also need to make use of the KEMParameterSpec class to specify a symmetric wrapping algorithm.
+</p>
+<p>
+If access to the shared secret is required, KeyGenerator implementations can also be used in conjuction with the KEMGenerateSpec and the KEMExtractSpec which return the shared secret directly.
+</p>
 <h4>ECIES</h4>
 <p>
 An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now based more formally on Victor Shoup's paper and should be compatible with the implementation in Crypto++ (version 6 onwards).
@@ -752,6 +787,7 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <tr><td>Blake2s-160</td><td>160</td><td>&nbsp;</td></tr>
 <tr><td>Blake2s-224</td><td>224</td><td>&nbsp;</td></tr>
 <tr><td>Blake2s-256</td><td>256</td><td>&nbsp;</td></tr>
+<tr><td>Blake3-256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>DSTU7564-256</td><td>256</td><td>&nbsp;</td></tr>
 <tr><td>DSTU7564-384</td><td>384</td><td>&nbsp;</td></tr>
 <tr><td>DSTU7564-512</td><td>512</td><td>&nbsp;</td></tr>
