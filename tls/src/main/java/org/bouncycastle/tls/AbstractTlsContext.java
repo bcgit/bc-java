@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
@@ -280,7 +281,21 @@ abstract class AbstractTlsContext
 
         try
         {
-            return TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, asciiLabel, context, length).extract();
+            TlsHash exporterHash = getCrypto().createHash(cryptoHashAlgorithm);
+            byte[] emptyTranscriptHash = exporterHash.calculateHash();
+
+            TlsSecret exporterSecret = TlsUtils.deriveSecret(getSecurityParametersConnection(), secret, asciiLabel,
+                emptyTranscriptHash);
+
+            byte[] exporterContext = emptyTranscriptHash;
+            if (context.length > 0)
+            {
+                exporterHash.update(context, 0, context.length);
+                exporterContext = exporterHash.calculateHash();
+            }
+
+            return TlsCryptoUtils
+                .hkdfExpandLabel(exporterSecret, cryptoHashAlgorithm, "exporter", exporterContext, length).extract();
         }
         catch (IOException e)
         {
