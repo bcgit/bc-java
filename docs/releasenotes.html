@@ -27,18 +27,42 @@ Release: 1.71<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
+<li>In line with GPG the PGP API now attempts to preserve comments containing non-ascii UTF8 characters.</li>
+<li>An accidental partial dependency on Java 1.7 has been removed from the TLS API.</li>
+<li>JcaPKIXIdentityBuilder would fail to process File objects correctly. This is now fixed.</li>
+<li>Some byte[] parameters to the CMP API were not being defensively cloned to prevent accidental changes. Extra defensive cloning has been added.</li>
+<li>CMS primitives would sometimes convert ASN.1 definite-length encodings into indefinite-length encodings. The primitives will now try and preserve the original encoding where possible.</li>
+<li>CMSSignedData.getAttributeCertificates() now properly restricts the tag values checked to just 1 (the obsolete v1 tag) and 2 (for the more current v2 certificates).</li>
+<li>BCJSSE now tries to validate a custom KeyManager selection in order to catch errors around a key manager ignoring key type early.</li>
+<li>Compressed streams in PGP ending with zero length partial packets could cause failure on parsing the OpenPGP API. This has been fixed.</li>
+<li>The fallback mode for JceAsymmetricKeyWrapper/Unwrapper would lose track of any algorithm parameters generated in the initial attempt. The algorithm parameters are now propagated.</li>
+<li>An accidental regression introduced by a fix for another issue in PKIXCertPathReviewer around use of the AuthorityKeyIdentifier extension and it failing to match a certificate uniquely when the serial number field is missing has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>Support has been added for OpenPGP regular expression signature packets.</li>
+<li>Support has been added for OpenPGP PolicyURI signature packets.</li>
+<li>A utility method has been added to PGPSecretKeyRing to allow for inserting or replacing a PGPPublicKey.</li>
 <li>A utility method has been added to PGPSecretKeyRing to allow for inserting or replacing a PGPPublicKey.</li>
 <li>The NIST PQC Finalist, Classic McEliece has been added to the low level API and the BCPQC provider.</li>
 <li>The NIST PQC Alternate Candidate, SPHINCS+ has been added to the BCPQC provider.</li>
 <li>The NIST PQC Alternate Candidate, FrodoKEM has been added to the low level API and the BCPQC provider.</li>
-<li>The NIST PQC Alternate Candidate, SABER has been added to the low level API and the BCPQC provider.</li>
+<li>The NIST PQC Finalist, SABER has been added to the low level API and the BCPQC provider.</li>
 <li>KMAC128, KMAC256 has been added to the BC provider (empty customization string).</li>
 <li>TupleHash128, TupleHash256 has been added to the BC provider (empty customization string).</li>
 <li>ParallelHash128, ParallelHash256 has been added to the BC provider (empty customization string, block size 1024 bits).</li>
+<li>Two new properties: "org.bouncycastle.rsa.max_size" (default 15360) and "org.bouncycastle.ec.fp_max_size" (default 1042) have been added to cap the maximum size of RSA and EC keys.</li>
+<li>RSA modulus are now checked to be provably composite using the enhanced MR probable prime test.</li>
+<li>Imported EC Fp basis values are now validated against the MR prime number test before use. The certainty level of the prime test can be determined by "org.bouncycastle.ec.fp_certainty" (default 100).</li>
+<li>The BC entropy thread now has a specific name: "BC-ENTROPY-GATHERER".</li>
+<li>Utility methods have been added for joining/merging PGP public keys and signatures.</li>
+<li>Blake3-256 has been added to the BC provider.</li>
+<li>DTLS: optimisation to delayed handshake hash.</li>
+<li>Further additions to the ETSI 102 941 support in the ETSI/ITS package: certification request, signed message generation and verification now supported.</li>
+<li>CMSSignedDataGenerator now supports the direct generation of definite-length data.</li>
+<li>The NetscapeCertType class now has a hasUsages() method on it for querying usage settings on its bit string.</li>
+<li>Support for additional input has been added for deterministic (EC)DSA.</li>
+<li>The OpenPGP API provides better support for subkey generation.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>
