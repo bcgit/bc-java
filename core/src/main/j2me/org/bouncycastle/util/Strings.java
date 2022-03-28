@@ -24,6 +24,11 @@ public final class Strings
        }
     }
 
+    public static String fromUTF8ByteArray(byte[] bytes, int off, int len)
+    {
+        return fromUTF8ByteArray(Arrays.copyOfRange(bytes, off, off + len));
+    }
+
     public static String fromUTF8ByteArray(byte[] bytes)
     {
         int i = 0;

@@ -170,10 +170,25 @@ then
         rm -r src/org/bouncycastle/apache
         rm -r src/org/bouncycastle/voms
         rm -r src/org/bouncycastle/math/ec/tools
+        rm src/org/bouncycastle/cert/test/ExternalKeyTest.java
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
+
+        for i in src/org/bouncycastle/pqc/crypto/*/*.java
+        do
+            ed $i <<%%
+g/ .Override/d
+w
+q
+%%
+        done
 
         ed src/org/bouncycastle/cms/CMSSignedDataGenerator.java <<%
 g/LinkedHashSet/s//HashSet/g
+w
+q
+%
+        ed src/org/bouncycastle/openpgp/PGPEncryptedData.java <<%
+g/new UnsupportedOperationException/s//new RuntimeException/g
 w
 q
 %
