@@ -119,6 +119,8 @@ public class TlsTestCase extends TestCase
             assertEquals(count, data.length);
             assertTrue(Arrays.areEqual(data, echo));
 
+            assertTrue(Arrays.areEqual(clientImpl.tlsKeyingMaterial1, serverImpl.tlsKeyingMaterial1));
+            assertTrue(Arrays.areEqual(clientImpl.tlsKeyingMaterial2, serverImpl.tlsKeyingMaterial2));
             assertTrue(Arrays.areEqual(clientImpl.tlsServerEndPoint, serverImpl.tlsServerEndPoint));
 
             if (!TlsUtils.isTLSv13(clientImpl.negotiatedVersion))
