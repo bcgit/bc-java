@@ -21,6 +21,7 @@ import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.ConnectionEnd;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -72,6 +73,8 @@ class TlsTestClientImpl
     protected short firstFatalAlertDescription = -1;
 
     ProtocolVersion negotiatedVersion = null;
+    byte[] tlsKeyingMaterial1 = null;
+    byte[] tlsKeyingMaterial2 = null;
     byte[] tlsServerEndPoint = null;
     byte[] tlsUnique = null;
 
@@ -169,6 +172,13 @@ class TlsTestClientImpl
     public void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
+
+        SecurityParameters securityParameters = context.getSecurityParametersConnection();
+        if (securityParameters.isExtendedMasterSecret())
+        {
+            tlsKeyingMaterial1 = context.exportKeyingMaterial("BC_TLS_TESTS_1", null, 16);
+            tlsKeyingMaterial2 = context.exportKeyingMaterial("BC_TLS_TESTS_2", new byte[8], 16);
+        }
 
         tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
         tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
