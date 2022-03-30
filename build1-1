@@ -226,6 +226,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/CMCEVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
+    rm org/bouncycastle/pkix/SubjectPublicKeyInfoChecker.java
     rm -rf org/bouncycastle/pkix/jcajce/X509*
     rm -rf org/bouncycastle/pkix/jcajce/RFC3280*
     rm -rf org/bouncycastle/pkix/jcajce/Revocation*
