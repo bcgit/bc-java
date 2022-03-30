@@ -64,6 +64,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>The NetscapeCertType class now has a hasUsages() method on it for querying usage settings on its bit string.</li>
 <li>Support for additional input has been added for deterministic (EC)DSA.</li>
 <li>The OpenPGP API provides better support for subkey generation.</li>
+<li>BCJSSE: Added boolean system properties "org.bouncycastle.jsse.client.dh.disableDefaultSuites" and "org.bouncycastle.jsse.server.dh.disableDefaultSuites".
+Default "false". Set to "true" to disable inclusion of DH cipher suites in the default cipher suites for client/server respectively.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>

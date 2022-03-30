@@ -37,6 +37,7 @@ import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
@@ -327,7 +328,7 @@ class ProvSSLContextSpi
     }
 
     private static String[] getDefaultEnabledCipherSuites(Map<String, CipherSuiteInfo> supportedCipherSuiteMap,
-        String cipherSuitesPropertyName, List<String> defaultCipherSuiteList)
+        List<String> defaultCipherSuiteList, boolean disableDHDefaultSuites, String cipherSuitesPropertyName)
     {
         List<String> candidates = getJdkTlsCipherSuites(cipherSuitesPropertyName, defaultCipherSuiteList);
 
@@ -335,7 +336,14 @@ class ProvSSLContextSpi
         int count = 0;
         for (String candidate : candidates)
         {
-            if (!supportedCipherSuiteMap.containsKey(candidate))
+            CipherSuiteInfo cipherSuiteInfo = supportedCipherSuiteMap.get(candidate);
+            if (null == cipherSuiteInfo)
+            {
+                continue;
+            }
+            if (disableDHDefaultSuites &&
+                candidates == defaultCipherSuiteList &&
+                TlsDHUtils.isDHCipherSuite(cipherSuiteInfo.getCipherSuite()))
             {
                 continue;
             }
@@ -352,15 +360,21 @@ class ProvSSLContextSpi
     private static String[] getDefaultEnabledCipherSuitesClient(Map<String, CipherSuiteInfo> supportedCipherSuiteMap,
         List<String> defaultCipherSuiteList)
     {
-        return getDefaultEnabledCipherSuites(supportedCipherSuiteMap, PROPERTY_CLIENT_CIPHERSUITES,
-            defaultCipherSuiteList);
+        boolean disableDHDefaultSuites = PropertyUtils
+            .getBooleanSystemProperty("org.bouncycastle.jsse.client.dh.disableDefaultSuites", false);
+
+        return getDefaultEnabledCipherSuites(supportedCipherSuiteMap, defaultCipherSuiteList, disableDHDefaultSuites,
+            PROPERTY_CLIENT_CIPHERSUITES);
     }
 
     private static String[] getDefaultEnabledCipherSuitesServer(Map<String, CipherSuiteInfo> supportedCipherSuiteMap,
         List<String> defaultCipherSuiteList)
     {
-        return getDefaultEnabledCipherSuites(supportedCipherSuiteMap, PROPERTY_SERVER_CIPHERSUITES,
-            defaultCipherSuiteList);
+        boolean disableDHDefaultSuites = PropertyUtils
+            .getBooleanSystemProperty("org.bouncycastle.jsse.server.dh.disableDefaultSuites", false);
+
+        return getDefaultEnabledCipherSuites(supportedCipherSuiteMap, defaultCipherSuiteList, disableDHDefaultSuites,
+            PROPERTY_SERVER_CIPHERSUITES);
     }
 
     private static String[] getDefaultEnabledProtocols(Map<String, ProtocolVersion> supportedProtocolMap,
