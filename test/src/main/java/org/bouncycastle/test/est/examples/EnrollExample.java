@@ -110,14 +110,9 @@ public class EnrollExample
                     keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
                     t += 1;
                 }
-                else if (arg.equals("--keyStoreType"))
-                {
-                    keyStoreType = ExampleUtils.nextArgAsString("Keystore type", args, t);
-                    t += 1;
-                }
                 else if (arg.equals("--auth"))
                 {
-                    credentials = ExampleUtils.nextArgAsString("Keystore type", args, t).split(":");
+                    credentials = ExampleUtils.nextArgAsString("Authentication credentials", args, t).split(":");
                     httpAuth = true;
                     t += 1;
                 }
