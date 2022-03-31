@@ -42,7 +42,7 @@ class ClassUtil
               }
               catch (IllegalStateException e)
               {
-                    e.printStackTrace();
+		  // ignore
               }
         }
         return new AEADParameterSpec(nonce, tagSize);
