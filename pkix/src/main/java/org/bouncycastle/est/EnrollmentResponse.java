@@ -1,5 +1,6 @@
 package org.bouncycastle.est;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Store;
 
@@ -10,16 +11,23 @@ import org.bouncycastle.util.Store;
 public class EnrollmentResponse
 {
     private final Store<X509CertificateHolder> store;
+    private final PrivateKeyInfo privateKeyInfo;
     private final long notBefore;
     private final ESTRequest requestToRetry;
     private final Source source;
 
-    public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTRequest requestToRetry, Source session)
+    public EnrollmentResponse(Store<X509CertificateHolder> store, PrivateKeyInfo privateKeyInfo, long notBefore, ESTRequest requestToRetry, Source session)
     {
         this.store = store;
+        this.privateKeyInfo = privateKeyInfo;
         this.notBefore = notBefore;
         this.requestToRetry = requestToRetry;
         this.source = session;
+    }
+
+    public EnrollmentResponse(Store<X509CertificateHolder> store, long notBefore, ESTRequest requestToRetry, Source session)
+    {
+        this(store, null, notBefore, requestToRetry, session);
     }
 
     public boolean canRetry()
@@ -30,6 +38,10 @@ public class EnrollmentResponse
     public Store<X509CertificateHolder> getStore()
     {
         return store;
+    }
+
+    public PrivateKeyInfo getPrivateKeyInfo() {
+        return privateKeyInfo;
     }
 
     public long getNotBefore()

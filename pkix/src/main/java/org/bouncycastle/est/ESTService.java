@@ -1,34 +1,28 @@
 package org.bouncycastle.est;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.regex.Pattern;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+
+import java.io.*;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * ESTService provides unified access to an EST server which is defined as implementing
@@ -263,8 +257,31 @@ public class ESTService
      * @param certificationRequest The certification request.
      * @param auth                 The http auth provider, basic auth or digest auth, can be null.
      * @return The enrolled certificate.
+     * @deprecated Use simpleEnroll(EnrollmentOperation operation, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
      */
+    @Deprecated
     public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
+        throws IOException
+    {
+        return simpleEnroll(
+                reenroll ? EnrollmentOperation.SIMPLE_REENROLL : EnrollmentOperation.SIMPLE_ENROLL,
+                certificationRequest,
+                auth);
+    }
+
+    /**
+     * Perform a simple enrollment operation.
+     * <p>
+     * This method accepts an ESPHttpAuth instance to provide basic or digest authentication.
+     * <p>
+     * If authentication is to be performed as part of TLS then this instances client keystore and their keystore
+     * password need to be specified.
+     *
+     * @param certificationRequest The certification request.
+     * @param auth                 The http auth provider, basic auth or digest auth, can be null.
+     * @return The enrolled certificate.
+     */
+    public EnrollmentResponse simpleEnroll(EnrollmentOperation operation, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
         throws IOException
     {
         if (!clientProvider.isTrusted())
@@ -277,8 +294,7 @@ public class ESTService
         {
             final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
-            URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
-
+            URL url = new URL(server + operation.getUriPart());
 
             ESTClient client = clientProvider.makeClient();
             ESTRequestBuilder req = new ESTRequestBuilder("POST", url).withData(data).withClient(client);
@@ -318,7 +334,6 @@ public class ESTService
 
     }
 
-
     /**
      * Implements Enroll with PoP.
      * Request will have the tls-unique attribute added to it before it is signed and completed.
@@ -329,8 +344,31 @@ public class ESTService
      * @param auth          Auth modes.
      * @return Enrollment response.
      * @throws IOException
+     * @deprecated use simpleEnrollPoP(EnrollmentOperation operation, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
      */
+    @Deprecated
     public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
+        throws IOException
+    {
+        return simpleEnrollPoP(
+                reEnroll ? EnrollmentOperation.SIMPLE_REENROLL : EnrollmentOperation.SIMPLE_ENROLL,
+                builder,
+                contentSigner,
+                auth);
+    }
+
+    /**
+     * Implements Enroll with PoP.
+     * Request will have the tls-unique attribute added to it before it is signed and completed.
+     *
+     * @param operation      enrollment operation.
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPoP(EnrollmentOperation operation, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
         throws IOException
     {
         if (!clientProvider.isTrusted())
@@ -341,7 +379,7 @@ public class ESTService
         ESTResponse resp = null;
         try
         {
-            URL url = new URL(server + (reEnroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(server + operation.getUriPart());
             ESTClient client = clientProvider.makeClient();
 
             //
@@ -415,7 +453,6 @@ public class ESTService
 
     }
 
-
     /**
      * Handles the enroll response, deals with status codes and setting of delays.
      *
@@ -429,6 +466,8 @@ public class ESTService
 
         ESTRequest req = resp.getOriginalRequest();
         Store<X509CertificateHolder> enrolled = null;
+        PrivateKeyInfo privateKeyInfo = null;
+
         if (resp.getStatusCode() == 202)
         {
             // Received but not ready.
@@ -468,24 +507,160 @@ public class ESTService
         }
         else if (resp.getStatusCode() == 200)
         {
-            ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-            SimplePKIResponse spkr = null;
-            try
-            {
-                spkr = new SimplePKIResponse(ContentInfo.getInstance(ain.readObject()));
+            String contentType = resp.getHeader("content-type");
+            if (contentType.startsWith("multipart/mixed")) {
+                // process multipart response rfc1341
+                int boundaryIndex = contentType.indexOf("boundary=");
+                if (boundaryIndex == -1) {
+                    throw new ESTException("Invalid multipart format. boundary not found");
+                }
+                String boundary = "--" + contentType.substring(boundaryIndex + "boundary=".length());
+                Map<String, String> partsMap = new HashMap<>();
+
+                // Read stream and collect parts
+                // there are 3 pieces
+                // 1. boundary line
+                // 2. headers
+                // 3. data
+                int state = 1;
+                byte[] lineBuffer = new byte[1024];
+                String data = "";
+                String partContent = "";
+
+                while (true) {
+                    String line = readLine(resp.getInputStream(), lineBuffer);
+
+                    if (line == null) {
+                        if (state == 3) {
+                            partsMap.put(partContent, data);
+                        }
+                        break;
+                    }
+
+                    // check if boundary line
+                    if (line.startsWith(boundary)) {
+                        switch (state) {
+                            case 1:
+                                state = 2;
+                                break;
+                            case 3:
+                                // new part started
+                                partsMap.put(partContent, data);
+                                data = "";
+                                partContent="";
+                                state = 2;
+                                break;
+                            default:
+                                throw new ESTException("Invalid multipart/mixed format. Empty boundary.");
+                        }
+                        continue;
+                    }
+
+                    switch (state) {
+                        case 1:
+                            continue;
+                        case 2:
+                            if (line.isEmpty()) {
+                                // headers are completed
+                                if (partContent.isEmpty()) {
+                                    throw new ESTException("Invalid multipart/mixed format. Content Type not found");
+                                }
+                                state = 3;
+                            } else {
+                                // read header
+                                int idx = line.indexOf(':');
+                                if (idx == -1) {
+                                    throw new ESTException("Invalid multipart/mixed format. Invalid headers format");
+                                }
+
+                                String header = Strings.toLowerCase(line.substring(0, idx).trim());
+                                String value = line.substring(idx + 1).trim();
+
+                                // we care about two headers only
+                                if (header.equals("content-type")) {
+                                    if (!value.startsWith("application/pkcs8") && !value.startsWith("application/pkcs7")) {
+                                        throw new ESTException("Invalid multipart/mixed format. Unsupported content-type: " + value);
+                                    }
+                                    partContent = value;
+                                } else if (header.equals("content-transfer-encoding")) {
+                                    if (!value.equals("base64")) {
+                                        throw new ESTException("Invalid multipart/mixed format. Unsupported encoding: " + value);
+                                    }
+                                }
+                            }
+                            break;
+                        case 3:
+                            data += line;
+                    }
+                }
+
+                // store last part
+                partsMap.put(partContent, data);
+
+                // now process them
+                for (Map.Entry<String, String> entry : partsMap.entrySet()) {
+                    try {
+                        byte[] decoded = Base64.decode(entry.getValue());
+
+                        if (entry.getKey().startsWith("application/pkcs7")) {
+                            // read certificate
+                            enrolled = readPkcs7Certificates(new ByteArrayInputStream(decoded));
+                        } else {
+                            // read private key
+                            privateKeyInfo = PrivateKeyInfo.getInstance(decoded);
+                        }
+                    } catch (Exception ex) {
+                        throw new ESTException("Failed to decode part " + entry.getKey(), ex);
+                    }
+                }
+            } else {
+                // assume "application/pkcs7-mime; smime-type=certs-only"
+                InputStream in = resp.getInputStream();
+                enrolled = readPkcs7Certificates(in);
             }
-            catch (CMCException e)
-            {
-                throw new ESTException(e.getMessage(), e.getCause());
-            }
-            enrolled = spkr.getCertificates();
-            return new EnrollmentResponse(enrolled, -1, null, resp.getSource());
+            return new EnrollmentResponse(enrolled, privateKeyInfo, -1, null, resp.getSource());
         }
 
         throw new ESTException(
             "Simple Enroll: " + req.getURL().toString(), null,
             resp.getStatusCode(), resp.getInputStream());
 
+    }
+
+    private Store<X509CertificateHolder> readPkcs7Certificates(InputStream in) throws IOException {
+        Store<X509CertificateHolder> enrolled;
+        ASN1InputStream ain = new ASN1InputStream(in);
+        SimplePKIResponse spkr = null;
+        try {
+                spkr = new SimplePKIResponse(ContentInfo.getInstance(ain.readObject()));
+        } catch (Exception e) {
+                throw new ESTException(e.getMessage(), e.getCause());
+            }
+            enrolled = spkr.getCertificates();
+        return enrolled;
+    }
+
+    protected String readLine(InputStream inputStream, byte[] lineBuffer)
+            throws IOException
+    {
+        int c = 0;
+        int j;
+        do
+        {
+            j = inputStream.read();
+            if (j == -1)
+                break;
+            lineBuffer[c++] = (byte) j;
+            if (c >= lineBuffer.length) {
+                throw new IOException("Server sent line > " + lineBuffer.length);
+            }
+        }
+        while (j != '\n');
+
+        if (c == 0)
+            return null;
+        else
+            return new String(lineBuffer, 0, c).trim();
     }
 
     /**
