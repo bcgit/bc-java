@@ -61,19 +61,8 @@ public class TlsImplUtils
     {
         SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
         TlsSecret master_secret = securityParameters.getMasterSecret();
+        int prfAlgorithm = securityParameters.getPRFAlgorithm();
         byte[] seed = Arrays.concatenate(securityParameters.getServerRandom(), securityParameters.getClientRandom());
-        return PRF(securityParameters, master_secret, ExporterLabel.key_expansion, seed, length).extract();
-    }
-
-    public static TlsSecret PRF(SecurityParameters securityParameters, TlsSecret secret, String asciiLabel, byte[] seed,
-        int length)
-    {
-        return secret.deriveUsingPRF(securityParameters.getPRFAlgorithm(), asciiLabel, seed, length);
-    }
-
-    public static TlsSecret PRF(TlsCryptoParameters cryptoParams, TlsSecret secret, String asciiLabel, byte[] seed,
-        int length)
-    {
-        return PRF(cryptoParams.getSecurityParametersHandshake(), secret, asciiLabel, seed, length);
+        return master_secret.deriveUsingPRF(prfAlgorithm, ExporterLabel.key_expansion, seed, length).extract();
     }
 }

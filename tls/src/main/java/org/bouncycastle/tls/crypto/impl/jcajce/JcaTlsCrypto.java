@@ -236,7 +236,18 @@ public class JcaTlsCrypto
 
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+        case MACAlgorithm.hmac_sha1:
+        case MACAlgorithm.hmac_sha256:
+        case MACAlgorithm.hmac_sha384:
+        case MACAlgorithm.hmac_sha512:
+            return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+
+        default:
+            throw new IllegalArgumentException("invalid MACAlgorithm: " + macAlgorithm);
+        }
     }
 
     public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
@@ -527,8 +538,18 @@ public class JcaTlsCrypto
 
     public boolean hasMacAlgorithm(int macAlgorithm)
     {
-        // TODO: expand
-        return true;
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+        case MACAlgorithm.hmac_sha1:
+        case MACAlgorithm.hmac_sha256:
+        case MACAlgorithm.hmac_sha384:
+        case MACAlgorithm.hmac_sha512:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasNamedGroup(int namedGroup)
