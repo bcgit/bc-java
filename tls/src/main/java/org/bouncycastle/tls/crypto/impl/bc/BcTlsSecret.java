@@ -163,12 +163,12 @@ public class BcTlsSecret
         byte[] output)
     {
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
-        HMac mac = new HMac(digest);
-        mac.init(new KeyParameter(secret, secretOff, secretLen));
+        HMac hmac = new HMac(digest);
+        hmac.init(new KeyParameter(secret, secretOff, secretLen));
 
         byte[] a = seed;
 
-        int macSize = mac.getMacSize();
+        int macSize = hmac.getMacSize();
 
         byte[] b1 = new byte[macSize];
         byte[] b2 = new byte[macSize];
@@ -176,12 +176,12 @@ public class BcTlsSecret
         int pos = 0;
         while (pos < output.length)
         {
-            mac.update(a, 0, a.length);
-            mac.doFinal(b1, 0);
+            hmac.update(a, 0, a.length);
+            hmac.doFinal(b1, 0);
             a = b1;
-            mac.update(a, 0, a.length);
-            mac.update(seed, 0, seed.length);
-            mac.doFinal(b2, 0);
+            hmac.update(a, 0, a.length);
+            hmac.update(seed, 0, seed.length);
+            hmac.doFinal(b2, 0);
             System.arraycopy(b2, 0, output, pos, Math.min(macSize, output.length - pos));
             pos += macSize;
         }
