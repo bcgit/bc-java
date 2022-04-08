@@ -399,7 +399,6 @@ public class PGPPublicKeyRing
      * @param second                remote copy of the certificate (e.g. from a key server)
      * @return joined key ring
      * @throws PGPException
-     * @throws IOException
      */
     public static PGPPublicKeyRing join(
         PGPPublicKeyRing first,
@@ -424,7 +423,6 @@ public class PGPPublicKeyRing
      * @param allowSubkeySigsOnNonSubkey if true, the resulting joined certificate may carry subkey signatures on its primary key
      * @return joined certificate
      * @throws PGPException
-     * @throws IOException
      */
     public static PGPPublicKeyRing join(
         PGPPublicKeyRing first,

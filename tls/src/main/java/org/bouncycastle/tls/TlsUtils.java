@@ -4395,9 +4395,22 @@ public class TlsUtils
 
     public static boolean isSupportedCipherSuite(TlsCrypto crypto, int cipherSuite)
     {
-        return isSupportedKeyExchange(crypto, getKeyExchangeAlgorithm(cipherSuite))
-            && crypto.hasEncryptionAlgorithm(getEncryptionAlgorithm(cipherSuite))
-            && crypto.hasMacAlgorithm(getMACAlgorithm(cipherSuite));
+        int keyExchangeAlgorithm = getKeyExchangeAlgorithm(cipherSuite);
+        if (!isSupportedKeyExchange(crypto, keyExchangeAlgorithm))
+            return false;
+
+        int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);
+        if (encryptionAlgorithm < 0 || !crypto.hasEncryptionAlgorithm(encryptionAlgorithm))
+            return false;
+
+        int macAlgorithm = getMACAlgorithm(cipherSuite);
+        if (macAlgorithm != MACAlgorithm._null)
+        {
+            if (macAlgorithm < 0 || !crypto.hasMacAlgorithm(macAlgorithm))
+                return false;
+        }
+
+        return true;
     }
 
     public static boolean isSupportedKeyExchange(TlsCrypto crypto, int keyExchangeAlgorithm)

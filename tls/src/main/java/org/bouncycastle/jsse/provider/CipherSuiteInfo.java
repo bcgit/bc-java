@@ -31,6 +31,8 @@ class CipherSuiteInfo
         decomposeKeyExchangeAlgorithm(decompositionX509, keyExchangeAlgorithm);
 
         Set<String> decompositionTLS = new HashSet<String>(decompositionX509);
+        decomposeKeyExchangeAlgorithmTLS(decompositionTLS, keyExchangeAlgorithm);
+
         decomposeEncryptionAlgorithm(decompositionTLS, encryptionAlgorithm);
         decomposeHashAlgorithm(decompositionTLS, cryptoHashAlgorithm);
         decomposeMACAlgorithm(decompositionTLS, encryptionAlgorithmType, macAlgorithm);
@@ -204,12 +206,41 @@ class CipherSuiteInfo
         case KeyExchangeAlgorithm.ECDHE_RSA:
             addAll(decomposition, "ECDHE", "RSA", "ECDHE_RSA");
             break;
-        case KeyExchangeAlgorithm.NULL:
-            // NOTE: TLS 1.3 cipher suites
-            break;
         case KeyExchangeAlgorithm.RSA:
             addAll(decomposition, "RSA");
             break;
+
+        case KeyExchangeAlgorithm.DH_anon:
+        case KeyExchangeAlgorithm.ECDH_anon:
+        case KeyExchangeAlgorithm.NULL:
+            break;
+
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void decomposeKeyExchangeAlgorithmTLS(Set<String> decompositionTLS, int keyExchangeAlgorithm)
+    {
+        switch (keyExchangeAlgorithm)
+        {
+        case KeyExchangeAlgorithm.DH_anon:
+            addAll(decompositionTLS, "ANON", "DH", "DiffieHellman", "DH_ANON");
+            break;
+        case KeyExchangeAlgorithm.ECDH_anon:
+            addAll(decompositionTLS, "ANON", "ECDH", "ECDH_ANON");
+            break;
+        case KeyExchangeAlgorithm.NULL:
+            addAll(decompositionTLS, "K_NULL");
+            break;
+
+        case KeyExchangeAlgorithm.DHE_DSS:
+        case KeyExchangeAlgorithm.DHE_RSA:
+        case KeyExchangeAlgorithm.ECDHE_ECDSA:
+        case KeyExchangeAlgorithm.ECDHE_RSA:
+        case KeyExchangeAlgorithm.RSA:
+            break;
+
         default:
             throw new IllegalArgumentException();
         }

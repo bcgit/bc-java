@@ -7,6 +7,6 @@ popd
 
 $DIR/ensurejar.sh
 
-CP="$DIR/jars/pkix.jar:$DIR/jars/bcprov.jar:$DIR/jars/test.jar:$DIR/jars/bctls.jar"
+CP="$DIR/jars/util.jar:$DIR/jars/pkix.jar:$DIR/jars/bcprov.jar:$DIR/jars/test.jar:$DIR/jars/bctls.jar"
 java -classpath $CP  org.bouncycastle.test.est.examples.CaCertsExample --sl $DIR/jars/suffixlist.dat $@
 

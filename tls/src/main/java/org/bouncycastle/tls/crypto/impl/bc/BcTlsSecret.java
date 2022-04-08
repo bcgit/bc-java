@@ -159,14 +159,16 @@ public class BcTlsSecret
         return crypto;
     }
 
-    protected void hmacHash(Digest digest, byte[] secret, int secretOff, int secretLen, byte[] seed, byte[] output)
+    protected void hmacHash(int cryptoHashAlgorithm, byte[] secret, int secretOff, int secretLen, byte[] seed,
+        byte[] output)
     {
-        HMac mac = new HMac(digest);
-        mac.init(new KeyParameter(secret, secretOff, secretLen));
+        Digest digest = crypto.createDigest(cryptoHashAlgorithm);
+        HMac hmac = new HMac(digest);
+        hmac.init(new KeyParameter(secret, secretOff, secretLen));
 
         byte[] a = seed;
 
-        int macSize = mac.getMacSize();
+        int macSize = hmac.getMacSize();
 
         byte[] b1 = new byte[macSize];
         byte[] b2 = new byte[macSize];
@@ -174,12 +176,12 @@ public class BcTlsSecret
         int pos = 0;
         while (pos < output.length)
         {
-            mac.update(a, 0, a.length);
-            mac.doFinal(b1, 0);
+            hmac.update(a, 0, a.length);
+            hmac.doFinal(b1, 0);
             a = b1;
-            mac.update(a, 0, a.length);
-            mac.update(seed, 0, seed.length);
-            mac.doFinal(b2, 0);
+            hmac.update(a, 0, a.length);
+            hmac.update(seed, 0, seed.length);
+            hmac.doFinal(b2, 0);
             System.arraycopy(b2, 0, output, pos, Math.min(macSize, output.length - pos));
             pos += macSize;
         }
@@ -248,10 +250,10 @@ public class BcTlsSecret
         int s_half = (data.length + 1) / 2;
 
         byte[] b1 = new byte[length];
-        hmacHash(crypto.createDigest(CryptoHashAlgorithm.md5), data, 0, s_half, labelSeed, b1);
+        hmacHash(CryptoHashAlgorithm.md5, data, 0, s_half, labelSeed, b1);
 
         byte[] b2 = new byte[length];
-        hmacHash(crypto.createDigest(CryptoHashAlgorithm.sha1), data, data.length - s_half, s_half, labelSeed, b2);
+        hmacHash(CryptoHashAlgorithm.sha1, data, data.length - s_half, s_half, labelSeed, b2);
 
         for (int i = 0; i < length; i++)
         {
@@ -262,9 +264,9 @@ public class BcTlsSecret
 
     protected byte[] prf_1_2(int prfAlgorithm, byte[] labelSeed, int length)
     {
-        Digest digest = crypto.createDigest(TlsCryptoUtils.getHashForPRF(prfAlgorithm));
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(prfAlgorithm);
         byte[] result = new byte[length];
-        hmacHash(digest, data, 0, data.length, labelSeed, result);
+        hmacHash(cryptoHashAlgorithm, data, 0, data.length, labelSeed, result);
         return result;
     }
 

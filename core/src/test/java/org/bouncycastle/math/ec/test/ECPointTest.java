@@ -431,15 +431,25 @@ public class ECPointTest extends TestCase
             BigInteger pMinusOne = p.subtract(ECConstants.ONE);
             BigInteger legendreExponent = p.shiftRight(1);
 
-            int count = 0;
-            while (count < 10)
+            ECFieldElement zero = c.fromBigInteger(BigInteger.ZERO);
+            assertEquals(zero, zero.sqrt());
+
+            ECFieldElement one = c.fromBigInteger(BigInteger.ONE);
+            assertEquals(one, one.sqrt());
+
+            for (int i = 0; i < 20; ++i)
             {
-                BigInteger nonSquare = BigIntegers.createRandomInRange(ECConstants.TWO, pMinusOne, secRand);
-                if (!nonSquare.modPow(legendreExponent, p).equals(ECConstants.ONE))
+                BigInteger x = BigIntegers.createRandomInRange(ECConstants.TWO, pMinusOne, secRand);
+                ECFieldElement fe = c.fromBigInteger(x);
+                ECFieldElement root = fe.sqrt();
+
+                if (root == null)
                 {
-                    ECFieldElement root = c.fromBigInteger(nonSquare).sqrt();
-                    assertNull(root);
-                    ++count;
+                    assertEquals(pMinusOne, x.modPow(legendreExponent, p));
+                }
+                else
+                {
+                    assertEquals(fe, root.square());
                 }
             }
         }
