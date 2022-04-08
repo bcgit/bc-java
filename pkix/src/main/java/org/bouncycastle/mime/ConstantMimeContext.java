@@ -6,6 +6,9 @@ import java.io.InputStream;
 public class ConstantMimeContext
     implements MimeContext, MimeMultipartContext
 {
+
+    public static final ConstantMimeContext Instance = new ConstantMimeContext();
+
     public InputStream applyContext(Headers headers, InputStream contentStream)
         throws IOException
     {

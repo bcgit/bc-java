@@ -173,6 +173,9 @@ class HttpUtil
     static class Headers
         extends HashMap<String, String[]>
     {
+        private static final String EMPTY = "";
+
+
         public Headers()
         {
             super();
@@ -186,6 +189,16 @@ class HttpUtil
                 return j[0];
             }
             return null;
+        }
+
+        public String getFirstValueOrEmpty(String key)
+        {
+            String[] j = getValues(key);
+            if (j != null && j.length > 0)
+            {
+                return j[0];
+            }
+            return EMPTY;
         }
 
         public String[] getValues(String key)

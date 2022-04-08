@@ -45,6 +45,56 @@ public class Headers
         return headerLines;
     }
 
+    /**
+     * Create specifying content type header value and default content transfer encoding.
+     *
+     * @param contentType                    The content type value
+     * @param defaultContentTransferEncoding default content transfer encoding.
+     */
+    public Headers(String contentType, String defaultContentTransferEncoding)
+    {
+        String header = "Content-Type: " + contentType;
+        headersAsPresented = new ArrayList<String>();
+        headersAsPresented.add(header);
+
+
+        this.put("Content-Type", contentType);
+
+        String contentTypeHeader = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];
+        int parameterIndex = contentTypeHeader.indexOf(';');
+        if (parameterIndex < 0)
+        {
+            contentType = contentTypeHeader;
+            contentTypeParameters = Collections.EMPTY_MAP;
+        }
+        else
+        {
+            contentType = contentTypeHeader.substring(0, parameterIndex);
+            contentTypeParameters = createContentTypeParameters(contentTypeHeader.substring(parameterIndex + 1).trim());
+        }
+
+        contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
+
+        if (contentType.contains("multipart"))
+        {
+            multipart = true;
+            String bound = contentTypeParameters.get("boundary");
+            if (bound.startsWith("\"") && bound.endsWith("\""))
+            {
+                boundary = bound.substring(1, bound.length() - 1); // quoted-string
+            }
+            else
+            {
+                boundary = bound;
+            }
+        }
+        else
+        {
+            boundary = null;
+            multipart = false;
+        }
+    }
+
     public Headers(InputStream source, String defaultContentTransferEncoding)
         throws IOException
     {

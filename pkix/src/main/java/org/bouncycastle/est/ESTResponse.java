@@ -25,6 +25,11 @@ public class ESTResponse
     private long read = 0;
     private Long absoluteReadLimit;
 
+    public long getAbsoluteReadLimit()
+    {
+        return absoluteReadLimit == null ? Long.MAX_VALUE : absoluteReadLimit;
+    }
+
     private static final Long ZERO = 0L;
 
     public ESTResponse(ESTRequest originalRequest, Source source)
@@ -82,9 +87,16 @@ public class ESTResponse
             line = readStringIncluding('\n');
         }
 
+        boolean chunked = headers.getFirstValueOrEmpty("Transfer-Encoding").equalsIgnoreCase("chunked");
 
-        contentLength = getContentLength();
-
+        if (chunked)
+        {
+            contentLength = 0L;
+        }
+        else
+        {
+            contentLength = getContentLength();
+        }
         //
         // Concerned that different servers may or may not set a Content-length
         // for these success types. In this case we will arbitrarily set content length
@@ -110,7 +122,7 @@ public class ESTResponse
             throw new IOException("No Content-length header.");
         }
 
-        if (contentLength.equals(ZERO))
+        if (contentLength.equals(ZERO) && !chunked)
         {
 
             //
@@ -141,6 +153,12 @@ public class ESTResponse
 
 
         inputStream = wrapWithCounter(inputStream, absoluteReadLimit);
+
+        if (chunked)
+        {
+            inputStream = new CTEChunkedInputStream(inputStream);
+        }
+
         //
         // Observed that some
         //
@@ -155,6 +173,10 @@ public class ESTResponse
         return headers.getFirstValue(key);
     }
 
+    public String getHeaderOrEmpty(String key)
+    {
+        return headers.getFirstValueOrEmpty(key);
+    }
 
     protected InputStream wrapWithCounter(final InputStream in, final Long absoluteReadLimit)
     {

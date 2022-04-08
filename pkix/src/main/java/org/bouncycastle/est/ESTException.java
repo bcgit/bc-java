@@ -82,6 +82,18 @@ public class ESTException
 
     public InputStream getBody()
     {
+        if (body == null)
+        {
+            return new InputStream()
+            {
+                @Override
+                public int read()
+                    throws IOException
+                {
+                    return -1;
+                }
+            };
+        }
         return body;
     }
 

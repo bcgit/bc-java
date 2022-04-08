@@ -105,7 +105,7 @@ public class TestCACertsFetch
             serverInstance = startDefaultServer();
             System.setProperty("org.bouncycastle.debug.est", "all");
 
-//            SSLSocketFactoryCreatorBuilder sfcb = new SSLSockuetFactoryCreatorBuilder();
+//            SSLSocketFactoryCreatorBuilder sfcb = new SSLSocketFactoryCreatorBuilder();
 
             ESTService est = new JsseESTServiceBuilder("localhost:8443/", JcaJceUtils.getTrustAllTrustManager()).build();
             CACertsResponse caCertsResponse = est.getCACerts();

@@ -2,6 +2,7 @@ package org.bouncycastle.est;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -19,10 +20,18 @@ import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.est.CsrAttrs;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
+import org.bouncycastle.mime.BasicMimeParser;
+import org.bouncycastle.mime.ConstantMimeContext;
+import org.bouncycastle.mime.Headers;
+import org.bouncycastle.mime.MimeContext;
+import org.bouncycastle.mime.MimeParser;
+import org.bouncycastle.mime.MimeParserContext;
+import org.bouncycastle.mime.MimeParserListener;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
@@ -262,9 +271,14 @@ public class ESTService
      *
      * @param certificationRequest The certification request.
      * @param auth                 The http auth provider, basic auth or digest auth, can be null.
+     * @param certGen              if true, request server key generation
      * @return The enrolled certificate.
      */
-    public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
+    protected EnrollmentResponse enroll(
+        boolean reenroll,
+        PKCS10CertificationRequest certificationRequest,
+        ESTAuth auth,
+        boolean certGen)
         throws IOException
     {
         if (!clientProvider.isTrusted())
@@ -277,7 +291,7 @@ public class ESTService
         {
             final byte[] data = annotateRequest(certificationRequest.getEncoded()).getBytes();
 
-            URL url = new URL(server + (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL));
+            URL url = new URL(server + (certGen ? SERVERGEN : (reenroll ? SIMPLE_REENROLL : SIMPLE_ENROLL)));
 
 
             ESTClient client = clientProvider.makeClient();
@@ -320,6 +334,45 @@ public class ESTService
 
 
     /**
+     * Perform a simple enrollment operation.
+     * <p>
+     * This method accepts an ESPHttpAuth instance to provide basic or digest authentication.
+     * <p>
+     * If authentication is to be performed as part of TLS then this instances client keystore and their keystore
+     * password need to be specified.
+     *
+     * @param reenroll             true for enrollment.
+     * @param certificationRequest The certification request.
+     * @param auth                 The http auth provider, basic auth or digest auth, can be null.
+     * @return The enrolled certificate.
+     */
+    public EnrollmentResponse simpleEnroll(boolean reenroll, PKCS10CertificationRequest certificationRequest, ESTAuth auth)
+        throws IOException
+    {
+        return enroll(reenroll, certificationRequest, auth, false);
+    }
+
+
+    /**
+     * Perform a simple enrollment operation.
+     * <p>
+     * This method accepts an ESPHttpAuth instance to provide basic or digest authentication.
+     * <p>
+     * If authentication is to be performed as part of TLS then this instances client keystore and their keystore
+     * password need to be specified.
+     *
+     * @param certificationRequest The certification request.
+     * @param auth                 The http auth provider, basic auth or digest auth, can be null.
+     * @return The enrolled certificate.
+     */
+    public EnrollmentResponse simpleEnrollWithServersideCreation(PKCS10CertificationRequest certificationRequest, ESTAuth auth)
+        throws IOException
+    {
+        return enroll(false, certificationRequest, auth, true);
+    }
+
+
+    /**
      * Implements Enroll with PoP.
      * Request will have the tls-unique attribute added to it before it is signed and completed.
      *
@@ -327,10 +380,15 @@ public class ESTService
      * @param builder       The request builder.
      * @param contentSigner The content signer.
      * @param auth          Auth modes.
+     * @param certGen       if true will request server key generation.
      * @return Enrollment response.
      * @throws IOException
      */
-    public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
+    public EnrollmentResponse enrollPop(
+        boolean reEnroll,
+        final PKCS10CertificationRequestBuilder builder,
+        final ContentSigner contentSigner,
+        ESTAuth auth, boolean certGen)
         throws IOException
     {
         if (!clientProvider.isTrusted())
@@ -417,7 +475,44 @@ public class ESTService
 
 
     /**
-     * Handles the enroll response, deals with status codes and setting of delays.
+     * Implements Enroll with PoP.
+     * Request will have the tls-unique attribute added to it before it is signed and completed.
+     *
+     * @param reEnroll      True = re enroll.
+     * @param builder       The request builder.
+     * @param contentSigner The content signer.
+     * @param auth          Auth modes.
+     * @return Enrollment response.
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPoP(boolean reEnroll, final PKCS10CertificationRequestBuilder builder, final ContentSigner contentSigner, ESTAuth auth)
+        throws IOException
+    {
+        return enrollPop(reEnroll, builder, contentSigner, auth, false);
+    }
+
+
+    /**
+     * Simple enrollment with PoP and server side creation of keys.
+     *
+     * @param builder       The request builder.
+     * @param contentSigner The content signer
+     * @param auth          Auth modes
+     * @return Enrollment Response
+     * @throws IOException
+     */
+    public EnrollmentResponse simpleEnrollPopWithServersideCreation(
+        final PKCS10CertificationRequestBuilder builder,
+        final ContentSigner contentSigner,
+        ESTAuth auth)
+        throws IOException
+    {
+        return enrollPop(false, builder, contentSigner, auth, true);
+    }
+
+
+    /**
+     * Handles an enrollment response, deals with status codes and setting of delays.
      *
      * @param resp The response.
      * @return An EnrollmentResponse.
@@ -464,6 +559,70 @@ public class ESTService
             }
 
             return new EnrollmentResponse(null, notBefore, req, resp.getSource());
+
+        }
+        else if (resp.getStatusCode() == 200 && resp.getHeaderOrEmpty("content-type").contains("multipart/mixed"))
+        {
+
+            Headers mimeHeaders = new Headers(resp.getHeaderOrEmpty("content-type"), "base64");
+            MimeParser mp = new BasicMimeParser(mimeHeaders, resp.getInputStream());
+
+            // 0 = PrivateKeyInfo, 1 = SimplePKIResponse
+            final Object[] parts = new Object[2];
+
+            mp.parse(new MimeParserListener()
+            {
+                public MimeContext createContext(MimeParserContext parserContext, Headers headers)
+                {
+                    return ConstantMimeContext.Instance;
+                }
+
+                public void object(MimeParserContext parserContext, Headers headers, InputStream inputStream)
+                    throws IOException
+                {
+                    if (headers.getContentType().contains("application/pkcs8"))
+                    {
+                        ASN1InputStream asn1In = new ASN1InputStream(inputStream);
+                        parts[0] = PrivateKeyInfo.getInstance(asn1In.readObject());
+
+                        // We want to check we got what we expected in terms of responses,
+                        // and nothing more.
+                        if (asn1In.readObject() != null)
+                        {
+                            throw new ESTException("Unexpected ASN1 object after private key info");
+                        }
+
+                    }
+                    else if (headers.getContentType().contains("application/pkcs7-mime"))
+                    {
+                        ASN1InputStream asn1In = new ASN1InputStream(inputStream);
+                        try
+                        {
+                            parts[1] = new SimplePKIResponse(ContentInfo.getInstance(asn1In.readObject()));
+                        }
+                        catch (CMCException e)
+                        {
+                            throw new IOException(e.getMessage());
+                        }
+
+                        // We want to check we got what we expected in terms of responses,
+                        // and nothing more.
+                        if (asn1In.readObject() != null)
+                        {
+                            throw new ESTException("Unexpected ASN1 object after reading certificates");
+                        }
+                    }
+                }
+            });
+
+            if (parts[0] == null || parts[1] == null)
+            {
+                throw new ESTException("received neither private key info and certificates");
+            }
+
+            enrolled = ((SimplePKIResponse)parts[1]).getCertificates();
+            return new EnrollmentResponse(enrolled, -1, null, resp.getSource(), PrivateKeyInfo.getInstance(parts[0]));
+
 
         }
         else if (resp.getStatusCode() == 200)
@@ -680,4 +839,5 @@ public class ESTService
         }
 
     }
+
 }
