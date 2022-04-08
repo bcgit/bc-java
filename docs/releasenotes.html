@@ -24,7 +24,7 @@ to conform the algorithms to the JCE framework.
 
 <a name="r1rv71"><h3>2.1.1 Version</h3></a>
 Release: 1.71<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, March 31st.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>In line with GPG the PGP API now attempts to preserve comments containing non-ascii UTF8 characters.</li>
@@ -37,6 +37,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>Compressed streams in PGP ending with zero length partial packets could cause failure on parsing the OpenPGP API. This has been fixed.</li>
 <li>The fallback mode for JceAsymmetricKeyWrapper/Unwrapper would lose track of any algorithm parameters generated in the initial attempt. The algorithm parameters are now propagated.</li>
 <li>An accidental regression introduced by a fix for another issue in PKIXCertPathReviewer around use of the AuthorityKeyIdentifier extension and it failing to match a certificate uniquely when the serial number field is missing has been fixed.</li>
+<li>An error was found in the creation of TLS 1.3 Export Keying Material which could cause compatibility issues. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -63,6 +64,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>The NetscapeCertType class now has a hasUsages() method on it for querying usage settings on its bit string.</li>
 <li>Support for additional input has been added for deterministic (EC)DSA.</li>
 <li>The OpenPGP API provides better support for subkey generation.</li>
+<li>BCJSSE: Added boolean system properties "org.bouncycastle.jsse.client.dh.disableDefaultSuites" and "org.bouncycastle.jsse.server.dh.disableDefaultSuites".
+Default "false". Set to "true" to disable inclusion of DH cipher suites in the default cipher suites for client/server respectively.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <ul>

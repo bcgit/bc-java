@@ -1359,6 +1359,10 @@
         <delete dir="${pkix.target.src.dir}" />
         <zip basedir="${pg.target.src.dir}" destfile="${pg.target.src.zip}" />
         <delete dir="${pg.target.src.dir}" />
+        <zip basedir="${util.target.src.dir}" destfile="${util.target.src.zip}" />
+        <delete dir="${util.target.src.dir}" />
+        <zip basedir="${jmail.target.src.dir}" destfile="${jmail.target.src.zip}" />
+        <delete dir="${jmail.target.src.dir}" />
     </target>
 
     <target name="zip-src-jce" if="jce.present">

@@ -3,6 +3,7 @@ package org.bouncycastle.operator.jcajce;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -157,6 +158,10 @@ public class JceAsymmetricKeyUnwrapper
         catch (IllegalBlockSizeException e)
         {
             throw new OperatorException("illegal blocksize: " + e.getMessage(), e);
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            throw new OperatorException("illegal parameter: " + e.getMessage(), e);
         }
         catch (BadPaddingException e)
         {
