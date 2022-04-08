@@ -5,6 +5,7 @@
   <!-- ignore intellij out directory and out directory -->
   <suppress files="out.+" checks="NoHttp"/>
   <suppress files="(core|pg|pkix|prov|tls|util)[\\/]build.+" checks="NoHttp"/>
+  <suppress files="test[\\/]est.+" checks="NoHttp"/>
 
   <!-- Suppress warnings in certificates, signatures, configs and emails for testing -->
   <suppress files=".+\.(?:pem|crt|cer|eml|cnf|sig|message)$" checks="NoHttp"/>

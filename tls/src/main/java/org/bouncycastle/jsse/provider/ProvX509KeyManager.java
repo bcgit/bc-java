@@ -880,16 +880,18 @@ class ProvX509KeyManager
 
         public int compareTo(Match that)
         {
-            int cmp = Boolean.compare(that.isValid(), this.isValid());
-            if (cmp == 0)
+            boolean thisValid = this.isValid(), thatValid = that.isValid();
+            if (thisValid != thatValid)
             {
-                cmp = Integer.compare(this.keyTypeIndex, that.keyTypeIndex);
-                if (cmp == 0)
-                {
-                    cmp = this.quality.compareTo(that.quality);
-                }
+                return thisValid ? -1 : 1;
             }
-            return cmp;
+
+            if (this.keyTypeIndex != that.keyTypeIndex)
+            {
+                return this.keyTypeIndex < that.keyTypeIndex ? -1 : 1;
+            }
+
+            return this.quality.compareTo(that.quality);
         }
 
         boolean isIdeal()

@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
@@ -307,6 +308,14 @@ class ProvX509TrustManager
             // TODO[jsse] Consider supporting jdk.security.caDistrustPolicies security property
 
             return trustedChain;
+        }
+        catch (CertificateException e)
+        {
+            throw e;
+        }
+        catch (CertPathBuilderException e)
+        {
+            throw new CertificateException(e.getMessage(), e.getCause());
         }
         catch (GeneralSecurityException e)
         {

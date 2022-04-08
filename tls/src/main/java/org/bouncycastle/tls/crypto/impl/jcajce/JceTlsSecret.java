@@ -176,9 +176,10 @@ public class JceTlsSecret
         return crypto;
     }
 
-    protected void hmacHash(String digestName, byte[] secret, int secretOff, int secretLen, byte[] seed, byte[] output)
-        throws GeneralSecurityException
+    protected void hmacHash(int cryptoHashAlgorithm, byte[] secret, int secretOff, int secretLen, byte[] seed,
+        byte[] output) throws GeneralSecurityException
     {
+        String digestName = crypto.getDigestName(cryptoHashAlgorithm).replaceAll("-", "");
         String macName = "Hmac" + digestName;
         Mac mac = crypto.getHelper().createMac(macName);
         mac.init(new SecretKeySpec(secret, secretOff, secretLen, macName));
@@ -270,10 +271,10 @@ public class JceTlsSecret
         int s_half = (data.length + 1) / 2;
 
         byte[] b1 = new byte[length];
-        hmacHash("MD5", data, 0, s_half, labelSeed, b1);
+        hmacHash(CryptoHashAlgorithm.md5, data, 0, s_half, labelSeed, b1);
 
         byte[] b2 = new byte[length];
-        hmacHash("SHA1", data, data.length - s_half, s_half, labelSeed, b2);
+        hmacHash(CryptoHashAlgorithm.sha1, data, data.length - s_half, s_half, labelSeed, b2);
 
         for (int i = 0; i < length; i++)
         {
@@ -285,9 +286,9 @@ public class JceTlsSecret
     protected byte[] prf_1_2(int prfAlgorithm, byte[] labelSeed, int length)
         throws GeneralSecurityException
     {
-        String digestName = crypto.getDigestName(TlsCryptoUtils.getHashForPRF(prfAlgorithm)).replaceAll("-", "");
+        int cryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(prfAlgorithm);
         byte[] result = new byte[length];
-        hmacHash(digestName, data, 0, data.length, labelSeed, result);
+        hmacHash(cryptoHashAlgorithm, data, 0, data.length, labelSeed, result);
         return result;
     }
 

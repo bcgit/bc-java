@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.its.ITSPublicVerificationKey;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -166,8 +165,8 @@ public class JcaITSPublicVerificationKey
         try
         {
             KeyFactory keyFactory = helper.createKeyFactory("EC");
-            ECParameterSpec spec = EC5Util.convertToSpec(params);
-            java.security.spec.ECPoint jPoint = EC5Util.convertPoint(point);
+            ECParameterSpec spec = ECUtil.convertToSpec(params);
+            java.security.spec.ECPoint jPoint = ECUtil.convertPoint(point);
             return keyFactory.generatePublic(new ECPublicKeySpec(jPoint, spec));
         }
         catch (Exception e)
