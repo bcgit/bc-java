@@ -11,11 +11,6 @@ public abstract class SimpleTest
 {
     public abstract String getName();
 
-    public TestResult skip(String message)
-    {
-        throw new TestFailedException(new SkipTestResult(message));
-    }
-
     private TestResult success()
     {
         return SimpleTestResult.successful(this, "Okay");
@@ -233,15 +228,11 @@ public abstract class SimpleTest
     public static void runTests(Test[] tests, PrintStream out)
     {
         Vector failures = new Vector();
-        Vector skipped = new Vector();
+
         for (int i = 0; i != tests.length; i++)
         {
             TestResult result = tests[i].perform();
 
-            if (result instanceof SkipTestResult) {
-               skipped.addElement(result);
-               continue;
-            }
 
             if (!result.isSuccessful())
             {
@@ -276,16 +267,7 @@ public abstract class SimpleTest
             }
         }
 
-        if (!skipped.isEmpty()) {
-            out.println("Completed with " + skipped.size() + " SKIPPED:");
 
-            Enumeration e = skipped.elements();
-            while (e.hasMoreElements())
-            {
-                // -DM System.out.print
-                System.out.println("=>  " + (TestResult)e.nextElement());
-            }
-        }
 
     }
 }
