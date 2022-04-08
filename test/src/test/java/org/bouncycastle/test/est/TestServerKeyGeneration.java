@@ -21,24 +21,20 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TestServerKeyGeneration
     extends SimpleTest
 {
 
 
-    private static final String ca = "-----BEGIN CERTIFICATE-----\n" +
-        "MIIBuDCCAV+gAwIBAgIBATAKBggqhkjOPQQDAjAyMTAwLgYDVQQDEydOb24tUHJv\n" +
-        "ZHVjdGlvbiBUZXN0aW5nIFJvb3QgQ0EgaDlCaDhUWWkwHhcNMjIwNDA4MDAwMDQ1\n" +
-        "WhcNMjIwNDA5MDAwMDQ1WjAyMTAwLgYDVQQDEydOb24tUHJvZHVjdGlvbiBUZXN0\n" +
-        "aW5nIFJvb3QgQ0EgaDlCaDhUWWkwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR5\n" +
-        "+kq7LlVAr1HWAIB4w8lfiiwi+cRrCbxR7tjyBXAkeA3wQ+ErkC9f8qge8OAHKNZ6\n" +
-        "R09m1oMbBzWUrmyl8gkQo2YwZDAOBgNVHQ8BAf8EBAMCAQYwEgYDVR0TAQH/BAgw\n" +
-        "BgEB/wIBATAdBgNVHQ4EFgQUb3fqxptJnhpKRWgz+lK4LCSbdF0wHwYDVR0jBBgw\n" +
-        "FoAUb3fqxptJnhpKRWgz+lK4LCSbdF0wCgYIKoZIzj0EAwIDRwAwRAIgG5JG0jrQ\n" +
-        "+TcS9jSyKnK0UOyM8Oq+ZVViOZuOviXYlKgCIAE2nMK2OBJZR3rnkw924Q5rr+cg\n" +
-        "F2GpHhBxbbwSNfGN\n" +
-        "-----END CERTIFICATE-----\n";
+    @Before
+    public void before()
+    {
+        ESTTestUtils.ensureProvider();
+    }
 
     public String getName()
     {
@@ -48,11 +44,12 @@ public class TestServerKeyGeneration
     public void performTest()
         throws Exception
     {
-        serverGenWithoutEncryption();
+        testServerGenWithoutEncryption();
     }
 
 
-    public void serverGenWithoutEncryption()
+    @Test
+    public void testServerGenWithoutEncryption()
         throws Exception
     {
         //
@@ -70,7 +67,8 @@ public class TestServerKeyGeneration
         }
         catch (ESTException ex)
         {
-            skip("skipping, unable to fetch CA certs, assume no EST server.");
+            // Skip if server cannot be reached.
+            Assume.assumeNoException(ex);
         }
 
 

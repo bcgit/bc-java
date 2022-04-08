@@ -2,7 +2,6 @@ package org.bouncycastle.test.est;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -11,7 +10,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.Security;
 import java.security.Signature;
 import java.security.cert.Certificate;
@@ -73,34 +71,18 @@ public class ESTTestUtils
 
     public static void ensureProvider()
     {
-       Security.addProvider(new BouncyCastleProvider());
-       Security.addProvider(new BouncyCastleJsseProvider());
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleJsseProvider());
+        }
+
     }
 
-//    public static void ensureProvider(String name)
-//    {
-//        Provider[] pp = Security.getProviders();
-//        for (Provider p : pp)
-//        {
-//            if (p.getName().equals(name))
-//            {
-//                return;
-//            }
-//        }
-//
-//        if (name.equals(BouncyCastleProvider.PROVIDER_NAME))
-//        {
-//            Security.addProvider(new BouncyCastleProvider());
-//        }
-//        else if (name.equals(BouncyCastleJsseProvider.PROVIDER_NAME))
-//        {
-//            Security.addProvider(new BouncyCastleJsseProvider());
-//        }
-//        else
-//        {
-//            throw new IllegalArgumentException("Unknown provider " + name + " perhaps you need to add it here.");
-//        }
-//    }
 
     /**
      * Convert (X509CertificateHolder, X509Certificate, javax X509Certificate) to trust anchors.
