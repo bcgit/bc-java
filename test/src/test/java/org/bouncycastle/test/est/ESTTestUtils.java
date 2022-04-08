@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -403,6 +404,24 @@ public class ESTTestUtils
         fr.close();
         return certs.toArray(new Object[certs.size()]);
     }
+
+    public static Object[] readPemCertificates(String pem)
+        throws Exception
+    {
+        ArrayList<Object> certs = new ArrayList<Object>();
+        StringReader fr = new StringReader(pem);
+        PemReader reader = new PemReader(fr);
+        PemObject o;
+
+        while((o = reader.readPemObject()) != null )
+        {
+            certs.add(new X509CertificateHolder(o.getContent()));
+        }
+        reader.close();
+        fr.close();
+        return certs.toArray(new Object[certs.size()]);
+    }
+
 
 
     public static Object[] readCertAndKey(File path)
