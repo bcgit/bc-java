@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -66,6 +67,15 @@ public class AllTests
         assertEquals(nameFinder.getAlgorithmName(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160), "RIPEMD160WITHRSA");
         assertEquals(nameFinder.getAlgorithmName(new AlgorithmIdentifier(OIWObjectIdentifiers.elGamalAlgorithm, DERNull.INSTANCE)), "ELGAMAL");
         assertEquals(nameFinder.getAlgorithmName(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE)), "RSA");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2b160), "BLAKE2b160");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2b256), "BLAKE2b256");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2b384), "BLAKE2b384");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2b512), "BLAKE2b512");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2s128), "BLAKE2s128");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2s160), "BLAKE2s160");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2s224), "BLAKE2s224");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.id_blake2s256), "BLAKE2s256");
+        assertEquals(nameFinder.getAlgorithmName(MiscObjectIdentifiers.blake3_256), "BLAKE3-256");
 
         assertEquals(nameFinder.getAlgorithmName(Extension.authorityKeyIdentifier), Extension.authorityKeyIdentifier.getId());
     }
