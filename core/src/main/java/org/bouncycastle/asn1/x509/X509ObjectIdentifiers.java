@@ -107,4 +107,11 @@ public interface X509ObjectIdentifiers
     static final ASN1ObjectIdentifier ocspAccessMethod = id_ad_ocsp;
     /** OID for crl uri in AuthorityInformationAccess extension */
     static final ASN1ObjectIdentifier crlAccessMethod  = id_ad_caIssuers;
+
+
+    /**
+     *  id-PasswordBasedMac OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+     *          us(840) nt(113533) nsn(7) algorithms(66) 13 }
+     */
+    static final ASN1ObjectIdentifier id_PasswordBasedMac = new ASN1ObjectIdentifier("1.2.840.113533.7.66.13");
 }

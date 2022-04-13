@@ -11,6 +11,16 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
+/**
+ * KeyRecRepContent ::= SEQUENCE {
+ *          status                  PKIStatusInfo,
+ *          newSigCert          [0] CMPCertificate OPTIONAL,
+ *          caCerts             [1] SEQUENCE SIZE (1..MAX) OF
+ *                                              CMPCertificate OPTIONAL,
+ *          keyPairHist         [2] SEQUENCE SIZE (1..MAX) OF
+ *                                              CertifiedKeyPair OPTIONAL
+ *      }
+ */
 public class KeyRecRepContent
     extends ASN1Object
 {

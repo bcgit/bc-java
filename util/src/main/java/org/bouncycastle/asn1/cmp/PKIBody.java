@@ -9,6 +9,37 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 
+/**
+ * PKIBody ::= CHOICE {       -- message-specific body elements
+ *          ir       [0]  CertReqMessages,        --Initialization Request
+ *          ip       [1]  CertRepMessage,         --Initialization Response
+ *          cr       [2]  CertReqMessages,        --Certification Request
+ *          cp       [3]  CertRepMessage,         --Certification Response
+ *          p10cr    [4]  CertificationRequest,   --imported from [PKCS10]
+ *          popdecc  [5]  POPODecKeyChallContent, --pop Challenge
+ *          popdecr  [6]  POPODecKeyRespContent,  --pop Response
+ *          kur      [7]  CertReqMessages,        --Key Update Request
+ *          kup      [8]  CertRepMessage,         --Key Update Response
+ *          krr      [9]  CertReqMessages,        --Key Recovery Request
+ *          krp      [10] KeyRecRepContent,       --Key Recovery Response
+ *          rr       [11] RevReqContent,          --Revocation Request
+ *          rp       [12] RevRepContent,          --Revocation Response
+ *          ccr      [13] CertReqMessages,        --Cross-Cert. Request
+ *          ccp      [14] CertRepMessage,         --Cross-Cert. Response
+ *          ckuann   [15] CAKeyUpdAnnContent,     --CA Key Update Ann.
+ *          cann     [16] CertAnnContent,         --Certificate Ann.
+ *          rann     [17] RevAnnContent,          --Revocation Ann.
+ *          crlann   [18] CRLAnnContent,          --CRL Announcement
+ *          pkiconf  [19] PKIConfirmContent,      --Confirmation
+ *          nested   [20] NestedMessageContent,   --Nested Message
+ *          genm     [21] GenMsgContent,          --General Message
+ *          genp     [22] GenRepContent,          --General Response
+ *          error    [23] ErrorMsgContent,        --Error Message
+ *          certConf [24] CertConfirmContent,     --Certificate confirm
+ *          pollReq  [25] PollReqContent,         --Polling request
+ *          pollRep  [26] PollRepContent          --Polling response
+ *      }
+ */
 public class PKIBody
     extends ASN1Object
     implements ASN1Choice

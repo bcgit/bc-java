@@ -9,6 +9,18 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.crmf.CertId;
 import org.bouncycastle.asn1.x509.Extensions;
 
+/**
+ * <pre>
+ *      RevAnnContent ::= SEQUENCE {
+ *          status              PKIStatus,
+ *          certId              CertId,
+ *          willBeRevokedAt     GeneralizedTime,
+ *          badSinceDate        GeneralizedTime,
+ *          crlDetails          Extensions  OPTIONAL
+ *          -- extra CRL details (e.g., crl number, reason, location, etc.)
+ *      }
+ * </pre>
+ */
 public class RevAnnContent
     extends ASN1Object
 {

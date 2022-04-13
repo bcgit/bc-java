@@ -10,6 +10,23 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+/**
+ *  PBMParameter ::= SEQUENCE {
+ *          salt                OCTET STRING,
+ *          -- note:  implementations MAY wish to limit acceptable sizes
+ *          -- of this string to values appropriate for their environment
+ *          -- in order to reduce the risk of denial-of-service attacks
+ *          owf                 AlgorithmIdentifier,
+ *          -- AlgId for a One-Way Function (SHA-1 recommended)
+ *          iterationCount      INTEGER,
+ *          -- number of times the OWF is applied
+ *          -- note:  implementations MAY wish to limit acceptable sizes
+ *          -- of this integer to values appropriate for their environment
+ *          -- in order to reduce the risk of denial-of-service attacks
+ *          mac                 AlgorithmIdentifier
+ *          -- the MAC AlgId (e.g., DES-MAC, Triple-DES-MAC [PKCS11],
+ *      }   -- or HMAC [RFC2104, RFC2202])
+ */
 public class PBMParameter
     extends ASN1Object
 {
