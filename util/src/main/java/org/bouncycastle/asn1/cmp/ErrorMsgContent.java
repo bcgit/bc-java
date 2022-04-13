@@ -10,6 +10,17 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <pre>
+ *      ErrorMsgContent ::= SEQUENCE {
+ *          pKIStatusInfo          PKIStatusInfo,
+ *          errorCode              INTEGER           OPTIONAL,
+ *          -- implementation-specific error codes
+ *          errorDetails           PKIFreeText       OPTIONAL
+ *          -- implementation-specific error details
+ *      }
+ * </pre>
+ */
 public class ErrorMsgContent
     extends ASN1Object
 {

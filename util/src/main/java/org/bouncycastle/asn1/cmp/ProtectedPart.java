@@ -6,6 +6,14 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * <pre>
+ * ProtectedPart ::= SEQUENCE {
+ *          header    PKIHeader,
+ *          body      PKIBody
+ *      }
+ * </pre>
+ */
 public class ProtectedPart
     extends ASN1Object
 {

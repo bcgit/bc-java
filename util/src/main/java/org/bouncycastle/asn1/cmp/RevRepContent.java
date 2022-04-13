@@ -13,6 +13,20 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.CertId;
 import org.bouncycastle.asn1.x509.CertificateList;
 
+/**
+ * <pre>
+ * RevRepContent ::= SEQUENCE {
+ *          status       SEQUENCE SIZE (1..MAX) OF PKIStatusInfo,
+ *          -- in same order as was sent in RevReqContent
+ *          revCerts [0] SEQUENCE SIZE (1..MAX) OF CertId
+ *                                              OPTIONAL,
+ *          -- IDs for which revocation was requested
+ *          -- (same order as status)
+ *          crls     [1] SEQUENCE SIZE (1..MAX) OF CertificateList OPTIONAL
+ *          -- the resulting CRLs (there may be more than one)
+ *      }
+ *</pre>
+ */
 public class RevRepContent
     extends ASN1Object
 {

@@ -6,6 +6,31 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 
+/**
+ * PKIStatus ::= INTEGER {
+ *          accepted                (0),
+ *          -- you got exactly what you asked for
+ *          grantedWithMods        (1),
+ *          -- you got something like what you asked for; the
+ *          -- requester is responsible for ascertaining the differences
+ *          rejection              (2),
+ *          -- you don't get it, more information elsewhere in the message
+ *          waiting                (3),
+ *          -- the request body part has not yet been processed; expect to
+ *          -- hear more later (note: proper handling of this status
+ *          -- response MAY use the polling req/rep PKIMessages specified
+ *          -- in Section 5.3.22; alternatively, polling in the underlying
+ *          -- transport layer MAY have some utility in this regard)
+ *          revocationWarning      (4),
+ *          -- this message contains a warning that a revocation is
+ *          -- imminent
+ *          revocationNotification (5),
+ *          -- notification that a revocation has occurred
+ *          keyUpdateWarning       (6)
+ *          -- update already done for the oldCertId specified in
+ *          -- CertReqMsg
+ *      }
+ */
 public class PKIStatus
     extends ASN1Object
 {

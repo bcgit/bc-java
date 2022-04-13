@@ -12,6 +12,18 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
+
+/**
+ * EncryptedValue
+ *
+ * Please see reference to pending deprecation in favour of EnvelopedData.
+ *
+ * Abstract of:
+ * @link https://datatracker.ietf.org/doc/html/draft-ietf-lamps-cmp-updates
+ *
+ * Point 9 of,
+ * @Link https://datatracker.ietf.org/doc/html/rfc4211#section-2.1
+ */
 public class EncryptedValue
     extends ASN1Object
 {

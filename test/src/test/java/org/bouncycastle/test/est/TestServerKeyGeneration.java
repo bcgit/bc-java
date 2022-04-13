@@ -38,7 +38,7 @@ public class TestServerKeyGeneration
 
     public String getName()
     {
-        return "test against cisto est server";
+        return "test against globalsign est server";
     }
 
     public void performTest()

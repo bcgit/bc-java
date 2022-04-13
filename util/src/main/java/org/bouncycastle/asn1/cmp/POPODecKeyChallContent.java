@@ -4,6 +4,11 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 
+/**
+ * POPODecKeyChallContent ::= SEQUENCE OF Challenge
+ * -- One Challenge per encryption key certification request (in the
+ * -- same order as these requests appear in CertReqMessages).
+ */
 public class POPODecKeyChallContent
     extends ASN1Object
 {
@@ -41,13 +46,7 @@ public class POPODecKeyChallContent
         return result;
     }
 
-    /**
-     * <pre>
-     * POPODecKeyChallContent ::= SEQUENCE OF Challenge
-     * </pre>
-     *
-     * @return a basic ASN.1 object representation.
-     */
+
     public ASN1Primitive toASN1Primitive()
     {
         return content;

@@ -9,6 +9,18 @@ import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.X509Extensions;
 
+/**
+ * <pre>
+ * RevDetails ::= SEQUENCE {
+ *          certDetails         CertTemplate,
+ *          -- allows requester to specify as much as they can about
+ *          -- the cert. for which revocation is requested
+ *          -- (e.g., for cases in which serialNumber is not available)
+ *          crlEntryDetails     Extensions       OPTIONAL
+ *          -- requested crlEntryExtensions
+ *      }
+ * </pre>
+ */
 public class RevDetails
     extends ASN1Object
 {
@@ -71,20 +83,7 @@ public class RevDetails
         return crlEntryDetails;
     }
 
-    /**
-     * <pre>
-     * RevDetails ::= SEQUENCE {
-     *                  certDetails         CertTemplate,
-     *                   -- allows requester to specify as much as they can about
-     *                   -- the cert. for which revocation is requested
-     *                   -- (e.g., for cases in which serialNumber is not available)
-     *                   crlEntryDetails     Extensions       OPTIONAL
-     *                   -- requested crlEntryExtensions
-     *             }
-     * </pre>
-     *
-     * @return a basic ASN.1 object representation.
-     */
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
