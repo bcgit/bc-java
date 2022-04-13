@@ -17,6 +17,42 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 
+/**
+ * PKIHeader ::= SEQUENCE {
+ *          pvno                INTEGER     { cmp1999(1), cmp2000(2) },
+ *          sender              GeneralName,
+ *          -- identifies the sender
+ *          recipient           GeneralName,
+ *          -- identifies the intended recipient
+ *          messageTime     [0] GeneralizedTime         OPTIONAL,
+ *          -- time of production of this message (used when sender
+ *          -- believes that the transport will be "suitable"; i.e.,
+ *          -- that the time will still be meaningful upon receipt)
+ *          protectionAlg   [1] AlgorithmIdentifier     OPTIONAL,
+ *          -- algorithm used for calculation of protection bits
+ *          senderKID       [2] KeyIdentifier           OPTIONAL,
+ *          recipKID        [3] KeyIdentifier           OPTIONAL,
+ *          -- to identify specific keys used for protection
+ *          transactionID   [4] OCTET STRING            OPTIONAL,
+ *          -- identifies the transaction; i.e., this will be the same in
+ *          -- corresponding request, response, certConf, and PKIConf
+ *          -- messages
+ *          senderNonce     [5] OCTET STRING            OPTIONAL,
+ *          recipNonce      [6] OCTET STRING            OPTIONAL,
+ *          -- nonces used to provide replay protection, senderNonce
+ *          -- is inserted by the creator of this message; recipNonce
+ *          -- is a nonce previously inserted in a related message by
+ *          -- the intended recipient of this message
+ *          freeText        [7] PKIFreeText             OPTIONAL,
+ *          -- this may be used to indicate context-specific instructions
+ *          -- (this field is intended for human consumption)
+ *          generalInfo     [8] SEQUENCE SIZE (1..MAX) OF
+ *                                 InfoTypeAndValue     OPTIONAL
+ *          -- this may be used to convey context-specific information
+ *          -- (this field not primarily intended for human consumption)
+ *      }
+ */
+
 public class PKIHeader
     extends ASN1Object
 {

@@ -5,12 +5,15 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ * PKIMessages ::= SEQUENCE SIZE (1..MAX) OF PKIMessage
+ */
 public class PKIMessages
     extends ASN1Object
 {
     private final ASN1Sequence content;
 
-    private PKIMessages(ASN1Sequence seq)
+    protected PKIMessages(ASN1Sequence seq)
     {
         content = seq;
     }

@@ -5,6 +5,11 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
+/**
+ *  <pre>
+ *       RevReqContent ::= SEQUENCE OF RevDetails
+ *  </pre>
+ */
 public class RevReqContent
     extends ASN1Object
 {
@@ -53,10 +58,6 @@ public class RevReqContent
     }
 
     /**
-     * <pre>
-     * RevReqContent ::= SEQUENCE OF RevDetails
-     * </pre>
-     *
      * @return a basic ASN.1 object representation.
      */
     public ASN1Primitive toASN1Primitive()

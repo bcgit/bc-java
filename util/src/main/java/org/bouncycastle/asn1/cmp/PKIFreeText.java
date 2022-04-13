@@ -11,6 +11,13 @@ import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
 
+/**
+ * PKIFreeText ::= SEQUENCE SIZE (1..MAX) OF UTF8String
+ *          -- text encoded as UTF-8 String [RFC3629] (note: each
+ *          -- UTF8String MAY include an [RFC3066] language tag
+ *          -- to indicate the language of the contained text
+ *          -- see [RFC2482] for details)
+ */
 public class PKIFreeText
     extends ASN1Object
 {
