@@ -133,14 +133,14 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(GNUObjectIdentifiers.Serpent_256_CBC, "Serpent-256/CBC");
         algorithms.put(GNUObjectIdentifiers.Serpent_256_CFB, "Serpent-256/CFB");
         algorithms.put(GNUObjectIdentifiers.Serpent_256_OFB, "Serpent-256/OFB");
-        algorithms.put(MiscObjectIdentifiers.id_blake2b160, "BLAKE2b160");
-        algorithms.put(MiscObjectIdentifiers.id_blake2b256, "BLAKE2b256");
-        algorithms.put(MiscObjectIdentifiers.id_blake2b384, "BLAKE2b384");
-        algorithms.put(MiscObjectIdentifiers.id_blake2b512, "BLAKE2b512");
-        algorithms.put(MiscObjectIdentifiers.id_blake2s128, "BLAKE2s128");
-        algorithms.put(MiscObjectIdentifiers.id_blake2s160, "BLAKE2s160");
-        algorithms.put(MiscObjectIdentifiers.id_blake2s224, "BLAKE2s224");
-        algorithms.put(MiscObjectIdentifiers.id_blake2s256, "BLAKE2s256");
+        algorithms.put(MiscObjectIdentifiers.id_blake2b160, "BLAKE2b-160");
+        algorithms.put(MiscObjectIdentifiers.id_blake2b256, "BLAKE2b-256");
+        algorithms.put(MiscObjectIdentifiers.id_blake2b384, "BLAKE2b-384");
+        algorithms.put(MiscObjectIdentifiers.id_blake2b512, "BLAKE2b-512");
+        algorithms.put(MiscObjectIdentifiers.id_blake2s128, "BLAKE2s-128");
+        algorithms.put(MiscObjectIdentifiers.id_blake2s160, "BLAKE2s-160");
+        algorithms.put(MiscObjectIdentifiers.id_blake2s224, "BLAKE2s-224");
+        algorithms.put(MiscObjectIdentifiers.id_blake2s256, "BLAKE2s-256");
         algorithms.put(MiscObjectIdentifiers.blake3_256, "BLAKE3-256");
     }
 
