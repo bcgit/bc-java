@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -39,8 +38,7 @@ public class BcTlsECDSA13Verifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-        DSA dsa = new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(cryptoHashAlgorithm)));
+        DSA dsa = new ECDSASigner();
 
         Signer signer = new DSADigestSigner(dsa, new NullDigest());
         signer.init(false, publicKey);
