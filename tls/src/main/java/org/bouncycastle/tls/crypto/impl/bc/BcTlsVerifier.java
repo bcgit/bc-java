@@ -30,7 +30,7 @@ public abstract class BcTlsVerifier
         this.publicKey = publicKey;
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
     {
         return null;
     }
