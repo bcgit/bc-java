@@ -30,9 +30,9 @@ public class BcTlsECDSA13Verifier
         this.signatureScheme = signatureScheme;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -43,6 +43,6 @@ public class BcTlsECDSA13Verifier
         Signer signer = new DSADigestSigner(dsa, new NullDigest());
         signer.init(false, publicKey);
         signer.update(hash, 0, hash.length);
-        return signer.verifySignature(signature.getSignature());
+        return signer.verifySignature(digitallySigned.getSignature());
     }
 }

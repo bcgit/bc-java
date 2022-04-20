@@ -24,11 +24,11 @@ public class BcTlsRSAVerifier
         super(crypto, publicKey);
     }
 
-    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
         Digest nullDigest = new NullDigest();
 
-        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         Signer signer;
         if (algorithm != null)
         {
@@ -53,6 +53,6 @@ public class BcTlsRSAVerifier
         }
         signer.init(false, publicKey);
         signer.update(hash, 0, hash.length);
-        return signer.verifySignature(signedParams.getSignature());
+        return signer.verifySignature(digitallySigned.getSignature());
     }
 }

@@ -860,11 +860,11 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsStreamVerifier createStreamVerifier(DigitallySigned signature, PublicKey publicKey) throws IOException
+    protected TlsStreamVerifier createStreamVerifier(DigitallySigned digitallySigned, PublicKey publicKey) throws IOException
     {
-        String algorithmName = JcaUtils.getJcaAlgorithmName(signature.getAlgorithm());
+        String algorithmName = JcaUtils.getJcaAlgorithmName(digitallySigned.getAlgorithm());
 
-        return createStreamVerifier(algorithmName, null, signature.getSignature(), publicKey);
+        return createStreamVerifier(algorithmName, null, digitallySigned.getSignature(), publicKey);
     }
 
     protected TlsStreamVerifier createStreamVerifier(String algorithmName, AlgorithmParameterSpec parameter,

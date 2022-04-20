@@ -22,14 +22,14 @@ public class BcTlsSM2Verifier
         this.identifier = Arrays.clone(identifier);
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null
             // TODO[RFC 8998] 
 //            || algorithm.getSignature() != SignatureAlgorithm.sm2
@@ -44,6 +44,6 @@ public class BcTlsSM2Verifier
         SM2Signer verifier = new SM2Signer();
         verifier.init(false, parametersWithID);
 
-        return new BcTlsStreamVerifier(verifier, signature.getSignature());
+        return new BcTlsStreamVerifier(verifier, digitallySigned.getSignature());
     }
 }
