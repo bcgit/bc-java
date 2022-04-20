@@ -23,9 +23,9 @@ public abstract class BcTlsDSSVerifier
 
     protected abstract short getSignatureAlgorithm();
 
-    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
-        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm != null && algorithm.getSignature() != getSignatureAlgorithm())
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -42,6 +42,6 @@ public abstract class BcTlsDSSVerifier
         {
             signer.update(hash, 0, hash.length);
         }
-        return signer.verifySignature(signedParams.getSignature());
+        return signer.verifySignature(digitallySigned.getSignature());
     }
 }

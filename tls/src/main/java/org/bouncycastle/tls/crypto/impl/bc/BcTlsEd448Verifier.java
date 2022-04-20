@@ -18,14 +18,14 @@ public class BcTlsEd448Verifier
         super(crypto, publicKey);
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != SignatureScheme.ed448)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -34,6 +34,6 @@ public class BcTlsEd448Verifier
         Ed448Signer verifier = new Ed448Signer(TlsUtils.EMPTY_BYTES);
         verifier.init(false, publicKey);
 
-        return new BcTlsStreamVerifier(verifier, signature.getSignature());
+        return new BcTlsStreamVerifier(verifier, digitallySigned.getSignature());
     }
 }

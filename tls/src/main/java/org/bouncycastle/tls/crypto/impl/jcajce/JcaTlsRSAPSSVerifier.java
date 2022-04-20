@@ -40,14 +40,14 @@ public class JcaTlsRSAPSSVerifier
         this.signatureScheme = signatureScheme;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -61,6 +61,6 @@ public class JcaTlsRSAPSSVerifier
         AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName,
             crypto.getHelper());
 
-        return crypto.createStreamVerifier(sigName, pssSpec, signature.getSignature(), publicKey);
+        return crypto.createStreamVerifier(sigName, pssSpec, digitallySigned.getSignature(), publicKey);
     }
 }

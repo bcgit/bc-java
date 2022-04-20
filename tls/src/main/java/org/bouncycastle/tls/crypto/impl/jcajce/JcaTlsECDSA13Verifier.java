@@ -40,14 +40,14 @@ public class JcaTlsECDSA13Verifier
         this.signatureScheme = signatureScheme;
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
     {
         return null;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -58,7 +58,7 @@ public class JcaTlsECDSA13Verifier
             Signature signer = crypto.getHelper().createSignature("NoneWithECDSA");
             signer.initVerify(publicKey);
             signer.update(hash, 0, hash.length);
-            return signer.verify(signature.getSignature());
+            return signer.verify(digitallySigned.getSignature());
         }
         catch (GeneralSecurityException e)
         {
