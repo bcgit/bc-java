@@ -24,6 +24,23 @@ public interface TlsCrypto
     boolean hasAllRawSignatureAlgorithms();
 
     /**
+     * Return true if this TlsCrypto can support the passed in hash algorithm.
+     *
+     * @param cryptoHashAlgorithm the algorithm of interest.
+     * @return true if cryptoHashAlgorithm is supported, false otherwise.
+     */
+    boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm);
+
+    /**
+     * Return true if this TlsCrypto can support the passed in signature algorithm
+     * (not necessarily in combination with EVERY hash algorithm).
+     *
+     * @param cryptoSignatureAlgorithm the algorithm of interest.
+     * @return true if cryptoSignatureAlgorithm is supported, false otherwise.
+     */
+    boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm);
+
+    /**
      * Return true if this TlsCrypto can support DH key agreement.
      *
      * @return true if this instance can support DH key agreement, false otherwise.
@@ -46,21 +63,12 @@ public interface TlsCrypto
     boolean hasEncryptionAlgorithm(int encryptionAlgorithm);
 
     /**
-     * Return true if this TlsCrypto can support the passed in hash algorithm.
+     * Return true if this TlsCrypto can support HKDF with the passed in hash algorithm.
      *
      * @param cryptoHashAlgorithm the algorithm of interest.
-     * @return true if cryptoHashAlgorithm is supported, false otherwise.
+     * @return true if HKDF is supported with cryptoHashAlgorithm, false otherwise.
      */
-    boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm);
-
-    /**
-     * Return true if this TlsCrypto can support the passed in signature algorithm
-     * (not necessarily in combination with EVERY hash algorithm).
-     *
-     * @param cryptoSignatureAlgorithm the algorithm of interest.
-     * @return true if cryptoSignatureAlgorithm is supported, false otherwise.
-     */
-    boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm);
+    boolean hasHKDFAlgorithm(int cryptoHashAlgorithm);
 
     /**
      * Return true if this TlsCrypto can support the passed in MAC algorithm.
