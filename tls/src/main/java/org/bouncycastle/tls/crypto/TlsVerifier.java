@@ -10,15 +10,15 @@ import org.bouncycastle.tls.DigitallySigned;
  */
 public interface TlsVerifier
 {
-    TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException;
+    TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException;
 
     /**
      * Return true if the passed in signature and hash represent a real signature.
      *
-     * @param signature the signature object containing the signature to be verified.
+     * @param digitallySigned the signature object containing the signature to be verified.
      * @param hash the hash calculated for the signature.
      * @return true if signature verifies, false otherwise.
      * @throws IOException in case of an exception verifying signature.
      */
-    boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException;
+    boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException;
 }

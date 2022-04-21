@@ -41,9 +41,9 @@ public class JcaTlsRSAVerifier
         this.publicKey = publicKey;
     }
 
-    public TlsStreamVerifier getStreamVerifier(final DigitallySigned signature) throws IOException
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
 
         /*
          * NOTE: The SunMSCAPI provider's "NoneWithRSA" can't produce/verify RSA signatures in the correct format for TLS 1.2
@@ -53,15 +53,15 @@ public class JcaTlsRSAVerifier
             && JcaUtils.isSunMSCAPIProviderActive()
             && isSunMSCAPIRawVerifier())
         {
-            return crypto.createStreamVerifier(signature, publicKey);
+            return crypto.createStreamVerifier(digitallySigned, publicKey);
         }
 
         return null;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
 
         try
         {
@@ -92,7 +92,7 @@ public class JcaTlsRSAVerifier
                 verifier.update(hash, 0, hash.length);
             }
 
-            return verifier.verify(signedParams.getSignature());
+            return verifier.verify(digitallySigned.getSignature());
         }
         catch (GeneralSecurityException e)
         {

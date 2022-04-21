@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -31,20 +30,19 @@ public class BcTlsECDSA13Verifier
         this.signatureScheme = signatureScheme;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-        DSA dsa = new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(cryptoHashAlgorithm)));
+        DSA dsa = new ECDSASigner();
 
         Signer signer = new DSADigestSigner(dsa, new NullDigest());
         signer.init(false, publicKey);
         signer.update(hash, 0, hash.length);
-        return signer.verifySignature(signature.getSignature());
+        return signer.verifySignature(digitallySigned.getSignature());
     }
 }
