@@ -454,8 +454,42 @@ public class JcaTlsCrypto
     {
         // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
         return !JcaUtils.isSunMSCAPIProviderActive()
-            && !hasSignatureAlgorithm(SignatureAlgorithm.ed25519)
-            && !hasSignatureAlgorithm(SignatureAlgorithm.ed448);
+            && false;
+    }
+
+    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
+    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
+    {
+        switch (cryptoSignatureAlgorithm)
+        {
+        case CryptoSignatureAlgorithm.rsa:
+        case CryptoSignatureAlgorithm.dsa:
+        case CryptoSignatureAlgorithm.ecdsa:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
+        case CryptoSignatureAlgorithm.ed25519:
+        case CryptoSignatureAlgorithm.ed448:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case CryptoSignatureAlgorithm.gostr34102012_256:
+        case CryptoSignatureAlgorithm.gostr34102012_512:
+
+        // TODO[RFC 8998]
+        case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasDHAgreement()
@@ -501,35 +535,15 @@ public class JcaTlsCrypto
         return supported.booleanValue();
     }
 
-    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
+    public boolean hasHKDFAlgorithm(int cryptoHashAlgorithm)
     {
-        // TODO: expand
-        return true;
-    }
-
-    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
-    {
-        switch (cryptoSignatureAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case CryptoSignatureAlgorithm.rsa:
-        case CryptoSignatureAlgorithm.dsa:
-        case CryptoSignatureAlgorithm.ecdsa:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
-        case CryptoSignatureAlgorithm.ed25519:
-        case CryptoSignatureAlgorithm.ed448:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+        case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sm3:
             return true;
-
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
-        case CryptoSignatureAlgorithm.gostr34102012_256:
-        case CryptoSignatureAlgorithm.gostr34102012_512:
-
-        // TODO[RFC 8998]
-        case CryptoSignatureAlgorithm.sm2:
 
         default:
             return false;
