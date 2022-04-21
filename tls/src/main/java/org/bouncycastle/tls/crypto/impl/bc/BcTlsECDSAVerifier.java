@@ -3,7 +3,6 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.tls.SignatureAlgorithm;
 
 /**
@@ -17,9 +16,9 @@ public class BcTlsECDSAVerifier
         super(crypto, publicKey);
     }
 
-    protected DSA createDSAImpl(int cryptoHashAlgorithm)
+    protected DSA createDSAImpl()
     {
-        return new ECDSASigner(new HMacDSAKCalculator(crypto.createDigest(cryptoHashAlgorithm)));
+        return new ECDSASigner();
     }
 
     protected short getSignatureAlgorithm()

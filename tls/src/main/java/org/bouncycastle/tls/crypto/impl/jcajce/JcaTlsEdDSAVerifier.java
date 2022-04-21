@@ -34,14 +34,14 @@ public class JcaTlsEdDSAVerifier
         this.algorithmName = algorithmName;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
 
         if (algorithm == null
             || algorithm.getSignature() != algorithmType
@@ -50,6 +50,6 @@ public class JcaTlsEdDSAVerifier
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
-        return crypto.createStreamVerifier(algorithmName, null, signature.getSignature(), publicKey);
+        return crypto.createStreamVerifier(algorithmName, null, digitallySigned.getSignature(), publicKey);
     }
 }

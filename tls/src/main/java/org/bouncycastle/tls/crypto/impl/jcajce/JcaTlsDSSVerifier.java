@@ -38,14 +38,14 @@ public abstract class JcaTlsDSSVerifier
         this.algorithmName = algorithmName;
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
     {
         return null;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signedParams, byte[] hash)
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash)
     {
-        SignatureAndHashAlgorithm algorithm = signedParams.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm != null && algorithm.getSignature() != algorithmType)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -65,7 +65,7 @@ public abstract class JcaTlsDSSVerifier
             {
                 signer.update(hash, 0, hash.length);
             }
-            return signer.verify(signedParams.getSignature());
+            return signer.verify(digitallySigned.getSignature());
         }
         catch (GeneralSecurityException e)
         {
