@@ -159,13 +159,16 @@ public final class Arrays
      * @return true if arrays equal, false otherwise.
      */
     public static boolean constantTimeAreEqual(
-            char[]  expected,
-            char[]  supplied) {
-        if (expected == null || supplied == null) {
+        char[] expected,
+        char[] supplied)
+    {
+        if (expected == null || supplied == null)
+        {
             return false;
         }
 
-        if (expected == supplied) {
+        if (expected == supplied)
+        {
             return true;
         }
 
@@ -174,12 +177,14 @@ public final class Arrays
         int nonEqual = expected.length ^ supplied.length;
 
         // do the char-wise comparison
-        for (int i = 0; i != len; i++) {
+        for (int i = 0; i != len; i++)
+        {
             nonEqual |= (expected[i] ^ supplied[i]);
         }
         // If supplied is longer than expected, iterate over rest of supplied with NOPs
-        for (int i = len; i < supplied.length; i++) {
-            nonEqual |= ((byte) supplied[i] ^ (byte) ~supplied[i]);
+        for (int i = len; i < supplied.length; i++)
+        {
+            nonEqual |= ((byte)supplied[i] ^ (byte)~supplied[i]);
         }
 
         return nonEqual == 0;
