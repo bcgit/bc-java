@@ -236,7 +236,7 @@ public class JcaPGPKeyConverter
             }
 
             default:
-                throw new PGPException("unknown public key algorithm encountered");
+                throw new PGPException("unknown public key algorithm encountered: " + pubPk.getAlgorithm());
             }
         }
         catch (PGPException e)
@@ -327,7 +327,7 @@ public class JcaPGPKeyConverter
             }
 
             default:
-                throw new PGPException("unknown public key algorithm encountered");
+                throw new PGPException("unknown public key algorithm encountered: " + publicPk.getAlgorithm());
             }
         }
         catch (PGPException e)
