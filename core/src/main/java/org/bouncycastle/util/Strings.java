@@ -251,9 +251,19 @@ public final class Strings
         boolean isEqual = a.length() == b.length();
         int     len = a.length();
 
-        for (int i = 0; i != len; i++)
+        if (isEqual)
         {
-            isEqual &= (a.charAt(i) == b.charAt(i));
+            for (int i = 0; i != len; i++)
+            {
+                isEqual &= (a.charAt(i) == b.charAt(i));
+            }
+        }
+        else
+        {
+            for (int i = 0; i != len; i++)
+            {
+                isEqual &= (a.charAt(i) == ' ');
+            }
         }
 
         return isEqual;
