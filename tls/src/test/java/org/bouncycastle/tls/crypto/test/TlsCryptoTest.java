@@ -448,6 +448,11 @@ public abstract class TlsCryptoTest
         for (int i = 0; i < hashes.length; ++i)
         {
             int hash = hashes[i];
+            if (!crypto.hasHKDFAlgorithm(hash))
+            {
+                continue;
+            }
+
             int hashLen = TlsCryptoUtils.getHashOutputSize(hash);
             TlsSecret zeros = crypto.hkdfInit(hash);
 

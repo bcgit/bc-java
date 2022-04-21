@@ -207,35 +207,7 @@ public class BcTlsCrypto
     public boolean hasAllRawSignatureAlgorithms()
     {
         // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
-        return !hasSignatureAlgorithm(SignatureAlgorithm.ed25519)
-            && !hasSignatureAlgorithm(SignatureAlgorithm.ed448);
-    }
-
-    public boolean hasDHAgreement()
-    {
-        return true;
-    }
-
-    public boolean hasECDHAgreement()
-    {
-        return true;
-    }
-
-    public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
-    {
-        switch (encryptionAlgorithm)
-        {
-        case EncryptionAlgorithm.DES40_CBC:
-        case EncryptionAlgorithm.DES_CBC:
-        case EncryptionAlgorithm.IDEA_CBC:
-        case EncryptionAlgorithm.RC2_CBC_40:
-        case EncryptionAlgorithm.RC4_128:
-        case EncryptionAlgorithm.RC4_40:
-            return false;
-
-        default:
-            return true;
-        }
+        return false;
     }
 
     public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
@@ -279,6 +251,48 @@ public class BcTlsCrypto
 
         // TODO[RFC 8998]
         case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
+    }
+
+    public boolean hasDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasECDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
+    {
+        switch (encryptionAlgorithm)
+        {
+        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.RC2_CBC_40:
+        case EncryptionAlgorithm.RC4_128:
+        case EncryptionAlgorithm.RC4_40:
+            return false;
+
+        default:
+            return true;
+        }
+    }
+
+    public boolean hasHKDFAlgorithm(int cryptoHashAlgorithm)
+    {
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sm3:
+            return true;
 
         default:
             return false;
