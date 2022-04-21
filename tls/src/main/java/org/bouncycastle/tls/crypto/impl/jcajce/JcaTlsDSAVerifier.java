@@ -20,9 +20,9 @@ public class JcaTlsDSAVerifier
         super(crypto, publicKey, SignatureAlgorithm.dsa, "NoneWithDSA");
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
 
         /*
          * Unfortunately "NoneWithDSA" (a.k.a "RawDSA") only works with 20 byte inputs in the SUN
@@ -35,7 +35,7 @@ public class JcaTlsDSAVerifier
             && algorithmType == algorithm.getSignature()
             && HashAlgorithm.getOutputSize(algorithm.getHash()) != 20)
         {
-            return crypto.createStreamVerifier(signature, publicKey);
+            return crypto.createStreamVerifier(digitallySigned, publicKey);
         }
 
         return null;

@@ -31,14 +31,14 @@ public class BcTlsRSAPSSVerifier
         this.signatureScheme = signatureScheme;
     }
 
-    public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException
+    public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
     }
 
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned signature)
+    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
     {
-        SignatureAndHashAlgorithm algorithm = signature.getAlgorithm();
+        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -50,6 +50,6 @@ public class BcTlsRSAPSSVerifier
         PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
         verifier.init(false, publicKey);
 
-        return new BcTlsStreamVerifier(verifier, signature.getSignature());
+        return new BcTlsStreamVerifier(verifier, digitallySigned.getSignature());
     }
 }
