@@ -25,11 +25,11 @@ public final class DefaultXMSSMTOid
             new DefaultXMSSMTOid(0x00000002, "XMSSMT_SHA2_20/4_256"));
         map.put(createKey("SHA-256", 32, 16, 67, 40, 2),
             new DefaultXMSSMTOid(0x00000003, "XMSSMT_SHA2_40/2_256"));
-        map.put(createKey("SHA-256", 32, 16, 67, 40, 2),
-            new DefaultXMSSMTOid(0x00000004, "XMSSMT_SHA2_40/4_256"));
         map.put(createKey("SHA-256", 32, 16, 67, 40, 4),
+            new DefaultXMSSMTOid(0x00000004, "XMSSMT_SHA2_40/4_256"));
+        map.put(createKey("SHA-256", 32, 16, 67, 40, 8),
             new DefaultXMSSMTOid(0x00000005, "XMSSMT_SHA2_40/8_256"));
-        map.put(createKey("SHA-256", 32, 16, 67, 60, 8),
+        map.put(createKey("SHA-256", 32, 16, 67, 60, 3),
             new DefaultXMSSMTOid(0x00000006, "XMSSMT_SHA2_60/3_256"));
         map.put(createKey("SHA-256", 32, 16, 67, 60, 6),
             new DefaultXMSSMTOid(0x00000007, "XMSSMT_SHA2_60/6_256"));
