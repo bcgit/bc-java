@@ -2,6 +2,7 @@ package org.bouncycastle.jsse.provider;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -10,6 +11,8 @@ import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
 
 abstract class X509TrustManagerUtil
 {
+    private static final Logger LOG = Logger.getLogger(X509TrustManagerUtil.class.getName());
+
     private static final Class<?> x509ExtendedTrustManagerClass;
     private static final Constructor<? extends X509TrustManager> exportX509TrustManagerConstructor;
     private static final Constructor<? extends BCX509ExtendedTrustManager> importX509TrustManagerConstructor;
@@ -88,6 +91,8 @@ abstract class X509TrustManagerUtil
     static BCX509ExtendedTrustManager importX509TrustManager(boolean isInFipsMode, JcaJceHelper helper,
         X509TrustManager x509TrustManager)
     {
+        LOG.fine("Importing X509TrustManager implementation: " + x509TrustManager.getClass().getName());
+
         if (x509TrustManager instanceof BCX509ExtendedTrustManager)
         {
             return (BCX509ExtendedTrustManager)x509TrustManager;
