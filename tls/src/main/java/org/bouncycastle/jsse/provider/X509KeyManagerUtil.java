@@ -1,5 +1,7 @@
 package org.bouncycastle.jsse.provider;
 
+import java.util.logging.Logger;
+
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
 
@@ -8,6 +10,8 @@ import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 
 abstract class X509KeyManagerUtil
 {
+    private static final Logger LOG = Logger.getLogger(X509KeyManagerUtil.class.getName());
+
     static X509KeyManager exportX509KeyManager(BCX509ExtendedKeyManager x509KeyManager)
     {
         if (x509KeyManager instanceof ImportX509KeyManager)
@@ -20,6 +24,8 @@ abstract class X509KeyManagerUtil
 
     static BCX509ExtendedKeyManager importX509KeyManager(JcaJceHelper helper, X509KeyManager x509KeyManager)
     {
+        LOG.fine("Importing X509KeyManager implementation: " + x509KeyManager.getClass().getName());
+
         if (x509KeyManager instanceof BCX509ExtendedKeyManager)
         {
             return (BCX509ExtendedKeyManager)x509KeyManager;
