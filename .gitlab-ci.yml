@@ -1,0 +1,16 @@
+
+stages:
+  - check
+  - test
+
+check-code:
+  stage: check
+  script:
+    - "export PATH=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin:$PATH:/var/gradle/gradle-6.9/bin:/var/ant/apache-ant-1.10.5/bin \
+       export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \ gradle check -x test;"
+
+test-code:
+  stage: test
+  script:
+    - "export PATH=/usr/lib/jvm/java-8-openjdk-amd64/jre/bin:$PATH:/var/gradle/gradle-6.9/bin:/var/ant/apache-ant-1.10.5/bin \
+       export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 \ gradle -stacktrace clean build;"
