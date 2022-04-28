@@ -2,9 +2,12 @@ package org.bouncycastle.operator.test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.Security;
+import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
 
+import javax.crypto.Cipher;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 
@@ -13,16 +16,24 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
+import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
@@ -44,6 +55,228 @@ public class AllTests
             Security.addProvider(new BouncyCastleProvider());
         }
     }
+
+    public void testAgainstKnownList()
+        throws Exception
+    {
+        Object[] values = new Object[]{new Object[]{BSIObjectIdentifiers.ecdsa_plain_RIPEMD160, "RIPEMD160WITHPLAIN-ECDSA"},
+            new Object[]{BSIObjectIdentifiers.ecdsa_plain_SHA1, "SHA1WITHPLAIN-ECDSA"},
+            new Object[]{BSIObjectIdentifiers.ecdsa_plain_SHA224, "SHA224WITHPLAIN-ECDSA"},
+            new Object[]{BSIObjectIdentifiers.ecdsa_plain_SHA256, "SHA256WITHPLAIN-ECDSA"},
+            new Object[]{BSIObjectIdentifiers.ecdsa_plain_SHA384, "SHA384WITHPLAIN-ECDSA"},
+            new Object[]{BSIObjectIdentifiers.ecdsa_plain_SHA512, "SHA512WITHPLAIN-ECDSA"},
+            new Object[]{CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_2001, "GOST3411WITHECGOST3410-2001"},
+            new Object[]{CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94, "GOST3411WITHGOST3410-94"},
+            new Object[]{CryptoProObjectIdentifiers.gostR3411, "GOST3411"},
+            new Object[]{RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_256, "GOST3411WITHECGOST3410-2012-256"},
+            new Object[]{RosstandartObjectIdentifiers.id_tc26_signwithdigest_gost_3410_12_512, "GOST3411WITHECGOST3410-2012-512"},
+            new Object[]{EACObjectIdentifiers.id_TA_ECDSA_SHA_1, "SHA1WITHCVC-ECDSA"},
+            new Object[]{EACObjectIdentifiers.id_TA_ECDSA_SHA_224, "SHA224WITHCVC-ECDSA"},
+            new Object[]{EACObjectIdentifiers.id_TA_ECDSA_SHA_256, "SHA256WITHCVC-ECDSA"},
+            new Object[]{EACObjectIdentifiers.id_TA_ECDSA_SHA_384, "SHA384WITHCVC-ECDSA"},
+            new Object[]{EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA"},
+            new Object[]{NISTObjectIdentifiers.id_sha224, "SHA224"},
+            new Object[]{NISTObjectIdentifiers.id_sha256, "SHA256"},
+            new Object[]{NISTObjectIdentifiers.id_sha384, "SHA384"},
+            new Object[]{NISTObjectIdentifiers.id_sha512, "SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_sha3_224, "SHA3-224"},
+            new Object[]{NISTObjectIdentifiers.id_sha3_256, "SHA3-256"},
+            new Object[]{NISTObjectIdentifiers.id_sha3_384, "SHA3-384"},
+            new Object[]{NISTObjectIdentifiers.id_sha3_512, "SHA3-512"},
+            new Object[]{OIWObjectIdentifiers.dsaWithSHA1, "SHA1WITHDSA"},
+            new Object[]{OIWObjectIdentifiers.elGamalAlgorithm, "ELGAMAL"},
+            new Object[]{OIWObjectIdentifiers.idSHA1, "SHA1"},
+            new Object[]{OIWObjectIdentifiers.md5WithRSA, "MD5WITHRSA"},
+            new Object[]{OIWObjectIdentifiers.sha1WithRSA, "SHA1WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.id_RSAES_OAEP, "RSAOAEP"},
+            new Object[]{PKCSObjectIdentifiers.id_RSASSA_PSS, "RSAPSS"},
+            new Object[]{PKCSObjectIdentifiers.md2WithRSAEncryption, "MD2WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.md5, "MD5"},
+            new Object[]{PKCSObjectIdentifiers.md5WithRSAEncryption, "MD5WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.rsaEncryption, "RSA"},
+            new Object[]{PKCSObjectIdentifiers.sha1WithRSAEncryption, "SHA1WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.sha224WithRSAEncryption, "SHA224WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.sha256WithRSAEncryption, "SHA256WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.sha384WithRSAEncryption, "SHA384WITHRSA"},
+            new Object[]{PKCSObjectIdentifiers.sha512WithRSAEncryption, "SHA512WITHRSA"},
+            new Object[]{NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_224, "SHA3-224WITHRSA"},
+            new Object[]{NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_256, "SHA3-256WITHRSA"},
+            new Object[]{NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_384, "SHA3-384WITHRSA"},
+            new Object[]{NISTObjectIdentifiers.id_rsassa_pkcs1_v1_5_with_sha3_512, "SHA3-512WITHRSA"},
+            new Object[]{TeleTrusTObjectIdentifiers.ripemd128, "RIPEMD128"},
+            new Object[]{TeleTrusTObjectIdentifiers.ripemd160, "RIPEMD160"},
+            new Object[]{TeleTrusTObjectIdentifiers.ripemd256, "RIPEMD256"},
+            new Object[]{TeleTrusTObjectIdentifiers.rsaSignatureWithripemd128, "RIPEMD128WITHRSA"},
+            new Object[]{TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160, "RIPEMD160WITHRSA"},
+            new Object[]{TeleTrusTObjectIdentifiers.rsaSignatureWithripemd256, "RIPEMD256WITHRSA"},
+            new Object[]{X9ObjectIdentifiers.ecdsa_with_SHA1, "ECDSAWITHSHA1"},
+            new Object[]{X9ObjectIdentifiers.ecdsa_with_SHA224, "SHA224WITHECDSA"},
+            new Object[]{X9ObjectIdentifiers.ecdsa_with_SHA256, "SHA256WITHECDSA"},
+            new Object[]{X9ObjectIdentifiers.ecdsa_with_SHA384, "SHA384WITHECDSA"},
+            new Object[]{X9ObjectIdentifiers.ecdsa_with_SHA512, "SHA512WITHECDSA"},
+            new Object[]{NISTObjectIdentifiers.id_ecdsa_with_sha3_224, "SHA3-224WITHECDSA"},
+            new Object[]{NISTObjectIdentifiers.id_ecdsa_with_sha3_256, "SHA3-256WITHECDSA"},
+            new Object[]{NISTObjectIdentifiers.id_ecdsa_with_sha3_384, "SHA3-384WITHECDSA"},
+            new Object[]{NISTObjectIdentifiers.id_ecdsa_with_sha3_512, "SHA3-512WITHECDSA"},
+            new Object[]{X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.dsa_with_sha384, "SHA384WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.dsa_with_sha512, "SHA512WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_224, "SHA3-224WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_256, "SHA3-256WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_384, "SHA3-384WITHDSA"},
+            new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA"},
+            new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
+
+            new Object[]{PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC"},
+            new Object[]{PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE-3KEY/CBC"},
+            new Object[]{NISTObjectIdentifiers.id_aes128_ECB, "AES-128/ECB"},
+            new Object[]{NISTObjectIdentifiers.id_aes192_ECB, "AES-192/ECB"},
+            new Object[]{NISTObjectIdentifiers.id_aes256_ECB, "AES-256/ECB"},
+            new Object[]{NISTObjectIdentifiers.id_aes128_CBC, "AES-128/CBC"},
+            new Object[]{NISTObjectIdentifiers.id_aes192_CBC, "AES-192/CBC"},
+            new Object[]{NISTObjectIdentifiers.id_aes256_CBC, "AES-256/CBC"},
+            new Object[]{NISTObjectIdentifiers.id_aes128_CFB, "AES-128/CFB"},
+            new Object[]{NISTObjectIdentifiers.id_aes192_CFB, "AES-192/CFB"},
+            new Object[]{NISTObjectIdentifiers.id_aes256_CFB, "AES-256/CFB"},
+            new Object[]{NISTObjectIdentifiers.id_aes128_OFB, "AES-128/OFB"},
+            new Object[]{NISTObjectIdentifiers.id_aes192_OFB, "AES-192/OFB"},
+            new Object[]{NISTObjectIdentifiers.id_aes256_OFB, "AES-256/OFB"},
+            new Object[]{NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA-128/CBC"},
+            new Object[]{NTTObjectIdentifiers.id_camellia192_cbc, "CAMELLIA-192/CBC"},
+            new Object[]{NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA-256/CBC"},
+            new Object[]{KISAObjectIdentifiers.id_seedCBC, "SEED/CBC"},
+            new Object[]{MiscObjectIdentifiers.as_sys_sec_alg_ideaCBC, "IDEA/CBC"},
+            new Object[]{MiscObjectIdentifiers.cast5CBC, "CAST5/CBC"},
+            new Object[]{MiscObjectIdentifiers.cryptlib_algorithm_blowfish_ECB, "Blowfish/ECB"},
+            new Object[]{MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC, "Blowfish/CBC"},
+            new Object[]{MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CFB, "Blowfish/CFB"},
+            new Object[]{MiscObjectIdentifiers.cryptlib_algorithm_blowfish_OFB, "Blowfish/OFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_128_ECB, "Serpent-128/ECB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_128_CBC, "Serpent-128/CBC"},
+            new Object[]{GNUObjectIdentifiers.Serpent_128_CFB, "Serpent-128/CFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_128_OFB, "Serpent-128/OFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_192_ECB, "Serpent-192/ECB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_192_CBC, "Serpent-192/CBC"},
+            new Object[]{GNUObjectIdentifiers.Serpent_192_CFB, "Serpent-192/CFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_192_OFB, "Serpent-192/OFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_256_ECB, "Serpent-256/ECB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_256_CBC, "Serpent-256/CBC"},
+            new Object[]{GNUObjectIdentifiers.Serpent_256_CFB, "Serpent-256/CFB"},
+            new Object[]{GNUObjectIdentifiers.Serpent_256_OFB, "Serpent-256/OFB"},
+            new Object[]{MiscObjectIdentifiers.id_blake2b160, "BLAKE2b-160"},
+            new Object[]{MiscObjectIdentifiers.id_blake2b256, "BLAKE2b-256"},
+            new Object[]{MiscObjectIdentifiers.id_blake2b384, "BLAKE2b-384"},
+            new Object[]{MiscObjectIdentifiers.id_blake2b512, "BLAKE2b-512"},
+            new Object[]{MiscObjectIdentifiers.id_blake2s128, "BLAKE2s-128"},
+            new Object[]{MiscObjectIdentifiers.id_blake2s160, "BLAKE2s-160"},
+            new Object[]{MiscObjectIdentifiers.id_blake2s224, "BLAKE2s-224"},
+            new Object[]{MiscObjectIdentifiers.id_blake2s256, "BLAKE2s-256"},
+            new Object[]{MiscObjectIdentifiers.blake3_256, "BLAKE3-256"}};
+
+
+        for (Object value : values)
+        {
+            //
+            // If this fails then the name finder has probably had entries added that are not captured in
+            // this test.
+            //
+            assertEquals("default name finder has same number of entries as test case",
+                DefaultAlgorithmNameFinder.entryCount(), values.length);
+
+            AlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)((Object[])value)[0];
+            String name = ((Object[])value)[1].toString();
+            assertTrue(nameFinder.hasAlgorithmName(oid));
+            assertEquals(nameFinder.getAlgorithmName(oid), name);
+            assertEquals(name, nameFinder.getAlgorithmName(new AlgorithmIdentifier(oid)));
+
+
+            if (name.startsWith("AES-"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+            if (name.equals("RSAOAEP"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+            if (name.startsWith("Blowfish"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+            if (name.startsWith("Serpent"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+            if (name.startsWith("GOST3411") || name.startsWith("CAMELLIA-"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+            if (name.equals("IDEA/CBC") ||
+                name.equals("RC2/CBC") ||
+                name.equals("CAST5/CBC") ||
+                name.equals("SEED/CBC") ||
+                name.equals("DESEDE-3KEY/CBC"))
+            {
+                System.out.println("Skipping for provider resolution " + name);
+                continue;
+            }
+
+
+            // Is it a digest?
+            try
+            {
+                MessageDigest.getInstance(nameFinder.getAlgorithmName(oid), BouncyCastleProvider.PROVIDER_NAME);
+                assertTrue(true);
+                continue;
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            // Is it a cipher
+            try
+            {
+                Cipher.getInstance(nameFinder.getAlgorithmName(oid), BouncyCastleProvider.PROVIDER_NAME);
+                assertTrue(true);
+                continue;
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            // Is it a signature
+            try
+            {
+                Signature.getInstance(nameFinder.getAlgorithmName(oid), BouncyCastleProvider.PROVIDER_NAME);
+                assertTrue(true);
+                continue;
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            System.out.println("Could not resolve " + oid.toString() + " " + name + " into either Digest, Cipher or Signature");
+
+            //fail("Could not resolve " + oid.toString() + " " + name + " into either Digest, Cipher or Signature");
+        }
+
+    }
+
 
     public void testAlgorithmNameFinder()
         throws Exception
