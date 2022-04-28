@@ -161,4 +161,9 @@ public class DefaultAlgorithmNameFinder
         // TODO: take into account PSS/OAEP params
         return getAlgorithmName(algorithmIdentifier.getAlgorithm());
     }
+
+    public static int entryCount()
+    {
+        return algorithms.size();
+    }
 }
