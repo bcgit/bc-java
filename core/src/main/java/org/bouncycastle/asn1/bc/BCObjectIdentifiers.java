@@ -165,6 +165,25 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier sphincsPlus_sha_512 = sphincsPlus.branch("3");
 
     /**
+     * Picnic
+     */
+    public static final ASN1ObjectIdentifier picnic = bc_sig.branch("6");
+    public static final ASN1ObjectIdentifier picnicl1fs = picnic.branch("1");
+    public static final ASN1ObjectIdentifier picnicl1ur = picnic.branch("2");
+    public static final ASN1ObjectIdentifier picnicl3fs = picnic.branch("3");
+    public static final ASN1ObjectIdentifier picnicl3ur = picnic.branch("4");
+    public static final ASN1ObjectIdentifier picnicl5fs = picnic.branch("5");
+    public static final ASN1ObjectIdentifier picnicl5ur = picnic.branch("6");
+    public static final ASN1ObjectIdentifier picnic3l1 = picnic.branch("7");
+    public static final ASN1ObjectIdentifier picnic3l3 = picnic.branch("8");
+    public static final ASN1ObjectIdentifier picnic3l5 = picnic.branch("9");
+    public static final ASN1ObjectIdentifier picnicl1full = picnic.branch("10");
+    public static final ASN1ObjectIdentifier picnicl3full = picnic.branch("11");
+    public static final ASN1ObjectIdentifier picnicl5full = picnic.branch("12");
+
+
+
+    /**
      * key_exchange(3) algorithms
      */
     public static final ASN1ObjectIdentifier bc_exch = bc.branch("3");
