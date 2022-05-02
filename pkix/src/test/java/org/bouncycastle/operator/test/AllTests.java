@@ -182,10 +182,10 @@ public class AllTests
             // If this fails then the name finder has probably had entries added that are not captured in
             // this test.
             //
+            DefaultAlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
             assertEquals("default name finder has same number of entries as test case",
-                DefaultAlgorithmNameFinder.entryCount(), values.length);
+                nameFinder.getOIDSet().size(), values.length);
 
-            AlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)((Object[])value)[0];
             String name = ((Object[])value)[1].toString();
             assertTrue(nameFinder.hasAlgorithmName(oid));
