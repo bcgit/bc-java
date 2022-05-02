@@ -17,6 +17,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
@@ -38,6 +39,9 @@ class Utils
     static final AlgorithmIdentifier XMSS_SHAKE256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
 
     static final Map categories = new HashMap();
+
+    static final Map picnicOids = new HashMap();
+    static final Map picnicParams = new HashMap();
 
     static final Map frodoOids = new HashMap();
     static final Map frodoParams = new HashMap();
@@ -113,6 +117,33 @@ class Utils
         saberParams.put(BCObjectIdentifiers.lightsaberkem256r3, SABERParameters.lightsaberkem256r3);
         saberParams.put(BCObjectIdentifiers.saberkem256r3, SABERParameters.saberkem256r3);
         saberParams.put(BCObjectIdentifiers.firesaberkem256r3, SABERParameters.firesaberkem256r3);
+
+
+        picnicOids.put(PicnicParameters.picnicl1fs, BCObjectIdentifiers.picnicl1fs);
+        picnicOids.put(PicnicParameters.picnicl1ur, BCObjectIdentifiers.picnicl1ur);
+        picnicOids.put(PicnicParameters.picnicl3fs, BCObjectIdentifiers.picnicl3fs);
+        picnicOids.put(PicnicParameters.picnicl3ur, BCObjectIdentifiers.picnicl3ur);
+        picnicOids.put(PicnicParameters.picnicl5fs, BCObjectIdentifiers.picnicl5fs);
+        picnicOids.put(PicnicParameters.picnicl5ur, BCObjectIdentifiers.picnicl5ur);
+        picnicOids.put(PicnicParameters.picnic3l1, BCObjectIdentifiers.picnic3l1);
+        picnicOids.put(PicnicParameters.picnic3l3, BCObjectIdentifiers.picnic3l3);
+        picnicOids.put(PicnicParameters.picnic3l5, BCObjectIdentifiers.picnic3l5);
+        picnicOids.put(PicnicParameters.picnicl1full, BCObjectIdentifiers.picnicl1full);
+        picnicOids.put(PicnicParameters.picnicl3full, BCObjectIdentifiers.picnicl3full);
+        picnicOids.put(PicnicParameters.picnicl5full, BCObjectIdentifiers.picnicl5full);
+
+        picnicParams.put(BCObjectIdentifiers.picnicl1fs, PicnicParameters.picnicl1fs);
+        picnicParams.put(BCObjectIdentifiers.picnicl1ur, PicnicParameters.picnicl1ur);
+        picnicParams.put(BCObjectIdentifiers.picnicl3fs, PicnicParameters.picnicl3fs);
+        picnicParams.put(BCObjectIdentifiers.picnicl3ur, PicnicParameters.picnicl3ur);
+        picnicParams.put(BCObjectIdentifiers.picnicl5fs, PicnicParameters.picnicl5fs);
+        picnicParams.put(BCObjectIdentifiers.picnicl5ur, PicnicParameters.picnicl5ur);
+        picnicParams.put(BCObjectIdentifiers.picnic3l1, PicnicParameters.picnic3l1);
+        picnicParams.put(BCObjectIdentifiers.picnic3l3, PicnicParameters.picnic3l3);
+        picnicParams.put(BCObjectIdentifiers.picnic3l5, PicnicParameters.picnic3l5);
+        picnicParams.put(BCObjectIdentifiers.picnicl1full, PicnicParameters.picnicl1full);
+        picnicParams.put(BCObjectIdentifiers.picnicl3full, PicnicParameters.picnicl3full);
+        picnicParams.put(BCObjectIdentifiers.picnicl5full, PicnicParameters.picnicl5full);
 
     }
 
@@ -311,5 +342,15 @@ class Utils
     static SABERParameters saberParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SABERParameters)saberParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier picnicOidLookup(PicnicParameters params)
+    {
+        return (ASN1ObjectIdentifier)picnicOids.get(params);
+    }
+
+    static PicnicParameters picnicParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (PicnicParameters)picnicParams.get(oid);
     }
 }

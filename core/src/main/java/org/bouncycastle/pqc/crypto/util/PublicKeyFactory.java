@@ -31,6 +31,8 @@ import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
+import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
@@ -94,6 +96,18 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.lightsaberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.picnicl1fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl1ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l1, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l3, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l5, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl1full, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3full, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5full, new PicnicConverter());
 
     }
 
@@ -346,6 +360,20 @@ public class PublicKeyFactory
             FrodoParameters fParams = Utils.frodoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new FrodoPublicKeyParameters(fParams, keyEnc);
+        }
+    }
+
+    private static class PicnicConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            PicnicParameters picnicParams = Utils.picnicParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new PicnicPublicKeyParameters(picnicParams, keyEnc);
         }
     }
 }
