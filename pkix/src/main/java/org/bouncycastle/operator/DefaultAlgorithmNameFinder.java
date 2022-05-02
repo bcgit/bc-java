@@ -2,6 +2,7 @@ package org.bouncycastle.operator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
@@ -162,8 +163,8 @@ public class DefaultAlgorithmNameFinder
         return getAlgorithmName(algorithmIdentifier.getAlgorithm());
     }
 
-    public static int entryCount()
+    public Set<ASN1ObjectIdentifier> getOIDSet()
     {
-        return algorithms.size();
+        return algorithms.keySet();
     }
 }
