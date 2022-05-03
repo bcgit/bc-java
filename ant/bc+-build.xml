@@ -383,6 +383,7 @@
              </fileset>
              <fileset dir="${src.dir}">
                  <include name="org/bouncycastle/x509/CertPathReviewerMessages*.properties" />
+                 <include name="org/bouncycastle/pqc/crypto/picnic/lowmc.properties" />
              </fileset>
              <fileset dir="${src.dir}" includes="org/bouncycastle/util/test/*.java" />
         </copy>
