@@ -44,7 +44,7 @@ class Utils
 
         /* Compute parity of x using code from Section 5-2 of
          * H.S. Warren, *Hacker's Delight*, Pearson Education, 2003.
-         * http://www.hackersdelight.org/hdcodetxt/parity.c.txt
+         * https://www.hackersdelight.org/hdcodetxt/parity.c.txt
          */
         int y = x ^ (x >>> 1);
         y ^= (y >>> 2);
@@ -68,7 +68,7 @@ class Utils
     {
         /* Compute parity of x using code from Section 5-2 of
          * H.S. Warren, *Hacker's Delight*, Pearson Education, 2003.
-         * http://www.hackersdelight.org/hdcodetxt/parity.c.txt
+         * https://www.hackersdelight.org/hdcodetxt/parity.c.txt
          */
         int y = (x ^ (x >>> 1));
         y ^= (y >>> 2);
