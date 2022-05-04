@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
 import java.security.SecureRandom;
+import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -9,6 +10,7 @@ import org.bouncycastle.util.Pack;
 
 class PicnicEngine
 {
+    private static final Logger LOG = Logger.getLogger(PicnicEngine.class.getName());
 
     /// parameters
     private final int CRYPTO_SECRETKEYBYTES;
@@ -337,9 +339,10 @@ class PicnicEngine
         {
             Signature sig = new Signature(this);
             int ret = deserializeSignature(sig, signature, sigLen, message.length + 4);
-            if(ret != 0)
+            if (ret != 0)
             {
-                System.out.println("Error couldn't deserialize signature!");
+                LOG.fine("Error couldn't deserialize signature!");
+                return -1;
             }
 
             return verify(sig, ciphertext, plaintext, message);
@@ -404,7 +407,7 @@ class PicnicEngine
 
         if (!subarrayEquals(received_challengebits, computed_challengebits, Utils.numBytes(2 * numMPCRounds)))
         {
-            System.out.println(("Invalid signature. Did not verify\n"));
+            LOG.fine(("Invalid signature. Did not verify"));
             status = -1;
         }
 
@@ -477,13 +480,13 @@ class PicnicEngine
                 break;
 
             default:
-                System.out.println("Invalid Challenge!");
+                LOG.fine("Invalid Challenge!");
                 break;
         }
 
         if (!status)
         {
-            System.out.println("Failed to generate random tapes, signature verification will fail (but signature may actually be valid)\n");
+            LOG.fine("Failed to generate random tapes, signature verification will fail (but signature may actually be valid)");
         }
         /* When input shares are read from the tapes, and the length is not a whole number of bytes, the trailing bits must be zero */
         byte[] view_bytes = new byte[stateSizeBytes * 4];
@@ -632,7 +635,8 @@ class PicnicEngine
         int bytesExpected = Utils.numBytes(2 * numMPCRounds) + saltSizeBytes +
                 numMPCRounds * (2 * seedSizeBytes + andSizeBytes + digestSizeBytes) + inputShareSize;
 
-        if (transform == TRANSFORM_UR) {
+        if (transform == TRANSFORM_UR)
+        {
             bytesExpected += UnruhGWithoutInputBytes * numMPCRounds;
         }
         if (sigBytesLen < bytesExpected)
@@ -764,7 +768,8 @@ class PicnicEngine
                 seeds[t] = new Tree(this, numMPCParties, seedSizeBytes);
                 seeds[t].generateSeeds(iSeedsTree.getLeaf(t), sig.salt, t);
             }
-            else {
+            else
+            {
                 /* We don't have the initial seed for the round, but instead a seed
                  * for each unopened party */
                 seeds[t] = new Tree(this, numMPCParties, seedSizeBytes);
@@ -776,7 +781,7 @@ class PicnicEngine
                         sig.salt, t);
                 if (ret != 0)
                 {
-                    System.out.printf("Failed to reconstruct seeds for round %d\n", t);
+                    LOG.fine("Failed to reconstruct seeds for round " + t);
                     return -1;
                 }
             }
@@ -866,7 +871,7 @@ class PicnicEngine
                 int rv = simulateOnline(temp, tapes[t], tmp_shares, msgs[t], plaintext, pubKey);
                 if (rv != 0)
                 {
-                    System.out.printf("MPC simulation failed for round %d, signature invalid\n", t);
+                    LOG.fine("MPC simulation failed for round " + t + ", signature invalid");
                     return -1;
                 }
                 commit_v(Cv[t], sig.proofs[t].input, msgs[t]);
@@ -897,7 +902,7 @@ class PicnicEngine
         /* Compare to challenge from signature */
         if (!subarrayEquals(sig.challengeHash, challengeHash, digestSizeBytes))
         {
-            System.out.println("Challenge does not match, signature invalid\n");
+            LOG.fine("Challenge does not match, signature invalid");
             return -1;
         }
         return ret;
@@ -957,7 +962,7 @@ class PicnicEngine
         /* Fail if the signature does not have the exact number of bytes we expect */
         if (sigLen != bytesRequired)
         {
-            System.out.printf("sigBytesLen = %d, expected bytesRequired = %d\n", sigBytes.length, bytesRequired);
+            LOG.fine("sigBytesLen = " + sigBytes.length + ", expected bytesRequired = " + bytesRequired);
             return -1;
         }
 
@@ -988,7 +993,7 @@ class PicnicEngine
                     sigBytesOffset += andSizeBytes;
                     if (!arePaddingBitsZero(sig.proofs[t].aux, 3 * numRounds * numSboxes))
                     {
-                        System.out.println("failed while deserializing aux bits\n");
+                        LOG.fine("failed while deserializing aux bits");
                         return -1;
                     }
                 }
@@ -1001,7 +1006,7 @@ class PicnicEngine
                 int msgsBitLength =  3 * numRounds * numSboxes;
                 if (!arePaddingBitsZero(sig.proofs[t].msgs, msgsBitLength))
                 {
-                    System.out.println("failed while deserializing msgs bits\n");
+                    LOG.fine("failed while deserializing msgs bits");
                     return -1;
                 }
 
@@ -1060,13 +1065,13 @@ class PicnicEngine
             int ret = sign_picnic1(data, ciphertext, plaintext, message, sig);
             if (ret != 0)
             {
-                System.out.println("Failed to create signature\n");
+                LOG.fine("Failed to create signature");
             }
 
             int len = serializeSignature(sig, signature, message.length + 4);
             if (len == -1)
             {
-                System.out.println("Failed to serialize signature\n");
+                LOG.fine("Failed to serialize signature");
             }
             signatureLength = len;
             Pack.intToLittleEndian(len, signature, 0);
@@ -1256,7 +1261,7 @@ class PicnicEngine
                         sig.salt, k, j, tmp, stateSizeBytes + andSizeBytes);
                 if (!status) 
                 {
-                    System.out.println("createRandomTape failed \n");
+                    LOG.fine("createRandomTape failed");
                     return -1;
                 }
                 System.arraycopy(tmp, 0, view_byte, 0, stateSizeBytes);
@@ -1271,7 +1276,7 @@ class PicnicEngine
                     sig.salt, k, 2, tape.tapes[2], andSizeBytes);
             if (!status)
             {
-                System.out.println("createRandomTape failed \n");
+                LOG.fine("createRandomTape failed");
                 return -1;
             }
 
@@ -1289,7 +1294,7 @@ class PicnicEngine
 
             if(!subarrayEquals(temp, pubKey, stateSizeWords))
             {
-                System.out.printf("Simulation failed; output does not match public key (round = %d)\n", k);
+                LOG.fine("Simulation failed; output does not match public key (round = " + k + ")");
                 return -1;
             }
 
@@ -1351,7 +1356,7 @@ class PicnicEngine
         }
         else 
         {
-            System.out.println("Invalid challenge");
+            LOG.fine("Invalid challenge");
         }
 
         if (challenge == 1 || challenge == 2)
@@ -1682,9 +1687,6 @@ class PicnicEngine
         return allSeeds;
     }
 
-
-
-
     private void sign_picnic3(int[] privateKey, int[] pubKey, int[] plaintext, byte[] message, Signature2 sig)
     {
         byte[] saltAndRoot = new byte[saltSizeBytes + seedSizeBytes];
@@ -1741,7 +1743,7 @@ class PicnicEngine
             int rv = simulateOnline(maskedKey, tapes[t], tmp_shares, msgs[t], plaintext, pubKey);
             if (rv != 0)
             {
-                System.out.println("MPC simulation failed, aborting signature\n");
+                LOG.fine("MPC simulation failed, aborting signature");
             }
             Pack.intToLittleEndian(maskedKey, inputs[t], 0);
         }
@@ -2252,7 +2254,7 @@ class PicnicEngine
         int bytesRequired = 1 + 3 * stateSizeBytes;
         if (buf.length < bytesRequired)
         {
-            System.out.println("Failed writing private key!");
+            LOG.fine("Failed writing private key!");
             return -1;
         }
         buf[0] = (byte) parameters;
@@ -2267,7 +2269,7 @@ class PicnicEngine
         int bytesRequired = 1 + 2 * stateSizeBytes;
         if (buf.length < bytesRequired)
         {
-            System.out.println("Failed writing public key!");
+            LOG.fine("Failed writing public key!");
             return -1;
         }
         buf[0] = (byte) parameters;

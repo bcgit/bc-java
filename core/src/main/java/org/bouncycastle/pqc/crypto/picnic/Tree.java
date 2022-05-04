@@ -1,11 +1,15 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
+import java.util.logging.Logger;
+
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 
 class Tree
 {
+    private static final Logger LOG = Logger.getLogger(Tree.class.getName());
+
     private static final int MAX_SEED_SIZE_BYTES = 32;
     private final int MAX_AUX_BYTES;
 
@@ -90,7 +94,8 @@ class Tree
 
         /* Copy the leaf data, where we have it. The actual data being committed to has already been
          * hashed, according to the spec. */
-        for (int i = 0; i < this.numLeaves; i++) {
+        for (int i = 0; i < this.numLeaves; i++)
+        {
             if (leafData[i] != null)
             {
                 if (this.haveNode[firstLeaf + i])
@@ -245,7 +250,7 @@ class Tree
             }
             else
             {
-                System.out.println("getSibling: request for node with not sibling");
+                LOG.fine("getSibling: request for node with not sibling");
                 return 0;
             }
         }
@@ -304,7 +309,7 @@ class Tree
             outLen -= engine.seedSizeBytes;
             if (outLen < 0)
             {
-                System.out.println("Insufficient sized buffer provided to revealSeeds");
+                LOG.fine("Insufficient sized buffer provided to revealSeeds");
                 return 0;
             }
             System.arraycopy(this.nodes[revealed[i]], 0, output, i * engine.seedSizeBytes, engine.seedSizeBytes);
@@ -491,7 +496,8 @@ class Tree
          * non-leaf nodes. */
         int lastNonLeaf = getParent(this.numNodes - 1);
 
-        for (int i = 0; i <= lastNonLeaf; i++) {
+        for (int i = 0; i <= lastNonLeaf; i++)
+        {
             if (!this.haveNode[i])
             {
                 continue;
@@ -549,7 +555,8 @@ class Tree
     {
         assert(node != 0);
 
-        if (isLeftChild(node)) {
+        if (isLeftChild(node))
+        {
             return (node - 1) / 2;
         }
         return (node - 2) / 2;
