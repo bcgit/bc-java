@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSABlindingParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -24,9 +25,22 @@ import org.bouncycastle.util.Arrays;
 public class PSSSigner
     implements Signer
 {
-    static final public byte   TRAILER_IMPLICIT    = (byte)0xBC;
+    public static final byte TRAILER_IMPLICIT = (byte)0xBC;
 
-    private Digest                      contentDigest;
+    public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
+        int sLen, byte trailer)
+    {
+        return new PSSSigner(cipher, new NullDigest(), contentDigest, mgfDigest, sLen, trailer);
+    }
+
+    public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
+        byte[] salt, byte trailer)
+    {
+        return new PSSSigner(cipher, new NullDigest(), contentDigest, mgfDigest, salt, trailer);
+    }
+
+    private Digest                      contentDigest1;
+    private Digest                      contentDigest2;
     private Digest                      mgfDigest;
     private AsymmetricBlockCipher       cipher;
     private SecureRandom                random;
@@ -81,10 +95,22 @@ public class PSSSigner
         int                     sLen,
         byte                    trailer)
     {
+        this(cipher, contentDigest, contentDigest, mgfDigest, sLen, trailer);
+    }
+
+    private PSSSigner(
+        AsymmetricBlockCipher   cipher,
+        Digest                  contentDigest1,
+        Digest                  contentDigest2,
+        Digest                  mgfDigest,
+        int                     sLen,
+        byte                    trailer)
+    {
         this.cipher = cipher;
-        this.contentDigest = contentDigest;
+        this.contentDigest1 = contentDigest1;
+        this.contentDigest2 = contentDigest2;
         this.mgfDigest = mgfDigest;
-        this.hLen = contentDigest.getDigestSize();
+        this.hLen = contentDigest2.getDigestSize();
         this.mgfhLen = mgfDigest.getDigestSize();
         this.sSet = false;
         this.sLen = sLen;
@@ -117,10 +143,22 @@ public class PSSSigner
         byte[]                  salt,
         byte                    trailer)
     {
+        this(cipher, contentDigest, contentDigest, mgfDigest, salt, trailer);
+    }
+
+    private PSSSigner(
+        AsymmetricBlockCipher   cipher,
+        Digest                  contentDigest1,
+        Digest                  contentDigest2,
+        Digest                  mgfDigest,
+        byte[]                  salt,
+        byte                    trailer)
+    {
         this.cipher = cipher;
-        this.contentDigest = contentDigest;
+        this.contentDigest1 = contentDigest1;
+        this.contentDigest2 = contentDigest2;
         this.mgfDigest = mgfDigest;
-        this.hLen = contentDigest.getDigestSize();
+        this.hLen = contentDigest2.getDigestSize();
         this.mgfhLen = mgfDigest.getDigestSize();
         this.sSet = true;
         this.sLen = salt.length;
@@ -196,7 +234,7 @@ public class PSSSigner
     public void update(
         byte    b)
     {
-        contentDigest.update(b);
+        contentDigest1.update(b);
     }
 
     /**
@@ -207,7 +245,7 @@ public class PSSSigner
         int     off,
         int     len)
     {
-        contentDigest.update(in, off, len);
+        contentDigest1.update(in, off, len);
     }
 
     /**
@@ -215,7 +253,7 @@ public class PSSSigner
      */
     public void reset()
     {
-        contentDigest.reset();
+        contentDigest1.reset();
     }
 
     /**
@@ -225,7 +263,12 @@ public class PSSSigner
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
     {
-        contentDigest.doFinal(mDash, mDash.length - hLen - sLen);
+        if (contentDigest1.getDigestSize() != hLen)
+        {
+            throw new IllegalStateException();
+        }
+
+        contentDigest1.doFinal(mDash, mDash.length - hLen - sLen);
 
         if (sLen != 0)
         {
@@ -239,9 +282,9 @@ public class PSSSigner
 
         byte[]  h = new byte[hLen];
 
-        contentDigest.update(mDash, 0, mDash.length);
+        contentDigest2.update(mDash, 0, mDash.length);
 
-        contentDigest.doFinal(h, 0);
+        contentDigest2.doFinal(h, 0);
 
         block[block.length - sLen - 1 - hLen - 1] = 0x01;
         System.arraycopy(salt, 0, block, block.length - sLen - hLen - 1, sLen);
@@ -273,7 +316,12 @@ public class PSSSigner
     public boolean verifySignature(
         byte[]      signature)
     {
-        contentDigest.doFinal(mDash, mDash.length - hLen - sLen);
+        if (contentDigest1.getDigestSize() != hLen)
+        {
+            throw new IllegalStateException();
+        }
+
+        contentDigest1.doFinal(mDash, mDash.length - hLen - sLen);
 
         try
         {
@@ -328,8 +376,8 @@ public class PSSSigner
             System.arraycopy(block, block.length - sLen - hLen - 1, mDash, mDash.length - sLen, sLen);
         }
 
-        contentDigest.update(mDash, 0, mDash.length);
-        contentDigest.doFinal(mDash, mDash.length - hLen);
+        contentDigest2.update(mDash, 0, mDash.length);
+        contentDigest2.doFinal(mDash, mDash.length - hLen);
 
         for (int i = block.length - hLen - 1, j = mDash.length - hLen;
                                                  j != mDash.length; i++, j++)

@@ -42,6 +42,32 @@ public class JcaTlsRSAPSSSigner
     public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
+
+        // TODO Can only use this if "RAWRSASSA-PSS" is available
+//        if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
+//        {
+//            throw new IllegalStateException("Invalid algorithm: " + algorithm);
+//        }
+//
+//        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+//        String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+//
+//        // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+//        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName,
+//            crypto.getHelper());
+//
+//        try
+//        {
+//            Signature signer = crypto.getHelper().createSignature("RAWRSASSA-PSS");
+//            signer.setParameter(pssSpec);
+//            signer.initSign(privateKey);
+//            signer.update(hash);
+//            return signer.sign();
+//        }
+//        catch (GeneralSecurityException e)
+//        {
+//            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+//        }
     }
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm) throws IOException
