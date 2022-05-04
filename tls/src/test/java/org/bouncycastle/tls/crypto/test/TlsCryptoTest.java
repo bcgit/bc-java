@@ -631,6 +631,20 @@ public abstract class TlsCryptoTest
         return Hex.decode(s.replaceAll(" ", ""));
     }
 
+    private byte[] implPrehash(int signatureScheme, byte[] message)
+    {
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+        TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
+        tlsHash.update(message, 0, message.length);
+        return tlsHash.calculateHash();
+    }
+
+    private byte[] implPrehash(SignatureAndHashAlgorithm signatureAndHashAlgorithm, byte[] message)
+    {
+        int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+        return implPrehash(signatureScheme, message);
+    }
+
     private void implTestAgreement(TlsAgreement aA, TlsAgreement aB) throws IOException
     {
         byte[] pA = aA.generateEphemeral();
@@ -728,8 +742,6 @@ public abstract class TlsCryptoTest
     private void implTestSignature12(TlsCredentialedSigner credentialedSigner,
         SignatureAndHashAlgorithm signatureAndHashAlgorithm) throws IOException
     {
-        short hashAlgorithm = signatureAndHashAlgorithm.getHash(); 
-
         byte[] message = crypto.createNonceGenerator(TlsUtils.EMPTY_BYTES).generateNonce(100);
 
         byte[] signature;
@@ -742,14 +754,7 @@ public abstract class TlsCryptoTest
         }
         else
         {
-            // Currently 1.2 relies on these being handled by stream signers 
-            assertTrue(HashAlgorithm.Intrinsic != hashAlgorithm);
-
-            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
-
-            TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
-            tlsHash.update(message, 0, message.length);
-            byte[] hash = tlsHash.calculateHash();
+            byte[] hash = implPrehash(signatureAndHashAlgorithm, message);
             signature = credentialedSigner.generateRawSignature(hash);
         }
 
@@ -768,14 +773,7 @@ public abstract class TlsCryptoTest
         }
         else
         {
-            // Currently 1.2 relies on these being handled by stream verifiers 
-            assertTrue(HashAlgorithm.Intrinsic != hashAlgorithm);
-
-            int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
-
-            TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
-            tlsHash.update(message, 0, message.length);
-            byte[] hash = tlsHash.calculateHash();
+            byte[] hash = implPrehash(signatureAndHashAlgorithm, message);
             verified = tlsVerifier.verifyRawSignature(digitallySigned, hash);
         }
 
@@ -797,11 +795,7 @@ public abstract class TlsCryptoTest
         }
         else
         {
-            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-            TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
-            tlsHash.update(message, 0, message.length);
-            byte[] hash = tlsHash.calculateHash();
+            byte[] hash = implPrehash(signatureScheme, message);
             signature = credentialedSigner.generateRawSignature(hash);
         }
 
@@ -821,11 +815,7 @@ public abstract class TlsCryptoTest
         }
         else
         {
-            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-            TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
-            tlsHash.update(message, 0, message.length);
-            byte[] hash = tlsHash.calculateHash();
+            byte[] hash = implPrehash(signatureScheme, message);
             verified = tlsVerifier.verifyRawSignature(digitallySigned, hash);
         }
 

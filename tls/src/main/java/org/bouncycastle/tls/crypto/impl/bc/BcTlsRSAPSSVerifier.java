@@ -9,7 +9,6 @@ import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.crypto.TlsStreamVerifier;
 
 /**
  * Operator supporting the verification of RSASSA-PSS signatures using the BC light-weight API.
@@ -20,7 +19,7 @@ public class BcTlsRSAPSSVerifier
     private final int signatureScheme;
 
     public BcTlsRSAPSSVerifier(BcTlsCrypto crypto, RSAKeyParameters publicKey, int signatureScheme)
-   {
+    {
         super(crypto, publicKey);
 
         if (!SignatureScheme.isRSAPSS(signatureScheme))
@@ -33,11 +32,6 @@ public class BcTlsRSAPSSVerifier
 
     public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
-        throw new UnsupportedOperationException();
-    }
-
-    public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned)
-    {
         SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
@@ -47,9 +41,10 @@ public class BcTlsRSAPSSVerifier
         int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
-        PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
+        PSSSigner verifier = PSSSigner.createRawSigner(new RSAEngine(), digest, digest, digest.getDigestSize(),
+            PSSSigner.TRAILER_IMPLICIT);
         verifier.init(false, publicKey);
-
-        return new BcTlsStreamVerifier(verifier, digitallySigned.getSignature());
+        verifier.update(hash, 0, hash.length);
+        return verifier.verifySignature(digitallySigned.getSignature());
     }
 }

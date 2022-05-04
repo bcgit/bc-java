@@ -43,6 +43,33 @@ public class JcaTlsRSAPSSVerifier
     public boolean verifyRawSignature(DigitallySigned digitallySigned, byte[] hash) throws IOException
     {
         throw new UnsupportedOperationException();
+
+        // TODO Can only use this if "RAWRSASSA-PSS" is available
+//        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
+//        if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
+//        {
+//            throw new IllegalStateException("Invalid algorithm: " + algorithm);
+//        }
+//
+//        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+//        String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+//
+//        // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+//        AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName,
+//            crypto.getHelper());
+//
+//        try
+//        {
+//            Signature verifier = crypto.getHelper().createSignature("RAWRSASSA-PSS");
+//            verifier.setParameter(pssSpec);
+//            verifier.initVerify(publicKey);
+//            verifier.update(hash);
+//            return verifier.verify(digitallySigned.getSignature());
+//        }
+//        catch (GeneralSecurityException e)
+//        {
+//            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+//        }
     }
 
     public TlsStreamVerifier getStreamVerifier(DigitallySigned digitallySigned) throws IOException
