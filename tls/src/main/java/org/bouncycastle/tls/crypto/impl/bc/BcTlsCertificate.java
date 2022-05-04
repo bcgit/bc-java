@@ -197,6 +197,11 @@ public class BcTlsCertificate
         }
     }
 
+    public Certificate getCertificate()
+    {
+        return certificate;
+    }
+
     public byte[] getEncoded() throws IOException
     {
         return certificate.getEncoded(ASN1Encoding.DER);
