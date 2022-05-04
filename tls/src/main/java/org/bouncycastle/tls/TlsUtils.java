@@ -2302,7 +2302,7 @@ public class TlsUtils
 
         TlsHash h = algorithm == null
             ? new CombinedHash(crypto)
-            : createHash(crypto, algorithm.getHash());
+            : createHash(crypto, algorithm);
 
         SecurityParameters sp = context.getSecurityParametersHandshake();
         // NOTE: The implicit copy here is intended (and important)
@@ -4500,6 +4500,14 @@ public class TlsUtils
     private static TlsHash createHash(TlsCrypto crypto, short hashAlgorithm)
     {
         int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
+
+        return crypto.createHash(cryptoHashAlgorithm);
+    }
+
+    private static TlsHash createHash(TlsCrypto crypto, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
 
         return crypto.createHash(cryptoHashAlgorithm);
     }
