@@ -312,8 +312,10 @@ class PicnicEngine
         int sigLen = Pack.littleEndianToInt(sm, 0);
         byte[] m_from_sm = Arrays.copyOfRange(sm, 4,  4 + m.length);
         int ret = picnic_verify(pk, m_from_sm, sm, sigLen);
+        if (ret == -1)
+            return false;
         System.arraycopy(sm, 4, m, 0, m.length);
-        return ret != -1;
+        return true;
     }
 
     private int picnic_verify(byte[] pk, byte[] message, byte[] signature, int sigLen)
@@ -414,7 +416,7 @@ class PicnicEngine
         return status;
     }
 
-    void verifyProof(Signature.Proof proof, View view1, View view2, int challenge, byte[] salt,
+    boolean verifyProof(Signature.Proof proof, View view1, View view2, int challenge, byte[] salt,
                      int roundNumber, byte[] tmp, int[] plaintext, Tape tape)
     {
         System.arraycopy(proof.communicatedBits, 0, view2.communicatedBits, 0, andSizeBytes);
@@ -487,6 +489,7 @@ class PicnicEngine
         if (!status)
         {
             LOG.fine("Failed to generate random tapes, signature verification will fail (but signature may actually be valid)");
+            return false;
         }
         /* When input shares are read from the tapes, and the length is not a whole number of bytes, the trailing bits must be zero */
         byte[] view_bytes = new byte[stateSizeBytes * 4];
@@ -503,11 +506,11 @@ class PicnicEngine
 
         int[] tmp_ints = Pack.littleEndianToInt(tmp, 0, tmp.length/4);
         mpc_LowMC_verify(view1, view2, tape, tmp_ints, plaintext, challenge);
+        return true;
     }
 
     void mpc_LowMC_verify(View view1, View view2, Tape tapes, int[] tmp, int[] plaintext, int challenge)
     {
-
         Arrays.fill(tmp,0, tmp.length, 0);
 
         mpc_xor_constant_verify(tmp, plaintext, 0, stateSizeWords, challenge);
@@ -1034,12 +1037,16 @@ class PicnicEngine
 
     public void crypto_sign(byte[] sm, byte[] m, byte[] sk)
     {
-        picnic_sign(sk, m, sm);
+        boolean ret = picnic_sign(sk, m, sm);
+        if(!ret)
+        {
+            return; // throw error?
+        }
         System.arraycopy(m, 0, sm, 4, m.length);
-        sm = Arrays.copyOfRange(sm, 0, signatureLength);
+//        sm = Arrays.copyOfRange(sm, 0, signatureLength);
     }
 
-    private void picnic_sign(byte[] sk, byte[] message, byte[] signature)
+    private boolean picnic_sign(byte[] sk, byte[] message, byte[] signature)
     {
         //todo unify conversion
 
@@ -1066,23 +1073,39 @@ class PicnicEngine
             if (ret != 0)
             {
                 LOG.fine("Failed to create signature");
+                return false;
             }
 
             int len = serializeSignature(sig, signature, message.length + 4);
             if (len == -1)
             {
                 LOG.fine("Failed to serialize signature");
+                return false;
             }
             signatureLength = len;
             Pack.intToLittleEndian(len, signature, 0);
+            return true;
         }
         else
         {
             Signature2 sig = new Signature2(this);
-            sign_picnic3(data, ciphertext, plaintext, message, sig);
+            boolean ret = sign_picnic3(data, ciphertext, plaintext, message, sig);
+            if (!ret)
+            {
+                LOG.fine("Failed to create signature");
+                return false;
+            }
+
             int len = serializeSignature2(sig, signature, message.length + 4);
+            if (len == -1)
+            {
+                LOG.fine("Failed to serialize signature");
+                return false;
+            }
+
             signatureLength = len;
             Pack.intToLittleEndian(len, signature, 0);
+            return true;
         }
     }
 
@@ -1687,7 +1710,7 @@ class PicnicEngine
         return allSeeds;
     }
 
-    private void sign_picnic3(int[] privateKey, int[] pubKey, int[] plaintext, byte[] message, Signature2 sig)
+    private boolean sign_picnic3(int[] privateKey, int[] pubKey, int[] plaintext, byte[] message, Signature2 sig)
     {
         byte[] saltAndRoot = new byte[saltSizeBytes + seedSizeBytes];
         computeSaltAndRootSeed(saltAndRoot, privateKey, pubKey, plaintext, message);
@@ -1744,6 +1767,7 @@ class PicnicEngine
             if (rv != 0)
             {
                 LOG.fine("MPC simulation failed, aborting signature");
+                return false;
             }
             Pack.intToLittleEndian(maskedKey, inputs[t], 0);
         }
@@ -1806,7 +1830,7 @@ class PicnicEngine
                 System.arraycopy(C[t][sig.challengeP[P_index]], 0, sig.proofs[t].C, 0, digestSizeBytes);
             }
         }
-
+        return true;
     }
 
     static int indexOf(int[] list, int len, int value)
