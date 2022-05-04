@@ -2,14 +2,16 @@ package org.bouncycastle.tls.crypto.impl.bc;
 
 import java.io.IOException;
 
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.PSSSigner;
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.crypto.TlsStreamSigner;
+import org.bouncycastle.tls.TlsFatalAlert;
 
 /**
  * Operator supporting the generation of RSASSA-PSS signatures using the BC light-weight API.
@@ -33,11 +35,6 @@ public class BcTlsRSAPSSSigner
 
     public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
     {
-        throw new UnsupportedOperationException();
-    }
-
-    public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
-    {
         if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
         {
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
@@ -46,9 +43,17 @@ public class BcTlsRSAPSSSigner
         int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
-        PSSSigner signer = new PSSSigner(new RSABlindedEngine(), digest, digest.getDigestSize());
+        PSSSigner signer = PSSSigner.createRawSigner(new RSABlindedEngine(), digest, digest, digest.getDigestSize(),
+            PSSSigner.TRAILER_IMPLICIT);
         signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
-
-        return new BcTlsStreamSigner(signer);
+        signer.update(hash, 0, hash.length);
+        try
+        {
+            return signer.generateSignature();
+        }
+        catch (CryptoException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
     }
 }
