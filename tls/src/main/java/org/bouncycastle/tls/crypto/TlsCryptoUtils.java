@@ -2,6 +2,10 @@ package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
@@ -110,6 +114,30 @@ public abstract class TlsCryptoUtils
             return 48;
         case CryptoHashAlgorithm.sha512:
             return 64;
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
+    public static ASN1ObjectIdentifier getOIDForHash(int cryptoHashAlgorithm)
+    {
+        switch (cryptoHashAlgorithm)
+        {
+        case CryptoHashAlgorithm.md5:
+            return PKCSObjectIdentifiers.md5;
+        case CryptoHashAlgorithm.sha1:
+            return X509ObjectIdentifiers.id_SHA1;
+        case CryptoHashAlgorithm.sha224:
+            return NISTObjectIdentifiers.id_sha224;
+        case CryptoHashAlgorithm.sha256:
+            return NISTObjectIdentifiers.id_sha256;
+        case CryptoHashAlgorithm.sha384:
+            return NISTObjectIdentifiers.id_sha384;
+        case CryptoHashAlgorithm.sha512:
+            return NISTObjectIdentifiers.id_sha512;
+        // TODO[RFC 8998]
+//        case CryptoHashAlgorithm.sm3:
+//            return GMObjectIdentifiers.sm3;
         default:
             throw new IllegalArgumentException();
         }

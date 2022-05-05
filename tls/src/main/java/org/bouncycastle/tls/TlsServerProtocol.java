@@ -1409,13 +1409,11 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        // TODO[tls13] Actual structure is 'CertificateVerify' in RFC 8446, consider adding for clarity
-        DigitallySigned certificateVerify = DigitallySigned.parse(tlsServerContext, buf);
+        CertificateVerify certificateVerify = CertificateVerify.parse(tlsServerContext, buf);
 
         assertEmpty(buf);
 
-        TlsUtils.verify13CertificateVerifyClient(tlsServerContext, certificateRequest, certificateVerify,
-            handshakeHash);
+        TlsUtils.verify13CertificateVerifyClient(tlsServerContext, handshakeHash, certificateVerify);
     }
 
     protected void receive13ClientFinished(ByteArrayInputStream buf) throws IOException

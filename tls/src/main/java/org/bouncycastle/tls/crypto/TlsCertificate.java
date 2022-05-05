@@ -32,7 +32,7 @@ public interface TlsCertificate
      * @param signatureScheme
      *            {@link SignatureScheme}
      */
-    TlsVerifier createVerifier(int signatureScheme) throws IOException;
+    Tls13Verifier createVerifier(int signatureScheme) throws IOException;
 
     byte[] getEncoded() throws IOException;
 
