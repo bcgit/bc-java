@@ -1230,6 +1230,9 @@ public class TlsUtils
         return result;
     }
 
+    /**
+     * @deprecated Will be removed
+     */
     public static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(TlsContext context,
         TlsCredentialedSigner signerCredentials)
         throws IOException
@@ -2347,7 +2350,7 @@ public class TlsUtils
 
         if (isTLSv13(negotiatedVersion))
         {
-            //  Should be using generateCertificateVerify13 instead
+            // Should be using generate13CertificateVerify instead
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
@@ -2586,7 +2589,7 @@ public class TlsUtils
         /*
          * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
          */
-        SignatureAndHashAlgorithm algorithm = getSignatureAndHashAlgorithm(context, credentials);
+        SignatureAndHashAlgorithm algorithm = getSignatureAndHashAlgorithm(context.getServerVersion(), credentials);
         TlsStreamSigner streamSigner = credentials.getStreamSigner();
 
         byte[] signature;
