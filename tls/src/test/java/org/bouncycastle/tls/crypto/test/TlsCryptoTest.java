@@ -18,6 +18,7 @@ import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.DHGroup;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -799,25 +800,12 @@ public abstract class TlsCryptoTest
             signature = credentialedSigner.generateRawSignature(hash);
         }
 
-        DigitallySigned digitallySigned = new DigitallySigned(
-            SignatureScheme.getSignatureAndHashAlgorithm(signatureScheme), signature);
-
         TlsCertificate tlsCertificate = credentialedSigner.getCertificate().getCertificateAt(0);
-        TlsVerifier tlsVerifier = tlsCertificate.createVerifier(signatureScheme);
+        Tls13Verifier tls13Verifier = tlsCertificate.createVerifier(signatureScheme);
 
-        boolean verified;
-        TlsStreamVerifier tlsStreamVerifier = tlsVerifier.getStreamVerifier(digitallySigned);
-        if (null != tlsStreamVerifier)
-        {
-            OutputStream output = tlsStreamVerifier.getOutputStream();
-            output.write(message);
-            verified = tlsStreamVerifier.isVerified();
-        }
-        else
-        {
-            byte[] hash = implPrehash(signatureScheme, message);
-            verified = tlsVerifier.verifyRawSignature(digitallySigned, hash);
-        }
+        OutputStream output = tls13Verifier.getOutputStream();
+        output.write(message);
+        boolean verified = tls13Verifier.verifySignature(signature);
 
         assertTrue(verified);
     }

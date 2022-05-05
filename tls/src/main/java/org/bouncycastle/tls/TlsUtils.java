@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
@@ -2500,62 +2501,52 @@ public class TlsUtils
         }
     }
 
-    static void verify13CertificateVerifyClient(TlsServerContext serverContext, CertificateRequest certificateRequest,
-        DigitallySigned certificateVerify, TlsHandshakeHash handshakeHash) throws IOException
+    static void verify13CertificateVerifyClient(TlsServerContext serverContext, TlsHandshakeHash handshakeHash,
+        CertificateVerify certificateVerify) throws IOException
     {
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
-        Certificate clientCertificate = securityParameters.getPeerCertificate();
-        TlsCertificate verifyingCert = clientCertificate.getCertificateAt(0);
 
-        SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
-        verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
+        Vector supportedAlgorithms = securityParameters.getServerSigAlgs();
+        TlsCertificate certificate = securityParameters.getPeerCertificate().getCertificateAt(0);
 
-        int signatureScheme = SignatureScheme.from(sigAndHashAlg);
-
-        // Verify the CertificateVerify message contains a correct signature.
-        boolean verified;
-        try
-        {
-            TlsVerifier verifier = verifyingCert.createVerifier(signatureScheme);
-
-            verified = verify13CertificateVerify(serverContext.getCrypto(), certificateVerify, verifier,
-                "TLS 1.3, client CertificateVerify", handshakeHash);
-        }
-        catch (TlsFatalAlert e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error, e);
-        }
-
-        if (!verified)
-        {
-            throw new TlsFatalAlert(AlertDescription.decrypt_error);
-        }
+        verify13CertificateVerify(supportedAlgorithms, "TLS 1.3, client CertificateVerify", handshakeHash, certificate,
+            certificateVerify);
     }
 
-    static void verify13CertificateVerifyServer(TlsClientContext clientContext, DigitallySigned certificateVerify,
-        TlsHandshakeHash handshakeHash) throws IOException
+    static void verify13CertificateVerifyServer(TlsClientContext clientContext, TlsHandshakeHash handshakeHash,
+        CertificateVerify certificateVerify) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
-        Certificate serverCertificate = securityParameters.getPeerCertificate();
-        TlsCertificate verifyingCert = serverCertificate.getCertificateAt(0);
 
-        SignatureAndHashAlgorithm sigAndHashAlg = certificateVerify.getAlgorithm();
-        verifySupportedSignatureAlgorithm(securityParameters.getClientSigAlgs(), sigAndHashAlg);
+        Vector supportedAlgorithms = securityParameters.getClientSigAlgs();
+        TlsCertificate certificate = securityParameters.getPeerCertificate().getCertificateAt(0);
 
-        int signatureScheme = SignatureScheme.from(sigAndHashAlg);
+        verify13CertificateVerify(supportedAlgorithms, "TLS 1.3, server CertificateVerify", handshakeHash, certificate,
+            certificateVerify);
+    }
 
+    private static void verify13CertificateVerify(Vector supportedAlgorithms, String contextString,
+        TlsHandshakeHash handshakeHash, TlsCertificate certificate, CertificateVerify certificateVerify)
+        throws IOException
+    {
         // Verify the CertificateVerify message contains a correct signature.
         boolean verified;
         try
         {
-            TlsVerifier verifier = verifyingCert.createVerifier(signatureScheme);
+            int signatureScheme = certificateVerify.getAlgorithm();
 
-            verified = verify13CertificateVerify(clientContext.getCrypto(), certificateVerify, verifier,
-                "TLS 1.3, server CertificateVerify", handshakeHash);
+            SignatureAndHashAlgorithm algorithm = SignatureScheme.getSignatureAndHashAlgorithm(signatureScheme);
+            verifySupportedSignatureAlgorithm(supportedAlgorithms, algorithm);
+
+            Tls13Verifier verifier = certificate.createVerifier(signatureScheme);
+
+            byte[] header = getCertificateVerifyHeader(contextString);
+            byte[] prfHash = getCurrentPRFHash(handshakeHash);
+
+            OutputStream output = verifier.getOutputStream();
+            output.write(header, 0, header.length);
+            output.write(prfHash, 0, prfHash.length);
+            verified = verifier.verifySignature(certificateVerify.getSignature());
         }
         catch (TlsFatalAlert e)
         {
@@ -2570,32 +2561,6 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.decrypt_error);
         }
-    }
-
-    private static boolean verify13CertificateVerify(TlsCrypto crypto, DigitallySigned certificateVerify,
-        TlsVerifier verifier, String contextString, TlsHandshakeHash handshakeHash) throws IOException
-    {
-        TlsStreamVerifier streamVerifier = verifier.getStreamVerifier(certificateVerify);
-
-        byte[] header = getCertificateVerifyHeader(contextString);
-        byte[] prfHash = getCurrentPRFHash(handshakeHash);
-
-        if (null != streamVerifier)
-        {
-            OutputStream output = streamVerifier.getOutputStream();
-            output.write(header, 0, header.length);
-            output.write(prfHash, 0, prfHash.length);
-            return streamVerifier.isVerified();
-        }
-
-        int signatureScheme = SignatureScheme.from(certificateVerify.getAlgorithm());
-        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-        TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
-        tlsHash.update(header, 0, header.length);
-        tlsHash.update(prfHash, 0, prfHash.length);
-        byte[] hash = tlsHash.calculateHash();
-        return verifier.verifyRawSignature(certificateVerify, hash);
     }
 
     private static byte[] getCertificateVerifyHeader(String contextString)

@@ -13,6 +13,9 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -20,6 +23,12 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.signers.DSADigestSigner;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
+import org.bouncycastle.crypto.signers.Ed448Signer;
+import org.bouncycastle.crypto.signers.PSSSigner;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -27,10 +36,13 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
 
@@ -112,37 +124,55 @@ public class BcTlsCertificate
     {
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
         case SignatureAlgorithm.ed25519:
         case SignatureAlgorithm.ed448:
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return createVerifier(SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm));
+        {
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            Tls13Verifier tls13Verifier = createVerifier(signatureScheme);
+            return new LegacyTls13Verifier(signatureScheme, tls13Verifier);
+        }
         }
 
         validateKeyUsage(KeyUsage.digitalSignature);
 
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa:
-            validateRSA_PKCS1();
-            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
-
         case SignatureAlgorithm.dsa:
             return new BcTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
             return new BcTlsECDSAVerifier(crypto, getPubKeyEC());
 
+        case SignatureAlgorithm.rsa:
+        {
+            validateRSA_PKCS1();
+            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+        }
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+        {
+            validateRSA_PSS_PSS(signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        {
+            validateRSA_PSS_RSAE();
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 
-    public TlsVerifier createVerifier(int signatureScheme) throws IOException
+    public Tls13Verifier createVerifier(int signatureScheme) throws IOException
     {
         validateKeyUsage(KeyUsage.digitalSignature);
 
@@ -155,13 +185,31 @@ public class BcTlsCertificate
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.ecdsa_sha1:
-            return new BcTlsECDSA13Verifier(crypto, getPubKeyEC(), signatureScheme);
+        {
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            Digest digest = crypto.createDigest(cryptoHashAlgorithm);
+
+            Signer verifier = new DSADigestSigner(new ECDSASigner(), digest);
+            verifier.init(false, getPubKeyEC());
+
+            return new BcTls13Verifier(verifier);
+        }
 
         case SignatureScheme.ed25519:
-            return new BcTlsEd25519Verifier(crypto, getPubKeyEd25519());
+        {
+            Ed25519Signer verifier = new Ed25519Signer();
+            verifier.init(false, getPubKeyEd25519());
+
+            return new BcTls13Verifier(verifier);
+        }
 
         case SignatureScheme.ed448:
-            return new BcTlsEd448Verifier(crypto, getPubKeyEd448());
+        {
+            Ed448Signer verifier = new Ed448Signer(TlsUtils.EMPTY_BYTES);
+            verifier.init(false, getPubKeyEd448());
+
+            return new BcTls13Verifier(verifier);
+        }
 
         case SignatureScheme.rsa_pkcs1_sha1:
         case SignatureScheme.rsa_pkcs1_sha256:
@@ -169,7 +217,14 @@ public class BcTlsCertificate
         case SignatureScheme.rsa_pkcs1_sha512:
         {
             validateRSA_PKCS1();
-            return new BcTlsRSAVerifier(crypto, getPubKeyRSA());
+
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            Digest digest = crypto.createDigest(cryptoHashAlgorithm);
+
+            RSADigestSigner verifier = new RSADigestSigner(digest, TlsCryptoUtils.getOIDForHash(cryptoHashAlgorithm));
+            verifier.init(false, getPubKeyRSA());
+
+            return new BcTls13Verifier(verifier);
         }
 
         case SignatureScheme.rsa_pss_pss_sha256:
@@ -177,7 +232,14 @@ public class BcTlsCertificate
         case SignatureScheme.rsa_pss_pss_sha512:
         {
             validateRSA_PSS_PSS(SignatureScheme.getSignatureAlgorithm(signatureScheme));
-            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            Digest digest = crypto.createDigest(cryptoHashAlgorithm);
+
+            PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
+            verifier.init(false, getPubKeyRSA());
+
+            return new BcTls13Verifier(verifier);
         }
 
         case SignatureScheme.rsa_pss_rsae_sha256:
@@ -185,12 +247,27 @@ public class BcTlsCertificate
         case SignatureScheme.rsa_pss_rsae_sha512:
         {
             validateRSA_PSS_RSAE();
-            return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            Digest digest = crypto.createDigest(cryptoHashAlgorithm);
+
+            PSSSigner verifier = new PSSSigner(new RSAEngine(), digest, digest.getDigestSize());
+            verifier.init(false, getPubKeyRSA());
+
+            return new BcTls13Verifier(verifier);
         }
 
         // TODO[RFC 8998]
 //        case SignatureScheme.sm2sig_sm3:
-//            return new BcTlsSM2Verifier(crypto, getPubKeyEC(), Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+//        {
+//            ParametersWithID parametersWithID = new ParametersWithID(getPubKeyEC(),
+//                Strings.toByteArray("TLSv1.3+GM+Cipher+Suite"));
+//
+//            SM2Signer verifier = new SM2Signer();
+//            verifier.init(false, parametersWithID);
+//
+//            return new BcTls13Verifier(verifier);
+//        }
 
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
