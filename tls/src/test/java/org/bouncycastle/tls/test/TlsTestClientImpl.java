@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -324,7 +325,25 @@ class TlsTestClientImpl
 
                     public TlsStreamSigner getStreamSigner() throws IOException
                     {
-                        return null;
+                        final TlsStreamSigner streamSigner = signerCredentials.getStreamSigner();
+
+                        if (streamSigner != null && config.clientAuth == TlsTestConfig.CLIENT_AUTH_INVALID_VERIFY)
+                        {
+                            return new TlsStreamSigner()
+                            {
+                                public OutputStream getOutputStream() throws IOException
+                                {
+                                    return streamSigner.getOutputStream();
+                                }
+
+                                public byte[] getSignature() throws IOException
+                                {
+                                    return corruptBit(streamSigner.getSignature());
+                                }
+                            };
+                        }
+
+                        return streamSigner;
                     }
                 };
             }
