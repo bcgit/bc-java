@@ -32,6 +32,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.SRP6Group;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
@@ -893,6 +894,25 @@ public class JcaTlsCrypto
             }
             verifier.initVerify(publicKey);
             return new JcaTlsStreamVerifier(verifier, signature);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    protected Tls13Verifier createTls13Verifier(String algorithmName, AlgorithmParameterSpec parameter,
+        PublicKey publicKey) throws IOException
+    {
+        try
+        {
+            Signature verifier = getHelper().createSignature(algorithmName);
+            if (null != parameter)
+            {
+                verifier.setParameter(parameter);
+            }
+            verifier.initVerify(publicKey);
+            return new JcaTls13Verifier(verifier);
         }
         catch (GeneralSecurityException e)
         {
