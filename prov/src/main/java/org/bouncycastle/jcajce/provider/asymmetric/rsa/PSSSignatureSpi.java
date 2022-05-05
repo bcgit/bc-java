@@ -60,13 +60,11 @@ public class PSSSignatureSpi
 
     private void setupContentDigest()
     {
+        this.contentDigest = DigestFactory.getDigest(paramSpec.getDigestAlgorithm());
+
         if (isRaw)
         {
-            this.contentDigest = new NullPssDigest(mgfDigest);
-        }
-        else
-        {
-            this.contentDigest = DigestFactory.getDigest(paramSpec.getDigestAlgorithm());
+            this.contentDigest = new NullPssDigest(contentDigest);
         }
     }
 
