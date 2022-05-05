@@ -2442,23 +2442,17 @@ public class TlsUtils
         {
             signatureAlgorithm = verifyingCert.getLegacySignatureAlgorithm();
 
-            short clientCertType = getLegacyClientCertType(signatureAlgorithm);
-            if (clientCertType < 0 || !Arrays.contains(certificateRequest.getCertificateTypes(), clientCertType))
-            {
-                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
-            }
+            checkClientCertificateType(certificateRequest, getLegacyClientCertType(signatureAlgorithm),
+                AlertDescription.unsupported_certificate);
         }
         else
         {
+            verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
+
             signatureAlgorithm = sigAndHashAlg.getSignature();
 
-            // TODO Is it possible (maybe only pre-1.2 to check this immediately when the Certificate arrives?
-            if (!isValidSignatureAlgorithmForCertificateVerify(signatureAlgorithm, certificateRequest.getCertificateTypes()))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
-            verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(), sigAndHashAlg);
+            checkClientCertificateType(certificateRequest,
+                SignatureAlgorithm.getClientCertificateType(signatureAlgorithm), AlertDescription.illegal_parameter);
         }
 
         // Verify the CertificateVerify message contains a correct signature.
@@ -4136,13 +4130,6 @@ public class TlsUtils
             && NamedGroup.canBeNegotiated(keyShareGroup, negotiatedVersion);
     }
 
-    static boolean isValidSignatureAlgorithmForCertificateVerify(short signatureAlgorithm, short[] clientCertificateTypes)
-    {
-        short clientCertificateType = SignatureAlgorithm.getClientCertificateType(signatureAlgorithm);
-
-        return clientCertificateType >= 0 &&  Arrays.contains(clientCertificateTypes, clientCertificateType);
-    }
-
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)
     {
         // TODO[tls13]
@@ -5086,6 +5073,16 @@ public class TlsUtils
         }
 
         return (TlsCredentialedSigner)credentials;
+    }
+
+    private static void checkClientCertificateType(CertificateRequest certificateRequest, short clientCertificateType,
+        short alertDescription) throws IOException
+    {
+        if (clientCertificateType < 0
+            || !Arrays.contains(certificateRequest.getCertificateTypes(), clientCertificateType))
+        {
+            throw new TlsFatalAlert(alertDescription);
+        }
     }
 
     private static void checkDowngradeMarker(byte[] randomBlock, byte[] downgradeMarker) throws IOException
