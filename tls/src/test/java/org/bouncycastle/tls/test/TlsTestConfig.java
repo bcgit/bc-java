@@ -70,6 +70,12 @@ public class TlsTestConfig
     public SignatureAndHashAlgorithm clientAuthSigAlgClaimed = null;
 
     /**
+     * If TLS 1.2 or higher is negotiated, configures the set of supported signature algorithms in the
+     * ClientHello. If null, uses a default set.
+     */
+    public Vector clientCHSigAlgs = null;
+
+    /**
      * Control whether the client will call
      * {@link TlsUtils#checkPeerSigAlgs(TlsContext, TlsCertificate[]) to check the
      * server certificate chain.
