@@ -169,6 +169,12 @@ public abstract class TlsCryptoUtils
             return CryptoSignatureAlgorithm.rsa_pss_pss_sha384;
         case SignatureAlgorithm.rsa_pss_pss_sha512:
             return CryptoSignatureAlgorithm.rsa_pss_pss_sha512;
+        case SignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256:
+            return CryptoSignatureAlgorithm.ecdsa_brainpoolP256r1tls13_sha256;
+        case SignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384:
+            return CryptoSignatureAlgorithm.ecdsa_brainpoolP384r1tls13_sha384;
+        case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
+            return CryptoSignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512;
         case SignatureAlgorithm.gostr34102012_256:
             return CryptoSignatureAlgorithm.gostr34102012_256;
         case SignatureAlgorithm.gostr34102012_512:
