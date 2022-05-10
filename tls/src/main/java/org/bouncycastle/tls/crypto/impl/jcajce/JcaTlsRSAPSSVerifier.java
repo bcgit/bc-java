@@ -44,7 +44,7 @@ public class JcaTlsRSAPSSVerifier
     {
         throw new UnsupportedOperationException();
 
-        // TODO Can only use this if "RAWRSASSA-PSS" is available
+        // TODO Can only use this if "NoneWithRSASSA-PSS" is available
 //        SignatureAndHashAlgorithm algorithm = digitallySigned.getAlgorithm();
 //        if (algorithm == null || SignatureScheme.from(algorithm) != signatureScheme)
 //        {
@@ -60,7 +60,7 @@ public class JcaTlsRSAPSSVerifier
 //
 //        try
 //        {
-//            Signature verifier = crypto.getHelper().createSignature("RAWRSASSA-PSS");
+//            Signature verifier = crypto.getHelper().createSignature("NoneWithRSASSA-PSS");
 //            verifier.setParameter(pssSpec);
 //            verifier.initVerify(publicKey);
 //            verifier.update(hash);
