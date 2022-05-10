@@ -3,7 +3,9 @@ package org.bouncycastle.tls.crypto;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Vector;
 
+import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
@@ -17,11 +19,24 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 public interface TlsCrypto
 {
     /**
-     * Return true if this TlsCrypto can perform raw signatures and verifications for all supported algorithms.
+     * Return true if this TlsCrypto would use a stream verifier for any of the passed in algorithms. This
+     * method is only relevant to handshakes negotiating (D)TLS 1.2.
      *
-     * @return true if this instance can perform raw signatures and verifications for all supported algorithms, false otherwise.
+     * @param signatureAndHashAlgorithms A {@link Vector} of {@link SignatureAndHashAlgorithm} values.
+     * @return true if this instance would use a stream verifier for any of the passed in algorithms,
+     *         otherwise false.
      */
-    boolean hasAllRawSignatureAlgorithms();
+    boolean hasAnyStreamVerifiers(Vector signatureAndHashAlgorithms);
+
+    /**
+     * Return true if this TlsCrypto would use a stream verifier for any of the passed in algorithms. This
+     * method is only relevant to handshakes negotiating (D)TLS versions older than 1.2.
+     *
+     * @param clientCertificateTypes An array of {@link ClientCertificateType} values.
+     * @return true if this instance would use a stream verifier for any of the passed in algorithms,
+     *         otherwise false.
+     */
+    boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes);
 
     /**
      * Return true if this TlsCrypto can support the passed in hash algorithm.

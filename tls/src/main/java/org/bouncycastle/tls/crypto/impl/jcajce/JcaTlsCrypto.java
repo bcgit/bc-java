@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -451,11 +452,52 @@ public class JcaTlsCrypto
         return signer.getParameters();
     }
 
-    public boolean hasAllRawSignatureAlgorithms()
+    public boolean hasAnyStreamVerifiers(Vector signatureAndHashAlgorithms)
     {
-        // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
-        return !JcaUtils.isSunMSCAPIProviderActive()
-            && false;
+        boolean isRSAStreamVerifier = JcaUtils.isSunMSCAPIProviderActive();
+
+        for (int i = 0, count = signatureAndHashAlgorithms.size(); i < count; ++i)
+        {
+            SignatureAndHashAlgorithm algorithm = (SignatureAndHashAlgorithm)signatureAndHashAlgorithms.elementAt(i);
+            switch (algorithm.getSignature())
+            {
+            case SignatureAlgorithm.rsa:
+            {
+                if (isRSAStreamVerifier)
+                {
+                    return true;
+                }
+                break;
+            }
+            case SignatureAlgorithm.dsa:
+            {
+                if (HashAlgorithm.getOutputSize(algorithm.getHash()) != 20)
+                {
+                    return true;
+                }
+                break;
+            }
+            }
+
+            switch (SignatureScheme.from(algorithm))
+            {
+            case SignatureScheme.ed25519:
+            case SignatureScheme.ed448:
+            case SignatureScheme.rsa_pss_rsae_sha256:
+            case SignatureScheme.rsa_pss_rsae_sha384:
+            case SignatureScheme.rsa_pss_rsae_sha512:
+            case SignatureScheme.rsa_pss_pss_sha256:
+            case SignatureScheme.rsa_pss_pss_sha384:
+            case SignatureScheme.rsa_pss_pss_sha512:
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes)
+    {
+        return false;
     }
 
     public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)

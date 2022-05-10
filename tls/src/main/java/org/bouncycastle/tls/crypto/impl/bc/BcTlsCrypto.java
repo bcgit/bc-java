@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Vector;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Digest;
@@ -204,9 +205,24 @@ public class BcTlsCrypto
         return new BcTlsNonceGenerator(nonceGen);
     }
 
-    public boolean hasAllRawSignatureAlgorithms()
+    public boolean hasAnyStreamVerifiers(Vector signatureAndHashAlgorithms)
     {
-        // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
+        for (int i = 0, count = signatureAndHashAlgorithms.size(); i < count; ++i)
+        {
+            SignatureAndHashAlgorithm algorithm = (SignatureAndHashAlgorithm)signatureAndHashAlgorithms.elementAt(i);
+
+            switch (SignatureScheme.from(algorithm))
+            {
+            case SignatureScheme.ed25519:
+            case SignatureScheme.ed448:
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes)
+    {
         return false;
     }
 

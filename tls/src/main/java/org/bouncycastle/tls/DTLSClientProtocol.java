@@ -143,10 +143,6 @@ public class DTLSClientProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
-        if (!ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
-        {
-            handshake.getHandshakeHash().sealHashAlgorithms();
-        }
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
@@ -305,10 +301,7 @@ public class DTLSClientProtocol
             }
         }
 
-        if (ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
-        {
-            handshake.getHandshakeHash().sealHashAlgorithms();
-        }
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         if (clientAuthCredentials == null)
         {
