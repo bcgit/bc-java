@@ -298,8 +298,7 @@ class TlsTestClientImpl
                     supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
                 if (creds == null && supportedSigAlgs != null)
                 {
-                    SignatureAndHashAlgorithm pss = SignatureScheme.getSignatureAndHashAlgorithm(
-                        SignatureScheme.rsa_pss_rsae_sha256);
+                    SignatureAndHashAlgorithm pss = SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
                     if (TlsUtils.containsSignatureAlgorithm(supportedSigAlgs, pss))
                     {
                         creds = TlsTestUtils.loadSignerCredentials(context, new String[]{ "x509-client-rsa.pem" },
