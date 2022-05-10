@@ -84,20 +84,16 @@ public class SignatureAlgorithm
             return "dsa";
         case ecdsa:
             return "ecdsa";
-        case ed25519:
-            return "ed25519";
-        case ed448:
-            return "ed448";
-        case gostr34102012_256:
-            return "gostr34102012_256";
-        case gostr34102012_512:
-            return "gostr34102012_512";
         case rsa_pss_rsae_sha256:
             return "rsa_pss_rsae_sha256";
         case rsa_pss_rsae_sha384:
             return "rsa_pss_rsae_sha384";
         case rsa_pss_rsae_sha512:
             return "rsa_pss_rsae_sha512";
+        case ed25519:
+            return "ed25519";
+        case ed448:
+            return "ed448";
         case rsa_pss_pss_sha256:
             return "rsa_pss_pss_sha256";
         case rsa_pss_pss_sha384:
@@ -110,6 +106,10 @@ public class SignatureAlgorithm
             return "ecdsa_brainpoolP384r1tls13_sha384";
         case ecdsa_brainpoolP512r1tls13_sha512:
             return "ecdsa_brainpoolP512r1tls13_sha512";
+        case gostr34102012_256:
+            return "gostr34102012_256";
+        case gostr34102012_512:
+            return "gostr34102012_512";
         default:
             return "UNKNOWN";
         }
@@ -118,5 +118,32 @@ public class SignatureAlgorithm
     public static String getText(short signatureAlgorithm)
     {
         return getName(signatureAlgorithm) + "(" + signatureAlgorithm + ")";
+    }
+
+    public static boolean isRecognized(short signatureAlgorithm)
+    {
+        switch (signatureAlgorithm)
+        {
+        case anonymous:
+        case rsa:
+        case dsa:
+        case ecdsa:
+        case rsa_pss_rsae_sha256:
+        case rsa_pss_rsae_sha384:
+        case rsa_pss_rsae_sha512:
+        case ed25519:
+        case ed448:
+        case rsa_pss_pss_sha256:
+        case rsa_pss_pss_sha384:
+        case rsa_pss_pss_sha512:
+        case ecdsa_brainpoolP256r1tls13_sha256:
+        case ecdsa_brainpoolP384r1tls13_sha384:
+        case ecdsa_brainpoolP512r1tls13_sha512:
+        case gostr34102012_256:
+        case gostr34102012_512:
+            return true;
+        default:
+            return false;
+        }
     }
 }
