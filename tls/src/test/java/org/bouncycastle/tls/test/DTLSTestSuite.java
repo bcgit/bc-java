@@ -95,10 +95,9 @@ public class DTLSTestSuite extends TestSuite
         {
             TlsTestConfig c = createDTLSTestConfig(version);
             c.clientAuth = C.CLIENT_AUTH_VALID;
-            c.clientAuthSigAlg = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256);
+            c.clientAuthSigAlg = SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
             c.clientAuthSigAlgClaimed = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256);
-            c.serverCertReqSigAlgs = TlsUtils.vectorOfOne(
-                SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256));
+            c.serverCertReqSigAlgs = TlsUtils.vectorOfOne(SignatureAndHashAlgorithm.rsa_pss_rsae_sha256);
             c.serverCheckSigAlgOfClientCerts = false;
             c.expectServerFatalAlert(AlertDescription.illegal_parameter);
 
@@ -114,11 +113,10 @@ public class DTLSTestSuite extends TestSuite
         {
             TlsTestConfig c = createDTLSTestConfig(version);
             c.clientAuth = C.CLIENT_AUTH_VALID;
-            c.clientAuthSigAlg = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256);
+            c.clientAuthSigAlg = SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
             c.clientAuthSigAlgClaimed = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256);
             c.serverCertReqSigAlgs = new Vector(2);
-            c.serverCertReqSigAlgs.addElement(
-                SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256));
+            c.serverCertReqSigAlgs.addElement(SignatureAndHashAlgorithm.rsa_pss_rsae_sha256);
             c.serverCertReqSigAlgs.addElement(
                 SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256));
             c.expectServerFatalAlert(AlertDescription.bad_certificate);
@@ -168,30 +166,32 @@ public class DTLSTestSuite extends TestSuite
         }
 
         /*
-         * Server selects MD5/RSA for ServerKeyExchange signature, which is not in the default
-         * supported signature algorithms that the client sent. We expect fatal alert from the
-         * client when it verifies the selected algorithm against the supported algorithms.
+         * Client declares support for SHA256/RSA, server selects SHA384/RSA, so we expect fatal alert from the
+         * client validation of the ServerKeyExchange algorithm.
          */
         if (TlsUtils.isTLSv12(version))
         {
             TlsTestConfig c = createDTLSTestConfig(version);
-            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
+            c.clientCHSigAlgs = TlsUtils.vectorOfOne(
+                new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa));
+            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha384, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);
 
             addTestCase(testSuite, c, prefix + "BadServerKeyExchangeSigAlg");
         }
 
         /*
-         * Server selects MD5/RSA for ServerKeyExchange signature, which is not the default {sha1,rsa}
-         * implied by the absent signature_algorithms extension. We expect fatal alert from the
-         * client when it verifies the selected algorithm against the implicit default.
+         * Server selects SHA256/RSA for ServerKeyExchange signature, which is not the default {sha1,rsa} implied by
+         * the absent signature_algorithms extension. We expect fatal alert from the client when it verifies the
+         * selected algorithm against the implicit default.
          */
         if (TlsUtils.isTLSv12(version))
         {
             TlsTestConfig c = createDTLSTestConfig(version);
             c.clientCheckSigAlgOfServerCerts = false;
             c.clientSendSignatureAlgorithms = false;
-            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
+            c.clientSendSignatureAlgorithmsCert = false;
+            c.serverAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
             c.expectClientFatalAlert(AlertDescription.illegal_parameter);
 
             addTestCase(testSuite, c, prefix + "BadServerKeyExchangeSigAlg2");
