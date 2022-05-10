@@ -126,6 +126,16 @@ class TlsTestClientImpl
         return super.getEarlyKeyShareGroups();
     }
 
+    protected Vector getSupportedSignatureAlgorithms()
+    {
+        if (config.clientCHSigAlgs != null)
+        {
+            return TlsUtils.getSupportedSignatureAlgorithms(context, config.clientCHSigAlgs);
+        }
+
+        return super.getSupportedSignatureAlgorithms();
+    }
+
     public boolean isFallback()
     {
         return config.clientFallback;
