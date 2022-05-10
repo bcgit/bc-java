@@ -152,6 +152,10 @@ public class DTLSServerProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
+        if (!ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
+        {
+            handshake.getHandshakeHash().sealHashAlgorithms();
+        }
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -232,17 +236,30 @@ public class DTLSServerProtocol
 
                 TlsUtils.establishServerSigAlgs(securityParameters, state.certificateRequest);
 
-                TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(), securityParameters.getServerSigAlgs());
+                if (ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
+                {
+                    TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(), securityParameters.getServerSigAlgs());
 
-                byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
-                handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
+                    if (!state.serverContext.getCrypto().hasAllRawSignatureAlgorithms())
+                    {
+                        handshake.getHandshakeHash().forceBuffering();
+                    }
+                }
             }
         }
 
-        handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
+        if (ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
+        {
+            handshake.getHandshakeHash().sealHashAlgorithms();
+        }
 
-        boolean forceBuffering = false;
-        TlsUtils.sealHandshakeHash(state.serverContext, handshake.getHandshakeHash(), forceBuffering);
+        if (null != state.certificateRequest)
+        {
+            byte[] certificateRequestBody = generateCertificateRequest(state, state.certificateRequest);
+            handshake.sendMessage(HandshakeType.certificate_request, certificateRequestBody);
+        }
+
+        handshake.sendMessage(HandshakeType.server_hello_done, TlsUtils.EMPTY_BYTES);
 
         clientMessage = handshake.receiveMessage();
 

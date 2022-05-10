@@ -18,6 +18,16 @@ class TlsTestClientProtocol extends TlsClientProtocol
         this.config = config;
     }
 
+    protected void send13CertificateVerifyMessage(DigitallySigned certificateVerify) throws IOException
+    {
+        if (config.clientAuthSigAlgClaimed != null)
+        {
+            certificateVerify = new DigitallySigned(config.clientAuthSigAlgClaimed, certificateVerify.getSignature());
+        }
+
+        super.send13CertificateVerifyMessage(certificateVerify);
+    }
+
     protected void sendCertificateVerifyMessage(DigitallySigned certificateVerify) throws IOException
     {
         if (certificateVerify.getAlgorithm() != null && config.clientAuthSigAlgClaimed != null)
