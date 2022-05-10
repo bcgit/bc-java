@@ -1021,16 +1021,15 @@ public class TlsServerProtocol
 
                 ServerHello serverHello = generateServerHello(clientHello, buf);
                 handshakeHash.notifyPRFDetermined();
-                if (!ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
-                {
-                    handshakeHash.sealHashAlgorithms();
-                }
 
                 if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                 {
+                    handshakeHash.sealHashAlgorithms();
+
                     if (serverHello.isHelloRetryRequest())
                     {
                         TlsUtils.adjustTranscriptForRetry(handshakeHash);
+
                         sendServerHelloMessage(serverHello);
                         this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
@@ -1152,8 +1151,15 @@ public class TlsServerProtocol
                         if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
                         {
                             TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
-    
-                            if (!tlsServerContext.getCrypto().hasAllRawSignatureAlgorithms())
+
+                            if (tlsServerContext.getCrypto().hasAnyStreamVerifiers(securityParameters.getServerSigAlgs()))
+                            {
+                                handshakeHash.forceBuffering();
+                            }
+                        }
+                        else
+                        {
+                            if (tlsServerContext.getCrypto().hasAnyStreamVerifiersLegacy(certificateRequest.getCertificateTypes()))
                             {
                                 handshakeHash.forceBuffering();
                             }
@@ -1161,10 +1167,7 @@ public class TlsServerProtocol
                     }
                 }
 
-                if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
-                {
-                    handshakeHash.sealHashAlgorithms();
-                }
+                handshakeHash.sealHashAlgorithms();
 
                 if (null != certificateRequest)
                 {

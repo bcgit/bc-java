@@ -491,7 +491,7 @@ public class TlsClientProtocol
                 {
                     processServerHello(serverHello);
                     handshakeHash.notifyPRFDetermined();
-                    if (!ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                    if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                     {
                         handshakeHash.sealHashAlgorithms();
                     }
@@ -596,10 +596,7 @@ public class TlsClientProtocol
                     }
                 }
 
-                if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
-                {
-                    handshakeHash.sealHashAlgorithms();
-                }
+                handshakeHash.sealHashAlgorithms();
 
                 if (clientAuthCredentials == null)
                 {

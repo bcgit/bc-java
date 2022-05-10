@@ -152,10 +152,6 @@ public class DTLSServerProtocol
         }
 
         handshake.getHandshakeHash().notifyPRFDetermined();
-        if (!ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
-        {
-            handshake.getHandshakeHash().sealHashAlgorithms();
-        }
 
         Vector serverSupplementalData = state.server.getServerSupplementalData();
         if (serverSupplementalData != null)
@@ -240,7 +236,14 @@ public class DTLSServerProtocol
                 {
                     TlsUtils.trackHashAlgorithms(handshake.getHandshakeHash(), securityParameters.getServerSigAlgs());
 
-                    if (!state.serverContext.getCrypto().hasAllRawSignatureAlgorithms())
+                    if (state.serverContext.getCrypto().hasAnyStreamVerifiers(securityParameters.getServerSigAlgs()))
+                    {
+                        handshake.getHandshakeHash().forceBuffering();
+                    }
+                }
+                else
+                {
+                    if (state.serverContext.getCrypto().hasAnyStreamVerifiersLegacy(state.certificateRequest.getCertificateTypes()))
                     {
                         handshake.getHandshakeHash().forceBuffering();
                     }
@@ -248,10 +251,7 @@ public class DTLSServerProtocol
             }
         }
 
-        if (ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
-        {
-            handshake.getHandshakeHash().sealHashAlgorithms();
-        }
+        handshake.getHandshakeHash().sealHashAlgorithms();
 
         if (null != state.certificateRequest)
         {
