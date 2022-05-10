@@ -25,6 +25,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
@@ -278,20 +279,30 @@ class TlsTestClientImpl
                 Vector supportedSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
                 if (supportedSigAlgs != null && config.clientAuthSigAlg != null)
                 {
-                    supportedSigAlgs = new Vector(1);
-                    supportedSigAlgs.addElement(config.clientAuthSigAlg);
+                    supportedSigAlgs = TlsUtils.vectorOfOne(config.clientAuthSigAlg);
                 }
 
                 // TODO[tls13] Check also supportedSigAlgsCert against the chain signature(s)
 
-                final TlsCredentialedSigner signerCredentials = TlsTestUtils.loadSignerCredentials(context,
+                TlsCredentialedSigner creds = TlsTestUtils.loadSignerCredentials(context,
                     supportedSigAlgs, SignatureAlgorithm.rsa, "x509-client-rsa.pem", "x509-client-key-rsa.pem");
+                if (creds == null && supportedSigAlgs != null)
+                {
+                    SignatureAndHashAlgorithm pss = SignatureScheme.getSignatureAndHashAlgorithm(
+                        SignatureScheme.rsa_pss_rsae_sha256);
+                    if (TlsUtils.containsSignatureAlgorithm(supportedSigAlgs, pss))
+                    {
+                        creds = TlsTestUtils.loadSignerCredentials(context, new String[]{ "x509-client-rsa.pem" },
+                            "x509-client-key-rsa.pem", pss);
+                    }
+                }
 
                 if (config.clientAuth == TlsTestConfig.CLIENT_AUTH_VALID)
                 {
-                    return signerCredentials;
+                    return creds;
                 }
 
+                final TlsCredentialedSigner signerCredentials = creds;
                 return new TlsCredentialedSigner()
                 {
                     public byte[] generateRawSignature(byte[] hash) throws IOException

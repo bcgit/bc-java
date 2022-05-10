@@ -282,9 +282,7 @@ class TlsTestServerImpl
     {
         if (TlsUtils.isTLSv12(context) && config.serverAuthSigAlg != null)
         {
-            Vector signatureAlgorithms = new Vector(1);
-            signatureAlgorithms.addElement(config.serverAuthSigAlg);
-            return signatureAlgorithms;
+            return TlsUtils.vectorOfOne(config.serverAuthSigAlg);
         }
 
         return context.getSecurityParametersHandshake().getClientSigAlgs();

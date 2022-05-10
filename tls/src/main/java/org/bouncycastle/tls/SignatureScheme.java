@@ -97,6 +97,11 @@ public class SignatureScheme
         }
     }
 
+    public static int getCryptoHashAlgorithm(SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        return getCryptoHashAlgorithm(from(signatureAndHashAlgorithm));
+    }
+
     public static String getName(int signatureScheme)
     {
         switch (signatureScheme)

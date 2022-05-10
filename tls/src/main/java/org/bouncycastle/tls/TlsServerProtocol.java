@@ -1021,11 +1021,13 @@ public class TlsServerProtocol
 
                 ServerHello serverHello = generateServerHello(clientHello, buf);
                 handshakeHash.notifyPRFDetermined();
+                if (!ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                {
+                    handshakeHash.sealHashAlgorithms();
+                }
 
                 if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                 {
-                    handshakeHash.sealHashAlgorithms();
-
                     if (serverHello.isHelloRetryRequest())
                     {
                         TlsUtils.adjustTranscriptForRetry(handshakeHash);
@@ -1147,18 +1149,31 @@ public class TlsServerProtocol
 
                         TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
 
-                        TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
-
-                        sendCertificateRequestMessage(certificateRequest);
-                        this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
+                        if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                        {
+                            TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
+    
+                            if (!tlsServerContext.getCrypto().hasAllRawSignatureAlgorithms())
+                            {
+                                handshakeHash.forceBuffering();
+                            }
+                        }
                     }
+                }
+
+                if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                {
+                    handshakeHash.sealHashAlgorithms();
+                }
+
+                if (null != certificateRequest)
+                {
+                    sendCertificateRequestMessage(certificateRequest);
+                    this.connection_state = CS_SERVER_CERTIFICATE_REQUEST;
                 }
 
                 sendServerHelloDoneMessage();
                 this.connection_state = CS_SERVER_HELLO_DONE;
-
-                boolean forceBuffering = false;
-                TlsUtils.sealHandshakeHash(tlsServerContext, handshakeHash, forceBuffering);
 
                 break;
             }

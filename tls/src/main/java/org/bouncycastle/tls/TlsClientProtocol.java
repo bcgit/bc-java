@@ -479,24 +479,27 @@ public class TlsClientProtocol
                 {
                     process13HelloRetryRequest(serverHello);
                     handshakeHash.notifyPRFDetermined();
+                    handshakeHash.sealHashAlgorithms();
                     TlsUtils.adjustTranscriptForRetry(handshakeHash);
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO_RETRY_REQUEST;
 
                     send13ClientHelloRetry();
-                    handshakeHash.sealHashAlgorithms();
                     this.connection_state = CS_CLIENT_HELLO_RETRY;
                 }
                 else
                 {
                     processServerHello(serverHello);
                     handshakeHash.notifyPRFDetermined();
+                    if (!ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                    {
+                        handshakeHash.sealHashAlgorithms();
+                    }
                     buf.updateHash(handshakeHash);
                     this.connection_state = CS_SERVER_HELLO;
 
                     if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
                     {
-                        handshakeHash.sealHashAlgorithms();
                         process13ServerHelloCoda(serverHello, false);
                     }
                 }
@@ -554,6 +557,59 @@ public class TlsClientProtocol
 
                 this.connection_state = CS_SERVER_HELLO_DONE;
 
+                TlsCredentials clientAuthCredentials = null;
+                TlsCredentialedSigner clientAuthSigner = null;
+                Certificate clientAuthCertificate = null;
+                SignatureAndHashAlgorithm clientAuthAlgorithm = null;
+                TlsStreamSigner clientAuthStreamSigner = null;
+
+                if (certificateRequest != null)
+                {
+                    clientAuthCredentials = TlsUtils.establishClientCredentials(authentication, certificateRequest);
+                    if (clientAuthCredentials != null)
+                    {
+                        clientAuthCertificate = clientAuthCredentials.getCertificate();
+
+                        if (clientAuthCredentials instanceof TlsCredentialedSigner)
+                        {
+                            clientAuthSigner = (TlsCredentialedSigner)clientAuthCredentials;
+                            clientAuthAlgorithm = TlsUtils.getSignatureAndHashAlgorithm(
+                                securityParameters.getNegotiatedVersion(), clientAuthSigner);
+                            clientAuthStreamSigner = clientAuthSigner.getStreamSigner();
+
+                            if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                            {
+                                TlsUtils.verifySupportedSignatureAlgorithm(securityParameters.getServerSigAlgs(),
+                                    clientAuthAlgorithm, AlertDescription.internal_error);
+
+                                if (clientAuthStreamSigner == null)
+                                {
+                                    TlsUtils.trackHashAlgorithmClient(handshakeHash, clientAuthAlgorithm);
+                                }
+                            }
+
+                            if (clientAuthStreamSigner != null)
+                            {
+                                handshakeHash.forceBuffering();
+                            }
+                        }
+                    }
+                }
+
+                if (ProtocolVersion.TLSv12.equals(securityParameters.getNegotiatedVersion()))
+                {
+                    handshakeHash.sealHashAlgorithms();
+                }
+
+                if (clientAuthCredentials == null)
+                {
+                    keyExchange.skipClientCredentials();
+                }
+                else
+                {
+                    keyExchange.processClientCredentials(clientAuthCredentials);                    
+                }
+
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
                 if (clientSupplementalData != null)
                 {
@@ -561,54 +617,12 @@ public class TlsClientProtocol
                     this.connection_state = CS_CLIENT_SUPPLEMENTAL_DATA;
                 }
 
-                TlsCredentialedSigner credentialedSigner = null;
-                TlsStreamSigner streamSigner = null;
-
-                if (certificateRequest == null)
+                if (certificateRequest != null)
                 {
-                    this.keyExchange.skipClientCredentials();
-                }
-                else
-                {
-                    Certificate clientCertificate = null;
-
-                    TlsCredentials clientCredentials = TlsUtils.establishClientCredentials(authentication,
-                        certificateRequest);
-                    if (null == clientCredentials)
-                    {
-                        this.keyExchange.skipClientCredentials();
-
-                        /*
-                         * RFC 5246 If no suitable certificate is available, the client MUST send a
-                         * certificate message containing no certificates.
-                         * 
-                         * NOTE: In previous RFCs, this was SHOULD instead of MUST.
-                         */
-                    }
-                    else
-                    {
-                        this.keyExchange.processClientCredentials(clientCredentials);
-
-                        clientCertificate = clientCredentials.getCertificate();
-
-                        if (clientCredentials instanceof TlsCredentialedSigner)
-                        {
-                            credentialedSigner = (TlsCredentialedSigner)clientCredentials;
-                            streamSigner = credentialedSigner.getStreamSigner();
-                        }
-                    }
-
-                    sendCertificateMessage(clientCertificate, null);
-                    this.connection_state = CS_CLIENT_CERTIFICATE;
+                    sendCertificateMessage(clientAuthCertificate, null);
+                    this.connection_state = CS_CLIENT_CERTIFICATE;                    
                 }
 
-                boolean forceBuffering = streamSigner != null;
-                TlsUtils.sealHandshakeHash(tlsClientContext, handshakeHash, forceBuffering);
-
-                /*
-                 * Send the client key exchange message, depending on the key exchange we are using
-                 * in our CipherSuite.
-                 */
                 sendClientKeyExchange();
                 this.connection_state = CS_CLIENT_KEY_EXCHANGE;
 
@@ -629,10 +643,10 @@ public class TlsClientProtocol
 
                 recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
 
-                if (credentialedSigner != null)
+                if (clientAuthSigner != null)
                 {
                     DigitallySigned certificateVerify = TlsUtils.generateCertificateVerifyClient(tlsClientContext,
-                        credentialedSigner, streamSigner, handshakeHash);
+                        clientAuthSigner, clientAuthAlgorithm, clientAuthStreamSigner, handshakeHash);
                     sendCertificateVerifyMessage(certificateVerify);
                     this.connection_state = CS_CLIENT_CERTIFICATE_VERIFY;
                 }
@@ -701,13 +715,6 @@ public class TlsClientProtocol
                 receiveCertificateRequest(buf);
 
                 TlsUtils.establishServerSigAlgs(securityParameters, certificateRequest);
-
-                /*
-                 * TODO Give the client a chance to immediately select the CertificateVerify hash
-                 * algorithm here to avoid tracking the other hash algorithms unnecessarily?
-                 */
-                TlsUtils.trackHashAlgorithms(handshakeHash, securityParameters.getServerSigAlgs());
-
                 break;
             }
             default:
