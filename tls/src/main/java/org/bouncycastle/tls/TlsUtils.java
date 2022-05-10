@@ -1241,14 +1241,17 @@ public class TlsUtils
     }
 
     static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(ProtocolVersion negotiatedVersion,
-        TlsCredentialedSigner signerCredentials) throws IOException
+        TlsCredentialedSigner credentialedSigner) throws IOException
     {
         SignatureAndHashAlgorithm signatureAndHashAlgorithm = null;
-        if (isTLSv12(negotiatedVersion))
+        if (isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
         {
-            signatureAndHashAlgorithm = signerCredentials.getSignatureAndHashAlgorithm();
+            signatureAndHashAlgorithm = credentialedSigner.getSignatureAndHashAlgorithm();
             if (signatureAndHashAlgorithm == null)
             {
+                /*
+                 * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
+                 */
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
         }
@@ -1507,8 +1510,15 @@ public class TlsUtils
         return supportedSignatureAlgorithms;
     }
 
-    public static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms, SignatureAndHashAlgorithm signatureAlgorithm)
-        throws IOException
+    public static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms,
+        SignatureAndHashAlgorithm signatureAlgorithm) throws IOException
+    {
+        verifySupportedSignatureAlgorithm(supportedSignatureAlgorithms, signatureAlgorithm,
+            AlertDescription.illegal_parameter);
+    }
+
+    static void verifySupportedSignatureAlgorithm(Vector supportedSignatureAlgorithms,
+        SignatureAndHashAlgorithm signatureAlgorithm, short alertDescription) throws IOException
     {
         if (supportedSignatureAlgorithms == null || supportedSignatureAlgorithms.size() < 1
             || supportedSignatureAlgorithms.size() >= (1 << 15))
@@ -1524,7 +1534,7 @@ public class TlsUtils
         if (signatureAlgorithm.getSignature() == SignatureAlgorithm.anonymous
             || !containsSignatureAlgorithm(supportedSignatureAlgorithms, signatureAlgorithm))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(alertDescription);
         }
     }
 
@@ -2342,49 +2352,38 @@ public class TlsUtils
     }
 
     static DigitallySigned generateCertificateVerifyClient(TlsClientContext clientContext,
-        TlsCredentialedSigner credentialedSigner, TlsStreamSigner streamSigner, TlsHandshakeHash handshakeHash)
-        throws IOException
+        TlsCredentialedSigner clientAuthSigner, SignatureAndHashAlgorithm clientAuthAlgorithm,
+        TlsStreamSigner clientAuthStreamSigner, TlsHandshakeHash handshakeHash) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
-        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
-
-        if (isTLSv13(negotiatedVersion))
+        if (isTLSv13(securityParameters.getNegotiatedVersion()))
         {
             // Should be using generate13CertificateVerify instead
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        /*
-         * RFC 5246 4.7. digitally-signed element needs SignatureAndHashAlgorithm from TLS 1.2
-         */
-        SignatureAndHashAlgorithm signatureAndHashAlgorithm = getSignatureAndHashAlgorithm(negotiatedVersion,
-            credentialedSigner);
-
         byte[] signature;
-        if (streamSigner != null)
+        if (clientAuthStreamSigner != null)
         {
-            handshakeHash.copyBufferTo(streamSigner.getOutputStream());
-            signature = streamSigner.getSignature();
+            handshakeHash.copyBufferTo(clientAuthStreamSigner.getOutputStream());
+            signature = clientAuthStreamSigner.getSignature();
         }
         else
         {
             byte[] hash;
-            if (signatureAndHashAlgorithm == null)
+            if (clientAuthAlgorithm == null)
             {
                 hash = securityParameters.getSessionHash();
             }
             else
             {
-                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
-                int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-                hash = handshakeHash.getFinalHash(cryptoHashAlgorithm);
+                hash = handshakeHash.getFinalHash(SignatureScheme.getCryptoHashAlgorithm(clientAuthAlgorithm));
             }
 
-            signature = credentialedSigner.generateRawSignature(hash);
+            signature = clientAuthSigner.generateRawSignature(hash);
         }
 
-        return new DigitallySigned(signatureAndHashAlgorithm, signature);
+        return new DigitallySigned(clientAuthAlgorithm, signature);
     }
 
     static DigitallySigned generate13CertificateVerify(TlsContext context, TlsCredentialedSigner credentialedSigner,
@@ -2423,10 +2422,7 @@ public class TlsUtils
             return streamSigner.getSignature();
         }
 
-        int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
-        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-        TlsHash tlsHash = crypto.createHash(cryptoHashAlgorithm);
+        TlsHash tlsHash = createHash(crypto, signatureAndHashAlgorithm);
         tlsHash.update(header, 0, header.length);
         tlsHash.update(prfHash, 0, prfHash.length);
         byte[] hash = tlsHash.calculateHash();
@@ -2476,10 +2472,7 @@ public class TlsUtils
                 byte[] hash;
                 if (isTLSv12(serverContext))
                 {
-                    int signatureScheme = SignatureScheme.from(sigAndHashAlg);
-                    int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-                    hash = handshakeHash.getFinalHash(cryptoHashAlgorithm);
+                    hash = handshakeHash.getFinalHash(SignatureScheme.getCryptoHashAlgorithm(sigAndHashAlg));
                 }
                 else
                 {
@@ -2658,31 +2651,30 @@ public class TlsUtils
         }
     }
 
+    static void trackHashAlgorithmClient(TlsHandshakeHash handshakeHash,
+        SignatureAndHashAlgorithm signatureAndHashAlgorithm)
+    {
+        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureAndHashAlgorithm);
+        if (cryptoHashAlgorithm >= 0)
+        {
+            handshakeHash.trackHashAlgorithm(cryptoHashAlgorithm);
+        }
+    }
+
     static void trackHashAlgorithms(TlsHandshakeHash handshakeHash, Vector supportedSignatureAlgorithms)
     {
-        if (supportedSignatureAlgorithms != null)
+        for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
         {
-            for (int i = 0; i < supportedSignatureAlgorithms.size(); ++i)
+            SignatureAndHashAlgorithm signatureAndHashAlgorithm =
+                (SignatureAndHashAlgorithm)supportedSignatureAlgorithms.elementAt(i);
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureAndHashAlgorithm);
+            if (cryptoHashAlgorithm >= 0)
             {
-                /*
-                 * TODO We could validate the signature algorithm part. Currently the impact is
-                 * that we might be tracking extra hashes pointlessly (but there are only a
-                 * limited number of recognized hash algorithms).
-                 */
-                SignatureAndHashAlgorithm signatureAndHashAlgorithm = (SignatureAndHashAlgorithm)
-                    supportedSignatureAlgorithms.elementAt(i);
-
-                int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
-                int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-                if (cryptoHashAlgorithm >= 0)
-                {
-                    handshakeHash.trackHashAlgorithm(cryptoHashAlgorithm);
-                }
-                else if (HashAlgorithm.Intrinsic == signatureAndHashAlgorithm.getHash())
-                {
-                    handshakeHash.forceBuffering();
-                }
+                handshakeHash.trackHashAlgorithm(cryptoHashAlgorithm);
+            }
+            else if (HashAlgorithm.Intrinsic == signatureAndHashAlgorithm.getHash())
+            {
+                handshakeHash.forceBuffering();
             }
         }
     }
@@ -4442,29 +4434,14 @@ public class TlsUtils
         return handshakeHash.forkPRFHash().calculateHash();
     }
 
-    static void sealHandshakeHash(TlsContext context, TlsHandshakeHash handshakeHash, boolean forceBuffering)
-    {
-        if (forceBuffering || !context.getCrypto().hasAllRawSignatureAlgorithms())
-        {
-            handshakeHash.forceBuffering();
-        }
-
-        handshakeHash.sealHashAlgorithms();
-    }
-
     private static TlsHash createHash(TlsCrypto crypto, short hashAlgorithm)
     {
-        int cryptoHashAlgorithm = TlsCryptoUtils.getHash(hashAlgorithm);
-
-        return crypto.createHash(cryptoHashAlgorithm);
+        return crypto.createHash(TlsCryptoUtils.getHash(hashAlgorithm));
     }
 
     private static TlsHash createHash(TlsCrypto crypto, SignatureAndHashAlgorithm signatureAndHashAlgorithm)
     {
-        int signatureScheme = SignatureScheme.from(signatureAndHashAlgorithm);
-        int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
-
-        return crypto.createHash(cryptoHashAlgorithm);
+        return crypto.createHash(SignatureScheme.getCryptoHashAlgorithm(signatureAndHashAlgorithm));
     }
 
     private static TlsKeyExchange createKeyExchangeClient(TlsClient client, int keyExchange) throws IOException

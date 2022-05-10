@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Vector;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
@@ -9,6 +10,7 @@ import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
@@ -123,56 +125,59 @@ public class TlsTestSuite extends TestSuite
         }
 
         /*
-         * Server only declares support for SHA1/RSA, client selects MD5/RSA. Since the client is
-         * NOT actually tracking MD5 over the handshake, we expect fatal alert from the client.
+         * Server only declares support for SHA256/ECDSA, client selects SHA256/RSA, so we expect fatal alert
+         * from the client validation of the CertificateVerify algorithm.
          */
         if (isTLSv12Exactly)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
-            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.md5, SignatureAlgorithm.rsa);
-            c.serverCertReqSigAlgs = TlsUtils.getDefaultRSASignatureAlgorithms();
-            c.serverCheckSigAlgOfClientCerts = false;
+            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.rsa);
+            c.serverCertReqSigAlgs = TlsUtils.vectorOfOne(
+                new SignatureAndHashAlgorithm(HashAlgorithm.sha256, SignatureAlgorithm.ecdsa));
             c.expectClientFatalAlert(AlertDescription.internal_error);
 
-            addTestCase(testSuite, c, prefix + "BadCertificateVerifyHashAlg");
+            addTestCase(testSuite, c, prefix + "BadCertVerifySigAlgClient");
         }
 
         /*
-         * Server only declares support for SHA1/ECDSA, client selects SHA1/RSA. Since the client is
-         * actually tracking SHA1 over the handshake, we expect fatal alert to come from the server
-         * when it verifies the selected algorithm against the CertificateRequest supported
-         * algorithms.
+         * Server only declares support for rsa_pss_rsae_sha256, client selects rsa_pss_rsae_sha256 but claims
+         * ecdsa_secp256r1_sha256, so we expect fatal alert from the server validation of the
+         * CertificateVerify algorithm.
          */
         if (isTLSv12)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
-            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa);
-            c.serverCertReqSigAlgs = TlsUtils.getDefaultECDSASignatureAlgorithms();
+            c.clientAuthSigAlg = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256);
+            c.clientAuthSigAlgClaimed = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256);
+            c.serverCertReqSigAlgs = TlsUtils.vectorOfOne(
+                SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256));
             c.serverCheckSigAlgOfClientCerts = false;
             c.expectServerFatalAlert(AlertDescription.illegal_parameter);
 
-            addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlg");
+            addTestCase(testSuite, c, prefix + "BadCertVerifySigAlgServer1");
         }
 
         /*
-         * Server only declares support for SHA1/ECDSA, client signs with SHA1/RSA, but sends
-         * SHA1/ECDSA in the CertificateVerify. Since the client is actually tracking SHA1 over the
-         * handshake, and the claimed algorithm is in the CertificateRequest supported algorithms,
-         * we expect fatal alert to come from the server when it finds the claimed algorithm
-         * doesn't match the client certificate.
+         * Server declares support for rsa_pss_rsae_sha256 and ecdsa_secp256r1_sha256, client selects
+         * rsa_pss_rsae_sha256 but claims ecdsa_secp256r1_sha256, so we expect fatal alert from the server
+         * validation of the client certificate.
          */
         if (isTLSv12)
         {
             TlsTestConfig c = createTlsTestConfig(version, clientCrypto, serverCrypto);
             c.clientAuth = C.CLIENT_AUTH_VALID;
-            c.clientAuthSigAlg = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.rsa);
-            c.clientAuthSigAlgClaimed = new SignatureAndHashAlgorithm(HashAlgorithm.sha1, SignatureAlgorithm.ecdsa);
-            c.serverCertReqSigAlgs = TlsUtils.getDefaultECDSASignatureAlgorithms();
+            c.clientAuthSigAlg = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256);
+            c.clientAuthSigAlgClaimed = SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256);
+            c.serverCertReqSigAlgs = new Vector(2);
+            c.serverCertReqSigAlgs.addElement(
+                SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.rsa_pss_rsae_sha256));
+            c.serverCertReqSigAlgs.addElement(
+                SignatureScheme.getSignatureAndHashAlgorithm(SignatureScheme.ecdsa_secp256r1_sha256));
             c.expectServerFatalAlert(AlertDescription.bad_certificate);
 
-            addTestCase(testSuite, c, prefix + "BadCertificateVerifySigAlgMismatch");
+            addTestCase(testSuite, c, prefix + "BadCertVerifySigAlgServer2");
         }
 
         {
@@ -180,7 +185,7 @@ public class TlsTestSuite extends TestSuite
             c.clientAuth = C.CLIENT_AUTH_INVALID_VERIFY;
             c.expectServerFatalAlert(AlertDescription.decrypt_error);
 
-            addTestCase(testSuite, c, prefix + "BadCertificateVerifySignature");
+            addTestCase(testSuite, c, prefix + "BadCertVerifySignature");
         }
 
         {
