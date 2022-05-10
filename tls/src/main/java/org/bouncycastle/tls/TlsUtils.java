@@ -1219,13 +1219,18 @@ public class TlsUtils
 
     public static Vector getDefaultSupportedSignatureAlgorithms(TlsContext context)
     {
+        return getSupportedSignatureAlgorithms(context, DEFAULT_SUPPORTED_SIG_ALGS);
+    }
+
+    public static Vector getSupportedSignatureAlgorithms(TlsContext context, Vector candidates)
+    {
         TlsCrypto crypto = context.getCrypto();
 
-        int count = DEFAULT_SUPPORTED_SIG_ALGS.size();
+        int count = candidates.size();
         Vector result = new Vector(count);
         for (int i = 0; i < count; ++i)
         {
-            addIfSupported(result, crypto, (SignatureAndHashAlgorithm)DEFAULT_SUPPORTED_SIG_ALGS.elementAt(i));
+            addIfSupported(result, crypto, (SignatureAndHashAlgorithm)candidates.elementAt(i));
         }
         return result;
     }
