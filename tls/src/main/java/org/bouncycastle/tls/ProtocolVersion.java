@@ -232,15 +232,20 @@ public final class ProtocolVersion
     {
         switch (getMajorVersion())
         {
-        case 0x03:  return this;
+        case 0x03:
+            return this;
         case 0xFE:
             switch(getMinorVersion())
             {
-            case 0xFF:  return TLSv11;
-            case 0xFD:  return TLSv12;
-            default:    return null;
+            case 0xFF:
+                return TLSv11;
+            case 0xFD:
+                return TLSv12;
+            default:
+                return null;
             }
-        default:    return null;
+        default:
+            return null;
         }
     }
 
@@ -252,17 +257,23 @@ public final class ProtocolVersion
         case 0x03:
             switch (minor)
             {
-            case 0xFF: return null;
-            default  : return get(major, minor + 1);
+            case 0xFF:
+                return null;
+            default:
+                return get(major, minor + 1);
             }
         case 0xFE:
             switch(minor)
             {
-            case 0x00: return null;
-            case 0xFF: return DTLSv12;
-            default  : return get(major, minor - 1);
+            case 0x00:
+                return null;
+            case 0xFF:
+                return DTLSv12;
+            default:
+                return get(major, minor - 1);
             }
-        default:    return null;
+        default:
+            return null;
         }
     }
 
@@ -274,17 +285,23 @@ public final class ProtocolVersion
         case 0x03:
             switch (minor)
             {
-            case 0x00: return null;
-            default  : return get(major, minor - 1);
+            case 0x00:
+                return null;
+            default:
+                return get(major, minor - 1);
             }
         case 0xFE:
             switch(minor)
             {
-            case 0xFF: return null;
-            case 0xFD: return DTLSv10;
-            default  : return get(major, minor + 1);
+            case 0xFF:
+                return null;
+            case 0xFD:
+                return DTLSv10;
+            default:
+                return get(major, minor + 1);
             }
-        default:    return null;
+        default:
+            return null;
         }
     }
 
