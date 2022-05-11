@@ -210,15 +210,15 @@ public class HMac
      */
     public void reset()
     {
-        /*
-         * reset the underlying digest.
-         */
-        digest.reset();
-
-        /*
-         * reinitialize the digest.
-         */
-        digest.update(inputPad, 0, inputPad.length);
+        if (ipadState != null)
+        {
+            ((Memoable)digest).reset(ipadState);
+        }
+        else
+        {
+            digest.reset();
+            digest.update(inputPad, 0, inputPad.length);
+        }
     }
 
     private static void xorPad(byte[] pad, int len, byte n)
