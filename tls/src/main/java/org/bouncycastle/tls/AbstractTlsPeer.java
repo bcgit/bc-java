@@ -29,8 +29,7 @@ public abstract class AbstractTlsPeer
      */
     protected ProtocolVersion[] getSupportedVersions()
     {
-        // TODO[tls13] Enable TLSv13 by default in due course
-        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+        return ProtocolVersion.TLSv13.downTo(ProtocolVersion.TLSv12);
     }
 
     protected abstract int[] getSupportedCipherSuites();

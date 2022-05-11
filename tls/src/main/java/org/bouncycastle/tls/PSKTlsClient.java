@@ -34,7 +34,7 @@ public class PSKTlsClient
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+        return ProtocolVersion.TLSv12.only();
     }
 
     protected int[] getSupportedCipherSuites()

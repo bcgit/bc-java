@@ -34,19 +34,13 @@ public class SRPTlsClient
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+        return ProtocolVersion.TLSv12.only();
     }
 
     protected boolean requireSRPServerExtension()
     {
         // No explicit guidance in RFC 5054; by default an (empty) extension from server is optional
         return false;
-    }
-
-    /** @deprecated Unused; will be removed */
-    public ProtocolVersion getClientVersion()
-    {
-        return ProtocolVersion.TLSv12;
     }
 
     public Hashtable getClientExtensions()
