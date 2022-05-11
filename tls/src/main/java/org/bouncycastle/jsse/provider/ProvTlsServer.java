@@ -242,13 +242,19 @@ class ProvTlsServer
     @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
-        TlsCredentials cipherSuiteCredentials = selectCredentials(jsseSecurityParameters.trustedIssuers, cipherSuite);
+        TlsCredentials cipherSuiteCredentials = null;
 
-        if (null == cipherSuiteCredentials)
+        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
+        if (!KeyExchangeAlgorithm.isAnonymous(keyExchangeAlgorithm))
         {
-            String cipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
-            LOG.finer("Server found no credentials for cipher suite: " + cipherSuiteName);
-            return false;
+            cipherSuiteCredentials = selectCredentials(jsseSecurityParameters.trustedIssuers, keyExchangeAlgorithm);
+
+            if (null == cipherSuiteCredentials)
+            {
+                String cipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
+                LOG.finer("Server found no credentials for cipher suite: " + cipherSuiteName);
+                return false;
+            }
         }
 
         boolean result = super.selectCipherSuite(cipherSuite);
@@ -347,6 +353,11 @@ class ProvTlsServer
     public TlsCredentials getCredentials()
         throws IOException
     {
+        if (credentials == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         return credentials;
     }
 
@@ -897,9 +908,8 @@ class ProvTlsServer
         return true;
     }
 
-    protected TlsCredentials selectCredentials(Principal[] issuers, int cipherSuite) throws IOException
+    protected TlsCredentials selectCredentials(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
     {
-        int keyExchangeAlgorithm = TlsUtils.getKeyExchangeAlgorithm(cipherSuite);
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_DSS:

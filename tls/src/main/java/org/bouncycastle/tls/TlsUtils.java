@@ -5126,7 +5126,8 @@ public class TlsUtils
         ByteArrayInputStream buf) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
-        if (null != securityParameters.getPeerCertificate())
+        if (KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm())
+            || null != securityParameters.getPeerCertificate())
         {
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }

@@ -1075,7 +1075,12 @@ public class TlsServerProtocol
 
                 this.keyExchange = TlsUtils.initKeyExchangeServer(tlsServerContext, tlsServer);
 
-                TlsCredentials serverCredentials = TlsUtils.establishServerCredentials(tlsServer);
+                TlsCredentials serverCredentials = null;
+
+                if (!KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm()))
+                {
+                    serverCredentials = TlsUtils.establishServerCredentials(tlsServer);
+                }
 
                 // Server certificate
                 {
