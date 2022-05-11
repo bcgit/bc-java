@@ -999,40 +999,40 @@ public class JcaTlsCrypto
     {
         switch (encryptionAlgorithm)
         {
-        case EncryptionAlgorithm.CHACHA20_POLY1305:
-            return isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305");
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return isUsableCipher("DESede/CBC/NoPadding", 192);
         case EncryptionAlgorithm.AES_128_CBC:
             return isUsableCipher("AES/CBC/NoPadding", 128);
-        case EncryptionAlgorithm.AES_256_CBC:
-            return isUsableCipher("AES/CBC/NoPadding", 256);
         case EncryptionAlgorithm.AES_128_CCM:
         case EncryptionAlgorithm.AES_128_CCM_8:
             return isUsableCipher("AES/CCM/NoPadding", 128);
+        case EncryptionAlgorithm.AES_128_GCM:
+            return isUsableCipher("AES/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.AES_256_CBC:
+            return isUsableCipher("AES/CBC/NoPadding", 256);
         case EncryptionAlgorithm.AES_256_CCM:
         case EncryptionAlgorithm.AES_256_CCM_8:
             return isUsableCipher("AES/CCM/NoPadding", 256);
-        case EncryptionAlgorithm.AES_128_GCM:
-            return isUsableCipher("AES/GCM/NoPadding", 128);
         case EncryptionAlgorithm.AES_256_GCM:
             return isUsableCipher("AES/GCM/NoPadding", 256);
         case EncryptionAlgorithm.ARIA_128_CBC:
             return isUsableCipher("ARIA/CBC/NoPadding", 128);
-        case EncryptionAlgorithm.ARIA_256_CBC:
-            return isUsableCipher("ARIA/CBC/NoPadding", 256);
         case EncryptionAlgorithm.ARIA_128_GCM:
             return isUsableCipher("ARIA/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.ARIA_256_CBC:
+            return isUsableCipher("ARIA/CBC/NoPadding", 256);
         case EncryptionAlgorithm.ARIA_256_GCM:
             return isUsableCipher("ARIA/GCM/NoPadding", 256);
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return isUsableCipher("Camellia/CBC/NoPadding", 128);
-        case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return isUsableCipher("Camellia/CBC/NoPadding", 256);
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
             return isUsableCipher("Camellia/GCM/NoPadding", 128);
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            return isUsableCipher("Camellia/CBC/NoPadding", 256);
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
             return isUsableCipher("Camellia/GCM/NoPadding", 256);
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+            return isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305");
         case EncryptionAlgorithm.NULL:
             return Boolean.TRUE;
         case EncryptionAlgorithm.SEED_CBC:
@@ -1044,8 +1044,8 @@ public class JcaTlsCrypto
         case EncryptionAlgorithm.SM4_GCM:
             return isUsableCipher("SM4/GCM/NoPadding", 128);
 
-        case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
