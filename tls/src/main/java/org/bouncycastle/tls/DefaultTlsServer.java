@@ -85,10 +85,6 @@ public abstract class DefaultTlsServer
         case KeyExchangeAlgorithm.DHE_DSS:
             return getDSASignerCredentials();
 
-        case KeyExchangeAlgorithm.DH_anon:
-        case KeyExchangeAlgorithm.ECDH_anon:
-            return null;
-
         case KeyExchangeAlgorithm.ECDHE_ECDSA:
             return getECDSASignerCredentials();
 

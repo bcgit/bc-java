@@ -161,7 +161,13 @@ public class DTLSServerProtocol
         }
 
         state.keyExchange = TlsUtils.initKeyExchangeServer(state.serverContext, state.server);
-        state.serverCredentials = TlsUtils.establishServerCredentials(state.server);
+
+        state.serverCredentials = null;
+
+        if (!KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm()))
+        {
+            state.serverCredentials = TlsUtils.establishServerCredentials(state.server);
+        }
 
         // Server certificate
         {
