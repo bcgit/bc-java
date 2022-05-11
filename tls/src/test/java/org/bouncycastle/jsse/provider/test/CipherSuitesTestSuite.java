@@ -32,7 +32,7 @@ public class CipherSuitesTestSuite
                  * we could modify that security property when running this test suite.
                  */
                 return cipherSuite.contains("_WITH_NULL_") || cipherSuite.contains("_WITH_3DES_EDE_CBC_")
-                        || cipherSuite.contains("_anon_");
+                    || cipherSuite.contains("_anon_");
             }
 
             public boolean isPermitted(String cipherSuite)
@@ -108,7 +108,8 @@ public class CipherSuitesTestSuite
                         cipherSuite.endsWith("_CBC_SHA256") ||
                         cipherSuite.endsWith("_CBC_SHA384") ||
                         cipherSuite.endsWith("_CCM") ||
-                        cipherSuite.endsWith("_CCM_8"));
+                        cipherSuite.endsWith("_CCM_8") ||
+                        cipherSuite.endsWith("_NULL_SHA256"));
                 if (isTLSv12CipherSuite && !isTLSv12Protocol)
                 {
                     //  AEAD ciphers and configurable CBC PRFs are both 1.2 features
