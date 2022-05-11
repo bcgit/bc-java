@@ -287,16 +287,39 @@ public class BcTlsCrypto
     {
         switch (encryptionAlgorithm)
         {
-        case EncryptionAlgorithm.DES40_CBC:
+        case EncryptionAlgorithm._3DES_EDE_CBC:
+        case EncryptionAlgorithm.AES_128_CBC:
+        case EncryptionAlgorithm.AES_128_CCM:
+        case EncryptionAlgorithm.AES_128_CCM_8:
+        case EncryptionAlgorithm.AES_128_GCM:
+        case EncryptionAlgorithm.AES_256_CBC:
+        case EncryptionAlgorithm.AES_256_CCM:
+        case EncryptionAlgorithm.AES_256_CCM_8:
+        case EncryptionAlgorithm.AES_256_GCM:
+        case EncryptionAlgorithm.ARIA_128_CBC:
+        case EncryptionAlgorithm.ARIA_128_GCM:
+        case EncryptionAlgorithm.ARIA_256_CBC:
+        case EncryptionAlgorithm.ARIA_256_GCM:
+        case EncryptionAlgorithm.CAMELLIA_128_CBC:
+        case EncryptionAlgorithm.CAMELLIA_128_GCM:
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+        case EncryptionAlgorithm.CAMELLIA_256_GCM:
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+        case EncryptionAlgorithm.NULL:
+        case EncryptionAlgorithm.SEED_CBC:
+        case EncryptionAlgorithm.SM4_CBC:
+        case EncryptionAlgorithm.SM4_CCM:
+        case EncryptionAlgorithm.SM4_GCM:
+            return true;
+
         case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
-            return false;
-
         default:
-            return true;
+            return false;
         }
     }
 
