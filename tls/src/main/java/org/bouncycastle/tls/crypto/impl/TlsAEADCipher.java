@@ -191,14 +191,13 @@ public class TlsAEADCipher
 
         try
         {
-            encryptCipher.init(nonce, macSize, additionalData);
-
             System.arraycopy(plaintext, plaintextOffset, output, outputPos, plaintextLength);
             if (isTLSv13)
             {
                 output[outputPos + plaintextLength] = (byte)contentType;
             }
 
+            encryptCipher.init(nonce, macSize, additionalData);
             outputPos += encryptCipher.doFinal(output, outputPos, plaintextLength + extraLength, output, outputPos);
         }
         catch (RuntimeException e)
