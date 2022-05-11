@@ -156,6 +156,6 @@ class MockDTLSServer
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.DTLSv12.downTo(ProtocolVersion.DTLSv10);
+        return ProtocolVersion.DTLSv12.only();
     }
 }

@@ -73,7 +73,7 @@ public class KeyManagerFactoryTest
 
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        SSLContext context = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -119,7 +119,7 @@ public class KeyManagerFactoryTest
             ProviderUtils.PROVIDER_NAME_BCJSSE);
         trustManagerFactory.init(trustStore);
 
-        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        SSLContext context = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(null, trustManagerFactory.getTrustManagers(), null);
 
@@ -158,7 +158,7 @@ public class KeyManagerFactoryTest
             ProviderUtils.PROVIDER_NAME_BCJSSE);
         trustManagerFactory.init(clientTS);
 
-        SSLContext context = SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE);
+        SSLContext context = SSLContext.getInstance("TLSv1.2", ProviderUtils.PROVIDER_NAME_BCJSSE);
 
         context.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
