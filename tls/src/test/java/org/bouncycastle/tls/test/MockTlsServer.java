@@ -18,6 +18,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -38,6 +39,20 @@ class MockTlsServer
         protocolNames.addElement(ProtocolName.HTTP_2_TLS);
         protocolNames.addElement(ProtocolName.HTTP_1_1);
         return protocolNames;
+    }
+
+    public TlsCredentials getCredentials() throws IOException
+    {
+        /*
+         * TODO[tls13] Should really be finding the first client-supported signature scheme that the
+         * server also supports and has credentials for.
+         */
+        if (TlsUtils.isTLSv13(context))
+        {
+            return getRSASignerCredentials();
+        }
+
+        return super.getCredentials();
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
@@ -73,9 +88,6 @@ class MockTlsServer
 
     public CertificateRequest getCertificateRequest() throws IOException
     {
-        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
-            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
-
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
@@ -90,7 +102,24 @@ class MockTlsServer
         // All the CA certificates are currently configured with this subject
         certificateAuthorities.addElement(new X500Name("CN=BouncyCastle TLS Test CA"));
 
-        return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
+        if (TlsUtils.isTLSv13(context))
+        {
+            // TODO[tls13] Support for non-empty request context
+            byte[] certificateRequestContext = TlsUtils.EMPTY_BYTES;
+
+            // TODO[tls13] Add TlsTestConfig.serverCertReqSigAlgsCert
+            Vector serverSigAlgsCert = null;
+
+            return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
+                certificateAuthorities);
+        }
+        else
+        {
+            short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
+                ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
+
+            return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
+        }
     }
 
     public void notifyClientCertificate(org.bouncycastle.tls.Certificate clientCertificate) throws IOException
