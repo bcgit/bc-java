@@ -13,6 +13,7 @@ public final class ProtocolVersion
     public static final ProtocolVersion TLSv13 = new ProtocolVersion(0x0304, "TLS 1.3");
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
+    public static final ProtocolVersion DTLSv13 = new ProtocolVersion(0xFEFC, "DTLS 1.3");
 
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3;
@@ -241,6 +242,8 @@ public final class ProtocolVersion
                 return TLSv11;
             case 0xFD:
                 return TLSv12;
+            case 0xFC:
+                return TLSv13;
             default:
                 return null;
             }
@@ -391,6 +394,8 @@ public final class ProtocolVersion
                 throw new IllegalArgumentException("{0xFE, 0xFE} is a reserved protocol version");
             case 0xFD:
                 return DTLSv12;
+            case 0xFC:
+                return DTLSv13;
             }
             return getUnknownVersion(major, minor, "DTLS");
         }
