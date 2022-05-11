@@ -44,18 +44,12 @@ public class SRPTlsServer
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return ProtocolVersion.TLSv12.downTo(ProtocolVersion.TLSv10);
+        return ProtocolVersion.TLSv12.only();
     }
 
     protected int[] getSupportedCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(getCrypto(), DEFAULT_CIPHER_SUITES);
-    }
-
-    /** @deprecated Unused; will be removed */
-    public ProtocolVersion getMaximumVersion()
-    {
-        return ProtocolVersion.TLSv12;
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException

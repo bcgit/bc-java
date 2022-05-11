@@ -161,8 +161,7 @@ class ProvSSLContextSpi
     {
         ArrayList<String> ps = new ArrayList<String>();
 
-        // TODO[tls13] Enable TLSv1.3 by default in due course
-//        ps.add("TLSv1.3");
+        ps.add("TLSv1.3");
         ps.add("TLSv1.2");
         ps.add("TLSv1.1");
         ps.add("TLSv1");

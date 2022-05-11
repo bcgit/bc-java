@@ -9,13 +9,12 @@ public abstract class DefaultTlsServer
 {
     private static final int[] DEFAULT_CIPHER_SUITES = new int[]
     {
-        // TODO[tls13]
-//        /*
-//         * TLS 1.3
-//         */
-//        CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
-//        CipherSuite.TLS_AES_256_GCM_SHA384,
-//        CipherSuite.TLS_AES_128_GCM_SHA256,
+        /*
+         * TLS 1.3
+         */
+        CipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+        CipherSuite.TLS_AES_256_GCM_SHA384,
+        CipherSuite.TLS_AES_128_GCM_SHA256,
 
         /*
          * pre-TLS 1.3
@@ -79,9 +78,9 @@ public abstract class DefaultTlsServer
     public TlsCredentials getCredentials()
         throws IOException
     {
-        int keyExchangeAlgorithm = context.getSecurityParametersHandshake().getKeyExchangeAlgorithm();
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
 
-        switch (keyExchangeAlgorithm)
+        switch (securityParameters.getKeyExchangeAlgorithm())
         {
         case KeyExchangeAlgorithm.DHE_DSS:
             return getDSASignerCredentials();
@@ -96,6 +95,10 @@ public abstract class DefaultTlsServer
         case KeyExchangeAlgorithm.DHE_RSA:
         case KeyExchangeAlgorithm.ECDHE_RSA:
             return getRSASignerCredentials();
+
+        case KeyExchangeAlgorithm.NULL:
+            throw new TlsFatalAlert(AlertDescription.internal_error,
+                securityParameters.getNegotiatedVersion() + " credentials unhandled");
 
         case KeyExchangeAlgorithm.RSA:
             return getRSAEncryptionCredentials();
