@@ -11,11 +11,11 @@ import org.bouncycastle.tls.SignatureScheme;
 abstract class FipsUtils
 {
     /*
-     * This can only be set to true if the underlying provider is able to assert it is compliant with
-     * FIPS IG A.5 and a mechanism has been integrated into this API accordingly to ensure that is the
-     * case.
+     * This can only be set to true if the underlying provider is able to assert it is compliant with FIPS IG
+     * A.5 (when GCM is used in TLS 1.2) and a mechanism has been integrated into this API accordingly to
+     * ensure that is the case.
      */
-    private static final boolean provAllowGCMCiphers = false;
+    private static final boolean provAllowGCMCiphersIn12 = false;
 
     private static final boolean provAllowRSAKeyExchange = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
@@ -37,6 +37,8 @@ abstract class FipsUtils
 
         cs.add("TLS_AES_128_CCM_8_SHA256");
         cs.add("TLS_AES_128_CCM_SHA256");
+        cs.add("TLS_AES_128_GCM_SHA256");
+        cs.add("TLS_AES_256_GCM_SHA384");
 
 //        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA");
 //        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256");
@@ -86,11 +88,8 @@ abstract class FipsUtils
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
 
-        if (provAllowGCMCiphers)
+        if (provAllowGCMCiphersIn12)
         {
-            cs.add("TLS_AES_128_GCM_SHA256");
-            cs.add("TLS_AES_256_GCM_SHA384");
-
 //            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
 //            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
 
@@ -127,7 +126,7 @@ abstract class FipsUtils
             cs.add("TLS_RSA_WITH_AES_256_CCM");
             cs.add("TLS_RSA_WITH_AES_256_CCM_8");
 
-            if (provAllowGCMCiphers)
+            if (provAllowGCMCiphersIn12)
             {
                 cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
                 cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
