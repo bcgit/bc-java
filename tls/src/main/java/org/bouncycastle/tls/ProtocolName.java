@@ -39,6 +39,17 @@ public final class ProtocolName
     public static final ProtocolName COAP = asUtf8Encoding("coap");
     public static final ProtocolName XMPP_CLIENT = asUtf8Encoding("xmpp-client");
     public static final ProtocolName XMPP_SERVER = asUtf8Encoding("xmpp-server");
+    public static final ProtocolName ACME_TLS_1 = asUtf8Encoding("acme-tls/1");
+    public static final ProtocolName OASIS_MQTT = asUtf8Encoding("mqtt");
+    public static final ProtocolName DNS_OVER_TLS = asUtf8Encoding("dot");
+    public static final ProtocolName NTSKE_1 = asUtf8Encoding("ntske/1");
+    public static final ProtocolName SNU_RPC = asUtf8Encoding("sunrpc");
+    public static final ProtocolName HTTP_3 = asUtf8Encoding("h3");
+    public static final ProtocolName SMB_2 = asUtf8Encoding("smb");
+    public static final ProtocolName IRC = asUtf8Encoding("irc");
+    public static final ProtocolName NNTP_READING = asUtf8Encoding("nntp");
+    public static final ProtocolName NNTP_TRANSIT = asUtf8Encoding("nnsp");
+    public static final ProtocolName DNS_OVER_QUIC = asUtf8Encoding("doq");
 
     private final byte[] bytes;
 
