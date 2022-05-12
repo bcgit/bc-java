@@ -10,7 +10,7 @@ import junit.framework.TestSuite;
 public class FipsCipherSuitesTestSuite
     extends TestSuite
 {
-    private static final boolean provAllowGCMCiphers = false;
+    private static final boolean provAllowGCMCiphersIn12 = false;
     private static final boolean provAllowRSAKeyExchange = true;
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
@@ -29,6 +29,8 @@ public class FipsCipherSuitesTestSuite
 
         cs.add("TLS_AES_128_CCM_8_SHA256");
         cs.add("TLS_AES_128_CCM_SHA256");
+        cs.add("TLS_AES_128_GCM_SHA256");
+        cs.add("TLS_AES_256_GCM_SHA384");
 
 //        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA");
 //        cs.add("TLS_DH_DSS_WITH_AES_128_CBC_SHA256");
@@ -78,11 +80,8 @@ public class FipsCipherSuitesTestSuite
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
 
-        if (provAllowGCMCiphers)
+        if (provAllowGCMCiphersIn12)
         {
-            cs.add("TLS_AES_128_GCM_SHA256");
-            cs.add("TLS_AES_256_GCM_SHA384");
-
 //            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
 //            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
 
@@ -119,7 +118,7 @@ public class FipsCipherSuitesTestSuite
             cs.add("TLS_RSA_WITH_AES_256_CCM");
             cs.add("TLS_RSA_WITH_AES_256_CCM_8");
 
-            if (provAllowGCMCiphers)
+            if (provAllowGCMCiphersIn12)
             {
                 cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
                 cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
