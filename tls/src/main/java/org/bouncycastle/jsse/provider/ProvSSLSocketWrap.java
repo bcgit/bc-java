@@ -794,7 +794,7 @@ class ProvSSLSocketWrap
 
             byte[] buf = new byte[1];
             int ret = protocol.readApplicationData(buf, 0, 1);
-            return ret < 0 ? -1 : buf[0] & 0xFF;
+            return ret < 1 ? -1 : buf[0] & 0xFF;
         }
 
         @Override
