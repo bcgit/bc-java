@@ -591,9 +591,11 @@ class ProvSSLSocketDirect
         @Override
         public int read() throws IOException
         {
+            handshakeIfNecessary(true);
+
             byte[] buf = new byte[1];
-            int ret = read(buf, 0, 1);
-            return ret <= 0 ? -1 : buf[0] & 0xFF;
+            int ret = protocol.readApplicationData(buf, 0, 1);
+            return ret < 1 ? -1 : buf[0] & 0xFF;
         }
 
         @Override
