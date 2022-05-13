@@ -22,9 +22,9 @@ class TlsInputStream extends InputStream
         return ret <= 0 ? -1 : buf[0] & 0xFF;
     }
 
-    public int read(byte[] buf, int offset, int len) throws IOException
+    public int read(byte[] buf, int off, int len) throws IOException
     {
-        return handler.readApplicationData(buf, offset, len);
+        return handler.readApplicationData(buf, off, len);
     }
 
     public int available() throws IOException

@@ -784,20 +784,38 @@ public abstract class TlsProtocol
      * left in the buffer, or block until some application data has been read from the network.
      *
      * @param buf    The buffer where the data will be copied to.
-     * @param offset The position where the data will be placed in the buffer.
+     * @param off The position where the data will be placed in the buffer.
      * @param len    The maximum number of bytes to read.
      * @return The number of bytes read.
      * @throws IOException If something goes wrong during reading data.
      */
-    public int readApplicationData(byte[] buf, int offset, int len)
+    public int readApplicationData(byte[] buf, int off, int len)
         throws IOException
     {
+        if (buf == null)
+        {
+            throw new NullPointerException("'buf' cannot be null");
+        }
+        if (off < 0)
+        {
+            throw new IllegalArgumentException("'off' cannot be negative");
+        }
+        if (len < 0 || len > buf.length - off)
+        {
+            throw new IllegalArgumentException("'len' out of range for given 'buf, 'off'");
+        }
+
+        if (!appDataReady)
+        {
+            throw new IllegalStateException("Cannot read application data until initial handshake completed.");
+        }
+
         if (len < 1)
         {
             return 0;
         }
 
-        while (applicationDataQueue.available() == 0)
+        while (applicationDataQueue.available() < 1)
         {
             if (this.closed)
             {
@@ -806,10 +824,6 @@ public abstract class TlsProtocol
                     throw new IOException("Cannot read application data on failed TLS connection");
                 }
                 return -1;
-            }
-            if (!appDataReady)
-            {
-                throw new IllegalStateException("Cannot read application data until initial handshake completed.");
             }
 
             /*
@@ -820,7 +834,7 @@ public abstract class TlsProtocol
         }
 
         len = Math.min(len, applicationDataQueue.available());
-        applicationDataQueue.removeData(buf, offset, len, 0);
+        applicationDataQueue.removeData(buf, off, len, 0);
         return len;
     }
 
