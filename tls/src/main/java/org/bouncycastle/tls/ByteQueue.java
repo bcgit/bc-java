@@ -2,6 +2,7 @@ package org.bouncycastle.tls;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * A queue for bytes. This file could be more optimized.
@@ -141,6 +142,28 @@ public class ByteQueue
     }
 
     /**
+     * Read data from the buffer.
+     *
+     * @param buf    The {@link ByteBuffer} where the read data will be copied to.
+     * @param len    How many bytes to read at all.
+     * @param skip   How many bytes from our data to skip.
+     */
+    public void read(ByteBuffer buf, int len, int skip)
+    {
+        int remaining = buf.remaining();
+        if (remaining < len)
+        {
+            throw new IllegalArgumentException(
+                "Buffer size of " + remaining + " is too small for a read of " + len + " bytes");
+        }
+        if ((available - skip) < len)
+        {
+            throw new IllegalStateException("Not enough data to read");
+        }
+        buf.put(databuf, skipped + skip, len);
+    }
+
+    /**
      * Return a {@link HandshakeMessageInput} over some bytes at the beginning of the data.
      * 
      * @param length
@@ -201,6 +224,19 @@ public class ByteQueue
     public void removeData(byte[] buf, int off, int len, int skip)
     {
         read(buf, off, len, skip);
+        removeData(skip + len);
+    }
+
+    /**
+     * Remove data from the buffer.
+     *
+     * @param buf The {@link ByteBuffer} where the removed data will be copied to.
+     * @param len How many bytes to read at all.
+     * @param skip How many bytes from our data to skip.
+     */
+    public void removeData(ByteBuffer buf, int len, int skip)
+    {
+        read(buf, len, skip);
         removeData(skip + len);
     }
 
