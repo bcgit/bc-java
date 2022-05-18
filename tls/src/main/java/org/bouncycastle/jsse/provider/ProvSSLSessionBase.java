@@ -156,7 +156,7 @@ abstract class ProvSSLSessionBase
          */
 
         ProtocolVersion protocolVersion = getProtocolTLS();
-        if (null == protocolVersion || !TlsUtils.isTLSv12(protocolVersion))
+        if (null == protocolVersion || !TlsUtils.isTLSv11(protocolVersion))
         {
             // Worst case accounts for possible application data splitting (before TLS 1.1)
             return (1 << 14) + 1 + (RecordFormat.FRAGMENT_OFFSET + 1024) * 2;
