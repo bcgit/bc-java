@@ -75,9 +75,18 @@ public class ByteQueue
             throw new IllegalStateException("Cannot add data to read-only buffer");
         }
 
-        if ((skipped + available + len) > databuf.length)
+        if (available == 0)
         {
-            int desiredSize = ByteQueue.nextTwoPow(available + len);
+            if (len > databuf.length)
+            {
+                int desiredSize = nextTwoPow(len | 256);
+                databuf = new byte[desiredSize];
+            }
+            skipped = 0;
+        }
+        else if ((skipped + available + len) > databuf.length)
+        {
+            int desiredSize = nextTwoPow(available + len);
             if (desiredSize > databuf.length)
             {
                 byte[] tmp = new byte[desiredSize];
@@ -256,7 +265,7 @@ public class ByteQueue
         }
         else
         {
-            int desiredSize = ByteQueue.nextTwoPow(available);
+            int desiredSize = nextTwoPow(available);
             if (desiredSize < databuf.length)
             {
                 byte[] tmp = new byte[desiredSize];
