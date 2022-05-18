@@ -471,12 +471,9 @@ class ProvSSLEngine
                         int count = Math.min(dst.remaining(), appDataAvailable);
                         if (count > 0)
                         {
-                            byte[] appData = new byte[count];
-                            int numRead = protocol.readInput(appData, 0, count);
+                            int numRead = protocol.readInput(dst, count);
                             assert numRead == count;
-                
-                            dst.put(appData);
-                
+
                             bytesProduced += count;
                             appDataAvailable -= count;
                         }
@@ -642,12 +639,9 @@ class ProvSSLEngine
             int count = Math.min(dst.remaining(), outputAvailable);
             if (count > 0)
             {
-                byte[] output = new byte[count];
-                int numRead = protocol.readOutput(output, 0, count);
+                int numRead = protocol.readOutput(dst, count);
                 assert numRead == count;
-    
-                dst.put(output);
-    
+
                 bytesProduced += count;
                 outputAvailable -= count;
             }

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -1417,6 +1418,36 @@ public abstract class TlsProtocol
     }
 
     /**
+     * Retrieves received application data into a {@link ByteBuffer}. Use {@link #getAvailableInputBytes()} to
+     * check how much application data is currently available. This method functions similarly to
+     * {@link InputStream#read(byte[], int, int)}, except that it never blocks. If no data is available,
+     * nothing will be copied and zero will be returned.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * 
+     * @param buffer The {@link ByteBuffer} to hold the application data
+     * @param length The maximum number of bytes to read
+     * @return The total number of bytes copied to the buffer. May be less than the length specified if the
+     *         length was greater than the amount of available data.
+     */
+    public int readInput(ByteBuffer buffer, int length)
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use readInput() in blocking mode! Use getInputStream() instead.");
+        }
+
+        length = Math.min(length, applicationDataQueue.available());
+        if (length < 1)
+        {
+            return 0;
+        }
+
+        applicationDataQueue.removeData(buffer, length, 0);
+        return length;
+    }
+
+    /**
      * Gets the amount of encrypted data available to be sent. A call to
      * {@link #readOutput(byte[], int, int)} is guaranteed to be able to return at
      * least this much data.<br>
@@ -1456,6 +1487,30 @@ public abstract class TlsProtocol
         
         int bytesToRead = Math.min(getAvailableOutputBytes(), length);
         outputBuffer.getBuffer().removeData(buffer, offset, bytesToRead, 0);
+        return bytesToRead;
+    }
+
+    /**
+     * Retrieves encrypted data to be sent. Use {@link #getAvailableOutputBytes()} to check
+     * how much encrypted data is currently available. This method functions similarly to
+     * {@link InputStream#read(byte[], int, int)}, except that it never blocks. If no data
+     * is available, nothing will be copied and zero will be returned.<br>
+     * <br>
+     * Only allowed in non-blocking mode.
+     * @param buffer The {@link ByteBuffer} to hold the encrypted data
+     * @param length The maximum number of bytes to read
+     * @return The total number of bytes copied to the buffer. May be less than the
+     *          length specified if the length was greater than the amount of available data.
+     */
+    public int readOutput(ByteBuffer buffer, int length)
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use readOutput() in blocking mode! Use getOutputStream() instead.");
+        }
+
+        int bytesToRead = Math.min(getAvailableOutputBytes(), length);
+        outputBuffer.getBuffer().removeData(buffer, bytesToRead, 0);
         return bytesToRead;
     }
 
