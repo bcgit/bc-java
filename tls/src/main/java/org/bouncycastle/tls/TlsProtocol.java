@@ -781,29 +781,31 @@ public abstract class TlsProtocol
     }
 
     /**
-     * Read data from the network. The method will return immediately, if there is still some data
-     * left in the buffer, or block until some application data has been read from the network.
+     * Read data from the network. The method will return immediately, if there is still some data left in the
+     * buffer, or block until some application data has been read from the network.
      *
-     * @param buf    The buffer where the data will be copied to.
+     * @param buf The buffer where the data will be copied to.
      * @param off The position where the data will be placed in the buffer.
-     * @param len    The maximum number of bytes to read.
+     * @param len The maximum number of bytes to read.
      * @return The number of bytes read.
      * @throws IOException If something goes wrong during reading data.
      */
     public int readApplicationData(byte[] buf, int off, int len)
         throws IOException
     {
-        if (buf == null)
+        // TODO Use method once available in bc-fips-java
+//        Streams.validateBufferArguments(buf, off, len);
         {
-            throw new NullPointerException("'buf' cannot be null");
-        }
-        if (off < 0)
-        {
-            throw new IllegalArgumentException("'off' cannot be negative");
-        }
-        if (len < 0 || len > buf.length - off)
-        {
-            throw new IllegalArgumentException("'len' out of range for given 'buf, 'off'");
+            if (buf == null)
+            {
+                throw new NullPointerException();
+            }
+            int available = buf.length - off;
+            int remaining = available - len;
+            if ((off | len | available | remaining) < 0)
+            {
+                throw new IndexOutOfBoundsException();
+            }
         }
 
         if (!appDataReady)
@@ -959,30 +961,39 @@ public abstract class TlsProtocol
     }
 
     /**
-     * Write some application data. Fragmentation is handled internally. Usable in both
-     * blocking/non-blocking modes.<br>
+     * Write some application data. Fragmentation is handled internally. Usable in both blocking/non-blocking
+     * modes.<br>
      * <br>
-     * In blocking mode, the output will be automatically sent via the underlying transport. In
-     * non-blocking mode, call {@link #readOutput(byte[], int, int)} to get the output bytes to send
-     * to the peer.<br>
+     * In blocking mode, the output will be automatically sent via the underlying transport. In non-blocking
+     * mode, call {@link #readOutput(byte[], int, int)} to get the output bytes to send to the peer.<br>
      * <br>
-     * This method must not be called until after the initial handshake is complete. Attempting to
-     * call it earlier will result in an {@link IllegalStateException}.
+     * This method must not be called until after the initial handshake is complete. Attempting to call it
+     * earlier will result in an {@link IllegalStateException}.
      *
-     * @param buf
-     *            The buffer containing application data to send
-     * @param offset
-     *            The offset at which the application data begins
-     * @param len
-     *            The number of bytes of application data
-     * @throws IllegalStateException
-     *             If called before the initial handshake has completed.
-     * @throws IOException
-     *             If connection is already closed, or for encryption or transport errors.
+     * @param buf The buffer containing application data to send
+     * @param off The offset at which the application data begins
+     * @param len The number of bytes of application data
+     * @throws IllegalStateException If called before the initial handshake has completed.
+     * @throws IOException           If connection is already closed, or for encryption or transport errors.
      */
-    public void writeApplicationData(byte[] buf, int offset, int len)
+    public void writeApplicationData(byte[] buf, int off, int len)
         throws IOException
     {
+        // TODO Use method once available in bc-fips-java
+//      Streams.validateBufferArguments(buf, off, len);
+        {
+            if (buf == null)
+            {
+                throw new NullPointerException();
+            }
+            int available = buf.length - off;
+            int remaining = available - len;
+            if ((off | len | available | remaining) < 0)
+            {
+                throw new IndexOutOfBoundsException();
+            }
+        }
+
         if (!appDataReady)
         {
             throw new IllegalStateException("Cannot write application data until initial handshake completed.");
@@ -1027,8 +1038,8 @@ public abstract class TlsProtocol
                     {
                         if (len > 1)
                         {
-                            safeWriteRecord(ContentType.application_data, buf, offset, 1);
-                            ++offset;
+                            safeWriteRecord(ContentType.application_data, buf, off, 1);
+                            ++off;
                             --len;
                         }
                         break;
@@ -1049,8 +1060,8 @@ public abstract class TlsProtocol
 
                 // Fragment data according to the current fragment limit.
                 int toWrite = Math.min(len, recordStream.getPlaintextLimit());
-                safeWriteRecord(ContentType.application_data, buf, offset, toWrite);
-                offset += toWrite;
+                safeWriteRecord(ContentType.application_data, buf, off, toWrite);
+                off += toWrite;
                 len -= toWrite;
             }
         }

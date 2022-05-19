@@ -20,9 +20,9 @@ class TlsOutputStream extends OutputStream
         write(new byte[]{ (byte)b }, 0, 1);
     }
 
-    public void write(byte buf[], int offset, int len) throws IOException
+    public void write(byte buf[], int off, int len) throws IOException
     {
-        handler.writeApplicationData(buf, offset, len);
+        handler.writeApplicationData(buf, off, len);
     }
 
     public void close() throws IOException
