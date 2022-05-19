@@ -1218,6 +1218,34 @@ public abstract class TlsProtocol
         return safePreviewRecordHeader(recordHeader);
     }
 
+    public int previewOutputRecord()
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use previewOutputRecord() in blocking mode!");
+        }
+
+        ByteQueue buffer = outputBuffer.getBuffer();
+        int available = buffer.available();
+        if (available < 1)
+        {
+            return 0;
+        }
+
+        if (available >= RecordFormat.FRAGMENT_OFFSET)
+        {
+            int length = buffer.readUint16(RecordFormat.LENGTH_OFFSET);
+            int recordSize = RecordFormat.FRAGMENT_OFFSET + length;
+
+            if (available >= recordSize)
+            {
+                return recordSize;
+            }
+        }
+
+        throw new IllegalStateException("Can only use previewOutputRecord() for record-aligned output.");
+    }
+
     public RecordPreview previewOutputRecord(int applicationDataSize) throws IOException
     {
         if (!appDataReady)

@@ -203,6 +203,15 @@ public class ByteQueue
         return TlsUtils.readInt32(databuf, skipped);
     }
 
+    public int readUint16(int skip)
+    {
+        if (available < skip + 2)
+        {
+            throw new IllegalStateException("Not enough data to read");
+        }
+        return TlsUtils.readUint16(databuf, skipped + skip);
+    }
+
     /**
      * Remove some bytes from our data from the beginning.
      *
