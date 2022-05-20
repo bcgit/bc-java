@@ -74,7 +74,6 @@ public class PGPSignature
 
     PGPSignature(
         SignaturePacket sigPacket)
-        throws PGPException
     {
         sigPck = sigPacket;
         signatureType = sigPck.getSignatureType();
@@ -84,7 +83,6 @@ public class PGPSignature
     PGPSignature(
         SignaturePacket sigPacket,
         TrustPacket trustPacket)
-        throws PGPException
     {
         this(sigPacket);
 
