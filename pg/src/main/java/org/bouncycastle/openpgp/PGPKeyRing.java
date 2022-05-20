@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 
 /**
  * Parent class for PGP public and secret key rings.
@@ -48,25 +49,22 @@ public abstract class PGPKeyRing
         BCPGInputStream pIn)
         throws IOException
     {
-        try
-        {
-            List sigList = new ArrayList();
+        List sigList = new ArrayList();
 
-            while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
-            {
-                SignaturePacket signaturePacket = (SignaturePacket)pIn.readPacket();
+        while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
+        {
+            try {
+                SignaturePacket signaturePacket = (SignaturePacket) pIn.readPacket();
                 TrustPacket trustPacket = readOptionalTrustPacket(pIn);
 
                 sigList.add(new PGPSignature(signaturePacket, trustPacket));
             }
-
-            return sigList;
+            catch (UnsupportedPacketVersionException e)
+            {
+                // skip unsupported signatures
+            }
         }
-        catch (PGPException e)
-        {
-            throw new IOException("can't create signature object: " + e.getMessage()
-                + ", cause: " + e.getUnderlyingException().toString());
-        }
+        return sigList;
     }
 
     static void readUserIDs(

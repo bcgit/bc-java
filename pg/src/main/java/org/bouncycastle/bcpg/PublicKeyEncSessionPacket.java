@@ -22,6 +22,10 @@ public class PublicKeyEncSessionPacket
         throws IOException
     {      
         version = in.read();
+        if (version != 3)
+        {
+            throw new UnsupportedPacketVersionException("Unsupported PGP public key encrypted session key packet version encountered: " + version);
+        }
         
         keyID |= (long)in.read() << 56;
         keyID |= (long)in.read() << 48;
