@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.util.Integers;
+
 /**
  * An output stream that compresses into the BZip2 format (with the file
  * header chars) into another stream.
@@ -49,37 +51,40 @@ public class CBZip2OutputStream
     protected static final int SMALL_THRESH = 20;
     protected static final int DEPTH_THRESH = 10;
 
+    static final short[] R_NUMS = { 619, 720, 127, 481, 931, 816, 813, 233, 566, 247, 985, 724, 205, 454, 863, 491, 741,
+        242, 949, 214, 733, 859, 335, 708, 621, 574, 73, 654, 730, 472, 419, 436, 278, 496, 867, 210, 399, 680, 480, 51,
+        878, 465, 811, 169, 869, 675, 611, 697, 867, 561, 862, 687, 507, 283, 482, 129, 807, 591, 733, 623, 150, 238,
+        59, 379, 684, 877, 625, 169, 643, 105, 170, 607, 520, 932, 727, 476, 693, 425, 174, 647, 73, 122, 335, 530, 442,
+        853, 695, 249, 445, 515, 909, 545, 703, 919, 874, 474, 882, 500, 594, 612, 641, 801, 220, 162, 819, 984, 589,
+        513, 495, 799, 161, 604, 958, 533, 221, 400, 386, 867, 600, 782, 382, 596, 414, 171, 516, 375, 682, 485, 911,
+        276, 98, 553, 163, 354, 666, 933, 424, 341, 533, 870, 227, 730, 475, 186, 263, 647, 537, 686, 600, 224, 469, 68,
+        770, 919, 190, 373, 294, 822, 808, 206, 184, 943, 795, 384, 383, 461, 404, 758, 839, 887, 715, 67, 618, 276,
+        204, 918, 873, 777, 604, 560, 951, 160, 578, 722, 79, 804, 96, 409, 713, 940, 652, 934, 970, 447, 318, 353, 859,
+        672, 112, 785, 645, 863, 803, 350, 139, 93, 354, 99, 820, 908, 609, 772, 154, 274, 580, 184, 79, 626, 630, 742,
+        653, 282, 762, 623, 680, 81, 927, 626, 789, 125, 411, 521, 938, 300, 821, 78, 343, 175, 128, 250, 170, 774, 972,
+        275, 999, 639, 495, 78, 352, 126, 857, 956, 358, 619, 580, 124, 737, 594, 701, 612, 669, 112, 134, 694, 363,
+        992, 809, 743, 168, 974, 944, 375, 748, 52, 600, 747, 642, 182, 862, 81, 344, 805, 988, 739, 511, 655, 814, 334,
+        249, 515, 897, 955, 664, 981, 649, 113, 974, 459, 893, 228, 433, 837, 553, 268, 926, 240, 102, 654, 459, 51,
+        686, 754, 806, 760, 493, 403, 415, 394, 687, 700, 946, 670, 656, 610, 738, 392, 760, 799, 887, 653, 978, 321,
+        576, 617, 626, 502, 894, 679, 243, 440, 680, 879, 194, 572, 640, 724, 926, 56, 204, 700, 707, 151, 457, 449,
+        797, 195, 791, 558, 945, 679, 297, 59, 87, 824, 713, 663, 412, 693, 342, 606, 134, 108, 571, 364, 631, 212, 174,
+        643, 304, 329, 343, 97, 430, 751, 497, 314, 983, 374, 822, 928, 140, 206, 73, 263, 980, 736, 876, 478, 430, 305,
+        170, 514, 364, 692, 829, 82, 855, 953, 676, 246, 369, 970, 294, 750, 807, 827, 150, 790, 288, 923, 804, 378,
+        215, 828, 592, 281, 565, 555, 710, 82, 896, 831, 547, 261, 524, 462, 293, 465, 502, 56, 661, 821, 976, 991, 658,
+        869, 905, 758, 745, 193, 768, 550, 608, 933, 378, 286, 215, 979, 792, 961, 61, 688, 793, 644, 986, 403, 106,
+        366, 905, 644, 372, 567, 466, 434, 645, 210, 389, 550, 919, 135, 780, 773, 635, 389, 707, 100, 626, 958, 165,
+        504, 920, 176, 193, 713, 857, 265, 203, 50, 668, 108, 645, 990, 626, 197, 510, 357, 358, 850, 858, 364, 936,
+        638 };
+
     private boolean finished;
 
-    private static void panic()
-    {
-        throw new IllegalStateException();
-    }
-
-    private void makeMaps()
-    {
-        int i;
-        nInUse = 0;
-        for (i = 0; i < 256; i++)
-        {
-            if (inUse[i])
-            {
-                seqToUnseq[nInUse] = (char)i;
-                unseqToSeq[i] = (char)nInUse;
-                nInUse++;
-            }
-        }
-    }
-
-    protected static void hbMakeCodeLengths(byte[] len, int[] freq,
-                                            int alphaSize, int maxLen)
+    protected static void hbMakeCodeLengths(byte[] len, int[] freq, int alphaSize, int maxLen)
     {
         /*
           Nodes and heap entries run from 1.  Entry 0
           for both the heap and nodes is a sentinel.
         */
         int nNodes, nHeap, n1, n2, i, j, k;
-        boolean tooLong;
 
         int[] heap = new int[MAX_ALPHA_SIZE + 2];
         int[] weight = new int[MAX_ALPHA_SIZE * 2];
@@ -118,7 +123,7 @@ public class CBZip2OutputStream
             }
             if (!(nHeap < (MAX_ALPHA_SIZE + 2)))
             {
-                panic();
+                throw new IllegalStateException();
             }
 
             while (nHeap > 1)
@@ -206,10 +211,11 @@ public class CBZip2OutputStream
             }
             if (!(nNodes < (MAX_ALPHA_SIZE * 2)))
             {
-                panic();
+                throw new IllegalStateException();
             }
 
-            tooLong = false;
+//            boolean tooLong = false;
+            int tooLongBits = 0;
             for (i = 1; i <= alphaSize; i++)
             {
                 j = 0;
@@ -220,18 +226,17 @@ public class CBZip2OutputStream
                     j++;
                 }
                 len[i - 1] = (byte)j;
-                if (j > maxLen)
-                {
-                    tooLong = true;
-                }
+//                tooLong |= j > maxLen;
+                tooLongBits |= maxLen - j;
             }
 
-            if (!tooLong)
+//            if (!tooLong)
+            if (tooLongBits >= 0)
             {
                 break;
             }
 
-            for (i = 1; i < alphaSize; i++)
+            for (i = 1; i <= alphaSize; i++)
             {
                 j = weight[i] >> 8;
                 j = 1 + (j / 2);
@@ -254,22 +259,22 @@ public class CBZip2OutputStream
       always: in the range 0 .. 9.
       The current block size is 100000 * this number.
     */
-    int blockSize100k;
+    private final int blockSize100k;
+    private final int allowableBlockSize;
 
     boolean blockRandomised;
+    Vector blocksortStack = new Vector();
 
     int bsBuff;
-    int bsLive;
-    CRC mCrc = new CRC();
+    int bsLivePos;
+    private final CRC blockCRC = new CRC();
 
     private boolean[] inUse = new boolean[256];
     private int nInUse;
 
-    private char[] seqToUnseq = new char[256];
-    private char[] unseqToSeq = new char[256];
+    private byte[] unseqToSeq = new byte[256];
 
-    private char[] selector = new char[MAX_SELECTORS];
-    private char[] selectorMtf = new char[MAX_SELECTORS];
+    private byte[] selectors = new byte[MAX_SELECTORS];
 
     private byte[] blockBytes;
     private short[] quadrantShorts;
@@ -293,6 +298,7 @@ public class CBZip2OutputStream
 
     private int currentByte = -1;
     private int runLength = 0;
+    private int streamCRC;
 
     public CBZip2OutputStream(OutputStream outStream)
         throws IOException
@@ -311,14 +317,16 @@ public class CBZip2OutputStream
         outStream.write('B');
         outStream.write('Z');
 
-        bsSetStream(outStream);
+        bsStream = outStream;
+        bsBuff = 0;
+        bsLivePos = 32;
 
         workFactor = 50;
         if (blockSize > 9)
         {
             blockSize = 9;
         }
-        if (blockSize < 1)
+        else if (blockSize < 1)
         {
             blockSize = 1;
         }
@@ -327,8 +335,31 @@ public class CBZip2OutputStream
         /* 20 is just a paranoia constant */
         allowableBlockSize = baseBlockSize * blockSize100k - 20;
 
-        allocateCompressStructures();
-        initialize();
+        int n = baseBlockSize * blockSize100k;
+        blockBytes = new byte[(n + 1 + NUM_OVERSHOOT_BYTES)];
+        quadrantShorts = new short[(n + 1 + NUM_OVERSHOOT_BYTES)];
+        zptr = new int[n];
+        ftab = new int[65537];
+
+        /*
+          The back end needs a place to store the MTF values
+          whilst it calculates the coding tables.  We could
+          put them in the zptr array.  However, these values
+          will fit in a short, so we overlay szptr at the
+          start of zptr, in the hope of reducing the number
+          of cache misses induced by the multiple traversals
+          of the MTF values when calculating coding tables.
+          Seems to improve compression speed by about 1%.
+        */
+        // NOTE: We can't "overlay" in Java, so we just share zptr
+        szptr = zptr;
+
+        // Write `magic' bytes h indicating file-format == huffmanised, followed by a digit indicating blockSize100k
+        outStream.write('h');
+        outStream.write('0' + blockSize100k);
+
+        streamCRC = 0;
+
         initBlock();
     }
 
@@ -341,25 +372,22 @@ public class CBZip2OutputStream
         int b = bv & 0xFF;
         if (currentByte == b)
         {
-            runLength++;
-            if (runLength > 254)
+            if (++runLength > 254)
             {
                 writeRun();
                 currentByte = -1;
                 runLength = 0;
             }
+            return;
         }
-        else if (currentByte == -1)
-        {
-            currentByte = b;
-            runLength++;
-        }
-        else
+
+        if (currentByte >= 0)
         {
             writeRun();
-            runLength = 1;
-            currentByte = b;
         }
+
+        currentByte = b;
+        runLength = 1;
     }
 
     private void writeRun()
@@ -373,32 +401,34 @@ public class CBZip2OutputStream
 
         inUse[currentByte] = true;
 
-        for (int i = 0; i < runLength; i++)
-        {
-            mCrc.updateCRC(currentByte);
-        }
-
         switch (runLength)
         {
         case 1:
             blockBytes[++count] = (byte)currentByte;
+            blockCRC.update(currentByte);
             break;
         case 2:
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
+            blockCRC.update(currentByte);
+            blockCRC.update(currentByte);
             break;
         case 3:
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
+            blockCRC.update(currentByte);
+            blockCRC.update(currentByte);
+            blockCRC.update(currentByte);
             break;
         default:
-            inUse[runLength - 4] = true;
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)currentByte;
             blockBytes[++count] = (byte)(runLength - 4);
+            inUse[runLength - 4] = true;
+            blockCRC.updateRun(currentByte, runLength);
             break;
         }
     }
@@ -456,24 +486,9 @@ public class CBZip2OutputStream
         bsStream.flush();
     }
 
-    private int blockCRC, combinedCRC;
-    private final int allowableBlockSize;
-
-    private void initialize()
-        throws IOException
-    {
-        /* Write `magic' bytes h indicating file-format == huffmanised,
-           followed by a digit indicating blockSize100k.
-        */
-        bsPutUChar('h');
-        bsPutUChar('0' + blockSize100k);
-
-        combinedCRC = 0;
-    }
-
     private void initBlock()
     {
-        mCrc.initialiseCRC();
+        blockCRC.initialise();
         count = 0;
 
         for (int i = 0; i < 256; i++)
@@ -485,9 +500,8 @@ public class CBZip2OutputStream
     private void endBlock()
         throws IOException
     {
-        blockCRC = mCrc.getFinalCRC();
-        combinedCRC = (combinedCRC << 1) | (combinedCRC >>> 31);
-        combinedCRC ^= blockCRC;
+        int blockFinalCRC = blockCRC.getFinal();
+        streamCRC = Integers.rotateLeft(streamCRC, 1) ^ blockFinalCRC;
 
         /* sort the block and establish posn of original string */
         doReversibleTransformation();
@@ -505,18 +519,13 @@ public class CBZip2OutputStream
           They are only important when trying to recover blocks from
           damaged files.
         */
-        bsPutUChar(0x31);
-        bsPutUChar(0x41);
-        bsPutUChar(0x59);
-        bsPutUChar(0x26);
-        bsPutUChar(0x53);
-        bsPutUChar(0x59);
+        bsPutLong48(0x314159265359L);
 
         /* Now the block's CRC, so it is in a known place. */
-        bsPutint(blockCRC);
+        bsPutInt32(blockFinalCRC);
 
         /* Now a single bit indicating randomisation. */
-        bsW(1, blockRandomised ? 1 : 0);
+        bsPutBit(blockRandomised ? 1 : 0);
 
         /* Finally, block's contents proper. */
         moveToFrontCodeAndSend();
@@ -532,20 +541,14 @@ public class CBZip2OutputStream
           too much repetition -- 27 18 28 18 28 46 -- for me
           to feel statistically comfortable.  Call me paranoid.)
         */
-        bsPutUChar(0x17);
-        bsPutUChar(0x72);
-        bsPutUChar(0x45);
-        bsPutUChar(0x38);
-        bsPutUChar(0x50);
-        bsPutUChar(0x90);
+        bsPutLong48(0x177245385090L);
 
-        bsPutint(combinedCRC);
+        bsPutInt32(streamCRC);
 
         bsFinishedWithStream();
     }
 
-    private void hbAssignCodes(int[] code, byte[] length, int minLen,
-                               int maxLen, int alphaSize)
+    private void hbAssignCodes(int[] code, byte[] length, int minLen, int maxLen, int alphaSize)
     {
         int vec = 0;
         for (int n = minLen; n <= maxLen; n++)
@@ -554,64 +557,82 @@ public class CBZip2OutputStream
             {
                 if ((length[i] & 0xFF) == n)
                 {
-                    code[i] = vec;
-                    vec++;
+                    code[i] = vec++;
                 }
             }
             vec <<= 1;
         }
     }
 
-    private void bsSetStream(OutputStream f)
-    {
-        bsStream = f;
-        bsLive = 0;
-        bsBuff = 0;
-    }
-
     private void bsFinishedWithStream()
         throws IOException
     {
-        while (bsLive > 0)
+        if (bsLivePos < 32)
         {
-            bsStream.write(bsBuff >> 24); // write 8-bit
-            bsBuff <<= 8;
-            bsLive -= 8;
+            bsStream.write(bsBuff >>> 24);
+            bsBuff = 0;
+            bsLivePos = 32;
         }
     }
 
-    private void bsW(int n, int v)
+    private void bsPutBit(int v)
         throws IOException
     {
-        while (bsLive >= 8)
+        --bsLivePos;
+        bsBuff |= v << bsLivePos;
+
+        if (bsLivePos <= 24)
         {
-            bsStream.write(bsBuff >> 24); // write 8-bit
+            bsStream.write(bsBuff >>> 24);
             bsBuff <<= 8;
-            bsLive -= 8;
+            bsLivePos += 8;
         }
-        bsBuff |= (v << (32 - bsLive - n));
-        bsLive += n;
     }
 
-    private void bsPutUChar(int c)
+    private void bsPutBits(int n, int v)
         throws IOException
     {
-        bsW(8, c);
+//        assert 1 <= n && n <= 24;
+
+        bsLivePos -= n;
+        bsBuff |= v << bsLivePos;
+
+        while (bsLivePos <= 24)
+        {
+            bsStream.write(bsBuff >>> 24);
+            bsBuff <<= 8;
+            bsLivePos += 8;
+        }
     }
 
-    private void bsPutint(int u)
+    private void bsPutBitsSmall(int n, int v)
         throws IOException
     {
-        bsW(8, (u >> 24) & 0xff);
-        bsW(8, (u >> 16) & 0xff);
-        bsW(8, (u >> 8) & 0xff);
-        bsW(8, u & 0xff);
+//        assert 1 <= n && n <= 8;
+
+        bsLivePos -= n;
+        bsBuff |= v << bsLivePos;
+
+        if (bsLivePos <= 24)
+        {
+            bsStream.write(bsBuff >>> 24);
+            bsBuff <<= 8;
+            bsLivePos += 8;
+        }
     }
 
-    private void bsPutIntVS(int numBits, int c)
+    private void bsPutInt32(int u)
         throws IOException
     {
-        bsW(numBits, c);
+        bsPutBits(16, u >>> 16);
+        bsPutBits(16, u & 0xFFFF);
+    }
+
+    private void bsPutLong48(long u)
+        throws IOException
+    {
+        bsPutBits(24, (int)(u >>> 24) & 0xFFFFFF);
+        bsPutBits(24, (int)u & 0xFFFFFF);
     }
 
     private void sendMTFValues()
@@ -619,11 +640,9 @@ public class CBZip2OutputStream
     {
         byte[][] len = new byte[N_GROUPS][MAX_ALPHA_SIZE];
 
-        int v, t, i, j, gs, ge, bt, bc, iter;
-        int nSelectors = 0, alphaSize, minLen, maxLen, selCtr;
-        int nGroups;
+        int v, t, i, j, bt, bc, iter;
 
-        alphaSize = nInUse + 2;
+        int alphaSize = nInUse + 2;
         for (t = 0; t < N_GROUPS; t++)
         {
             byte[] len_t = len[t];
@@ -636,9 +655,10 @@ public class CBZip2OutputStream
         /* Decide how many coding tables to use */
         if (nMTF <= 0)
         {
-            panic();
+            throw new IllegalStateException();
         }
 
+        int nGroups;
         if (nMTF < 200)
         {
             nGroups = 2;
@@ -662,16 +682,13 @@ public class CBZip2OutputStream
 
         /* Generate an initial set of coding tables */
         {
-            int nPart, remF, tFreq, aFreq;
-
-            nPart = nGroups;
-            remF = nMTF;
-            gs = 0;
+            int nPart = nGroups;
+            int remF = nMTF;
+            int ge = -1;
             while (nPart > 0)
             {
-                tFreq = remF / nPart;
-                ge = gs - 1;
-                aFreq = 0;
+                int gs = ge + 1;
+                int aFreq = 0, tFreq = remF / nPart;
                 while (aFreq < tFreq && ge < alphaSize - 1)
                 {
                     ge++;
@@ -699,7 +716,6 @@ public class CBZip2OutputStream
                 }
 
                 nPart--;
-                gs = ge + 1;
                 remF -= aFreq;
             }
         }
@@ -714,9 +730,8 @@ public class CBZip2OutputStream
         byte[] len_4 = len[4];
         byte[] len_5 = len[5];
 
-        /*
-          Iterate up to N_ITERS times to improve the tables.
-        */
+        // Iterate up to N_ITERS times to improve the tables.
+        int nSelectors = 0;
         for (iter = 0; iter < N_ITERS; iter++)
         {
             for (t = 0; t < nGroups; t++)
@@ -730,7 +745,7 @@ public class CBZip2OutputStream
             }
 
             nSelectors = 0;
-            gs = 0;
+            int gs = 0;
             while (gs < nMTF)
             {
                 /* Set group start & end marks. */
@@ -739,7 +754,7 @@ public class CBZip2OutputStream
                  * Calculate the cost of this group as coded by each of the coding tables.
                  */
 
-                ge = Math.min(gs + G_SIZE - 1, nMTF - 1);
+                int ge = Math.min(gs + G_SIZE - 1, nMTF - 1);
 
                 if (nGroups == 6)
                 {
@@ -784,18 +799,19 @@ public class CBZip2OutputStream
                   Find the coding table which is best for this group,
                   and record its identity in the selector table.
                 */
-                bc = 999999999;
-                bt = -1;
-                for (t = 0; t < nGroups; t++)
+                bc = cost[0];
+                bt = 0;
+                for (t = 1; t < nGroups; t++)
                 {
-                    if (cost[t] < bc)
+                    short cost_t = cost[t];
+                    if (cost_t < bc)
                     {
-                        bc = cost[t];
+                        bc = cost_t;
                         bt = t;
                     }
                 }
                 fave[bt]++;
-                selector[nSelectors] = (char)bt;
+                selectors[nSelectors] = (byte)bt;
                 nSelectors++;
 
                 /*
@@ -815,47 +831,17 @@ public class CBZip2OutputStream
             */
             for (t = 0; t < nGroups; t++)
             {
-                hbMakeCodeLengths(len[t], rfreq[t], alphaSize, 20);
+                hbMakeCodeLengths(len[t], rfreq[t], alphaSize, MAX_CODE_LEN_GEN);
             }
         }
 
-        rfreq = null;
-        fave = null;
-        cost = null;
-
-        if (!(nGroups < 8))
+        if (nGroups >= 8 || nGroups > N_GROUPS)
         {
-            panic();
+            throw new IllegalStateException();
         }
-        if (!(nSelectors < 32768 && nSelectors <= (2 + (900000 / G_SIZE))))
+        if (nSelectors >= 32768 || nSelectors > BZip2Constants.MAX_SELECTORS)
         {
-            panic();
-        }
-
-
-        /* Compute MTF values for the selectors. */
-        {
-            char[] pos = new char[N_GROUPS];
-            char ll_i, tmp2, tmp;
-            for (i = 0; i < nGroups; i++)
-            {
-                pos[i] = (char)i;
-            }
-            for (i = 0; i < nSelectors; i++)
-            {
-                ll_i = selector[i];
-                j = 0;
-                tmp = pos[j];
-                while (ll_i != tmp)
-                {
-                    j++;
-                    tmp2 = tmp;
-                    tmp = pos[j];
-                    pos[j] = tmp2;
-                }
-                pos[0] = tmp;
-                selectorMtf[i] = (char)j;
-            }
+            throw new IllegalStateException();
         }
 
         int[][] code = new int[N_GROUPS][MAX_ALPHA_SIZE];
@@ -863,30 +849,19 @@ public class CBZip2OutputStream
         /* Assign actual codes for the tables. */
         for (t = 0; t < nGroups; t++)
         {
-            minLen = 32;
-            maxLen = 0;
+            int maxLen = 0, minLen = 32;
             byte[] len_t = len[t];
             for (i = 0; i < alphaSize; i++)
             {
                 int lti = len_t[i] & 0xFF;
-                if (lti > maxLen)
-                {
-                    maxLen = lti;
-                }
-                if (lti < minLen)
-                {
-                    minLen = lti;
-                }
+                maxLen = Math.max(maxLen, lti);
+                minLen = Math.min(minLen, lti);
             }
-            if (maxLen > 20)
+            if (minLen < 1 | maxLen > MAX_CODE_LEN_GEN)
             {
-                panic();
+                throw new IllegalStateException();
             }
-            if (minLen < 1)
-            {
-                panic();
-            }
-            hbAssignCodes(code[t], len[t], minLen, maxLen, alphaSize);
+            hbAssignCodes(code[t], len_t, minLen, maxLen, alphaSize);
         }
 
         /* Transmit the mapping table. */
@@ -908,7 +883,7 @@ public class CBZip2OutputStream
 
             for (i = 0; i < 16; i++)
             {
-                bsW(1, inUse16[i] ? 1 : 0);
+                bsPutBit(inUse16[i] ? 1 : 0);
             }
 
             for (i = 0; i < 16; i++)
@@ -918,29 +893,38 @@ public class CBZip2OutputStream
                     int i16 = i * 16;
                     for (j = 0; j < 16; j++)
                     {
-                        bsW(1, inUse[i16 + j] ? 1 : 0);
+                        bsPutBit(inUse[i16 + j] ? 1 : 0);
                     }
                 }
             }
         }
 
         /* Now the selectors. */
-        bsW(3, nGroups);
-        bsW(15, nSelectors);
-        for (i = 0; i < nSelectors; i++)
+        bsPutBitsSmall(3, nGroups);
+        bsPutBits(15, nSelectors);
         {
-            int count = selectorMtf[i];
-//            for (j = 0; j < count; j++)
-//            {
-//                bsW(1, 1);
-//            }
-//            bsW(1, 0);
-            while (count >= 24)
+            byte[] pos = new byte[N_GROUPS];
+            for (i = 0; i < nGroups; i++)
             {
-                bsW(24, 0xFFFFFF);
-                count -= 24;
+                pos[i] = (byte)i;
             }
-            bsW(count + 1, (1 << (count + 1)) - 2);
+
+            for (i = 0; i < nSelectors; i++)
+            {
+                // Compute MTF value for the selector.
+                byte ll_i = selectors[i];
+                int mtfSelector = 1;
+                byte tmp = pos[0];
+                while (ll_i != tmp)
+                {
+                    byte tmp2 = tmp;
+                    tmp = pos[mtfSelector];
+                    pos[mtfSelector++] = tmp2;
+                }
+                pos[0] = tmp;
+
+                bsPutBitsSmall(mtfSelector, (1 << mtfSelector) - 2);
+            }
         }
 
         /* Now the coding tables. */
@@ -949,54 +933,56 @@ public class CBZip2OutputStream
         {
             byte[] len_t = len[t];
             int curr = len_t[0] & 0xFF;
-            bsW(5, curr);
-            for (i = 0; i < alphaSize; i++)
+            bsPutBitsSmall(6, curr << 1);
+            for (i = 1; i < alphaSize; i++)
             {
                 int lti = len_t[i] & 0xFF;
                 while (curr < lti)
                 {
-                    bsW(2, 2);
+                    bsPutBitsSmall(2, 2);
                     curr++; /* 10 */
                 }
                 while (curr > lti)
                 {
-                    bsW(2, 3);
+                    bsPutBitsSmall(2, 3);
                     curr--; /* 11 */
                 }
-                bsW(1, 0);
+                bsPutBit(0);
             }
         }
 
         /* And finally, the block data proper */
-        selCtr = 0;
-        gs = 0;
-        while (gs < nMTF)
         {
-            ge = Math.min(gs + G_SIZE - 1, nMTF - 1);
-
-            int selector_selCtr = selector[selCtr];
-            byte[] len_selCtr = len[selector_selCtr];
-            int[] code_selCtr = code[selector_selCtr];
-
-            for (i = gs; i <= ge; i++)
+            int selCtr = 0;
+            int gs = 0;
+            while (gs < nMTF)
             {
-                int sfmap_i = szptr[i];
-                bsW(len_selCtr[sfmap_i] & 0xFF, code_selCtr[sfmap_i]);
-            }
+                int ge = Math.min(gs + G_SIZE - 1, nMTF - 1);
 
-            gs = ge + 1;
-            selCtr++;
-        }
-        if (!(selCtr == nSelectors))
-        {
-            panic();
+                int selector_selCtr = selectors[selCtr] & 0xFF;
+                byte[] len_selCtr = len[selector_selCtr];
+                int[] code_selCtr = code[selector_selCtr];
+
+                for (i = gs; i <= ge; i++)
+                {
+                    int sfmap_i = szptr[i];
+                    bsPutBits(len_selCtr[sfmap_i] & 0xFF, code_selCtr[sfmap_i]);
+                }
+
+                gs = ge + 1;
+                selCtr++;
+            }
+            if (selCtr != nSelectors)
+            {
+                throw new IllegalStateException();
+            }
         }
     }
 
     private void moveToFrontCodeAndSend()
         throws IOException
     {
-        bsPutIntVS(24, origPtr);
+        bsPutBits(24, origPtr);
         generateMTFValues();
         sendMTFValues();
     }
@@ -1139,7 +1125,7 @@ public class CBZip2OutputStream
     {
         int unLo, unHi, ltLo, gtHi, n, m;
 
-        Vector stack = new Vector();
+        Vector stack = blocksortStack;
         int stackCount = 0;
         StackElem stackElem;
 
@@ -1425,7 +1411,7 @@ public class CBZip2OutputStream
 
                     if (!(((bbSize - 1) >> shifts) <= 65535))
                     {
-                        panic();
+                        throw new IllegalStateException();
                     }
                 }
 
@@ -1459,29 +1445,24 @@ public class CBZip2OutputStream
 
     private void randomiseBlock()
     {
-        int i;
-        int rNToGo = 0;
-        int rTPos = 0;
-        for (i = 0; i < 256; i++)
+        for (int i = 0; i < 256; i++)
         {
             inUse[i] = false;
         }
 
-        for (i = 0; i < count; i++)
+        int rNToGo = 0, rTPos = 0;
+
+        for (int i = 1; i <= count; i++)
         {
             if (rNToGo == 0)
             {
-                rNToGo = (char)rNums[rTPos];
-                rTPos++;
-                if (rTPos == 512)
-                {
-                    rTPos = 0;
-                }
+                rNToGo = R_NUMS[rTPos++];
+                rTPos &= 0x1FF;
             }
             rNToGo--;
-            blockBytes[i + 1] ^= (rNToGo == 1) ? 1 : 0;
+            blockBytes[i] ^= rNToGo == 1 ? 1 : 0;
 
-            inUse[blockBytes[i + 1] & 0xFF] = true;
+            inUse[blockBytes[i] & 0xFF] = true;
         }
     }
 
@@ -1515,7 +1496,7 @@ public class CBZip2OutputStream
 
         if (origPtr == -1)
         {
-            panic();
+            throw new IllegalStateException();
         }
     }
 
@@ -1649,39 +1630,24 @@ public class CBZip2OutputStream
         9841, 29524, 88573, 265720,
         797161, 2391484};
 
-    private void allocateCompressStructures()
-    {
-        int n = baseBlockSize * blockSize100k;
-        blockBytes = new byte[(n + 1 + NUM_OVERSHOOT_BYTES)];
-        quadrantShorts = new short[(n + 1 + NUM_OVERSHOOT_BYTES)];
-        zptr = new int[n];
-        ftab = new int[65537];
-
-        /*
-          The back end needs a place to store the MTF values
-          whilst it calculates the coding tables.  We could
-          put them in the zptr array.  However, these values
-          will fit in a short, so we overlay szptr at the
-          start of zptr, in the hope of reducing the number
-          of cache misses induced by the multiple traversals
-          of the MTF values when calculating coding tables.
-          Seems to improve compression speed by about 1%.
-        */
-        // NOTE: We can't "overlay" in Java, so we just share zptr
-        szptr = zptr;
-    }
-
     private void generateMTFValues()
     {
-        char[] yy = new char[256];
+        byte[] yy = new byte[256];
         int i, j;
-        char tmp;
-        char tmp2;
         int zPend;
         int wr;
         int EOB;
 
-        makeMaps();
+        nInUse = 0;
+
+        for (i = 0; i < 256; i++)
+        {
+            if (inUse[i])
+            {
+                unseqToSeq[i] = (byte)nInUse++;
+            }
+        }
+
         EOB = nInUse + 1;
 
         for (i = 0; i <= EOB; i++)
@@ -1693,21 +1659,19 @@ public class CBZip2OutputStream
         zPend = 0;
         for (i = 0; i < nInUse; i++)
         {
-            yy[i] = (char)i;
+            yy[i] = (byte)i;
         }
 
         for (i = 0; i < count; i++)
         {
-            char ll_i;
-
-            ll_i = unseqToSeq[blockBytes[zptr[i]] & 0xFF];
+            byte ll_i = unseqToSeq[blockBytes[zptr[i]] & 0xFF];
 
             j = 0;
-            tmp = yy[j];
+            byte tmp = yy[j];
             while (ll_i != tmp)
             {
                 j++;
-                tmp2 = tmp;
+                byte tmp2 = tmp;
                 tmp = yy[j];
                 yy[j] = tmp2;
             }
@@ -1724,17 +1688,10 @@ public class CBZip2OutputStream
                     zPend--;
                     while (true)
                     {
-                        switch (zPend % 2)
-                        {
-                        case 0:
-                            szptr[wr++] = RUNA;
-                            mtfFreq[RUNA]++;
-                            break;
-                        case 1:
-                            szptr[wr++] = RUNB;
-                            mtfFreq[RUNB]++;
-                            break;
-                        }
+                        // RUNA or RUNB
+                        int run = zPend & 1;
+                        szptr[wr++] = run;
+                        mtfFreq[run]++;
                         if (zPend < 2)
                         {
                             break;
@@ -1753,17 +1710,10 @@ public class CBZip2OutputStream
             zPend--;
             while (true)
             {
-                switch (zPend % 2)
-                {
-                case 0:
-                    szptr[wr++] = RUNA;
-                    mtfFreq[RUNA]++;
-                    break;
-                case 1:
-                    szptr[wr++] = RUNB;
-                    mtfFreq[RUNB]++;
-                    break;
-                }
+                // RUNA or RUNB
+                int run = zPend & 1;
+                szptr[wr++] = run;
+                mtfFreq[run]++;
                 if (zPend < 2)
                 {
                     break;
