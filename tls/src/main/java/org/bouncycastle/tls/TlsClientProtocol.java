@@ -1764,6 +1764,12 @@ public class TlsClientProtocol
         final boolean offeringTLSv12Minus = ProtocolVersion.TLSv12.isEqualOrLaterVersionOf(earliestVersion);
         final boolean offeringTLSv13Plus = ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(latestVersion);
 
+        {
+            boolean useGMTUnixTime = !offeringTLSv13Plus && tlsClient.shouldUseGMTUnixTime();
+
+            securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
+        }
+
         establishSession(offeringTLSv12Minus ? tlsClient.getSessionToResume() : null);
         tlsClient.notifySessionToResume(tlsSession);
 
@@ -1831,12 +1837,6 @@ public class TlsClientProtocol
         else if (!offeringTLSv13Plus && tlsClient.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        {
-            boolean useGMTUnixTime = !offeringTLSv13Plus && tlsClient.shouldUseGMTUnixTime();
-
-            securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
         }
 
         if (securityParameters.isRenegotiating())

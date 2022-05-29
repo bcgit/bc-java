@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
@@ -11,9 +12,8 @@ import org.bouncycastle.tls.ChannelBinding;
 import org.bouncycastle.tls.PSKTlsServer;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
-import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
-import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSKIdentityManager;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Strings;
@@ -88,6 +88,36 @@ class MockPSKTlsServer
             String name = Strings.fromUTF8ByteArray(pskIdentity);
             System.out.println("TLS-PSK server completed handshake for PSK identity: " + name);
         }
+    }
+
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processClientExtensions(clientExtensions);
+    }
+
+    public Hashtable getServerExtensions() throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return super.getServerExtensions();
+    }
+
+    public void getServerExtensionsForConnection(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.getServerExtensionsForConnection(serverExtensions);
     }
 
     protected TlsCredentialedDecryptor getRSAEncryptionCredentials() throws IOException
