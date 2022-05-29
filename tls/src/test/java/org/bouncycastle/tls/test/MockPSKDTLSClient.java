@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.tls.AlertDescription;
@@ -155,6 +156,26 @@ class MockPSKDTLSClient
             byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
             System.out.println("Client 'tls-unique': " + hex(tlsUnique));
         }
+    }
+
+    public Hashtable getClientExtensions() throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return super.getClientExtensions();
+    }
+
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processServerExtensions(serverExtensions);
     }
 
     protected String hex(byte[] data)

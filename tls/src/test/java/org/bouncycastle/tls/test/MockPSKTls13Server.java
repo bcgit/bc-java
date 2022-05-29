@@ -3,6 +3,7 @@ package org.bouncycastle.tls.test;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.AbstractTlsServer;
@@ -15,6 +16,7 @@ import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.PskIdentity;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsPSKExternal;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsSecret;
@@ -114,5 +116,35 @@ class MockPSKTls13Server
         {
             System.out.println("Server ALPN: " + protocolName.getUtf8Decoding());
         }
+    }
+
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processClientExtensions(clientExtensions);
+    }
+
+    public Hashtable getServerExtensions() throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return super.getServerExtensions();
+    }
+
+    public void getServerExtensionsForConnection(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.getServerExtensionsForConnection(serverExtensions);
     }
 }

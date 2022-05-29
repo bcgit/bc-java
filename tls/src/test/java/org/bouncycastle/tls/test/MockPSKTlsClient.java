@@ -83,6 +83,11 @@ class MockPSKTlsClient
 
     public Hashtable getClientExtensions() throws IOException
     {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         Hashtable clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(super.getClientExtensions());
         {
             /*
@@ -181,6 +186,16 @@ class MockPSKTlsClient
             byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
             System.out.println("Client 'tls-unique': " + hex(tlsUnique));
         }
+    }
+
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processServerExtensions(serverExtensions);
     }
 
     protected String hex(byte[] data)

@@ -226,6 +226,15 @@ public class TlsServerProtocol
         }
         else
         {
+            {
+                securityParameters.serverRandom = createRandomBlock(false, tlsServerContext);
+
+                if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
+                {
+                    TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
+                }
+            }
+
             this.clientExtensions = clientHelloExtensions;
 
             securityParameters.secureRenegotiation = false;
@@ -269,15 +278,6 @@ public class TlsServerProtocol
             tlsServer.notifySession(tlsSession);
 
             TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
-
-            {
-                securityParameters.serverRandom = createRandomBlock(false, tlsServerContext);
-
-                if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
-                {
-                    TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
-                }
-            }
 
             {
                 // TODO[tls13] Constrain selection when PSK selected
@@ -520,6 +520,17 @@ public class TlsServerProtocol
 
         recordStream.setWriteVersion(serverVersion);
 
+        {
+            boolean useGMTUnixTime = tlsServer.shouldUseGMTUnixTime();
+
+            securityParameters.serverRandom = createRandomBlock(useGMTUnixTime, tlsServerContext);
+
+            if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
+            {
+                TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
+            }
+        }
+
         this.clientExtensions = clientHello.getExtensions();
 
         byte[] clientRenegExtData = TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo);
@@ -655,17 +666,6 @@ public class TlsServerProtocol
         tlsServer.notifySession(tlsSession);
 
         TlsUtils.negotiatedVersionTLSServer(tlsServerContext);
-
-        {
-            boolean useGMTUnixTime = tlsServer.shouldUseGMTUnixTime();
-
-            securityParameters.serverRandom = createRandomBlock(useGMTUnixTime, tlsServerContext);
-
-            if (!serverVersion.equals(ProtocolVersion.getLatestTLS(tlsServer.getProtocolVersions())))
-            {
-                TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
-            }
-        }
 
         {
             int cipherSuite = resumedSession ? sessionParameters.getCipherSuite() : tlsServer.getSelectedCipherSuite();

@@ -25,7 +25,6 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
@@ -99,6 +98,11 @@ class TlsTestClientImpl
 
     public Hashtable getClientExtensions() throws IOException
     {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         Hashtable clientExtensions = super.getClientExtensions();
         if (clientExtensions != null)
         {
@@ -368,6 +372,16 @@ class TlsTestClientImpl
                 };
             }
         };
+    }
+
+    public void processServerExtensions(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processServerExtensions(serverExtensions);
     }
 
     protected org.bouncycastle.tls.Certificate corruptCertificate(org.bouncycastle.tls.Certificate cert)

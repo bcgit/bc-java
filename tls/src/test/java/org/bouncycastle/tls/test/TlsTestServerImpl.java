@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -276,6 +277,36 @@ class TlsTestServerImpl
         {
             TlsUtils.checkPeerSigAlgs(context, certPath);
         }
+    }
+
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processClientExtensions(clientExtensions);
+    }
+
+    public Hashtable getServerExtensions() throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return super.getServerExtensions();
+    }
+
+    public void getServerExtensionsForConnection(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.getServerExtensionsForConnection(serverExtensions);
     }
 
     protected Vector getSupportedSignatureAlgorithms()
