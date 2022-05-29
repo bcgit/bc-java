@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
@@ -18,6 +19,7 @@ import org.bouncycastle.tls.SRPTlsServer;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SimulatedTlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsSRPIdentity;
 import org.bouncycastle.tls.TlsSRPIdentityManager;
 import org.bouncycastle.tls.TlsSRPLoginParameters;
@@ -107,6 +109,36 @@ class MockSRPTlsServer
             String name = Strings.fromUTF8ByteArray(srpIdentity);
             System.out.println("TLS-SRP server completed handshake for SRP identity: " + name);
         }
+    }
+
+    public void processClientExtensions(Hashtable clientExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getClientRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.processClientExtensions(clientExtensions);
+    }
+
+    public Hashtable getServerExtensions() throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return super.getServerExtensions();
+    }
+
+    public void getServerExtensionsForConnection(Hashtable serverExtensions) throws IOException
+    {
+        if (context.getSecurityParametersHandshake().getServerRandom() == null)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        super.getServerExtensionsForConnection(serverExtensions);
     }
 
     protected TlsCredentialedSigner getDSASignerCredentials() throws IOException

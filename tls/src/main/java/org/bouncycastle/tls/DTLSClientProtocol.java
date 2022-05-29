@@ -425,6 +425,13 @@ public class DTLSClientProtocol
 
         context.setClientVersion(client_version);
 
+        {
+            boolean useGMTUnixTime = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(client_version)
+                && state.client.shouldUseGMTUnixTime();
+
+            securityParameters.clientRandom = TlsProtocol.createRandomBlock(useGMTUnixTime, state.clientContext);
+        }
+
         byte[] session_id = TlsUtils.getSessionID(state.tlsSession);
 
         boolean fallback = state.client.isFallback();
@@ -474,13 +481,6 @@ public class DTLSClientProtocol
             && state.client.requiresExtendedMasterSecret())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
-        {
-            boolean useGMTUnixTime = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(client_version)
-                && state.client.shouldUseGMTUnixTime();
-
-            securityParameters.clientRandom = TlsProtocol.createRandomBlock(useGMTUnixTime, state.clientContext);
         }
 
         // Cipher Suites (and SCSV)
