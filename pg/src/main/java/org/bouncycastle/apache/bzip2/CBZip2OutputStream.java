@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -638,19 +639,9 @@ public class CBZip2OutputStream
     private void sendMTFValues()
         throws IOException
     {
-        byte[][] len = new byte[N_GROUPS][MAX_ALPHA_SIZE];
-
         int v, t, i, j, bt, bc, iter;
 
         int alphaSize = nInUse + 2;
-        for (t = 0; t < N_GROUPS; t++)
-        {
-            byte[] len_t = len[t];
-            for (v = 0; v < alphaSize; v++)
-            {
-                len_t[v] = GREATER_ICOST;
-            }
-        }
 
         /* Decide how many coding tables to use */
         if (nMTF <= 0)
@@ -678,6 +669,12 @@ public class CBZip2OutputStream
         else
         {
             nGroups = 6;
+        }
+
+        byte[][] len = new byte[nGroups][alphaSize];
+        for (t = 0; t < nGroups; t++)
+        {
+            Arrays.fill(len[t], (byte)GREATER_ICOST);
         }
 
         /* Generate an initial set of coding tables */
@@ -723,12 +720,6 @@ public class CBZip2OutputStream
         int[][] rfreq = new int[N_GROUPS][MAX_ALPHA_SIZE];
         int[] fave = new int[N_GROUPS];
         short[] cost = new short[N_GROUPS];
-        byte[] len_0 = len[0];
-        byte[] len_1 = len[1];
-        byte[] len_2 = len[2];
-        byte[] len_3 = len[3];
-        byte[] len_4 = len[4];
-        byte[] len_5 = len[5];
 
         // Iterate up to N_ITERS times to improve the tables.
         int nSelectors = 0;
@@ -758,6 +749,7 @@ public class CBZip2OutputStream
 
                 if (nGroups == 6)
                 {
+                    byte[] len_0 = len[0], len_1 = len[1], len_2 = len[2], len_3 = len[3], len_4 = len[4], len_5 = len[5];
                     short cost0 = 0, cost1 = 0, cost2 = 0, cost3 = 0, cost4 = 0, cost5 = 0;
 
                     for (i = gs; i <= ge; i++)
@@ -844,7 +836,7 @@ public class CBZip2OutputStream
             throw new IllegalStateException();
         }
 
-        int[][] code = new int[N_GROUPS][MAX_ALPHA_SIZE];
+        int[][] code = new int[nGroups][alphaSize];
 
         /* Assign actual codes for the tables. */
         for (t = 0; t < nGroups; t++)
@@ -903,25 +895,20 @@ public class CBZip2OutputStream
         bsPutBitsSmall(3, nGroups);
         bsPutBits(15, nSelectors);
         {
-            byte[] pos = new byte[N_GROUPS];
-            for (i = 0; i < nGroups; i++)
-            {
-                pos[i] = (byte)i;
-            }
+            int mtfSelectors = 0x00654321;
 
             for (i = 0; i < nSelectors; i++)
             {
                 // Compute MTF value for the selector.
-                byte ll_i = selectors[i];
-                int mtfSelector = 1;
-                byte tmp = pos[0];
-                while (ll_i != tmp)
+                int ll_i = selectors[i] & 0xFF;
+                int bitPos = ll_i << 2;
+                int mtfSelector = (mtfSelectors >>> bitPos) & 0xF;
+
+                if (mtfSelector != 1)
                 {
-                    byte tmp2 = tmp;
-                    tmp = pos[mtfSelector];
-                    pos[mtfSelector++] = tmp2;
+                    int mtfIncMask = (0x00888888 - mtfSelectors + 0x00111111 * mtfSelector) & 0x00888888;
+                    mtfSelectors = mtfSelectors - (mtfSelector << bitPos) + (mtfIncMask >>> 3);
                 }
-                pos[0] = tmp;
 
                 bsPutBitsSmall(mtfSelector, (1 << mtfSelector) - 2);
             }
@@ -1633,10 +1620,7 @@ public class CBZip2OutputStream
     private void generateMTFValues()
     {
         byte[] yy = new byte[256];
-        int i, j;
-        int zPend;
-        int wr;
-        int EOB;
+        int i;
 
         nInUse = 0;
 
@@ -1648,78 +1632,60 @@ public class CBZip2OutputStream
             }
         }
 
-        EOB = nInUse + 1;
+        int EOB = nInUse + 1;
 
         for (i = 0; i <= EOB; i++)
         {
             mtfFreq[i] = 0;
         }
 
-        wr = 0;
-        zPend = 0;
         for (i = 0; i < nInUse; i++)
         {
             yy[i] = (byte)i;
         }
 
+        int wr = 0, zPend = 0;
         for (i = 0; i < count; i++)
         {
             byte ll_i = unseqToSeq[blockBytes[zptr[i]] & 0xFF];
 
-            j = 0;
-            byte tmp = yy[j];
-            while (ll_i != tmp)
-            {
-                j++;
-                byte tmp2 = tmp;
-                tmp = yy[j];
-                yy[j] = tmp2;
-            }
-            yy[0] = tmp;
-
-            if (j == 0)
+            byte tmp = yy[0];
+            if (ll_i == tmp)
             {
                 zPend++;
+                continue;
             }
-            else
-            {
-                if (zPend > 0)
-                {
-                    zPend--;
-                    while (true)
-                    {
-                        // RUNA or RUNB
-                        int run = zPend & 1;
-                        szptr[wr++] = run;
-                        mtfFreq[run]++;
-                        if (zPend < 2)
-                        {
-                            break;
-                        }
-                        zPend = (zPend - 2) / 2;
-                    }
-                    zPend = 0;
-                }
-                szptr[wr++] = j + 1;
-                mtfFreq[j + 1]++;
-            }
-        }
 
-        if (zPend > 0)
-        {
-            zPend--;
-            while (true)
+            int sym = 1;
+            do
+            {
+                byte tmp2 = tmp;
+                tmp = yy[sym];
+                yy[sym++] = tmp2;
+            }
+            while (ll_i != tmp);
+            yy[0] = tmp;
+
+            while (zPend > 0)
             {
                 // RUNA or RUNB
-                int run = zPend & 1;
+                int run = --zPend & 1;
                 szptr[wr++] = run;
                 mtfFreq[run]++;
-                if (zPend < 2)
-                {
-                    break;
-                }
-                zPend = (zPend - 2) / 2;
+                zPend >>>= 1;
             }
+
+            szptr[wr++] = sym;
+            mtfFreq[sym]++;
+        }
+
+        while (zPend > 0)
+        {
+            // RUNA or RUNB
+            int run = --zPend & 1;
+            szptr[wr++] = run;
+            mtfFreq[run]++;
+            zPend >>>= 1;
         }
 
         szptr[wr++] = EOB;

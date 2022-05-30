@@ -339,7 +339,6 @@ public class CBZip2InputStream
         int pp = 0, baseVal = 0;
         for (int i = minLen; i <= maxLen; i++)
         {
-            base[i] = baseVal;
             for (int j = 0; j < alphaSize; j++)
             {
                 if ((length[j] & 0xFF) == i)
@@ -347,8 +346,9 @@ public class CBZip2InputStream
                     perm[pp++] = j;
                 }
             }
+            base[i] = baseVal;
             limit[i] = baseVal + pp;
-            baseVal += limit[i];
+            baseVal += baseVal + pp;
         }
     }
 
@@ -599,8 +599,8 @@ public class CBZip2InputStream
 //                while (nextSym == RUNA || nextSym == RUNB);
                 while (nextSym <= RUNB);
 
-                int ch = seqToUnseq[yy[0] & 0xFF] & 0xFF;
-                unzftab[ch] += s;
+                byte ch = seqToUnseq[yy[0] & 0xFF];
+                unzftab[ch & 0xFF] += s;
 
                 if (last >= limitLast - s)
                 {
@@ -609,7 +609,7 @@ public class CBZip2InputStream
 
                 while (--s >= 0)
                 {
-                    ll8[++last] = (byte)ch;
+                    ll8[++last] = ch;
                 }
                 continue;
             }
