@@ -265,7 +265,7 @@ public class Blake3Digest
     /**
      * Constructor.
      *
-     * @param pDigestLen the default digestLength
+     * @param pDigestLen the default digestLength (in bytes)
      */
     public Blake3Digest(final int pDigestLen)
     {
