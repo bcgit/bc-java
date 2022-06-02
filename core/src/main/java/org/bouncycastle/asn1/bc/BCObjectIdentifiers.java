@@ -252,4 +252,14 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier saberkem256r3 = pqc_kem_saber.branch("8");
     public static final ASN1ObjectIdentifier firesaberkem256r3 = pqc_kem_saber.branch("9");
 
+    /**
+     * SIKE
+     */
+    public static final ASN1ObjectIdentifier pqc_kem_sike = bc_kem.branch("4");
+
+    public static final ASN1ObjectIdentifier sikep434 = pqc_kem_sike.branch("1");
+    public static final ASN1ObjectIdentifier sikep503 = pqc_kem_sike.branch("2");
+    public static final ASN1ObjectIdentifier sikep610 = pqc_kem_sike.branch("3");
+    public static final ASN1ObjectIdentifier sikep751 = pqc_kem_sike.branch("4");
+
 }
