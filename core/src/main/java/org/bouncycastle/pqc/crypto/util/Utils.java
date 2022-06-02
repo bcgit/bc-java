@@ -20,6 +20,7 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -54,6 +55,9 @@ class Utils
 
     static final Map sphincsPlusOids = new HashMap();
     static final Map sphincsPlusParams = new HashMap();
+
+    static final Map sikeOids = new HashMap();
+    static final Map sikeParams = new HashMap();
 
     static
     {
@@ -144,6 +148,16 @@ class Utils
         picnicParams.put(BCObjectIdentifiers.picnicl1full, PicnicParameters.picnicl1full);
         picnicParams.put(BCObjectIdentifiers.picnicl3full, PicnicParameters.picnicl3full);
         picnicParams.put(BCObjectIdentifiers.picnicl5full, PicnicParameters.picnicl5full);
+
+        sikeOids.put(SIKEParameters.sikep434, BCObjectIdentifiers.sikep434);
+        sikeOids.put(SIKEParameters.sikep503, BCObjectIdentifiers.sikep503);
+        sikeOids.put(SIKEParameters.sikep610, BCObjectIdentifiers.sikep610);
+        sikeOids.put(SIKEParameters.sikep751, BCObjectIdentifiers.sikep751);
+
+        sikeParams.put(BCObjectIdentifiers.sikep434, SIKEParameters.sikep434);
+        sikeParams.put(BCObjectIdentifiers.sikep503, SIKEParameters.sikep503);
+        sikeParams.put(BCObjectIdentifiers.sikep610, SIKEParameters.sikep610);
+        sikeParams.put(BCObjectIdentifiers.sikep751, SIKEParameters.sikep751);
 
     }
 
@@ -352,5 +366,15 @@ class Utils
     static PicnicParameters picnicParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (PicnicParameters)picnicParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier sikeOidLookup(SIKEParameters params)
+    {
+        return (ASN1ObjectIdentifier)sikeOids.get(params);
+    }
+
+    static SIKEParameters sikeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SIKEParameters)sikeParams.get(oid);
     }
 }
