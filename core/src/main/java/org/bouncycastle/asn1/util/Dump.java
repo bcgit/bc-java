@@ -16,7 +16,15 @@ public class Dump
         String args[])
         throws Exception
     {
+        if (args.length == 0)
+        {
+            // -DM System.out.println
+            System.out.println("usage: Dump [-v] filename");
+            System.exit(1);
+        }
+
         FileInputStream fIn = new FileInputStream(args[0]);
+        boolean verbose = (args.length > 1) ? false : args[1].equals("-v");
 
         try
         {
@@ -26,7 +34,7 @@ public class Dump
             while ((obj = bIn.readObject()) != null)
             {
                 // -DM System.out.println
-                System.out.println(ASN1Dump.dumpAsString(obj));
+                System.out.println(ASN1Dump.dumpAsString(obj, verbose));
             }
         }
         finally
