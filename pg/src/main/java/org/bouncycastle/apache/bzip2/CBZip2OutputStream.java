@@ -77,6 +77,13 @@ public class CBZip2OutputStream
         504, 920, 176, 193, 713, 857, 265, 203, 50, 668, 108, 645, 990, 626, 197, 510, 357, 358, 850, 858, 364, 936,
         638 };
 
+    /*
+     * Knuth's increments seem to work better than Incerpi-Sedgewick here, possibly because the number of elements to
+     * sort is usually small, typically <= 20.
+     */
+    private static final int[] INCS = { 1, 4, 13, 40, 121, 364, 1093, 3280, 9841, 29524, 88573, 265720, 797161,
+        2391484 };
+
     private boolean finished;
 
     protected static void hbMakeCodeLengths(byte[] len, int[] freq, int alphaSize, int maxLen)
@@ -264,7 +271,7 @@ public class CBZip2OutputStream
     private final int allowableBlockSize;
 
     boolean blockRandomised;
-    Vector blocksortStack = new Vector();
+    private final Vector blocksortStack = new Vector();
 
     int bsBuff;
     int bsLivePos;
@@ -272,8 +279,6 @@ public class CBZip2OutputStream
 
     private boolean[] inUse = new boolean[256];
     private int nInUse;
-
-    private byte[] unseqToSeq = new byte[256];
 
     private byte[] selectors = new byte[MAX_SELECTORS];
 
@@ -988,7 +993,7 @@ public class CBZip2OutputStream
         }
 
         hp = 0;
-        while (incs[hp] < bigN)
+        while (INCS[hp] < bigN)
         {
             hp++;
         }
@@ -996,7 +1001,7 @@ public class CBZip2OutputStream
 
         for (; hp >= 0; hp--)
         {
-            h = incs[hp];
+            h = INCS[hp];
 
             i = lo + h;
             while (true)
@@ -1607,28 +1612,18 @@ public class CBZip2OutputStream
         return false;
     }
 
-    /*
-      Knuth's increments seem to work better
-      than Incerpi-Sedgewick here.  Possibly
-      because the number of elems to sort is
-      usually small, typically <= 20.
-    */
-    private int[] incs = {1, 4, 13, 40, 121, 364, 1093, 3280,
-        9841, 29524, 88573, 265720,
-        797161, 2391484};
-
     private void generateMTFValues()
     {
-        byte[] yy = new byte[256];
         int i;
 
         nInUse = 0;
 
+        byte[] yy = new byte[256];
         for (i = 0; i < 256; i++)
         {
             if (inUse[i])
             {
-                unseqToSeq[i] = (byte)nInUse++;
+                yy[nInUse++] = (byte)i;
             }
         }
 
@@ -1639,18 +1634,13 @@ public class CBZip2OutputStream
             mtfFreq[i] = 0;
         }
 
-        for (i = 0; i < nInUse; i++)
-        {
-            yy[i] = (byte)i;
-        }
-
         int wr = 0, zPend = 0;
         for (i = 0; i < count; i++)
         {
-            byte ll_i = unseqToSeq[blockBytes[zptr[i]] & 0xFF];
+            byte blockByte = blockBytes[zptr[i]];
 
             byte tmp = yy[0];
-            if (ll_i == tmp)
+            if (blockByte == tmp)
             {
                 zPend++;
                 continue;
@@ -1663,7 +1653,7 @@ public class CBZip2OutputStream
                 tmp = yy[sym];
                 yy[sym++] = tmp2;
             }
-            while (ll_i != tmp);
+            while (blockByte != tmp);
             yy[0] = tmp;
 
             while (zPend > 0)

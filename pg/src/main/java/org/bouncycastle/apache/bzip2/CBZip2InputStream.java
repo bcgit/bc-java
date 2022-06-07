@@ -486,7 +486,6 @@ public class CBZip2InputStream
     private void getAndMoveToFrontDecode()
         throws IOException
     {
-        byte[] yy = new byte[256];
         int i, j, nextSym;
 
         int limitLast = baseBlockSize * blockSize100k;
@@ -513,9 +512,10 @@ public class CBZip2InputStream
             unzftab[i] = 0;
         }
 
-        for (i = 0; i <= 255; i++)
+        byte[] yy = new byte[nInUse];
+        for (i = 0; i < nInUse; ++i)
         {
-            yy[i] = (byte)i;
+            yy[i] = seqToUnseq[i];
         }
 
         last = -1;
@@ -599,7 +599,7 @@ public class CBZip2InputStream
 //                while (nextSym == RUNA || nextSym == RUNB);
                 while (nextSym <= RUNB);
 
-                byte ch = seqToUnseq[yy[0] & 0xFF];
+                byte ch = yy[0];
                 unzftab[ch & 0xFF] += s;
 
                 if (last >= limitLast - s)
@@ -620,9 +620,9 @@ public class CBZip2InputStream
                     throw new IllegalStateException("Block overrun");
                 }
 
-                int tmp = yy[nextSym - 1] & 0xFF;
-                unzftab[seqToUnseq[tmp] & 0xFF]++;
-                ll8[last] = seqToUnseq[tmp];
+                byte tmp = yy[nextSym - 1];
+                unzftab[tmp & 0xFF]++;
+                ll8[last] = tmp;
 
                 /*
                  * This loop is hammered during decompression, hence avoid native method call
@@ -640,7 +640,7 @@ public class CBZip2InputStream
                     System.arraycopy(yy, 0, yy, 1, nextSym - 1);
                 }
 
-                yy[0] = (byte)tmp;
+                yy[0] = tmp;
 
                 {
                     if (groupPos == 0)
