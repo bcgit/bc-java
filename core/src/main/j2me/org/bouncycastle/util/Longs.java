@@ -13,6 +13,22 @@ public class Longs
         0x3E, 0x33, 0x05, 0x19, 0x24, 0x27, 0x20, 0x2E, 0x3C, 0x2C, 0x2A, 0x14, 0x16, 0x39, 0x10, 0x09,
         0x32, 0x18, 0x23, 0x1F, 0x3B, 0x13, 0x38, 0x0F, 0x31, 0x1E, 0x12, 0x0E, 0x1D, 0x0D, 0x0C, 0x0B };
 
+    public static long highestOneBit(long i)
+    {
+        i |= (i >>  1);
+        i |= (i >>  2);
+        i |= (i >>  4);
+        i |= (i >>  8);
+        i |= (i >> 16);
+        i |= (i >> 32);
+        return i - (i >>> 1);
+    }
+
+    public static long lowestOneBit(long i)
+    {
+        return i & -i;
+    }
+
     public static int numberOfLeadingZeros(long i)
     {
         int x = (int)(i >>> 32), n = 0;
