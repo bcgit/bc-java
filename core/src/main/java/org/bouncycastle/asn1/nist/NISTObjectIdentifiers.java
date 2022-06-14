@@ -218,12 +218,12 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_ecdsa_with_sha3_512       = sigAlgs.branch("12");
 
     // RSA PKCS #1 v1.5 Signature with SHA-3 family.
-    /** 2.16.840.1.101.3.4.3.9 */
+    /** 2.16.840.1.101.3.4.3.13 */
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_224       = sigAlgs.branch("13");
-    /** 2.16.840.1.101.3.4.3.10 */
+    /** 2.16.840.1.101.3.4.3.14 */
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_256       = sigAlgs.branch("14");
-    /** 2.16.840.1.101.3.4.3.11 */
+    /** 2.16.840.1.101.3.4.3.15 */
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_384       = sigAlgs.branch("15");
-    /** 2.16.840.1.101.3.4.3.12 */
+    /** 2.16.840.1.101.3.4.3.16 */
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_512       = sigAlgs.branch("16");
 }
