@@ -772,7 +772,6 @@ class FalconNTT
             gi = w;
             if (gi < -127 || gi > +127)
             {
-                System.out.println("out of bounds");
                 assert false : "complete_private: out of bounds";
                 return false;
             }
