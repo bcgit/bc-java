@@ -418,7 +418,7 @@ class FalconCommon
                 while (w >= 12289) {
                     w -= 12289;
                 }
-			    x_arr[x ++] = (short)w;
+                x_arr[x ++] = (short)w;
                 n --;
             }
         }

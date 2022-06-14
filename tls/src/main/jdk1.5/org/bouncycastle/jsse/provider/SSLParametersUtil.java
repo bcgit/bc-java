@@ -57,13 +57,9 @@ abstract class SSLParametersUtil
         {
             ssl.setNeedClientAuth(true);
         }
-        else if (prov.getWantClientAuth())
-        {
-            ssl.setWantClientAuth(true);
-        }
         else
         {
-            ssl.setWantClientAuth(false);
+            ssl.setWantClientAuth(prov.getWantClientAuth());
         }
 
         ssl.setAlgorithmConstraints(prov.getAlgorithmConstraints());
@@ -86,13 +82,9 @@ abstract class SSLParametersUtil
         {
             ssl.setNeedClientAuth(true);
         }
-        else if (prov.getWantClientAuth())
-        {
-            ssl.setWantClientAuth(true);
-        }
         else
         {
-            ssl.setWantClientAuth(false);
+            ssl.setWantClientAuth(prov.getWantClientAuth());
         }
 
         // From JDK 1.7
@@ -163,13 +155,9 @@ abstract class SSLParametersUtil
         {
             bc.setNeedClientAuth(true);
         }
-        else if (ssl.getWantClientAuth())
-        {
-            bc.setWantClientAuth(true);
-        }
         else
         {
-            bc.setWantClientAuth(false);
+            bc.setWantClientAuth(ssl.getWantClientAuth());
         }
 
         // From JDK 1.7
@@ -257,13 +245,9 @@ abstract class SSLParametersUtil
         {
             prov.setNeedClientAuth(true);
         }
-        else if (ssl.getWantClientAuth())
-        {
-            prov.setWantClientAuth(true);
-        }
         else
         {
-            prov.setWantClientAuth(false);
+            prov.setWantClientAuth(ssl.getWantClientAuth());
         }
 
         BCAlgorithmConstraints algorithmConstraints = ssl.getAlgorithmConstraints();
@@ -320,13 +304,9 @@ abstract class SSLParametersUtil
         {
             prov.setNeedClientAuth(true);
         }
-        else if (ssl.getWantClientAuth())
-        {
-            prov.setWantClientAuth(true);
-        }
         else
         {
-            prov.setWantClientAuth(false);
+            prov.setWantClientAuth(ssl.getWantClientAuth());
         }
 
         // From JDK 1.7

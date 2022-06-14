@@ -8,6 +8,16 @@ public class Longs
     public static final int BYTES = 8;
     public static final int SIZE = Long.SIZE;
 
+    public static long highestOneBit(long i)
+    {
+        return Long.highestOneBit(i);
+    }
+
+    public static long lowestOneBit(long i)
+    {
+        return Long.lowestOneBit(i);
+    }
+
     public static int numberOfLeadingZeros(long i)
     {
         return Long.numberOfLeadingZeros(i);
