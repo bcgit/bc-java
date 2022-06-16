@@ -28,12 +28,23 @@ class Fors
 
         for (int idx = 0; idx < (1 << z); idx++)
         {
+            adrs = new ADRS(adrsParam);
+            adrs.setType(ADRS.FORS_PRF);
+            adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(s + idx);
 
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
+
+            adrs = new ADRS(adrsParam);
+            adrs.setType(ADRS.FORS_TREE);
+            adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
+            adrs.setTreeHeight(0);
+            adrs.setTreeIndex(s + idx);
             byte[] node = engine.F(pkSeed, adrs, sk);
 
+            adrs = new ADRS(adrsParam);
+            adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
             adrs.setTreeHeight(1);
             adrs.setTreeIndex(s + idx);
 
@@ -55,8 +66,10 @@ class Fors
         return ((NodeEntry)stack.get(0)).nodeValue;
     }
 
-    public SIG_FORS[] sign(byte[] md, byte[] skSeed, byte[] pkSeed, ADRS adrs)
+    public SIG_FORS[] sign(byte[] md, byte[] skSeed, byte[] pkSeed, ADRS paramAdrs)
     {
+        ADRS adrs;
+
         int[] idxs = message_to_idxs(md, engine.K, engine.A);
         SIG_FORS[] sig_fors = new SIG_FORS[engine.K];
 // compute signature elements
@@ -66,16 +79,27 @@ class Fors
 // get next index
             int idx = idxs[i];
 // pick private key element
-
+            adrs = new ADRS(paramAdrs);
+            adrs.setType(ADRS.FORS_PRF);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(i * t + idx);
+
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
+
+            adrs = new ADRS(paramAdrs);
+            adrs.setType(ADRS.FORS_TREE);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
+            adrs.setTreeHeight(0);
+            adrs.setTreeIndex(i * t + idx);
+
             byte[][] authPath = new byte[engine.A][];
 // compute auth path
             for (int j = 0; j < engine.A; j++)
             {
                 int s = (idx / (1 << j)) ^ 1;
                 authPath[j] = treehash(skSeed, i * t + s * (1 << j), j, pkSeed, adrs);
+
             }
             sig_fors[i] = new SIG_FORS(sk, authPath);
         }
@@ -121,7 +145,7 @@ class Fors
             root[i] = node[0];
         }
         ADRS forspkADRS = new ADRS(adrs); // copy address to create FTS public key address
-        forspkADRS.setType(ADRS.FORS_ROOTS);
+        forspkADRS.setType(ADRS.FORS_PK);
         forspkADRS.setKeyPairAddress(adrs.getKeyPairAddress());
         return engine.T_l(pkSeed, forspkADRS, Arrays.concatenate(root));
     }
