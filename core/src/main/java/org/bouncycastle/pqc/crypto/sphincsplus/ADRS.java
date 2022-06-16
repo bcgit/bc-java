@@ -9,8 +9,10 @@ class ADRS
     public static final int WOTS_PK = 1;
     public static final int TREE = 2;
     public static final int FORS_TREE = 3;
-    public static final int FORS_ROOTS = 4;
-
+    public static final int FORS_PK = 4;
+    public static final int WOTS_PRF = 5;
+    public static final int FORS_PRF = 6;
+    
     static final int OFFSET_LAYER = 0;
     static final int OFFSET_TREE = 4;
     static final int OFFSET_TREE_HGT = 24;

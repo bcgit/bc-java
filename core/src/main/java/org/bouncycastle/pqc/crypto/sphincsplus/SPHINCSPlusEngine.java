@@ -113,37 +113,44 @@ abstract class SPHINCSPlusEngine
 
     abstract byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message);
 
-    static class Sha256Engine
+    static class Sha2Engine
         extends SPHINCSPlusEngine
     {
-        private final byte[] padding = new byte[64];
+        private final byte[] padding = new byte[128];
         private final Digest treeDigest;
         private final byte[] digestBuf;
         private final HMac treeHMac;
         private final MGF1BytesGenerator mgf1;
         private final byte[] hmacBuf;
         private final Digest msgDigest;
+        private final byte[] msgDigestBuf;
+        private final int bl;
 
-        public Sha256Engine(boolean robust, int n, int w, int d, int a, int k, int h)
+        private final Digest sha256 = new SHA256Digest();
+        private final byte[] sha256Buf = new byte[sha256.getDigestSize()];
+
+        public Sha2Engine(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             super(robust, n, w, d, a, k, h);
             this.treeDigest = new SHA256Digest();
-            if (n == 32)
-            {
-                this.msgDigest = new SHA512Digest();
-                this.treeHMac = new HMac(new SHA512Digest());
-                this.mgf1 = new MGF1BytesGenerator(new SHA512Digest());
-            }
-            else
+            if (n == 16)
             {
                 this.msgDigest = new SHA256Digest();
                 this.treeHMac = new HMac(new SHA256Digest());
                 this.mgf1 = new MGF1BytesGenerator(new SHA256Digest());
+                this.bl = 64;
+            }
+            else
+            {
+                this.msgDigest = new SHA512Digest();
+                this.treeHMac = new HMac(new SHA512Digest());
+                this.mgf1 = new MGF1BytesGenerator(new SHA512Digest());
+                this.bl = 128;
             }
 
             this.digestBuf = new byte[treeDigest.getDigestSize()];
             this.hmacBuf = new byte[treeHMac.getMacSize()];
-
+            this.msgDigestBuf = new byte[msgDigest.getDigestSize()];
         }
 
         public byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
@@ -155,13 +162,13 @@ abstract class SPHINCSPlusEngine
                 m1 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1);
             }
 
-            treeDigest.update(pkSeed, 0, pkSeed.length);
-            treeDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
-            treeDigest.update(compressedADRS, 0, compressedADRS.length);
-            treeDigest.update(m1, 0, m1.length);
-            treeDigest.doFinal(digestBuf, 0);
+            sha256.update(pkSeed, 0, pkSeed.length);
+            sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+            sha256.update(compressedADRS, 0, compressedADRS.length);
+            sha256.update(m1, 0, m1.length);
+            sha256.doFinal(sha256Buf, 0);
 
-            return Arrays.copyOfRange(digestBuf, 0, N);
+            return Arrays.copyOfRange(sha256Buf, 0, N);
         }
 
         public byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
@@ -171,16 +178,23 @@ abstract class SPHINCSPlusEngine
 
             if (robust)
             {
-                m1m2 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1m2);
+                if (N == 16)
+                {
+                    m1m2 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1m2);
+                }
+                else
+                {
+                    m1m2 = bitmask512(Arrays.concatenate(pkSeed, compressedADRS), m1m2);
+                }
             }
 
-            treeDigest.update(pkSeed, 0, pkSeed.length);
-            treeDigest.update(padding, 0, 64 - N); // toByte(0, 64 - n)
-            treeDigest.update(compressedADRS, 0, compressedADRS.length);
-            treeDigest.update(m1m2, 0, m1m2.length);
-            treeDigest.doFinal(digestBuf, 0);
+            msgDigest.update(pkSeed, 0, pkSeed.length);
+            msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
+            msgDigest.update(compressedADRS, 0, compressedADRS.length);
+            msgDigest.update(m1m2, 0, m1m2.length);
+            msgDigest.doFinal(msgDigestBuf, 0);
 
-            return Arrays.copyOfRange(digestBuf, 0, N);
+            return Arrays.copyOfRange(msgDigestBuf, 0, N);
         }
 
         IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] message)
@@ -199,7 +213,6 @@ abstract class SPHINCSPlusEngine
             msgDigest.update(pkRoot, 0, pkRoot.length);
             msgDigest.update(message, 0, message.length);
             msgDigest.doFinal(dig, 0);
-
 
             out = bitmask(Arrays.concatenate(prf, pkSeed, dig), out);
 
@@ -224,33 +237,41 @@ abstract class SPHINCSPlusEngine
             byte[] compressedADRS = compressedADRS(adrs);
             if (robust)
             {
-                m = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m);
+                if (N == 16)
+                {
+                    m = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m);
+                }
+                else
+                {
+                    m = bitmask512(Arrays.concatenate(pkSeed, compressedADRS), m);
+                }
             }
 
-            treeDigest.update(pkSeed, 0, pkSeed.length);
-            treeDigest.update(padding, 0, 64 - N); // toByte(0, 64 - n)
-            treeDigest.update(compressedADRS, 0, compressedADRS.length);
-            treeDigest.update(m, 0, m.length);
-            treeDigest.doFinal(digestBuf, 0);
+            msgDigest.update(pkSeed, 0, pkSeed.length);
+            msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
+            msgDigest.update(compressedADRS, 0, compressedADRS.length);
+            msgDigest.update(m, 0, m.length);
+            msgDigest.doFinal(msgDigestBuf, 0);
 
-            return Arrays.copyOfRange(digestBuf, 0, N);
+            return Arrays.copyOfRange(msgDigestBuf, 0, N);
         }
 
         byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
             int n = skSeed.length;
 
-            // TODO: #UPDATE final submission update announced 17/1/2022
-//            treeDigest.update(pkSeed, 0, pkSeed.length);
-//            treeDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
 
-            treeDigest.update(skSeed, 0, skSeed.length);
+
+            sha256.update(pkSeed, 0, pkSeed.length);
+            sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+
             byte[] compressedADRS = compressedADRS(adrs);
 
-            treeDigest.update(compressedADRS, 0, compressedADRS.length);
-            treeDigest.doFinal(digestBuf, 0);
+            sha256.update(compressedADRS, 0, compressedADRS.length);
+            sha256.update(skSeed, 0, skSeed.length);
+            sha256.doFinal(sha256Buf, 0);
 
-            return Arrays.copyOfRange(digestBuf, 0, n);
+            return Arrays.copyOfRange(sha256Buf, 0, n);
         }
 
         public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message)
@@ -295,6 +316,24 @@ abstract class SPHINCSPlusEngine
             byte[] mask = new byte[m.length];
 
             MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest());
+
+            mgf1.init(new MGFParameters(key));
+
+            mgf1.generateBytes(mask, 0, mask.length);
+
+            for (int i = 0; i < m.length; ++i)
+            {
+                mask[i] ^= m[i];
+            }
+
+            return mask;
+        }
+
+        protected byte[] bitmask512(byte[] key, byte[] m)
+        {
+            byte[] mask = new byte[m.length];
+
+            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA512Digest());
 
             mgf1.init(new MGFParameters(key));
 
@@ -413,10 +452,10 @@ abstract class SPHINCSPlusEngine
 
         byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
-            // TODO: #UPDATE final submission update announced 17/1/2022
-            //treeDigest.update(pkSeed, 0, pkSeed.length);
-            treeDigest.update(skSeed, 0, skSeed.length);
+            treeDigest.update(pkSeed, 0, pkSeed.length);
             treeDigest.update(adrs.value, 0, adrs.value.length);
+            treeDigest.update(skSeed, 0, skSeed.length);
+
             byte[] prf = new byte[N];
             treeDigest.doFinal(prf, 0, N);
             return prf;

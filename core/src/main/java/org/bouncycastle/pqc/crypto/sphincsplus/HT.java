@@ -40,6 +40,7 @@ class HT
         // init
         ADRS adrs = new ADRS();
         // sign
+       // adrs.setType(ADRS.TREE);
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
         SIG_XMSS SIG_tmp = xmss_sign(M, skSeed, idx_leaf, pkSeed, adrs);
@@ -118,9 +119,15 @@ class HT
     //    # Input: n-byte message M, secret seed SK.seed, index idx, public seed PK.seed,
     //    address ADRS
     //    # Output: XMSS signature SIG_XMSS = (sig || AUTH)
-    SIG_XMSS xmss_sign(byte[] M, byte[] skSeed, int idx, byte[] pkSeed, ADRS adrs)
+    SIG_XMSS xmss_sign(byte[] M, byte[] skSeed, int idx, byte[] pkSeed, ADRS paramAdrs)
     {
         byte[][] AUTH = new byte[engine.H_PRIME][];
+
+        ADRS adrs = new ADRS(paramAdrs);
+
+        adrs.setType(ADRS.TREE);
+        adrs.setLayerAddress(paramAdrs.getLayerAddress());
+        adrs.setTreeAddress(paramAdrs.getTreeAddress());
 
         // build authentication path
         for (int j = 0; j < engine.H_PRIME; j++)
@@ -128,11 +135,12 @@ class HT
             int k = (idx / (1 << j)) ^ 1;
             AUTH[j] = treehash(skSeed, k * (1 << j), j, pkSeed, adrs);
         }
-        adrs = new ADRS(adrs);
-        adrs.setType(ADRS.WOTS_HASH);
+        adrs = new ADRS(paramAdrs);
+        adrs.setType(ADRS.WOTS_PK);
         adrs.setKeyPairAddress(idx);
 
         byte[] sig = wots.sign(M, skSeed, pkSeed, adrs);
+
         return new SIG_XMSS(sig, AUTH);
     }
 
@@ -175,7 +183,7 @@ class HT
 
             stack.add(0, new NodeEntry(node, adrs.getTreeHeight()));
         }
-
+ 
         return ((NodeEntry)stack.get(0)).nodeValue;
     }
 
