@@ -73,7 +73,7 @@ public class CompositePublicKey
         try
         {
             return new SubjectPublicKeyInfo(
-                new AlgorithmIdentifier(MiscObjectIdentifiers.id_alg_composite), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+                new AlgorithmIdentifier(MiscObjectIdentifiers.id_composite_key), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {

@@ -152,4 +152,13 @@ public interface MiscObjectIdentifiers
     //        iso(1)  identified-organization(3) dod(6) internet(1) private(4)
     //        enterprise(1) OpenCA(18227) Algorithms(2) id-alg-composite(1) }
     ASN1ObjectIdentifier id_alg_composite = new ASN1ObjectIdentifier("1.3.6.1.4.1.18227.2.1");
+
+    // -- To be replaced by IANA
+    //
+    //id-composite-key OBJECT IDENTIFIER ::= {
+    //
+    //    joint-iso-itu-t(2) country(16) us(840) organization(1) entrust(114027)
+    //
+    //    Algorithm(80) Composite(4) CompositeKey(1)
+    ASN1ObjectIdentifier id_composite_key = new ASN1ObjectIdentifier("2.16.840.1.114027.80.4.1");
 }
