@@ -49,7 +49,6 @@ public class SphincsPlusTest
             String name = fileList[i];
             if (full || name.indexOf("-128s-") >= 0 || name.indexOf("-128f-") >= 0)
             {
-                System.err.println(name);
                 InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
                 BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -248,8 +247,7 @@ public class SphincsPlusTest
 
         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
-        System.err.println(Hex.toHexString(pubParams.getEncoded()));
-        System.err.println(Hex.toHexString(privParams.getEncoded()));
+
         byte[] msg = Hex.decode("D81C4D8D734FCBFBEADE3D3F8A039FAA2A2C9957E835AD55B22E75BF57BB556AC8");
 
         SPHINCSPlusSigner signer = new SPHINCSPlusSigner();
