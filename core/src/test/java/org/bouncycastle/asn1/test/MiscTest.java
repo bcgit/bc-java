@@ -51,40 +51,46 @@ public class MiscTest
     public void asn1IntegerTest()
         throws Exception
     {
+        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
+
         try
         {
             new ASN1Integer(new byte[] { 0, 0, 0, 1});
+            fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+            isTrue("wrong exc 1: " + e.getMessage(), "malformed integer".equals(e.getMessage()));
         }
 
         try
         {
             new ASN1Integer(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+            fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("wrong exc", "malformed integer".equals(e.getMessage()));
+            isTrue("wrong exc 2: " + e.getMessage(), "malformed integer".equals(e.getMessage()));
         }
 
         try
         {
             new ASN1Enumerated(new byte[] { 0, 0, 0, 1});
+            fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
+            isTrue("wrong exc 3: " + e.getMessage(), "malformed enumerated".equals(e.getMessage()));
         }
 
         try
         {
             new ASN1Enumerated(new byte[] {(byte)0xff, (byte)0x80, 0, 1});
+            fail("expected IllegalArgumentException");
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("wrong exc", "malformed enumerated".equals(e.getMessage()));
+            isTrue("wrong exc 4: " + e.getMessage(), "malformed enumerated".equals(e.getMessage()));
         }
     }
 
