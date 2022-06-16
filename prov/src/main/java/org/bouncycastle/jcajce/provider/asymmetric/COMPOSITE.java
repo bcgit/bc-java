@@ -127,10 +127,13 @@ public class COMPOSITE
             provider.addAlgorithm("KeyFactory.COMPOSITE", PREFIX + "$KeyFactory");
             provider.addAlgorithm("KeyFactory." + MiscObjectIdentifiers.id_alg_composite, PREFIX + "$KeyFactory");
             provider.addAlgorithm("KeyFactory.OID." + MiscObjectIdentifiers.id_alg_composite, PREFIX + "$KeyFactory");
+            provider.addAlgorithm("KeyFactory." + MiscObjectIdentifiers.id_composite_key, PREFIX + "$KeyFactory");
+            provider.addAlgorithm("KeyFactory.OID." + MiscObjectIdentifiers.id_composite_key, PREFIX + "$KeyFactory");
 
             baseConverter = new CompositeKeyInfoConverter(provider);
 
             provider.addKeyInfoConverter(MiscObjectIdentifiers.id_alg_composite, baseConverter);
+            provider.addKeyInfoConverter(MiscObjectIdentifiers.id_composite_key, baseConverter);
         }
     }
 }

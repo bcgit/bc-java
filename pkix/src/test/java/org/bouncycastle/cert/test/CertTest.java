@@ -3911,7 +3911,9 @@ public class CertTest
 
         org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
 
-        isTrue(MiscObjectIdentifiers.id_alg_composite.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
+        isTrue(MiscObjectIdentifiers.id_alg_composite.equals(crt.getSignatureAlgorithm().getAlgorithm()));
+        isTrue(MiscObjectIdentifiers.id_alg_composite.equals(crt.getTBSCertificate().getSignature().getAlgorithm()));
+        isTrue(MiscObjectIdentifiers.id_composite_key.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
 
         KeyFactory kFact = KeyFactory.getInstance("Composite", "BC");
@@ -4010,7 +4012,7 @@ public class CertTest
 
         org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
 
-        isTrue(MiscObjectIdentifiers.id_alg_composite.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
+        isTrue(MiscObjectIdentifiers.id_composite_key.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
 
         KeyFactory kFact = KeyFactory.getInstance("Composite", "BC");
