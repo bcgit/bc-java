@@ -24,33 +24,33 @@ public class SPHINCSPlusKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(SPHINCSPlusParameterSpec.sha256_128f.getName(), SPHINCSPlusParameters.sha256_128f);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_128s.getName(), SPHINCSPlusParameters.sha256_128s);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_192f.getName(), SPHINCSPlusParameters.sha256_192f);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_192s.getName(), SPHINCSPlusParameters.sha256_192s);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_256f.getName(), SPHINCSPlusParameters.sha256_256f);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_256s.getName(), SPHINCSPlusParameters.sha256_256s);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128f.getName(), SPHINCSPlusParameters.sha2_128f);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128s.getName(), SPHINCSPlusParameters.sha2_128s);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192f.getName(), SPHINCSPlusParameters.sha2_192f);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192s.getName(), SPHINCSPlusParameters.sha2_192s);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256f.getName(), SPHINCSPlusParameters.sha2_256f);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256s.getName(), SPHINCSPlusParameters.sha2_256s);
         
-        parameters.put(SPHINCSPlusParameterSpec.sha256_128f_simple.getName(), SPHINCSPlusParameters.sha256_128f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_128s_simple.getName(), SPHINCSPlusParameters.sha256_128s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_192f_simple.getName(), SPHINCSPlusParameters.sha256_192f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_192s_simple.getName(), SPHINCSPlusParameters.sha256_192s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_256f_simple.getName(), SPHINCSPlusParameters.sha256_256f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha256_256s_simple.getName(), SPHINCSPlusParameters.sha256_256s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128f_simple.getName(), SPHINCSPlusParameters.sha2_128f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128s_simple.getName(), SPHINCSPlusParameters.sha2_128s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192f_simple.getName(), SPHINCSPlusParameters.sha2_192f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192s_simple.getName(), SPHINCSPlusParameters.sha2_192s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256f_simple.getName(), SPHINCSPlusParameters.sha2_256f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256s_simple.getName(), SPHINCSPlusParameters.sha2_256s_simple);
         
-        parameters.put(SPHINCSPlusParameterSpec.shake256_128f.getName(), SPHINCSPlusParameters.shake256_128f);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_128s.getName(), SPHINCSPlusParameters.shake256_128s);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_192f.getName(), SPHINCSPlusParameters.shake256_192f);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_192s.getName(), SPHINCSPlusParameters.shake256_192s);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_256f.getName(), SPHINCSPlusParameters.shake256_256f);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_256s.getName(), SPHINCSPlusParameters.shake256_256s);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128f.getName(), SPHINCSPlusParameters.shake_128f);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128s.getName(), SPHINCSPlusParameters.shake_128s);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192f.getName(), SPHINCSPlusParameters.shake_192f);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192s.getName(), SPHINCSPlusParameters.shake_192s);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256f.getName(), SPHINCSPlusParameters.shake_256f);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256s.getName(), SPHINCSPlusParameters.shake_256s);
         
-        parameters.put(SPHINCSPlusParameterSpec.shake256_128f_simple.getName(), SPHINCSPlusParameters.shake256_128f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_128s_simple.getName(), SPHINCSPlusParameters.shake256_128s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_192f_simple.getName(), SPHINCSPlusParameters.shake256_192f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_192s_simple.getName(), SPHINCSPlusParameters.shake256_192s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_256f_simple.getName(), SPHINCSPlusParameters.shake256_256f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake256_256s_simple.getName(), SPHINCSPlusParameters.shake256_256s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128f_simple.getName(), SPHINCSPlusParameters.shake_128f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128s_simple.getName(), SPHINCSPlusParameters.shake_128s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192f_simple.getName(), SPHINCSPlusParameters.shake_192f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192s_simple.getName(), SPHINCSPlusParameters.shake_192s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256f_simple.getName(), SPHINCSPlusParameters.shake_256f_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256s_simple.getName(), SPHINCSPlusParameters.shake_256s_simple);
     }
 
     SPHINCSPlusKeyGenerationParameters param;
@@ -91,7 +91,7 @@ public class SPHINCSPlusKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha256_256s);
+            param = new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_256s);
 
             engine.init(param);
             initialised = true;
