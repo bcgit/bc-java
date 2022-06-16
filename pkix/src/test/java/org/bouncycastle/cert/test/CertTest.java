@@ -3480,7 +3480,7 @@ public class CertTest
         //
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha256_256f, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
