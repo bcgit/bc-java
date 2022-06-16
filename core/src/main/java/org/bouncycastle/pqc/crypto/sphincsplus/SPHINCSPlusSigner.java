@@ -73,6 +73,7 @@ public class SPHINCSPlusSigner
 
         Fors fors = new Fors(engine); 
         byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, message);
+
         // compute message digest and index
         IndexedDigest idxDigest = engine.H_msg(R, privKey.pk.seed, privKey.pk.root, message);
         byte[] mHash = idxDigest.digest;
@@ -85,6 +86,10 @@ public class SPHINCSPlusSigner
         adrs.setKeyPairAddress(idx_leaf);
         SIG_FORS[] sig_fors = fors.sign(mHash, privKey.sk.seed, privKey.pk.seed, adrs);
         // get FORS public key - spec shows M?
+        adrs = new ADRS();
+        adrs.setType(ADRS.FORS_TREE);
+        adrs.setTreeAddress(idx_tree);
+        adrs.setKeyPairAddress(idx_leaf);
         byte[] PK_FORS = fors.pkFromSig(sig_fors, mHash, privKey.pk.seed, adrs);
 
         // sign FORS public key with HT
@@ -93,6 +98,7 @@ public class SPHINCSPlusSigner
 
         HT ht = new HT(engine, privKey.getSeed(), privKey.getPublicSeed());
         byte[] SIG_HT = ht.sign(PK_FORS, idx_tree, idx_leaf);
+
         byte[][] sigComponents = new byte[sig_fors.length + 2][];
         sigComponents[0] = R;
 
@@ -127,13 +133,16 @@ public class SPHINCSPlusSigner
         int idx_leaf = idxDigest.idx_leaf;
 
         // compute FORS public key
+        adrs.setType(ADRS.FORS_TREE);
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
-        adrs.setType(ADRS.FORS_TREE);
         adrs.setKeyPairAddress(idx_leaf);
         byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pubKey.getSeed(), adrs);
         // verify HT signature
         adrs.setType(ADRS.TREE);
+        adrs.setLayerAddress(0);
+        adrs.setTreeAddress(idx_tree);
+        adrs.setKeyPairAddress(idx_leaf);
         HT ht = new HT(engine, null, pubKey.getSeed());
         return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
     }

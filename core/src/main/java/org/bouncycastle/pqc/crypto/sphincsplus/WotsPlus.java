@@ -22,10 +22,17 @@ class WotsPlus
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
             ADRS adrs = new ADRS(paramAdrs);
+            adrs.setType(ADRS.WOTS_PRF);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
+
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
+            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
+            adrs.setChainAddress(i);
+            adrs.setHashAddress(0);
             tmp[i] = chain(sk, 0, w - 1, pkSeed, adrs);
         }
 
@@ -81,9 +88,15 @@ class WotsPlus
         byte[][] sig = new byte[engine.WOTS_LEN][];
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
+            adrs.setType(ADRS.WOTS_PRF);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
+            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
+            adrs.setChainAddress(i);
+            adrs.setHashAddress(0);
             sig[i] = chain(sk, 0, msg[i], pkSeed, adrs);
         }
         return Arrays.concatenate(sig);
@@ -99,7 +112,7 @@ class WotsPlus
         int total = 0;
         int bits = 0;
         int[] output = new int[out_len];
-        
+
         for (int consumed = 0; consumed < out_len; consumed++)
         {
             if (bits == 0)
