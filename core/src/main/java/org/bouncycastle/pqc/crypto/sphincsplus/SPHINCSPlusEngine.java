@@ -118,7 +118,6 @@ abstract class SPHINCSPlusEngine
     {
         private final byte[] padding = new byte[128];
         private final Digest treeDigest;
-        private final byte[] digestBuf;
         private final HMac treeHMac;
         private final MGF1BytesGenerator mgf1;
         private final byte[] hmacBuf;
@@ -148,7 +147,6 @@ abstract class SPHINCSPlusEngine
                 this.bl = 128;
             }
 
-            this.digestBuf = new byte[treeDigest.getDigestSize()];
             this.hmacBuf = new byte[treeHMac.getMacSize()];
             this.msgDigestBuf = new byte[msgDigest.getDigestSize()];
         }
@@ -173,25 +171,21 @@ abstract class SPHINCSPlusEngine
 
         public byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
         {
-            byte[] m1m2 = Arrays.concatenate(m1, m2);
             byte[] compressedADRS = compressedADRS(adrs);
-
-            if (robust)
-            {
-                if (N == 16)
-                {
-                    m1m2 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1m2);
-                }
-                else
-                {
-                    m1m2 = bitmask512(Arrays.concatenate(pkSeed, compressedADRS), m1m2);
-                }
-            }
 
             msgDigest.update(pkSeed, 0, pkSeed.length);
             msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
-            msgDigest.update(m1m2, 0, m1m2.length);
+            if (robust)
+            {
+                byte[] m1m2 = bitmask(Arrays.concatenate(pkSeed, compressedADRS), m1, m2);
+                msgDigest.update(m1m2, 0, m1m2.length);
+            }
+            else
+            {
+                msgDigest.update(m1, 0, m1.length);
+                msgDigest.update(m2, 0, m2.length);
+            }
             msgDigest.doFinal(msgDigestBuf, 0);
 
             return Arrays.copyOfRange(msgDigestBuf, 0, N);
@@ -237,14 +231,7 @@ abstract class SPHINCSPlusEngine
             byte[] compressedADRS = compressedADRS(adrs);
             if (robust)
             {
-                if (N == 16)
-                {
-                    m = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m);
-                }
-                else
-                {
-                    m = bitmask512(Arrays.concatenate(pkSeed, compressedADRS), m);
-                }
+                m = bitmask(Arrays.concatenate(pkSeed, compressedADRS), m);
             }
 
             msgDigest.update(pkSeed, 0, pkSeed.length);
@@ -259,8 +246,6 @@ abstract class SPHINCSPlusEngine
         byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
             int n = skSeed.length;
-
-
 
             sha256.update(pkSeed, 0, pkSeed.length);
             sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
@@ -311,29 +296,30 @@ abstract class SPHINCSPlusEngine
             return mask;
         }
 
-        protected byte[] bitmask256(byte[] key, byte[] m)
+        protected byte[] bitmask(byte[] key, byte[] m1, byte[] m2)
         {
-            byte[] mask = new byte[m.length];
-
-            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest());
+            byte[] mask = new byte[m1.length + m2.length];
 
             mgf1.init(new MGFParameters(key));
 
             mgf1.generateBytes(mask, 0, mask.length);
 
-            for (int i = 0; i < m.length; ++i)
+            for (int i = 0; i < m1.length; ++i)
             {
-                mask[i] ^= m[i];
+                mask[i] ^= m1[i];
             }
-
+            for (int i = 0; i < m2.length; ++i)
+            {
+                mask[i + m1.length] ^= m2[i];
+            }
             return mask;
         }
 
-        protected byte[] bitmask512(byte[] key, byte[] m)
+        protected byte[] bitmask256(byte[] key, byte[] m)
         {
             byte[] mask = new byte[m.length];
 
-            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA512Digest());
+            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest());
 
             mgf1.init(new MGFParameters(key));
 
