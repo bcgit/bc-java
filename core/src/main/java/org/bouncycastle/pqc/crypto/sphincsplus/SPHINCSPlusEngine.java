@@ -338,12 +338,14 @@ abstract class SPHINCSPlusEngine
         extends SPHINCSPlusEngine
     {
         private final Xof treeDigest;
+        private final Xof maskDigest;
 
         public Shake256Engine(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             super(robust, n, w, d, a, k, h);
 
             this.treeDigest = new SHAKEDigest(256);
+            this.maskDigest = new SHAKEDigest(256);
         }
 
         byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
@@ -366,19 +368,22 @@ abstract class SPHINCSPlusEngine
 
         byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
         {
-            byte[] m1m2 = Arrays.concatenate(m1, m2);
-
-            if (robust)
-            {
-                m1m2 = bitmask(pkSeed, adrs, m1m2);
-            }
-
-
             byte[] rv = new byte[N];
 
             treeDigest.update(pkSeed, 0, pkSeed.length);
             treeDigest.update(adrs.value, 0, adrs.value.length);
-            treeDigest.update(m1m2, 0, m1m2.length);
+            if (robust)
+            {
+                byte[] m1m2 = bitmask(pkSeed, adrs, m1, m2);
+
+                treeDigest.update(m1m2, 0, m1m2.length);
+            }
+            else
+            {
+                treeDigest.update(m1, 0, m1.length);
+                treeDigest.update(m2, 0, m2.length);
+            }
+
             treeDigest.doFinal(rv, 0, rv.length);
 
             return rv;
@@ -393,7 +398,6 @@ abstract class SPHINCSPlusEngine
             int treeBytes = (treeBits + 7) / 8;
             int m = forsMsgBytes + leafBytes + treeBytes;
             byte[] out = new byte[m];
-
 
             treeDigest.update(R, 0, R.length);
             treeDigest.update(pkSeed, 0, pkSeed.length);
@@ -461,14 +465,35 @@ abstract class SPHINCSPlusEngine
         {
             byte[] mask = new byte[m.length];
 
-            treeDigest.update(pkSeed, 0, pkSeed.length);
-            treeDigest.update(adrs.value, 0, adrs.value.length);
+            maskDigest.update(pkSeed, 0, pkSeed.length);
+            maskDigest.update(adrs.value, 0, adrs.value.length);
 
-            treeDigest.doFinal(mask, 0, mask.length);
+            maskDigest.doFinal(mask, 0, mask.length);
 
             for (int i = 0; i < m.length; ++i)
             {
                 mask[i] ^= m[i];
+            }
+
+            return mask;
+        }
+
+        protected byte[] bitmask(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
+        {
+            byte[] mask = new byte[m1.length + m2.length];
+
+            maskDigest.update(pkSeed, 0, pkSeed.length);
+            maskDigest.update(adrs.value, 0, adrs.value.length);
+
+            maskDigest.doFinal(mask, 0, mask.length);
+
+            for (int i = 0; i < m1.length; ++i)
+            {
+                mask[i] ^= m1[i];
+            }
+            for (int i = 0; i < m2.length; ++i)
+            {
+                mask[i + m1.length] ^= m2[i];
             }
 
             return mask;
