@@ -82,6 +82,11 @@ class ADRS
         Arrays.fill(value, 20, value.length, (byte)0);
     }
 
+    public void changeType(int type)
+    {
+        Pack.intToBigEndian(type, value, OFFSET_TYPE);
+    }
+
     public int getType()
     {
         return Pack.bigEndianToInt(value, OFFSET_TYPE);
