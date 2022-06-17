@@ -17,8 +17,6 @@ class Fors
     // Output: n-byte root node - top node on Stack
     byte[] treehash(byte[] skSeed, int s, int z, byte[] pkSeed, ADRS adrsParam)
     {
-        ADRS adrs = new ADRS(adrsParam);
-
         LinkedList<NodeEntry> stack = new LinkedList<NodeEntry>();
 
         if (s % (1 << z) != 0)
@@ -26,9 +24,10 @@ class Fors
             return null;
         }
 
+        ADRS adrs = new ADRS(adrsParam);
+
         for (int idx = 0; idx < (1 << z); idx++)
         {
-            adrs = new ADRS(adrsParam);
             adrs.setType(ADRS.FORS_PRF);
             adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
             adrs.setTreeHeight(0);
@@ -36,17 +35,11 @@ class Fors
 
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
-            adrs = new ADRS(adrsParam);
-            adrs.setType(ADRS.FORS_TREE);
-            adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
-            adrs.setTreeHeight(0);
-            adrs.setTreeIndex(s + idx);
+            adrs.changeType(ADRS.FORS_TREE);
+
             byte[] node = engine.F(pkSeed, adrs, sk);
 
-            adrs = new ADRS(adrsParam);
-            adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
             adrs.setTreeHeight(1);
-            adrs.setTreeIndex(s + idx);
 
             // while ( Top node on Stack has same height as node )
             while (!stack.isEmpty()
@@ -68,7 +61,7 @@ class Fors
 
     public SIG_FORS[] sign(byte[] md, byte[] skSeed, byte[] pkSeed, ADRS paramAdrs)
     {
-        ADRS adrs;
+        ADRS adrs = new ADRS(paramAdrs);
 
         int[] idxs = message_to_idxs(md, engine.K, engine.A);
         SIG_FORS[] sig_fors = new SIG_FORS[engine.K];
@@ -79,7 +72,6 @@ class Fors
 // get next index
             int idx = idxs[i];
 // pick private key element
-            adrs = new ADRS(paramAdrs);
             adrs.setType(ADRS.FORS_PRF);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setTreeHeight(0);
@@ -87,11 +79,7 @@ class Fors
 
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
-            adrs = new ADRS(paramAdrs);
-            adrs.setType(ADRS.FORS_TREE);
-            adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
-            adrs.setTreeHeight(0);
-            adrs.setTreeIndex(i * t + idx);
+            adrs.changeType(ADRS.FORS_TREE);
 
             byte[][] authPath = new byte[engine.A][];
 // compute auth path
@@ -99,7 +87,6 @@ class Fors
             {
                 int s = (idx / (1 << j)) ^ 1;
                 authPath[j] = treehash(skSeed, i * t + s * (1 << j), j, pkSeed, adrs);
-
             }
             sig_fors[i] = new SIG_FORS(sk, authPath);
         }
