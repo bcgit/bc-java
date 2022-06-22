@@ -28,6 +28,7 @@ public abstract class PGPEncryptedData
         int[]         lookAhead = new int[22];
         int           bufPtr;
         InputStream   in;
+        byte[] readBuffer = new byte[8192];
 
         TruncatedStream(
             InputStream    in)
@@ -61,6 +62,55 @@ public abstract class PGPEncryptedData
             }
 
             return -1;
+        }
+
+        @Override
+        public int read(byte[] b)
+                throws IOException
+        {
+            return read(b, 0, b.length);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len)
+                throws IOException
+        {
+            // Efficient index check copied from BufferedInputStream
+            if ((off | len | off + len | b.length - (off + len)) < 0)
+            {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0)
+            {
+                return 0;
+            }
+
+            // read into our buffer
+            int maxRead = Math.min(readBuffer.length, len);
+            int bytesRead = in.read(readBuffer, 0, maxRead);
+            if (bytesRead < 0)
+            {
+                return -1;
+            }
+
+            // Copy lookahead to output
+            int bytesFromLookahead = Math.min(bytesRead, lookAhead.length);
+            for (int i = 0; i < bytesFromLookahead; i++)
+            {
+                b[i] = (byte) lookAhead[(bufPtr + i) % lookAhead.length];
+            }
+
+            // write tail of readBuffer to lookahead
+            int bufferTail = bytesRead - bytesFromLookahead;
+            for (int i = bufferTail; i < bytesRead; i++)
+            {
+                lookAhead[bufPtr] = readBuffer[i];
+                bufPtr = (bufPtr + 1) % lookAhead.length;
+            }
+
+            // Copy head of readBuffer to output
+            System.arraycopy(readBuffer, 0, b, off + bytesFromLookahead, bufferTail);
+
+            return bytesRead;
         }
 
         int[] getLookAhead()
