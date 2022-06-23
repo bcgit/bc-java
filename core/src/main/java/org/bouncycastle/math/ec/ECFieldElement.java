@@ -112,11 +112,6 @@ public abstract class ECFieldElement
 
         Fp(BigInteger q, BigInteger r, BigInteger x)
         {
-            if (x == null || x.signum() < 0 || x.compareTo(q) >= 0)
-            {
-                throw new IllegalArgumentException("x value invalid in Fp field element");
-            }
-
             this.q = q;
             this.r = r;
             this.x = x;
@@ -603,58 +598,6 @@ public abstract class ECFieldElement
          * The <code>LongArray</code> holding the bits.
          */
         LongArray x;
-
-        /**
-         * Constructor for PPB.
-         * @param m  The exponent <code>m</code> of
-         * <code>F<sub>2<sup>m</sup></sub></code>.
-         * @param k1 The integer <code>k1</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.
-         * @param k2 The integer <code>k2</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.
-         * @param k3 The integer <code>k3</code> where <code>x<sup>m</sup> +
-         * x<sup>k3</sup> + x<sup>k2</sup> + x<sup>k1</sup> + 1</code>
-         * represents the reduction polynomial <code>f(z)</code>.
-         * @param x The BigInteger representing the value of the field element.
-         */
-        F2m(
-            int m, 
-            int k1, 
-            int k2, 
-            int k3,
-            BigInteger x)
-        {
-            if (x == null || x.signum() < 0 || x.bitLength() > m)
-            {
-                throw new IllegalArgumentException("x value invalid in F2m field element");
-            }
-
-            if ((k2 == 0) && (k3 == 0))
-            {
-                this.representation = TPB;
-                this.ks = new int[]{ k1 }; 
-            }
-            else
-            {
-                if (k2 >= k3)
-                {
-                    throw new IllegalArgumentException(
-                            "k2 must be smaller than k3");
-                }
-                if (k2 <= 0)
-                {
-                    throw new IllegalArgumentException(
-                            "k2 must be larger than 0");
-                }
-                this.representation = PPB;
-                this.ks = new int[]{ k1, k2, k3 }; 
-            }
-
-            this.m = m;
-            this.x = new LongArray(x);
-        }
 
         F2m(int m, int[] ks, LongArray x)
         {
