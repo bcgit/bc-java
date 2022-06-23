@@ -310,7 +310,7 @@ public class BCStyle
 
     public String oidToDisplayName(ASN1ObjectIdentifier oid)
     {
-        return (String)DefaultSymbols.get(oid);
+        return (String)defaultSymbols.get(oid);
     }
 
     public String[] oidToAttrNames(ASN1ObjectIdentifier oid)
