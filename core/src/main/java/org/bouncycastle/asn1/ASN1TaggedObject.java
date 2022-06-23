@@ -50,6 +50,38 @@ public abstract class ASN1TaggedObject
         throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
     }
 
+    public static ASN1TaggedObject getInstance(Object obj, int tagClass)
+    {
+        if (obj == null)
+        {
+            throw new NullPointerException("'obj' cannot be null");
+        }
+
+        ASN1TaggedObject taggedObject = getInstance(obj);
+        if (tagClass != taggedObject.getTagClass())
+        {
+            throw new IllegalArgumentException("unexpected tag in getInstance: " + ASN1Util.getTagText(taggedObject));
+        }
+
+        return taggedObject;
+    }
+
+    public static ASN1TaggedObject getInstance(Object obj, int tagClass, int tagNo)
+    {
+        if (obj == null)
+        {
+            throw new NullPointerException("'obj' cannot be null");
+        }
+
+        ASN1TaggedObject taggedObject = getInstance(obj);
+        if (!taggedObject.hasTag(tagClass, tagNo))
+        {
+            throw new IllegalArgumentException("unexpected tag in getInstance: " + ASN1Util.getTagText(taggedObject));
+        }
+
+        return taggedObject;
+    }
+
     public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
         if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())

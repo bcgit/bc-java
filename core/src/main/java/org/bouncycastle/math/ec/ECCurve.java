@@ -784,6 +784,11 @@ public abstract class ECCurve
 
         public ECFieldElement fromBigInteger(BigInteger x)
         {
+            if (x == null || x.signum() < 0 || x.compareTo(q) >= 0)
+            {
+                throw new IllegalArgumentException("x value invalid for Fp field element");
+            }
+
             return new ECFieldElement.Fp(this.q, this.r, x);
         }
 
@@ -840,32 +845,11 @@ public abstract class ECCurve
 
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
-            if (k1 == 0)
-            {
-                throw new IllegalArgumentException("k1 must be > 0");
-            }
+            int[] exponents = (k2 | k3) == 0
+                ? new int[]{ 0, k1, m }
+                : new int[]{ 0, k1, k2, k3, m };
 
-            if (k2 == 0)
-            {
-                if (k3 != 0)
-                {
-                    throw new IllegalArgumentException("k3 must be 0 if k2 == 0");
-                }
-
-                return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, m });
-            }
-
-            if (k2 <= k1)
-            {
-                throw new IllegalArgumentException("k2 must be > k1");
-            }
-
-            if (k3 <= k2)
-            {
-                throw new IllegalArgumentException("k3 must be > k2");
-            }
-
-            return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, k2, k3, m });
+            return FiniteFields.getBinaryExtensionField(exponents);
         }
 
         protected AbstractF2m(int m, int k1, int k2, int k3)
@@ -1318,7 +1302,16 @@ public abstract class ECCurve
 
         public ECFieldElement fromBigInteger(BigInteger x)
         {
-            return new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3, x);
+            if (x == null || x.signum() < 0 || x.bitLength() > m)
+            {
+                throw new IllegalArgumentException("x value invalid in F2m field element");
+            }
+
+            int[] ks = (k2 | k3) == 0
+                ? new int[]{ k1 }
+                : new int[]{ k1, k2, k3 };
+
+            return new ECFieldElement.F2m(m, ks, new LongArray(x));
         }
 
         protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
