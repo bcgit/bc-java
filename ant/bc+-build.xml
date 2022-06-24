@@ -474,6 +474,8 @@
                  <exclude name="**/*.crl" />
                  <exclude name="**/*.key" />
                  <exclude name="org/bouncycastle/**.crt" />
+                 <exclude name="org/bouncycastle/**/test/*.bin" />
+                 <exclude name="org/bouncycastle/**/test/*.ers" />
                  <exclude name="org/bouncycastle/**/test/*.cer" />
                  <exclude name="org/bouncycastle/**/test/*.kbx" />
                  <exclude name="org/bouncycastle/**/test/*.csr" />
@@ -922,6 +924,8 @@
              <fileset dir="${src.dir}" includes="**/*.crt" />
              <fileset dir="${src.dir}" includes="**/*.key" />
              <fileset dir="${src.dir}" includes="**/*.cer" />
+             <fileset dir="${src.dir}" includes="**/*.bin" />
+             <fileset dir="${src.dir}" includes="**/*.ers" />
              <fileset dir="${src.dir}" includes="**/*.oer" />
              <fileset dir="${src.dir}" includes="**/*.kbx" />
              <fileset dir="${src.dir}" includes="**/*.crl" />
