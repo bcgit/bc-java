@@ -82,6 +82,10 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA384  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA384;
     public static final ASN1ObjectIdentifier  ECKA_EG_X963KDF_SHA512  = BSIObjectIdentifiers.ecka_eg_X963kdf_SHA512;
 
+    public static final ASN1ObjectIdentifier  RSA_PKCS15 = PKCSObjectIdentifiers.rsaEncryption;
+    public static final ASN1ObjectIdentifier  RSA_OAEP = PKCSObjectIdentifiers.id_RSAES_OAEP;
+    public static final ASN1ObjectIdentifier  RSA_KEM = PKCSObjectIdentifiers.id_rsa_KEM;
+
     public static final ASN1ObjectIdentifier  SHA1 = OIWObjectIdentifiers.idSHA1.intern();
     public static final ASN1ObjectIdentifier  SHA224 = NISTObjectIdentifiers.id_sha224.intern();
     public static final ASN1ObjectIdentifier  SHA256 = NISTObjectIdentifiers.id_sha256.intern();

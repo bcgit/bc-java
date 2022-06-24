@@ -61,12 +61,17 @@ import org.bouncycastle.cert.crmf.jcajce.JcePKMACValuesCalculator;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.Recipient;
 import org.bouncycastle.cms.RecipientId;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientId;
+import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
@@ -181,6 +186,40 @@ public class AllTests
         checkCertReqMsgWithArchiveControl(kp, cert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
     }
 
+    public void testECBasicMessageWithArchiveControl()
+        throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("EC", BC);
+
+        kGen.initialize(256);
+
+        KeyPair clientKp = kGen.generateKeyPair();
+        KeyPair serverKp = kGen.generateKeyPair();
+        X509Certificate serverCert = makeV1Certificate(serverKp, "CN=Test Server", serverKp, "CN=Test Server");
+
+        JcaCertificateRequestMessageBuilder certReqBuild = new JcaCertificateRequestMessageBuilder(BigInteger.ONE);
+
+        certReqBuild.setSubject(new X500Principal("CN=Test"))
+                    .setPublicKey(clientKp.getPublic());
+
+        certReqBuild.addControl(new JcaPKIArchiveControlBuilder(clientKp.getPrivate(), new X500Principal("CN=Test"))
+            .addRecipientGenerator(new JceKeyAgreeRecipientInfoGenerator(
+                        CMSAlgorithm.ECCDH_SHA256KDF,
+                        clientKp.getPrivate(), serverKp.getPublic(),
+                        CMSAlgorithm.AES256_WRAP)
+                        .addRecipient(serverCert)
+                        .setProvider(BC))
+            .build(new JceCMSContentEncryptorBuilder(new ASN1ObjectIdentifier(CMSEnvelopedDataGenerator.AES128_CBC)).setProvider(BC).build()));
+
+        JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
+
+        TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
+        TestCase.assertEquals(clientKp.getPublic(), certReqMsg.getPublicKey());
+
+        checkCertReqMsgWithArchiveControl(clientKp, serverCert, certReqMsg);
+        checkCertReqMsgWithArchiveControl(clientKp, serverCert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
+    }
+
     private void checkCertReqMsgWithArchiveControl(KeyPair kp, X509Certificate cert, JcaCertificateRequestMessage certReqMsg)
         throws CRMFException, CMSException, IOException
     {
@@ -190,15 +229,31 @@ public class AllTests
 
         TestCase.assertTrue(archiveControl.isEnvelopedData());
 
-        RecipientInformationStore recips = archiveControl.getEnvelopedData().getRecipientInfos();
+        CMSEnvelopedData envelopedData = archiveControl.getEnvelopedData();
+
+        RecipientInformationStore recips = envelopedData.getRecipientInfos();
 
         RecipientId recipientId = new JceKeyTransRecipientId(cert);
 
         RecipientInformation recipientInformation = recips.get(recipientId);
 
+        Recipient recipient;
+        if (recipientInformation == null)
+        {
+            recipientId = new JceKeyAgreeRecipientId(cert);
+            recipientInformation = recips.get(recipientId);
+            recipient = new JceKeyAgreeEnvelopedRecipient(kp.getPrivate()).setProvider(BC);
+            TestCase.assertEquals(CMSAlgorithm.ECCDH_SHA256KDF, recipientInformation.getKeyEncryptionAlgorithm().getAlgorithm());
+        }
+        else
+        {
+            recipient = new JceKeyTransEnvelopedRecipient(kp.getPrivate()).setProvider(BC);
+            TestCase.assertEquals(PKCSObjectIdentifiers.rsaEncryption, recipientInformation.getKeyEncryptionAlgorithm().getAlgorithm());
+        }
+
         TestCase.assertNotNull(recipientInformation);
 
-        EncKeyWithID encKeyWithID = EncKeyWithID.getInstance(recipientInformation.getContent(new JceKeyTransEnvelopedRecipient(kp.getPrivate()).setProvider(BC)));
+        EncKeyWithID encKeyWithID = EncKeyWithID.getInstance(recipientInformation.getContent(recipient));
 
         TestCase.assertTrue(encKeyWithID.hasIdentifier());
         TestCase.assertFalse(encKeyWithID.isIdentifierUTF8String());
@@ -574,6 +629,10 @@ public class AllTests
         else if (issPub.getAlgorithm().equals("DSA"))
         {
             signerBuilder = new JcaContentSignerBuilder("SHA1withDSA");
+        }
+        else if (issPub.getAlgorithm().equals("EC"))
+        {
+            signerBuilder = new JcaContentSignerBuilder("SHA256withECDSA");
         }
         else if (issPub.getAlgorithm().equals("ECDSA"))
         {
