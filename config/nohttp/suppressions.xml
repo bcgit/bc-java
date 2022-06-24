@@ -8,7 +8,7 @@
   <suppress files="test[\\/]est.+" checks="NoHttp"/>
 
   <!-- Suppress warnings in certificates, signatures, configs and emails for testing -->
-  <suppress files=".+\.(?:pem|crt|cer|eml|cnf|sig|message)$" checks="NoHttp"/>
+  <suppress files=".+\.(?:ers|pem|crt|cer|eml|cnf|sig|message)$" checks="NoHttp"/>
 
   <!-- This tests server doesn't seem to support HTTPS -->
   <suppress message="http://testrfc7030.com/" checks="NoHttp"/>
