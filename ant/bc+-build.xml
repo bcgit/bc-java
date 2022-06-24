@@ -186,6 +186,8 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.kbx" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.key" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.der" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.bin" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.ers" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.gpg" />
@@ -223,6 +225,8 @@
                             <include name="**/*.gpg" />
                             <include name="**/*.pub" />
                             <include name="**/*.sec" />
+                            <include name="**/*.ers" />
+                            <include name="**/*.bin" />
                             <include name="**/*.properties" />
                         </fileset>
                     </fileset-element>
