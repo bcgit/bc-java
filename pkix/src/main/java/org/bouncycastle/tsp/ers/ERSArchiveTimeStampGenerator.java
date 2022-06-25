@@ -53,6 +53,7 @@ public class ERSArchiveTimeStampGenerator
         OutputStream digOut = digCalc.getOutputStream();
 
         digOut.write(archiveTimeStampSequence.getEncoded(ASN1Encoding.DER));
+        digOut.close();
 
         this.previousChainHash = digCalc.getDigest();
     }
