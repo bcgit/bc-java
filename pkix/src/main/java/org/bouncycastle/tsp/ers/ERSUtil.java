@@ -184,9 +184,9 @@ class ERSUtil
         try
         {
             OutputStream digOut = digCalc.getOutputStream();
-
-            digOut.write(chainHash);
+            
             digOut.write(dataHash);
+            digOut.write(chainHash);
             digOut.close();
 
             return digCalc.getDigest();
