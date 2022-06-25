@@ -25,6 +25,7 @@ public class ERSArchiveTimeStamp
     private final ArchiveTimeStamp archiveTimeStamp;
     private final DigestCalculator digCalc;
     private final TimeStampToken timeStampToken;
+    private final byte[] previousChainsDigest;
 
     private ERSRootNodeCalculator rootNodeCalculator = new BinaryTreeRootCalculator();
 
@@ -37,6 +38,7 @@ public class ERSArchiveTimeStamp
     public ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculatorProvider digCalcProv)
         throws TSPException, ERSException
     {
+        this.previousChainsDigest = null;
         try
         {
             this.archiveTimeStamp = archiveTimeStamp;
@@ -56,6 +58,7 @@ public class ERSArchiveTimeStamp
     ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc, ERSRootNodeCalculator rootNodeCalculator)
         throws TSPException, ERSException
     {
+        this.previousChainsDigest = null;
         try
         {
             this.archiveTimeStamp = archiveTimeStamp;
@@ -64,6 +67,26 @@ public class ERSArchiveTimeStamp
             this.rootNodeCalculator = rootNodeCalculator;
         }
         catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
+    }
+
+    ERSArchiveTimeStamp(byte[] previousChainsDigest, ArchiveTimeStamp archiveTimeStamp, DigestCalculatorProvider digCalcProv)
+        throws TSPException, ERSException
+    {
+        this.previousChainsDigest = previousChainsDigest;
+        try
+        {
+            this.archiveTimeStamp = archiveTimeStamp;
+            this.timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
+            this.digCalc = digCalcProv.get(archiveTimeStamp.getDigestAlgorithmIdentifier());
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
+        catch (OperatorCreationException e)
         {
             throw new ERSException(e.getMessage(), e);
         }
@@ -86,6 +109,11 @@ public class ERSArchiveTimeStamp
         if (timeStampToken.getTimeStampInfo().getGenTime().after(atDate))
         {
             throw new ArchiveTimeStampValidationException("timestamp generation time is in the future");
+        }
+
+        if (previousChainsDigest != null)
+        {
+            hash = ERSUtil.concatPreviousHashes(digCalc, previousChainsDigest, hash);
         }
 
         checkContainsHashValue(hash, digCalc);
