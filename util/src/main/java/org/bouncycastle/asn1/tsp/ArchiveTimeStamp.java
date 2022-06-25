@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.tsp;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -147,7 +148,8 @@ public class ArchiveTimeStamp
                 SignedData tsData = SignedData.getInstance(timeStamp.getContent());
                 if (tsData.getEncapContentInfo().getContentType().equals(PKCSObjectIdentifiers.id_ct_TSTInfo))
                 {
-                    TSTInfo tstData = TSTInfo.getInstance(tsData.getEncapContentInfo());
+                    TSTInfo tstData = TSTInfo.getInstance(
+                        ASN1OctetString.getInstance(tsData.getEncapContentInfo().getContent()).getOctets());
 
                     return tstData.getMessageImprint().getHashAlgorithm();
                 }

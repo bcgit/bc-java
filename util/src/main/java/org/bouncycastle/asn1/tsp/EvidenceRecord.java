@@ -233,6 +233,12 @@ public class EvidenceRecord
         {
             ArchiveTimeStampChain[] chains = archiveTimeStampSequence.getArchiveTimeStampChains();
 
+            AlgorithmIdentifier digAlg = chains[chains.length - 1].getArchiveTimestamps()[0].getDigestAlgorithmIdentifier();
+            if (!digAlg.equals(ats.getDigestAlgorithmIdentifier()))
+            {
+                throw new IllegalArgumentException("mismatch of digest algorithm in addArchiveTimeStamp");
+            }
+
             chains[chains.length - 1] = chains[chains.length - 1].append(ats);
             return new EvidenceRecord(this, new ArchiveTimeStampSequence(chains), null);
         }

@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -320,6 +321,143 @@ public class ERSTest
         ev2.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
         ev2.validatePresent(h3Docs, new Date());
+    }
+
+    public void testTimeStampRenewal()
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        TimeStampResponse tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+
+        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tspResp);
+        
+        // simple renewal of timestamp, same hash, same data.
+
+        ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
+
+        ERSEvidenceRecord ev = evGen.generate(ats);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+        
+        tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
+
+        signKP = TSPTestUtil.makeKeyPair();
+        signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        origKP = TSPTestUtil.makeKeyPair();
+        origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        certs = new JcaCertStore(certList);
+
+        tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+        
+        ev = ev.renewTimeStamp(tspResp);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+
+        ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
+
+        assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps().length);
+
+        tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
+
+        signKP = TSPTestUtil.makeKeyPair();
+        signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        origKP = TSPTestUtil.makeKeyPair();
+        origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        certs = new JcaCertStore(certList);
+
+        tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+
+        ev = ev.renewTimeStamp(tspResp);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+
+        ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
+
+        assertEquals(3, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps().length);
+    }
+
+    private TimeStampResponse doTimeStamp(PrivateKey tspKey, X509Certificate tspCert, Store certs, TimeStampRequest tspReq)
+        throws Exception
+    {
+        JcaSignerInfoGeneratorBuilder infoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(infoGeneratorBuilder.build(new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(tspKey), tspCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2.3"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(tspReq, new BigInteger("23"), new Date());
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
+
+        return tsResp;
     }
 
     public void test4NodeBuild()
