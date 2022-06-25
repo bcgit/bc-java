@@ -40,14 +40,14 @@ class ERSUtil
 
     static byte[] calculateBranchHash(DigestCalculator digCalc, byte[] a, byte[] b)
     {
-          if (hashComp.compare(a, b) <= 0)
-          {
-              return calculateDigest(digCalc, a, b);
-          }
-          else
-          {
-              return calculateDigest(digCalc, b, a);
-          }
+        if (hashComp.compare(a, b) <= 0)
+        {
+            return calculateDigest(digCalc, a, b);
+        }
+        else
+        {
+            return calculateDigest(digCalc, b, a);
+        }
     }
 
     static byte[] calculateBranchHash(DigestCalculator digCalc, byte[][] values)
@@ -78,7 +78,7 @@ class ERSUtil
             throw ExpUtil.createIllegalState("unable to calculate hash: " + e.getMessage(), e);
         }
     }
-    
+
     static byte[] calculateDigest(DigestCalculator digCalc, Iterator<byte[]> dataGroup)
     {
         try
@@ -151,5 +151,50 @@ class ERSUtil
         }
 
         return hashes.toList();
+    }
+
+    static List<byte[]> buildHashList(DigestCalculator digCalc, List<ERSData> dataObjects, byte[] previousChainsHash)
+    {
+        SortedHashList hashes = new SortedHashList();
+
+        if (previousChainsHash != null)
+        {
+            for (int i = 0; i != dataObjects.size(); i++)
+            {
+                byte[] hash = ((ERSData)dataObjects.get(i)).getHash(digCalc);
+
+                hashes.add(concatPreviousHashes(digCalc, previousChainsHash, hash));
+            }
+        }
+        else
+        {
+            for (int i = 0; i != dataObjects.size(); i++)
+            {
+                byte[] hash = ((ERSData)dataObjects.get(i)).getHash(digCalc);
+
+                hashes.add(hash);
+            }
+        }
+
+        return hashes.toList();
+    }
+
+    static byte[] concatPreviousHashes(DigestCalculator digCalc, byte[] chainHash, byte[] dataHash)
+    {
+        try
+        {
+            OutputStream digOut = digCalc.getOutputStream();
+
+            digOut.write(chainHash);
+            digOut.write(dataHash);
+            digOut.close();
+
+            return digCalc.getDigest();
+        }
+        catch (IOException e)
+        {
+            // should never happen
+            throw new IllegalStateException("unable to hash data");
+        }
     }
 }

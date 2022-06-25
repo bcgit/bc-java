@@ -1,6 +1,7 @@
 package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,7 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
+import org.bouncycastle.asn1.tsp.ArchiveTimeStampSequence;
 import org.bouncycastle.asn1.tsp.PartialHashtree;
 import org.bouncycastle.asn1.tsp.TSTInfo;
 import org.bouncycastle.operator.DigestCalculator;
@@ -27,6 +30,7 @@ public class ERSArchiveTimeStampGenerator
     private List<ERSData> dataObjects = new ArrayList<ERSData>();
 
     private ERSRootNodeCalculator rootNodeCalculator = new BinaryTreeRootCalculator();
+    private byte[] previousChainHash;
 
     public ERSArchiveTimeStampGenerator(DigestCalculator digCalc)
     {
@@ -41,6 +45,16 @@ public class ERSArchiveTimeStampGenerator
     public void addAllData(List<ERSData> dataObjects)
     {
         this.dataObjects.addAll(dataObjects);
+    }
+
+    void addPreviousChains(ArchiveTimeStampSequence archiveTimeStampSequence)
+        throws IOException
+    {
+        OutputStream digOut = digCalc.getOutputStream();
+
+        digOut.write(archiveTimeStampSequence.getEncoded(ASN1Encoding.DER));
+
+        this.previousChainHash = digCalc.getDigest();
     }
 
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator)
@@ -70,6 +84,11 @@ public class ERSArchiveTimeStampGenerator
 
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
+        if (tspResponse.getStatus() != 0)
+        {
+            throw new TSPException("TSP response error status: " + tspResponse.getStatusString());
+        }
+        
         TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
 
         if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
@@ -100,7 +119,7 @@ public class ERSArchiveTimeStampGenerator
 
     private PartialHashtree[] getPartialHashtrees()
     {
-        List<byte[]> hashes = ERSUtil.buildHashList(digCalc, dataObjects);
+        List<byte[]> hashes = ERSUtil.buildHashList(digCalc, dataObjects, previousChainHash);
         PartialHashtree[] trees = new PartialHashtree[hashes.size()];
 
         Set<ERSDataGroup> dataGroupSet = new HashSet<ERSDataGroup>();
