@@ -367,7 +367,7 @@ public class ERSTest
         TimeStampResponse tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
 
         ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tspResp);
-        
+
         // simple renewal of timestamp, same hash, same data.
 
         ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
@@ -377,7 +377,7 @@ public class ERSTest
         ev.validatePresent(h1Doc, new Date());
         ev.validatePresent(h2Doc, new Date());
         ev.validatePresent(h3Docs, new Date());
-        
+
         tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
 
         signKP = TSPTestUtil.makeKeyPair();
@@ -395,7 +395,7 @@ public class ERSTest
         certs = new JcaCertStore(certList);
 
         tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
-        
+
         ev = ev.renewTimeStamp(tspResp);
 
         ev.validatePresent(h1Doc, new Date());
@@ -433,6 +433,126 @@ public class ERSTest
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
 
         assertEquals(3, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps().length);
+    }
+
+    public void testHashRenewal()
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        TimeStampResponse tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+
+        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tspResp);
+
+        // simple renewal of timestamp, same hash, same data.
+
+        ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
+
+        ERSEvidenceRecord ev = evGen.generate(ats);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+
+        digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
+
+        ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+
+        tspReq = ev.generateHashRenewalRequest(ersGen, tspReqGen);
+
+        signKP = TSPTestUtil.makeKeyPair();
+        signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        origKP = TSPTestUtil.makeKeyPair();
+        origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        certs = new JcaCertStore(certList);
+
+        tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+
+        ev = ev.renewHash(ersGen, tspResp);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+
+        ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
+
+        assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().size());
+
+        tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
+
+        signKP = TSPTestUtil.makeKeyPair();
+        signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        origKP = TSPTestUtil.makeKeyPair();
+        origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        certs = new JcaCertStore(certList);
+
+        tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
+
+        ev = ev.renewTimeStamp(tspResp);
+
+        ev.validatePresent(h1Doc, new Date());
+        ev.validatePresent(h2Doc, new Date());
+        ev.validatePresent(h3Docs, new Date());
+
+        ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
+
+        assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[1].getArchiveTimestamps().length);
     }
 
     private TimeStampResponse doTimeStamp(PrivateKey tspKey, X509Certificate tspCert, Store certs, TimeStampRequest tspReq)
@@ -582,7 +702,7 @@ public class ERSTest
         ERSEvidenceRecord ers = new ERSEvidenceRecord(Base64.decode("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"), new JcaDigestCalculatorProviderBuilder().build());
 
         ers.getLastArchiveTimeStamp().validate(new JcaSimpleSignerInfoVerifierBuilder().build(ers.getSigningCertificate()));
-  
+
         ers.validatePresent(Hex.decode("9CE2D7D350F9418407439F0CA11DCC12AB9F7CDB15F9ECC5ECA935482602B872"), new Date());
         ers.validatePresent(Hex.decode("EECC4D3352C0E965FD88795EDFD1A60C5AC09B3C1100C052EBB6AE0BD3432B26"), new Date());
 

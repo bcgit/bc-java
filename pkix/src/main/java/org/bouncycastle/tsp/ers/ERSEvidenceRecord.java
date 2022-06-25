@@ -1,10 +1,13 @@
 package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStampChain;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStampSequence;
@@ -28,6 +31,8 @@ public class ERSEvidenceRecord
     private final DigestCalculatorProvider digestCalculatorProvider;
     private final ERSArchiveTimeStamp firstArchiveTimeStamp;
     private final ERSArchiveTimeStamp lastArchiveTimeStamp;
+    private final byte[] previousChainsDigest;
+    private final DigestCalculator digCalc;
 
     public ERSEvidenceRecord(byte[] evidenceRecord, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException
@@ -46,8 +51,38 @@ public class ERSEvidenceRecord
         ArchiveTimeStampChain chain = chains[chains.length - 1];
         ArchiveTimeStamp[] archiveTimestamps = chain.getArchiveTimestamps();
 
-        this.firstArchiveTimeStamp = new ERSArchiveTimeStamp(archiveTimestamps[0], digestCalculatorProvider);
         this.lastArchiveTimeStamp = new ERSArchiveTimeStamp(archiveTimestamps[archiveTimestamps.length - 1], digestCalculatorProvider);
+
+        if (chains.length > 1)
+        {
+            try
+            {
+                ASN1EncodableVector v = new ASN1EncodableVector();
+                for (int i = 0; i != chains.length - 1; i++)
+                {
+                    v.add(chains[i]);
+                }
+
+                this.digCalc = digestCalculatorProvider.get(lastArchiveTimeStamp.getDigestAlgorithmIdentifier());
+                OutputStream dOut = digCalc.getOutputStream();
+
+                dOut.write(new DERSequence(v).getEncoded(ASN1Encoding.DER));
+                dOut.close();
+
+                this.previousChainsDigest = digCalc.getDigest();
+            }
+            catch (Exception e)
+            {
+                 throw new ERSException(e.getMessage(), e);
+            }
+        }
+        else
+        {
+            this.digCalc = null;
+            this.previousChainsDigest = null;
+        }
+
+        this.firstArchiveTimeStamp = new ERSArchiveTimeStamp(previousChainsDigest, archiveTimestamps[0], digestCalculatorProvider);
     }
 
     public ERSArchiveTimeStamp getLastArchiveTimeStamp()
@@ -129,19 +164,33 @@ public class ERSEvidenceRecord
     }
 
     public TimeStampRequest generateTimeStampRenewalRequest(TimeStampRequestGenerator tspReqGen)
-        throws TSPException, ERSException, IOException
+        throws TSPException, ERSException
     {
         ERSArchiveTimeStampGenerator atsGen = buildTspRenewalGenerator();
 
-        return atsGen.generateTimeStampRequest(tspReqGen);
+        try
+        {
+            return atsGen.generateTimeStampRequest(tspReqGen);
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
     }
 
     public TimeStampRequest generateTimeStampRenewalRequest(TimeStampRequestGenerator tspReqGen, BigInteger nonce)
-        throws ERSException, TSPException, IOException
+        throws ERSException, TSPException
     {
         ERSArchiveTimeStampGenerator atsGen = buildTspRenewalGenerator();
 
-        return atsGen.generateTimeStampRequest(tspReqGen, nonce);
+        try
+        {
+            return atsGen.generateTimeStampRequest(tspReqGen, nonce);
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
     }
 
     public ERSEvidenceRecord renewTimeStamp(TimeStampResponse tspResp)
@@ -196,5 +245,49 @@ public class ERSEvidenceRecord
         }
 
         return atsGen;
+    }
+
+    public TimeStampRequest generateHashRenewalRequest(ERSArchiveTimeStampGenerator atsGen, TimeStampRequestGenerator tspReqGen)
+        throws ERSException, TSPException, IOException
+    {
+        try
+        {
+            atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
+
+            return atsGen.generateTimeStampRequest(tspReqGen);
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
+    }
+
+    public TimeStampRequest generateHashRenewalRequest(ERSArchiveTimeStampGenerator atsGen, TimeStampRequestGenerator tspReqGen, BigInteger nonce)
+        throws ERSException, TSPException, IOException
+    {
+        atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
+
+        return atsGen.generateTimeStampRequest(tspReqGen, nonce);
+    }
+
+    public ERSEvidenceRecord renewHash(ERSArchiveTimeStampGenerator atsGen, TimeStampResponse tspResp)
+        throws ERSException, TSPException
+    {
+        try
+        {
+            atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
+
+            ArchiveTimeStamp ats = atsGen.generateArchiveTimeStamp(tspResp).toASN1Structure();
+
+            return new ERSEvidenceRecord(evidenceRecord.addArchiveTimeStamp(ats, true), digestCalculatorProvider);
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
     }
 }
