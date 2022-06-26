@@ -18,17 +18,31 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.CMSSignedData;
+import org.bouncycastle.cms.CMSSignedDataGenerator;
+import org.bouncycastle.cms.CMSTypedData;
+import org.bouncycastle.cms.SignerInformation;
+import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
@@ -37,9 +51,12 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -304,6 +321,134 @@ public class CompositeKeyTest
 //        doOutput("/tmp/comp_cert_1.pem", certKeyStr);
 //        doOutput("/tmp/comp_priv_1.pem", privKeyStr);
 //        doOutput("/tmp/comp_pub_1.pem", pubKeyStr);
+    }
+
+    public void testRSAAndECCompositeSignedDataGen()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpg.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
+
+        rsaKpg.initialize(new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4));
+
+        KeyPair lmsKp = rsaKpg.generateKeyPair();
+
+        PrivateKey lmsPriv = lmsKp.getPrivate();
+        PublicKey lmsPub = lmsKp.getPublic();
+
+        //
+        // create the certificate - version 3
+        //
+        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
+            .add("SHA256withECDSA")
+            .add("SHA256withRSA")
+            .build();
+        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
+
+        X500Name issuerName = new X500Name("CN=Composite EC/RSA Test");
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            issuerName,
+            BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), issuerName,
+            compPub);
+
+        X509CertificateHolder ecCertHldr = certGen.build(sigGen);
+
+        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
+            .build(compPub);
+
+        assertTrue("ec multi failed", ecCertHldr.isSignatureValid(vProv));
+
+        vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
+
+        assertTrue("ec failed", ecCertHldr.isSignatureValid(vProv));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ecCertHldr);
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(compPub);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+
+        assertTrue(MiscObjectIdentifiers.id_composite_key.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
+        assertTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
+
+        byte[]              data = "Hello World!".getBytes();
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray(data);
+
+        certList.add(cert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digProvider = new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
+        JcaSignerInfoGeneratorBuilder signerInfoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(digProvider);
+
+        signerInfoGeneratorBuilder.setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+        
+        gen.addSignerInfoGenerator(signerInfoGeneratorBuilder.build(sigGen, cert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        s = new CMSSignedData(s.getEncoded());
+
+        SignerInformationStore sigStore = s.getSignerInfos();
+        Store certStore = s.getCertificates();
+
+        SignerInformation sigInf = sigStore.getSigners().iterator().next();
+
+        assertTrue(sigInf.verify(new JcaSimpleSignerInfoVerifierBuilder().build((X509CertificateHolder)certStore.getMatches(null).iterator().next())));
+
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
+
+        pWrt.writeObject(s.toASN1Structure());
+        pWrt.close();
+
+        PEMParser parser = new PEMParser(new StringReader(sWrt.toString()));
+
+        s = new CMSSignedData((ContentInfo)parser.readObject());
+
+        sigStore = s.getSignerInfos();
+        certStore = s.getCertificates();
+
+        sigInf = sigStore.getSigners().iterator().next();
+
+        assertTrue(sigInf.verify(new JcaSimpleSignerInfoVerifierBuilder().build((X509CertificateHolder)certStore.getMatches(null).iterator().next())));
+
+        //doOutput("/tmp/comp_cms_1.pem", sWrt.toString());
     }
 
     private static void doOutput(String fileName, String contents)
