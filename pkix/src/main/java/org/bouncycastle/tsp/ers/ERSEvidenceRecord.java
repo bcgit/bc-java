@@ -3,7 +3,9 @@ package org.bouncycastle.tsp.ers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -105,10 +107,10 @@ public class ERSEvidenceRecord
         firstArchiveTimeStamp.validatePresent(data, atDate);
     }
 
-    public void validatePresent(byte[] hash, Date atDate)
+    public void validatePresent(boolean isDataGroup, byte[] hash, Date atDate)
         throws ERSException, OperatorCreationException
     {
-        firstArchiveTimeStamp.validatePresent(hash, atDate);
+        firstArchiveTimeStamp.validatePresent(isDataGroup, hash, atDate);
     }
 
     /**
@@ -199,7 +201,7 @@ public class ERSEvidenceRecord
         ERSArchiveTimeStampGenerator atsGen = buildTspRenewalGenerator();
 
         ArchiveTimeStamp ats = atsGen.generateArchiveTimeStamp(tspResp).toASN1Structure();
-   
+
         try
         {
             return new ERSEvidenceRecord(evidenceRecord.addArchiveTimeStamp(ats, false), digestCalculatorProvider);
@@ -231,27 +233,45 @@ public class ERSEvidenceRecord
         }
 
         ERSArchiveTimeStampGenerator atsGen = new ERSArchiveTimeStampGenerator(digCalc);
-
+        
+        List<ERSData> prevTimes = new ArrayList<ERSData>(previous.length);   
         for (int i = 0; i != previous.length; i++)
         {
             try
             {
-                atsGen.addData(new ERSByteData(previous[i].getTimeStamp().getEncoded(ASN1Encoding.DER)));
+                prevTimes.add(new ERSByteData(previous[i].getTimeStamp().getEncoded(ASN1Encoding.DER)));
             }
             catch (IOException e)
             {
                 throw new ERSException("unable to process previous ArchiveTimeStamps", e);
             }
         }
+        ERSDataGroup timestampGroup = new ERSDataGroup(prevTimes);
+        
+        atsGen.addData(timestampGroup);
 
         return atsGen;
     }
 
-    public TimeStampRequest generateHashRenewalRequest(ERSArchiveTimeStampGenerator atsGen, TimeStampRequestGenerator tspReqGen)
+    public TimeStampRequest generateHashRenewalRequest(DigestCalculator digCalc, ERSData data, TimeStampRequestGenerator tspReqGen)
         throws ERSException, TSPException, IOException
     {
+        // check old data present
         try
         {
+            firstArchiveTimeStamp.validatePresent(data, new Date());
+        }
+        catch (Exception e)
+        {
+            throw new ERSException("attempt to hash renew on invalid data");
+        }
+
+        try
+        {
+            ERSArchiveTimeStampGenerator atsGen = new ERSArchiveTimeStampGenerator(digCalc);
+
+            atsGen.addData(data);
+
             atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
 
             return atsGen.generateTimeStampRequest(tspReqGen);
@@ -262,19 +282,47 @@ public class ERSEvidenceRecord
         }
     }
 
-    public TimeStampRequest generateHashRenewalRequest(ERSArchiveTimeStampGenerator atsGen, TimeStampRequestGenerator tspReqGen, BigInteger nonce)
+    public TimeStampRequest generateHashRenewalRequest(DigestCalculator digCalc, ERSData data, TimeStampRequestGenerator tspReqGen, BigInteger nonce)
         throws ERSException, TSPException, IOException
     {
+        // check old data present
+        try
+        {
+            firstArchiveTimeStamp.validatePresent(data, new Date());
+        }
+        catch (Exception e)
+        {
+            throw new ERSException("attempt to hash renew on invalid data");
+        }
+        
+        ERSArchiveTimeStampGenerator atsGen = new ERSArchiveTimeStampGenerator(digCalc);
+
+        atsGen.addData(data);
+        
         atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
 
         return atsGen.generateTimeStampRequest(tspReqGen, nonce);
     }
 
-    public ERSEvidenceRecord renewHash(ERSArchiveTimeStampGenerator atsGen, TimeStampResponse tspResp)
+    public ERSEvidenceRecord renewHash(DigestCalculator digCalc, ERSData data, TimeStampResponse tspResp)
         throws ERSException, TSPException
     {
+        // check old data present
         try
         {
+            firstArchiveTimeStamp.validatePresent(data, new Date());
+        }
+        catch (Exception e)
+        {
+            throw new ERSException("attempt to hash renew on invalid data");
+        }
+
+        try
+        {
+            ERSArchiveTimeStampGenerator atsGen = new ERSArchiveTimeStampGenerator(digCalc);
+
+            atsGen.addData(data);
+
             atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
 
             ArchiveTimeStamp ats = atsGen.generateArchiveTimeStamp(tspResp).toASN1Structure();

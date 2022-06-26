@@ -55,6 +55,22 @@ public class ERSArchiveTimeStamp
         }
     }
 
+    ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc)
+        throws TSPException, ERSException
+    {
+        this.previousChainsDigest = null;
+        try
+        {
+            this.archiveTimeStamp = archiveTimeStamp;
+            this.timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
+            this.digCalc = digCalc;
+        }
+        catch (IOException e)
+        {
+            throw new ERSException(e.getMessage(), e);
+        }
+    }
+
     ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc, ERSRootNodeCalculator rootNodeCalculator)
         throws TSPException, ERSException
     {
@@ -100,10 +116,10 @@ public class ERSArchiveTimeStamp
     public void validatePresent(ERSData data, Date atDate)
         throws ERSException, OperatorCreationException
     {
-        validatePresent(data.getHash(digCalc), atDate);
+        validatePresent(data instanceof ERSDataGroup, data.getHash(digCalc), atDate);
     }
 
-    public void validatePresent(byte[] hash, Date atDate)
+    public void validatePresent(boolean isDataGroup, byte[] hash, Date atDate)
         throws ERSException, OperatorCreationException
     {
         if (timeStampToken.getTimeStampInfo().getGenTime().after(atDate))
@@ -116,7 +132,7 @@ public class ERSArchiveTimeStamp
             hash = ERSUtil.concatPreviousHashes(digCalc, previousChainsDigest, hash);
         }
 
-        checkContainsHashValue(hash, digCalc);
+        checkContainsHashValue(isDataGroup, hash, digCalc);
 
         PartialHashtree[] partialTree = archiveTimeStamp.getReducedHashTree();
         byte[] rootHash;
@@ -169,28 +185,26 @@ public class ERSArchiveTimeStamp
         timeStampToken.validate(verifier);
     }
 
-    void checkContainsHashValue(final byte[] hash, final DigestCalculator digCalc)
+    void checkContainsHashValue(boolean isGroup, final byte[] hash, final DigestCalculator digCalc)
         throws ArchiveTimeStampValidationException
     {
         PartialHashtree[] reducedHashTree = archiveTimeStamp.getReducedHashTree();
 
         if (reducedHashTree != null)
         {
-            for (int i = 0; i != reducedHashTree.length; i++)
-            {
-                PartialHashtree current = reducedHashTree[i];
+            // RFC 4998, Section 4.3, part 2, search first node only.
+            PartialHashtree current = reducedHashTree[0];
 
-                if (current.containsHash(hash))
+            if (!isGroup && current.containsHash(hash))
+            {
+                return;
+            }
+            // check we're not a composite document hash
+            if (current.getValueCount() > 1)
+            {
+                if (Arrays.areEqual(hash, ERSUtil.calculateBranchHash(digCalc, current.getValues())))
                 {
                     return;
-                }
-                // check we're not a composite document hash
-                if (current.getValueCount() > 1)
-                {
-                    if (Arrays.areEqual(hash, ERSUtil.calculateBranchHash(digCalc, current.getValues())))
-                    {
-                        return;
-                    }
                 }
             }
             throw new ArchiveTimeStampValidationException("object hash not found");

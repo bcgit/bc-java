@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStampSequence;
 import org.bouncycastle.asn1.tsp.PartialHashtree;
@@ -82,6 +83,10 @@ public class ERSArchiveTimeStampGenerator
         throws TSPException, ERSException
     {
         PartialHashtree[] reducedHashTree = getPartialHashtrees();
+        if (reducedHashTree.length != 1)
+        {
+            throw new ERSException("multiple reduced hash trees found");
+        }
 
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
@@ -102,20 +107,79 @@ public class ERSArchiveTimeStampGenerator
             throw new ERSException("time stamp imprint for wrong root hash");
         }
 
-        ArchiveTimeStamp ats;
-        if (reducedHashTree.length == 1)
+        if (reducedHashTree[0].getValueCount() == 1)
         {
             // just include the TimeStamp
-            ats = new ArchiveTimeStamp(null, null,
-                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure());
+            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null,
+                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
         }
         else
         {
-            ats = new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree,
-                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure());
+            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree,
+                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
+        }
+    }
+
+    public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
+        throws TSPException, ERSException
+    {
+        PartialHashtree[] reducedHashTree = getPartialHashtrees();
+
+        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
+
+        if (tspResponse.getStatus() != 0)
+        {
+            throw new TSPException("TSP response error status: " + tspResponse.getStatusString());
         }
 
-        return new ERSArchiveTimeStamp(ats, digCalc, rootNodeCalculator);
+        TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
+
+        if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
+        {
+            throw new ERSException("time stamp imprint for wrong algorithm");
+        }
+
+        if (!Arrays.areEqual(tstInfo.getMessageImprint().getHashedMessage(), rootHash))
+        {
+            throw new ERSException("time stamp imprint for wrong root hash");
+        }
+
+        ArchiveTimeStamp ats;
+        ContentInfo timeStamp = tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure();
+        List<ERSArchiveTimeStamp> atss = new ArrayList<ERSArchiveTimeStamp>();
+
+        if (reducedHashTree.length == 1 && reducedHashTree[0].getValueCount() == 1)
+        {
+            // just include the TimeStamp
+            atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null, timeStamp), digCalc));
+        }
+        else
+        {
+            // we compute the final hash tree by left first traversal.
+            for (int i = 0; i != reducedHashTree.length; i++)
+            {
+                if (i > 0)
+                {
+                    byte[] bashHash = new byte[0];
+                    for (int j = 0; j != i; j++)
+                    {
+                        bashHash = concatenate(bashHash, reducedHashTree[j]);
+                    }
+                    PartialHashtree[] compressedTree = new PartialHashtree[reducedHashTree.length - i];
+                    compressedTree[0] = new PartialHashtree(bashHash, reducedHashTree[i].getValues());
+
+                    System.arraycopy(reducedHashTree, i + 1, compressedTree, 1, compressedTree.length - 1);
+
+                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
+                }
+                else
+                {
+                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree, timeStamp), digCalc));
+                }
+            }
+        }
+
+        return atss;
     }
 
     private PartialHashtree[] getPartialHashtrees()
@@ -162,5 +226,27 @@ public class ERSArchiveTimeStampGenerator
         }
 
         return trees;
+    }
+
+    byte[] concatenate(byte[] baseHash, PartialHashtree partialHashtree)
+    {
+        try
+        {
+            byte[][] values = partialHashtree.getValues();
+            OutputStream dOut = digCalc.getOutputStream();
+
+            dOut.write(baseHash);
+            for (int i = 0; i != values.length; i++)
+            {
+                dOut.write(values[i]);
+            }
+            dOut.close();
+
+            return digCalc.getDigest();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 }
