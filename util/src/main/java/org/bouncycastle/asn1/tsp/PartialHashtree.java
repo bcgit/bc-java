@@ -65,20 +65,6 @@ public class PartialHashtree
         this(new byte[][] { values });
     }
 
-    public PartialHashtree(byte[] value, byte[][] values)
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector(values.length + 1);
-
-        v.add(new DEROctetString(Arrays.clone(value)));
-
-        for (int i = 0; i != values.length; i++)
-        {
-            v.add(new DEROctetString(Arrays.clone(values[i])));
-        }
-
-        this.values = new DERSequence(v);
-    }
-
     public PartialHashtree(byte[][] values)
     {
         ASN1EncodableVector v = new ASN1EncodableVector(values.length);

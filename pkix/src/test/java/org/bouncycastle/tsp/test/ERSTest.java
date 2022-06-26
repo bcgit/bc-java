@@ -64,6 +64,9 @@ public class ERSTest
     public static final byte[] H3B_DATA = Strings.toByteArray("This is H3B");
     public static final byte[] H3C_DATA = Strings.toByteArray("This is H3C");
     public static final byte[] H4_DATA = Strings.toByteArray("This is H4");
+    public static final byte[] H5A_DATA = Strings.toByteArray("This is H5A");
+    public static final byte[] H5B_DATA = Strings.toByteArray("This is H5B");
+    public static final byte[] H5C_DATA = Strings.toByteArray("This is H5C");
 
     public void setUp()
     {
@@ -169,6 +172,250 @@ public class ERSTest
         ats = atss.get(1);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
         
+        ats = atss.get(2);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+    }
+
+    public void testBuildMultiGroups()
+        throws Exception
+    {
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
+        ERSDataGroup h5Docs = new ERSDataGroup(
+             new ERSData[]{new ERSByteData(H5A_DATA),
+                 new ERSByteData(H5B_DATA),
+                 new ERSByteData(H5C_DATA)});
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+        ersGen.addData(h5Docs);
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("06836dfdec4b556e05535d5696b0e4add5cee7d765bcba1f4c1613ddb9176813"),
+            tspReq.getMessageImprintDigest()));
+
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        JcaSignerInfoGeneratorBuilder infoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(infoGeneratorBuilder.build(new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(origKP.getPrivate()), origCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2.3"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(tspReq, new BigInteger("23"), new Date());
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
+
+        List<ERSArchiveTimeStamp> atss = ersGen.generateArchiveTimeStamps(tsResp);
+
+        assertEquals(4, atss.size());
+
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h3Docs, new Date());
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h1Doc);
+        checkAbsent(ats, h5Docs);
+
+        ats = new ERSArchiveTimeStamp(atss.get(1).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(new ERSByteData(H5A_DATA), new Date());
+        ats.validatePresent(new ERSByteData(H5B_DATA), new Date());
+        ats.validatePresent(h5Docs, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h1Doc);
+        checkAbsent(ats, h2Doc);
+
+        ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h1Doc, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h5Docs);
+
+        ats = new ERSArchiveTimeStamp(atss.get(3).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h2Doc, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h1Doc);
+        checkAbsent(ats, h5Docs);
+
+        // check for individual sub-documents
+        ats = atss.get(0);
+        List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
+        for (int i = 0; i != h3Hashes.size(); i++)
+        {
+            ats.validatePresent(false, (byte[])h3Hashes.get(i), new Date());
+        }
+
+        X509CertificateHolder tspCert = ats.getSigningCertificate();
+
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+
+        ats = atss.get(1);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+
+        ats = atss.get(2);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+    }
+
+    public void testBuildMulti()
+        throws Exception
+    {
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+        ERSDataGroup h3Docs = new ERSDataGroup(
+            new ERSData[]{new ERSByteData(H3A_DATA),
+                new ERSByteData(H3B_DATA),
+                new ERSByteData(H3C_DATA)});
+        ERSData h4Doc = new ERSByteData(H4_DATA);
+        ERSDataGroup h5Docs = new ERSDataGroup(
+             new ERSData[]{new ERSByteData(H5A_DATA),
+                 new ERSByteData(H5B_DATA),
+                 new ERSByteData(H5C_DATA)});
+
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(h1Doc);
+        ersGen.addData(h2Doc);
+        ersGen.addData(h3Docs);
+        ersGen.addData(h4Doc);
+        ersGen.addData(h5Docs);
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+                               
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
+            tspReq.getMessageImprintDigest()));
+
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        JcaSignerInfoGeneratorBuilder infoGeneratorBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(infoGeneratorBuilder.build(new JcaContentSignerBuilder("MD5withRSA").setProvider(BC).build(origKP.getPrivate()), origCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2.3"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp;
+
+        try
+        {
+            tsResp = tsRespGen.generateGrantedResponse(tspReq, new BigInteger("23"), new Date());
+        }
+        catch (TSPException e)
+        {
+            tsResp = tsRespGen.generateRejectedResponse(e);
+        }
+
+        List<ERSArchiveTimeStamp> atss = ersGen.generateArchiveTimeStamps(tsResp);
+
+        assertEquals(5, atss.size());
+
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h3Docs, new Date());
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h1Doc);
+        checkAbsent(ats, h5Docs);
+
+        ats = new ERSArchiveTimeStamp(atss.get(1).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h4Doc, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h5Docs);
+
+        ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(new ERSByteData(H5A_DATA), new Date());
+        ats.validatePresent(new ERSByteData(H5B_DATA), new Date());
+        ats.validatePresent(h5Docs, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h1Doc);
+        checkAbsent(ats, h2Doc);
+
+        ats = new ERSArchiveTimeStamp(atss.get(3).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h1Doc, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h5Docs);
+
+        // check for individual sub-documents
+        ats = atss.get(0);
+        List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
+        for (int i = 0; i != h3Hashes.size(); i++)
+        {
+            ats.validatePresent(false, (byte[])h3Hashes.get(i), new Date());
+        }
+
+        X509CertificateHolder tspCert = ats.getSigningCertificate();
+
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+
+        ats = atss.get(1);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+
         ats = atss.get(2);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
