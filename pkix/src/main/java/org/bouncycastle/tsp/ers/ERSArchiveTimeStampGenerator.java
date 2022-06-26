@@ -21,7 +21,6 @@ import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Generator for RFC 4998 Archive Time Stamps.
@@ -150,7 +149,6 @@ public class ERSArchiveTimeStampGenerator
 
         if (reducedHashTree.length == 1 && reducedHashTree[0].getValueCount() == 1)
         {
-            System.err.println(Hex.toHexString(reducedHashTree[0].getValues()[0]));
             // just include the TimeStamp
             atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null, timeStamp), digCalc));
         }
@@ -177,7 +175,15 @@ public class ERSArchiveTimeStampGenerator
                 {
                     PartialHashtree p = compressedTree[0];
                     compressedTree[0] = compressedTree[i];
-                    compressedTree[i] = p;
+
+                    // p[0] is always the smallest hash so we resort the output for later.
+                    for (int j = i; j > 1; j--)
+                    {
+                        compressedTree[j] = compressedTree[j - 1];
+                    }
+
+                    compressedTree[1] = p;
+                    
                     atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
                 }
             }
