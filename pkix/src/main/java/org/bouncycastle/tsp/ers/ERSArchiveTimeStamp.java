@@ -114,13 +114,13 @@ public class ERSArchiveTimeStamp
     }
 
     public void validatePresent(ERSData data, Date atDate)
-        throws ERSException, OperatorCreationException
+        throws ERSException
     {
         validatePresent(data instanceof ERSDataGroup, data.getHash(digCalc), atDate);
     }
 
     public void validatePresent(boolean isDataGroup, byte[] hash, Date atDate)
-        throws ERSException, OperatorCreationException
+        throws ERSException
     {
         if (timeStampToken.getTimeStampInfo().getGenTime().after(atDate))
         {
