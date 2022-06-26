@@ -136,6 +136,7 @@ public class ERSArchiveTimeStamp
 
         PartialHashtree[] partialTree = archiveTimeStamp.getReducedHashTree();
         byte[] rootHash;
+
         if (partialTree != null)
         {
             rootHash = rootNodeCalculator.computeRootHash(digCalc, archiveTimeStamp.getReducedHashTree());

@@ -94,7 +94,7 @@ public class ERSArchiveTimeStampGenerator
         {
             throw new TSPException("TSP response error status: " + tspResponse.getStatusString());
         }
-        
+
         TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
 
         if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
@@ -158,23 +158,84 @@ public class ERSArchiveTimeStampGenerator
             // we compute the final hash tree by left first traversal.
             for (int i = 0; i != reducedHashTree.length; i++)
             {
-                if (i > 0)
+                PartialHashtree[] compressedTree = new PartialHashtree[reducedHashTree.length];
+
+                System.arraycopy(reducedHashTree, 0, compressedTree, 0, compressedTree.length);
+                for (int j = 0; j != compressedTree.length; j++)
                 {
-                    byte[] bashHash = new byte[0];
-                    for (int j = 0; j != i; j++)
+                    if (j != i && compressedTree[j].getValueCount() > 1)
                     {
-                        bashHash = concatenate(bashHash, reducedHashTree[j]);
+                        compressedTree[j] = new PartialHashtree(concatenate(compressedTree[j]));
                     }
-                    PartialHashtree[] compressedTree = new PartialHashtree[reducedHashTree.length - i];
-                    compressedTree[0] = new PartialHashtree(bashHash, reducedHashTree[i].getValues());
+                }
+                if (i == 0)
+                {
+                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
+                }
+                else if (i == 1)
+                {
+                    PartialHashtree p = compressedTree[0];
+                    compressedTree[0] = compressedTree[1];
+                    compressedTree[1] = p;
+                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
+                }
+                else if (i % 2 == 0)
+                {
+                    if (i + 1 == compressedTree.length)
+                    {
+                        // in this case we have an odd number of leaves, have to reduce to an even
+                        // number for the branch calculation.
+                        PartialHashtree p0 = compressedTree[i];
 
-                    System.arraycopy(reducedHashTree, i + 1, compressedTree, 1, compressedTree.length - 1);
+                        byte[][] nodes = new byte[(compressedTree.length - 1) / 2][];
+                        for (int k = 0; k != nodes.length; k++)
+                        {
+                            nodes[k] = ERSUtil.calculateBranchHash(digCalc, compressedTree[2 * k].getValues()[0], compressedTree[2 * k + 1].getValues()[0]);
+                        }
 
+                        // need nodes to be an odd length
+                        while ((nodes.length & 1) == 0)
+                        {
+                            byte[][] oldNodes = nodes;
+                            nodes = new byte[oldNodes.length / 2][];
+                            for (int k = 0; k != nodes.length; k++)
+                            {
+                                nodes[k] = ERSUtil.calculateBranchHash(digCalc, oldNodes[2 * k], oldNodes[2 * k + 1]);
+                            }
+                        }
+
+                        compressedTree = new PartialHashtree[nodes.length + 1];
+                        compressedTree[0] = p0;
+                        for (int k = 0; k != nodes.length; k++)
+                        {
+                            compressedTree[k + 1] = new PartialHashtree(nodes[k]);
+                        }
+                    }
+                    else
+                    {
+                        PartialHashtree p1 = compressedTree[0];
+                        PartialHashtree p2 = compressedTree[1];
+
+                        compressedTree[0] = compressedTree[i];
+                        compressedTree[1] = compressedTree[i + 1];
+
+                        compressedTree[i] = p1;
+                        compressedTree[i + 1] = p2;
+                    }
                     atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
                 }
                 else
                 {
-                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree, timeStamp), digCalc));
+                    PartialHashtree p1 = compressedTree[0];
+                    PartialHashtree p2 = compressedTree[1];
+
+                    compressedTree[0] = compressedTree[i];
+                    compressedTree[1] = compressedTree[i - 1];
+
+                    compressedTree[i - 1] = p1;
+                    compressedTree[i] = p2;
+
+                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
                 }
             }
         }
@@ -202,7 +263,7 @@ public class ERSArchiveTimeStampGenerator
             byte[] hash = (byte[])hashes.get(i);
             ERSDataGroup found = null;
 
-            for (Iterator it = dataGroupSet.iterator(); it.hasNext();)
+            for (Iterator it = dataGroupSet.iterator(); it.hasNext(); )
             {
                 ERSDataGroup data = (ERSDataGroup)it.next();
 
@@ -226,6 +287,27 @@ public class ERSArchiveTimeStampGenerator
         }
 
         return trees;
+    }
+
+    byte[] concatenate(PartialHashtree partialHashtree)
+    {
+        try
+        {
+            byte[][] values = partialHashtree.getValues();
+            OutputStream dOut = digCalc.getOutputStream();
+
+            for (int i = 0; i != values.length; i++)
+            {
+                dOut.write(values[i]);
+            }
+            dOut.close();
+
+            return digCalc.getDigest();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 
     byte[] concatenate(byte[] baseHash, PartialHashtree partialHashtree)
