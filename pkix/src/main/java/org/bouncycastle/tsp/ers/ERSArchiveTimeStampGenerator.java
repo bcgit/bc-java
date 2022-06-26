@@ -21,6 +21,7 @@ import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Generator for RFC 4998 Archive Time Stamps.
@@ -144,12 +145,12 @@ public class ERSArchiveTimeStampGenerator
             throw new ERSException("time stamp imprint for wrong root hash");
         }
 
-        ArchiveTimeStamp ats;
         ContentInfo timeStamp = tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure();
         List<ERSArchiveTimeStamp> atss = new ArrayList<ERSArchiveTimeStamp>();
 
         if (reducedHashTree.length == 1 && reducedHashTree[0].getValueCount() == 1)
         {
+            System.err.println(Hex.toHexString(reducedHashTree[0].getValues()[0]));
             // just include the TimeStamp
             atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null, timeStamp), digCalc));
         }
@@ -172,69 +173,11 @@ public class ERSArchiveTimeStampGenerator
                 {
                     atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
                 }
-                else if (i == 1)
-                {
-                    PartialHashtree p = compressedTree[0];
-                    compressedTree[0] = compressedTree[1];
-                    compressedTree[1] = p;
-                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
-                }
-                else if (i % 2 == 0)
-                {
-                    if (i + 1 == compressedTree.length)
-                    {
-                        // in this case we have an odd number of leaves, have to reduce to an even
-                        // number for the branch calculation.
-                        PartialHashtree p0 = compressedTree[i];
-
-                        byte[][] nodes = new byte[(compressedTree.length - 1) / 2][];
-                        for (int k = 0; k != nodes.length; k++)
-                        {
-                            nodes[k] = ERSUtil.calculateBranchHash(digCalc, compressedTree[2 * k].getValues()[0], compressedTree[2 * k + 1].getValues()[0]);
-                        }
-
-                        // need nodes to be an odd length
-                        while ((nodes.length & 1) == 0)
-                        {
-                            byte[][] oldNodes = nodes;
-                            nodes = new byte[oldNodes.length / 2][];
-                            for (int k = 0; k != nodes.length; k++)
-                            {
-                                nodes[k] = ERSUtil.calculateBranchHash(digCalc, oldNodes[2 * k], oldNodes[2 * k + 1]);
-                            }
-                        }
-
-                        compressedTree = new PartialHashtree[nodes.length + 1];
-                        compressedTree[0] = p0;
-                        for (int k = 0; k != nodes.length; k++)
-                        {
-                            compressedTree[k + 1] = new PartialHashtree(nodes[k]);
-                        }
-                    }
-                    else
-                    {
-                        PartialHashtree p1 = compressedTree[0];
-                        PartialHashtree p2 = compressedTree[1];
-
-                        compressedTree[0] = compressedTree[i];
-                        compressedTree[1] = compressedTree[i + 1];
-
-                        compressedTree[i] = p1;
-                        compressedTree[i + 1] = p2;
-                    }
-                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
-                }
                 else
                 {
-                    PartialHashtree p1 = compressedTree[0];
-                    PartialHashtree p2 = compressedTree[1];
-
+                    PartialHashtree p = compressedTree[0];
                     compressedTree[0] = compressedTree[i];
-                    compressedTree[1] = compressedTree[i - 1];
-
-                    compressedTree[i - 1] = p1;
-                    compressedTree[i] = p2;
-
+                    compressedTree[i] = p;
                     atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
                 }
             }
@@ -296,28 +239,6 @@ public class ERSArchiveTimeStampGenerator
             byte[][] values = partialHashtree.getValues();
             OutputStream dOut = digCalc.getOutputStream();
 
-            for (int i = 0; i != values.length; i++)
-            {
-                dOut.write(values[i]);
-            }
-            dOut.close();
-
-            return digCalc.getDigest();
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException(e.getMessage());
-        }
-    }
-
-    byte[] concatenate(byte[] baseHash, PartialHashtree partialHashtree)
-    {
-        try
-        {
-            byte[][] values = partialHashtree.getValues();
-            OutputStream dOut = digCalc.getOutputStream();
-
-            dOut.write(baseHash);
             for (int i = 0; i != values.length; i++)
             {
                 dOut.write(values[i]);
