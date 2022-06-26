@@ -1,6 +1,7 @@
 package org.bouncycastle.tsp.ers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.asn1.tsp.PartialHashtree;
@@ -16,18 +17,14 @@ public class BinaryTreeRootCalculator
     public byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)
     {
         List<byte[]> hashes = new ArrayList<byte[]>();
-        for (int i = 0; i <= nodes.length - 2; i += 2)
+        for (int i = 0; i < nodes.length; i++)
         {
             byte[] left = ERSUtil.computeNodeHash(digCalc, nodes[i]);
-            byte[] right = ERSUtil.computeNodeHash(digCalc, nodes[i + 1]);
 
-            hashes.add(ERSUtil.calculateBranchHash(digCalc, left, right));
+            hashes.add(left);
         }
 
-        if (nodes.length % 2 == 1)
-        {
-            hashes.add(ERSUtil.computeNodeHash(digCalc, nodes[nodes.length - 1]));
-        }
+        Collections.sort(hashes, new ByteArrayComparator());
 
         do
         {
@@ -42,6 +39,8 @@ public class BinaryTreeRootCalculator
             {
                 newHashes.add(hashes.get(hashes.size() - 1));
             }
+            
+            Collections.sort(newHashes, new ByteArrayComparator());
 
             hashes = newHashes;
         }
