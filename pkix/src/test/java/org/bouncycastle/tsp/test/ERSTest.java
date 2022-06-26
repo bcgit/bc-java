@@ -44,6 +44,7 @@ import org.bouncycastle.tsp.ers.ERSDataGroup;
 import org.bouncycastle.tsp.ers.ERSDirectoryDataGroup;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecord;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecordGenerator;
+import org.bouncycastle.tsp.ers.ERSException;
 import org.bouncycastle.tsp.ers.ERSFileData;
 import org.bouncycastle.tsp.ers.ERSInputStreamData;
 import org.bouncycastle.util.Arrays;
@@ -133,19 +134,32 @@ public class ERSTest
             tsResp = tsRespGen.generateRejectedResponse(e);
         }
 
-        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tsResp);
+        List<ERSArchiveTimeStamp> atss = ersGen.generateArchiveTimeStamps(tsResp);
 
-        ats = new ERSArchiveTimeStamp(ats.getEncoded(), digestCalculatorProvider);
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+
+        ats.validatePresent(h3Docs, new Date());
+        checkAbsent(ats, h2Doc);
+        checkAbsent(ats, h1Doc);
+
+        ats = new ERSArchiveTimeStamp(atss.get(1).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h1Doc, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h2Doc);
+
+        ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+
         ats.validatePresent(h2Doc, new Date());
-        ats.validatePresent(h3Docs, new Date());
+        checkAbsent(ats, h3Docs);
+        checkAbsent(ats, h1Doc);
 
         // check for individual sub-documents
+        ats = atss.get(0);
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
-            ats.validatePresent((byte[])h3Hashes.get(i), new Date());
+            ats.validatePresent(false, (byte[])h3Hashes.get(i), new Date());
         }
 
         X509CertificateHolder tspCert = ats.getSigningCertificate();
@@ -153,19 +167,41 @@ public class ERSTest
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
 
+    private void checkAbsent(ERSArchiveTimeStamp ats, ERSData data)
+        throws OperatorCreationException, ERSException
+    {
+        try
+        {
+            ats.validatePresent(data, new Date());
+            fail();
+        }
+        catch (ArchiveTimeStampValidationException e)
+        {
+            assertEquals(e.getMessage(), "object hash not found");
+        }
+    }
+
+    private void checkAbsent(ERSEvidenceRecord ats, ERSData data)
+        throws OperatorCreationException, ERSException
+    {
+        try
+        {
+            ats.validatePresent(data, new Date());
+            fail();
+        }
+        catch (ArchiveTimeStampValidationException e)
+        {
+            assertEquals(e.getMessage(), "object hash not found");
+        }
+    }
+
     public void testSingleTimeStamp()
         throws Exception
     {
         ERSData h1Doc = new ERSByteData(H1_DATA);
         ERSData h2Doc = new ERSByteData(H2_DATA);
-        ERSDataGroup h3Docs = new ERSDataGroup(
-            new ERSData[]{new ERSByteData(H3A_DATA),
-                new ERSByteData(H3B_DATA),
-                new ERSByteData(H3C_DATA)});
 
         DigestCalculator digestCalculator = new JcaDigestCalculatorProviderBuilder().build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
-        List<byte[]> hashes = h3Docs.getHashes(
-            digestCalculator);
 
         ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
 
@@ -293,21 +329,31 @@ public class ERSTest
             tsResp = tsRespGen.generateRejectedResponse(e);
         }
 
-        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tsResp);
+        List<ERSArchiveTimeStamp> ats = ersGen.generateArchiveTimeStamps(tsResp);
 
         ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
 
-        ERSEvidenceRecord ev = evGen.generate(ats);
+        List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
-        ev.validatePresent(h3Docs, new Date());
+        checkAbsent(evs.get(0), h1Doc);
+        checkAbsent(evs.get(0), h2Doc);
+        evs.get(0).validatePresent(h3Docs, new Date());
+
+        evs.get(1).validatePresent(h1Doc, new Date());
+        checkAbsent(evs.get(1), h2Doc);
+        checkAbsent(evs.get(1), h3Docs);
+
+        checkAbsent(evs.get(2), h1Doc);
+        evs.get(2).validatePresent(h2Doc, new Date());
+        checkAbsent(evs.get(2), h3Docs);
+        
+        ERSEvidenceRecord ev = evs.get(0);
 
         // check for individual sub-documents
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
-            ev.validatePresent((byte[])h3Hashes.get(i), new Date());
+            ev.validatePresent(false, (byte[])h3Hashes.get(i), new Date());
         }
 
         X509CertificateHolder tspCert = ev.getSigningCertificate();
@@ -321,6 +367,12 @@ public class ERSTest
         ev2.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
         ev2.validatePresent(h3Docs, new Date());
+    }
+
+    private void checkPresent(ERSEvidenceRecord ev, ERSData data)
+        throws OperatorCreationException, ERSException
+    {
+        ev.validatePresent(data, new Date());
     }
 
     public void testTimeStampRenewal()
@@ -366,17 +418,19 @@ public class ERSTest
 
         TimeStampResponse tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
 
-        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tspResp);
+        List<ERSArchiveTimeStamp> ats = ersGen.generateArchiveTimeStamps(tspResp);
 
         // simple renewal of timestamp, same hash, same data.
 
         ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
 
-        ERSEvidenceRecord ev = evGen.generate(ats);
+        List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
-        ev.validatePresent(h3Docs, new Date());
+        checkPresent(evs.get(1), h1Doc);
+        checkPresent(evs.get(2), h2Doc);
+        checkPresent(evs.get(0), h3Docs);
+
+        ERSEvidenceRecord ev = evs.get(0);
 
         tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
 
@@ -398,13 +452,23 @@ public class ERSTest
 
         ev = ev.renewTimeStamp(tspResp);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
+//        ev.validatePresent(h1Doc, new Date());
+//        ev.validatePresent(h2Doc, new Date());
         ev.validatePresent(h3Docs, new Date());
 
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
 
+        // as the time stamp is shared between records we should be able to reuse the response
+        ERSEvidenceRecord ev1 = evs.get(1).renewTimeStamp(tspResp);
+        
+        ev1.validatePresent(h1Doc, new Date());
+        checkAbsent(ev1, h2Doc);
+        checkAbsent(ev1, h3Docs);
+
+        ev1.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
+
         assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps().length);
+        assertEquals(2, ev1.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps().length);
 
         tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
 
@@ -426,8 +490,8 @@ public class ERSTest
 
         ev = ev.renewTimeStamp(tspResp);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
+        checkAbsent(ev, h1Doc);
+        checkAbsent(ev, h2Doc);
         ev.validatePresent(h3Docs, new Date());
 
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
@@ -478,27 +542,26 @@ public class ERSTest
 
         TimeStampResponse tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
 
-        ERSArchiveTimeStamp ats = ersGen.generateArchiveTimeStamp(tspResp);
+        List<ERSArchiveTimeStamp> ats = ersGen.generateArchiveTimeStamps(tspResp);
 
         // simple renewal of timestamp, same hash, same data.
 
         ERSEvidenceRecordGenerator evGen = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
 
-        ERSEvidenceRecord ev = evGen.generate(ats);
+        List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
-        ev.validatePresent(h3Docs, new Date());
+        evs.get(1).validatePresent(h1Doc, new Date());
+        evs.get(2).validatePresent(h2Doc, new Date());
+        evs.get(0).validatePresent(h3Docs, new Date());
 
-        digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
+        DigestCalculator newDigCalc = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
 
         ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
 
-        ersGen.addData(h1Doc);
-        ersGen.addData(h2Doc);
         ersGen.addData(h3Docs);
 
-        tspReq = ev.generateHashRenewalRequest(ersGen, tspReqGen);
+        ERSEvidenceRecord ev = evs.get(0);
+        tspReq = ev.generateHashRenewalRequest(newDigCalc, h3Docs, tspReqGen);
 
         signKP = TSPTestUtil.makeKeyPair();
         signCert = TSPTestUtil.makeCACertificate(signKP,
@@ -516,10 +579,8 @@ public class ERSTest
 
         tspResp = doTimeStamp(origKP.getPrivate(), origCert, certs, tspReq);
 
-        ev = ev.renewHash(ersGen, tspResp);
+        ev = ev.renewHash(newDigCalc, h3Docs, tspResp);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
         ev.validatePresent(h3Docs, new Date());
 
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
@@ -546,13 +607,22 @@ public class ERSTest
 
         ev = ev.renewTimeStamp(tspResp);
 
-        ev.validatePresent(h1Doc, new Date());
-        ev.validatePresent(h2Doc, new Date());
         ev.validatePresent(h3Docs, new Date());
 
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
 
         assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[1].getArchiveTimestamps().length);
+
+        try
+        {
+            tspReq = ev.generateHashRenewalRequest(newDigCalc, h1Doc, tspReqGen);
+        }
+        catch (ERSException e)
+        {
+            assertEquals("attempt to hash renew on invalid data", e.getMessage());
+        }
+
+
     }
 
     private TimeStampResponse doTimeStamp(PrivateKey tspKey, X509Certificate tspCert, Store certs, TimeStampRequest tspReq)
@@ -703,15 +773,15 @@ public class ERSTest
 
         ers.getLastArchiveTimeStamp().validate(new JcaSimpleSignerInfoVerifierBuilder().build(ers.getSigningCertificate()));
 
-        ers.validatePresent(Hex.decode("9CE2D7D350F9418407439F0CA11DCC12AB9F7CDB15F9ECC5ECA935482602B872"), new Date());
-        ers.validatePresent(Hex.decode("EECC4D3352C0E965FD88795EDFD1A60C5AC09B3C1100C052EBB6AE0BD3432B26"), new Date());
+        ers.validatePresent(false, Hex.decode("9CE2D7D350F9418407439F0CA11DCC12AB9F7CDB15F9ECC5ECA935482602B872"), new Date());
+        ers.validatePresent(false, Hex.decode("EECC4D3352C0E965FD88795EDFD1A60C5AC09B3C1100C052EBB6AE0BD3432B26"), new Date());
 
         // look for data group
         byte[] digest = MessageDigest.getInstance("SHA-256").digest(Arrays.concatenate(
             Hex.decode("9CE2D7D350F9418407439F0CA11DCC12AB9F7CDB15F9ECC5ECA935482602B872"),
             Hex.decode("EECC4D3352C0E965FD88795EDFD1A60C5AC09B3C1100C052EBB6AE0BD3432B26")));
 
-        ers.validatePresent(digest, new Date());
+        ers.validatePresent(true, digest, new Date());
     }
 
     private void deleteDirectory(File directory)
