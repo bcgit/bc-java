@@ -1,7 +1,5 @@
 package org.bouncycastle.tsp.ers;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.asn1.tsp.PartialHashtree;
@@ -16,7 +14,7 @@ public class BinaryTreeRootCalculator
 {
     public byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)
     {
-        List<byte[]> hashes = new ArrayList<byte[]>();
+        SortedHashList hashes = new SortedHashList();
         for (int i = 0; i < nodes.length; i++)
         {
             byte[] left = ERSUtil.computeNodeHash(digCalc, nodes[i]);
@@ -24,28 +22,25 @@ public class BinaryTreeRootCalculator
             hashes.add(left);
         }
 
-        Collections.sort(hashes, new ByteArrayComparator());
-
         do
         {
-            List<byte[]> newHashes = new ArrayList<byte[]>((hashes.size() + 1) / 2);
+            SortedHashList newHashes = new SortedHashList();
+            List<byte[]>   hashValues = hashes.toList();
 
-            for (int i = 0; i <= hashes.size() - 2; i += 2)
+            for (int i = 0; i <= hashValues.size() - 2; i += 2)
             {
-                newHashes.add(ERSUtil.calculateBranchHash(digCalc, (byte[])hashes.get(i), (byte[])hashes.get(i + 1)));
+                newHashes.add(ERSUtil.calculateDigest(digCalc, (byte[])hashValues.get(i), (byte[])hashValues.get(i + 1)));
             }
 
             if (hashes.size() % 2 == 1)
             {
-                newHashes.add(hashes.get(hashes.size() - 1));
+                newHashes.add(hashValues.get(hashes.size() - 1));
             }
-            
-            Collections.sort(newHashes, new ByteArrayComparator());
 
             hashes = newHashes;
         }
         while (hashes.size() > 1);
 
-        return (byte[])hashes.get(0);
+        return hashes.getFirst();
     }
 }

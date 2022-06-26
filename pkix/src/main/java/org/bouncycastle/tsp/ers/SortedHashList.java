@@ -18,6 +18,11 @@ public class SortedHashList
     {
     }
 
+    public byte[] getFirst()
+    {
+        return baseList.getFirst();
+    }
+
     public void add(byte[] hash)
     {
         if (baseList.size() == 0)
@@ -48,6 +53,11 @@ public class SortedHashList
                 }
             }
         }
+    }
+
+    public int size()
+    {
+        return baseList.size();
     }
 
     public List<byte[]> toList()
