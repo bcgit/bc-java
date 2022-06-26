@@ -98,9 +98,8 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-//        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
-//            tspReq.getMessageImprintDigest()));
-
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+            tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
         KeyPair signKP = TSPTestUtil.makeKeyPair();
