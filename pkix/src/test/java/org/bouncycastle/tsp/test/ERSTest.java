@@ -165,6 +165,12 @@ public class ERSTest
         X509CertificateHolder tspCert = ats.getSigningCertificate();
 
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+
+        ats = atss.get(1);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
+        
+        ats = atss.get(2);
+        ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
 
     private void checkAbsent(ERSArchiveTimeStamp ats, ERSData data)
@@ -621,8 +627,6 @@ public class ERSTest
         {
             assertEquals("attempt to hash renew on invalid data", e.getMessage());
         }
-
-
     }
 
     private TimeStampResponse doTimeStamp(PrivateKey tspKey, X509Certificate tspCert, Store certs, TimeStampRequest tspReq)
