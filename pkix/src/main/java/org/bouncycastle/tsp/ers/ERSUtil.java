@@ -45,7 +45,7 @@ class ERSUtil
             return calculateDigest(digCalc, a, b);
         }
         else
-        {                     System.err.println("fails");
+        {
             return calculateDigest(digCalc, b, a);
         }
     }
