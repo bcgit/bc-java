@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 
 public class SIKEKEMExtractor
     implements EncapsulatedSecretExtractor
-
 {
     private SIKEEngine engine;
 
@@ -35,9 +34,8 @@ public class SIKEKEMExtractor
         return session_key;
     }
 
-//    public int getInputSize()
-//    {
-//        return engine.getCipherTextSize();
-//    }
-
+    public int getInputSize()
+    {
+        return engine.getCipherTextSize();
+    }
 }

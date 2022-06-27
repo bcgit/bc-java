@@ -114,6 +114,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sikep503, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep610, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep751, new SIKEConverter());
+        converters.put(BCObjectIdentifiers.sikep434_compressed, new SIKEConverter());
+        converters.put(BCObjectIdentifiers.sikep503_compressed, new SIKEConverter());
+        converters.put(BCObjectIdentifiers.sikep610_compressed, new SIKEConverter());
+        converters.put(BCObjectIdentifiers.sikep751_compressed, new SIKEConverter());
     }
 
     /**

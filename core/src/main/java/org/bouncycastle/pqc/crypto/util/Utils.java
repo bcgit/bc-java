@@ -153,12 +153,19 @@ class Utils
         sikeOids.put(SIKEParameters.sikep503, BCObjectIdentifiers.sikep503);
         sikeOids.put(SIKEParameters.sikep610, BCObjectIdentifiers.sikep610);
         sikeOids.put(SIKEParameters.sikep751, BCObjectIdentifiers.sikep751);
+        sikeOids.put(SIKEParameters.sikep434_compressed, BCObjectIdentifiers.sikep434_compressed);
+        sikeOids.put(SIKEParameters.sikep503_compressed, BCObjectIdentifiers.sikep503_compressed);
+        sikeOids.put(SIKEParameters.sikep610_compressed, BCObjectIdentifiers.sikep610_compressed);
+        sikeOids.put(SIKEParameters.sikep751_compressed, BCObjectIdentifiers.sikep751_compressed);
 
         sikeParams.put(BCObjectIdentifiers.sikep434, SIKEParameters.sikep434);
         sikeParams.put(BCObjectIdentifiers.sikep503, SIKEParameters.sikep503);
         sikeParams.put(BCObjectIdentifiers.sikep610, SIKEParameters.sikep610);
         sikeParams.put(BCObjectIdentifiers.sikep751, SIKEParameters.sikep751);
-
+        sikeParams.put(BCObjectIdentifiers.sikep434_compressed, SIKEParameters.sikep434_compressed);
+        sikeParams.put(BCObjectIdentifiers.sikep503_compressed, SIKEParameters.sikep503_compressed);
+        sikeParams.put(BCObjectIdentifiers.sikep610_compressed, SIKEParameters.sikep610_compressed);
+        sikeParams.put(BCObjectIdentifiers.sikep751_compressed, SIKEParameters.sikep751_compressed);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)

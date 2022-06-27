@@ -5,7 +5,7 @@ import org.bouncycastle.util.Arrays;
 public class SIKEPublicKeyParameters
     extends SIKEKeyParameters
 {
-    public byte[] publicKey;
+    private final byte[] publicKey;
 
     public byte[] getPublicKey()
     {

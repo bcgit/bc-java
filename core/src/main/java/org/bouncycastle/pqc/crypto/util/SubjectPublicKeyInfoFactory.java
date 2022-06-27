@@ -197,7 +197,6 @@ public class SubjectPublicKeyInfoFactory
             SIKEPublicKeyParameters params = (SIKEPublicKeyParameters)publicKey;
 
             byte[] encoding = params.getEncoded();
-
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sikeOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
