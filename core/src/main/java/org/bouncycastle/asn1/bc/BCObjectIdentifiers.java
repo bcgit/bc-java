@@ -261,5 +261,8 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier sikep503 = pqc_kem_sike.branch("2");
     public static final ASN1ObjectIdentifier sikep610 = pqc_kem_sike.branch("3");
     public static final ASN1ObjectIdentifier sikep751 = pqc_kem_sike.branch("4");
-
+    public static final ASN1ObjectIdentifier sikep434_compressed = pqc_kem_sike.branch("5");
+    public static final ASN1ObjectIdentifier sikep503_compressed = pqc_kem_sike.branch("6");
+    public static final ASN1ObjectIdentifier sikep610_compressed = pqc_kem_sike.branch("7");
+    public static final ASN1ObjectIdentifier sikep751_compressed = pqc_kem_sike.branch("8");
 }
