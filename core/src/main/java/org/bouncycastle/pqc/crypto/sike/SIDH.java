@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.sike;
 
+
 class SIDH
 {
 
@@ -13,12 +14,12 @@ class SIDH
     // Initialization of basis points
     protected void init_basis(long[] gen, long[][] XP, long[][] XQ, long[][] XR)
     {
-        engine.fpx.fpcopy(gen, 0, XP[0]);
-        engine.fpx.fpcopy(gen, engine.params.NWORDS_FIELD, XP[1]);
-        engine.fpx.fpcopy(gen, 2 * engine.params.NWORDS_FIELD, XQ[0]);
-        engine.fpx.fpcopy(gen, 3 * engine.params.NWORDS_FIELD, XQ[1]);
-        engine.fpx.fpcopy(gen, 4 * engine.params.NWORDS_FIELD, XR[0]);
-        engine.fpx.fpcopy(gen, 5 * engine.params.NWORDS_FIELD, XR[1]);
+       engine.fpx.fpcopy(gen, 0, XP[0]);
+       engine.fpx.fpcopy(gen, engine.params.NWORDS_FIELD, XP[1]);
+       engine.fpx.fpcopy(gen, 2 * engine.params.NWORDS_FIELD, XQ[0]);
+       engine.fpx.fpcopy(gen, 3 * engine.params.NWORDS_FIELD, XQ[1]);
+       engine.fpx.fpcopy(gen, 4 * engine.params.NWORDS_FIELD, XR[0]);
+       engine.fpx.fpcopy(gen, 5 * engine.params.NWORDS_FIELD, XR[1]);
     }
 
     // Bob's ephemeral public key generation
@@ -27,18 +28,18 @@ class SIDH
     protected void EphemeralKeyGeneration_B(byte[] sk, byte[] pk)
     {
         PointProj R = new PointProj(engine.params.NWORDS_FIELD),
-            phiP = new PointProj(engine.params.NWORDS_FIELD),
-            phiQ = new PointProj(engine.params.NWORDS_FIELD),
-            phiR = new PointProj(engine.params.NWORDS_FIELD);
+                phiP = new PointProj(engine.params.NWORDS_FIELD),
+                phiQ = new PointProj(engine.params.NWORDS_FIELD),
+                phiR = new PointProj(engine.params.NWORDS_FIELD);
 
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
 
         long[][] XPB = new long[2][engine.params.NWORDS_FIELD],
-            XQB = new long[2][engine.params.NWORDS_FIELD],
-            XRB = new long[2][engine.params.NWORDS_FIELD],
-            A24plus = new long[2][engine.params.NWORDS_FIELD],
-            A24minus = new long[2][engine.params.NWORDS_FIELD],
-            A = new long[2][engine.params.NWORDS_FIELD];
+                XQB = new long[2][engine.params.NWORDS_FIELD],
+                XRB = new long[2][engine.params.NWORDS_FIELD],
+                A24plus = new long[2][engine.params.NWORDS_FIELD],
+                A24minus = new long[2][engine.params.NWORDS_FIELD],
+                A = new long[2][engine.params.NWORDS_FIELD];
 
         long[][][] coeff = new long[3][2][engine.params.NWORDS_FIELD];
         int i, row, m, index = 0, npts = 0, ii = 0;
@@ -48,12 +49,12 @@ class SIDH
         // Initialize basis points
         init_basis(engine.params.B_gen, XPB, XQB, XRB);
         init_basis(engine.params.A_gen, phiP.X, phiQ.X, phiR.X);
-        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, phiP.Z[0]);
-        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, phiQ.Z[0]);
-        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, phiR.Z[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one,0,phiP.Z[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one,0,phiQ.Z[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one,0,phiR.Z[0]);
 
         // Initialize constants: A24minus = A-2C, A24plus = A+2C, where A=6, C=1
-        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, A24plus[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0,A24plus[0]);
         engine.fpx.mp2_add(A24plus, A24plus, A24plus);
         engine.fpx.mp2_add(A24plus, A24plus, A24minus);
         engine.fpx.mp2_add(A24plus, A24minus, A);
@@ -62,8 +63,8 @@ class SIDH
         engine.isogeny.LADDER3PT(XPB, XQB, XRB, SecretKeyB, engine.params.BOB, R, A);
 
         // Traverse tree
-        index = 0;
-        for (row = 1; row < engine.params.MAX_Bob; row++)
+        index =0;
+        for(row = 1; row < engine.params.MAX_Bob; row++)
         {
             while (index < engine.params.MAX_Bob - row)
             {
@@ -103,7 +104,7 @@ class SIDH
         // Format public key
         engine.fpx.fp2_encode(phiP.X, pk, 0);
         engine.fpx.fp2_encode(phiQ.X, pk, engine.params.FP2_ENCODED_BYTES);
-        engine.fpx.fp2_encode(phiR.X, pk, 2 * engine.params.FP2_ENCODED_BYTES);
+        engine.fpx.fp2_encode(phiR.X, pk, 2*engine.params.FP2_ENCODED_BYTES);
     }
 
     // Alice's ephemeral public key generation
@@ -112,18 +113,18 @@ class SIDH
     protected void EphemeralKeyGeneration_A(byte[] ephemeralsk, byte[] ct)
     {
         PointProj R = new PointProj(engine.params.NWORDS_FIELD),
-            phiP = new PointProj(engine.params.NWORDS_FIELD),
-            phiQ = new PointProj(engine.params.NWORDS_FIELD),
-            phiR = new PointProj(engine.params.NWORDS_FIELD);
+                phiP = new PointProj(engine.params.NWORDS_FIELD),
+                phiQ = new PointProj(engine.params.NWORDS_FIELD),
+                phiR = new PointProj(engine.params.NWORDS_FIELD);
 
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_ALICE];
 
         long[][] XPA = new long[2][engine.params.NWORDS_FIELD],
-            XQA = new long[2][engine.params.NWORDS_FIELD],
-            XRA = new long[2][engine.params.NWORDS_FIELD],
-            A24plus = new long[2][engine.params.NWORDS_FIELD],
-            C24 = new long[2][engine.params.NWORDS_FIELD],
-            A = new long[2][engine.params.NWORDS_FIELD];
+                XQA = new long[2][engine.params.NWORDS_FIELD],
+                XRA = new long[2][engine.params.NWORDS_FIELD],
+                A24plus = new long[2][engine.params.NWORDS_FIELD],
+                C24 = new long[2][engine.params.NWORDS_FIELD],
+                A = new long[2][engine.params.NWORDS_FIELD];
 
         long[][][] coeff = new long[3][2][engine.params.NWORDS_FIELD];
         int i, row, m, index = 0, npts = 0, ii = 0;
@@ -151,7 +152,7 @@ class SIDH
         if (engine.params.OALICE_BITS % 2 == 1)
         {
             PointProj S = new PointProj(engine.params.NWORDS_FIELD);
-            engine.isogeny.xDBLe(R, S, A24plus, C24, (int)(engine.params.OALICE_BITS - 1));
+            engine.isogeny.xDBLe(R, S, A24plus, C24, (int) (engine.params.OALICE_BITS - 1));
             engine.isogeny.get_2_isog(S, A24plus, C24);
             engine.isogeny.eval_2_isog(phiP, S);
             engine.isogeny.eval_2_isog(phiQ, S);
@@ -163,14 +164,14 @@ class SIDH
         index = 0;
         for (row = 1; row < engine.params.MAX_Alice; row++)
         {
-            while (index < engine.params.MAX_Alice - row)
+            while (index < engine.params.MAX_Alice-row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
                 engine.fpx.fp2copy(R.Z, pts[npts].Z);
                 pts_index[npts++] = index;
                 m = engine.params.strat_Alice[ii++];
-                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2 * m));
+                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2*m));
                 index += m;
             }
             engine.isogeny.get_4_isog(R, A24plus, C24, coeff);
@@ -183,9 +184,9 @@ class SIDH
             engine.isogeny.eval_4_isog(phiQ, coeff);
             engine.isogeny.eval_4_isog(phiR, coeff);
 
-            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
-            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
-            index = pts_index[npts - 1];
+            engine.fpx.fp2copy(pts[npts-1].X, R.X);
+            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
+            index = pts_index[npts-1];
             npts -= 1;
         }
 
@@ -200,9 +201,9 @@ class SIDH
         engine.fpx.fp2mul_mont(phiR.X, phiR.Z, phiR.X);
 
         // Format public key
-        engine.fpx.fp2_encode(phiP.X, ct, 0);
+        engine.fpx.fp2_encode(phiP.X, ct,0);
         engine.fpx.fp2_encode(phiQ.X, ct, engine.params.FP2_ENCODED_BYTES);
-        engine.fpx.fp2_encode(phiR.X, ct, 2 * engine.params.FP2_ENCODED_BYTES);
+        engine.fpx.fp2_encode(phiR.X, ct,2*engine.params.FP2_ENCODED_BYTES);
 
     }
 
@@ -216,11 +217,11 @@ class SIDH
         PointProj R = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_ALICE];
         long[][][] PKB = new long[3][2][engine.params.NWORDS_FIELD],
-            coeff = new long[3][2][engine.params.NWORDS_FIELD];
+                   coeff = new long[3][2][engine.params.NWORDS_FIELD];
         long[][] jinv = new long[2][engine.params.NWORDS_FIELD],
-            A24plus = new long[2][engine.params.NWORDS_FIELD],
-            C24 = new long[2][engine.params.NWORDS_FIELD],
-            A = new long[2][engine.params.NWORDS_FIELD];
+                 A24plus =  new long[2][engine.params.NWORDS_FIELD],
+                 C24 = new long[2][engine.params.NWORDS_FIELD],
+                 A = new long[2][engine.params.NWORDS_FIELD];
 
         int i = 0, row = 0, m = 0, index = 0, npts = 0, ii = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_ALICE];
@@ -229,7 +230,7 @@ class SIDH
         // Initialize images of Bob's basis
         engine.fpx.fp2_decode(pk, PKB[0], 0);
         engine.fpx.fp2_decode(pk, PKB[1], engine.params.FP2_ENCODED_BYTES);
-        engine.fpx.fp2_decode(pk, PKB[2], 2 * engine.params.FP2_ENCODED_BYTES);
+        engine.fpx.fp2_decode(pk, PKB[2], 2*engine.params.FP2_ENCODED_BYTES);
 
         // Initialize constants: A24plus = A+2C, C24 = 4C, where C=1
         engine.isogeny.get_A(PKB[0], PKB[1], PKB[2], A);
@@ -245,7 +246,7 @@ class SIDH
         {
             PointProj S = new PointProj(engine.params.NWORDS_FIELD);
 
-            engine.isogeny.xDBLe(R, S, A24plus, C24, (int)(engine.params.OALICE_BITS - 1));
+            engine.isogeny.xDBLe(R, S, A24plus, C24, (int) (engine.params.OALICE_BITS - 1));
             engine.isogeny.get_2_isog(S, A24plus, C24);
             engine.isogeny.eval_2_isog(R, S);
         }
@@ -254,14 +255,14 @@ class SIDH
         index = 0;
         for (row = 1; row < engine.params.MAX_Alice; row++)
         {
-            while (index < engine.params.MAX_Alice - row)
+            while (index < engine.params.MAX_Alice-row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
                 engine.fpx.fp2copy(R.Z, pts[npts].Z);
                 pts_index[npts++] = index;
                 m = engine.params.strat_Alice[ii++];
-                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2 * m));
+                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2*m));
                 index += m;
             }
             engine.isogeny.get_4_isog(R, A24plus, C24, coeff);
@@ -271,9 +272,9 @@ class SIDH
                 engine.isogeny.eval_4_isog(pts[i], coeff);
             }
 
-            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
-            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
-            index = pts_index[npts - 1];
+            engine.fpx.fp2copy(pts[npts-1].X, R.X);
+            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
+            index = pts_index[npts-1];
             npts -= 1;
         }
 
@@ -295,19 +296,19 @@ class SIDH
         PointProj R = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
         long[][][] coeff = new long[3][2][engine.params.NWORDS_FIELD],
-            PKB = new long[3][2][engine.params.NWORDS_FIELD];
+                PKB = new long[3][2][engine.params.NWORDS_FIELD];
         long[][] jinv = new long[2][engine.params.NWORDS_FIELD],
-            A24plus = new long[2][engine.params.NWORDS_FIELD],
-            A24minus = new long[2][engine.params.NWORDS_FIELD],
-            A = new long[2][engine.params.NWORDS_FIELD];
+                A24plus = new long[2][engine.params.NWORDS_FIELD],
+                A24minus = new long[2][engine.params.NWORDS_FIELD],
+                A = new long[2][engine.params.NWORDS_FIELD];
         int i, row, m, index = 0, npts = 0, ii = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_BOB];
         long[] SecretKeyB = new long[engine.params.NWORDS_ORDER];
 
         // Initialize images of Alice's basis
-        engine.fpx.fp2_decode(ct, PKB[0], 0);
+        engine.fpx.fp2_decode(ct,  PKB[0], 0);
         engine.fpx.fp2_decode(ct, PKB[1], engine.params.FP2_ENCODED_BYTES);
-        engine.fpx.fp2_decode(ct, PKB[2], 2 * engine.params.FP2_ENCODED_BYTES);
+        engine.fpx.fp2_decode(ct, PKB[2], 2*engine.params.FP2_ENCODED_BYTES);
 
         // Initialize constants: A24plus = A+2C, A24minus = A-2C, where C=1
         engine.isogeny.get_A(PKB[0], PKB[1], PKB[2], A);
@@ -323,7 +324,7 @@ class SIDH
         index = 0;
         for (row = 1; row < engine.params.MAX_Bob; row++)
         {
-            while (index < engine.params.MAX_Bob - row)
+            while (index < engine.params.MAX_Bob-row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
@@ -335,14 +336,13 @@ class SIDH
             }
             engine.isogeny.get_3_isog(R, A24minus, A24plus, coeff);
 
-            for (i = 0; i < npts; i++)
-            {
+            for (i = 0; i < npts; i++) {
                 engine.isogeny.eval_3_isog(pts[i], coeff);
             }
 
-            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
-            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
-            index = pts_index[npts - 1];
+            engine.fpx.fp2copy(pts[npts-1].X, R.X);
+            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
+            index = pts_index[npts-1];
             npts -= 1;
         }
 

@@ -10,14 +10,13 @@ public class SIKEKeyGenerationParameters
     private SIKEParameters params;
 
     public SIKEKeyGenerationParameters(
-        SecureRandom random,
-        SIKEParameters sikeParameters
+            SecureRandom random,
+            SIKEParameters sikeParameters
     )
     {
         super(random, 256);
         this.params = sikeParameters;
     }
-
     public SIKEParameters getParameters()
     {
         return params;

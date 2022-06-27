@@ -2,17 +2,244 @@ package org.bouncycastle.pqc.crypto.sike;
 
 class Isogeny
 {
-    SIKEEngine engine;
-
+     SIKEEngine engine;
     Isogeny(SIKEEngine engine)
     {
         this.engine = engine;
     }
+    
+    // Doubling of a Montgomery point in projective coordinates (X:Z) over affine curve coefficient A. 
+    // Input: projective Montgomery x-coordinates P = (X1:Z1), where x1=X1/Z1 and Montgomery curve constants (A+2)/4.
+    // Output: projective Montgomery x-coordinates Q = 2*P = (X2:Z2). 
+    protected void Double(PointProj P, PointProj Q, long[][] A24, int k)
+    { 
+        long[][] temp = new long[2][engine.params.NWORDS_FIELD],
+                 a = new long[2][engine.params.NWORDS_FIELD],
+                 b = new long[2][engine.params.NWORDS_FIELD],
+                 c = new long[2][engine.params.NWORDS_FIELD],
+                 aa = new long[2][engine.params.NWORDS_FIELD],
+                 bb = new long[2][engine.params.NWORDS_FIELD];
+        engine.fpx.fp2copy(P.X, Q.X);
+        engine.fpx.fp2copy(P.Z, Q.Z);
+
+        for (int j = 0; j < k; j++)
+        {
+            engine.fpx.fp2add(Q.X, Q.Z, a);
+            engine.fpx.fp2sub(Q.X, Q.Z, b);
+            engine.fpx.fp2sqr_mont(a, aa);
+            engine.fpx.fp2sqr_mont(b, bb);
+            engine.fpx.fp2sub(aa, bb, c);
+            engine.fpx.fp2mul_mont(aa, bb, Q.X);
+            engine.fpx.fp2mul_mont(A24, c, temp);
+            engine.fpx.fp2add(temp, bb, temp);
+            engine.fpx.fp2mul_mont(c, temp, Q.Z);
+        }
+    }
+
+    protected void CompleteMPoint(long[][] A, PointProj P, PointProjFull R)
+    { // Given an xz-only representation on a montgomery curve, compute its affine representation
+        long[][] zero = new long[2][engine.params.NWORDS_FIELD],
+                one = new long[2][engine.params.NWORDS_FIELD],
+                xz = new long[2][engine.params.NWORDS_FIELD],
+                yz = new long[2][engine.params.NWORDS_FIELD],
+                s2 = new long[2][engine.params.NWORDS_FIELD],
+                r2 = new long[2][engine.params.NWORDS_FIELD],
+                invz = new long[2][engine.params.NWORDS_FIELD],
+                temp0 = new long[2][engine.params.NWORDS_FIELD],
+                temp1 = new long[2][engine.params.NWORDS_FIELD];
+                
+
+        engine.fpx.fpcopy(engine.params.Montgomery_one,0, one[0]);
+        
+        if (!Fpx.subarrayEquals(P.Z[0], zero[0], engine.params.NWORDS_FIELD) || !Fpx.subarrayEquals(P.Z[1], zero[1], engine.params.NWORDS_FIELD))
+        {
+            engine.fpx.fp2mul_mont(P.X, P.Z, xz);       // xz = x*z;
+            engine.fpx.fpsubPRIME(P.X[0], P.Z[1], temp0[0]);
+            engine.fpx.fpaddPRIME(P.X[1], P.Z[0], temp0[1]);
+            engine.fpx.fpaddPRIME(P.X[0], P.Z[1], temp1[0]);
+            engine.fpx.fpsubPRIME(P.X[1], P.Z[0], temp1[1]);
+            engine.fpx.fp2mul_mont(temp0, temp1, s2);     // s2 = (x + i*z)*(x - i*z);
+            engine.fpx.fp2mul_mont(A, xz, temp0);
+            engine.fpx.fp2add(temp0, s2, temp1);
+            engine.fpx.fp2mul_mont(xz, temp1, r2);        // r2 = xz*(A*xz + s2);
+            engine.fpx.sqrt_Fp2(r2, yz);
+            engine.fpx.fp2copy(P.Z, invz);
+            engine.fpx.fp2inv_mont_bingcd(invz);
+            engine.fpx.fp2mul_mont(P.X, invz, R.X);
+            engine.fpx.fp2sqr_mont(invz, temp0);
+            engine.fpx.fp2mul_mont(yz, temp0, R.Y);      // R = EM![x*invz, yz*invz^2];
+            engine.fpx.fp2copy(one, R.Z);
+        }
+        else
+        {
+            engine.fpx.fp2copy(zero, R.X);
+            engine.fpx.fp2copy(one, R.Y);
+            engine.fpx.fp2copy(zero, R.Z);               // R = EM!0;
+        }
+    }
+
+    void Ladder(PointProj P, long[] m, long[][] A, int order_bits, PointProj R)
+    {
+        PointProj R0 = new PointProj(engine.params.NWORDS_FIELD),
+                  R1 = new PointProj(engine.params.NWORDS_FIELD);
+        long[][] A24 = new long[2][engine.params.NWORDS_FIELD];
+        int bit = 0;
+        long mask;
+        int j, swap, prevbit = 0;
+
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, A24[0]);
+        engine.fpx.fpaddPRIME(A24[0], A24[0], A24[0]);
+        engine.fpx.fp2add(A, A24, A24);
+        engine.fpx.fp2div2(A24, A24);
+        engine.fpx.fp2div2(A24, A24);  // A24 = (A+2)/4          
+
+        j = order_bits - 1;
+        bit = (int) ((m[j >> Internal.LOG2RADIX] >>> (j & (Internal.RADIX-1))) & 1);
+        while (bit == 0)
+        {
+            j--;
+            bit = (int) ((m[j >> Internal.LOG2RADIX] >>> (j & (Internal.RADIX-1))) & 1);
+        }
+
+        // R0 <- P, R1 <- 2P
+        engine.fpx.fp2copy(P.X, R0.X);
+        engine.fpx.fp2copy(P.Z, R0.Z);
+        xDBL_e(P, R1, A24, 1);
+
+        // Main loop
+        for (int i = j - 1;  i >= 0; i--) 
+        {
+            bit = (int) ((m[i >> Internal.LOG2RADIX] >>> (i & (Internal.RADIX-1))) & 1);
+            swap = bit ^ prevbit;
+            prevbit = bit;
+            mask = 0 - swap;
+
+            swap_points(R0, R1, mask);
+            xDBLADD_proj(R0, R1, P.X, P.Z, A24);
+        }
+        swap = 0 ^ prevbit;
+        mask = 0 - swap;
+        swap_points(R0, R1, mask);
+
+        engine.fpx.fp2copy(R0.X, R.X);
+        engine.fpx.fp2copy(R0.Z, R.Z);
+    }
+
+    // Simultaneous doubling and differential addition.
+    // Input: projective Montgomery points P=(XP:ZP) and Q=(XQ:ZQ) such that xP=XP/ZP and xQ=XQ/ZQ, affine difference xPQ=x(P-Q) and Montgomery curve constant A24=(A+2)/4.
+    // Output: projective Montgomery points P <- 2*P = (X2P:Z2P) such that x(2P)=X2P/Z2P, and Q <- P+Q = (XQP:ZQP) such that = x(Q+P)=XQP/ZQP.
+    private void xDBLADD_proj(PointProj P, PointProj Q, long[][] XPQ, long[][] ZPQ, long[][] A24)
+    {
+        long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
+                t1 = new long[2][engine.params.NWORDS_FIELD],
+                t2 = new long[2][engine.params.NWORDS_FIELD];
+
+
+        engine.fpx.fp2add(P.X, P.Z, t0);                         // t0 = XP+ZP
+        engine.fpx.fp2sub(P.X, P.Z, t1);                         // t1 = XP-ZP
+        engine.fpx.fp2sqr_mont(t0, P.X);                          // XP = (XP+ZP)^2
+        engine.fpx.fp2sub(Q.X, Q.Z, t2);                         // t2 = XQ-ZQ
+        engine.fpx.fp2correction(t2);
+        engine.fpx.fp2add(Q.X, Q.Z, Q.X);                       // XQ = XQ+ZQ
+        engine.fpx.fp2mul_mont(t0, t2, t0);                        // t0 = (XP+ZP)*(XQ-ZQ)
+        engine.fpx.fp2sqr_mont(t1, P.Z);                          // ZP = (XP-ZP)^2
+        engine.fpx.fp2mul_mont(t1, Q.X, t1);                      // t1 = (XP-ZP)*(XQ+ZQ)
+        engine.fpx.fp2sub(P.X, P.Z, t2);                         // t2 = (XP+ZP)^2-(XP-ZP)^2
+        engine.fpx.fp2mul_mont(P.X, P.Z, P.X);                  // XP = (XP+ZP)^2*(XP-ZP)^2
+        engine.fpx.fp2mul_mont(t2, A24, Q.X);                     // XQ = A24*[(XP+ZP)^2-(XP-ZP)^2]
+        engine.fpx.fp2sub(t0, t1, Q.Z);                           // ZQ = (XP+ZP)*(XQ-ZQ)-(XP-ZP)*(XQ+ZQ)
+        engine.fpx.fp2add(Q.X, P.Z, P.Z);                       // ZP = A24*[(XP+ZP)^2-(XP-ZP)^2]+(XP-ZP)^2
+        engine.fpx.fp2add(t0, t1, Q.X);                           // XQ = (XP+ZP)*(XQ-ZQ)+(XP-ZP)*(XQ+ZQ)
+        engine.fpx.fp2mul_mont(P.Z, t2, P.Z);                    // ZP = [A24*[(XP+ZP)^2-(XP-ZP)^2]+(XP-ZP)^2]*[(XP+ZP)^2-(XP-ZP)^2]
+        engine.fpx.fp2sqr_mont(Q.Z, Q.Z);                        // ZQ = [(XP+ZP)*(XQ-ZQ)-(XP-ZP)*(XQ+ZQ)]^2
+        engine.fpx.fp2sqr_mont(Q.X, Q.X);                        // XQ = [(XP+ZP)*(XQ-ZQ)+(XP-ZP)*(XQ+ZQ)]^2
+        engine.fpx.fp2mul_mont(Q.X, ZPQ, Q.X);                   // XQ = ZPQ*[(XP+ZP)*(XQ-ZQ)+(XP-ZP)*(XQ+ZQ)]^2
+        engine.fpx.fp2mul_mont(Q.Z, XPQ, Q.Z);                   // ZQ = XPQ*[(XP+ZP)*(XQ-ZQ)-(XP-ZP)*(XQ+ZQ)]^2
+    }
+
+    // Doubling of a Montgomery point in projective coordinates (X:Z) over affine curve coefficient A.
+    // Input: projective Montgomery x-coordinates P = (X1:Z1), where x1=X1/Z1 and Montgomery curve constants (A+2)/4.
+    // Output: projective Montgomery x-coordinates Q = 2*P = (X2:Z2).
+    private void xDBL_e(PointProj P, PointProj Q, long[][] A24, int e)
+    {
+        long[][] temp = new long[2][engine.params.NWORDS_FIELD],
+                a = new long[2][engine.params.NWORDS_FIELD],
+                b = new long[2][engine.params.NWORDS_FIELD],
+                c = new long[2][engine.params.NWORDS_FIELD],
+                aa = new long[2][engine.params.NWORDS_FIELD],
+                bb = new long[2][engine.params.NWORDS_FIELD];
+
+
+        engine.fpx.fp2copy(P.X,Q.X);
+        engine.fpx.fp2copy(P.Z,Q.Z);
+
+        for (int j = 0; j < e; j++)
+        {
+            engine.fpx.fp2add(Q.X, Q.Z, a);           // a = xQ + zQ
+            engine.fpx.fp2sub(Q.X, Q.Z, b);           // b = xQ - zQ
+            engine.fpx.fp2sqr_mont(a, aa);              //aa = (xQ + zQ)^2
+            engine.fpx.fp2sqr_mont(b, bb);              //bb = (xQ - zQ)^2
+            engine.fpx.fp2sub(aa, bb, c);               // c = (xQ + zQ)^2 - (xQ - zQ)^2
+            engine.fpx.fp2mul_mont(aa, bb, Q.X);       // xQ = (xQ + zQ)^2 * (xQ - zQ)^2
+            engine.fpx.fp2mul_mont(A24, c, temp);       // temp = A24 * ((xQ + zQ)^2 - (xQ - zQ)^2)
+            engine.fpx.fp2add(temp, bb, temp);          // temp = A24 * ((xQ + zQ)^2 - (xQ - zQ)^2) + (xQ - zQ)^2
+            engine.fpx.fp2mul_mont(c, temp, Q.Z);      // temp =  (A24 * ((xQ + zQ)^2 - (xQ - zQ)^2) + (xQ - zQ)^2) * ((xQ + zQ)^2 - (xQ - zQ)^2)
+        }
+    }
+
+    // Computes [3^e](X:Z) on Montgomery curve with projective constant via e repeated triplings. e triplings in E costs k*(5M + 6S + 9A)
+    // Input: projective Montgomery x-coordinates P = (X:Z), where x=X/Z, Montgomery curve constant A2 = A/2 and the number of triplings e.
+    // Output: projective Montgomery x-coordinates Q <- [3^e]P.
+    void xTPLe_fast(PointProj P, PointProj Q, long[][] A2, int e)
+    {
+        PointProj T = new PointProj(engine.params.NWORDS_FIELD);
+
+        engine.fpx.copy_words(P, T);
+        for (int j = 0; j < e; j++)
+        {
+            xTPL_fast(T, T, A2);
+        }
+        engine.fpx.copy_words(T, Q);
+    }
+
+    // Montgomery curve (E: y^2 = x^3 + A*x^2 + x) x-only tripling at a cost 5M + 6S + 9A = 27p + 61a.
+    // Input : projective Montgomery x-coordinates P = (X:Z), where x=X/Z and Montgomery curve constant A/2.
+    // Output: projective Montgomery x-coordinates Q = 3*P = (X3:Z3).
+    private void xTPL_fast(PointProj P, PointProj Q, long[][] A2)
+    {
+        long[][] t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD],
+                 t3 = new long[2][engine.params.NWORDS_FIELD],
+                 t4 = new long[2][engine.params.NWORDS_FIELD];
+
+
+        engine.fpx.fp2sqr_mont(P.X, t1);        // t1 = x^2
+        engine.fpx.fp2sqr_mont(P.Z, t2);        // t2 = z^2
+        engine.fpx.fp2add(t1, t2, t3);          // t3 = t1 + t2
+        engine.fpx.fp2add(P.X, P.Z, t4);        // t4 = x + z
+        engine.fpx.fp2sqr_mont(t4, t4);         // t4 = t4^2
+        engine.fpx.fp2sub(t4, t3, t4);          // t4 = t4 - t3
+        engine.fpx.fp2mul_mont(A2, t4, t4);     // t4 = t4*A2
+        engine.fpx.fp2add(t3, t4, t4);          // t4 = t4 + t3
+        engine.fpx.fp2sub(t1, t2, t3);          // t3 = t1 - t2
+        engine.fpx.fp2sqr_mont(t3, t3);         // t3 = t3^2
+        engine.fpx.fp2mul_mont(t1, t4, t1);     // t1 = t1*t4
+        engine.fpx.fp2shl(t1, 2, t1);        // t1 = 4*t1
+        engine.fpx.fp2sub(t1, t3, t1);          // t1 = t1 - t3
+        engine.fpx.fp2sqr_mont(t1, t1);         // t1 = t1^2
+        engine.fpx.fp2mul_mont(t2, t4, t2);     // t2 = t2*t4
+        engine.fpx.fp2shl(t2, 2, t2);        // t2 = 4*t2
+        engine.fpx.fp2sub(t2, t3, t2);          // t2 = t2 - t3
+        engine.fpx.fp2sqr_mont(t2, t2);         // t2 = t2^2
+        engine.fpx.fp2mul_mont(P.X, t2, Q.X);   // x = x*t2
+        engine.fpx.fp2mul_mont(P.Z, t1, Q.Z);   // z = z*t1
+    }
+
 
     protected void LADDER3PT(long[][] xP, long[][] xQ, long[][] xPQ, long[] m, int AliceOrBob, PointProj R, long[][] A)
     {
         PointProj R0 = new PointProj(engine.params.NWORDS_FIELD),
-            R2 = new PointProj(engine.params.NWORDS_FIELD);
+                  R2 = new PointProj(engine.params.NWORDS_FIELD);
         long[][] A24 = new long[2][engine.params.NWORDS_FIELD];
         long mask;
         int i, nbits, bit, swap, prevbit = 0;
@@ -20,8 +247,7 @@ class Isogeny
         if (AliceOrBob == engine.params.ALICE)
         {
             nbits = engine.params.OALICE_BITS;
-        }
-        else
+        } else
         {
             nbits = engine.params.OBOB_BITS - 1;
         }
@@ -45,10 +271,10 @@ class Isogeny
         // Main loop
         for (i = 0; i < nbits; i++)
         {
-            bit = (int)((m[i >>> Internal.LOG2RADIX] >>> (i & (Internal.RADIX - 1))) & 1);
+            bit = (int) ((m[i >>> Internal.LOG2RADIX] >>> (i & (Internal.RADIX-1))) & 1);
             swap = bit ^ prevbit;
             prevbit = bit;
-            mask = 0 - (long)swap;
+            mask = 0 - (long) swap;
             swap_points(R, R2, mask);
             xDBLADD(R0, R2, R.X, A24);
             engine.fpx.fp2mul_mont(R2.X, R.Z, R2.X);
@@ -57,6 +283,36 @@ class Isogeny
         mask = 0 - (long)swap;
         swap_points(R, R2, mask);
     }
+
+    // Complete point on A = 0 curve
+    protected void CompletePoint(PointProj P, PointProjFull R)
+    {
+        long[][] xz = new long[2][engine.params.NWORDS_FIELD],
+                 s2 = new long[2][engine.params.NWORDS_FIELD],
+                 r2 = new long[2][engine.params.NWORDS_FIELD],
+                 yz = new long[2][engine.params.NWORDS_FIELD],
+                 invz = new long[2][engine.params.NWORDS_FIELD],
+                 t0 = new long[2][engine.params.NWORDS_FIELD],
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 one = new long[2][engine.params.NWORDS_FIELD];
+
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one[0]);
+        engine.fpx.fp2mul_mont(P.X, P.Z, xz);
+        engine.fpx.fpsubPRIME(P.X[0], P.Z[1], t0[0]);
+        engine.fpx.fpaddPRIME(P.X[1], P.Z[0], t0[1]);
+        engine.fpx.fpaddPRIME(P.X[0], P.Z[1], t1[0]);
+        engine.fpx.fpsubPRIME(P.X[1], P.Z[0], t1[1]);
+        engine.fpx.fp2mul_mont(t0, t1, s2);
+        engine.fpx.fp2mul_mont(xz, s2, r2);
+        engine.fpx.sqrt_Fp2(r2, yz);//todo check
+        engine.fpx.fp2copy(P.Z,invz);
+        engine.fpx.fp2inv_mont_bingcd(invz);
+        engine.fpx.fp2mul_mont(P.X, invz, R.X);
+        engine.fpx.fp2sqr_mont(invz, t0);
+        engine.fpx.fp2mul_mont(yz, t0, R.Y);
+        engine.fpx.fp2copy(one, R.Z);
+    }
+
 
     // Swap points.
     // If option = 0 then P <- P and Q <- Q, else if option = 0xFF...FF then P <- Q and Q <- P
@@ -86,12 +342,11 @@ class Isogeny
     // Simultaneous doubling and differential addition.
     // Input: projective Montgomery points P=(XP:ZP) and Q=(XQ:ZQ) such that xP=XP/ZP and xQ=XQ/ZQ, affine difference xPQ=x(P-Q) and Montgomery curve constant A24=(A+2)/4.
     // Output: projective Montgomery points P <- 2*P = (X2P:Z2P) such that x(2P)=X2P/Z2P, and Q <- P+Q = (XQP:ZQP) such that = x(Q+P)=XQP/ZQP.
-
     protected void xDBLADD(PointProj P, PointProj Q, long[][] xPQ, long[][] A24)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_add(P.X, P.Z, t0);                  // t0 = XP+ZP
         engine.fpx.mp2_sub_p2(P.X, P.Z, t1);               // t1 = XP-ZP
@@ -133,7 +388,7 @@ class Isogeny
     protected void xDBL(PointProj P, PointProj Q, long[][] A24plus, long[][] C24)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_sub_p2(P.X, P.Z, t0);                // t0 = X1-Z1
         engine.fpx.mp2_add(P.X, P.Z, t1);                   // t1 = X1+Z1
@@ -153,12 +408,12 @@ class Isogeny
     private void xTPL(PointProj P, PointProj Q, long[][] A24minus, long[][] A24plus)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD],
-            t3 = new long[2][engine.params.NWORDS_FIELD],
-            t4 = new long[2][engine.params.NWORDS_FIELD],
-            t5 = new long[2][engine.params.NWORDS_FIELD],
-            t6 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD],
+                 t3 = new long[2][engine.params.NWORDS_FIELD],
+                 t4 = new long[2][engine.params.NWORDS_FIELD],
+                 t5 = new long[2][engine.params.NWORDS_FIELD],
+                 t6 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_sub_p2(P.X, P.Z, t0);               // t0 = X-Z
         engine.fpx.fp2sqr_mont(t0, t2);                    // t2 = (X-Z)^2
@@ -203,8 +458,8 @@ class Isogeny
     protected void get_A(long[][] xP, long[][] xQ, long[][] xR, long[][] A)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            one = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 one = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one[0]);
         engine.fpx.fp2add(xP, xQ, t1);                     // t1 = xP+xQ
@@ -228,7 +483,7 @@ class Isogeny
     protected void j_inv(long[][] A, long[][] C, long[][] jinv)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2sqr_mont(A, jinv);                   // jinv = A^2
         engine.fpx.fp2sqr_mont(C, t1);                     // t1 = C^2
@@ -249,16 +504,17 @@ class Isogeny
     }
 
 
+
     // Computes the corresponding 3-isogeny of a projective Montgomery point (X3:Z3) of order 3.
     // Input:  projective point of order three P = (X3:Z3).
     // Output: the 3-isogenous Montgomery curve with projective coefficient A/C.
     protected void get_3_isog(PointProj P, long[][] A24minus, long[][] A24plus, long[][][] coeff)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD],
-            t3 = new long[2][engine.params.NWORDS_FIELD],
-            t4 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD],
+                 t3 = new long[2][engine.params.NWORDS_FIELD],
+                 t4 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_sub_p2(P.X, P.Z, coeff[0]);         // coeff0 = X-Z
         engine.fpx.fp2sqr_mont(coeff[0], t0);              // t0 = (X-Z)^2
@@ -285,8 +541,8 @@ class Isogeny
     protected void eval_3_isog(PointProj Q, long[][][] coeff)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_add(Q.X, Q.Z, t0);                  // t0 = X+Z
         engine.fpx.mp2_sub_p2(Q.X, Q.Z, t1);               // t1 = X-Z
@@ -306,9 +562,9 @@ class Isogeny
     protected void inv_3_way(long[][] z1, long[][] z2, long[][] z3)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD],
-            t3 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD],
+                 t3 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2mul_mont(z1, z2, t0);                // t0 = z1*z2
         engine.fpx.fp2mul_mont(z3, t0, t1);                // t1 = z1*z2*z3
@@ -336,9 +592,9 @@ class Isogeny
     protected void eval_2_isog(PointProj P, PointProj Q)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD],
-            t2 = new long[2][engine.params.NWORDS_FIELD],
-            t3 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD],
+                 t2 = new long[2][engine.params.NWORDS_FIELD],
+                 t3 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_add(Q.X, Q.Z, t0);                  // t0 = X2+Z2
         engine.fpx.mp2_sub_p2(Q.X, Q.Z, t1);               // t1 = X2-Z2
@@ -376,7 +632,7 @@ class Isogeny
     protected void eval_4_isog(PointProj P, long[][][] coeff)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-            t1 = new long[2][engine.params.NWORDS_FIELD];
+                 t1 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.mp2_add(P.X, P.Z, t0);                  // t0 = X+Z
         engine.fpx.mp2_sub_p2(P.X, P.Z, t1);               // t1 = X-Z
@@ -393,6 +649,7 @@ class Isogeny
         engine.fpx.fp2mul_mont(P.X, t1, P.X);              // Xfinal
         engine.fpx.fp2mul_mont(P.Z, t0, P.Z);              // Zfinal
     }
-
+    
+    
 
 }

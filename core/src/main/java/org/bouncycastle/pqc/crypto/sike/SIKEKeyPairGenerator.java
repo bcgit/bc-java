@@ -15,7 +15,7 @@ public class SIKEKeyPairGenerator
 
     private void initialize(KeyGenerationParameters param)
     {
-        this.sikeParams = (SIKEKeyGenerationParameters)param;
+        this.sikeParams = (SIKEKeyGenerationParameters) param;
         this.random = param.getRandom();
     }
 

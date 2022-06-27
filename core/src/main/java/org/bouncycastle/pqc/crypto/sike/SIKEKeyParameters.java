@@ -8,8 +8,8 @@ public class SIKEKeyParameters
     private SIKEParameters params;
 
     public SIKEKeyParameters(
-        boolean isPrivate,
-        SIKEParameters params
+            boolean isPrivate,
+            SIKEParameters params
     )
     {
         super(isPrivate);
