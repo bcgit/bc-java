@@ -1152,7 +1152,8 @@ class Fpx
             }
             else
             {
-                if (is_even_mod_order(v)) {
+                if (is_even_mod_order(v))
+                {
                     mp_shiftr1(v, engine.params.NWORDS_ORDER);
                     mp_shiftl1(x1, engine.params.NWORDS_ORDER);
                 }

@@ -336,7 +336,8 @@ class SIDH
             }
             engine.isogeny.get_3_isog(R, A24minus, A24plus, coeff);
 
-            for (i = 0; i < npts; i++) {
+            for (i = 0; i < npts; i++)
+            {
                 engine.isogeny.eval_3_isog(pts[i], coeff);
             }
 
