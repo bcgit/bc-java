@@ -157,35 +157,9 @@ public class ERSArchiveTimeStampGenerator
             // we compute the final hash tree by left first traversal.
             for (int i = 0; i != reducedHashTree.length; i++)
             {
-                PartialHashtree[] compressedTree = new PartialHashtree[reducedHashTree.length];
+                PartialHashtree[] path = rootNodeCalculator.computePathToRoot(digCalc, reducedHashTree[i], i);
 
-                System.arraycopy(reducedHashTree, 0, compressedTree, 0, compressedTree.length);
-                for (int j = 0; j != compressedTree.length; j++)
-                {
-                    if (j != i && compressedTree[j].getValueCount() > 1)
-                    {
-                        compressedTree[j] = new PartialHashtree(concatenate(compressedTree[j]));
-                    }
-                }
-                if (i == 0)
-                {
-                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
-                }
-                else
-                {
-                    PartialHashtree p = compressedTree[0];
-                    compressedTree[0] = compressedTree[i];
-
-                    // p[0] is always the smallest hash so we resort the output for later.
-                    for (int j = i; j > 1; j--)
-                    {
-                        compressedTree[j] = compressedTree[j - 1];
-                    }
-
-                    compressedTree[1] = p;
-                    
-                    atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), compressedTree, timeStamp), digCalc));
-                }
+                atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), path, timeStamp), digCalc));
             }
         }
 

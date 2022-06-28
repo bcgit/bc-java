@@ -71,23 +71,6 @@ public class ERSArchiveTimeStamp
         }
     }
 
-    ERSArchiveTimeStamp(ArchiveTimeStamp archiveTimeStamp, DigestCalculator digCalc, ERSRootNodeCalculator rootNodeCalculator)
-        throws TSPException, ERSException
-    {
-        this.previousChainsDigest = null;
-        try
-        {
-            this.archiveTimeStamp = archiveTimeStamp;
-            this.timeStampToken = new TimeStampToken(archiveTimeStamp.getTimeStamp());
-            this.digCalc = digCalc;
-            this.rootNodeCalculator = rootNodeCalculator;
-        }
-        catch (IOException e)
-        {
-            throw new ERSException(e.getMessage(), e);
-        }
-    }
-
     ERSArchiveTimeStamp(byte[] previousChainsDigest, ArchiveTimeStamp archiveTimeStamp, DigestCalculatorProvider digCalcProv)
         throws TSPException, ERSException
     {
@@ -139,7 +122,7 @@ public class ERSArchiveTimeStamp
 
         if (partialTree != null)
         {
-            rootHash = rootNodeCalculator.computeRootHash(digCalc, archiveTimeStamp.getReducedHashTree());
+            rootHash = rootNodeCalculator.recoverRootHash(digCalc, archiveTimeStamp.getReducedHashTree());
         }
         else
         {

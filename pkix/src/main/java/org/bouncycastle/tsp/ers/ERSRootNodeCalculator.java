@@ -18,4 +18,8 @@ public interface ERSRootNodeCalculator
      * @return the root hash of the Merkle tree.
      */
     byte[] computeRootHash(DigestCalculator digCalc, PartialHashtree[] nodes);
+
+    PartialHashtree[] computePathToRoot(DigestCalculator digCalc, PartialHashtree node, int index);
+
+    byte[] recoverRootHash(DigestCalculator digCalc, PartialHashtree[] nodes);
 }
