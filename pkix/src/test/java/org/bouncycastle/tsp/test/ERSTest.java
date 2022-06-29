@@ -10,6 +10,7 @@ import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -44,6 +45,8 @@ import org.bouncycastle.tsp.ers.ERSDataGroup;
 import org.bouncycastle.tsp.ers.ERSDirectoryDataGroup;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecord;
 import org.bouncycastle.tsp.ers.ERSEvidenceRecordGenerator;
+import org.bouncycastle.tsp.ers.ERSEvidenceRecordSelector;
+import org.bouncycastle.tsp.ers.ERSEvidenceRecordStore;
 import org.bouncycastle.tsp.ers.ERSException;
 import org.bouncycastle.tsp.ers.ERSFileData;
 import org.bouncycastle.tsp.ers.ERSInputStreamData;
@@ -703,10 +706,24 @@ public class ERSTest
         ev2.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
         ev2.validatePresent(h3Docs, new Date());
+
+        ERSEvidenceRecordStore store = new ERSEvidenceRecordStore(evs);
+
+        Collection<ERSEvidenceRecord> recs = store.getMatches(new ERSEvidenceRecordSelector(h3Docs));
+
+        Assert.assertEquals(1, recs.size());
+        ERSEvidenceRecord r1 = recs.iterator().next();
+
+        recs = store.getMatches(new ERSEvidenceRecordSelector(new ERSByteData(H3A_DATA)));
+
+        Assert.assertEquals(1, recs.size());
+        ERSEvidenceRecord r2 = recs.iterator().next();
+
+        Assert.assertTrue(r2 == r1);
     }
 
     private void checkPresent(ERSEvidenceRecord ev, ERSData data)
-        throws OperatorCreationException, ERSException
+        throws ERSException
     {
         ev.validatePresent(data, new Date());
     }
