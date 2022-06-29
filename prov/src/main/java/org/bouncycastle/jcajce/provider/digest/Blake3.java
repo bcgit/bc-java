@@ -17,7 +17,7 @@ public class Blake3
     {
         public Blake3_256()
         {
-            super(new Blake3Digest(32));
+            super(new Blake3Digest(256));
         }
 
         public Object clone()

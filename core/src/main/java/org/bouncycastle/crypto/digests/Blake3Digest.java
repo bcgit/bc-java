@@ -259,17 +259,27 @@ public class Blake3Digest
      */
     public Blake3Digest()
     {
-        this(BLOCKLEN >> 1);
+        this((BLOCKLEN >> 1) * 8);
     }
 
     /**
      * Constructor.
      *
-     * @param pDigestLen the default digestLength (in bytes)
+     * @param pDigestSize the default digest size (in bits)
      */
-    public Blake3Digest(final int pDigestLen)
+    public Blake3Digest(final int pDigestSize)
     {
-        theDigestLen = pDigestLen;
+        // In aid of less confusion -this is to deal with the fact the
+        // original checkin for this has the digest length in bytes
+        // and every other digest we have doesn't....
+        if (pDigestSize > 100)
+        {
+            theDigestLen = pDigestSize / 8;
+        }
+        else
+        {
+            theDigestLen = pDigestSize;
+        }
         init(null);
     }
 
