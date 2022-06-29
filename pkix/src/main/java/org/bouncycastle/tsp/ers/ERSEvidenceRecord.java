@@ -208,6 +208,18 @@ public class ERSEvidenceRecord
     }
 
     /**
+     * Return true if the hash of data appears in the primary archive time stamp for the current chain.
+     *
+     * @param data the data of interest.
+     * @return
+     */
+    public boolean isContaining(ERSData data, Date date)
+        throws ERSException
+    {
+         return firstArchiveTimeStamp.isContaining(data, date);
+    }
+
+    /**
      * Validate that a particular data object/group is present.
      *
      * @param data the data object/group.
@@ -428,5 +440,10 @@ public class ERSEvidenceRecord
         {
             throw new ERSException(e.getMessage(), e);
         }
+    }
+
+    DigestCalculatorProvider getDigestAlgorithmProvider()
+    {
+        return digestCalculatorProvider;
     }
 }
