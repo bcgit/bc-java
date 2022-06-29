@@ -23,14 +23,16 @@ import org.bouncycastle.util.Arrays;
 public abstract class PGPEncryptedData
     implements SymmetricKeyAlgorithmTags
 {
-    protected class TruncatedStream extends InputStream
+    protected class TruncatedStream
+        extends InputStream
     {
-        int[]         lookAhead = new int[22];
-        int           bufPtr;
-        InputStream   in;
+        int[] lookAhead = new int[22];
+        int bufPtr;
+        InputStream in;
+        byte[] readBuffer = new byte[8192];
 
         TruncatedStream(
-            InputStream    in)
+            InputStream in)
             throws IOException
         {
             for (int i = 0; i != lookAhead.length; i++)
@@ -48,11 +50,11 @@ public abstract class PGPEncryptedData
         public int read()
             throws IOException
         {
-            int    ch = in.read();
+            int ch = in.read();
 
             if (ch >= 0)
             {
-                int    c = lookAhead[bufPtr];
+                int c = lookAhead[bufPtr];
 
                 lookAhead[bufPtr] = ch;
                 bufPtr = (bufPtr + 1) % lookAhead.length;
@@ -63,10 +65,58 @@ public abstract class PGPEncryptedData
             return -1;
         }
 
+        public int read(byte[] b)
+            throws IOException
+        {
+            return read(b, 0, b.length);
+        }
+
+        public int read(byte[] b, int off, int len)
+            throws IOException
+        {
+            // Efficient index check copied from BufferedInputStream
+            if ((off | len | off + len | b.length - (off + len)) < 0)
+            {
+                throw new IndexOutOfBoundsException();
+            }
+            else if (len == 0)
+            {
+                return 0;
+            }
+
+            // read into our buffer
+            int maxRead = Math.min(readBuffer.length, len);
+            int bytesRead = in.read(readBuffer, 0, maxRead);
+            if (bytesRead < 0)
+            {
+                return -1;
+            }
+
+            // Copy lookahead to output
+            int bytesFromLookahead = Math.min(bytesRead, lookAhead.length);
+            for (int i = 0; i < bytesFromLookahead; i++)
+            {
+                b[i] = (byte)lookAhead[(bufPtr + i) % lookAhead.length];
+            }
+
+            // write tail of readBuffer to lookahead
+            int bufferTail = bytesRead - bytesFromLookahead;
+            for (int i = bufferTail; i < bytesRead; i++)
+            {
+                lookAhead[bufPtr] = readBuffer[i];
+                bufPtr = (bufPtr + 1) % lookAhead.length;
+            }
+
+            // Copy head of readBuffer to output
+            System.arraycopy(readBuffer, 0, b, off + bytesFromLookahead, bufferTail);
+
+            return bytesRead;
+        }
+        
         int[] getLookAhead()
         {
-            int[]    tmp = new int[lookAhead.length];
-            int    count = 0;
+            int[] tmp = new int[lookAhead.length];
+            int count = 0;
 
             for (int i = bufPtr; i != lookAhead.length; i++)
             {
@@ -81,13 +131,13 @@ public abstract class PGPEncryptedData
         }
     }
 
-    InputStreamPacket        encData;
-    InputStream              encStream;
-    TruncatedStream          truncStream;
-    PGPDigestCalculator      integrityCalculator;
+    InputStreamPacket encData;
+    InputStream encStream;
+    TruncatedStream truncStream;
+    PGPDigestCalculator integrityCalculator;
 
     PGPEncryptedData(
-        InputStreamPacket    encData)
+        InputStreamPacket encData)
     {
         this.encData = encData;
     }
@@ -99,6 +149,7 @@ public abstract class PGPEncryptedData
      * {@link PGPEncryptedDataList} and with any decryption methods in sub-classes, so consuming
      * this stream will affect decryption.
      * </p>
+     *
      * @return the encrypted data in this packet.
      */
     public InputStream getInputStream()
@@ -110,7 +161,7 @@ public abstract class PGPEncryptedData
      * Checks whether the packet is integrity protected.
      *
      * @return <code>true</code> if there is a modification detection code package associated with
-     *         this stream
+     * this stream
      */
     public boolean isIntegrityProtected()
     {
@@ -123,9 +174,10 @@ public abstract class PGPEncryptedData
      * <p>
      * Note: This can only be called after the message has been read.
      * </p>
+     *
      * @return <code>true</code> if the message verifies, <code>false</code> otherwise.
      * @throws PGPException if the message is not {@link #isIntegrityProtected() integrity
-     *             protected}.
+     *                      protected}.
      */
     public boolean verify()
         throws PGPException, IOException
