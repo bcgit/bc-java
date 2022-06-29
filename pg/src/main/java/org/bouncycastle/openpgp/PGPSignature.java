@@ -599,6 +599,12 @@ public class PGPSignature
         boolean forTransfer)
         throws IOException
     {
+        // Exportable signatures MUST NOT be exported if forTransfer==true
+        if (forTransfer && (!getHashedSubPackets().isExportable() || !getUnhashedSubPackets().isExportable()))
+        {
+            return;
+        }
+
         BCPGOutputStream out;
 
         if (outStream instanceof BCPGOutputStream)
