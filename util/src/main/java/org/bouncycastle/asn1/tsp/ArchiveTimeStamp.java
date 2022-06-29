@@ -143,25 +143,35 @@ public class ArchiveTimeStamp
         }
         else
         {
-            if (timeStamp.getContentType().equals(CMSObjectIdentifiers.signedData))
-            {
-                SignedData tsData = SignedData.getInstance(timeStamp.getContent());
-                if (tsData.getEncapContentInfo().getContentType().equals(PKCSObjectIdentifiers.id_ct_TSTInfo))
-                {
-                    TSTInfo tstData = TSTInfo.getInstance(
-                        ASN1OctetString.getInstance(tsData.getEncapContentInfo().getContent()).getOctets());
+            return getTimeStampInfo().getMessageImprint().getHashAlgorithm();
+        }
+    }
 
-                    return tstData.getMessageImprint().getHashAlgorithm();
-                }
-                else
-                {
-                    throw new IllegalStateException("cannot parse time stamp");
-                }
+    public byte[] getTimeStampDigestValue()
+    {
+        return getTimeStampInfo().getMessageImprint().getHashedMessage();
+    }
+
+    private TSTInfo getTimeStampInfo()
+    {
+        if (timeStamp.getContentType().equals(CMSObjectIdentifiers.signedData))
+        {
+            SignedData tsData = SignedData.getInstance(timeStamp.getContent());
+            if (tsData.getEncapContentInfo().getContentType().equals(PKCSObjectIdentifiers.id_ct_TSTInfo))
+            {
+                TSTInfo tstData = TSTInfo.getInstance(
+                    ASN1OctetString.getInstance(tsData.getEncapContentInfo().getContent()).getOctets());
+
+                return tstData;
             }
             else
             {
-                throw new IllegalStateException("cannot identify algorithm identifier for digest");
+                throw new IllegalStateException("cannot parse time stamp");
             }
+        }
+        else
+        {
+            throw new IllegalStateException("cannot identify algorithm identifier for digest");
         }
     }
 
@@ -173,6 +183,21 @@ public class ArchiveTimeStamp
     public AlgorithmIdentifier getDigestAlgorithm()
     {
         return digestAlgorithm;
+    }
+
+    /**
+     * Return the first node in the reduced hash tree which contains the leaf node.
+     *
+     * @return the node containing the data hashes, null if no reduced hash tree is present.
+     */
+    public PartialHashtree getHashTreeLeaf()
+    {
+        if (reducedHashTree == null)
+        {
+           return null;
+        }
+
+        return  PartialHashtree.getInstance(reducedHashTree.getObjectAt(0));
     }
 
     public PartialHashtree[] getReducedHashTree()

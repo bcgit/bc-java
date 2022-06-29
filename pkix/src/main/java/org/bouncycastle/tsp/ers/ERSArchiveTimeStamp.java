@@ -102,6 +102,26 @@ public class ERSArchiveTimeStamp
         validatePresent(data instanceof ERSDataGroup, data.getHash(digCalc), atDate);
     }
 
+    public boolean isContaining(ERSData data, Date atDate)
+        throws ERSException
+    {
+        if (timeStampToken.getTimeStampInfo().getGenTime().after(atDate))
+        {
+            throw new ArchiveTimeStampValidationException("timestamp generation time is in the future");
+        }
+
+        try
+        {
+            validatePresent(data, atDate);
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+    }
+
     public void validatePresent(boolean isDataGroup, byte[] hash, Date atDate)
         throws ERSException
     {
