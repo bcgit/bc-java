@@ -1197,11 +1197,11 @@ class QTesla1p
                 pos = pos_list[i];
                 for (j = 0; j < pos; j++)
                 {
-                    temp[j] = temp[j] - sign_list[i] * pk[pkPos + j + PARAM_N - pos];
+                    temp[j] = temp[j] - (long) sign_list[i] * pk[pkPos + j + PARAM_N - pos];
                 }
                 for (j = pos; j < PARAM_N; j++)
                 {
-                    temp[j] = temp[j] + sign_list[i] * pk[pkPos + j - pos];
+                    temp[j] = temp[j] + (long) sign_list[i] * pk[pkPos + j - pos];
                 }
             }
 

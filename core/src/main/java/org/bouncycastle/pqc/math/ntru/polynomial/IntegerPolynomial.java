@@ -859,7 +859,7 @@ public class IntegerPolynomial
         BigInteger sum = Constants.BIGINT_ZERO;
         for (int i = 0; i < coeffs.length; i++)
         {
-            sum = sum.add(BigInteger.valueOf(coeffs[i] * coeffs[i]));
+            sum = sum.add(BigInteger.valueOf((long) coeffs[i] * (long) coeffs[i]));
         }
         return sum;
     }
@@ -1100,7 +1100,7 @@ public class IntegerPolynomial
         {
             int c = p.coeffs[i];
             sum += c;
-            sqSum += c * c;
+            sqSum += (long) c * (long) c;
         }
 
         long centeredNormSq = sqSum - sum * sum / N;

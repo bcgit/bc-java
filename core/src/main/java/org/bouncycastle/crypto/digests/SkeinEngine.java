@@ -689,7 +689,7 @@ public class SkeinEngine
             }
 
             // Process configuration block
-            ubiComplete(PARAM_TYPE_CONFIG, new Configuration(outputSizeBytes * 8).getBytes());
+            ubiComplete(PARAM_TYPE_CONFIG, new Configuration(outputSizeBytes * 8L).getBytes());
         }
 
         // Process additional pre-message parameters

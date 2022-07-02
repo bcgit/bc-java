@@ -45,7 +45,7 @@ class Horst
             offset_out = (1 << (HORST_LOGT - i - 1)) - 1;
             for (j = 0; j < (1 << (HORST_LOGT - i - 1)); j++)
             {
-                hs.hash_2n_n_mask(tree, (int)((offset_out + j) * SPHINCS256Config.HASH_BYTES), tree, (int)((offset_in + 2 * j) * SPHINCS256Config.HASH_BYTES), masks, 2 * i * SPHINCS256Config.HASH_BYTES);
+                hs.hash_2n_n_mask(tree, (int)((offset_out + j) * SPHINCS256Config.HASH_BYTES), tree, (int)((offset_in + 2L * j) * SPHINCS256Config.HASH_BYTES), masks, 2 * i * SPHINCS256Config.HASH_BYTES);
             }
         }
 

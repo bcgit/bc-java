@@ -77,9 +77,9 @@ public class WinternitzOTSVerify
 
         byte[] testKey = new byte[testKeySize];
 
-        int c = 0;
+        long c = 0;
         int counter = 0;
-        int test;
+        long test;
 
         if (8 % w == 0)
         {
@@ -279,7 +279,7 @@ public class WinternitzOTSVerify
         return log;
     }
 
-    private void hashSignatureBlock(byte[] sig, int sigOff, int rounds, byte[] buf, int bufOff)
+    private void hashSignatureBlock(byte[] sig, int sigOff, long rounds, byte[] buf, int bufOff)
     {
         if (rounds < 1)
         {

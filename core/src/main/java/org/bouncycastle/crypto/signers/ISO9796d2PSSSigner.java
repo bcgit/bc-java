@@ -394,7 +394,7 @@ public class ISO9796d2PSSSigner
         digest.doFinal(m2Hash, 0);
 
         byte[] C = new byte[8];
-        LtoOSP(messageLength * 8, C);
+        LtoOSP(messageLength * 8L, C);
 
         digest.update(C, 0, C.length);
 
@@ -514,7 +514,7 @@ public class ISO9796d2PSSSigner
         // check the hashes
         //
         byte[] C = new byte[8];
-        LtoOSP(recoveredMessage.length * 8, C);
+        LtoOSP(recoveredMessage.length * 8L, C);
 
         digest.update(C, 0, C.length);
 
