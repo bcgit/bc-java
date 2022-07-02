@@ -1,10 +1,14 @@
 package org.bouncycastle.tsp.ers;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.PartialHashtree;
@@ -19,13 +23,12 @@ import org.bouncycastle.util.StoreException;
 public class ERSEvidenceRecordStore
     implements Store<ERSEvidenceRecord>
 {
-    private Map<HashNode, ERSEvidenceRecord> recordMap = new HashMap<HashNode, ERSEvidenceRecord>();
+    private Map<HashNode, List<ERSEvidenceRecord>> recordMap = new HashMap<HashNode, List<ERSEvidenceRecord>>();
     private DigestCalculator digCalc = null;
 
     public ERSEvidenceRecordStore(Collection<ERSEvidenceRecord> records)
         throws OperatorCreationException
     {
-
         for (Iterator it = records.iterator(); it.hasNext(); )
         {
             ERSEvidenceRecord record = (ERSEvidenceRecord)it.next();
@@ -48,20 +51,39 @@ public class ERSEvidenceRecordStore
                     // a data group
                     for (int i = 0; i != dataHashes.length; i++)
                     {
-                        recordMap.put(new HashNode(dataHashes[i]), record);
+                        addRecord(new HashNode(dataHashes[i]), record);
                     }
-                    recordMap.put(new HashNode(ERSUtil.computeNodeHash(digCalc, dataLeaf)), record);
+                    addRecord(new HashNode(ERSUtil.computeNodeHash(digCalc, dataLeaf)), record);
                 }
                 else
                 {
-                    recordMap.put(new HashNode(dataHashes[0]), record);
+                    addRecord(new HashNode(dataHashes[0]), record);
                 }
             }
             else
             {
                 // only one object - use timestamp imprint
-                recordMap.put(new HashNode(archiveTimeStamp.getTimeStampDigestValue()), record);
+                addRecord(new HashNode(archiveTimeStamp.getTimeStampDigestValue()), record);
             }
+        }
+    }
+
+    private void addRecord(HashNode hashNode, ERSEvidenceRecord record)
+    {
+        List<ERSEvidenceRecord> recs = (List<ERSEvidenceRecord>)recordMap.get(hashNode);
+
+        if (recs != null)
+        {
+            List<ERSEvidenceRecord> newRecs = new ArrayList<ERSEvidenceRecord>(recs.size() + 1);
+
+            newRecs.addAll(recs);
+            newRecs.add(record);
+
+            recordMap.put(hashNode, newRecs);
+        }
+        else
+        {
+            recordMap.put(hashNode, Collections.singletonList(record));
         }
     }
 
@@ -70,17 +92,54 @@ public class ERSEvidenceRecordStore
     {
         if (selector instanceof ERSEvidenceRecordSelector)
         {
-            // TODO: more than one evidence record might contain the same data
             HashNode node = new HashNode(((ERSEvidenceRecordSelector)selector).getData().getHash(digCalc));
-            ERSEvidenceRecord record = recordMap.get(node);
+            List<ERSEvidenceRecord> records = (List<ERSEvidenceRecord>)recordMap.get(node);
 
-            if (record != null)
+            if (records != null)
             {
-                return Collections.singletonList(record);
+                List<ERSEvidenceRecord> rv = new ArrayList<ERSEvidenceRecord>(records.size());
+
+                for (int i = 0; i != records.size(); i++)
+                {
+                    ERSEvidenceRecord record = records.get(i);
+                    if (selector.match(record))
+                    {
+                        rv.add(record);
+                    }
+                }
+
+                return Collections.unmodifiableList(rv);
             }
+
+            return Collections.emptyList();
         }
 
-        return Collections.EMPTY_LIST;
+        if (selector == null)
+        {
+            // match all - use a set to avoid repeats
+            Set<ERSEvidenceRecord> rv = new HashSet<ERSEvidenceRecord>(recordMap.size());
+            for (Iterator<List<ERSEvidenceRecord>> it = recordMap.values().iterator(); it.hasNext(); )
+            {
+                rv.addAll((List<ERSEvidenceRecord>)it.next());
+            }
+            return Collections.unmodifiableList(new ArrayList<ERSEvidenceRecord>(rv));
+        }
+
+        Set<ERSEvidenceRecord> rv = new HashSet<ERSEvidenceRecord>();
+        for (Iterator<List<ERSEvidenceRecord>> it = recordMap.values().iterator(); it.hasNext(); )
+        {
+            List<ERSEvidenceRecord> next = it.next();
+
+            for (int i = 0; i != next.size(); i++)
+            {
+                if (selector.match(next.get(i)))
+                {
+                    rv.add(next.get(i));
+                }
+            }
+        }
+        
+        return Collections.unmodifiableList(new ArrayList<ERSEvidenceRecord>(rv));
     }
 
     private static class HashNode
