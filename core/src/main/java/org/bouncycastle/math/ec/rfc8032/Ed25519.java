@@ -11,6 +11,17 @@ import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A low-level implementation of the Ed25519, Ed25519ctx, and Ed25519ph instantiations of the Edwards-Curve
+ * Digital Signature Algorithm specified in <a href="https://www.rfc-editor.org/rfc/rfc8032">RFC 8032</a>.
+ * <p>
+ * The implementation strategy is mostly drawn from <a href="https://ia.cr/2012/309"> Mike Hamburg, "Fast and
+ * compact elliptic-curve cryptography"</a>, notably the "signed multi-comb" algorithm (for scalar
+ * multiplication by a fixed point), the "half Niels coordinates" (for precomputed points), and the
+ * "extensible coordinates" (for accumulators). Standard
+ * <a href="http://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html">extended coordinates</a> are used
+ * during precomputations, needing only a single extra point addition formula.
+ */
 public abstract class Ed25519
 {
     // -x^2 + y^2 == 1 + 0x52036CEE2B6FFE738CC740797779E89800700A4D4141D8AB75EB4DCA135978A3 * x^2 * y^2
@@ -48,16 +59,18 @@ public abstract class Ed25519
     private static final int[] L = new int[]{ 0x5CF5D3ED, 0x5812631A, 0xA2F79CD6, 0x14DEF9DE, 0x00000000, 0x00000000,
         0x00000000, 0x10000000 };
 
-    private static final int L0 = 0xFCF5D3ED;   // L0:26/--
-    private static final int L1 = 0x012631A6;   // L1:24/22
-    private static final int L2 = 0x079CD658;   // L2:27/--
-    private static final int L3 = 0xFF9DEA2F;   // L3:23/--
-    private static final int L4 = 0x000014DF;   // L4:12/11
+    private static final int L0 = -0x030A2C13;      // L0:26/--
+    private static final int L1 =  0x012631A6;      // L1:24/22
+    private static final int L2 =  0x079CD658;      // L2:27/--
+    private static final int L3 = -0x006215D1;      // L3:23/--
+    private static final int L4 =  0x000014DF;      // L4:12/11
 
     private static final int[] B_x = new int[]{ 0x0325D51A, 0x018B5823, 0x007B2C95, 0x0304A92D, 0x00D2598E, 0x01D6DC5C,
         0x01388C7F, 0x013FEC0A, 0x029E6B72, 0x0042D26D };
     private static final int[] B_y = new int[]{ 0x02666658, 0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, 0x02666666,
         0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, };
+
+    // Note that d == -121665/121666
     private static final int[] C_d = new int[]{ 0x035978A3, 0x02D37284, 0x018AB75E, 0x026A0A0E, 0x0000E014, 0x0379E898,
         0x01D01E5D, 0x01E738CC, 0x03715B7F, 0x00A406D9 };
     private static final int[] C_d2 = new int[]{ 0x02B2F159, 0x01A6E509, 0x01156EBD, 0x00D4141D, 0x0001C029, 0x02F3D130,
@@ -65,19 +78,20 @@ public abstract class Ed25519
     private static final int[] C_d4 = new int[]{ 0x0165E2B2, 0x034DCA13, 0x002ADD7A, 0x01A8283B, 0x00038052, 0x01E7A260,
         0x03407977, 0x019CE331, 0x01C56DFF, 0x00901B67 };
 
+    private static final int WNAF_WIDTH = 5;
     private static final int WNAF_WIDTH_BASE = 7;
 
     // scalarMultBase is hard-coded for these values of blocks, teeth, spacing so they can't be freely changed
     private static final int PRECOMP_BLOCKS = 8;
     private static final int PRECOMP_TEETH = 4;
     private static final int PRECOMP_SPACING = 8;
+//    private static final int PRECOMP_RANGE = PRECOMP_BLOCKS * PRECOMP_TEETH * PRECOMP_SPACING; // range == 256
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
-    private static final Object precompLock = new Object();
-    // TODO[ed25519] Convert to PointPrecomp
-    private static PointExt[] precompBaseTable = null;
-    private static int[] precompBase = null;
+    private static final Object PRECOMP_LOCK = new Object();
+    private static PointPrecomp[] PRECOMP_BASE_WNAF = null;
+    private static int[] PRECOMP_BASE_COMB = null;
 
     private static class PointAccum
     {
@@ -94,7 +108,7 @@ public abstract class Ed25519
         int[] y = F.create();
     }
 
-    private static class PointExt
+    private static class PointExtended
     {
         int[] x = F.create();
         int[] y = F.create();
@@ -104,9 +118,24 @@ public abstract class Ed25519
 
     private static class PointPrecomp
     {
-        int[] ypx_h = F.create();
-        int[] ymx_h = F.create();
-        int[] xyd = F.create();
+        int[] ymx_h = F.create();       // (y - x)/2
+        int[] ypx_h = F.create();       // (y + x)/2
+        int[] xyd = F.create();         // x.y.d
+    }
+
+    private static class PointPrecompZ
+    {
+        int[] ymx_h = F.create();       // (y - x)/2
+        int[] ypx_h = F.create();       // (y + x)/2
+        int[] xyd = F.create();         // x.y.d
+        int[] z = F.create();
+    }
+
+    // Temp space to avoid allocations in point formulae.
+    private static class PointTemp
+    {
+        int[] r0 = F.create();
+        int[] r1 = F.create();;
     }
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
@@ -519,6 +548,40 @@ public abstract class Ed25519
         return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
     }
 
+    private static void invertDoubleZs(PointExtended[] points)
+    {
+        int count = points.length;
+        int[] cs = F.createTable(count);
+
+        int[] u = F.create();
+        F.copy(points[0].z, 0, u, 0);
+        F.copy(u, 0, cs, 0);
+
+        int i = 0;
+        while (++i < count)
+        {
+            F.mul(u, points[i].z, u);
+            F.copy(u, 0, cs, i * F.SIZE);
+        }
+
+        F.add(u, u, u);
+        F.invVar(u, u);
+        --i;
+
+        int[] t = F.create();
+
+        while (i > 0)
+        {
+            int j = i--;
+            F.copy(cs, i * F.SIZE, t, 0);
+            F.mul(t, u, t);
+            F.mul(u, points[j].z, u);
+            F.copy(t, 0, points[j].z, 0);
+        }
+
+        F.copy(u, 0, points[0].z, 0);
+    }
+
     private static boolean isNeutralElementVar(int[] x, int[] y)
     {
         return F.isZeroVar(x) && F.isOneVar(y);
@@ -529,146 +592,44 @@ public abstract class Ed25519
         return F.isZeroVar(x) && F.areEqualVar(y, z);
     }
 
-    private static void pointAdd(PointExt p, PointAccum r)
+    private static void pointAdd(PointExtended p, PointExtended q, PointExtended r, PointTemp t)
     {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
-        int[] d = F.create();
-        int[] e = r.u;
-        int[] f = F.create();
-        int[] g = F.create();
-        int[] h = r.v;
+        // p may ref the same point as r (or q), but q may not ref the same point as r.
+        assert q != r;
 
-        F.apm(r.y, r.x, b, a);
-        F.apm(p.y, p.x, d, c);
-        F.mul(a, c, a);
-        F.mul(b, d, b);
-        F.mul(r.u, r.v, c);
-        F.mul(c, p.t, c);
-        F.mul(c, C_d2, c);
-        F.mul(r.z, p.z, d);
-        F.add(d, d, d);
-        F.apm(b, a, h, e);
-        F.apm(d, c, g, f);
-        F.carry(g);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
-        F.mul(f, g, r.z);
-    }
-
-    private static void pointAdd(PointExt p, PointExt r)
-    {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
-        int[] d = F.create();
-        int[] e = F.create();
-        int[] f = F.create();
-        int[] g = F.create();
-        int[] h = F.create();
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = t.r0;
+        int[] d = t.r1;
+        int[] e = a;
+        int[] f = c;
+        int[] g = d;
+        int[] h = b;
 
         F.apm(p.y, p.x, b, a);
-        F.apm(r.y, r.x, d, c);
-        F.mul(a, c, a);
-        F.mul(b, d, b);
-        F.mul(p.t, r.t, c);
-        F.mul(c, C_d2, c);
-        F.mul(p.z, r.z, d);
-        F.add(d, d, d);
-        F.apm(b, a, h, e);
-        F.apm(d, c, g, f);
-        F.carry(g);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
-        F.mul(f, g, r.z);
-        F.mul(e, h, r.t);
-    }
-
-    private static void pointAddVar(boolean negate, PointExt p, PointAccum r)
-    {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
-        int[] d = F.create();
-        int[] e = r.u;
-        int[] f = F.create();
-        int[] g = F.create();
-        int[] h = r.v;
-
-        int[] nc, nd, nf, ng;
-        if (negate)
-        {
-            nc = d; nd = c; nf = g; ng = f;
-        }
-        else
-        {
-            nc = c; nd = d; nf = f; ng = g;
-        }
-
-        F.apm(r.y, r.x, b, a);
-        F.apm(p.y, p.x, nd, nc);
-        F.mul(a, c, a);
-        F.mul(b, d, b);
-        F.mul(r.u, r.v, c);
-        F.mul(c, p.t, c);
-        F.mul(c, C_d2, c);
-        F.mul(r.z, p.z, d);
-        F.add(d, d, d);
-        F.apm(b, a, h, e);
-        F.apm(d, c, ng, nf);
-        F.carry(ng);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
-        F.mul(f, g, r.z);
-    }
-
-    private static void pointAddVar(boolean negate, PointExt p, PointExt q, PointExt r)
-    {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
-        int[] d = F.create();
-        int[] e = F.create();
-        int[] f = F.create();
-        int[] g = F.create();
-        int[] h = F.create();
-
-        int[] nc, nd, nf, ng;
-        if (negate)
-        {
-            nc = d; nd = c; nf = g; ng = f;
-        }
-        else
-        {
-            nc = c; nd = d; nf = f; ng = g;
-        }
-
-        F.apm(p.y, p.x, b, a);
-        F.apm(q.y, q.x, nd, nc);
+        F.apm(q.y, q.x, d, c);
         F.mul(a, c, a);
         F.mul(b, d, b);
         F.mul(p.t, q.t, c);
         F.mul(c, C_d2, c);
-        F.mul(p.z, q.z, d);
-        F.add(d, d, d);
+        F.add(p.z, p.z, d);
+        F.mul(d, q.z, d);
         F.apm(b, a, h, e);
-        F.apm(d, c, ng, nf);
-        F.carry(ng);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
-        F.mul(f, g, r.z);
+        F.apm(d, c, g, f);
         F.mul(e, h, r.t);
+        F.mul(f, g, r.z);
+        F.mul(e, f, r.x);
+        F.mul(h, g, r.y);
     }
 
-    private static void pointAddPrecomp(PointPrecomp p, PointAccum r)
+    private static void pointAdd(PointPrecomp p, PointAccum r, PointTemp t)
     {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = t.r0;
         int[] e = r.u;
-        int[] f = F.create();
-        int[] g = F.create();
+        int[] f = a;
+        int[] g = b;
         int[] h = r.v;
 
         F.apm(r.y, r.x, b, a);
@@ -678,82 +639,150 @@ public abstract class Ed25519
         F.mul(c, p.xyd, c);
         F.apm(b, a, h, e);
         F.apm(r.z, c, g, f);
-        F.carry(g);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
         F.mul(f, g, r.z);
+        F.mul(f, e, r.x);
+        F.mul(g, h, r.y);
     }
 
-    private static PointExt pointCopy(PointAccum p)
+    private static void pointAdd(PointPrecompZ p, PointAccum r, PointTemp t)
     {
-        PointExt r = new PointExt();
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = t.r0;
+        int[] d = r.z;
+        int[] e = r.u;
+        int[] f = a;
+        int[] g = b;
+        int[] h = r.v;
+
+        F.apm(r.y, r.x, b, a);
+        F.mul(a, p.ymx_h, a);
+        F.mul(b, p.ypx_h, b);
+        F.mul(r.u, r.v, c);
+        F.mul(c, p.xyd, c);
+        F.mul(r.z, p.z, d);
+        F.apm(b, a, h, e);
+        F.apm(d, c, g, f);
+        F.mul(f, g, r.z);
+        F.mul(f, e, r.x);
+        F.mul(g, h, r.y);
+    }
+
+    private static void pointAddVar(boolean negate, PointPrecomp p, PointAccum r, PointTemp t)
+    {
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = t.r0;
+        int[] e = r.u;
+        int[] f = a;
+        int[] g = b;
+        int[] h = r.v;
+
+        int[] na, nb;
+        if (negate)
+        {
+            na = b; nb = a;
+        }
+        else
+        {
+            na = a; nb = b;
+        }
+        int[] nf = na, ng = nb;
+
+        F.apm(r.y, r.x, b, a);
+        F.mul(na, p.ymx_h, na);
+        F.mul(nb, p.ypx_h, nb);
+        F.mul(r.u, r.v, c);
+        F.mul(c, p.xyd, c);
+        F.apm(b, a, h, e);
+        F.apm(r.z, c, ng, nf);
+        F.mul(f, g, r.z);
+        F.mul(f, e, r.x);
+        F.mul(g, h, r.y);
+    }
+
+    private static void pointAddVar(boolean negate, PointPrecompZ p, PointAccum r, PointTemp t)
+    {
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = t.r0;
+        int[] d = r.z;
+        int[] e = r.u;
+        int[] f = a;
+        int[] g = b;
+        int[] h = r.v;
+
+        int[] na, nb;
+        if (negate)
+        {
+            na = b; nb = a;
+        }
+        else
+        {
+            na = a; nb = b;
+        }
+        int[] nf = na, ng = nb;
+
+        F.apm(r.y, r.x, b, a);
+        F.mul(na, p.ymx_h, na);
+        F.mul(nb, p.ypx_h, nb);
+        F.mul(r.u, r.v, c);
+        F.mul(c, p.xyd, c);
+        F.mul(r.z, p.z, d);
+        F.apm(b, a, h, e);
+        F.apm(d, c, ng, nf);
+        F.mul(f, g, r.z);
+        F.mul(f, e, r.x);
+        F.mul(g, h, r.y);
+    }
+
+    private static void pointCopy(PointAccum p, PointExtended r)
+    {
         F.copy(p.x, 0, r.x, 0);
         F.copy(p.y, 0, r.y, 0);
         F.copy(p.z, 0, r.z, 0);
         F.mul(p.u, p.v, r.t);
-        return r;
     }
 
-    private static PointExt pointCopy(PointAffine p)
-    {
-        PointExt r = new PointExt();
-        F.copy(p.x, 0, r.x, 0);
-        F.copy(p.y, 0, r.y, 0);
-        pointExtendXY(r);
-        return r;
-    }
-
-    private static PointExt pointCopy(PointExt p)
-    {
-        PointExt r = new PointExt();
-        pointCopy(p, r);
-        return r;
-    }
-
-    private static void pointCopy(PointExt p, PointExt r)
+    private static void pointCopy(PointAffine p, PointExtended r)
     {
         F.copy(p.x, 0, r.x, 0);
         F.copy(p.y, 0, r.y, 0);
-        F.copy(p.z, 0, r.z, 0);
-        F.copy(p.t, 0, r.t, 0);
+        F.one(r.z);
+        F.mul(p.x, p.y, r.t);
+    }
+
+    private static void pointCopy(PointExtended p, PointPrecompZ r)
+    {
+        // To avoid halving x and y, we double t and z instead.
+        F.apm(p.y, p.x, r.ypx_h, r.ymx_h);
+        F.mul(p.t, C_d2, r.xyd);
+        F.add(p.z, p.z, r.z);
     }
 
     private static void pointDouble(PointAccum r)
     {
-        int[] a = F.create();
-        int[] b = F.create();
-        int[] c = F.create();
+        int[] a = r.x;
+        int[] b = r.y;
+        int[] c = r.z;
         int[] e = r.u;
-        int[] f = F.create();
-        int[] g = F.create();
+        int[] f = a;
+        int[] g = b;
         int[] h = r.v;
 
+        F.add(r.x, r.y, e);
         F.sqr(r.x, a);
         F.sqr(r.y, b);
         F.sqr(r.z, c);
         F.add(c, c, c);
         F.apm(a, b, h, g);
-        F.add(r.x, r.y, e);
         F.sqr(e, e);
         F.sub(h, e, e);
         F.add(c, g, f);
-        F.carry(f);
-        F.mul(e, f, r.x);
-        F.mul(g, h, r.y);
+        F.carry(f); // Probably unnecessary, but keep until better bounds analysis available
         F.mul(f, g, r.z);
-    }
-
-    private static void pointExtendXY(PointAccum p)
-    {
-        F.one(p.z);
-        F.copy(p.x, 0, p.u, 0);
-        F.copy(p.y, 0, p.v, 0);
-    }
-
-    private static void pointExtendXY(PointExt p)
-    {
-        F.one(p.z);
-        F.mul(p.x, p.y, p.t);
+        F.mul(f, e, r.x);
+        F.mul(g, h, r.y);
     }
 
     private static void pointLookup(int block, int index, PointPrecomp p)
@@ -766,15 +795,15 @@ public abstract class Ed25519
         for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
             int cond = ((i ^ index) - 1) >> 31;
-            F.cmov(cond, precompBase, off, p.ypx_h, 0);     off += F.SIZE;
-            F.cmov(cond, precompBase, off, p.ymx_h, 0);     off += F.SIZE;
-            F.cmov(cond, precompBase, off, p.xyd,   0);     off += F.SIZE;
+            F.cmov(cond, PRECOMP_BASE_COMB, off, p.ymx_h, 0);     off += F.SIZE;
+            F.cmov(cond, PRECOMP_BASE_COMB, off, p.ypx_h, 0);     off += F.SIZE;
+            F.cmov(cond, PRECOMP_BASE_COMB, off, p.xyd,   0);     off += F.SIZE;
         }
     }
 
-    private static void pointLookup(int[] x, int n, int[] table, PointExt r)
+    private static void pointLookupZ(int[] x, int n, int[] table, PointPrecompZ r)
     {
-        // TODO This method is currently hardcoded to 4-bit windows and 8 precomputed points
+        // TODO This method is currently hard-coded to 4-bit windows and 8 precomputed points
 
         int w = getWindow4(x, n);
 
@@ -787,60 +816,89 @@ public abstract class Ed25519
         for (int i = 0, off = 0; i < 8; ++i)
         {
             int cond = ((i ^ abs) - 1) >> 31;
-            F.cmov(cond, table, off, r.x, 0);       off += F.SIZE;
-            F.cmov(cond, table, off, r.y, 0);       off += F.SIZE;
-            F.cmov(cond, table, off, r.z, 0);       off += F.SIZE;
-            F.cmov(cond, table, off, r.t, 0);       off += F.SIZE;
+            F.cmov(cond, table, off, r.ymx_h, 0);       off += F.SIZE;
+            F.cmov(cond, table, off, r.ypx_h, 0);       off += F.SIZE;
+            F.cmov(cond, table, off, r.xyd  , 0);       off += F.SIZE;
+            F.cmov(cond, table, off, r.z    , 0);       off += F.SIZE;
         }
 
-        F.cnegate(sign, r.x);
-        F.cnegate(sign, r.t);
+        F.cswap(sign, r.ymx_h, r.ypx_h);
+        F.cnegate(sign, r.xyd);
     }
 
-    private static int[] pointPrecompute(PointAffine p, int count)
+    private static void pointPrecompute(PointAffine p, PointExtended[] points, int count, PointTemp t)
     {
 //        assert count > 0;
 
-        PointExt q = pointCopy(p);
-        PointExt d = pointCopy(q);
-        pointAdd(q, d);
+        pointCopy(p, points[0] = new PointExtended());
 
+        PointExtended d = new PointExtended();
+        pointAdd(points[0], points[0], d, t);
+
+        for (int i = 1; i < count; ++i)
+        {
+            pointAdd(points[i - 1], d, points[i] = new PointExtended(), t);
+        }
+    }
+
+    private static int[] pointPrecomputeZ(PointAffine p, int count, PointTemp t)
+    {
+//        assert count > 0;
+
+        PointExtended q = new PointExtended();
+        pointCopy(p, q);
+
+        PointExtended d = new PointExtended();
+        pointAdd(q, q, d, t);
+
+        PointPrecompZ r = new PointPrecompZ();
         int[] table = F.createTable(count * 4);
         int off = 0;
 
         int i = 0;
         for (;;)
         {
-            F.copy(q.x, 0, table, off);     off += F.SIZE;
-            F.copy(q.y, 0, table, off);     off += F.SIZE;
-            F.copy(q.z, 0, table, off);     off += F.SIZE;
-            F.copy(q.t, 0, table, off);     off += F.SIZE;
+            pointCopy(q, r);
+
+            F.copy(r.ymx_h, 0, table, off);     off += F.SIZE;
+            F.copy(r.ypx_h, 0, table, off);     off += F.SIZE;
+            F.copy(r.xyd  , 0, table, off);     off += F.SIZE;
+            F.copy(r.z    , 0, table, off);     off += F.SIZE;
 
             if (++i == count)
             {
                 break;
             }
 
-            pointAdd(d, q);
+            pointAdd(q, d, q, t);
         }
 
         return table;
     }
 
-    private static PointExt[] pointPrecomputeVar(PointExt p, int count)
+    private static void pointPrecomputeZ(PointAffine p, PointPrecompZ[] points, int count, PointTemp t)
     {
 //        assert count > 0;
 
-        PointExt d = new PointExt();
-        pointAddVar(false, p, p, d);
+        PointExtended q = new PointExtended();
+        pointCopy(p, q);
 
-        PointExt[] table = new PointExt[count];
-        table[0] = pointCopy(p);
-        for (int i = 1; i < count; ++i)
+        PointExtended d = new PointExtended();
+        pointAdd(q, q, d, t);
+
+        int i = 0;
+        for (;;)
         {
-            pointAddVar(false, table[i - 1], d, table[i] = new PointExt());
+            PointPrecompZ r = points[i] = new PointPrecompZ();
+            pointCopy(q, r);
+
+            if (++i == count)
+            {
+                break;
+            }
+
+            pointAdd(q, d, q, t);
         }
-        return table;
     }
 
     private static void pointSetNeutral(PointAccum p)
@@ -852,143 +910,137 @@ public abstract class Ed25519
         F.one(p.v);
     }
 
-    private static void pointSetNeutral(PointExt p)
-    {
-        F.zero(p.x);
-        F.one(p.y);
-        F.one(p.z);
-        F.zero(p.t);
-    }
-
     public static void precompute()
     {
-        synchronized (precompLock)
+        synchronized (PRECOMP_LOCK)
         {
-            if (precompBase != null)
+            if (PRECOMP_BASE_WNAF != null && PRECOMP_BASE_COMB != null)
             {
                 return;
             }
 
-            // Precomputed table for the base point in verification ladder
-            {
-                PointExt b = new PointExt();
-                F.copy(B_x, 0, b.x, 0);
-                F.copy(B_y, 0, b.y, 0);
-                pointExtendXY(b);
+            int wnafPoints = 1 << (WNAF_WIDTH_BASE - 2);
+            int combPoints = PRECOMP_BLOCKS * PRECOMP_POINTS;
+            int totalPoints = wnafPoints + combPoints;
 
-                precompBaseTable = pointPrecomputeVar(b, 1 << (WNAF_WIDTH_BASE - 2));
-            }
+            PointExtended[] points = new PointExtended[totalPoints];
+            PointTemp t = new PointTemp();
+
+            PointAffine b = new PointAffine();
+            b.x = B_x;
+            b.y = B_y;
+
+            pointPrecompute(b, points, wnafPoints, t);
 
             PointAccum p = new PointAccum();
             F.copy(B_x, 0, p.x, 0);
             F.copy(B_y, 0, p.y, 0);
-            pointExtendXY(p);
+            F.one(p.z);
+            F.copy(p.x, 0, p.u, 0);
+            F.copy(p.y, 0, p.v, 0);
 
-            precompBase = F.createTable(PRECOMP_BLOCKS * PRECOMP_POINTS * 3);
-
-            int off = 0;
-            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
+            int pointsIndex = wnafPoints;
+            PointExtended[] toothPowers = new PointExtended[PRECOMP_TEETH];
+            for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
             {
-                PointExt[] ds = new PointExt[PRECOMP_TEETH];
+                toothPowers[tooth] = new PointExtended();
+            }
+            PointExtended u = new PointExtended();
+            for (int block = 0; block < PRECOMP_BLOCKS; ++block)
+            {
+                PointExtended sum = points[pointsIndex++] = new PointExtended();
 
-                PointExt sum = new PointExt();
-                pointSetNeutral(sum);
-
-                for (int t = 0; t < PRECOMP_TEETH; ++t)
+                for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
                 {
-                    PointExt q = pointCopy(p);
-                    pointAddVar(true, sum, q, sum);
-                    pointDouble(p);
-
-                    ds[t] = pointCopy(p);
-
-                    if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+                    if (tooth == 0)
                     {
-                        for (int s = 1; s < PRECOMP_SPACING; ++s)
+                        pointCopy(p, sum);
+                    }
+                    else
+                    {
+                        pointCopy(p, u);
+                        pointAdd(sum, u, sum, t);
+                    }
+
+                    pointDouble(p);
+                    pointCopy(p, toothPowers[tooth]);
+
+                    if (block + tooth != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+                    {
+                        for (int spacing = 1; spacing < PRECOMP_SPACING; ++spacing)
                         {
                             pointDouble(p);
                         }
                     }
                 }
 
-                PointExt[] points = new PointExt[PRECOMP_POINTS];
-                int k = 0;
-                points[k++] = sum;
+                F.negate(sum.x, sum.x);
+                F.negate(sum.t, sum.t);
 
-                for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
+                for (int tooth = 0; tooth < (PRECOMP_TEETH - 1); ++tooth)
                 {
-                    int size = 1 << t;
-                    for (int j = 0; j < size; ++j, ++k)
+                    int size = 1 << tooth;
+                    for (int j = 0; j < size; ++j, ++pointsIndex)
                     {
-                        pointAddVar(false, points[k - size], ds[t], points[k] = new PointExt());
+                        points[pointsIndex] = new PointExtended();
+                        pointAdd(points[pointsIndex - size], toothPowers[tooth], points[pointsIndex], t);
                     }
-                }
-
-//                assert k == PRECOMP_POINTS;
-
-                int[] cs = F.createTable(PRECOMP_POINTS);
-
-                // TODO[ed25519] A single batch inversion across all blocks?
-                {
-                    int[] u = F.create();
-                    F.copy(points[0].z, 0, u, 0);
-                    F.copy(u, 0, cs, 0);
-
-                    int i = 0;
-                    while (++i < PRECOMP_POINTS)
-                    {
-                        F.mul(u, points[i].z, u);
-                        F.copy(u, 0, cs, i * F.SIZE);
-                    }
-
-                    F.add(u, u, u);
-                    F.invVar(u, u);
-                    --i;
-
-                    int[] t = F.create();
-
-                    while (i > 0)
-                    {
-                        int j = i--;
-                        F.copy(cs, i * F.SIZE, t, 0);
-                        F.mul(t, u, t);
-                        F.copy(t, 0, cs, j * F.SIZE);
-                        F.mul(u, points[j].z, u);
-                    }
-
-                    F.copy(u, 0, cs, 0);
-                }
-
-                for (int i = 0; i < PRECOMP_POINTS; ++i)
-                {
-                    PointExt q = points[i];
-
-                    int[] x = F.create();
-                    int[] y = F.create();
-
-//                    F.add(q.z, q.z, x);
-//                    F.invVar(x, y);
-                    F.copy(cs, i * F.SIZE, y, 0);
-
-                    F.mul(q.x, y, x);
-                    F.mul(q.y, y, y);
-
-                    PointPrecomp r = new PointPrecomp();
-                    F.apm(y, x, r.ypx_h, r.ymx_h);
-                    F.mul(x, y, r.xyd);
-                    F.mul(r.xyd, C_d4, r.xyd);
-
-                    F.normalize(r.ypx_h);
-                    F.normalize(r.ymx_h);
-//                    F.normalize(r.xyd);
-
-                    F.copy(r.ypx_h, 0, precompBase, off);       off += F.SIZE;
-                    F.copy(r.ymx_h, 0, precompBase, off);       off += F.SIZE;
-                    F.copy(r.xyd,   0, precompBase, off);       off += F.SIZE;
                 }
             }
+//            assert pointsIndex == totalPoints;
 
-//            assert off == precompBase.length;
+            // Set each z coordinate to 1/(2.z) to avoid calculating halves of x, y in the following code
+            invertDoubleZs(points);
+
+            PRECOMP_BASE_WNAF = new PointPrecomp[wnafPoints];
+            for (int i = 0; i < wnafPoints; ++i)
+            {
+                PointExtended q = points[i];
+                PointPrecomp r = PRECOMP_BASE_WNAF[i] = new PointPrecomp();
+
+                // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
+                F.mul(q.x, q.z, q.x);
+                F.mul(q.y, q.z, q.y);
+
+                // y/2 +/- x/2
+                F.apm(q.y, q.x, r.ypx_h, r.ymx_h);
+
+                // x/2 * y/2 * (4.d) == x.y.d
+                F.mul(q.x, q.y, r.xyd);
+                F.mul(r.xyd, C_d4, r.xyd);
+
+                F.normalize(r.ymx_h);
+                F.normalize(r.ypx_h);
+                F.normalize(r.xyd);
+            }
+
+            PRECOMP_BASE_COMB = F.createTable(combPoints * 3);
+            PointPrecomp s = new PointPrecomp();
+            int off = 0;
+            for (int i = wnafPoints; i < totalPoints; ++i)
+            {
+                PointExtended q = points[i];
+
+                // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
+                F.mul(q.x, q.z, q.x);
+                F.mul(q.y, q.z, q.y);
+
+                // y/2 +/- x/2
+                F.apm(q.y, q.x, s.ypx_h, s.ymx_h);
+
+                // x/2 * y/2 * (4.d) == x.y.d
+                F.mul(q.x, q.y, s.xyd);
+                F.mul(s.xyd, C_d4, s.xyd);
+
+                F.normalize(s.ymx_h);
+                F.normalize(s.ypx_h);
+                F.normalize(s.xyd);
+
+                F.copy(s.ymx_h, 0, PRECOMP_BASE_COMB, off);       off += F.SIZE;
+                F.copy(s.ypx_h, 0, PRECOMP_BASE_COMB, off);       off += F.SIZE;
+                F.copy(s.xyd  , 0, PRECOMP_BASE_COMB, off);       off += F.SIZE;
+            }
+//            assert off == precompBaseComb.length;
         }
     }
 
@@ -1150,16 +1202,17 @@ public abstract class Ed25519
             Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
         }
 
-        int[] table = pointPrecompute(p, 8);
-        PointExt q = new PointExt();
+        PointPrecompZ q = new PointPrecompZ();
+        PointTemp t = new PointTemp();
+        int[] table = pointPrecomputeZ(p, 8, t);
 
         pointSetNeutral(r);
 
         int w = 63;
         for (;;)
         {
-            pointLookup(n, w, table, q);
-            pointAdd(q, r);
+            pointLookupZ(n, w, table, q);
+            pointAdd(q, r, t);
 
             if (--w < 0)
             {
@@ -1193,6 +1246,10 @@ public abstract class Ed25519
             //int c2 =
             Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
 
+            /*
+             * Because we are using 4 teeth and 8 spacing, each limb of n corresponds to one of the 8 blocks.
+             * Therefore we can efficiently group the bits for each comb position using a (double) shuffle. 
+             */
             for (int i = 0; i < SCALAR_INTS; ++i)
             {
                 n[i] = Interleave.shuffle2(n[i]);
@@ -1200,8 +1257,10 @@ public abstract class Ed25519
         }
 
         PointPrecomp p = new PointPrecomp();
+        PointTemp t = new PointTemp();
 
         pointSetNeutral(r);
+        int resultSign = 0;
 
         int cOff = (PRECOMP_SPACING - 1) * PRECOMP_TEETH;
         for (;;)
@@ -1217,10 +1276,11 @@ public abstract class Ed25519
 
                 pointLookup(b, abs, p);
 
-                F.cswap(sign, p.ypx_h, p.ymx_h);
-                F.cnegate(sign, p.xyd);
+                F.cnegate(resultSign ^ sign, r.x);
+                F.cnegate(resultSign ^ sign, r.u);
+                resultSign = sign;
 
-                pointAddPrecomp(p, r);
+                pointAdd(p, r, t);
             }
 
             if ((cOff -= PRECOMP_TEETH) < 0)
@@ -1230,6 +1290,9 @@ public abstract class Ed25519
 
             pointDouble(r);
         }
+
+        F.cnegate(resultSign, r.x);
+        F.cnegate(resultSign, r.u);
     }
 
     private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
@@ -1267,11 +1330,12 @@ public abstract class Ed25519
 
     private static void scalarMultOrderVar(PointAffine p, PointAccum r)
     {
-        final int width = 5;
+        byte[] ws_p = getWnafVar(L, WNAF_WIDTH);
 
-        byte[] ws_p = getWnafVar(L, width);
-
-        PointExt[] tp = pointPrecomputeVar(pointCopy(p), 1 << (width - 2));
+        int count = 1 << (WNAF_WIDTH - 2);
+        PointPrecompZ[] tp = new PointPrecompZ[count];
+        PointTemp t = new PointTemp();
+        pointPrecomputeZ(p, tp, count, t);
 
         pointSetNeutral(r);
 
@@ -1283,7 +1347,7 @@ public abstract class Ed25519
                 int sign = wp >> 31;
                 int index = (wp ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), tp[index], r);
+                pointAddVar((sign != 0), tp[index], r, t);
             }
 
             if (--bit < 0)
@@ -1299,12 +1363,13 @@ public abstract class Ed25519
     {
         precompute();
 
-        final int width = 5;
-
         byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
-        byte[] ws_p = getWnafVar(np, width);
+        byte[] ws_p = getWnafVar(np, WNAF_WIDTH);
 
-        PointExt[] tp = pointPrecomputeVar(pointCopy(p), 1 << (width - 2));
+        int count = 1 << (WNAF_WIDTH - 2);
+        PointPrecompZ[] tp = new PointPrecompZ[count];
+        PointTemp t = new PointTemp();
+        pointPrecomputeZ(p, tp, count, t);
 
         pointSetNeutral(r);
 
@@ -1316,7 +1381,7 @@ public abstract class Ed25519
                 int sign = wb >> 31;
                 int index = (wb ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), precompBaseTable[index], r);
+                pointAddVar(sign != 0, PRECOMP_BASE_WNAF[index], r, t);
             }
 
             int wp = ws_p[bit];
@@ -1325,7 +1390,7 @@ public abstract class Ed25519
                 int sign = wp >> 31;
                 int index = (wp ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), tp[index], r);
+                pointAddVar(sign != 0, tp[index], r, t);
             }
 
             if (--bit < 0)
