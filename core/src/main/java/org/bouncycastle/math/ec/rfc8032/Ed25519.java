@@ -19,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  * compact elliptic-curve cryptography"</a>, notably the "signed multi-comb" algorithm (for scalar
  * multiplication by a fixed point), the "half Niels coordinates" (for precomputed points), and the
  * "extensible coordinates" (for accumulators). Standard
- * <a href="http://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html">extended coordinates</a> are used
+ * <a href="https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html">extended coordinates</a> are used
  * during precomputations, needing only a single extra point addition formula.
  */
 public abstract class Ed25519
