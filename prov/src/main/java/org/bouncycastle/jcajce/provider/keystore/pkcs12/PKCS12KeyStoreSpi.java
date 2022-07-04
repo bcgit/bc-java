@@ -291,25 +291,23 @@ public class PKCS12KeyStoreSpi
         String alias)
         throws KeyStoreException
     {
-        Key k = (Key)keys.remove(alias);
-
-        Certificate c = (Certificate)certs.remove(alias);
-
-        if (c != null)
+        Certificate cert = (Certificate)certs.remove(alias);
+        if (cert != null)
         {
-            chainCerts.remove(new CertId(c.getPublicKey()));
+            chainCerts.remove(new CertId(cert.getPublicKey()));
         }
 
-        if (k != null)
+        Key key = (Key)keys.remove(alias);
+        if (key != null)
         {
             String id = (String)localIds.remove(alias);
             if (id != null)
             {
-                c = (Certificate)keyCerts.remove(id);
-            }
-            if (c != null)
-            {
-                chainCerts.remove(new CertId(c.getPublicKey()));
+                Certificate keyCert = (Certificate)keyCerts.remove(id);
+                if (keyCert != null)
+                {
+                    chainCerts.remove(new CertId(keyCert.getPublicKey()));
+                }
             }
         }
     }
