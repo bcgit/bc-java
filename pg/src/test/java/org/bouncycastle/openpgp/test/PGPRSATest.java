@@ -1309,28 +1309,36 @@ public class PGPRSATest
                                 subGen.generate(), null, certificationSignerBuilder,
                                 keyEncryptorBuilder.build(passPhrase));
 
-        // build secret and public key rings out of the master key and subkey.
-        ByteArrayOutputStream sOut = new ByteArrayOutputStream();
+        {
+            // build secret and public key rings out of the master key and subkey.
+            ByteArrayOutputStream sOut = new ByteArrayOutputStream();
 
-        secretKey.encode(sOut);
+            secretKey.encode(sOut);
 
-        PGPSecretKeyRing sRing = new JcaPGPSecretKeyRing(sOut.toByteArray());
+            PGPSecretKeyRing sRing = new JcaPGPSecretKeyRing(sOut.toByteArray());
 
-        sOut = new ByteArrayOutputStream();
+            sOut = new ByteArrayOutputStream();
 
-        secretKey.getPublicKey().encode(sOut);
+            secretKey.getPublicKey().encode(sOut);
 
-        PGPPublicKeyRing pRing = new JcaPGPPublicKeyRing(sOut.toByteArray());
+            PGPPublicKeyRing pRing = new JcaPGPPublicKeyRing(sOut.toByteArray());
+    
+            pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretEncSubKey.getPublicKey());
+            sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretEncSubKey);
+            pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretSigSubKey.getPublicKey());
+            sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretSigSubKey);
 
-        pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretEncSubKey.getPublicKey());
-        sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretEncSubKey);
-        pRing = PGPPublicKeyRing.insertPublicKey(pRing, secretSigSubKey.getPublicKey());
-        sRing = PGPSecretKeyRing.insertSecretKey(sRing, secretSigSubKey);
+            isTrue(pRing.getPublicKey(secretEncSubKey.getKeyID()) != null);
+            isTrue(sRing.getSecretKey(secretEncSubKey.getKeyID()) != null);
+            isTrue(pRing.getPublicKey(secretSigSubKey.getKeyID()) != null);
+            isTrue(sRing.getSecretKey(secretSigSubKey.getKeyID()) != null);
 
-        isTrue(pRing.getPublicKey(secretEncSubKey.getKeyID()) != null);
-        isTrue(sRing.getSecretKey(secretEncSubKey.getKeyID()) != null);
-        isTrue(pRing.getPublicKey(secretSigSubKey.getKeyID()) != null);
-        isTrue(sRing.getSecretKey(secretSigSubKey.getKeyID()) != null);
+            pRing = PGPPublicKeyRing.removePublicKey(pRing, secretEncSubKey.getPublicKey());
+            sRing = PGPSecretKeyRing.removeSecretKey(sRing, secretEncSubKey);
+
+            isTrue(pRing.getPublicKey(secretEncSubKey.getKeyID()) == null);
+            isTrue(sRing.getSecretKey(secretEncSubKey.getKeyID()) == null);
+        }
 
         // check simplified constructor
         secretSigSubKey = new PGPSecretKey(
