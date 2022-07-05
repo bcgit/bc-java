@@ -162,7 +162,6 @@ public abstract class TlsProtocol
     protected Hashtable serverExtensions = null;
 
     protected short connection_state = CS_START;
-    protected boolean resumedSession = false;
     protected boolean selectedPSK13 = false;
     protected boolean receivedChangeCipherSpec = false;
     protected boolean expectSessionTicket = false;
@@ -346,10 +345,15 @@ public abstract class TlsProtocol
     {
         int renegotiationPolicy = RenegotiationPolicy.DENY;
 
-        // Never renegotiate without secure renegotiation and server certificate authentication.
+        /*
+         * Never renegotiate without secure renegotiation and server certificate authentication. Also, per RFC
+         * 7627 5.4, renegotiation MUST be disabled for session resumption without extended_master_secret.
+         */
         {
             SecurityParameters securityParameters = getContext().getSecurityParametersConnection();
-            if (null != securityParameters && securityParameters.isSecureRenegotiation())
+            if (null != securityParameters &&
+                securityParameters.isSecureRenegotiation() &&
+                (!securityParameters.isResumedSession() || securityParameters.isExtendedMasterSecret()))
             {
                 Certificate serverCertificate = ConnectionEnd.server == securityParameters.getEntity()
                     ?   securityParameters.getLocalCertificate()
@@ -429,7 +433,6 @@ public abstract class TlsProtocol
 
         this.handshakeHash = new DeferredHash(context);
         this.connection_state = CS_START;
-        this.resumedSession = false;
         this.selectedPSK13 = false;
 
         context.handshakeBeginning(peer);
@@ -464,7 +467,6 @@ public abstract class TlsProtocol
         this.clientExtensions = null;
         this.serverExtensions = null;
 
-        this.resumedSession = false;
         this.selectedPSK13 = false;
         this.receivedChangeCipherSpec = false;
         this.expectSessionTicket = false;
@@ -1579,9 +1581,8 @@ public abstract class TlsProtocol
             }
 
             /*
-             * NOTE: For session resumption without extended_master_secret, renegotiation MUST be
-             * disabled (see RFC 7627 5.4). We currently do not implement renegotiation and it is
-             * unlikely we ever would since it was removed in TLS 1.3.
+             * NOTE: For session resumption without extended_master_secret, renegotiation MUST be disabled
+             * (see RFC 7627 5.4).
              */
         }
 
@@ -1646,7 +1647,7 @@ public abstract class TlsProtocol
 
         securityParameters.peerVerifyData = expected_verify_data;
 
-        if (!resumedSession || securityParameters.isExtendedMasterSecret())
+        if (!securityParameters.isResumedSession() || securityParameters.isExtendedMasterSecret())
         {
             if (null == securityParameters.getLocalVerifyData())
             {
@@ -1821,7 +1822,7 @@ public abstract class TlsProtocol
 
         securityParameters.localVerifyData = verify_data;
 
-        if (!resumedSession || securityParameters.isExtendedMasterSecret())
+        if (!securityParameters.isResumedSession() || securityParameters.isExtendedMasterSecret())
         {
             if (null == securityParameters.getPeerVerifyData())
             {
@@ -1934,9 +1935,9 @@ public abstract class TlsProtocol
         short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
         if (maxFragmentLength >= 0)
         {
-            if (!MaxFragmentLength.isValid(maxFragmentLength)
-                || (!this.resumedSession && maxFragmentLength != TlsExtensionsUtils
-                    .getMaxFragmentLengthExtension(clientExtensions)))
+            if (!MaxFragmentLength.isValid(maxFragmentLength) ||
+                (clientExtensions != null &&
+                    maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions)))
             {
                 throw new TlsFatalAlert(alertDescription);
             }

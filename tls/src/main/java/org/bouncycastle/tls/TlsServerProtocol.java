@@ -267,6 +267,7 @@ public class TlsServerProtocol
              */
             {
                 // TODO[tls13] Resumption/PSK
+                securityParameters.resumedSession = false;
 
                 this.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
                 this.sessionParameters = null;
@@ -355,8 +356,9 @@ public class TlsServerProtocol
 
         if (!serverEncryptedExtensions.isEmpty())
         {
-            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientHelloExtensions,
-                serverEncryptedExtensions, AlertDescription.internal_error);
+            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(
+                securityParameters.isResumedSession() ? null : clientHelloExtensions, serverEncryptedExtensions,
+                AlertDescription.internal_error);
         }
 
         securityParameters.encryptThenMAC = false;
@@ -646,7 +648,8 @@ public class TlsServerProtocol
             tlsServer.processClientExtensions(clientExtensions);
         }
 
-        this.resumedSession = establishSession(tlsServer.getSessionToResume(clientHello.getSessionID()));
+        boolean resumedSession = establishSession(tlsServer.getSessionToResume(clientHello.getSessionID()));
+        securityParameters.resumedSession = resumedSession;
 
         if (!resumedSession)
         {
@@ -782,8 +785,8 @@ public class TlsServerProtocol
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(serverExtensions);
 
-            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(clientExtensions,
-                serverExtensions, AlertDescription.internal_error);
+            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(
+                resumedSession ? null : clientExtensions, serverExtensions, AlertDescription.internal_error);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);
 
@@ -834,16 +837,12 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (resumedSession)
-        {
-            /*
-             * TODO[tls13] Abbreviated handshakes (PSK resumption)
-             * 
-             * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
-             * might now send EndOfEarlyData after receiving server Finished message.
-             */
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+        /*
+         * TODO[tls13] Abbreviated handshakes (PSK resumption)
+         * 
+         * NOTE: No CertificateRequest, Certificate, CertificateVerify messages, but client
+         * might now send EndOfEarlyData after receiving server Finished message.
+         */
 
         switch (type)
         {
@@ -971,6 +970,11 @@ public class TlsServerProtocol
         if (connection_state > CS_CLIENT_HELLO
             && TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {
+            if (securityParameters.isResumedSession())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
             handle13HandshakeMessage(type, buf);
             return;
         }
@@ -980,7 +984,7 @@ public class TlsServerProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (resumedSession)
+        if (securityParameters.isResumedSession())
         {
             if (type != HandshakeType.finished || this.connection_state != CS_SERVER_FINISHED)
             {
@@ -1055,7 +1059,7 @@ public class TlsServerProtocol
                 sendServerHelloMessage(serverHello);
                 this.connection_state = CS_SERVER_HELLO;
 
-                if (resumedSession)
+                if (securityParameters.isResumedSession())
                 {
                     securityParameters.masterSecret = sessionMasterSecret;
                     recordStream.setPendingCipher(TlsUtils.initCipher(tlsServerContext));
