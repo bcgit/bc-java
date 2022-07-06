@@ -5,7 +5,13 @@ import org.bouncycastle.util.Arrays;
 public class SABERPublicKeyParameters
     extends SABERKeyParameters
 {
-    public byte[] publicKey;
+    private final byte[] publicKey;
+
+    public SABERPublicKeyParameters(SABERParameters params, byte[] publicKey)
+    {
+        super(false, params);
+        this.publicKey = Arrays.clone(publicKey);
+    }
 
     public byte[] getPublicKey()
     {
@@ -15,11 +21,5 @@ public class SABERPublicKeyParameters
     public byte[] getEncoded()
     {
         return getPublicKey();
-    }
-
-    public SABERPublicKeyParameters(SABERParameters params, byte[] publicKey)
-    {
-        super(false, params);
-        this.publicKey = Arrays.clone(publicKey);
     }
 }
