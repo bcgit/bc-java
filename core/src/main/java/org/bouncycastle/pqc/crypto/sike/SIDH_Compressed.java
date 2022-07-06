@@ -108,30 +108,15 @@ class SIDH_Compressed
                  y2 = new long[2][engine.params.NWORDS_FIELD];
 
         int t_ptr = 0;
-
-//        System.out.print("a24: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", a24[di][dj] );}System.out.println();}
-
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one_fp);
         engine.fpx.fp2add(a24, a24, A);
         engine.fpx.fpsubPRIME(A[0], one_fp, A[0]);
         engine.fpx.fp2add(A, A, A);                       // A = 4*a24-2
 
-
-//        System.out.print("A: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", A[di][dj] );}System.out.println();}
-
         // Elligator computation
         t_ptr = r[rIndex]; //(long[][] *)&v_3_torsion[r];
         engine.fpx.fp2mul_mont(A, engine.params.v_3_torsion[t_ptr], x);     // x = A*v; v := 1/(1 + U*r^2) table lookup
         engine.fpx.fp2neg(x);                             // x = -A*v;
-
-//        System.out.print("x: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", x[di][dj] );}System.out.println();}
-
 
         if (COMPorDEC == 0) //COMPRESSION
         {
@@ -142,11 +127,6 @@ class SIDH_Compressed
             engine.fpx.fpsqr_mont(y2[0], a2);
             engine.fpx.fpsqr_mont(y2[1], b2);
             engine.fpx.fpaddPRIME(a2, b2, N);                      // N := norm(y2);
-
-//            System.out.print("N: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", N[dj] );}System.out.println();
-
             engine.fpx.fpcopy(N,0, temp0);
             for (i = 0; i < engine.params.OALICE_BITS - 2; i++)
             {
@@ -160,11 +140,6 @@ class SIDH_Compressed
             engine.fpx.fpsqr_mont(temp0, temp1);              // z = N^((p + 1) div 4);
             engine.fpx.fpcorrectionPRIME(temp1);
             engine.fpx.fpcorrectionPRIME(N);
-
-//            System.out.print("N: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", N[dj] );}System.out.println();
-
             if(!Fpx.subarrayEquals(temp1, N, engine.params.NWORDS_FIELD))
             {
                 engine.fpx.fp2neg(x);
@@ -177,15 +152,12 @@ class SIDH_Compressed
         }
         else
         {
-            if (bit[bitOffset] == 1) // todo check
+            if (bit[bitOffset] == 1)
             {
                 engine.fpx.fp2neg(x);
                 engine.fpx.fp2sub(x,A,x);       // x = -x - A;
             }
         }
-//        System.out.print("x: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", x[di][dj] );}System.out.println();}
     }
 
 
@@ -272,8 +244,6 @@ class SIDH_Compressed
         engine.fpx.fp2sqr_mont(A24, A24);
     }
 
-//    if (engine.params.OALICE_BITS % 2 == 1)
-
     protected void eval_dual_2_isog(long[][] X2, long[][] Z2, PointProj P)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD];
@@ -307,36 +277,10 @@ class SIDH_Compressed
 
     protected void eval_dual_4_isog_shared(long[][] X4pZ4, long[][] X42, long[][] Z42, long[][][] coeff, int coeffOffset)
     {
-//        System.out.print("coeff0: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[0 + coeffOffset][di][dj]);}System.out.println();}
-//        System.out.print("coeff1: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[1 + coeffOffset][di][dj]);}System.out.println();}
-//        System.out.print("coeff2: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[2 + coeffOffset][di][dj]);}System.out.println();}
-
         engine.fpx.fp2sub(X42, Z42, coeff[0 + coeffOffset]);
         engine.fpx.fp2add(X42, Z42, coeff[1 + coeffOffset]);
         engine.fpx.fp2sqr_mont(X4pZ4, coeff[2 + coeffOffset]);
         engine.fpx.fp2sub(coeff[2 + coeffOffset], coeff[1 + coeffOffset], coeff[2 + coeffOffset]);
-
-//        System.out.print("coeff0: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[0 + coeffOffset][di][dj]);}System.out.println();}
-//        System.out.print("coeff1: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[1 + coeffOffset][di][dj]);}System.out.println();}
-//        System.out.print("coeff2: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", coeff[2 + coeffOffset][di][dj]);}System.out.println();}
     }
 
 
@@ -367,8 +311,6 @@ class SIDH_Compressed
 
     protected void eval_full_dual_4_isog(long[][][][] As, PointProj P)
     {
-        //todo : check
-        // First all 4-isogenies
         for(int i = 0; i < engine.params.MAX_Alice; i++)
         {
             eval_dual_4_isog(As[engine.params.MAX_Alice-i][0],
@@ -468,7 +410,7 @@ class SIDH_Compressed
         long[][][] gX = new long[2][2][engine.params.NWORDS_FIELD],
                    gZ = new long[2][2][engine.params.NWORDS_FIELD];
         long[] zero = new long[engine.params.NWORDS_FIELD];
-        int nbytes = engine.params.NWORDS_FIELD;// (((engine.params.NBITS_FIELD)+7)/8);
+        int nbytes = engine.params.NWORDS_FIELD;
         int alpha,beta;
 
         engine.fpx.fpcopy(engine.params.B_gen_3_tors, 0*engine.params.NWORDS_FIELD, (R3.X)[0]);
@@ -480,25 +422,7 @@ class SIDH_Compressed
         engine.fpx.fpcopy(engine.params.B_gen_3_tors, 6*engine.params.NWORDS_FIELD, (S3.Y)[0]);
         engine.fpx.fpcopy(engine.params.B_gen_3_tors, 7*engine.params.NWORDS_FIELD, (S3.Y)[1]);
 
-
-
         engine.isogeny.CompletePoint(P,R);
-
-
-//        System.out.print("RX: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R.X[di][dj] );}System.out.println();}
-//
-//        System.out.print("RZ: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R.Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("RY: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R.Y[di][dj] );}System.out.println();}
-
-
-
 
         Tate3_proj(R3,R,gX[0],gZ[0]);
         Tate3_proj(S3,R,gX[1],gZ[1]);
@@ -507,18 +431,6 @@ class SIDH_Compressed
         // Do small DLog with respect to g_R3_S3
         engine.fpx.fp2correction(gX[0]);
         engine.fpx.fp2correction(gX[1]);
-
-
-//        System.out.print("gX0: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", gX[0][di][dj] );}System.out.println();}
-//
-//        System.out.print("gX1: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", gX[1][di][dj] );}System.out.println();}
-
-
-
 
         if (Fpx.subarrayEquals(gX[0][1], zero, nbytes)) // = 1
         {
@@ -545,10 +457,6 @@ class SIDH_Compressed
         {
             beta = 2;
         }
-
-
-
-
 
         if (alpha == 0 && beta == 0)   // Not full order
         {
@@ -617,47 +525,12 @@ class SIDH_Compressed
 
         while (!b)
         {
-//            System.out.println("r: " + r[1]);
-
-
             bitEll[0] = 0;
-
-//            System.out.println("bitEll: " + bitEll[0]);
-//            System.out.println("ind: " + ind[0]);
-
             Elligator2(a24, r, 0, x, bitEll,0, 0);    // Get x-coordinate on curve a24
-
-
-//            System.out.print("x: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", x[di][dj] );}System.out.println();}
-//            System.out.println("bitEll: " + bitEll[0]);
-//            System.out.println("ind: " + ind[0]);
-
-
             engine.fpx.fp2copy(x, P.X);
             engine.fpx.fpcopy(engine.params.Montgomery_one, 0, P.Z[0]);
             engine.fpx.fpcopy(zero, 0, P.Z[1]);
             eval_full_dual_4_isog(As, P);    // Move x over to A = 0
-
-//            System.out.print("PZ: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", P.Z[di][dj] );}System.out.println();}
-//
-//            System.out.print("PX: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", P.X[di][dj] );}System.out.println();}
-//
-//
-//            System.out.print("\nRZ: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", R.Z[di][dj] );}System.out.println();}
-//
-//            System.out.print("RX: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", R.X[di][dj] );}System.out.println();}
-
-
             b = FirstPoint_dual(P, R, ind);  // Compute DLog with 3-torsion points
             r[0] = r[0] + 1;
         }
@@ -672,48 +545,12 @@ class SIDH_Compressed
 
         while (!b)
         {
-
-//            System.out.println("r: " + r[1]);
-
-
             bitEll[0] = 0;
-
-//            System.out.println("bitEll: " + bitEll[0]);
-//            System.out.println("ind: " + ind[0]);
-
             Elligator2(a24, r, 1, x, bitEll, 0, 0);
-
-//            System.out.print("x: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", x[di][dj] );}System.out.println();}
-
-
-//            System.out.println("bitEll: " + bitEll[0]);
-//            System.out.println("ind: " + ind[0]);
-
-
             engine.fpx.fp2copy(x, P.X);
             engine.fpx.fpcopy(engine.params.Montgomery_one, 0, P.Z[0]);
             engine.fpx.fpcopy(zero, 0, P.Z[1]);
             eval_full_dual_4_isog(As, P);    // Move x over to A = 0
-
-//            System.out.print("PZ: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", P.Z[di][dj] );}System.out.println();}
-//
-//            System.out.print("PX: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", P.X[di][dj] );}System.out.println();}
-//
-//
-//            System.out.print("\nRZ: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", R.Z[di][dj] );}System.out.println();}
-//
-//            System.out.print("RX: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", R.X[di][dj] );}System.out.println();}
-
             b = SecondPoint_dual(P, R, ind);
             r[1] = r[1] + 1;
         }
@@ -747,56 +584,16 @@ class SIDH_Compressed
 
     protected void BuildOrdinary3nBasis_dual(long[][] a24, long[][][][] As, PointProjFull[] R, int[] r, int[] bitsEll, int bitsEllOffset)
     {
-        //todo i dont think this is gonna work
         PointProj D = new PointProj(engine.params.NWORDS_FIELD);
         long[][][] xs = new long[2][2][engine.params.NWORDS_FIELD];
         byte[] ind = new byte[1],
                bit = new byte[1];
 
-//        System.out.print("a24: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", a24[di][dj] );}System.out.println();}
-
-//        System.out.print("As: ");
-//        for (int di = 0; di < engine.params.MAX_Alice+1; di++){
-//        for (int dj = 0; dj < 5; dj++){
-//        for (int dk = 0; dk < 2; dk++){
-//        for (int dl = 0; dl < engine.params.NWORDS_FIELD; dl++){
-//        System.out.printf("%016x ", As[di][dj][dk][dl]);}}}}System.out.println();
-
-
-
         FirstPoint3n(a24, As, xs[0], R[0], r, ind, bit);
-
-//        System.out.println("bitEll: " + bitsEll[bitsEllOffset]);
-//        System.out.println("ind: " + ind[0]);
-
         bitsEll[bitsEllOffset] = bit[0];
-
-//        System.out.println("bitEll: " + bitsEll[bitsEllOffset]);
         r[1] = r[0];
         SecondPoint3n(a24, As, xs[1], R[1], r, ind, bit);
         bitsEll[bitsEllOffset] |= ((int)bit[0] << 1);
-
-//        System.out.println("bitEll: " + bitsEll[bitsEllOffset]);
-//        System.out.println("ind: " + ind[0]);
-
-
-//        System.out.print("R0X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R[0].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("R0Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R[0].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("R1X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R[1].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("R1Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", R[1].Z[di][dj] );}System.out.println();}
 
         // Get x-coordinate of difference
         BiQuad_affine(a24, xs[0], xs[1], D);
@@ -826,21 +623,6 @@ class SIDH_Compressed
         // Initialize basis points
         init_basis(engine.params.A_gen, XPA, XQA, XRA);
 
-//        System.out.print("XPA: ");
-//        for (int di = 0; di < 2; di++){
-//        for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//            System.out.printf("%016x ", XPA[di][dj]);}System.out.println();}
-//
-//        System.out.print("XQA: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", XQA[di][dj]);}System.out.println();}
-//
-//        System.out.print("XRA: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", XRA[di][dj]);}System.out.println();}
-
         // Initialize constants: A24 = A+2C, C24 = 4C, where A=6, C=1
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, A24[0]);
         engine.fpx.fp2add(A24, A24, A24);
@@ -848,72 +630,17 @@ class SIDH_Compressed
         engine.fpx.fp2add(A24, C24, A);
         engine.fpx.fp2add(C24, C24, A24);
 
-//        System.out.print("A24: ");
-//        for (int di = 0; di < 2; di++){
-//        for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//            System.out.printf("%016x ", A24[di][dj]);}System.out.println();}
-//        System.out.print("C24: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", C24[di][dj]);}System.out.println();}
-//        System.out.print("A: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", A[di][dj]);}System.out.println();}
-//
-
         // Retrieve kernel point
         engine.fpx.decode_to_digits(PrivateKeyA, engine.params.MSG_BYTES, SecretKeyA, engine.params.SECRETKEY_A_BYTES, engine.params.NWORDS_ORDER);
-
-//        System.out.print("SecretKeyA: ");
-//        for (int di = 0; di < engine.params.NWORDS_ORDER; di++)
-//        {System.out.printf("%016x ", SecretKeyA[di]);}System.out.println();
-
         engine.isogeny.LADDER3PT(XPA, XQA, XRA, SecretKeyA, engine.params.ALICE, R, A);
-
-//        System.out.print("RX: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", R.X[di][dj]);}System.out.println();}
-//
-//        System.out.print("RZ: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", R.Z[di][dj]);}System.out.println();}
-//
-//        System.out.print("A: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", A[di][dj]);}System.out.println();}
-
-
         engine.fpx.fp2inv_mont(R.Z);
         engine.fpx.fp2mul_mont(R.X,R.Z,R.X);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, R.Z[0]);
         engine.fpx.fpzero(R.Z[1]);
-
-//        System.out.print("RX: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", R.X[di][dj]);}System.out.println();}
-//
-//        System.out.print("RZ: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", R.Z[di][dj]);}System.out.println();}
-
-
-
-
         if (sike == 1)
         {
             engine.fpx.fp2_encode(R.X, PrivateKeyA, engine.params.MSG_BYTES + engine.params.SECRETKEY_A_BYTES + engine.params.CRYPTO_PUBLICKEYBYTES);  // privA ||= x(KA) = x(PA + sk_A*QA)
         }
-
-//        System.out.println("PrivateKeyA: " + Hex.toHexString(PrivateKeyA));
-
-
-
         if (engine.params.OALICE_BITS % 2 == 1)
         {
             PointProj S = new PointProj(engine.params.NWORDS_FIELD);
@@ -925,8 +652,6 @@ class SIDH_Compressed
             engine.fpx.fp2copy(S.Z, As[engine.params.MAX_Alice][3]);
         }
 
-
-        //todo check tree treversal
         // Traverse tree
         index = 0;
         for (row = 1; row < engine.params.MAX_Alice; row++)
@@ -942,98 +667,28 @@ class SIDH_Compressed
                 index += m;
             }
 
-//            System.out.println("row: " + row);
-//            System.out.print("RX: ");
-//            for (int di = 0; di < 2; di++){
-//                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                    System.out.printf("%016x ", R.X[di][dj]);}System.out.println();}
-//
-//            System.out.print("RZ: ");
-//            for (int di = 0; di < 2; di++){
-//                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                    System.out.printf("%016x ", R.Z[di][dj]);}System.out.println();}
-//        System.out.print("A24: ");
-//        for (int di = 0; di < 2; di++){
-//        for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//            System.out.printf("%016x ", A24[di][dj]);}System.out.println();}
-//        System.out.print("C24: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", C24[di][dj]);}System.out.println();}
-
-
-
-
             engine.fpx.fp2copy(A24, As[row-1][0]);
             engine.fpx.fp2copy(C24, As[row-1][1]);
             get_4_isog_dual(R, A24, C24, coeff);
             for (i = 0; i < npts; i++)
             {
                 engine.isogeny.eval_4_isog(pts[i], coeff);
-
-//                System.out.print(i + "ptsX: ");
-//                for (int di = 0; di < 2; di++){
-//                    for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                        System.out.printf("%016x ", pts[i].X[di][dj]);}System.out.println();}
-//
-//                System.out.print(i + "ptsZ: ");
-//                for (int di = 0; di < 2; di++){
-//                    for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                        System.out.printf("%016x ", pts[i].Z[di][dj]);}System.out.println();}
             }
-            eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[row-1], 2);//*(As+row-1)+2); todo check
-
+            eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[row-1], 2);
             engine.fpx.fp2copy(pts[npts-1].X, R.X);
             engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-
-//            System.out.print("RX: ");
-//            for (int di = 0; di < 2; di++){
-//                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                    System.out.printf("%016x ", R.X[di][dj]);}System.out.println();}
-//
-//            System.out.print("RZ: ");
-//            for (int di = 0; di < 2; di++){
-//                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                    System.out.printf("%016x ", R.Z[di][dj]);}System.out.println();}
-
             index = pts_index[npts-1];
             npts -= 1;
         }
-
-
-//        System.out.print("A24: ");
-//        for (int di = 0; di < 2; di++){
-//        for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//        System.out.printf("%016x ", A24[di][dj]);}System.out.println();}
-//        System.out.print("C24: ");
-//        for (int di = 0; di < 2; di++){
-//        for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//        System.out.printf("%016x ", C24[di][dj]);}System.out.println();}
-
         engine.fpx.fp2copy(A24, As[engine.params.MAX_Alice-1][0]);
         engine.fpx.fp2copy(C24, As[engine.params.MAX_Alice-1][1]);
 
         get_4_isog_dual(R, A24, C24, coeff);
-        eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[engine.params.MAX_Alice-1], 2); //todo check
+        eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[engine.params.MAX_Alice-1], 2);
         engine.fpx.fp2copy(A24, As[engine.params.MAX_Alice][0]);
         engine.fpx.fp2copy(C24, As[engine.params.MAX_Alice][1]);
-
-//        System.out.print("A24: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", A24[di][dj]);}System.out.println();}
-//        System.out.print("C24: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", C24[di][dj]);}System.out.println();}
-//
         engine.fpx.fp2inv_mont_bingcd(C24);
         engine.fpx.fp2mul_mont(A24, C24, a24);
-//
-//        System.out.print("a24: ");
-//        for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", a24[di][dj]);}System.out.println();}
     }
 
 
@@ -1088,12 +743,7 @@ class SIDH_Compressed
         engine.fpx.fp2_decode(CompressedPKA, A, 3*engine.params.ORDER_B_ENCODED_BYTES);
         vone[0] = 1;
         engine.fpx.to_Montgomery_mod_order(vone, vone, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);  // Converting to Montgomery representation
-
-
-//        System.out.printf("bit: %02x\n", CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES]);
-//        System.out.printf("bit: %02x\n", ((CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0xff) >>> 7));
         bit = (byte) ((CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0xff) >> 7);
-//        System.out.println("bit: " + bit);
 
         byte[] rs_temp = new byte[3];
         System.arraycopy(CompressedPKA, 3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES, rs_temp, 0, 3);
@@ -1167,22 +817,6 @@ class SIDH_Compressed
         engine.fpx.to_Montgomery_mod_order(d0, d0, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
         engine.fpx.to_Montgomery_mod_order(d1, d1, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
 
-//        System.out.print("d0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d0[dj] );}System.out.println();
-//
-//        System.out.print("c0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c0[dj] );}System.out.println();
-//
-//        System.out.print("d1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d1[dj] );}System.out.println();
-//
-//        System.out.print("c1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c1[dj] );}System.out.println();
-
         if (bit != 0)
         {  // Storing [d1*c0inv, c1*c0inv, d0*c0inv] and setting bit "NBITS_ORDER" to 0
             engine.fpx.Montgomery_inversion_mod_order_bingcd(d1, inv, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
@@ -1239,56 +873,10 @@ class SIDH_Compressed
         Rs[0] = new PointProjFull(engine.params.NWORDS_FIELD);
         Rs[1] = new PointProjFull(engine.params.NWORDS_FIELD);
 
-        FullIsogeny_A_dual(PrivateKeyA, As, a24, 1);                // CHECK DONE
-
-        BuildOrdinary3nBasis_dual(a24, As, Rs, rs, rs, 2);      // CHECK DONE
-
-//        System.out.println("After BuildOrdinary");
-//        System.out.print("Rs0X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs0Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].Z[di][dj] );}System.out.println();}
-
-
-        Tate3_pairings(Rs, f);  // CHECK DONE
-
-//        System.out.print("f: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
+        FullIsogeny_A_dual(PrivateKeyA, As, a24, 1);
+        BuildOrdinary3nBasis_dual(a24, As, Rs, rs, rs, 2);
+        Tate3_pairings(Rs, f);
         Dlogs3_dual(f, D, d0, c0, d1, c1);
-
-//        System.out.print("D: ");
-//        for (int dj = 0; dj < engine.params.DLEN_3; dj++)
-//        {System.out.printf("%08x ", D[dj] );}System.out.println();
-//
-//        System.out.print("d0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d0[dj] );}System.out.println();
-//
-//        System.out.print("c0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c0[dj] );}System.out.println();
-//
-//        System.out.print("d1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d1[dj] );}System.out.println();
-//
-//        System.out.print("c1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c1[dj] );}System.out.println();
-
         Compress_PKA_dual(d0, c0, d1, c1, a24, rs, CompressedPKA);
         return 0;
     }
@@ -1339,10 +927,6 @@ class SIDH_Compressed
         engine.fpx.fp2add(A, A24minus, A24plus);
         engine.fpx.fp2sub(A, A24minus, A24minus);
 
-//        System.out.print("A24minus: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", A24minus[di][dj] );}System.out.println();}
-
         // Traverse tree
         index = 0;
         for (row = 1; row < engine.params.MAX_Bob; row++)
@@ -1391,13 +975,11 @@ class SIDH_Compressed
         // Select the correct table
         if (engine.fpx.is_sqr_fp2(A,  s))
         {
-//            System.out.println("qnr = 1");
             t_ptr = engine.params.table_v_qnr;
             qnr[0] = 1;
         }
         else
         {
-//            System.out.println("qnr = 0");
             t_ptr = engine.params.table_v_qr;
             qnr[0] = 0;
         }
@@ -1406,8 +988,6 @@ class SIDH_Compressed
         ind[0] = 0;
         do
         {
-//            System.out.println("ind: " + ind[0]);
-
             engine.fpx.fp2mul_mont(A,  t_ptr, t_ptrOffset,  R[0].X);    // R[0].X =  A*v
             t_ptrOffset += 2;
             engine.fpx.fp2neg(R[0].X);                                  // R[0].X = -A*v
@@ -1415,10 +995,6 @@ class SIDH_Compressed
             engine.fpx.fp2mul_mont(R[0].X,  t,  t);
             engine.fpx.fpaddPRIME(t[0],  engine.params.Montgomery_one, t[0]);
             engine.fpx.fp2mul_mont(R[0].X,  t,  t);                     // t = R[0].X^3 + A*R[0].X^2 + R[0].X
-
-//            System.out.print("R0X: ");
-//            for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", R[0].X[di][dj] );}System.out.println();}
             ind[0] += 1;
         } while (!engine.fpx.is_sqr_fp2(t,  s));
         ind[0] -= 1;
@@ -1500,35 +1076,6 @@ class SIDH_Compressed
 
         // Generate x-only entangled basis 
         BuildEntangledXonly(A, xs, qnr, ind);
-
-//        System.out.println();System.out.println();
-//        System.out.print("xs0X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[0].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("xs0Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[0].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("xs1X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[1].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("xs1Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[1].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("xs2X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[2].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("xs2Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xs[2].Z[di][dj] );}System.out.println();}
-
-
-
-
         engine.fpx.fpcopy(engine.params.Montgomery_one,0, (xs[0].Z)[0]);
         engine.fpx.fpcopy(engine.params.Montgomery_one,0, (xs[1].Z)[0]);
 
@@ -1571,21 +1118,6 @@ class SIDH_Compressed
 
         // Initialize basis points
         init_basis(engine.params.B_gen, XPB, XQB, XRB);
-
-//        System.out.print("XPB: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", XPB[di][dj] );}System.out.println();}
-//
-//        System.out.print("XQB: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", XQB[di][dj] );}System.out.println();}
-//
-//        System.out.print("XRB: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", XRB[di][dj] );}System.out.println();}
-
-
-
         engine.fpx.fpcopy(engine.params.XQB3, 0, Q3.X[0]);
         engine.fpx.fpcopy(engine.params.XQB3, engine.params.NWORDS_FIELD, (Q3.X)[1]);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Q3.Z[0]);
@@ -1728,34 +1260,7 @@ class SIDH_Compressed
         engine.fpx.fp2_decode(CompressedPKB, A, 4*engine.params.ORDER_A_ENCODED_BYTES);
         qnr = CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0x01;
         ind = CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1];
-
-//        System.out.print("A: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", A[di][dj] );}System.out.println();}
-//
-//
-//        System.out.println("qnr: " + qnr);
-//        System.out.println("ind: " + ind);
-
         BuildEntangledXonly_Decomp(A, Rs, qnr, ind);
-
-//        System.out.print("Rs0X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs0Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].Z[di][dj] );}System.out.println();}
-
-
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[0].Z[0]);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[1].Z[0]);
 
@@ -1822,26 +1327,8 @@ class SIDH_Compressed
         engine.fpx.mp_add(tmp, D, D, engine.params.NWORDS_ORDER);
         D[engine.params.NWORDS_ORDER-1] &= (long)mask;
         engine.fpx.inv_mod_orderA(D, Dinv);
-
-
-//        System.out.print("D: ");
-//        for (int dj = 0; dj < 2*engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", D[dj] );}System.out.println();
-//
-//        System.out.print("Dinv: ");
-//        for (int dj = 0; dj < 2*engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", Dinv[dj] );}System.out.println();
-
-
-
         engine.fpx.multiply(d1, Dinv, tmp, engine.params.NWORDS_ORDER); // a0' = 3^n * d1 / D
         tmp[engine.params.NWORDS_ORDER-1] &= mask;
-
-//        System.out.print("tmp: ");
-//        for (int dj = 0; dj < 2*engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", tmp[dj] );}System.out.println();
-
-
         engine.fpx.encode_to_bytes(tmp, CompressedPKB, 0, engine.params.ORDER_A_ENCODED_BYTES);
 
         engine.fpx.Montgomery_neg(d0, engine.params.Alice_order);
@@ -1996,19 +1483,7 @@ class SIDH_Compressed
                   Qw = new PointProj(engine.params.NWORDS_FIELD);
 
         FullIsogeny_B_dual(PrivateKeyB, Ds, A);
-
-//        System.out.print("A: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", A[di][dj] );}System.out.println();}System.out.println();
-
-//        System.out.print("Ds: ");
-//        for (int di = 0; di < engine.params.MAX_Bob; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < 2; dk++){for (int dl = 0; dl < engine.params.NWORDS_FIELD; dl++)
-//        {System.out.printf("%016x ", Ds[di][dj][dk][dl]);}System.out.println();}System.out.println();}}System.out.println();
-
-
-
         BuildOrdinary2nBasis_dual(A, Ds, Rs, qnr, ind);  // Generate a basis in E_A and pulls it back to E_A6. Rs[0] and Rs[1] affinized.
-
 
         // Maps from y^2 = x^3 + 6x^2 + x into y^2 = x^3 -11x + 14
         engine.fpx.fpaddPRIME(engine.params.Montgomery_one, Rs[0].X[0], Rs[0].X[0]);
@@ -2025,67 +1500,12 @@ class SIDH_Compressed
         engine.fpx.fpcopy(engine.params.A_basis_zero, 6*engine.params.NWORDS_FIELD, Qw.Z[0]);//y
         engine.fpx.fpcopy(engine.params.A_basis_zero, 7*engine.params.NWORDS_FIELD, Qw.Z[1]);//y
 
-
-
-//        System.out.println();
-//        System.out.print("Rs0X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs0Y: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].Y[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs0Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[0].Z[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1X: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].X[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1Y: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].Y[di][dj] );}System.out.println();}
-//
-//        System.out.print("Rs1Z: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", Rs[1].Z[di][dj] );}System.out.println();}
-
-
         Tate2_pairings(Pw, Qw, Rs, f);
         engine.fpx.fp2correction(f[0]);
         engine.fpx.fp2correction(f[1]);
         engine.fpx.fp2correction(f[2]);
         engine.fpx.fp2correction(f[3]);
-
-//        System.out.print("\nf: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
-
         Dlogs2_dual(f, D, d0, c0, d1, c1);
-
-
-//        System.out.print("D: ");
-//        for (int dj = 0; dj < engine.params.DLEN_2; dj++)
-//        {System.out.printf("%08x ", D[dj] );}System.out.println();
-//
-//        System.out.print("d0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d0[dj] );}System.out.println();
-//
-//        System.out.print("c0: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c0[dj] );}System.out.println();
-//
-//        System.out.print("d1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", d1[dj] );}System.out.println();
-//
-//        System.out.print("c1: ");
-//        for (int dj = 0; dj < engine.params.NWORDS_ORDER; dj++)
-//        {System.out.printf("%016x ", c1[dj] );}System.out.println();
 
         if (sike == 1)
         {
@@ -2447,36 +1867,21 @@ class SIDH_Compressed
                  alpha = new long[2][engine.params.NWORDS_FIELD];
 
 
-//        System.out.println("z: " + z);
-//        System.out.println("j: " + j);
-
         if (z > 1)
         {
             int t = P[z], goleft;
             engine.fpx.fp2copy(r, rp);
-//            System.out.println("t: " + t);
-//            System.out.println("e: " + e);
-//            System.out.println("w: " + w);
-
             goleft = (j > 0) ? w*(z-t) : (e % w) + w*(z-t-1);
-//            System.out.println("goleft: " + goleft);
             for (int i = 0; i < goleft; i++)
             {
                 if ((ell & 1) == 0)
                 {
-//                    System.out.println("Sqr");
                     engine.fpx.sqr_Fp2_cycl(rp, engine.params.Montgomery_one);
                 }
                 else
                 {
-//                    System.out.println("Cube");
                     engine.fpx.cube_Fp2_cycl(rp, engine.params.Montgomery_one);
                 }
-
-//                System.out.print("rp: ");
-//                for (int di = 0; di < 2; di++){
-//                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                System.out.printf("%016x ", rp[di][dj]);}System.out.println();}System.out.println();
 
             }
 
@@ -2520,63 +1925,34 @@ class SIDH_Compressed
         }
         else
         {
-//            System.out.print("ELSE >\n");
             engine.fpx.fp2copy(r, rp);
             engine.fpx.fp2correction(rp);
-//            System.out.print("rp: ");
-//            for (int di = 0; di < 2; di++){
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//            System.out.printf("%016x ", rp[di][dj]);}System.out.println();}
 
 
             if (engine.fpx.is_felm_zero(rp[1]) && Fpx.subarrayEquals(rp[0],engine.params.Montgomery_one, engine.params.NWORDS_FIELD))
             {
-//                System.out.print("IF0 > ");
                 D[k] = 0;
             }
             else
             {
-//                System.out.print("ELSE0 > ");
 
                 if (!(j == 0 && k == Dlen - 1))
                 {
-//                    System.out.print("IF1 > ");
 
                     for (int t = 1; t <= (ellw/2); t++)
                     {
-//                        System.out.println(2*(ellw/2)*(Dlen-1) + 2*(t-1));
-//                        System.out.print("rp: ");
-//                        for (int di = 0; di < 2; di++){
-//                            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                                System.out.printf("%016x ", rp[di][dj]);}System.out.println();}
-
                         if (Fpx.subarrayEquals(rp, CT2, engine.params.NWORDS_FIELD * (2 *(ellw/2)*(Dlen-1) + 2*(t-1)), 2*engine.params.NWORDS_FIELD))
                         {
-//                            System.out.print("FORIF > ");
-
                             D[k] = -t;
                             break;
                         }
                         else
                         {
-//                            System.out.print("FORELSE >\n");
-
                             engine.fpx.fp2copy(CT2, engine.params.NWORDS_FIELD *(2*((ellw/2)*(Dlen-1) + (t-1))), alpha);
-
-//                            System.out.println("offset: " + 2*((ellw/2)*(Dlen-1) + (t-1)));
-
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fpcorrectionPRIME(alpha[1]);
-
-//                            System.out.print("alpha: ");
-//                            for (int di = 0; di < 2; di++){
-//                                for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++){
-//                                    System.out.printf("%016x ", alpha[di][dj]);}System.out.println();}
-
                             if (Fpx.subarrayEquals(rp, alpha, 2*engine.params.NWORDS_FIELD))
                             {
-//                                System.out.print("INIF > ");
-
                                 D[k] = t;
                                 break;
                             }
@@ -2585,34 +1961,26 @@ class SIDH_Compressed
                 }
                 else
                 {
-//                    System.out.print("ELSE1 > ");
-
                     for (int t = 1; t <= ell_emodw/2; t++)
                     {
                         if (Fpx.subarrayEquals(rp, CT1,engine.params.NWORDS_FIELD * (2*(ellw/2)*(Dlen - 1) + 2*(t-1)), 2*engine.params.NWORDS_FIELD))
                         {
-//                            System.out.print("FORIF > ");
                             D[k] = -t;
                             break;
                         }
                         else
                         {
-//                            System.out.print("FORELSE > ");
-
                             engine.fpx.fp2copy(CT1, engine.params.NWORDS_FIELD * (2*((ellw/2)*(Dlen-1) + (t-1))), alpha);
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fpcorrectionPRIME(alpha[1]);
                             if (Fpx.subarrayEquals(rp, alpha, 2*engine.params.NWORDS_FIELD))
                             {
-//                                System.out.print("INIF > ");
-
                                 D[k] = t;
                                 break;
                             }
                         }
                     }
                 }
-//                System.out.println();
             }
         }
     }
@@ -2703,9 +2071,8 @@ class SIDH_Compressed
         }
     }
     ///
-    
-    //Pairing
 
+    //Pairing
     private static final int t_points = 2;
     private void Tate3_pairings(PointProjFull[] Qj, long[][][] f)
     {
@@ -2741,63 +2108,16 @@ class SIDH_Compressed
             engine.fpx.fp2copy(one, f[j+t_points]);
             engine.fpx.fp2sqr_mont(Qj[j].X, xQ2s[j]);
         }
-
-
-//        System.out.print("f: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
-
-//        System.out.print("xQ2s0: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xQ2s[0][di][dj] );}System.out.println();}
-//
-//        System.out.print("xQ2s1: ");
-//        for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//        {System.out.printf("%016x ", xQ2s[1][di][dj] );}System.out.println();}
-
-
-
-
-
         for (int k = 0; k < engine.params.OBOB_EXPON - 1; k++)
         {
-//            System.out.println("k: " + k);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 0), l1, 0, engine.params.NWORDS_FIELD);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 1), l2, 0, engine.params.NWORDS_FIELD);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 2), n1, 0, engine.params.NWORDS_FIELD);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 3), n2, 0, engine.params.NWORDS_FIELD);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 4), x23, 0, engine.params.NWORDS_FIELD);
             System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 5), x2p3, 0, engine.params.NWORDS_FIELD);
-
-//            System.out.print("l1: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", l1[dj] );}System.out.println();
-//
-//            System.out.print("l2: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", l2[dj] );}System.out.println();
-//
-//            System.out.print("n1: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", n1[dj] );}System.out.println();
-//
-//            System.out.print("n2: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", n2[dj] );}System.out.println();
-//
-//            System.out.print("x23: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", x23[dj] );}System.out.println();
-//
-//            System.out.print("x2p3: ");
-//            for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//            {System.out.printf("%016x ", x2p3[dj] );}System.out.println();
-
-
             for (int j = 0; j < t_points; j++)
             {
-//                System.out.println("j: " + j);
                 engine.fpx.fpmul_mont(Qj[j].X[0], l1, t0[0]);
                 engine.fpx.fpmul_mont(Qj[j].X[1], l1, t0[1]);
                 engine.fpx.fpmul_mont(Qj[j].X[0], l2, t2[0]);
@@ -2806,13 +2126,6 @@ class SIDH_Compressed
                 engine.fpx.fpcopy(xQ2s[j][1], 0, t4[1]);
                 engine.fpx.fpmul_mont(Qj[j].X[0], x2p3, t5[0]);
                 engine.fpx.fpmul_mont(Qj[j].X[1], x2p3, t5[1]);
-
-//                System.out.print("t5: ");
-//                for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//                {System.out.printf("%016x ", t5[di][dj] );}System.out.println();}
-
-
-
                 engine.fpx.fp2sub(t0, Qj[j].Y, t1);
                 engine.fpx.fpaddPRIME(t1[0], n1, t1[0]);
                 engine.fpx.fp2sub(t2, Qj[j].Y, t3);
@@ -2843,19 +2156,8 @@ class SIDH_Compressed
                 engine.fpx.fp2sqr_mont(f[j+t_points], tf);
                 engine.fpx.fp2mul_mont(f[j+t_points], tf, f[j+t_points]);
                 engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
-
-//                System.out.print("f: ");
-//                for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//                {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
             }
         }
-
-//        System.out.print("f: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
-
         for (int j = 0; j < t_points; j++)
         {
             System.arraycopy(engine.params.T_tate3,  engine.params.NWORDS_FIELD * (6*(engine.params.OBOB_EXPON-1) + 0), x, 0, engine.params.NWORDS_FIELD);
@@ -2892,10 +2194,6 @@ class SIDH_Compressed
             engine.fpx.fp2mul_mont(f[j+t_points], tf, f[j+t_points]);
             engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
         }
-//        System.out.print("f: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
 
         // Final exponentiation:
         engine.fpx.mont_n_way_inv(f, 2*t_points, finv);
@@ -2953,8 +2251,8 @@ class SIDH_Compressed
         x_first = P.X;
         y_first = P.Z;
 
-        x_Offset = 0; // engine.params.T_tate2_firststep_P
-        y_Offset = 1; // engine.params.T_tate2_firststep_P
+        x_Offset = 0;
+        y_Offset = 1;
         x_ = engine.params.T_tate2_firststep_P;
         y_ = engine.params.T_tate2_firststep_P;
 
@@ -2977,13 +2275,8 @@ class SIDH_Compressed
             engine.fpx.fp2sqr_mont(f[j], f[j]);
             engine.fpx.fp2mul_mont(f[j], g, f[j]);
         }
-        //////////////////////////////////////////////////
-
-
-
-
-        xOffset = 0; //engine.params.T_tate2_firststep_P
-        yOffset = 1 * engine.params.NWORDS_FIELD; //engine.params.T_tate2_firststep_P
+        xOffset = 0;
+        yOffset = 1 * engine.params.NWORDS_FIELD;
         x = x_;
         y = y_;
 
@@ -3001,17 +2294,7 @@ class SIDH_Compressed
                 engine.fpx.fpsubPRIME(x, xOffset, Qj[j].X[0], t0[1]);
                 engine.fpx.fpmul_mont(l1, l1Offset, t0[1], t0[1]);
                 engine.fpx.fpmul_mont(l1, l1Offset, Qj[j].X[1], t0[0]);
-
-//                System.out.print("t0: ");
-//                for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//                {System.out.printf("%016x ", t0[di][dj] );}System.out.println();}
-
                 engine.fpx.fpsubPRIME(Qj[j].Y[1], y, yOffset, t1[1]);
-
-//                System.out.print("t1: ");
-//                for (int di = 0; di < 2; di++){for (int dj = 0; dj < engine.params.NWORDS_FIELD; dj++)
-//                {System.out.printf("%016x ", t1[di][dj] );}System.out.println();}
-
                 engine.fpx.fpsubPRIME(t0[1], t1[1], g[1]);
                 engine.fpx.fpsubPRIME(t0[0], Qj[j].Y[0], g[0]);
 
@@ -3028,12 +2311,6 @@ class SIDH_Compressed
             yOffset = y_Offset;
             xOffset = x_Offset;
         }
-
-//        System.out.print("\nf: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
-
         for (int j = 0; j < t_points; j++)
         {
             engine.fpx.fpsubPRIME(Qj[j].X[0], x, xOffset, g[0]);
@@ -3041,10 +2318,6 @@ class SIDH_Compressed
             engine.fpx.fp2sqr_mont(f[j], f[j]);
             engine.fpx.fp2mul_mont(f[j], g, f[j]);
         }
-//        System.out.print("\nnf: ");
-//        for (int di = 0; di < 4; di++){for (int dj = 0; dj < 2; dj++){for (int dk = 0; dk < engine.params.NWORDS_FIELD; dk++)
-//        {System.out.printf("%016x ", f[di][dj][dk]);}System.out.println();}System.out.println();}
-
 
         // Pairings with Q
         x_first = Q.X;
@@ -3145,7 +2418,4 @@ class SIDH_Compressed
         }
         engine.fpx.fp2copy(temp, fout);
     }
-
-
-
 }
