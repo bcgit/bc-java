@@ -37,7 +37,6 @@ class SIKEEngine
     public SIKEEngine(int ver, boolean isCompressed)
     {
         this.isCompressed = isCompressed;
-        //todo switch for different parameters
         switch(ver)
         {
             case 434:
@@ -97,7 +96,6 @@ class SIKEEngine
         {
             // Generation of Bob's secret key
             // Outputs random value in [0, 2^Floor(Log(2, oB)) - 1]
-            // todo/org: SIDH.random_mod_order_B(sk, random);
             byte[] random_digits = new byte[params.SECRETKEY_B_BYTES];
             random.nextBytes(random_digits);
             random_digits[params.SECRETKEY_B_BYTES-1] &= params.MASK_BOB;
@@ -140,24 +138,12 @@ class SIKEEngine
 
             sidhCompressed.FormatPrivKey_B(ephemeralsk);
 
-//            System.out.println("ephemeralsk: " + Hex.toHexString(ephemeralsk));
-
-
             // Encrypt
             sidhCompressed.EphemeralKeyGeneration_B_extended(ephemeralsk, ct, 1);
-
-//            System.out.println("ct: " + Hex.toHexString(ct));
-//            System.out.println("pk: " + Hex.toHexString(pk));
-
             sidhCompressed.EphemeralSecretAgreement_B(ephemeralsk, pk, jinvariant);
-
-//            System.out.println("jinv: " + Hex.toHexString(jinvariant));
 
             digest.update(jinvariant, 0, params.FP2_ENCODED_BYTES);
             digest.doFinal(h, 0, params.MSG_BYTES);
-
-//            System.out.println("h: " + Hex.toHexString(h));
-//            System.out.println("temp: " + Hex.toHexString(temp));
 
             for (int i = 0; i < params.MSG_BYTES; i++)
             {
@@ -179,7 +165,7 @@ class SIKEEngine
             byte[] temp = new byte[params.CRYPTO_CIPHERTEXTBYTES + params.MSG_BYTES];
 
             // Generate ephemeralsk <- G(m||pk) mod oA
-            byte[] tmp = new byte[params.MSG_BYTES]; // todo: is there a simplier way to do this?
+            byte[] tmp = new byte[params.MSG_BYTES];
             random.nextBytes(tmp);
             System.arraycopy(tmp, 0, temp, 0, params.MSG_BYTES);
             System.arraycopy(pk, 0, temp, params.MSG_BYTES, params.CRYPTO_PUBLICKEYBYTES);
@@ -231,8 +217,6 @@ class SIKEEngine
             Xof digest = new SHAKEDigest(256);
             digest.update(jinvariant_, 0, params.FP2_ENCODED_BYTES);
             digest.doFinal(h_, 0, params.MSG_BYTES);
-
-//            System.out.println("h_: " + Hex.toHexString(h_));
 
             for (int i = 0; i < params.MSG_BYTES; i++)
             {
