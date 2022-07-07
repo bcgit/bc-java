@@ -11,7 +11,7 @@ public class SPHINCSPlusPublicKeyParameters
     public SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters parameters, byte[] pkEncoded)
     {
         super(false, parameters);
-        int n = parameters.getEngine().get().N;
+        int n = parameters.getN();
         if (pkEncoded.length != 2 * n)
         {
             throw new IllegalArgumentException("public key encoding does not match parameters");
