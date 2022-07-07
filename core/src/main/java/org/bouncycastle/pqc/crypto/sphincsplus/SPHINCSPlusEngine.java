@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.sphincsplus;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.crypto.digests.NonMemoableDigest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -13,10 +12,8 @@ import org.bouncycastle.crypto.params.MGFParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 abstract class SPHINCSPlusEngine
-    implements SPHINCSPlusEngineProvider
 {
     final boolean robust;
 
@@ -546,11 +543,6 @@ abstract class SPHINCSPlusEngine
             }
 
             return mask;
-        }
-
-        public SPHINCSPlusEngine get()
-        {
-            return this;
         }
     }
 }
