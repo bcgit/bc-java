@@ -155,9 +155,9 @@ public class SPHINCSPlusParameters
         return engineProvider.getN();
     }
 
-    SPHINCSPlusEngineProvider getEngine()
+    SPHINCSPlusEngine getEngine()
     {
-        return engineProvider;
+        return engineProvider.get();
     }
 
     /**
