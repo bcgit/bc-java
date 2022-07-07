@@ -8,43 +8,43 @@ import org.bouncycastle.util.Pack;
 
 public class SPHINCSPlusParameters
 {
-    public static final SPHINCSPlusParameters sha2_128f = new SPHINCSPlusParameters("sha2-128f-robust", new SPHINCSPlusEngine.Sha2Engine(true, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters sha2_128s = new SPHINCSPlusParameters("sha2-128s-robust", new SPHINCSPlusEngine.Sha2Engine(true, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters sha2_128f = new SPHINCSPlusParameters("sha2-128f-robust", new Sha2EngineProvider(true, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters sha2_128s = new SPHINCSPlusParameters("sha2-128s-robust", new Sha2EngineProvider(true, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters sha2_192f = new SPHINCSPlusParameters("sha2-192f-robust", new SPHINCSPlusEngine.Sha2Engine(true, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters sha2_192s = new SPHINCSPlusParameters("sha2-192s-robust", new SPHINCSPlusEngine.Sha2Engine(true, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters sha2_192f = new SPHINCSPlusParameters("sha2-192f-robust", new Sha2EngineProvider(true, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters sha2_192s = new SPHINCSPlusParameters("sha2-192s-robust", new Sha2EngineProvider(true, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters sha2_256f = new SPHINCSPlusParameters("sha2-256f-robust", new SPHINCSPlusEngine.Sha2Engine(true, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters sha2_256s = new SPHINCSPlusParameters("sha2-256s-robust", new SPHINCSPlusEngine.Sha2Engine(true, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters sha2_256f = new SPHINCSPlusParameters("sha2-256f-robust", new Sha2EngineProvider(true, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters sha2_256s = new SPHINCSPlusParameters("sha2-256s-robust", new Sha2EngineProvider(true, 32, 16, 8, 14, 22, 64));
 
-    public static final SPHINCSPlusParameters sha2_128f_simple = new SPHINCSPlusParameters("sha2-128f-simple", new SPHINCSPlusEngine.Sha2Engine(false, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters sha2_128s_simple = new SPHINCSPlusParameters("sha2-128s-simple", new SPHINCSPlusEngine.Sha2Engine(false, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters sha2_128f_simple = new SPHINCSPlusParameters("sha2-128f-simple", new Sha2EngineProvider(false, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters sha2_128s_simple = new SPHINCSPlusParameters("sha2-128s-simple", new Sha2EngineProvider(false, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters sha2_192f_simple = new SPHINCSPlusParameters("sha2-192f-simple", new SPHINCSPlusEngine.Sha2Engine(false, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters sha2_192s_simple = new SPHINCSPlusParameters("sha2-192s-simple", new SPHINCSPlusEngine.Sha2Engine(false, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters sha2_192f_simple = new SPHINCSPlusParameters("sha2-192f-simple", new Sha2EngineProvider(false, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters sha2_192s_simple = new SPHINCSPlusParameters("sha2-192s-simple", new Sha2EngineProvider(false, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters sha2_256f_simple = new SPHINCSPlusParameters("sha2-256f-simple", new SPHINCSPlusEngine.Sha2Engine(false, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters sha2_256s_simple = new SPHINCSPlusParameters("sha2-256s-simple", new SPHINCSPlusEngine.Sha2Engine(false, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters sha2_256f_simple = new SPHINCSPlusParameters("sha2-256f-simple", new Sha2EngineProvider(false, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters sha2_256s_simple = new SPHINCSPlusParameters("sha2-256s-simple", new Sha2EngineProvider(false, 32, 16, 8, 14, 22, 64));
 
     // SHAKE-256.
 
-    public static final SPHINCSPlusParameters shake_128f = new SPHINCSPlusParameters("shake-128f-robust", new SPHINCSPlusEngine.Shake256Engine(true, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters shake_128s = new SPHINCSPlusParameters("shake-128s-robust", new SPHINCSPlusEngine.Shake256Engine(true, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters shake_128f = new SPHINCSPlusParameters("shake-128f-robust", new Shake256EngineProvider(true, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters shake_128s = new SPHINCSPlusParameters("shake-128s-robust", new Shake256EngineProvider(true, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters shake_192f = new SPHINCSPlusParameters("shake-192f-robust", new SPHINCSPlusEngine.Shake256Engine(true, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters shake_192s = new SPHINCSPlusParameters("shake-192s-robust", new SPHINCSPlusEngine.Shake256Engine(true, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters shake_192f = new SPHINCSPlusParameters("shake-192f-robust", new Shake256EngineProvider(true, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters shake_192s = new SPHINCSPlusParameters("shake-192s-robust", new Shake256EngineProvider(true, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters shake_256f = new SPHINCSPlusParameters("shake-256f-robust", new SPHINCSPlusEngine.Shake256Engine(true, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters shake_256s = new SPHINCSPlusParameters("shake-256s-robust", new SPHINCSPlusEngine.Shake256Engine(true, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters shake_256f = new SPHINCSPlusParameters("shake-256f-robust", new Shake256EngineProvider(true, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters shake_256s = new SPHINCSPlusParameters("shake-256s-robust", new Shake256EngineProvider(true, 32, 16, 8, 14, 22, 64));
 
-    public static final SPHINCSPlusParameters shake_128f_simple = new SPHINCSPlusParameters("shake-128f-simple", new SPHINCSPlusEngine.Shake256Engine(false, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters shake_128s_simple = new SPHINCSPlusParameters("shake-128s-simple", new SPHINCSPlusEngine.Shake256Engine(false, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters shake_128f_simple = new SPHINCSPlusParameters("shake-128f-simple", new Shake256EngineProvider(false, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters shake_128s_simple = new SPHINCSPlusParameters("shake-128s-simple", new Shake256EngineProvider(false, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters shake_192f_simple = new SPHINCSPlusParameters("shake-192f-simple", new SPHINCSPlusEngine.Shake256Engine(false, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters shake_192s_simple = new SPHINCSPlusParameters("shake-192s-simple", new SPHINCSPlusEngine.Shake256Engine(false, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters shake_192f_simple = new SPHINCSPlusParameters("shake-192f-simple", new Shake256EngineProvider(false, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters shake_192s_simple = new SPHINCSPlusParameters("shake-192s-simple", new Shake256EngineProvider(false, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters shake_256f_simple = new SPHINCSPlusParameters("shake-256f-simple", new SPHINCSPlusEngine.Shake256Engine(false, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters shake_256s_simple = new SPHINCSPlusParameters("shake-256s-simple", new SPHINCSPlusEngine.Shake256Engine(false, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters shake_256f_simple = new SPHINCSPlusParameters("shake-256f-simple", new Shake256EngineProvider(false, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters shake_256s_simple = new SPHINCSPlusParameters("shake-256s-simple", new Shake256EngineProvider(false, 32, 16, 8, 14, 22, 64));
 
     private static final Integer sphincsPlus_sha2_128f_robust = Integers.valueOf(0x010101);
     private static final Integer sphincsPlus_sha2_128s_robust = Integers.valueOf(0x010102);
@@ -139,15 +139,20 @@ public class SPHINCSPlusParameters
     private final String name;
     private final SPHINCSPlusEngineProvider engineProvider;
 
-    private SPHINCSPlusParameters(String name, SPHINCSPlusEngineProvider engine)
+    private SPHINCSPlusParameters(String name, SPHINCSPlusEngineProvider engineProvider)
     {
         this.name = name;
-        this.engineProvider = engine.get();
+        this.engineProvider = engineProvider;
     }
 
     public String getName()
     {
         return name;
+    }
+
+    int getN()
+    {
+        return engineProvider.getN();
     }
 
     SPHINCSPlusEngineProvider getEngine()
@@ -180,5 +185,73 @@ public class SPHINCSPlusParameters
     public byte[] getEncoded()
     {
         return Pack.intToBigEndian(getID(this).intValue());
+    }
+
+    private static class Sha2EngineProvider
+        implements SPHINCSPlusEngineProvider
+    {
+        private final boolean robust;
+        private final int n;
+        private final int w;
+        private final int d;
+        private final int a;
+        private final int k;
+        private final int h;
+
+        public Sha2EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        {
+
+            this.robust = robust;
+            this.n = n;
+            this.w = w;
+            this.d = d;
+            this.a = a;
+            this.k = k;
+            this.h = h;
+        }
+
+        public int getN()
+        {
+            return n;
+        }
+
+        public SPHINCSPlusEngine get()
+        {
+            return new SPHINCSPlusEngine.Sha2Engine(robust, n, w, d, a, k, h);
+        }
+    }
+    
+    private static class Shake256EngineProvider
+        implements SPHINCSPlusEngineProvider
+    {
+        private final boolean robust;
+        private final int n;
+        private final int w;
+        private final int d;
+        private final int a;
+        private final int k;
+        private final int h;
+
+        public Shake256EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        {
+
+            this.robust = robust;
+            this.n = n;
+            this.w = w;
+            this.d = d;
+            this.a = a;
+            this.k = k;
+            this.h = h;
+        }
+
+        public int getN()
+        {
+            return n;
+        }
+
+        public SPHINCSPlusEngine get()
+        {
+            return new SPHINCSPlusEngine.Shake256Engine(robust, n, w, d, a, k, h);
+        }
     }
 }
