@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -26,6 +28,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
@@ -161,10 +164,10 @@ public class JcaX509ExtensionUtils
                 case GeneralName.ediPartyName:
                 case GeneralName.x400Address:
                 case GeneralName.otherName:
-                    list.add(genName.getName().toASN1Primitive());
+                    list.add(genName.getEncoded());
                     break;
                 case GeneralName.directoryName:
-                    list.add(X500Name.getInstance(genName.getName()).toString());
+                    list.add(X500Name.getInstance(RFC4519Style.INSTANCE, genName.getName()).toString());
                     break;
                 case GeneralName.dNSName:
                 case GeneralName.rfc822Name:
@@ -175,7 +178,17 @@ public class JcaX509ExtensionUtils
                     list.add(ASN1ObjectIdentifier.getInstance(genName.getName()).getId());
                     break;
                 case GeneralName.iPAddress:
-                    list.add(DEROctetString.getInstance(genName.getName()).getOctets());
+                    byte[] addrBytes = DEROctetString.getInstance(genName.getName()).getOctets();
+                    final String addr;
+                    try
+                    {
+                        addr = InetAddress.getByAddress(addrBytes).getHostAddress();
+                    }
+                    catch (UnknownHostException e)
+                    {
+                        continue;
+                    }
+                    list.add(addr);
                     break;
                 default:
                     throw new IOException("Bad tag number: " + genName.getTagNo());
