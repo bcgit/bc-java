@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -15,6 +16,10 @@ import org.bouncycastle.pqc.crypto.sike.SIKEKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -69,7 +74,7 @@ public class SIKEVectorTest
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-//            Random rnd = new Random(System.currentTimeMillis());
+            Random rnd = new Random(System.currentTimeMillis());
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -85,11 +90,11 @@ public class SIKEVectorTest
                         String count = (String)buf.get("count");
                         if (!"0".equals(count))
                         {
-//                            // randomly skip tests after zero.
-//                            if (rnd.nextBoolean())
-//                            {
-//                                continue;
-//                            }
+                            // randomly skip tests after zero.
+                            if (rnd.nextBoolean())
+                            {
+                                continue;
+                            }
                         }
                         System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for sike secure random
@@ -109,16 +114,10 @@ public class SIKEVectorTest
                         kpGen.init(genParam);
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-                        SIKEPublicKeyParameters pubParams = (SIKEPublicKeyParameters) kp.getPublic();
-//                                (SIKEPublicKeyParameters)PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SIKEPublicKeyParameters)kp.getPublic()));
-                        SIKEPrivateKeyParameters privParams = (SIKEPrivateKeyParameters) kp.getPrivate();
-//                            (SIKEPrivateKeyParameters)PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo((SIKEPrivateKeyParameters)kp.getPrivate()));
-
-//                        System.out.println(Hex.toHexString(pk).toUpperCase());
-//                        System.out.println(Hex.toHexString(pubParams.getPublicKey()).toUpperCase());
-
-//                        System.out.println(Hex.toHexString(sk).toUpperCase());
-//                        System.out.println(Hex.toHexString(privParams.getPrivateKey()).toUpperCase());
+//                        SIKEPublicKeyParameters pubParams = (SIKEPublicKeyParameters) kp.getPublic();
+                        SIKEPublicKeyParameters pubParams = (SIKEPublicKeyParameters) PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SIKEPublicKeyParameters)kp.getPublic()));
+//                        SIKEPrivateKeyParameters privParams = (SIKEPrivateKeyParameters) kp.getPrivate();
+                        SIKEPrivateKeyParameters privParams = (SIKEPrivateKeyParameters) PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo((SIKEPrivateKeyParameters)kp.getPrivate()));
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
@@ -128,24 +127,15 @@ public class SIKEVectorTest
                         SecretWithEncapsulation secWenc = sikeEncCipher.generateEncapsulated(pubParams);
                         byte[] generated_cipher_text = secWenc.getEncapsulation();
 
-
-//                        System.out.println(Hex.toHexString(ct));
-//                        System.out.println(Hex.toHexString(generated_cipher_text));
-
                         assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
                         byte[] secret = secWenc.getSecret();
 
-//                        System.out.println(Hex.toHexString(ss).toUpperCase());
-//                        System.out.println(Hex.toHexString(secret).toUpperCase());
                         assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, secret));
 
                         // KEM Dec
                         SIKEKEMExtractor sikeDecCipher = new SIKEKEMExtractor(privParams);
 
                         byte[] dec_key = sikeDecCipher.extractSecret(generated_cipher_text);
-
-//                        System.out.println(Hex.toHexString(dec_key).toUpperCase());
-//                        System.out.println(Hex.toHexString(ss).toUpperCase());
 
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));

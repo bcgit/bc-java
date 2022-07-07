@@ -11,6 +11,7 @@ import org.bouncycastle.tls.crypto.TlsSecret;
 public class SecurityParameters
 {
     int entity = -1;
+    boolean resumedSession = false;
     boolean renegotiating = false;
     boolean secureRenegotiation = false;
     int cipherSuite = CipherSuite.TLS_NULL_WITH_NULL_NULL;
@@ -91,6 +92,11 @@ public class SecurityParameters
     public int getEntity()
     {
         return entity;
+    }
+
+    public boolean isResumedSession()
+    {
+        return resumedSession;
     }
 
     public boolean isRenegotiating()

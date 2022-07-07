@@ -561,25 +561,30 @@ public class PGPSecretKeyRing
         PGPSecretKeyRing  secRing,
         PGPSecretKey      secKey)
     {
-        List       keys = new ArrayList(secRing.keys);
-        boolean    found = false;
-        
-        for (int i = 0; i < keys.size();i++)
+        int count = secRing.keys.size();
+        long keyID = secKey.getKeyID();
+
+        ArrayList result = new ArrayList(count);
+        boolean found = false;
+
+        for (int i = 0; i < count; ++i)
         {
-            PGPSecretKey   key = (PGPSecretKey)keys.get(i);
-            
-            if (key.getKeyID() == secKey.getKeyID())
+            PGPSecretKey key = (PGPSecretKey)secRing.keys.get(i);
+
+            if (key.getKeyID() == keyID)
             {
                 found = true;
-                keys.remove(i);
+                continue;
             }
+
+            result.add(key);
         }
-        
+
         if (!found)
         {
             return null;
         }
-        
-        return new PGPSecretKeyRing(keys, secRing.extraPubKeys);
+
+        return new PGPSecretKeyRing(result, secRing.extraPubKeys);
     }
 }

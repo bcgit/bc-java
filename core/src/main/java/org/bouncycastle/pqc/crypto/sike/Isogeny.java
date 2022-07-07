@@ -304,7 +304,7 @@ class Isogeny
         engine.fpx.fpsubPRIME(P.X[1], P.Z[0], t1[1]);
         engine.fpx.fp2mul_mont(t0, t1, s2);
         engine.fpx.fp2mul_mont(xz, s2, r2);
-        engine.fpx.sqrt_Fp2(r2, yz);//todo check
+        engine.fpx.sqrt_Fp2(r2, yz);
         engine.fpx.fp2copy(P.Z,invz);
         engine.fpx.fp2inv_mont_bingcd(invz);
         engine.fpx.fp2mul_mont(P.X, invz, R.X);
@@ -318,7 +318,6 @@ class Isogeny
     // If option = 0 then P <- P and Q <- Q, else if option = 0xFF...FF then P <- Q and Q <- P
     protected void swap_points(PointProj P, PointProj Q, long option)
     {
-        //todo/org : put this in the PointProj class
         long temp;
         int i;
 
