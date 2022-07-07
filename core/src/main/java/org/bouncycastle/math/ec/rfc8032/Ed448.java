@@ -9,6 +9,15 @@ import org.bouncycastle.math.ec.rfc7748.X448Field;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * A low-level implementation of the Ed448 and Ed448ph instantiations of the Edwards-Curve Digital Signature
+ * Algorithm specified in <a href="https://www.rfc-editor.org/rfc/rfc8032">RFC 8032</a>.
+ * <p>
+ * The implementation uses the "signed mult-comb" algorithm (for scalar multiplication by a fixed point) from
+ * <a href="https://ia.cr/2012/309">Mike Hamburg, "Fast and compact elliptic-curve cryptography"</a>. Standard
+ * <a href="https://hyperelliptic.org/EFD/g1p/auto-edwards-projective.html">projective coordinates</a> are
+ * used for most point arithmetic.
+ */
 public abstract class Ed448
 {
     // x^2 + y^2 == 1 - 39081 * x^2 * y^2
@@ -67,6 +76,7 @@ public abstract class Ed448
         0x005A0C2D, 0x07789C1E, 0x0A398408, 0x0A73736C, 0x0C7624BE, 0x003756C9, 0x02488762, 0x016EB6BC, 0x0693F467 };
     private static final int C_d = -39081;
 
+    private static final int WNAF_WIDTH = 5;
     private static final int WNAF_WIDTH_BASE = 7;
 
     // scalarMultBase supports varying blocks, teeth, spacing so long as their product is in range [449, 479]
@@ -77,22 +87,21 @@ public abstract class Ed448
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
-    private static final Object precompLock = new Object();
-    // TODO[ed448] Convert to PointPrecomp
-    private static PointExt[] precompBaseTable = null;
-    private static int[] precompBase = null;
+    private static final Object PRECOMP_LOCK = new Object();
+    private static PointAffine[] PRECOMP_BASE_WNAF = null;
+    private static int[] PRECOMP_BASE_COMB = null;
 
-    private static class PointExt
+    private static class PointAffine
+    {
+        int[] x = F.create();
+        int[] y = F.create();
+    }
+
+    private static class PointProjective
     {
         int[] x = F.create();
         int[] y = F.create();
         int[] z = F.create();
-    }
-
-    private static class PointPrecomp
-    {
-        int[] x = F.create();
-        int[] y = F.create();
     }
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
@@ -228,7 +237,7 @@ public abstract class Ed448
         }
     }
 
-    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointExt r)
+    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointProjective r)
     {
         byte[] py = copy(p, pOff, POINT_BYTES);
         if (!checkPointVar(py))
@@ -266,7 +275,7 @@ public abstract class Ed448
             F.negate(r.x, r.x);
         }
 
-        pointExtendXY(r);
+        F.one(r.z);
         return true;
     }
 
@@ -310,7 +319,7 @@ public abstract class Ed448
         encode24((int)(n >>> 32), bs, off + 4);
     }
 
-    private static int encodePoint(PointExt p, byte[] r, int rOff)
+    private static int encodePoint(PointProjective p, byte[] r, int rOff)
     {
         int[] x = F.create();
         int[] y = F.create();
@@ -494,7 +503,7 @@ public abstract class Ed448
             return false;
         }
 
-        PointExt pA = new PointExt();
+        PointProjective pA = new PointProjective();
         if (!decodePointVar(pk, pkOff, true, pA))
         {
             return false;
@@ -514,11 +523,44 @@ public abstract class Ed448
         int[] nA = new int[SCALAR_INTS];
         decodeScalar(k, 0, nA);
 
-        PointExt pR = new PointExt();
+        PointProjective pR = new PointProjective();
         scalarMultStrausVar(nS, nA, pA, pR);
 
         byte[] check = new byte[POINT_BYTES];
         return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
+    }
+
+    private static void invertZs(PointProjective[] points)
+    {
+        int count = points.length;
+        int[] cs = F.createTable(count);
+
+        int[] u = F.create();
+        F.copy(points[0].z, 0, u, 0);
+        F.copy(u, 0, cs, 0);
+
+        int i = 0;
+        while (++i < count)
+        {
+            F.mul(u, points[i].z, u);
+            F.copy(u, 0, cs, i * F.SIZE);
+        }
+
+        F.invVar(u, u);
+        --i;
+
+        int[] t = F.create();
+
+        while (i > 0)
+        {
+            int j = i--;
+            F.copy(cs, i * F.SIZE, t, 0);
+            F.mul(t, u, t);
+            F.mul(u, points[j].z, u);
+            F.copy(t, 0, points[j].z, 0);
+        }
+
+        F.copy(u, 0, points[0].z, 0);
     }
 
     private static boolean isNeutralElementVar(int[] x, int[] y, int[] z)
@@ -526,7 +568,40 @@ public abstract class Ed448
         return F.isZeroVar(x) && F.areEqualVar(y, z);
     }
 
-    private static void pointAdd(PointExt p, PointExt r)
+    private static void pointAdd(PointAffine p, PointProjective r)
+    {
+        int[] b = F.create();
+        int[] c = F.create();
+        int[] d = F.create();
+        int[] e = F.create();
+        int[] f = F.create();
+        int[] g = F.create();
+        int[] h = F.create();
+
+        F.sqr(r.z, b);
+        F.mul(p.x, r.x, c);
+        F.mul(p.y, r.y, d);
+        F.mul(c, d, e);
+        F.mul(e, -C_d, e);
+//        F.apm(b, e, f, g);
+        F.add(b, e, f);
+        F.sub(b, e, g);
+        F.add(p.y, p.x, h);
+        F.add(r.y, r.x, e);
+        F.mul(h, e, h);
+//        F.apm(d, c, b, e);
+        F.add(d, c, b);
+        F.sub(d, c, e);
+        F.carry(b);
+        F.sub(h, b, h);
+        F.mul(h, r.z, h);
+        F.mul(e, r.z, e);
+        F.mul(f, h, r.x);
+        F.mul(e, g, r.y);
+        F.mul(f, g, r.z);
+    }
+
+    private static void pointAdd(PointProjective p, PointProjective r)
     {
         int[] a = F.create();
         int[] b = F.create();
@@ -546,9 +621,9 @@ public abstract class Ed448
 //        F.apm(b, e, f, g);
         F.add(b, e, f);
         F.sub(b, e, g);
-        F.add(p.x, p.y, b);
-        F.add(r.x, r.y, e);
-        F.mul(b, e, h);
+        F.add(p.y, p.x, h);
+        F.add(r.y, r.x, e);
+        F.mul(h, e, h);
 //        F.apm(d, c, b, e);
         F.add(d, c, b);
         F.sub(d, c, e);
@@ -561,7 +636,51 @@ public abstract class Ed448
         F.mul(f, g, r.z);
     }
 
-    private static void pointAddVar(boolean negate, PointExt p, PointExt r)
+    private static void pointAddVar(boolean negate, PointAffine p, PointProjective r)
+    {
+        int[] b = F.create();
+        int[] c = F.create();
+        int[] d = F.create();
+        int[] e = F.create();
+        int[] f = F.create();
+        int[] g = F.create();
+        int[] h = F.create();
+
+        int[] nb, ne, nf, ng;
+        if (negate)
+        {
+            nb = e; ne = b; nf = g; ng = f;
+            F.sub(p.y, p.x, h);
+        }
+        else
+        {
+            nb = b; ne = e; nf = f; ng = g;
+            F.add(p.y, p.x, h);
+        }
+
+        F.sqr(r.z, b);
+        F.mul(p.x, r.x, c);
+        F.mul(p.y, r.y, d);
+        F.mul(c, d, e);
+        F.mul(e, -C_d, e);
+//        F.apm(b, e, nf, ng);
+        F.add(b, e, nf);
+        F.sub(b, e, ng);
+        F.add(r.y, r.x, e);
+        F.mul(h, e, h);
+//        F.apm(d, c, nb, e);
+        F.add(d, c, nb);
+        F.sub(d, c, ne);
+        F.carry(nb);
+        F.sub(h, b, h);
+        F.mul(h, r.z, h);
+        F.mul(e, r.z, e);
+        F.mul(f, h, r.x);
+        F.mul(e, g, r.y);
+        F.mul(f, g, r.z);
+    }
+
+    private static void pointAddVar(boolean negate, PointProjective p, PointProjective r)
     {
         int[] a = F.create();
         int[] b = F.create();
@@ -590,12 +709,12 @@ public abstract class Ed448
         F.mul(p.y, r.y, d);
         F.mul(c, d, e);
         F.mul(e, -C_d, e);
-//        F.apm(b, e, f, g);
+//        F.apm(b, e, nf, ng);
         F.add(b, e, nf);
         F.sub(b, e, ng);
-        F.add(r.x, r.y, e);
+        F.add(r.y, r.x, e);
         F.mul(h, e, h);
-//        F.apm(d, c, b, e);
+//        F.apm(d, c, nb, ne);
         F.add(d, c, nb);
         F.sub(d, c, ne);
         F.carry(nb);
@@ -607,54 +726,14 @@ public abstract class Ed448
         F.mul(f, g, r.z);
     }
 
-    private static void pointAddPrecomp(PointPrecomp p, PointExt r)
-    {
-        int[] b = F.create();
-        int[] c = F.create();
-        int[] d = F.create();
-        int[] e = F.create();
-        int[] f = F.create();
-        int[] g = F.create();
-        int[] h = F.create();
-
-        F.sqr(r.z, b);
-        F.mul(p.x, r.x, c);
-        F.mul(p.y, r.y, d);
-        F.mul(c, d, e);
-        F.mul(e, -C_d, e);
-//        F.apm(b, e, f, g);
-        F.add(b, e, f);
-        F.sub(b, e, g);
-        F.add(p.x, p.y, b);
-        F.add(r.x, r.y, e);
-        F.mul(b, e, h);
-//        F.apm(d, c, b, e);
-        F.add(d, c, b);
-        F.sub(d, c, e);
-        F.carry(b);
-        F.sub(h, b, h);
-        F.mul(h, r.z, h);
-        F.mul(e, r.z, e);
-        F.mul(f, h, r.x);
-        F.mul(e, g, r.y);
-        F.mul(f, g, r.z);
-    }
-
-    private static PointExt pointCopy(PointExt p)
-    {
-        PointExt r = new PointExt();
-        pointCopy(p, r);
-        return r;
-    }
-
-    private static void pointCopy(PointExt p, PointExt r)
+    private static void pointCopy(PointProjective p, PointProjective r)
     {
         F.copy(p.x, 0, r.x, 0);
         F.copy(p.y, 0, r.y, 0);
         F.copy(p.z, 0, r.z, 0);
     }
 
-    private static void pointDouble(PointExt r)
+    private static void pointDouble(PointProjective r)
     {
         int[] b = F.create();
         int[] c = F.create();
@@ -680,12 +759,7 @@ public abstract class Ed448
         F.mul(e, j, r.z);
     }
 
-    private static void pointExtendXY(PointExt p)
-    {
-        F.one(p.z);
-    }
-
-    private static void pointLookup(int block, int index, PointPrecomp p)
+    private static void pointLookup(int block, int index, PointAffine p)
     {
 //        assert 0 <= block && block < PRECOMP_BLOCKS;
 //        assert 0 <= index && index < PRECOMP_POINTS;
@@ -695,12 +769,12 @@ public abstract class Ed448
         for (int i = 0; i < PRECOMP_POINTS; ++i)
         {
             int cond = ((i ^ index) - 1) >> 31;
-            F.cmov(cond, precompBase, off, p.x, 0);     off += F.SIZE;
-            F.cmov(cond, precompBase, off, p.y, 0);     off += F.SIZE;
+            F.cmov(cond, PRECOMP_BASE_COMB, off, p.x, 0);     off += F.SIZE;
+            F.cmov(cond, PRECOMP_BASE_COMB, off, p.y, 0);     off += F.SIZE;
         }
     }
 
-    private static void pointLookup(int[] x, int n, int[] table, PointExt r)
+    private static void pointLookup(int[] x, int n, int[] table, PointProjective r)
     {
         // TODO This method is currently hardcoded to 4-bit windows and 8 precomputed points
 
@@ -723,7 +797,7 @@ public abstract class Ed448
         F.cnegate(sign, r.x);
     }
 
-    private static void pointLookup15(int[] table, PointExt r)
+    private static void pointLookup15(int[] table, PointProjective r)
     {
         int off = F.SIZE * 3 * 7;
 
@@ -732,12 +806,15 @@ public abstract class Ed448
         F.copy(table, off, r.z, 0);
     }
 
-    private static int[] pointPrecompute(PointExt p, int count)
+    private static int[] pointPrecompute(PointProjective p, int count)
     {
 //        assert count > 0;
 
-        PointExt q = pointCopy(p);
-        PointExt d = pointCopy(q);
+        PointProjective q = new PointProjective();
+        pointCopy(p, q);
+
+        PointProjective d = new PointProjective();
+        pointCopy(q, d);
         pointDouble(d);
 
         int[] table = F.createTable(count * 3);
@@ -761,24 +838,25 @@ public abstract class Ed448
         return table;
     }
 
-    private static PointExt[] pointPrecomputeVar(PointExt p, int count)
+    private static void pointPrecomputeVar(PointProjective p, PointProjective[] points, int count)
     {
 //        assert count > 0;
 
-        PointExt d = pointCopy(p);
+        PointProjective d = new PointProjective();
+        pointCopy(p, d);
         pointDouble(d);
 
-        PointExt[] table = new PointExt[count];
-        table[0] = pointCopy(p);
+        points[0] = new PointProjective();
+        pointCopy(p, points[0]);
         for (int i = 1; i < count; ++i)
         {
-            table[i] = pointCopy(table[i - 1]);
-            pointAddVar(false, d, table[i]);
+            points[i] = new PointProjective();
+            pointCopy(points[i - 1], points[i]);
+            pointAdd(d, points[i]);
         }
-        return table;
     }
 
-    private static void pointSetNeutral(PointExt p)
+    private static void pointSetNeutral(PointProjective p)
     {
         F.zero(p.x);
         F.one(p.y);
@@ -787,9 +865,9 @@ public abstract class Ed448
 
     public static void precompute()
     {
-        synchronized (precompLock)
+        synchronized (PRECOMP_LOCK)
         {
-            if (precompBase != null)
+            if (PRECOMP_BASE_WNAF != null && PRECOMP_BASE_COMB != null)
             {
                 return;
             }
@@ -797,106 +875,92 @@ public abstract class Ed448
 //            assert PRECOMP_RANGE > 448;
 //            assert PRECOMP_RANGE < 480;
 
-            PointExt p = new PointExt();
+            int wnafPoints = 1 << (WNAF_WIDTH_BASE - 2);
+            int combPoints = PRECOMP_BLOCKS * PRECOMP_POINTS;
+            int totalPoints = wnafPoints + combPoints;
+
+            PointProjective[] points = new PointProjective[totalPoints];
+
+            PointProjective p = new PointProjective();
             F.copy(B_x, 0, p.x, 0);
             F.copy(B_y, 0, p.y, 0);
-            pointExtendXY(p);
+            F.one(p.z);
 
-            precompBaseTable = pointPrecomputeVar(p, 1 << (WNAF_WIDTH_BASE - 2));
+            pointPrecomputeVar(p, points, wnafPoints);
 
-            precompBase = F.createTable(PRECOMP_BLOCKS * PRECOMP_POINTS * 2);
-
-            int off = 0;
-            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
+            int pointsIndex = wnafPoints;
+            PointProjective[] toothPowers = new PointProjective[PRECOMP_TEETH];
+            for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
             {
-                PointExt[] ds = new PointExt[PRECOMP_TEETH];
+                toothPowers[tooth] = new PointProjective();
+            }
+            for (int block = 0; block < PRECOMP_BLOCKS; ++block)
+            {
+                PointProjective sum = points[pointsIndex++] = new PointProjective();
 
-                PointExt sum = new PointExt();
-                pointSetNeutral(sum);
-
-                for (int t = 0; t < PRECOMP_TEETH; ++t)
+                for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
                 {
-                    pointAddVar(true, p, sum);
-                    pointDouble(p);
-
-                    ds[t] = pointCopy(p);
-
-                    if (b + t != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+                    if (tooth == 0)
                     {
-                        for (int s = 1; s < PRECOMP_SPACING; ++s)
+                        pointCopy(p, sum);
+                    }
+                    else
+                    {
+                        pointAdd(p, sum);
+                    }
+
+                    pointDouble(p);
+                    pointCopy(p, toothPowers[tooth]);
+
+                    if (block + tooth != PRECOMP_BLOCKS + PRECOMP_TEETH - 2)
+                    {
+                        for (int spacing = 1; spacing < PRECOMP_SPACING; ++spacing)
                         {
                             pointDouble(p);
                         }
                     }
                 }
 
-                PointExt[] points = new PointExt[PRECOMP_POINTS];
-                int k = 0;
-                points[k++] = sum;
+                F.negate(sum.x, sum.x);
 
-                for (int t = 0; t < (PRECOMP_TEETH - 1); ++t)
+                for (int tooth = 0; tooth < (PRECOMP_TEETH - 1); ++tooth)
                 {
-                    int size = 1 << t;
-                    for (int j = 0; j < size; ++j, ++k)
+                    int size = 1 << tooth;
+                    for (int j = 0; j < size; ++j, ++pointsIndex)
                     {
-                        points[k] = pointCopy(points[k - size]);
-                        pointAddVar(false, ds[t], points[k]);
+                        points[pointsIndex] = new PointProjective();
+                        pointCopy(points[pointsIndex - size], points[pointsIndex]);
+                        pointAdd(toothPowers[tooth], points[pointsIndex]);
                     }
-                }
-
-//                assert k == PRECOMP_POINTS;
-
-                int[] cs = F.createTable(PRECOMP_POINTS);
-
-                // TODO[ed448] A single batch inversion across all blocks?
-                {
-                    int[] u = F.create();
-                    F.copy(points[0].z, 0, u, 0);
-                    F.copy(u, 0, cs, 0);
-
-                    int i = 0;
-                    while (++i < PRECOMP_POINTS)
-                    {
-                        F.mul(u, points[i].z, u);
-                        F.copy(u, 0, cs, i * F.SIZE);
-                    }
-
-                    F.invVar(u, u);
-                    --i;
-
-                    int[] t = F.create();
-
-                    while (i > 0)
-                    {
-                        int j = i--;
-                        F.copy(cs, i * F.SIZE, t, 0);
-                        F.mul(t, u, t);
-                        F.copy(t, 0, cs, j * F.SIZE);
-                        F.mul(u, points[j].z, u);
-                    }
-
-                    F.copy(u, 0, cs, 0);
-                }
-
-                for (int i = 0; i < PRECOMP_POINTS; ++i)
-                {
-                    PointExt q = points[i];
-
-//                    F.invVar(q.z, q.z);
-                    F.copy(cs, i * F.SIZE, q.z, 0);
-
-                    F.mul(q.x, q.z, q.x);
-                    F.mul(q.y, q.z, q.y);
-
-//                    F.normalize(q.x);
-//                    F.normalize(q.y);
-
-                    F.copy(q.x, 0, precompBase, off);   off += F.SIZE;
-                    F.copy(q.y, 0, precompBase, off);   off += F.SIZE;
                 }
             }
+//            assert pointsIndex == totalPoints;
 
-//            assert off == precompBase.length;
+            invertZs(points);
+
+            PRECOMP_BASE_WNAF = new PointAffine[wnafPoints];
+            for (int i = 0; i < wnafPoints; ++i)
+            {
+                PointProjective q = points[i];
+                PointAffine r = PRECOMP_BASE_WNAF[i] = new PointAffine();
+
+                F.mul(q.x, q.z, r.x);       F.normalize(r.x);
+                F.mul(q.y, q.z, r.y);       F.normalize(r.y);
+            }
+
+            PRECOMP_BASE_COMB = F.createTable(combPoints * 2);
+            int off = 0;
+            for (int i = wnafPoints; i < totalPoints; ++i)
+            {
+                PointProjective q = points[i];
+
+                F.mul(q.x, q.z, q.x);       F.normalize(q.x);
+                F.mul(q.y, q.z, q.y);       F.normalize(q.y);
+
+                F.copy(q.x, 0, PRECOMP_BASE_COMB, off);     off += F.SIZE;
+                F.copy(q.y, 0, PRECOMP_BASE_COMB, off);     off += F.SIZE;
+            }
+//            assert off == PRECOMP_BASE_COMB.length;
         }
     }
 
@@ -1186,7 +1250,7 @@ public abstract class Ed448
         return r;
     }
 
-    private static void scalarMult(byte[] k, PointExt p, PointExt r)
+    private static void scalarMult(byte[] k, PointProjective p, PointProjective r)
     {
         int[] n = new int[SCALAR_INTS];
         decodeScalar(k, 0, n);
@@ -1201,7 +1265,7 @@ public abstract class Ed448
         }
 
         int[] table = pointPrecompute(p, 8);
-        PointExt q = new PointExt();
+        PointProjective q = new PointProjective();
 
         // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
         pointLookup15(table, r);
@@ -1225,13 +1289,13 @@ public abstract class Ed448
         }
     }
 
-    private static void scalarMultBase(byte[] k, PointExt r)
+    private static void scalarMultBase(byte[] k, PointProjective r)
     {
         // Equivalent (but much slower)
-//        PointExt p = new PointExt();
+//        PointProjective p = new PointProjective();
 //        F.copy(B_x, 0, p.x, 0);
 //        F.copy(B_y, 0, p.y, 0);
-//        pointExtendXY(p);
+//        F.one(p.z);
 //        scalarMult(k, p, r);
 
         precompute();
@@ -1248,7 +1312,7 @@ public abstract class Ed448
             //assert c == (1 << 31);
         }
 
-        PointPrecomp p = new PointPrecomp();
+        PointAffine p = new PointAffine();
 
         pointSetNeutral(r);
 
@@ -1278,7 +1342,7 @@ public abstract class Ed448
 
                 F.cnegate(sign, p.x);
 
-                pointAddPrecomp(p, r);
+                pointAdd(p, r);
             }
 
             if (--cOff < 0)
@@ -1292,7 +1356,7 @@ public abstract class Ed448
 
     private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
     {
-        PointExt p = new PointExt();
+        PointProjective p = new PointProjective();
         scalarMultBase(k, p);
         if (0 == encodePoint(p, r, rOff))
         {
@@ -1313,7 +1377,7 @@ public abstract class Ed448
         byte[] n = new byte[SCALAR_BYTES];
         pruneScalar(k, kOff, n);
 
-        PointExt p = new PointExt();
+        PointProjective p = new PointProjective();
         scalarMultBase(n, p);
         if (0 == checkPoint(p.x, p.y, p.z))
         {
@@ -1323,13 +1387,13 @@ public abstract class Ed448
         F.copy(p.y, 0, y, 0);
     }
 
-    private static void scalarMultOrderVar(PointExt p, PointExt r)
+    private static void scalarMultOrderVar(PointProjective p, PointProjective r)
     {
-        final int width = 5;
+        byte[] ws_p = getWnafVar(L, WNAF_WIDTH);
 
-        byte[] ws_p = getWnafVar(L, width);
-
-        PointExt[] tp = pointPrecomputeVar(p, 1 << (width - 2));
+        int count = 1 << (WNAF_WIDTH - 2);
+        PointProjective[] tp = new PointProjective[count];
+        pointPrecomputeVar(p, tp, count);
 
         pointSetNeutral(r);
 
@@ -1341,7 +1405,7 @@ public abstract class Ed448
                 int sign = wp >> 31;
                 int index = (wp ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), tp[index], r);
+                pointAddVar(sign != 0, tp[index], r);
             }
 
             if (--bit < 0)
@@ -1353,16 +1417,16 @@ public abstract class Ed448
         }
     }
 
-    private static void scalarMultStrausVar(int[] nb, int[] np, PointExt p, PointExt r)
+    private static void scalarMultStrausVar(int[] nb, int[] np, PointProjective p, PointProjective r)
     {
         precompute();
 
-        final int width = 5;
-
         byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
-        byte[] ws_p = getWnafVar(np, width);
+        byte[] ws_p = getWnafVar(np, WNAF_WIDTH);
 
-        PointExt[] tp = pointPrecomputeVar(p, 1 << (width - 2));
+        int count = 1 << (WNAF_WIDTH - 2);
+        PointProjective[] tp = new PointProjective[count];
+        pointPrecomputeVar(p, tp, count);
 
         pointSetNeutral(r);
 
@@ -1374,7 +1438,7 @@ public abstract class Ed448
                 int sign = wb >> 31;
                 int index = (wb ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), precompBaseTable[index], r);
+                pointAddVar(sign != 0, PRECOMP_BASE_WNAF[index], r);
             }
 
             int wp = ws_p[bit];
@@ -1383,7 +1447,7 @@ public abstract class Ed448
                 int sign = wp >> 31;
                 int index = (wp ^ sign) >>> 1;
 
-                pointAddVar((sign != 0), tp[index], r);
+                pointAddVar(sign != 0, tp[index], r);
             }
 
             if (--bit < 0)
@@ -1451,7 +1515,7 @@ public abstract class Ed448
 
     public static boolean validatePublicKeyFull(byte[] pk, int pkOff)
     {
-        PointExt p = new PointExt();
+        PointProjective p = new PointProjective();
         if (!decodePointVar(pk, pkOff, false, p))
         {
             return false;
@@ -1466,7 +1530,7 @@ public abstract class Ed448
             return false;
         }
 
-        PointExt r = new PointExt();
+        PointProjective r = new PointProjective();
         scalarMultOrderVar(p, r);
 
         F.normalize(r.x);
@@ -1478,7 +1542,7 @@ public abstract class Ed448
 
     public static boolean validatePublicKeyPartial(byte[] pk, int pkOff)
     {
-        PointExt p = new PointExt();
+        PointProjective p = new PointProjective();
         return decodePointVar(pk, pkOff, false, p);
     }
 

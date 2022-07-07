@@ -19,7 +19,6 @@ public class SIKEKEMExtractor
     {
         engine = param.getEngine();
         SIKEPrivateKeyParameters privateParams = (SIKEPrivateKeyParameters)key;
-        //todo: add compression check
     }
 
     public byte[] extractSecret(byte[] encapsulation)

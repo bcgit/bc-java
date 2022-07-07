@@ -341,18 +341,23 @@ public class PGPPublicKeyRing
         PGPPublicKeyRing pubRing,
         PGPPublicKey pubKey)
     {
-        List keys = new ArrayList(pubRing.keys);
+        int count = pubRing.keys.size();
+        long keyID = pubKey.getKeyID();
+
+        ArrayList result = new ArrayList(count);
         boolean found = false;
 
-        for (int i = 0; i < keys.size(); i++)
+        for (int i = 0; i < count; ++i)
         {
-            PGPPublicKey key = (PGPPublicKey)keys.get(i);
+            PGPPublicKey key = (PGPPublicKey)pubRing.keys.get(i);
 
-            if (key.getKeyID() == pubKey.getKeyID())
+            if (key.getKeyID() == keyID)
             {
                 found = true;
-                keys.remove(i);
+                continue;
             }
+
+            result.add(key);
         }
 
         if (!found)
@@ -360,7 +365,7 @@ public class PGPPublicKeyRing
             return null;
         }
 
-        return new PGPPublicKeyRing(keys);
+        return new PGPPublicKeyRing(result);
     }
 
     static PublicKeyPacket readPublicKeyPacket(BCPGInputStream in)
