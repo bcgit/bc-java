@@ -58,7 +58,7 @@ public class SPHINCSPlusSigner
 //        # Output: SPHINCS+ signature SIG
         // init
 
-        SPHINCSPlusEngine engine = privKey.getParameters().getEngine().get();
+        SPHINCSPlusEngine engine = privKey.getParameters().getEngine();
 
         // generate randomizer
         byte[] optRand = new byte[engine.N];
@@ -117,7 +117,7 @@ public class SPHINCSPlusSigner
         //# Output: Boolean
 
         // init
-        SPHINCSPlusEngine engine = pubKey.getParameters().getEngine().get();
+        SPHINCSPlusEngine engine = pubKey.getParameters().getEngine();
 
         ADRS adrs = new ADRS();
         SIG sig = new SIG(engine.N, engine.K, engine.A, engine.D, engine.H_PRIME, engine.WOTS_LEN, signature);

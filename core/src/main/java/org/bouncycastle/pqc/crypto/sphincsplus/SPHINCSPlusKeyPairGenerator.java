@@ -20,7 +20,7 @@ public class SPHINCSPlusKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        SPHINCSPlusEngine engine = parameters.getEngine().get();
+        SPHINCSPlusEngine engine = parameters.getEngine();
 
         SK sk = new SK(sec_rand(engine.N), sec_rand(engine.N));
         byte[] pkSeed = sec_rand(engine.N);
