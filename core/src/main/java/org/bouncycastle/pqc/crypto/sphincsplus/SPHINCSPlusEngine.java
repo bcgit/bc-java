@@ -196,9 +196,9 @@ abstract class SPHINCSPlusEngine
                 msgDigest.update(pkSeed, 0, pkSeed.length);
                 msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
                 msgMemo = ((Memoable)msgDigest).copy();
-                msgStateSaved = true;
+//                msgStateSaved = true;
             }
-            ((Memoable)msgDigest).reset(sha256Memo);
+//            ((Memoable)msgDigest).reset(sha256Memo);
 
 
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
@@ -265,9 +265,9 @@ abstract class SPHINCSPlusEngine
                 msgDigest.update(pkSeed, 0, pkSeed.length);
                 msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
                 msgMemo = ((Memoable)msgDigest).copy();
-                msgStateSaved = true;
+//                msgStateSaved = true;
             }
-            ((Memoable)msgDigest).reset(sha256Memo);
+//            ((Memoable)msgDigest).reset(sha256Memo);
 
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
             msgDigest.update(m, 0, m.length);
@@ -370,13 +370,6 @@ abstract class SPHINCSPlusEngine
             }
 
             return mask;
-        }
-
-        public SPHINCSPlusEngine get()
-        {
-            msgStateSaved = false;
-            sha256StateSaved = false;
-            return this;
         }
     }
 
