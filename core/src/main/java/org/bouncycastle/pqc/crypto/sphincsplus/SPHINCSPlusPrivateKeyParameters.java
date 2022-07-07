@@ -12,7 +12,7 @@ public class SPHINCSPlusPrivateKeyParameters
     public SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters parameters, byte[] skpkEncoded)
     {
         super(true, parameters);
-        int n = parameters.getEngine().N;
+        int n = parameters.getEngine().get().N;
         if (skpkEncoded.length != 4 * n)
         {
             throw new IllegalArgumentException("private key encoding does not match parameters");

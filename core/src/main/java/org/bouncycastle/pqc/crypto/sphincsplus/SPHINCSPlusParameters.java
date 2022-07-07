@@ -137,12 +137,12 @@ public class SPHINCSPlusParameters
     }
 
     private final String name;
-    private final SPHINCSPlusEngine engine;
+    private final SPHINCSPlusEngineProvider engineProvider;
 
-    private SPHINCSPlusParameters(String name, SPHINCSPlusEngine engine)
+    private SPHINCSPlusParameters(String name, SPHINCSPlusEngineProvider engine)
     {
         this.name = name;
-        this.engine = engine;
+        this.engineProvider = engine.get();
     }
 
     public String getName()
@@ -150,9 +150,9 @@ public class SPHINCSPlusParameters
         return name;
     }
 
-    SPHINCSPlusEngine getEngine()
+    SPHINCSPlusEngineProvider getEngine()
     {
-        return engine;
+        return engineProvider;
     }
 
     /**
