@@ -139,7 +139,7 @@ public class TlsClientProtocol
     protected void handle13HandshakeMessage(short type, HandshakeMessageInput buf)
         throws IOException
     {
-        if (!isTLSv13ConnectionState() || resumedSession)
+        if (!isTLSv13ConnectionState())
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -358,6 +358,11 @@ public class TlsClientProtocol
         if (connection_state > CS_CLIENT_HELLO
             && TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {
+            if (securityParameters.isResumedSession())
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+
             handle13HandshakeMessage(type, buf);
             return;
         }
@@ -367,7 +372,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (this.resumedSession)
+        if (securityParameters.isResumedSession())
         {
             if (type != HandshakeType.finished || this.connection_state != CS_SERVER_HELLO)
             {
@@ -909,7 +914,7 @@ public class TlsClientProtocol
         securityParameters.negotiatedVersion = server_version;
         TlsUtils.negotiatedVersionTLSClient(tlsClientContext, tlsClient);
 
-        this.resumedSession = false;
+        securityParameters.resumedSession = false;
         securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
         tlsClient.notifySessionID(TlsUtils.EMPTY_BYTES);
 
@@ -966,7 +971,7 @@ public class TlsClientProtocol
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
 
-            this.resumedSession = false;
+            securityParameters.resumedSession = false;
             securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
             tlsClient.notifySessionID(TlsUtils.EMPTY_BYTES);
 
@@ -1163,7 +1168,7 @@ public class TlsClientProtocol
             byte[] selectedSessionID = serverHello.getSessionID();
             securityParameters.sessionID = selectedSessionID;
             tlsClient.notifySessionID(selectedSessionID);
-            this.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
+            securityParameters.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
                 && Arrays.areEqual(selectedSessionID, this.tlsSession.getSessionID());
         }
 
@@ -1228,7 +1233,7 @@ public class TlsClientProtocol
                  * extensions appearing in the client hello, and send a server hello containing no
                  * extensions[.]
                  */
-                if (this.resumedSession)
+                if (securityParameters.isResumedSession())
                 {
                     // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
@@ -1326,6 +1331,7 @@ public class TlsClientProtocol
         {
             final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
                 serverExtensions);
+            final boolean resumedSession = securityParameters.isResumedSession();
 
             if (acceptedExtendedMasterSecret)
             {
@@ -1356,7 +1362,7 @@ public class TlsClientProtocol
         securityParameters.applicationProtocolSet = true;
 
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
-        if (this.resumedSession)
+        if (securityParameters.isResumedSession())
         {
             if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite()
                 || CompressionMethod._null != this.sessionParameters.getCompressionAlgorithm()
@@ -1395,7 +1401,7 @@ public class TlsClientProtocol
              * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
              * a session resumption handshake.
              */
-            if (!this.resumedSession)
+            if (!securityParameters.isResumedSession())
             {
                 // TODO[tls13] See RFC 8446 4.4.2.1
                 if (TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsExtensionsUtils.EXT_status_request_v2,
@@ -1421,7 +1427,7 @@ public class TlsClientProtocol
 
         applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
 
-        if (this.resumedSession)
+        if (securityParameters.isResumedSession())
         {
             securityParameters.masterSecret = sessionMasterSecret;
             this.recordStream.setPendingCipher(TlsUtils.initCipher(tlsClientContext));
@@ -1503,7 +1509,7 @@ public class TlsClientProtocol
         securityParameters.applicationProtocolSet = true;
 
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
-        if (resumedSession)
+        if (securityParameters.isResumedSession())
         {
             if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
                 || CompressionMethod._null != sessionParameters.getCompressionAlgorithm()

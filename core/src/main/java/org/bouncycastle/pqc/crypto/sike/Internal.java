@@ -5,6 +5,11 @@ import java.util.Properties;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
+
+import java.util.Properties;
+
 abstract class Internal
 {
         protected static final int RADIX = 64;

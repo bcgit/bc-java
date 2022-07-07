@@ -181,16 +181,6 @@ class Fpx
             {
                 return false;
             }
-
-//            //todo : find lt for unsigned longs
-//            if (x[i] < y[i])
-//            {
-//                return true;
-//            }
-//            else if (x[i] > y[i])
-//            {
-//                return false;
-//            }
         }
         return false;
     }
@@ -380,12 +370,10 @@ class Fpx
     // GF(p^2) division by two, c = a/2  in GF(p^2).
     protected void fp2div2(long[][] a, long[][] c)
     {
-        //todo/org : make fp class and change this to generic fpdiv2
         fpdiv2_PRIME(a[0], c[0]);
         fpdiv2_PRIME(a[1], c[1]);
     }
 
-    // todo/org : move to fp_generic
     // Modular division by two, c = a/2 mod PRIME.
     // Input : a in [0, 2*PRIME-1]
     // Output: c in [0, 2*PRIME-1]
@@ -406,7 +394,6 @@ class Fpx
         mp_shiftr1(c);
     }
 
-    // todo/org : move to fp_generic
     // Multiprecision subtraction with correction with 2*p, c = a-b+2p.
     private void mp_subPRIME_p2(long [] a, long[] b, long[] c)
     {
@@ -431,7 +418,6 @@ class Fpx
         }
     }
 
-    // todo/org : move to fp_generic
     // Multiprecision subtraction with correction with 4*p, c = a-b+4p.
     private void mp_subPRIME_p4(long[] a, long[] b, long[] c)
     {
@@ -458,7 +444,6 @@ class Fpx
         }
     }
 
-    // todo/org : move to fp_generic
     // Digit multiplication, digit * digit -> 2-digit result
     private void digit_x_digit(long a, long b, long[] c)
     {
@@ -493,7 +478,6 @@ class Fpx
         c[1] ^= (ahbh & mask_high) + carry; // C11
     }
 
-    // todo/org : move to fp_generic
     // Efficient Montgomery reduction using comba and exploiting the special form of the prime PRIME.
     // mc = ma*R^-1 mod PRIMEx2, where R = 2^448.
     // If ma < 2^448*PRIME, the output mc is in the range [0, 2*PRIME-1].
@@ -603,9 +587,6 @@ class Fpx
 
     protected static boolean subarrayEquals(long[] a, long[] b, int length)
     {
-//        if(a.length < length || b.length < length)
-//            return false;
-
         for (int i = 0; i < length; i++)
         {
             if(a[i] != b[i])
@@ -617,9 +598,6 @@ class Fpx
     protected static boolean subarrayEquals(long[][] a, long[][] b, int length)
     {
         int nwords_feild = b[0].length;
-//        if(a[0].length < length || b[0].length < length)
-//            return false;
-
         for (int i = 0; i < length; i++)
         {
             if(a[i/nwords_feild][i%nwords_feild] != b[i/nwords_feild][i%nwords_feild])
@@ -631,9 +609,6 @@ class Fpx
     protected static boolean subarrayEquals(long[][] a, long[][] b, int bOffset, int length)
     {
         int nwords_feild = b[0].length;
-//        if(a[0].length*2 < length || b[0].length*2 < length)
-//            return false;
-
         for (int i = 0; i < length; i++)
         {
             if(a[i/nwords_feild][i%nwords_feild] != b[(i + bOffset)/nwords_feild][(i+bOffset)%nwords_feild])
@@ -645,9 +620,6 @@ class Fpx
     protected static boolean subarrayEquals(long[][] a, long[] b, int bOffset, int length)
     {
         int nwords_field = a[0].length;
-//        if(a[0].length < length || b.length < length)
-//            return false;
-
         for (int i = 0; i < length; i++)
         {
             if(a[i/nwords_field][i%nwords_field] != b[(i + bOffset)])
@@ -665,7 +637,6 @@ class Fpx
                t2 = new long[engine.params.NWORDS_FIELD],
                t3 = new long[engine.params.NWORDS_FIELD];
 
-//        digit_t *a  = (long[])u[0], *b  = (long[])u[1];
         int i;
 
         fpsqr_mont(u[0], t0);                   // t0 = a^2
@@ -705,7 +676,6 @@ class Fpx
         }
     }
 
-    // todo/org : move to fp_generic
     // GF(p^2) squaring using Montgomery arithmetic, c = a^2 in GF(p^2).
     // Inputs: a = a0+a1*i, where a0, a1 are in [0, 2*p-1]
     // Output: c = c0+c1*i, where c0, c1 are in [0, 2*p-1]
@@ -722,7 +692,6 @@ class Fpx
         fpmul_mont(t3, a[1], c[1]);             // c1 = 2a0*a1
     }
 
-    // todo/org : move to fp_generic
     // Modular addition, c = a+b mod PRIME.
     // Inputs: a, b in [0, 2*PRIME-1]
     // Output: c in [0, 2*PRIME-1]
@@ -777,7 +746,6 @@ class Fpx
         fpmul_mont(a[0], t0, a[0]);    // a0 = t0*a0
     }
 
-    // todo/org : move to fp_generic
     // Modular subtraction, c = a-b mod PRIME.
     // Inputs: a, b in [0, 2*PRIME-1]
     // Output: c in [0, 2*PRIME-1]
@@ -856,7 +824,6 @@ class Fpx
         }
     }
 
-    // todo/org : move to fp_generic
     // Modular negation, a = -a mod PRIME.
     // Input/output: a in [0, 2*PRIME-1]
     protected void fpnegPRIME(long[] a)
@@ -873,7 +840,6 @@ class Fpx
         }
     }
 
-    // todo/org : move to fp_generic
     // Conversion of a GF(p^2) element from Montgomery representation to standard representation,
     // c_i = ma_i*R^(-1) = a_i in GF(p^2).
     protected void from_fp2mont(long[][] ma, long[][] c)
@@ -882,7 +848,6 @@ class Fpx
         from_mont(ma[1], c[1]);
     }
 
-    // todo/org : move to fp_generic
     // Conversion of GF(p^2) element from Montgomery to standard representation, and encoding by removing leading 0 bytes
     protected void fp2_encode(long[][] x, byte[] enc, int encOffset)
     {
@@ -1230,14 +1195,8 @@ class Fpx
 
         for (int i = (2*engine.params.NWORDS_ORDER-1); i >= 0; i--)
         {
-//            System.out.println("i: " + i);
-//            System.out.printf("val: %016x\n", val[i]);
-//            System.out.printf("val: %016x\n", a[i/2]);
-//            System.out.printf("r<<: %016x\n", ( ((long)r << (4*8))));
             temp = ((long)r << (4*8)) | ((long)val[i]) & 0x00000000ffffffffL;
-//            System.out.printf("temp: %016x\n", temp);
             r = (int)(temp % 3);
-//            System.out.printf("r: %d\n", r);
         }
 
     return r;
@@ -1260,7 +1219,6 @@ class Fpx
     }
 
 
-    // todo/org : move to fp_generic
     // Modular correction to reduce field element a in [0, 2*PRIME-1] to [0, PRIME-1].
     protected void fpcorrectionPRIME(long[] a)
     {
@@ -1594,7 +1552,6 @@ class Fpx
 
         mp_add(a[0], a[1], t1, engine.params.NWORDS_FIELD);            // t1 = a0+a1
         mp_add(b, bOffset, b, bOffset + engine.params.NWORDS_FIELD, t2,  0,engine.params.NWORDS_FIELD);            // t2 = b0+b1
-        // todo swapped a  and b
         mp_mul(b, bOffset, a[0], tt1, engine.params.NWORDS_FIELD);           // tt1 = a0*b0
         mp_mul(b,bOffset + engine.params.NWORDS_FIELD, a[1], tt2, engine.params.NWORDS_FIELD);           // tt2 = a1*b1
         mp_mul(t1, t2, tt3, engine.params.NWORDS_FIELD);               // tt3 = (a0+a1)*(b0+b1)
@@ -1645,14 +1602,6 @@ class Fpx
             {
                 return false;
             }
-//            if (x[i] < y[i])
-//            {
-//                return true;
-//            }
-//            else if (x[i] > y[i])
-//            {
-//                return false;
-//            }
         }
         return false;
     }
@@ -1796,7 +1745,6 @@ class Fpx
     // GF(p^2) addition, c = a+b in GF(p^2).
     protected void fp2add(long[][] a, long[][] b, long[][] c)
     {
-        //todo/org : make fp class and change this to generic function
         fpaddPRIME(a[0], b[0], c[0]);
         fpaddPRIME(a[1], b[1], c[1]);
     }
@@ -1804,7 +1752,6 @@ class Fpx
     // GF(p^2) subtraction, c = a-b in GF(p^2).
     protected void fp2sub(long[][] a, long[][] b, long[][] c)
     {
-        //todo/org : make fp class and change this to generic function
         fpsubPRIME(a[0], b[0], c[0]);
         fpsubPRIME(a[1], b[1], c[1]);
     }
@@ -1812,7 +1759,6 @@ class Fpx
     // GF(p^2) subtraction with correction with 4*p, c = a-b+4p in GF(p^2).
     private void mp2_sub_p4(long[][] a, long[][] b, long[][] c)
     {
-        //todo/org : make fp class and change this to generic function
         mp_subPRIME_p4(a[0], b[0], c[0]);
         mp_subPRIME_p4(a[1], b[1], c[1]);
     }
