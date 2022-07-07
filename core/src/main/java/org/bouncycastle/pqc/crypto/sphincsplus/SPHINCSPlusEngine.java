@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.sphincsplus;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.NonMemoableDigest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -10,9 +11,12 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.MGFParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 abstract class SPHINCSPlusEngine
+    implements SPHINCSPlusEngineProvider
 {
     final boolean robust;
 
@@ -122,15 +126,23 @@ abstract class SPHINCSPlusEngine
         private final MGF1BytesGenerator mgf1;
         private final byte[] hmacBuf;
         private final Digest msgDigest;
+
+        private Memoable msgMemo;
         private final byte[] msgDigestBuf;
         private final int bl;
 
-        private final Digest sha256 = new SHA256Digest();
+        private SHA256Digest sha256 = new SHA256Digest();
         private final byte[] sha256Buf = new byte[sha256.getDigestSize()];
+
+        private Memoable sha256Memo;
+
+        private boolean msgStateSaved = false;
+        private boolean sha256StateSaved = false;
 
         public Sha2Engine(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             super(robust, n, w, d, a, k, h);
+
             this.treeDigest = new SHA256Digest();
             if (n == 16)
             {
@@ -147,6 +159,7 @@ abstract class SPHINCSPlusEngine
                 this.bl = 128;
             }
 
+
             this.hmacBuf = new byte[treeHMac.getMacSize()];
             this.msgDigestBuf = new byte[msgDigest.getDigestSize()];
         }
@@ -160,11 +173,19 @@ abstract class SPHINCSPlusEngine
                 m1 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1);
             }
 
-            sha256.update(pkSeed, 0, pkSeed.length);
-            sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+            if(!sha256StateSaved)
+            {
+                sha256.update(pkSeed, 0, pkSeed.length);
+                sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+                sha256Memo = sha256.copy();
+                sha256StateSaved = true;
+            }
+            sha256.reset(sha256Memo);
+
             sha256.update(compressedADRS, 0, compressedADRS.length);
             sha256.update(m1, 0, m1.length);
             sha256.doFinal(sha256Buf, 0);
+
 
             return Arrays.copyOfRange(sha256Buf, 0, N);
         }
@@ -173,8 +194,16 @@ abstract class SPHINCSPlusEngine
         {
             byte[] compressedADRS = compressedADRS(adrs);
 
-            msgDigest.update(pkSeed, 0, pkSeed.length);
-            msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
+            if(!msgStateSaved)
+            {
+                msgDigest.update(pkSeed, 0, pkSeed.length);
+                msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+                msgMemo = ((Memoable)msgDigest).copy();
+                msgStateSaved = true;
+            }
+            ((Memoable)msgDigest).reset(sha256Memo);
+
+
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
             if (robust)
             {
@@ -234,8 +263,15 @@ abstract class SPHINCSPlusEngine
                 m = bitmask(Arrays.concatenate(pkSeed, compressedADRS), m);
             }
 
-            msgDigest.update(pkSeed, 0, pkSeed.length);
-            msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
+            if(!msgStateSaved)
+            {
+                msgDigest.update(pkSeed, 0, pkSeed.length);
+                msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+                msgMemo = ((Memoable)msgDigest).copy();
+                msgStateSaved = true;
+            }
+            ((Memoable)msgDigest).reset(sha256Memo);
+
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
             msgDigest.update(m, 0, m.length);
             msgDigest.doFinal(msgDigestBuf, 0);
@@ -247,8 +283,14 @@ abstract class SPHINCSPlusEngine
         {
             int n = skSeed.length;
 
-            sha256.update(pkSeed, 0, pkSeed.length);
-            sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+            if(!sha256StateSaved)
+            {
+                sha256.update(pkSeed, 0, pkSeed.length);
+                sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+                sha256Memo = sha256.copy();
+                sha256StateSaved = true;
+            }
+            sha256.reset(sha256Memo);
 
             byte[] compressedADRS = compressedADRS(adrs);
 
@@ -331,6 +373,13 @@ abstract class SPHINCSPlusEngine
             }
 
             return mask;
+        }
+
+        public SPHINCSPlusEngine get()
+        {
+            msgStateSaved = false;
+            sha256StateSaved = false;
+            return this;
         }
     }
 
@@ -497,6 +546,11 @@ abstract class SPHINCSPlusEngine
             }
 
             return mask;
+        }
+
+        public SPHINCSPlusEngine get()
+        {
+            return this;
         }
     }
 }
