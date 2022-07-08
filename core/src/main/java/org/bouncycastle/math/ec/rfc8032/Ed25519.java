@@ -927,8 +927,8 @@ public abstract class Ed25519
             PointTemp t = new PointTemp();
 
             PointAffine b = new PointAffine();
-            b.x = B_x;
-            b.y = B_y;
+            F.copy(B_x, 0, b.x, 0);
+            F.copy(B_y, 0, b.y, 0);
 
             pointPrecompute(b, points, wnafPoints, t);
 
