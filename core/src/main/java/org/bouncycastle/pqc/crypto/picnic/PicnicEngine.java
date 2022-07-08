@@ -12,57 +12,62 @@ class PicnicEngine
 {
     private static final Logger LOG = Logger.getLogger(PicnicEngine.class.getName());
 
-    /// parameters
-    private final int CRYPTO_SECRETKEYBYTES;
-    private final int CRYPTO_PUBLICKEYBYTES;
-    private final int CRYPTO_BYTES;
-
-
-
-    // varies between parameter sets
-    protected int numRounds;
-    private int numSboxes;
-    protected int stateSizeBits;
-    protected int stateSizeBytes;
-    protected int stateSizeWords;
-    protected int andSizeBytes;
-    private int UnruhGWithoutInputBytes;
-    protected int UnruhGWithInputBytes;
-    protected int numMPCRounds;          // T
-    protected int numOpenedRounds;       // u
-    protected int numMPCParties;         // N
-    protected int seedSizeBytes;
-    protected int digestSizeBytes;
-
-    static int pqSecurityLevel;
-
-
-
     // same for all parameter sets
     protected static final int saltSizeBytes = 32;
     private static final int MAX_DIGEST_SIZE = 64;
 
     private static final int WORD_SIZE_BITS = 32;// the word size for the implementation. Not a LowMC parameter
     private static final int LOWMC_MAX_STATE_SIZE = 64;
-    protected static final int LOWMC_MAX_WORDS = (LOWMC_MAX_STATE_SIZE/4);
+    protected static final int LOWMC_MAX_WORDS = (LOWMC_MAX_STATE_SIZE / 4);
     protected static final int LOWMC_MAX_KEY_BITS = 256;
-    protected static final int LOWMC_MAX_AND_GATES = (3*38*10 + 4);   /* Rounded to nearest byte */
+    protected static final int LOWMC_MAX_AND_GATES = (3 * 38 * 10 + 4);   /* Rounded to nearest byte */
     private static final int MAX_AUX_BYTES = ((LOWMC_MAX_AND_GATES + LOWMC_MAX_KEY_BITS) / 8 + 1);
 
     /* Maximum lengths in bytes */
     private static final int PICNIC_MAX_LOWMC_BLOCK_SIZE = 32;
-    private static final int PICNIC_MAX_PUBLICKEY_SIZE =  (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);/**< Largest serialized public key size, in bytes */
-    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);/**< Largest serialized private key size, in bytes */
-    private static final int PICNIC_MAX_SIGNATURE_SIZE =  209522;/**< Largest signature size, in bytes */
+    private static final int PICNIC_MAX_PUBLICKEY_SIZE = (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);
+    /**
+     * < Largest serialized public key size, in bytes
+     */
+    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);
+    /**
+     * < Largest serialized private key size, in bytes
+     */
+    private static final int PICNIC_MAX_SIGNATURE_SIZE = 209522;
+    /**
+     * < Largest signature size, in bytes
+     */
 
     private static final int TRANSFORM_FS = 0;
     private static final int TRANSFORM_UR = 1;
     private static final int TRANSFORM_INVALID = 255;
 
+    /// parameters
+    private final int CRYPTO_SECRETKEYBYTES;
+    private final int CRYPTO_PUBLICKEYBYTES;
+    private final int CRYPTO_BYTES;
+
+    // varies between parameter sets
+    protected final int numRounds;
+    protected final int numSboxes;
+    protected final int stateSizeBits;
+    protected final int stateSizeBytes;
+    protected final int stateSizeWords;
+    protected final int andSizeBytes;
+    protected final int UnruhGWithoutInputBytes;
+    protected final int UnruhGWithInputBytes;
+    protected final int numMPCRounds;          // T
+    protected final int numOpenedRounds;       // u
+    protected final int numMPCParties;         // N
+    protected final int seedSizeBytes;
+    protected final int digestSizeBytes;
+    protected final int pqSecurityLevel;
+
+    protected final Xof digest;
+
     ///
     private final int transform;
     private final int parameters;
-    protected final Xof digest;
     private int signatureLength;
 
     public int getSecretKeySize()
@@ -101,6 +106,7 @@ class PicnicEngine
                 numSboxes = 10;
                 numRounds = 20;
                 digestSizeBytes = 32;
+                numOpenedRounds = 0;
                 break;
             case 3:
             case 4:
@@ -113,6 +119,7 @@ class PicnicEngine
                 numSboxes = 10;
                 numRounds = 30;
                 digestSizeBytes = 48;
+                numOpenedRounds = 0;
                 break;
             case 5:
             case 6:
@@ -125,6 +132,7 @@ class PicnicEngine
                 numSboxes = 10;
                 numRounds = 38;
                 digestSizeBytes = 64;
+                numOpenedRounds = 0;
                 break;
             case 7:
                 /*Picnic3_L1*/
@@ -168,6 +176,7 @@ class PicnicEngine
                 numSboxes = 43;
                 numRounds = 4;
                 digestSizeBytes = 32;
+                numOpenedRounds = 0;
                 break;
             case 11:
                 /*Picnic_L3_full*/
@@ -178,6 +187,7 @@ class PicnicEngine
                 numSboxes = 64;
                 numRounds = 4;
                 digestSizeBytes = 48;
+                numOpenedRounds = 0;
                 break;
             case 12:
                 /*Picnic_L5_full*/
@@ -188,7 +198,10 @@ class PicnicEngine
                 numSboxes = 85;
                 numRounds = 4;
                 digestSizeBytes = 64;
+                numOpenedRounds = 0;
                 break;
+        default:
+            throw new IllegalArgumentException("unknown parameter set " + parameters);
         }
 
         switch (parameters)
@@ -290,11 +303,15 @@ class PicnicEngine
                 break;
         }
 
-
         if (transform == 1)
         {
             UnruhGWithoutInputBytes = seedSizeBytes + andSizeBytes;
             UnruhGWithInputBytes = UnruhGWithoutInputBytes + stateSizeBytes;
+        }
+        else
+        {
+            UnruhGWithoutInputBytes = 0;
+            UnruhGWithInputBytes = 0;
         }
 
         if (stateSizeBits == 128 || stateSizeBits == 129)
