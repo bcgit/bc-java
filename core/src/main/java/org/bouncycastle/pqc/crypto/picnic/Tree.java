@@ -32,6 +32,7 @@ class Tree
     {
         return this.numNodes - this.numLeaves;
     }
+
     public Tree(PicnicEngine engine, int numLeaves, int dataSize)
     {
         this.engine = engine;
