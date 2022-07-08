@@ -16,8 +16,6 @@ public class NISTSecureRandom
     private byte[] personalization;
     private byte[] key;
     private byte[] v;
-    int reseed_counuter = 1;
-
 
     /**
      * Return a seeded FixedSecureRandom representing the result of processing a
@@ -67,7 +65,6 @@ public class NISTSecureRandom
     private void init(int strength)
     {
         randombytes_init(seed, personalization, strength);
-        reseed_counuter = 1;
     }
 
     @Override
@@ -109,7 +106,6 @@ public class NISTSecureRandom
         }
 
         AES256_CTR_DRBG_Update(null, key, v);
-        reseed_counuter++;
     }
 
 
@@ -188,10 +184,6 @@ public class NISTSecureRandom
         key = new byte[32];
         v = new byte[16];
 
-
         AES256_CTR_DRBG_Update(seedMaterial, key, v);
-
-        reseed_counuter = 1;
-
     }
 }
