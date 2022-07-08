@@ -21,13 +21,13 @@ public class PicnicParameters
 
     //todo add all parameter sets
     private final String name;
-    private final PicnicEngine engine;
+    private final int    param;
 
     //todo make private
-    public PicnicParameters(String name, int param)
+    public PicnicParameters(String name, final int param)
     {
         this.name = name;
-        this.engine = new PicnicEngine(param);
+        this.param = param;
     }
 
     public String getName()
@@ -35,8 +35,8 @@ public class PicnicParameters
         return name;
     }
 
-    public PicnicEngine getEngine()
+    PicnicEngine getEngine()
     {
-        return engine;
+        return new PicnicEngine(param);
     }
 }
