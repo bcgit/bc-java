@@ -23,8 +23,7 @@ public class PicnicParameters
     private final String name;
     private final int    param;
 
-    //todo make private
-    public PicnicParameters(String name, final int param)
+    private PicnicParameters(String name, final int param)
     {
         this.name = name;
         this.param = param;
