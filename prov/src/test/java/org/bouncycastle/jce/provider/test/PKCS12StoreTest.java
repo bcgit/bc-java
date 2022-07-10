@@ -28,8 +28,10 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSequenceParser;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
@@ -41,6 +43,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -1345,11 +1348,48 @@ public class PKCS12StoreTest
             fail("Did not return alias for key certificate privateKey");
         }
 
+        KeyPair kp2 = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ca = TestUtils.generateRSAKeyPair();
+        KeyPair kp2ee = TestUtils.generateRSAKeyPair();
+        KeyPair kp3ee = TestUtils.generateRSAKeyPair();
+
+        X509Certificate kp2Root = TestUtils.generateRootCert(kp2, new X500Name("CN=KP2 ROOT"));
+        X509Certificate kp2CA = TestUtils.generateIntermediateCert(kp2ca.getPublic(), new X500Name("CN=KP2 CA"), kp2.getPrivate(), kp2Root);
+        X509Certificate kp2EE = TestUtils.generateEndEntityCert(kp2ee.getPublic(), new X500Name("CN=KP2 EE"), KeyPurposeId.id_kp_codeSigning, kp2ca.getPrivate(), kp2CA);
+        X509Certificate kp3EE = TestUtils.generateEndEntityCert(kp3ee.getPublic(), new X500Name("CN=KP3 EE"), KeyPurposeId.id_kp_capwapAC, KeyPurposeId.id_kp_capwapWTP, kp2ca.getPrivate(), kp2CA);
+
+        store.setCertificateEntry("kp2Root", kp2Root);       // should have any key usage
+        store.setCertificateEntry("kp2EE", kp2EE);
+        store.setCertificateEntry("kp3EE", kp3EE);
+
         ByteArrayOutputStream store1Stream = new ByteArrayOutputStream();
 
         store.store(store1Stream, passwd);
 
         testNoExtraLocalKeyID(store1Stream.toByteArray());
+
+        // trusted key entry test
+        store = KeyStore.getInstance("PKCS12", BC);
+
+        store.load(new ByteArrayInputStream(store1Stream.toByteArray()), passwd);
+
+        PKCS12BagAttributeCarrier usage1 = (PKCS12BagAttributeCarrier)store.getCertificate("kp2Root");
+
+        ASN1Encodable keyUsageValue1 = usage1.getBagAttribute(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+
+        isEquals(KeyPurposeId.anyExtendedKeyUsage, keyUsageValue1);
+
+        PKCS12BagAttributeCarrier usage2 = (PKCS12BagAttributeCarrier)store.getCertificate("kp2EE");
+
+        ASN1Encodable keyUsageValue2 = usage2.getBagAttribute(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+
+        isEquals(KeyPurposeId.id_kp_codeSigning, keyUsageValue2);
+
+        PKCS12BagAttributeCarrier usage3 = (PKCS12BagAttributeCarrier)store.getCertificate("kp3EE");
+
+        ASN1Encodable keyUsageValue3 = usage3.getBagAttribute(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+
+        isEquals(new DERSet(new ASN1Encodable[] { KeyPurposeId.id_kp_capwapAC, KeyPurposeId.id_kp_capwapWTP }), keyUsageValue3);
 
         //
         // no friendly name test
