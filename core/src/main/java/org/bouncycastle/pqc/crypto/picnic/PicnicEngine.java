@@ -351,7 +351,6 @@ class PicnicEngine
             Signature2 sig = new Signature2(this);
             deserializeSignature2(sig, signature, sigLen,  message.length + 4);
 
-
             return verify_picnic3(sig, ciphertext, plaintext, message);
         }
         else

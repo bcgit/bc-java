@@ -8,10 +8,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestingMessageSigner;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowParameters;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowSigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 

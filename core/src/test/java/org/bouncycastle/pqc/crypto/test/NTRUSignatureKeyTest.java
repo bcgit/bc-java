@@ -6,11 +6,11 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigner;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUSigningPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUSigner;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUSigningKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUSigningKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUSigningPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUSigningPublicKeyParameters;
 
 public class NTRUSignatureKeyTest
     extends TestCase
