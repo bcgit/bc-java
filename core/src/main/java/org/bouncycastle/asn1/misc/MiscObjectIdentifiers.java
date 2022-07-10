@@ -161,4 +161,6 @@ public interface MiscObjectIdentifiers
     //
     //    Algorithm(80) Composite(4) CompositeKey(1)
     ASN1ObjectIdentifier id_composite_key = new ASN1ObjectIdentifier("2.16.840.1.114027.80.4.1");
+
+    ASN1ObjectIdentifier id_oracle_pkcs12_trusted_key_usage = new ASN1ObjectIdentifier("2.16.840.1.113894.746875.1.1");
 }
