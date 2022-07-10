@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss;
+package org.bouncycastle.pqc.legacy.crypto.gmss;
 
 import java.security.SecureRandom;
 
@@ -7,10 +7,10 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.gmss.util.GMSSRandom;
-import org.bouncycastle.pqc.crypto.gmss.util.GMSSUtil;
-import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSVerify;
-import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSignature;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.GMSSRandom;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.GMSSUtil;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.WinternitzOTSVerify;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.WinternitzOTSignature;
 import org.bouncycastle.util.Arrays;
 
 /**

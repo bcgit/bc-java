@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss.util;
+package org.bouncycastle.pqc.legacy.crypto.gmss.util;
 
 import org.bouncycastle.crypto.Digest;
 

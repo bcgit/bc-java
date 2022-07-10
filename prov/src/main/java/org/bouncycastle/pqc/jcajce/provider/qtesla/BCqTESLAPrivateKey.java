@@ -8,12 +8,12 @@ import java.security.PrivateKey;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.QTESLAKey;
 import org.bouncycastle.pqc.jcajce.spec.QTESLAParameterSpec;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.util.Arrays;
 
 public class BCqTESLAPrivateKey

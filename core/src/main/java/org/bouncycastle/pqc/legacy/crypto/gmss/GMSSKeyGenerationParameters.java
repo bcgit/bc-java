@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss;
+package org.bouncycastle.pqc.legacy.crypto.gmss;
 
 import java.security.SecureRandom;
 
