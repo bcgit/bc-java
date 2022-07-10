@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import junit.framework.TestCase;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEncryptionKeyGenerationParameters;
 
 public class NTRUEncryptionParametersTest
     extends TestCase

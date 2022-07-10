@@ -9,8 +9,8 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.pqc.crypto.rainbow.Layer;
-import org.bouncycastle.pqc.crypto.rainbow.util.RainbowUtil;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.Layer;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.util.RainbowUtil;
 
 /**
  * Return the key data to encode in the PrivateKeyInfo structure.

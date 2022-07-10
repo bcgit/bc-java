@@ -11,19 +11,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class QTESLATest
     extends TestCase

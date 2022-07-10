@@ -1,7 +1,7 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.pqc.crypto.ntru.IndexGenerator.BitString;
+import org.bouncycastle.pqc.legacy.crypto.ntru.IndexGenerator.BitString;
 import org.bouncycastle.util.Arrays;
 
 public class BitStringTest

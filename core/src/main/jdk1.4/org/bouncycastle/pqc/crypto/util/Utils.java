@@ -12,7 +12,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.util.Integers;
 
