@@ -7,17 +7,17 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEncryptionPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUEngine;
-import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
-import org.bouncycastle.pqc.math.ntru.polynomial.DenseTernaryPolynomial;
-import org.bouncycastle.pqc.math.ntru.polynomial.IntegerPolynomial;
-import org.bouncycastle.pqc.math.ntru.polynomial.Polynomial;
-import org.bouncycastle.pqc.math.ntru.polynomial.SparseTernaryPolynomial;
-import org.bouncycastle.pqc.math.ntru.polynomial.TernaryPolynomial;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEncryptionKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEncryptionKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEncryptionPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEncryptionPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUEngine;
+import org.bouncycastle.pqc.legacy.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.legacy.math.ntru.polynomial.DenseTernaryPolynomial;
+import org.bouncycastle.pqc.legacy.math.ntru.polynomial.IntegerPolynomial;
+import org.bouncycastle.pqc.legacy.math.ntru.polynomial.Polynomial;
+import org.bouncycastle.pqc.legacy.math.ntru.polynomial.SparseTernaryPolynomial;
+import org.bouncycastle.pqc.legacy.math.ntru.polynomial.TernaryPolynomial;
 import org.bouncycastle.util.Arrays;
 
 public class NTRUEncryptTest
