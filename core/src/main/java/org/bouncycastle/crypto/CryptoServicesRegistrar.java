@@ -29,7 +29,7 @@ public final class CryptoServicesRegistrar
     private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
 
     private static final Object cacheLock = new Object();
-    private static SecureRandom defaultSecureRandom;
+    private static SecureRandomProvider defaultSecureRandomProvider;
 
     static
     {
@@ -109,22 +109,29 @@ public final class CryptoServicesRegistrar
     {
         synchronized (cacheLock)
         {
-            if (null != defaultSecureRandom)
+            if (null != defaultSecureRandomProvider)
             {
-                return defaultSecureRandom;
+                return defaultSecureRandomProvider.get();
             }
         }
 
-        SecureRandom tmp = new SecureRandom();
+        final SecureRandom tmp = new SecureRandom();
 
         synchronized (cacheLock)
         {
-            if (null == defaultSecureRandom)
+            if (null == defaultSecureRandomProvider)
             {
-                defaultSecureRandom = tmp;
+                defaultSecureRandomProvider = new SecureRandomProvider()
+                {
+                    @Override
+                    public SecureRandom get()
+                    {
+                        return tmp;
+                    }
+                };
             }
 
-            return defaultSecureRandom;
+            return defaultSecureRandomProvider.get();
         }
     }
 
@@ -144,14 +151,33 @@ public final class CryptoServicesRegistrar
      *
      * @param secureRandom the SecureRandom to use as the default.
      */
-    public static void setSecureRandom(SecureRandom secureRandom)
+    public static void setSecureRandom(final SecureRandom secureRandom)
     {
         checkPermission(CanSetDefaultRandom);
 
         synchronized (cacheLock)
         {
-            defaultSecureRandom = secureRandom;
+            defaultSecureRandomProvider = new SecureRandomProvider()
+            {
+                @Override
+                public SecureRandom get()
+                {
+                    return secureRandom;
+                }
+            };
         }
+    }
+    
+    /**
+     * Set a default secure random provider to be used where none is otherwise provided.
+     *
+     * @param secureRandomProvider a provider SecureRandom to use when a default SecureRandom is requested.
+     */
+    public static void setSecureRandomProvider(SecureRandomProvider secureRandomProvider)
+    {
+        checkPermission(CanSetDefaultRandom);
+
+        defaultSecureRandomProvider = secureRandomProvider;
     }
 
     /**
