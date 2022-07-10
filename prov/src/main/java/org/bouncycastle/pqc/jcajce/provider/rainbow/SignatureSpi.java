@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowSigner;
 
 /**
  * Rainbow Signature class, extending the jce SignatureSpi.

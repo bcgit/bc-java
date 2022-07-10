@@ -9,10 +9,10 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.RainbowPrivateKey;
-import org.bouncycastle.pqc.crypto.rainbow.Layer;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.rainbow.util.RainbowUtil;
 import org.bouncycastle.pqc.jcajce.spec.RainbowPrivateKeySpec;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.Layer;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.util.RainbowUtil;
 
 /**
  * The Private key in Rainbow consists of the linear affine maps L1, L2 and the

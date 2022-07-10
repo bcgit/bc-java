@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss;
+package org.bouncycastle.pqc.legacy.crypto.gmss;
 
 import java.security.SecureRandom;
 import java.util.Vector;
@@ -7,9 +7,9 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.gmss.util.GMSSRandom;
-import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSVerify;
-import org.bouncycastle.pqc.crypto.gmss.util.WinternitzOTSignature;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.GMSSRandom;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.WinternitzOTSVerify;
+import org.bouncycastle.pqc.legacy.crypto.gmss.util.WinternitzOTSignature;
 
 
 /**

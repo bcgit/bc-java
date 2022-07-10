@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss.util;
+package org.bouncycastle.pqc.legacy.crypto.gmss.util;
 
 /**
  * This class provides several methods that are required by the GMSS classes.

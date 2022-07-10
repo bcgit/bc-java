@@ -11,11 +11,11 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.pqc.crypto.gmss.GMSSLeaf;
-import org.bouncycastle.pqc.crypto.gmss.GMSSParameters;
-import org.bouncycastle.pqc.crypto.gmss.GMSSRootCalc;
-import org.bouncycastle.pqc.crypto.gmss.GMSSRootSig;
-import org.bouncycastle.pqc.crypto.gmss.Treehash;
+import org.bouncycastle.pqc.legacy.crypto.gmss.GMSSLeaf;
+import org.bouncycastle.pqc.legacy.crypto.gmss.GMSSParameters;
+import org.bouncycastle.pqc.legacy.crypto.gmss.GMSSRootCalc;
+import org.bouncycastle.pqc.legacy.crypto.gmss.GMSSRootSig;
+import org.bouncycastle.pqc.legacy.crypto.gmss.Treehash;
 
 public class GMSSPrivateKey
     extends ASN1Object
