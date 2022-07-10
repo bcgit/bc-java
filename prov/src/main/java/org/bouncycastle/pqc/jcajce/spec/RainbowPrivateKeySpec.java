@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.jcajce.spec;
 
 import java.security.spec.KeySpec;
 
-import org.bouncycastle.pqc.crypto.rainbow.Layer;
+import org.bouncycastle.pqc.legacy.crypto.rainbow.Layer;
 
 /**
  * This class provides a specification for a RainbowSignature private key.

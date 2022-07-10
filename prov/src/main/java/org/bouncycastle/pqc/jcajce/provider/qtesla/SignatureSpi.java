@@ -12,8 +12,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASecurityCategory;
-import org.bouncycastle.pqc.crypto.qtesla.QTESLASigner;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASigner;
 
 public class SignatureSpi
     extends Signature

@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gmss;
+package org.bouncycastle.pqc.legacy.crypto.gmss;
 
 import org.bouncycastle.util.Arrays;
 
@@ -6,7 +6,7 @@ import org.bouncycastle.util.Arrays;
  * This class provides a specification for the GMSS parameters that are used by
  * the GMSSKeyPairGenerator and GMSSSignature classes.
  *
- * @see org.bouncycastle.pqc.crypto.gmss.GMSSKeyPairGenerator
+ * @see org.bouncycastle.pqc.legacy.crypto.gmss.GMSSKeyPairGenerator
  */
 public class GMSSParameters
 {
