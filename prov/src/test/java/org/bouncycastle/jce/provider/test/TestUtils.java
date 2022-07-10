@@ -41,11 +41,13 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -224,6 +226,39 @@ class TestUtils
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
         extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+
+        return createCert(
+            caCertLw.getSubject(),
+            caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
+    }
+
+    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, KeyPurposeId keyPurpose, PrivateKey caKey, X509Certificate caCert)
+            throws Exception
+    {
+         return generateEndEntityCert(entityKey, subject, keyPurpose, null, caKey, caCert);
+    }
+
+    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, KeyPurposeId keyPurpose1, KeyPurposeId keyPurpose2, PrivateKey caKey, X509Certificate caCert)
+        throws Exception
+    {
+        Certificate caCertLw = Certificate.getInstance(caCert.getEncoded());
+
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+
+        extGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(getDigest(caCertLw.getSubjectPublicKeyInfo()),
+            new GeneralNames(new GeneralName(caCertLw.getIssuer())),
+            caCertLw.getSerialNumber().getValue()));
+        extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
+        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        if (keyPurpose2 == null)
+        {
+            extGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(keyPurpose1));
+        }
+        else
+        {
+            extGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(new KeyPurposeId[] { keyPurpose1, keyPurpose2 }));
+        }
 
         return createCert(
             caCertLw.getSubject(),

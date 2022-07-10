@@ -66,6 +66,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -84,9 +85,13 @@ import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
@@ -993,7 +998,6 @@ public class PKCS12KeyStoreSpi
                     for (int j = 0; j != seq.size(); j++)
                     {
                         SafeBag b = SafeBag.getInstance(seq.getObjectAt(j));
-
                         if (b.getBagId().equals(certBag))
                         {
                             chain.addElement(b);
@@ -1213,7 +1217,14 @@ public class PKCS12KeyStoreSpi
                             }
                             else
                             {
-                                bagAttr.setBagAttribute(oid, attr);
+                                if (attrSet.size() > 1)
+                                {
+                                    bagAttr.setBagAttribute(oid, attrSet);
+                                }
+                                else
+                                {
+                                    bagAttr.setBagAttribute(oid, attr);
+                                }
                             }
                         }
 
@@ -1641,6 +1652,7 @@ public class PKCS12KeyStoreSpi
                     }
                 }
 
+
                 SafeBag sBag = new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
 
                 certSeq.add(sBag);
@@ -1756,6 +1768,42 @@ public class PKCS12KeyStoreSpi
             fSeq.add(new DERSet(new DERBMPString(certId)));
 
             fName.add(new DERSequence(fSeq));
+        }
+
+        // add the trusted usage attribute - needed for Oracle key stores
+        if (cert instanceof X509Certificate)
+        {
+            TBSCertificate tbsCert = TBSCertificate.getInstance(((X509Certificate)cert).getTBSCertificate());
+            Extensions exts = tbsCert.getExtensions();
+            if (exts != null)
+            {
+                Extension extUsage = exts.getExtension(Extension.extendedKeyUsage);
+                if (extUsage != null)
+                {
+                    ASN1EncodableVector fSeq = new ASN1EncodableVector();
+
+                    // oracle trusted key usage OID.
+                    fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+                    fSeq.add(new DERSet(ExtendedKeyUsage.getInstance(extUsage.getParsedValue()).getUsages()));
+                    fName.add(new DERSequence(fSeq));
+                }
+                else
+                {
+                    ASN1EncodableVector fSeq = new ASN1EncodableVector();
+
+                    fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+                    fSeq.add(new DERSet(KeyPurposeId.anyExtendedKeyUsage));
+                    fName.add(new DERSequence(fSeq));
+                }
+            }
+            else
+            {
+                ASN1EncodableVector fSeq = new ASN1EncodableVector();
+
+                fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
+                fSeq.add(new DERSet(KeyPurposeId.anyExtendedKeyUsage));
+                fName.add(new DERSequence(fSeq));
+            }
         }
 
         return new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
