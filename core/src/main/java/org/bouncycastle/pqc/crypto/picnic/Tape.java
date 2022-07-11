@@ -54,7 +54,7 @@ class Tape
 //        {System.out.printf("%08x ", key0[i]);}System.out.println();
 
         // key = key0 x KMatrix[0]^(-1)
-        KMatrices current = LowmcConstants.KMatrixInv(engine, 0);
+        KMatricesWithPointer current = LowmcConstants.KMatrixInv(engine, 0);
         engine.matrix_mul(key, key0, current.getData(), current.getMatrixPointer());
 
 //        System.out.print("key: ");
