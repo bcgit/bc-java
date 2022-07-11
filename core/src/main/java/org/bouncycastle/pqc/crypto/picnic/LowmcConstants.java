@@ -207,15 +207,16 @@ class LowmcConstants
     // Functions to return individual matricies and round constants
 
     /* Return a pointer to the r-th matrix. The caller must know the dimensions */
-    private static KMatrices GET_MAT(KMatrices m, int r)
+    private static KMatricesWithPointer GET_MAT(KMatrices m, int r)
     {
-        m.setMatrixPointer(r * m.getSize());
-        return m;
+        KMatricesWithPointer mwp = new KMatricesWithPointer(m);
+        mwp.setMatrixPointer(r * mwp.getSize());
+        return mwp;
     }
 
 
     /* Return the LowMC linear matrix for this round */
-    static KMatrices LMatrix(PicnicEngine engine, int round)
+    static KMatricesWithPointer LMatrix(PicnicEngine engine, int round)
     {
 
         if (engine.stateSizeBits == 128)
@@ -252,7 +253,7 @@ class LowmcConstants
     }
 
     /* Return the LowMC inverse linear layer matrix for this round */
-    static KMatrices LMatrixInv(PicnicEngine engine, int round)
+    static KMatricesWithPointer LMatrixInv(PicnicEngine engine, int round)
     {
         if (engine.stateSizeBits == 129)
         {
@@ -273,7 +274,7 @@ class LowmcConstants
     }
 
     /* Return the LowMC key matrix for this round */
-    static KMatrices KMatrix(PicnicEngine engine, int round)
+    static KMatricesWithPointer KMatrix(PicnicEngine engine, int round)
     {
         if (engine.stateSizeBits == 128)
         {
@@ -309,7 +310,7 @@ class LowmcConstants
     }
 
     /* Return the LowMC inverse key matrix for this round */
-    static KMatrices KMatrixInv(PicnicEngine engine, int round)
+    static KMatricesWithPointer KMatrixInv(PicnicEngine engine, int round)
     {
         assert (round == 0);
         if (engine.stateSizeBits == 129)
@@ -332,7 +333,7 @@ class LowmcConstants
 
 
     /* Return the LowMC round constant for this round */
-    static KMatrices RConstant(PicnicEngine engine, int round)
+    static KMatricesWithPointer RConstant(PicnicEngine engine, int round)
     {
         if (engine.stateSizeBits == 128)
         {

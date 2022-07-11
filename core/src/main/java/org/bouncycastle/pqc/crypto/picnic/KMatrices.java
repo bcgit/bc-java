@@ -6,7 +6,6 @@ class KMatrices
     private int rows;
     private int columns;
     private int[] data;
-    private int matrixPointer;
 
     public KMatrices(int nmatrices, int rows, int columns, int[] data)
     {
@@ -14,17 +13,6 @@ class KMatrices
         this.rows = rows;
         this.columns = columns;
         this.data = data;
-        this.matrixPointer = 0;
-    }
-
-    public int getMatrixPointer()
-    {
-        return matrixPointer;
-    }
-
-    public void setMatrixPointer(int matrixPointer)
-    {
-        this.matrixPointer = matrixPointer;
     }
 
     public int getNmatrices()
@@ -50,5 +38,25 @@ class KMatrices
     public int[] getData()
     {
         return data;
+    }
+}
+class KMatricesWithPointer
+    extends KMatrices
+{
+    private int matrixPointer;
+    public KMatricesWithPointer(KMatrices m)
+    {
+        super(m.getNmatrices(), m.getRows(), m.getColumns(), m.getData());
+        this.matrixPointer = 0;
+
+    }
+    public int getMatrixPointer()
+    {
+        return matrixPointer;
+    }
+
+    public void setMatrixPointer(int matrixPointer)
+    {
+        this.matrixPointer = matrixPointer;
     }
 }
