@@ -19,6 +19,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class PicnicVectorTest
@@ -160,16 +161,17 @@ public class PicnicVectorTest
                         signer.init(true, privParams);
 
                         byte[] sigGenerated = signer.generateSignature(msg);
+                        byte[] attachedSig = Arrays.concatenate(Pack.intToLittleEndian(sigGenerated.length), msg, sigGenerated);
 
 //                        System.out.println("expected:\t" + Hex.toHexString(sigExpected));
 //                        System.out.println("generated:\t" + Hex.toHexString(sigGenerated));
 
-                        assertEquals(name + " " + count + ": signature length", smlen, sigGenerated.length);
+                        assertEquals(name + " " + count + ": signature length", smlen, attachedSig.length);
 
                         signer.init(false, pubParams);
 
-                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
-                        assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, sigGenerated));
+                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, attachedSig));
+                        assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
 
                     }
                     buf.clear();
