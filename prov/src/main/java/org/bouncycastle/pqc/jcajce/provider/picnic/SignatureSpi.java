@@ -12,6 +12,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 public class SignatureSpi
     extends java.security.SignatureSpi
@@ -78,9 +80,11 @@ public class SignatureSpi
         digest.doFinal(hash, 0);
         try
         {
-            byte[] sig = signer.generateSignature(hash);
+            byte[] detachedSig = signer.generateSignature(hash);
+            byte[] attachedSig = Arrays.concatenate(Pack.intToLittleEndian(detachedSig.length), hash, detachedSig);
 
-            return sig;
+
+            return attachedSig;
         }
         catch (Exception e)
         {
