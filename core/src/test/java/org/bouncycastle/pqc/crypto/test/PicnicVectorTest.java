@@ -165,6 +165,7 @@ public class PicnicVectorTest
 
 //                        System.out.println("expected:\t" + Hex.toHexString(sigExpected));
 //                        System.out.println("generated:\t" + Hex.toHexString(sigGenerated));
+//                        System.out.println("attached:\t" + Hex.toHexString(attachedSig));
 
                         assertEquals(name + " " + count + ": signature length", smlen, attachedSig.length);
 
