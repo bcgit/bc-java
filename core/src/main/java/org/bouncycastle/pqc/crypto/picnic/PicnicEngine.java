@@ -84,10 +84,9 @@ class PicnicEngine
         return CRYPTO_BYTES + messageLength;
     }
 
-    //todo dont do this
     public int getTrueSignatureSize()
     {
-        return signatureLength + 4;
+        return signatureLength;
     }
     
     PicnicEngine(int picnicParams)
