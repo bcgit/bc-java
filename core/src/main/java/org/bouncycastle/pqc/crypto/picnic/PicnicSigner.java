@@ -38,7 +38,9 @@ public class PicnicSigner
         byte[] sig = new byte[engine.getSignatureSize(message.length)];
         engine.crypto_sign(sig, message , privKey.getEncoded());
 
-        return Arrays.copyOfRange(sig, message.length + 4, engine.getTrueSignatureSize() + message.length);
+        byte[] signature = new byte[engine.getTrueSignatureSize()];
+        System.arraycopy(sig, message.length + 4, signature, 0, engine.getTrueSignatureSize());
+        return signature;
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
