@@ -8,7 +8,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 
-import org.bouncycastle.pqc.legacy.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
 
 
 public abstract class AsymmetricBlockCipherTest
@@ -68,9 +68,9 @@ public abstract class AsymmetricBlockCipherTest
                     // compare
                     assertEquals("Encryption and Decryption test failed:\n"
                         + " actual decrypted text: "
-                        + ByteUtils.toHexString(dBytes)
+                        + Hex.toHexString(dBytes)
                         + "\n expected plain text: "
-                        + ByteUtils.toHexString(mBytes), mBytes, dBytes);
+                        + Hex.toHexString(mBytes), mBytes, dBytes);
                 }
             }
         }
