@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
-import org.bouncycastle.util.Pack;
-
 class Utils
 {
     protected static int numBytes(int numBits)
@@ -113,30 +111,32 @@ class Utils
     /* Get one bit from a byte array */
     protected static byte getBit(byte[] array, int bitNumber)
     {
-        return (byte) ((array[bitNumber / 8] >> (7 - (bitNumber % 8))) & 0x01);
-    }
+        int arrayPos = bitNumber >>> 3, bitPos = (bitNumber & 7) ^ 7;
+        return (byte)((array[arrayPos] >>> bitPos) & 1);    }
 
     /* Get one bit from a byte array */
     protected static int getBit(int[] array, int bitNumber)
     {
-        int temp = Pack.littleEndianToInt(Pack.intToBigEndian(array[bitNumber / 32]), 0);
-        return ((temp >> (31 - (bitNumber % 32))) & 0x01);
+        int arrayPos = bitNumber >>> 5, bitPos = (bitNumber & 31) ^ 7;
+        return (array[arrayPos] >> bitPos) & 1;
+    }
+
+    protected static void setBit(byte[] array, int bitNumber, byte val)
+    {
+        int arrayPos = bitNumber >>> 3, bitPos = (bitNumber & 7) ^ 7;
+        int t = array[arrayPos];
+        t &= ~(1 << bitPos);
+        t |= (int)val << bitPos;
+        array[arrayPos] = (byte)t;
     }
 
     /* Set a specific bit in a int array to a given value */
-    protected static void setBit(int[] bytes, int bitNumber, int val)
+    protected static void setBit(int[] array, int bitNumber, int val)
     {
-        int temp = Pack.littleEndianToInt(Pack.intToBigEndian(bytes[bitNumber/32]), 0);
-        int x = ((temp
-                & ~(1 << (31 - (bitNumber % 32)))) | (val << (31 - (bitNumber % 32))));
-        bytes[bitNumber / 32] = Pack.littleEndianToInt(Pack.intToBigEndian(x), 0);
-//        bytes[bitNumber / 32]  = ((bytes[bitNumber/4 >> 3]
-//                        & ~(1 << (31 - (bitNumber % 32)))) | (val << (31 - (bitNumber % 32))));
-    }
-
-    protected static void setBit(byte[] bytes, int bitNumber, byte val)
-    {
-        bytes[bitNumber / 8] = (byte) ((bytes[bitNumber >> 3]
-                & ~(1 << (7 - (bitNumber % 8)))) | (val << (7 - (bitNumber % 8))));
+        int arrayPos = bitNumber >>> 5, bitPos = (bitNumber & 31) ^ 7;
+        int t = array[arrayPos];
+        t &= ~(1 << bitPos);
+        t |= val << bitPos;
+        array[arrayPos] = t;
     }
 }
