@@ -1,93 +1,167 @@
 package org.bouncycastle.pqc.crypto.test;
 
-public class FalconTest {
-//	public static void main(String[] args) throws Exception {
-//		FalconTest.testVectors();
-//	}
-//
-//	public static void testVectors() throws Exception {
-//		FalconParameters[] params = new FalconParameters[] {
-//				FalconParameters.falcon512,
-//				FalconParameters.falcon1024
-//		};
-//		String[] files = new String[] {
-//			"falcon512-KAT.rsp",
-//			"falcon1024-KAT.rsp"
-//		};
-//		for (int fileindex = 0; fileindex < files.length; fileindex++) {
-//			String name = files[fileindex];
-//			System.out.println("testing: " + name);
-//			InputStream src = FalconTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/falcon/"+name);
-//			BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-//			String line = null;
-//			HashMap<String, String> buf = new HashMap<String, String>();
-//            while ((line = bin.readLine()) != null)
-//            {
-//                line = line.trim();
-//
-//                if (line.startsWith("#"))
-//                {
-//                    continue;
-//                }
-//                if (line.length() == 0)
-//                {
-//                    if (buf.size() > 0)
-//                    {
-//                        String count = buf.get("count");
-//                        System.out.println("test case: " + count);
-//
-//                        byte[] seed = Hex.decode(buf.get("seed")); // seed for Falcon secure random
-//                        byte[] pk = Hex.decode(buf.get("pk"));     // public key
-//                        byte[] sk = Hex.decode(buf.get("sk"));     // private key
-//
-//                        NISTSecureRandom random = new NISTSecureRandom(seed, null);
-//                        FalconParameters parameters = params[fileindex];
-//
-//                        FalconKeyPairGenerator kpGen = new FalconKeyPairGenerator();
-//                        FalconKeyGenerationParameters genParam = new FalconKeyGenerationParameters(random, parameters);
-//                        //
-//                        // Generate keys and test.
-//                        //
-//                        kpGen.init(genParam);
-//                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-//
-//                        FalconPublicKeyParameters pubParams = (FalconPublicKeyParameters)kp.getPublic();
-//                        FalconPrivateKeyParameters privParams = (FalconPrivateKeyParameters)kp.getPrivate();
-//
-////                        print_bytes(pk,"pk");
-////                        print_bytes(pubParams.getPublicKey(),"pk");
-////                        print_bytes(sk,"sk");
-////                        print_bytes(privParams.getPrivateKey(),"sk");
-//                        assert Arrays.areEqual(pk, pubParams.getPublicKey()) : "test " + count + " pk are not equal";
-//                        assert Arrays.areEqual(sk, privParams.getPrivateKey()) : "test " + count + " sk are not equal";
-//                    }
-//                    buf.clear();
-//
-//                    continue;
-//                }
-//
-//                int a = line.indexOf("=");
-//                if (a > -1)
-//                {
-//                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-//                }
-//
-//
-//            }
-//            System.out.println("testing successful!");
-//        }
-//	}
-//	private static void print_bytes(byte[] p, String name) {
-//        System.out.print(name); System.out.print(" = ");
-//        for (int i = 0; i < p.length; i++) {
-//        	String resultWithPadZero = String.format("%2x", p[i])
-//                    .replace(" ", "0");
-//            System.out.print(resultWithPadZero);
-//            if (i != p.length - 1) {
-//                continue;
-//            } else {
-//                System.out.print("\n");
-//            }
-//        }
-//    }
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.falcon.FalconKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+
+public class FalconTest
+    extends TestCase
+{
+    public void testVectors()
+        throws Exception
+    {
+        String[] files = new String[]{
+            "falcon512-KAT.rsp",
+            "falcon1024-KAT.rsp"
+        };
+        FalconParameters[] parameters = new FalconParameters[]{
+            FalconParameters.falcon_512,
+            FalconParameters.falcon_1024
+        };
+        for (int fileindex = 0; fileindex < files.length; fileindex++)
+        {
+            String name = files[fileindex];
+            System.out.println("testing: " + name);
+            InputStream src = FalconTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/falcon/" + name);
+            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+            String line = null;
+            HashMap<String, String> buf = new HashMap<String, String>();
+            while ((line = bin.readLine()) != null)
+            {
+                line = line.trim();
+
+                if (line.startsWith("#"))
+                {
+                    continue;
+                }
+                if (line.length() == 0)
+                {
+                    if (buf.size() > 0)
+                    {
+                        String count = buf.get("count");
+                        System.out.println("test case: " + count);
+
+                        byte[] seed = Hex.decode(buf.get("seed")); // seed for Falcon secure random
+                        byte[] pk = Hex.decode(buf.get("pk"));     // public key
+                        byte[] sk = Hex.decode(buf.get("sk"));     // private key
+                        byte[] sm = Hex.decode(buf.get("sm"));     // signed message
+                        int sm_len = Integer.parseInt(buf.get("smlen"));
+                        byte[] msg = Hex.decode(buf.get("msg")); // message
+                        int m_len = Integer.parseInt(buf.get("mlen"));
+
+                        NISTSecureRandom random = new NISTSecureRandom(seed, null);
+
+                        // keygen
+                        FalconKeyGenerationParameters kparam = new FalconKeyGenerationParameters(random, parameters[fileindex]);
+                        FalconKeyPairGenerator kpg = new FalconKeyPairGenerator();
+                        kpg.init(kparam);
+                        AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
+                        byte[] respk = ((FalconPublicKeyParameters)ackp.getPublic()).getEncoded();
+                        byte[] ressk = ((FalconPrivateKeyParameters)ackp.getPrivate()).getEncoded();
+
+                        // sign
+                        FalconSigner signer = new FalconSigner();
+                        FalconPrivateKeyParameters skparam = new FalconPrivateKeyParameters(parameters[fileindex], sk);
+                        ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
+                        signer.init(true, skwrand);
+                        byte[] sig = signer.generateSignature(msg);
+                        byte[] ressm = new byte[2 + msg.length + sig.length - 1];
+                        ressm[0] = (byte)((sig.length - 40 - 1) >>> 8);
+                        ressm[1] = (byte)(sig.length - 40 - 1);
+                        System.arraycopy(sig, 1, ressm, 2, 40);
+                        System.arraycopy(msg, 0, ressm, 2 + 40, msg.length);
+                        System.arraycopy(sig, 40 + 1, ressm, 2 + 40 + msg.length, sig.length - 40 - 1);
+
+                        // verify
+                        FalconSigner verifier = new FalconSigner();
+                        FalconPublicKeyParameters pkparam = new FalconPublicKeyParameters(parameters[fileindex], pk);
+                        verifier.init(false, pkparam);
+                        byte[] noncesig = new byte[sm_len - m_len - 2 + 1];
+                        noncesig[0] = (byte)(0x30 + parameters[fileindex].getLogN());
+                        System.arraycopy(sm, 2, noncesig, 1, 40);
+                        System.arraycopy(sm, 2 + 40 + m_len, noncesig, 40 + 1, sm_len - 2 - 40 - m_len);
+                        boolean vrfyrespass = verifier.verifySignature(msg, noncesig);
+                        noncesig[42]++; // changing the signature by 1 byte should cause it to fail
+                        boolean vrfyresfail = verifier.verifySignature(msg, noncesig);
+
+                        // print results
+                        /*
+                        System.out.println("--Keygen");
+                        boolean kgenpass = true;
+                        if (!Arrays.areEqual(respk, pk)) {
+                            System.out.println("  == Keygen: pk do not match");
+                            kgenpass = false;
+                        }
+                        if (!Arrays.areEqual(ressk, sk)) {
+                            System.out.println("  == Keygen: sk do not match");
+                            kgenpass = false;
+                        }
+                        if (kgenpass) {
+                            System.out.println("  ++ Keygen pass");
+                        } else {
+                            System.out.println("  == Keygen failed");
+                            return;
+                        }
+
+                        System.out.println("--Sign");
+                        boolean spass = true;
+                        if (!Arrays.areEqual(ressm, sm)) {
+                            System.out.println("  == Sign: signature do not match");
+                            spass = false;
+                        }
+                        if (spass) {
+                            System.out.println("  ++ Sign pass");
+                        } else {
+                            System.out.println("  == Sign failed");
+                            return;
+                        }
+
+                        System.out.println("--Verify");
+                        if (vrfyrespass && !vrfyresfail) {
+                            System.out.println("  ++ Verify pass");
+                        } else {
+                            System.out.println("  == Verify failed");
+                            return;
+                        }
+                         */
+                        // AssertTrue
+                        //keygen
+                        assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
+                        assertTrue(name + " " + count + " public key", Arrays.areEqual(ressk, sk));
+                        //sign
+                        assertTrue(name + " " + count + " signature", Arrays.areEqual(ressm, sm));
+                        //verify
+                        assertTrue(name + " " + count + " verify failed when should pass", vrfyrespass);
+                        assertFalse(name + " " + count + " verify passed when should fail", vrfyresfail);
+
+                    }
+                    buf.clear();
+
+                    continue;
+                }
+
+                int a = line.indexOf("=");
+                if (a > -1)
+                {
+                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+
+
+            }
+            System.out.println("testing successful!");
+        }
+    }
 }
