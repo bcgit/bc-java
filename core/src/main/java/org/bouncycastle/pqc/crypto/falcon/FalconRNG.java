@@ -43,14 +43,14 @@ class FalconRNG
                 | (Byte.toUnsignedInt(tmp[(i << 2) + 1]) << 8)
                 | (Byte.toUnsignedInt(tmp[(i << 2) + 2]) << 16)
                 | (Byte.toUnsignedInt(tmp[(i << 2) + 3]) << 24);
-//		*(uint32_t *)(p->state.d + (i << 2)) = w;
+//        *(uint32_t *)(p->state.d + (i << 2)) = w;
             System.arraycopy(convertor.int_to_bytes(w), 0, this.sd, i << 2, 4);
         }
 //        tl = *(uint32_t *)(p->state.d + 48);
         tl = Integer.toUnsignedLong(convertor.bytes_to_int(this.sd, 48));
 //        th = *(uint32_t *)(p->state.d + 52);
         th = Integer.toUnsignedLong(convertor.bytes_to_int(this.sd, 52));
-//	*(uint64_t *)(p->state.d + 48) = tl + (th << 32);
+//    *(uint64_t *)(p->state.d + 48) = tl + (th << 32);
         System.arraycopy(convertor.long_to_bytes(tl + (th << 32)), 0, this.sd, 48, 8);
         this.prng_refill();
     }
@@ -120,10 +120,10 @@ class FalconRNG
                 state[v] += convertor.bytes_to_int(sd, (4 * v) - 16);
             }
 //            state[14] += ((uint32_t *)p->state.d)[10]
-//			^ (uint32_t)cc;
+//            ^ (uint32_t)cc;
             state[14] += convertor.bytes_to_int(sd, 40) ^ ((int)cc);
 //            state[15] += ((uint32_t *)p->state.d)[11]
-//			^ (uint32_t)(cc >> 32);
+//            ^ (uint32_t)(cc >> 32);
             state[15] += convertor.bytes_to_int(sd, 44) ^ ((int)(cc >>> 32));
             cc++;
 
@@ -151,7 +151,7 @@ class FalconRNG
                     (byte)(state[v] >>> 24);
             }
         }
-//	*(uint64_t *)(p->state.d + 48) = cc;
+//    *(uint64_t *)(p->state.d + 48) = cc;
         System.arraycopy(convertor.long_to_bytes(cc), 0, sd, 48, 8);
 
 
