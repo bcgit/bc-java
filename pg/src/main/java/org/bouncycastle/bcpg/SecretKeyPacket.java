@@ -6,28 +6,28 @@ import java.io.IOException;
 /**
  * basic packet for a PGP secret key
  */
-public class SecretKeyPacket 
-    extends ContainedPacket implements PublicKeyAlgorithmTags
+public class SecretKeyPacket
+    extends ContainedPacket
+    implements PublicKeyAlgorithmTags
 {
     public static final int USAGE_NONE = 0x00;
     public static final int USAGE_CHECKSUM = 0xff;
     public static final int USAGE_SHA1 = 0xfe;
     public static final int USAGE_AEAD = 0xfd;
 
-    private PublicKeyPacket    pubKeyPacket;
-    private byte[]             secKeyData;
-    private int                s2kUsage;
-    private int                encAlgorithm;
-    private S2K                s2k;
-    private byte[]             iv;
-    
+    private PublicKeyPacket pubKeyPacket;
+    private byte[] secKeyData;
+    private int s2kUsage;
+    private int encAlgorithm;
+    private S2K s2k;
+    private byte[] iv;
+
     /**
-     * 
      * @param in
      * @throws IOException
      */
     SecretKeyPacket(
-        BCPGInputStream    in)
+        BCPGInputStream in)
         throws IOException
     {
         if (this instanceof SecretSubkeyPacket)
@@ -53,7 +53,7 @@ public class SecretKeyPacket
 
         if (!(s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K && s2k.getProtectionMode() == 0x01))
         {
-            if (s2kUsage != 0) 
+            if (s2kUsage != 0)
             {
                 if (encAlgorithm < 7)
                 {
@@ -71,7 +71,6 @@ public class SecretKeyPacket
     }
 
     /**
-     * 
      * @param pubKeyPacket
      * @param encAlgorithm
      * @param s2k
@@ -80,14 +79,14 @@ public class SecretKeyPacket
      */
     public SecretKeyPacket(
         PublicKeyPacket pubKeyPacket,
-        int             encAlgorithm,
-        S2K             s2k,
-        byte[]          iv,
-        byte[]          secKeyData)
+        int encAlgorithm,
+        S2K s2k,
+        byte[] iv,
+        byte[] secKeyData)
     {
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
-        
+
         if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
         {
             this.s2kUsage = USAGE_CHECKSUM;
@@ -96,19 +95,19 @@ public class SecretKeyPacket
         {
             this.s2kUsage = USAGE_NONE;
         }
-        
+
         this.s2k = s2k;
         this.iv = iv;
         this.secKeyData = secKeyData;
     }
-    
+
     public SecretKeyPacket(
         PublicKeyPacket pubKeyPacket,
-        int             encAlgorithm,
-        int             s2kUsage,
-        S2K             s2k,
-        byte[]          iv,
-        byte[]          secKeyData)
+        int encAlgorithm,
+        int s2kUsage,
+        S2K s2k,
+        byte[] iv,
+        byte[] secKeyData)
     {
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
@@ -122,7 +121,7 @@ public class SecretKeyPacket
     {
         return encAlgorithm;
     }
-    
+
     public int getS2KUsage()
     {
         return s2kUsage;
@@ -132,30 +131,30 @@ public class SecretKeyPacket
     {
         return iv;
     }
-    
+
     public S2K getS2K()
     {
         return s2k;
     }
-    
+
     public PublicKeyPacket getPublicKeyPacket()
     {
         return pubKeyPacket;
     }
-    
+
     public byte[] getSecretKeyData()
     {
         return secKeyData;
     }
-    
+
     public byte[] getEncodedContents()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        BCPGOutputStream         pOut = new BCPGOutputStream(bOut);
-        
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut);
+
         pOut.write(pubKeyPacket.getEncodedContents());
-        
+
         pOut.write(s2kUsage);
 
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
@@ -163,12 +162,12 @@ public class SecretKeyPacket
             pOut.write(encAlgorithm);
             pOut.writeObject(s2k);
         }
-        
+
         if (iv != null)
         {
             pOut.write(iv);
         }
-        
+
         if (secKeyData != null && secKeyData.length > 0)
         {
             pOut.write(secKeyData);
@@ -178,9 +177,9 @@ public class SecretKeyPacket
 
         return bOut.toByteArray();
     }
-    
+
     public void encode(
-        BCPGOutputStream    out)
+        BCPGOutputStream out)
         throws IOException
     {
         out.writePacket(SECRET_KEY, getEncodedContents());
