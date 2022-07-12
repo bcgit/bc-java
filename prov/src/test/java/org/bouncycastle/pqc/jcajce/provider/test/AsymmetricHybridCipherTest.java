@@ -9,7 +9,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricHybridCipher;
-import org.bouncycastle.pqc.legacy.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Base class for unit tests of {@link AsymmetricHybridCipher}s.
@@ -72,11 +72,11 @@ public abstract class AsymmetricHybridCipherTest
                     // compare
                     assertEquals(
                         "Encryption/decryption test failed for message \""
-                            + ByteUtils.toHexString(mBytes)
+                            + Hex.toHexString(mBytes)
                             + "\":\n actual decrypted text: "
-                            + ByteUtils.toHexString(dBytes)
+                            + Hex.toHexString(dBytes)
                             + "\n expected plain text: "
-                            + ByteUtils.toHexString(mBytes), mBytes,
+                            + Hex.toHexString(mBytes), mBytes,
                         dBytes);
                 }
             }
