@@ -7,10 +7,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2Parameters;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePointchevalCipher;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2KeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2Parameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McEliecePointchevalCipher;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class McEliecePointchevalCipherTest

@@ -120,7 +120,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.ntru;
-    exports org.bouncycastle.pqc.crypto.mceliece;
+    exports org.bouncycastle.pqc.legacy.crypto.mceliece;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.legacy.crypto.gmss;
     exports org.bouncycastle.pqc.legacy.crypto.gmss.util;
@@ -147,7 +147,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.util;
     exports org.bouncycastle.pqc.jcajce.provider.xmss;
     exports org.bouncycastle.pqc.jcajce.spec;
-    exports org.bouncycastle.pqc.math.linearalgebra;
+    exports org.bouncycastle.pqc.legacy.math.linearalgebra;
     exports org.bouncycastle.pqc.legacy.math.ntru.euclid;
     exports org.bouncycastle.pqc.legacy.math.ntru.polynomial;
     exports org.bouncycastle.pqc.legacy.math.ntru.util;
