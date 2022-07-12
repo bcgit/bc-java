@@ -157,14 +157,21 @@ public final class CryptoServicesRegistrar
 
         synchronized (cacheLock)
         {
-            defaultSecureRandomProvider = new SecureRandomProvider()
+            if (secureRandom == null)
             {
-                @Override
-                public SecureRandom get()
+                defaultSecureRandomProvider = null;
+            }
+            else
+            {
+                defaultSecureRandomProvider = new SecureRandomProvider()
                 {
-                    return secureRandom;
-                }
-            };
+                    @Override
+                    public SecureRandom get()
+                    {
+                        return secureRandom;
+                    }
+                };
+            }
         }
     }
     
