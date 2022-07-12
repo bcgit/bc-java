@@ -1,5 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -17,20 +25,13 @@ import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Date;
-
 public class Argon2S2KTest
-        extends SimpleTest {
+    extends SimpleTest
+{
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -38,50 +39,54 @@ public class Argon2S2KTest
 
     // Test message from the crypto-refresh-05 document
     private static final String TEST_MSG_AES128 = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Encrypted using AES with 128-bit key\n" +
-            "Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F\n" +
-            "\n" +
-            "wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+\n" +
-            "YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH\n" +
-            "XfA3pqV4mTzF\n" +
-            "=uIks\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Encrypted using AES with 128-bit key\n" +
+        "Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F\n" +
+        "\n" +
+        "wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+\n" +
+        "YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH\n" +
+        "XfA3pqV4mTzF\n" +
+        "=uIks\n" +
+        "-----END PGP MESSAGE-----";
 
     // Test message from the crypto-refresh-05 document
     private static final String TEST_MSG_AES192 = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Encrypted using AES with 192-bit key\n" +
-            "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
-            "\n" +
-            "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
-            "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
-            "LVg77Mwwfgl2n/d572WciAM=\n" +
-            "=n8Ma\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Encrypted using AES with 192-bit key\n" +
+        "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
+        "\n" +
+        "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
+        "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
+        "LVg77Mwwfgl2n/d572WciAM=\n" +
+        "=n8Ma\n" +
+        "-----END PGP MESSAGE-----";
 
     // Test message from the crypto-refresh-05 document
     private static final String TEST_MSG_AES256 = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Encrypted using AES with 192-bit key\n" +
-            "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
-            "\n" +
-            "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
-            "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
-            "LVg77Mwwfgl2n/d572WciAM=\n" +
-            "=n8Ma\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Encrypted using AES with 192-bit key\n" +
+        "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
+        "\n" +
+        "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
+        "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
+        "LVg77Mwwfgl2n/d572WciAM=\n" +
+        "=n8Ma\n" +
+        "-----END PGP MESSAGE-----";
 
     private static final String TEST_MSG_PLAIN = "Hello, world!";
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new Argon2S2KTest());
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return Argon2S2KTest.class.getSimpleName();
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+        throws Exception
+    {
         // S2K parameter serialization
         encodingTest();
         // Test vectors
@@ -92,7 +97,9 @@ public class Argon2S2KTest
         testEncryptAndDecryptMessageWithArgon2();
     }
 
-    public void encodingTest() throws IOException {
+    public void encodingTest()
+        throws IOException
+    {
         byte[] salt = new byte[16];
         RANDOM.nextBytes(salt);
 
@@ -118,41 +125,51 @@ public class Argon2S2KTest
         isEquals(0x15, encoding[19]);   // 0x15 = 21 mem exp
     }
 
-    public void testDecryptAES128Message() throws IOException, PGPException {
+    public void testDecryptAES128Message()
+        throws IOException, PGPException
+    {
         String plaintext = decryptSymmetricallyEncryptedMessage(TEST_MSG_AES128, TEST_MSG_PASSWORD);
         isEquals(TEST_MSG_PLAIN, plaintext);
     }
 
-    public void testDecryptAES192Message() throws IOException, PGPException {
+    public void testDecryptAES192Message()
+        throws IOException, PGPException
+    {
         String plaintext = decryptSymmetricallyEncryptedMessage(TEST_MSG_AES192, TEST_MSG_PASSWORD);
         isEquals(TEST_MSG_PLAIN, plaintext);
     }
 
-    public void testDecryptAES256Message() throws IOException, PGPException {
+    public void testDecryptAES256Message()
+        throws IOException, PGPException
+    {
         String plaintext = decryptSymmetricallyEncryptedMessage(TEST_MSG_AES256, TEST_MSG_PASSWORD);
         isEquals(TEST_MSG_PLAIN, plaintext);
     }
 
-    public void testEncryptAndDecryptMessageWithArgon2() throws PGPException, IOException {
+    public void testEncryptAndDecryptMessageWithArgon2()
+        throws PGPException, IOException
+    {
         String encrypted = encryptMessageSymmetricallyWithArgon2(TEST_MSG_PLAIN, TEST_MSG_PASSWORD);
         String plaintext = decryptSymmetricallyEncryptedMessage(encrypted, TEST_MSG_PASSWORD);
         isEquals(TEST_MSG_PLAIN, plaintext);
     }
 
-    private String decryptSymmetricallyEncryptedMessage(String message, String password) throws IOException, PGPException {
+    private String decryptSymmetricallyEncryptedMessage(String message, String password)
+        throws IOException, PGPException
+    {
         char[] pass = password.toCharArray();
         BcPBEDataDecryptorFactory factory = new BcPBEDataDecryptorFactory(pass, new BcPGPDigestCalculatorProvider());
-        ByteArrayInputStream msgIn = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(message));
         ArmoredInputStream armorIn = new ArmoredInputStream(msgIn);
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
-        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) objectFactory.nextObject();
-        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData) encryptedDataList.get(0);
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
 
         // decrypt
         InputStream inputStream = encryptedData.getDataStream(factory);
         objectFactory = new BcPGPObjectFactory(inputStream);
-        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+        PGPLiteralData literalData = (PGPLiteralData)objectFactory.nextObject();
         InputStream decryptedIn = literalData.getDataStream();
         ByteArrayOutputStream decryptedOut = new ByteArrayOutputStream();
         Streams.pipeAll(decryptedIn, decryptedOut);
@@ -161,10 +178,12 @@ public class Argon2S2KTest
         return decryptedString;
     }
 
-    public String encryptMessageSymmetricallyWithArgon2(String plaintext, String password) throws PGPException, IOException {
+    public String encryptMessageSymmetricallyWithArgon2(String plaintext, String password)
+        throws PGPException, IOException
+    {
 
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
-                new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
+            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
         encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(password.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters()));
         PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
 
@@ -173,7 +192,7 @@ public class Argon2S2KTest
         OutputStream encOut = encGen.open(armorOut, new byte[4096]);
         OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[4096]);
 
-        ByteArrayInputStream plainIn = new ByteArrayInputStream(plaintext.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream plainIn = new ByteArrayInputStream(Strings.toByteArray(plaintext));
         Streams.pipeAll(plainIn, litOut);
         litOut.close();
         encOut.close();

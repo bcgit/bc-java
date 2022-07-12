@@ -29,6 +29,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <ul>
 <li>There were parameter errors in XMSS^MT OIDs for XMSSMT_SHA2_40/4_256 and XMSSMT_SHA2_60/3_256. These have been fixed.</li>
 <li>There was an error in Merkle tree construction for the Evidence Records (ERS) implementation which could result in invalid roots been timestamped. ERS now produces an ArchiveTimeStamp for each data object/group with an associated reduced hash tree.</li>
+<li>OpenPGP will now ignore signatures marked as non-exportable on encoding.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -40,6 +41,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The SIKE Alternative Candidate NIST Post Quantum Algorithm has been added to the low-level API and the PQC provider.</li>
 <li>The NTRU Alternative Candidate NIST Post Quantum Algorithm has been added to the low-level API.</li>
 <li>The Falcon Finalist NIST Post Quantum Algorithm has been added to the low-level API.</li>
+<li>Argon2 Support has been added to the OpenPGP API.</li>
 </ul>
 
 <a name="r1rv71"><h3>2.2.1 Version</h3></a>

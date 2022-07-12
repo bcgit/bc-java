@@ -1,12 +1,12 @@
 package org.bouncycastle.openpgp.operator;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
-
-import java.security.SecureRandom;
 
 /**
  * PGP style PBE encryption method.
@@ -32,8 +32,8 @@ public abstract class PBEKeyEncryptionMethodGenerator
     /**
      * Construct a PBE key generator using the default iteration count (<code>0x60</code> == 65536
      * iterations).
-     * 
-     * @param passPhrase the pass phrase to encrypt with.
+     *
+     * @param passPhrase          the pass phrase to encrypt with.
      * @param s2kDigestCalculator a digest calculator to use in the string-to-key function.
      */
     protected PBEKeyEncryptionMethodGenerator(
@@ -47,10 +47,11 @@ public abstract class PBEKeyEncryptionMethodGenerator
      * Construct a PBE key generator using Argon2 as S2K mechanism.
      *
      * @param passPhrase passphrase
-     * @param params argon2 parameters
+     * @param params     argon2 parameters
      */
     protected PBEKeyEncryptionMethodGenerator(
-            char[] passPhrase, S2K.Argon2Params params) {
+        char[] passPhrase, S2K.Argon2Params params)
+    {
         this.passPhrase = passPhrase;
         this.s2k = new S2K(params);
     }
@@ -58,10 +59,10 @@ public abstract class PBEKeyEncryptionMethodGenerator
     /**
      * Construct a PBE key generator using a specific iteration level.
      *
-     * @param passPhrase the pass phrase to encrypt with.
+     * @param passPhrase          the pass phrase to encrypt with.
      * @param s2kDigestCalculator a digest calculator to use in the string-to-key function.
-     * @param s2kCount a single byte {@link S2K} iteration count specifier, which is translated to
-     *            an actual iteration count by the S2K class.
+     * @param s2kCount            a single byte {@link S2K} iteration count specifier, which is translated to
+     *                            an actual iteration count by the S2K class.
      */
     protected PBEKeyEncryptionMethodGenerator(
         char[] passPhrase,
@@ -84,6 +85,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
      * <p>
      * If no SecureRandom is configured, a default SecureRandom will be used.
      * </p>
+     *
      * @return the current generator.
      */
     public PBEKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)
@@ -98,7 +100,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
      * method.
      *
      * @param encAlgorithm the {@link SymmetricKeyAlgorithmTags encryption algorithm} to generate
-     *            the key for.
+     *                     the key for.
      * @return the bytes of the generated key.
      * @throws PGPException if an error occurs performing the string-to-key generation.
      */
@@ -107,7 +109,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
     {
         if (s2k == null)
         {
-            byte[]        iv = new byte[8];
+            byte[] iv = new byte[8];
 
             if (random == null)
             {
@@ -142,6 +144,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
         return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, encryptSessionInfo(encAlgorithm, key, nSessionInfo));
     }
 
-    abstract protected byte[]  encryptSessionInfo(int encAlgorithm, byte[] key, byte[] sessionInfo)
+    abstract protected byte[] encryptSessionInfo(int encAlgorithm, byte[] key, byte[] sessionInfo)
         throws PGPException;
 }

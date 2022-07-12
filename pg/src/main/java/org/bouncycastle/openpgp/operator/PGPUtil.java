@@ -97,12 +97,12 @@ class PGPUtil
             if (s2k.getType() == S2K.ARGON_2)
             {
                 Argon2Parameters.Builder builder = new Argon2Parameters
-                        .Builder(Argon2Parameters.ARGON2_id)
-                        .withSalt(s2k.getIV())
-                        .withIterations(s2k.getPasses())
-                        .withParallelism(s2k.getParallelism())
-                        .withMemoryPowOfTwo(s2k.getMemorySizeExponent())
-                        .withVersion(Argon2Parameters.ARGON2_VERSION_13);
+                    .Builder(Argon2Parameters.ARGON2_id)
+                    .withSalt(s2k.getIV())
+                    .withIterations(s2k.getPasses())
+                    .withParallelism(s2k.getParallelism())
+                    .withMemoryPowOfTwo(s2k.getMemorySizeExponent())
+                    .withVersion(Argon2Parameters.ARGON2_VERSION_13);
 
                 Argon2BytesGenerator argon2 = new Argon2BytesGenerator();
                 argon2.init(builder.build());

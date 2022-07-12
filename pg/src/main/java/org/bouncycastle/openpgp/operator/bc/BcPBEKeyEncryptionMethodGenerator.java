@@ -20,7 +20,7 @@ public class BcPBEKeyEncryptionMethodGenerator
      * Create a PBE encryption method generator using the provided digest and the default S2K count
      * for key generation.
      *
-     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param passPhrase          the passphrase to use as the primary source of key material.
      * @param s2kDigestCalculator the digest calculator to use for key calculation.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator)
@@ -41,20 +41,22 @@ public class BcPBEKeyEncryptionMethodGenerator
 
     /**
      * Create a PBE encryption method generator using Argon2 for S2K key generation.
-     * @param passPhrase passphrase
+     *
+     * @param passPhrase   passphrase
      * @param argon2Params parameters for argon2
      */
-    public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params argon2Params) {
+    public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params argon2Params)
+    {
         super(passPhrase, argon2Params);
     }
 
     /**
      * Create a PBE encryption method generator using the provided calculator and S2K count for key
      * generation.
-     * 
-     * @param passPhrase the passphrase to use as the primary source of key material.
+     *
+     * @param passPhrase          the passphrase to use as the primary source of key material.
      * @param s2kDigestCalculator the digest calculator to use for key calculation.
-     * @param s2kCount the single byte {@link S2K} count to use.
+     * @param s2kCount            the single byte {@link S2K} count to use.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator, int s2kCount)
     {
@@ -66,7 +68,7 @@ public class BcPBEKeyEncryptionMethodGenerator
      * count other than the default for key generation.
      *
      * @param passPhrase the passphrase to use as the primary source of key material.
-     * @param s2kCount the single byte {@link S2K} count to use.
+     * @param s2kCount   the single byte {@link S2K} count to use.
      */
     public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, int s2kCount)
     {
