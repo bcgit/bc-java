@@ -118,11 +118,12 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto;
     exports org.bouncycastle.pqc.crypto.cmce;
     exports org.bouncycastle.pqc.crypto.frodo;
-    exports org.bouncycastle.pqc.legacy.crypto.gmss;
-    exports org.bouncycastle.pqc.legacy.crypto.gmss.util;
     exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.mceliece;
     exports org.bouncycastle.pqc.crypto.newhope;
+    exports org.bouncycastle.pqc.crypto.ntru;
+    exports org.bouncycastle.pqc.legacy.crypto.gmss;
+    exports org.bouncycastle.pqc.legacy.crypto.gmss.util;
     exports org.bouncycastle.pqc.legacy.crypto.qtesla;
     exports org.bouncycastle.pqc.legacy.crypto.rainbow;
     exports org.bouncycastle.pqc.legacy.crypto.rainbow.util;

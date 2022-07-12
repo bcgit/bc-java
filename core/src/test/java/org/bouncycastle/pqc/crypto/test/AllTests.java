@@ -43,6 +43,8 @@ public class AllTests
         suite.addTestSuite(FrodoVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(SIKEVectorTest.class);
+        suite.addTestSuite(NTRU3Test.class);
+        suite.addTestSuite(NTRU3ParametersTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
