@@ -47,6 +47,7 @@ public class PGPSignature
     public static final int SUBKEY_REVOCATION = 0x28;
     public static final int CERTIFICATION_REVOCATION = 0x30;
     public static final int TIMESTAMP = 0x40;
+    public static final int THIRD_PARTY_CONFIRMATION = 0x50;
 
     private SignaturePacket sigPck;
     private int signatureType;
