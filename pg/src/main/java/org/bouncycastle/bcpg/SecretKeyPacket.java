@@ -12,6 +12,7 @@ public class SecretKeyPacket
     public static final int USAGE_NONE = 0x00;
     public static final int USAGE_CHECKSUM = 0xff;
     public static final int USAGE_SHA1 = 0xfe;
+    public static final int USAGE_AEAD = 0xfd;
 
     private PublicKeyPacket    pubKeyPacket;
     private byte[]             secKeyData;

@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.params.Argon2Parameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Strings;
 
@@ -92,7 +94,23 @@ class PGPUtil
 
         if (s2k != null)
         {
-            if (s2k.getHashAlgorithm() != digestCalculator.getAlgorithm())
+            if (s2k.getType() == S2K.ARGON_2)
+            {
+                Argon2Parameters.Builder builder = new Argon2Parameters
+                        .Builder(Argon2Parameters.ARGON2_id)
+                        .withSalt(s2k.getIV())
+                        .withIterations(s2k.getPasses())
+                        .withParallelism(s2k.getParallelism())
+                        .withMemoryPowOfTwo(s2k.getMemorySizeExponent())
+                        .withVersion(Argon2Parameters.ARGON2_VERSION_13);
+
+                Argon2BytesGenerator argon2 = new Argon2BytesGenerator();
+                argon2.init(builder.build());
+                argon2.generateBytes(passPhrase, keyBytes);
+
+                return keyBytes;
+            }
+            else if (s2k.getHashAlgorithm() != digestCalculator.getAlgorithm())
             {
                 throw new PGPException("s2k/digestCalculator mismatch");
             }
@@ -215,7 +233,7 @@ class PGPUtil
     {
         PGPDigestCalculator digestCalculator;
 
-        if (s2k != null)
+        if (s2k != null && s2k.getType() != S2K.ARGON_2)
         {
             digestCalculator = digCalcProvider.get(s2k.getHashAlgorithm());
         }
