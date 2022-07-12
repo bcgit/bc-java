@@ -8,7 +8,7 @@ import org.bouncycastle.pqc.jcajce.provider.mceliece.BCMcElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.BCMcElieceCCA2PublicKey;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceCCA2Primitives;
 import org.bouncycastle.pqc.jcajce.spec.McElieceKeyGenParameterSpec;
-import org.bouncycastle.pqc.math.linearalgebra.GF2Vector;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.GF2Vector;
 
 
 public class McElieceCCA2PrimitivesTest

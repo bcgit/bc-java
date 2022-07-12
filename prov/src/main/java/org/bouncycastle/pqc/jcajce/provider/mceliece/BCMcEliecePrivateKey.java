@@ -9,12 +9,12 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.asn1.McEliecePrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePrivateKeyParameters;
-import org.bouncycastle.pqc.math.linearalgebra.GF2Matrix;
-import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
-import org.bouncycastle.pqc.math.linearalgebra.Permutation;
-import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McEliecePrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.GF2Matrix;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.GF2mField;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.Permutation;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.PolynomialGF2mSmallM;
 
 /**
  * This class implements a McEliece private key and is usually instantiated by

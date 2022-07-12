@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.asn1;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -11,9 +9,9 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
-import org.bouncycastle.pqc.math.linearalgebra.Permutation;
-import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.GF2mField;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.Permutation;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.PolynomialGF2mSmallM;
 
 /**
  * Return the keyData to encode in the PrivateKeyInfo structure.

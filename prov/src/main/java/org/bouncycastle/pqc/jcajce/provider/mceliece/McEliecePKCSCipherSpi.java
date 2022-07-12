@@ -15,9 +15,9 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCipher;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricBlockCipher;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCipher;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceKeyParameters;
 
 public class McEliecePKCSCipherSpi
     extends AsymmetricBlockCipher
