@@ -90,6 +90,7 @@ public class S2K
             break;
 
         case GNU_DUMMY_S2K:
+            algorithm = dIn.read();
             dIn.read(); // G
             dIn.read(); // N
             dIn.read(); // U
@@ -344,6 +345,7 @@ public class S2K
 
         case GNU_DUMMY_S2K:
             out.write(type);
+            out.write(algorithm);
             out.write('G');
             out.write('N');
             out.write('U');
