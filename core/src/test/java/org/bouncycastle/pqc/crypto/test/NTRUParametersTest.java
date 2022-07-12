@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048509;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSS701;
 
-public class NTRU3ParametersTest
+public class NTRUParametersTest
     extends TestCase
 {
     public void testHpsParameters()

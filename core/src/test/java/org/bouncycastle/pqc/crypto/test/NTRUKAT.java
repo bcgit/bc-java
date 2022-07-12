@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.bouncycastle.util.encoders.Hex;
 
-public class NTRU3KAT
+public class NTRUKAT
 {
     public int count;
     public byte[] seed;
@@ -31,9 +31,9 @@ public class NTRU3KAT
      */
     public byte[] ss;
 
-    public static List<NTRU3KAT> getKAT(InputStream src)
+    public static List<NTRUKAT> getKAT(InputStream src)
     {
-        List<NTRU3KAT> kats = new ArrayList<NTRU3KAT>();
+        List<NTRUKAT> kats = new ArrayList<NTRUKAT>();
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         HashMap<String, String> buf = new HashMap<String, String>();
         try
@@ -48,7 +48,7 @@ public class NTRU3KAT
                 {
                     if (buf.size() > 0)
                     {
-                        NTRU3KAT kat = new NTRU3KAT();
+                        NTRUKAT kat = new NTRUKAT();
                         kat.count = Integer.parseInt(buf.get("count"));
                         kat.seed = Hex.decode(buf.get("seed")); // seed for secure random
                         kat.pk = Hex.decode(buf.get("pk"));     // public key

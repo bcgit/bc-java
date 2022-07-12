@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.test;
+package org.bouncycastle.pqc.legacy.crypto.test;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

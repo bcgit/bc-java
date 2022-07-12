@@ -21,7 +21,7 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * KAT tests for round 3 NTRU algorithm.
  */
-public class NTRU3Test
+public class NTRUTest
     extends TestCase
 {
     private final String KAT_ROOT = "/org/bouncycastle/pqc/crypto/test/ntru/";
@@ -44,10 +44,10 @@ public class NTRU3Test
         {
             NTRUParameters param = params[i];
             String katFile = katFiles[i];
-            InputStream src = NTRU3Test.class.getResourceAsStream(KAT_ROOT + katFile);
-            List<NTRU3KAT> kats = NTRU3KAT.getKAT(src);
+            InputStream src = NTRUTest.class.getResourceAsStream(KAT_ROOT + katFile);
+            List<NTRUKAT> kats = NTRUKAT.getKAT(src);
 
-            for (NTRU3KAT kat : kats)
+            for (NTRUKAT kat : kats)
             {
                 SecureRandom random = new NISTSecureRandom(kat.seed, null);
 

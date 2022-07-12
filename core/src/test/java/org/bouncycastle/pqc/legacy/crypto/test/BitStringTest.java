@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.test;
+package org.bouncycastle.pqc.legacy.crypto.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.pqc.legacy.crypto.ntru.IndexGenerator.BitString;
