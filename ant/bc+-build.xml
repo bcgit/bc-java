@@ -516,8 +516,8 @@
         <compile target="${jce}">
             <jarFileSet>
                 <include name="**/*.class"/>
-                <exclude name="**/NTRU*.class" />
-                <exclude name="**/ntru/**/*.class" />
+                <exclude name="**/legacy/**/NTRU*.class" />
+                <exclude name="**/legacy/**/ntru/**/*.class" />
                 <exclude name="org/bouncycastle/pqc/**/*Tests.class" />
                 <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.class" />
                 <include name="**/*.properties"/>
@@ -1377,16 +1377,16 @@
 
     <target name="zip-src-jce" if="jce.present">
         <zip basedir="${jce.target.src.dir}" destfile="${jce.target.src.zip}">
-            <exclude name="**/NTRU*.java" />
-            <exclude name="**/ntru/**/*.java" />
+            <exclude name="**/legacy/**/NTRU*.java" />
+            <exclude name="**/legacy/**/ntru/**/*.java" />
         </zip>
     </target>
 
     <target name="zip-src-provider" if="provider.present">
         <zip basedir="${provider.target.src.dir}" destfile="${provider.target.src.zip}">
             <exclude name="**/javax/crypto/**/*.java"/>
-            <exclude name="**/NTRU*.java" />
-            <exclude name="**/ntru/**/*.java" />
+            <exclude name="**/legacy/**/NTRU*.java" />
+            <exclude name="**/legacy/**/ntru/**/*.java" />
         </zip>
     </target>
 
