@@ -577,24 +577,24 @@ class FalconSign
             return;
         }
 
-	/*
-	 * Normal end of recursion is for logn == 0. Since the last
-	 * steps of the recursions were inlined in the blocks above
-	 * (when logn == 1 or 2), this case is not reachable, and is
-	 * retained here only for documentation purposes.
+    /*
+     * Normal end of recursion is for logn == 0. Since the last
+     * steps of the recursions were inlined in the blocks above
+     * (when logn == 1 or 2), this case is not reachable, and is
+     * retained here only for documentation purposes.
 
-	if (logn == 0) {
-		fpr x0, x1, sigma;
+    if (logn == 0) {
+        fpr x0, x1, sigma;
 
-		x0 = t0[0];
-		x1 = t1[0];
-		sigma = tree[0];
-		z0[0] = fpr_of(samp(samp_ctx, x0, sigma));
-		z1[0] = fpr_of(samp(samp_ctx, x1, sigma));
-		return;
-	}
+        x0 = t0[0];
+        x1 = t1[0];
+        sigma = tree[0];
+        z0[0] = fpr_of(samp(samp_ctx, x0, sigma));
+        z1[0] = fpr_of(samp(samp_ctx, x1, sigma));
+        return;
+    }
 
-	 */
+     */
 
         /*
          * General recursive case (logn >= 3).
@@ -670,9 +670,9 @@ class FalconSign
         for (u = 0; u < n; u++)
         {
             srctmp[t0 + u] = fpr.fpr_of(srchm[hm + u]);
-		/* This is implicit.
-		t1[u] = fpr_zero;
-		*/
+        /* This is implicit.
+        t1[u] = fpr_zero;
+        */
         }
 
         /*
@@ -862,9 +862,9 @@ class FalconSign
         for (u = 0; u < n; u++)
         {
             srctmp[t0 + u] = fpr.fpr_of(srchm[hm + u]);
-		/* This is implicit.
-		t1[u] = fpr_zero;
-		*/
+        /* This is implicit.
+        t1[u] = fpr_zero;
+        */
         }
 
         /*
