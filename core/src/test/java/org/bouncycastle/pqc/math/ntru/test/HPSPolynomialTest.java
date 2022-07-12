@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.math.ntru;
+package org.bouncycastle.pqc.math.ntru.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
+import org.bouncycastle.pqc.math.ntru.HPSPolynomial;
+import org.bouncycastle.pqc.math.ntru.Polynomial;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048509;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPSParameterSet;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
