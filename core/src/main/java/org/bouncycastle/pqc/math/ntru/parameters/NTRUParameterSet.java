@@ -9,7 +9,8 @@ import org.bouncycastle.pqc.math.ntru.Polynomial;
  * @see NTRUHRSSParameterSet
  * @see <a href="https://ntru.org/f/ntru-20190330.pdf">NTRU specification document</a>
  */
-public abstract class NTRUParameterSet {
+public abstract class NTRUParameterSet
+{
     private final int n;
     private final int logQ;
 
@@ -17,7 +18,8 @@ public abstract class NTRUParameterSet {
     private final int prfKeyBytes;
     private final int sharedKeyBytes;
 
-    public NTRUParameterSet(int n, int logQ, int seedBytes, int prfKeyBytes, int sharedKeyBytes) {
+    public NTRUParameterSet(int n, int logQ, int seedBytes, int prfKeyBytes, int sharedKeyBytes)
+    {
         this.n = n;
         this.logQ = logQ;
         this.seedBytes = seedBytes;
@@ -37,7 +39,8 @@ public abstract class NTRUParameterSet {
      *
      * @return n is a prime and both 2 and 3 are of order n − 1 in (Z/n)×
      */
-    public int n() {
+    public int n()
+    {
         return n;
     }
 
@@ -46,7 +49,8 @@ public abstract class NTRUParameterSet {
      *
      * @return log2(q)
      */
-    public int logQ() {
+    public int logQ()
+    {
         return logQ;
     }
 
@@ -55,7 +59,8 @@ public abstract class NTRUParameterSet {
      *
      * @return q is a power of two
      */
-    public int q() {
+    public int q()
+    {
         return 1 << logQ;
     }
 
@@ -64,7 +69,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code key_seed_bits/8}
      */
-    public int seedBytes() {
+    public int seedBytes()
+    {
         return seedBytes;
     }
 
@@ -73,14 +79,16 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code prf_key_bits/8}
      */
-    public int prfKeyBytes() {
+    public int prfKeyBytes()
+    {
         return prfKeyBytes;
     }
 
     /**
      * @return {@code kem_shared_key_bits/8}
      */
-    public int sharedKeyBytes() {
+    public int sharedKeyBytes()
+    {
         return sharedKeyBytes;
     }
 
@@ -88,14 +96,16 @@ public abstract class NTRUParameterSet {
     /**
      * @return {@code sample_iid_bits/8}
      */
-    public int sampleIidBytes() {
+    public int sampleIidBytes()
+    {
         return n - 1;
     }
 
     /**
      * @return {@code sample_xed_type_bits}
      */
-    public int sampleFixedTypeBytes() {
+    public int sampleFixedTypeBytes()
+    {
         return (30 * (n - 1) + 7) / 8;
     }
 
@@ -109,14 +119,16 @@ public abstract class NTRUParameterSet {
      */
     public abstract int sampleRmBytes();
 
-    public int packDegree() {
+    public int packDegree()
+    {
         return n - 1;
     }
 
     /**
      * @return {@code packed_s3_bytes}
      */
-    public int packTrinaryBytes() {
+    public int packTrinaryBytes()
+    {
         return (packDegree() + 4) / 5;
     }
 
@@ -125,7 +137,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code dpke_plaintext_bytes}
      */
-    public int owcpaMsgBytes() {
+    public int owcpaMsgBytes()
+    {
         return 2 * packTrinaryBytes();
     }
 
@@ -134,7 +147,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code dpke_public_key_bytes}
      */
-    public int owcpaPublicKeyBytes() {
+    public int owcpaPublicKeyBytes()
+    {
         return (logQ * packDegree() + 7) / 8;
     }
 
@@ -143,7 +157,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code dpke_private_key_bytes}
      */
-    public int owcpaSecretKeyBytes() {
+    public int owcpaSecretKeyBytes()
+    {
         return 2 * packTrinaryBytes() + owcpaPublicKeyBytes();
     }
 
@@ -152,7 +167,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code dpke_ciphertext_bytes}
      */
-    public int owcpaBytes() {
+    public int owcpaBytes()
+    {
         return (logQ * packDegree() + 7) / 8;
     }
 
@@ -161,7 +177,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code kem_public_key_bytes}
      */
-    public int ntruPublicKeyBytes() {
+    public int ntruPublicKeyBytes()
+    {
         return owcpaPublicKeyBytes();
     }
 
@@ -170,7 +187,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code kem_private_key_bytes}
      */
-    public int ntruSecretKeyBytes() {
+    public int ntruSecretKeyBytes()
+    {
         return owcpaSecretKeyBytes() + prfKeyBytes;
     }
 
@@ -179,7 +197,8 @@ public abstract class NTRUParameterSet {
      *
      * @return {@code kem_ciphertext_bytes}
      */
-    public int ntruCiphertextBytes() {
+    public int ntruCiphertextBytes()
+    {
         return owcpaBytes();
     }
 }

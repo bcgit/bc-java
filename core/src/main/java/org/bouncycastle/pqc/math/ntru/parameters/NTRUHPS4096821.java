@@ -8,19 +8,23 @@ import org.bouncycastle.pqc.math.ntru.Polynomial;
  *
  * @see NTRUHPSParameterSet
  */
-public class NTRUHPS4096821 extends NTRUHPSParameterSet {
-    public NTRUHPS4096821() {
+public class NTRUHPS4096821
+    extends NTRUHPSParameterSet
+{
+    public NTRUHPS4096821()
+    {
         super(
-                821,
-                12,
-                32,
-                32,
-                32
+            821,
+            12,
+            32,
+            32,
+            32
         );
     }
 
     @Override
-    public Polynomial createPolynomial() {
+    public Polynomial createPolynomial()
+    {
         return new HPS4096Polynomial(this);
     }
 }
