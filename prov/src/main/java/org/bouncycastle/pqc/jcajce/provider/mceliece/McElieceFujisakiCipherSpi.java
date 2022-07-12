@@ -18,9 +18,9 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.DigestFactory;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceCCA2KeyParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McElieceFujisakiCipher;
 import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricHybridCipher;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2KeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceFujisakiCipher;
 
 public class McElieceFujisakiCipherSpi
     extends AsymmetricHybridCipher

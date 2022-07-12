@@ -21,8 +21,8 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.McEliecePrivateKey;
 import org.bouncycastle.pqc.asn1.McEliecePublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mceliece.McEliecePublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McEliecePrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McEliecePublicKeyParameters;
 
 /**
  * This class is used to translate between McEliece keys and key specifications.
