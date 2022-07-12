@@ -297,6 +297,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/internal/**/*.java" />
+                 <include name="org/bouncycastle/pqc/legacy/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
@@ -396,8 +397,8 @@
             <jarFileSet>
                 <include name="**/*.class"/>
                 <exclude name="**/javax/crypto/**/*.class"/>
-                <exclude name="**/NTRU*.class" />
-                <exclude name="**/ntru/**/*.class" />
+                <exclude name="**/legacy/**/NTRU*.class" />
+                <exclude name="**/legacy/**/ntru/**/*.class" />
                 <include name="**/*.properties"/>
             </jarFileSet>
             <manifestElements>
