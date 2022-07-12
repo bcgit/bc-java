@@ -1,12 +1,12 @@
 package org.bouncycastle.openpgp.operator;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
+
+import java.security.SecureRandom;
 
 /**
  * PGP style PBE encryption method.
@@ -41,6 +41,18 @@ public abstract class PBEKeyEncryptionMethodGenerator
         PGPDigestCalculator s2kDigestCalculator)
     {
         this(passPhrase, s2kDigestCalculator, 0x60);
+    }
+
+    /**
+     * Construct a PBE key generator using Argon2 as S2K mechanism.
+     *
+     * @param passPhrase passphrase
+     * @param params argon2 parameters
+     */
+    protected PBEKeyEncryptionMethodGenerator(
+            char[] passPhrase, S2K.Argon2Params params) {
+        this.passPhrase = passPhrase;
+        this.s2k = new S2K(params);
     }
 
     /**
