@@ -5,12 +5,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -27,6 +29,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -41,6 +44,7 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
@@ -757,6 +761,7 @@ public class PGPSignatureTest
         testSubpacketGenerator();
         testSignatureTarget();
         testUserAttributeEncoding();
+        testExportNonExportableSignature();
     }
 
     private void testUserAttributeEncoding()
@@ -1330,6 +1335,42 @@ public class PGPSignatureTest
         {
             fail("Failed generated signature check against original data");
         }
+    }
+
+    public void testExportNonExportableSignature() throws IOException {
+        String EXPORTABLESIGNATURE = "-----BEGIN PGP SIGNATURE-----\n" +
+                "Version: PGPainless\n" +
+                "\n" +
+                "iI8EExYKAEEFAmK8aU4JEDJBBPrCiPqgFiEECKiXm3bqI4ojIIhGMkEE+sKI+qAC\n" +
+                "ngECmwEFFgIDAQAECwkIBwUVCgkICwKZAQAAR6wA/RJnn5NOJX+RiYenHCsWntN6\n" +
+                "vekCppDpR0usktdM6c6TAQCh3s8aZQVLdDXML7jlZWOi63MXrD+cDvEDeDkL+dUH\n" +
+                "Bw==\n" +
+                "=Za8y\n" +
+                "-----END PGP SIGNATURE-----";
+
+        String NONEXPORTABLESIGNATURE = "-----BEGIN PGP SIGNATURE-----\n" +
+                "Version: PGPainless\n" +
+                "\n" +
+                "iHgEEBYKACoFAmK8aU4JEAsmrIrNwz5RFiEEQncQTHHtXmMRC2oFCyasis3DPlEC\n" +
+                "hAAAAFlDAP493FH/7WAp9nO5G3NfP3as3sDMGjdBalRnz25S5EFTGAEAjp/aAyK5\n" +
+                "5Q9Tj6dOUGO0H9E/n38PQRK+IHHvoiuEswI=\n" +
+                "=Ipfy\n" +
+                "-----END PGP SIGNATURE-----";
+
+        PGPSignature exportableSig = readSignatures(EXPORTABLESIGNATURE).get(0);
+        isTrue(Arrays.areEqual(exportableSig.getEncoded(), exportableSig.getEncoded(true)));
+
+        PGPSignature nonExportableSig = readSignatures(NONEXPORTABLESIGNATURE).get(0);
+        isTrue(!Arrays.areEqual(nonExportableSig.getEncoded(), nonExportableSig.getEncoded(true)));
+        isTrue(nonExportableSig.getEncoded(true).length == 0);
+    }
+
+    private PGPSignatureList readSignatures(String armored) throws IOException {
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(armored.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream armorIn = new ArmoredInputStream(byteIn);
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
+        PGPSignatureList signatures = (PGPSignatureList) objectFactory.nextObject();
+        return signatures;
     }
     
     public String getName()
