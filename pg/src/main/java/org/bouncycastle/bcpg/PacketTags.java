@@ -23,6 +23,7 @@ public interface PacketTags
       public static final int USER_ATTRIBUTE = 17;           // User attribute
       public static final int SYM_ENC_INTEGRITY_PRO = 18;    // Symmetric encrypted, integrity protected
       public static final int MOD_DETECTION_CODE = 19;       // Modification detection code
+      public static final int PADDING = 21;                  // Padding Packet
       
       public static final int EXPERIMENTAL_1 = 60;           // Private or Experimental Values
       public static final int EXPERIMENTAL_2 = 61;
