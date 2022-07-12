@@ -40,6 +40,15 @@ public class BcPBEKeyEncryptionMethodGenerator
     }
 
     /**
+     * Create a PBE encryption method generator using Argon2 for S2K key generation.
+     * @param passPhrase passphrase
+     * @param argon2Params parameters for argon2
+     */
+    public BcPBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params argon2Params) {
+        super(passPhrase, argon2Params);
+    }
+
+    /**
      * Create a PBE encryption method generator using the provided calculator and S2K count for key
      * generation.
      * 
