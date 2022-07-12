@@ -13,27 +13,34 @@ import org.bouncycastle.pqc.math.ntru.Polynomial;
  * @see NTRUHPS4096821
  * @see <a href="https://ntru.org/f/ntru-20190330.pdf">NTRU specification document</a> section 1.3.2
  */
-public abstract class NTRUHPSParameterSet extends NTRUParameterSet {
-    NTRUHPSParameterSet(int n, int logQ, int seedBytes, int prfKeyBytes, int sharedKeyBytes) {
+public abstract class NTRUHPSParameterSet
+    extends NTRUParameterSet
+{
+    NTRUHPSParameterSet(int n, int logQ, int seedBytes, int prfKeyBytes, int sharedKeyBytes)
+    {
         super(n, logQ, seedBytes, prfKeyBytes, sharedKeyBytes);
     }
 
     @Override
-    public Polynomial createPolynomial() {
+    public Polynomial createPolynomial()
+    {
         return new HPSPolynomial(this);
     }
 
     @Override
-    public int sampleFgBytes() {
+    public int sampleFgBytes()
+    {
         return sampleIidBytes() + sampleFixedTypeBytes();
     }
 
     @Override
-    public int sampleRmBytes() {
+    public int sampleRmBytes()
+    {
         return sampleIidBytes() + sampleFixedTypeBytes();
     }
 
-    public int weight() {
+    public int weight()
+    {
         return q() / 8 - 2;
     }
 }
