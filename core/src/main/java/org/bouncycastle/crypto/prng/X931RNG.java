@@ -110,7 +110,7 @@ public class X931RNG
 
         reseedCounter++;
 
-        return output.length;
+        return output.length * 8;
     }
 
     /**
