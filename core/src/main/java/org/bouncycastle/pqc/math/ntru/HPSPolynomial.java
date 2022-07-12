@@ -111,7 +111,6 @@ public class HPSPolynomial
         int n = this.coeffs.length;
         System.arraycopy(a.coeffs, 0, this.coeffs, 0, n);
         this.z3ToZq();
-        System.out.println();
     }
 
     @Override
