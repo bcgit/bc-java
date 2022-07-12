@@ -6,12 +6,6 @@ import org.bouncycastle.util.test.Test;
 public class RegressionTest
 {
     public static Test[]    tests = {
-        new GMSSSignerTest(),
-        new McElieceFujisakiCipherTest(),
-        new McElieceKobaraImaiCipherTest(),
-        new McElieceCipherTest(),
-        new McEliecePointchevalCipherTest(),
-        new RainbowSignerTest() ,
         new Sphincs256Test(),
         new NewHopeTest()
     };

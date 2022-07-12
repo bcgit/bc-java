@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.test;
+package org.bouncycastle.pqc.legacy.crypto.test;
 
 import java.security.SecureRandom;
 import java.util.Random;

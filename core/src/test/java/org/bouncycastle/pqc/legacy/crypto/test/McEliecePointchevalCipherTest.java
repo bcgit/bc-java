@@ -1,23 +1,21 @@
-package org.bouncycastle.pqc.crypto.test;
+package org.bouncycastle.pqc.legacy.crypto.test;
 
 import java.security.SecureRandom;
 import java.util.Random;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2KeyGenerationParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2KeyPairGenerator;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2Parameters;
-import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceFujisakiCipher;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McEliecePointchevalCipher;
 import org.bouncycastle.util.test.SimpleTest;
 
-public class McElieceFujisakiCipherTest
+public class McEliecePointchevalCipherTest
     extends SimpleTest
 {
-
     SecureRandom keyRandom = new SecureRandom();
 
     public String getName()
@@ -26,9 +24,8 @@ public class McElieceFujisakiCipherTest
 
     }
 
-
     public void performTest()
-        throws InvalidCipherTextException
+        throws Exception
     {
         int numPassesKPG = 1;
         int numPassesEncDec = 10;
@@ -36,7 +33,8 @@ public class McElieceFujisakiCipherTest
         byte[] mBytes;
         for (int j = 0; j < numPassesKPG; j++)
         {
-            McElieceCCA2Parameters params = new McElieceCCA2Parameters();
+
+            McElieceCCA2Parameters params = new McElieceCCA2Parameters("SHA-256");
             McElieceCCA2KeyPairGenerator mcElieceCCA2KeyGen = new McElieceCCA2KeyPairGenerator();
             McElieceCCA2KeyGenerationParameters genParam = new McElieceCCA2KeyGenerationParameters(keyRandom, params);
 
@@ -45,17 +43,17 @@ public class McElieceFujisakiCipherTest
 
             ParametersWithRandom param = new ParametersWithRandom(pair.getPublic(), keyRandom);
             Digest msgDigest = new SHA256Digest();
-            McElieceFujisakiCipher mcElieceFujisakiDigestCipher = new McElieceFujisakiCipher();
+            McEliecePointchevalCipher mcEliecePointchevalDigestCipher = new McEliecePointchevalCipher();
 
 
             for (int k = 1; k <= numPassesEncDec; k++)
             {
                 System.out.println("############### test: " + k);
                 // initialize for encryption
-                mcElieceFujisakiDigestCipher.init(true, param);
+                mcEliecePointchevalDigestCipher.init(true, param);
 
                 // generate random message
-                int mLength = (rand.nextInt() & 0x1f) + 1;;
+                int mLength = (rand.nextInt() & 0x1f) + 1;
                 mBytes = new byte[mLength];
                 rand.nextBytes(mBytes);
 
@@ -64,14 +62,13 @@ public class McElieceFujisakiCipherTest
                 msgDigest.doFinal(hash, 0);
 
                 // encrypt
-                byte[] enc = mcElieceFujisakiDigestCipher.messageEncrypt(hash);
+                byte[] enc = mcEliecePointchevalDigestCipher.messageEncrypt(hash);
 
                 // initialize for decryption
-                mcElieceFujisakiDigestCipher.init(false, pair.getPrivate());
-                byte[] constructedmessage = mcElieceFujisakiDigestCipher.messageDecrypt(enc);
+                mcEliecePointchevalDigestCipher.init(false, pair.getPrivate());
+                byte[] constructedmessage = mcEliecePointchevalDigestCipher.messageDecrypt(enc);
 
                 // XXX write in McElieceFujisakiDigestCipher?
-
 
                 boolean verified = true;
                 for (int i = 0; i < hash.length; i++)
@@ -97,7 +94,7 @@ public class McElieceFujisakiCipherTest
     public static void main(
         String[] args)
     {
-        runTest(new McElieceFujisakiCipherTest());
+        runTest(new McEliecePointchevalCipherTest());
     }
 
 }
