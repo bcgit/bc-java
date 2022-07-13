@@ -36,8 +36,8 @@ public class NTRUParametersTest
         assertEquals(935, hps2048509.ntruSecretKeyBytes());
         // kem_ciphertext_bytes
         assertEquals(699, hps2048509.ntruCiphertextBytes());
-        // kem_shared_key_bytes
-        assertEquals(256, hps2048509.sharedKeyBytes() * 8);
+        // kem_shared_key_bytes - category 1
+        assertEquals(128, hps2048509.sharedKeyBytes() * 8);
         // prf_key_bits
         assertEquals(256, hps2048509.prfKeyBytes() * 8);
     }
@@ -69,8 +69,8 @@ public class NTRUParametersTest
         assertEquals(1450, hrss701.ntruSecretKeyBytes());
         // kem_ciphertext_bytes
         assertEquals(1138, hrss701.ntruCiphertextBytes());
-        // kem_shared_key_bytes
-        assertEquals(256, hrss701.sharedKeyBytes() * 8);
+        // kem_shared_key_bytes  - category 3
+        assertEquals(192, hrss701.sharedKeyBytes() * 8);
         // prf_key_bits
         assertEquals(256, hrss701.prfKeyBytes() * 8);
     }
