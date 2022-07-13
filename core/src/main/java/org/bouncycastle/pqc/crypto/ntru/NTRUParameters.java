@@ -16,28 +16,35 @@ public class NTRUParameters
     /**
      * NTRU-HPS parameter set with n = 509 and q = 2048.
      */
-    public static final NTRUParameters ntruhps2048509 = new NTRUParameters(new NTRUHPS2048509());
+    public static final NTRUParameters ntruhps2048509 = new NTRUParameters("ntruhps2048509", new NTRUHPS2048509());
     /**
      * NTRU-HPS parameter set with n = 677 and q = 2048.
      */
-    public static final NTRUParameters ntruhps2048677 = new NTRUParameters(new NTRUHPS2048677());
+    public static final NTRUParameters ntruhps2048677 = new NTRUParameters("ntruhps2048677", new NTRUHPS2048677());
     /**
      * NTRU-HPS parameter set with n = 821 and q = 4096.
      */
-    public static final NTRUParameters ntruhps4096821 = new NTRUParameters(new NTRUHPS4096821());
+    public static final NTRUParameters ntruhps4096821 = new NTRUParameters("ntruhps4096821", new NTRUHPS4096821());
 
     /**
      * NTRU-HRSS parameter set with n = 701.
      */
-    public static final NTRUParameters ntruhrss701 = new NTRUParameters(new NTRUHRSS701());
+    public static final NTRUParameters ntruhrss701 = new NTRUParameters("ntruhrss701", new NTRUHRSS701());
 
+    private final String name;
     /**
      * Currently selected parameter set
      */
     final NTRUParameterSet parameterSet;
 
-    private NTRUParameters(NTRUParameterSet parameterSet)
+    private NTRUParameters(String name, NTRUParameterSet parameterSet)
     {
+        this.name = name;
         this.parameterSet = parameterSet;
+    }
+
+    public String getName()
+    {
+        return name;
     }
 }

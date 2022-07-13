@@ -18,11 +18,13 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
@@ -198,6 +200,23 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sikeOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof NTRUPublicKeyParameters)
+        {
+            NTRUPublicKeyParameters params = (NTRUPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntruOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof FalconPublicKeyParameters)
+        {
+            FalconPublicKeyParameters params = (FalconPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else

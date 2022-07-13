@@ -1,11 +1,11 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec;
-
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
+
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec;
 
 /**
  * KeyFactory/KeyPairGenerator tests for SABER with BCPQC provider.
@@ -18,7 +18,7 @@ public class SABERKeyPairGeneratorTest
         super.setUp();
     }
 
-    public void testKeyFacory()
+    public void testKeyFactory()
             throws Exception
     {
         kf = KeyFactory.getInstance("SABER", "BCPQC");

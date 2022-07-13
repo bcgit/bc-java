@@ -54,6 +54,10 @@ public class AllTests
         suite.addTestSuite(SABERKeyPairGeneratorTest.class);
         suite.addTestSuite(SIKETest.class);
         suite.addTestSuite(SIKEKeyPairGeneratorTest.class);
+        suite.addTestSuite(SABERTest.class);
+        suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
+        suite.addTestSuite(SIKETest.class);
+        suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }

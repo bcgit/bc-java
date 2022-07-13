@@ -25,7 +25,16 @@ public class CMCEParameterSpec
 
     static
     {
-
+        parameters.put("mceliece348864", mceliece348864);
+        parameters.put("mceliece348864f", mceliece348864f);
+        parameters.put("mceliece460896", mceliece460896);
+        parameters.put("mceliece460896f", mceliece460896f);
+        parameters.put("mceliece6688128", mceliece6688128);
+        parameters.put("mceliece6688128f", mceliece6688128f);
+        parameters.put("mceliece6960119", mceliece6960119);
+        parameters.put("mceliece6960119f", mceliece6960119f);
+        parameters.put("mceliece8192128", mceliece8192128);
+        parameters.put("mceliece8192128f", mceliece8192128f);
     }
 
     private final String name;

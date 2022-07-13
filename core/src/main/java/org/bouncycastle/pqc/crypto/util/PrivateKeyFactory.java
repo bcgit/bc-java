@@ -23,11 +23,15 @@ import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -174,6 +178,20 @@ public class PrivateKeyFactory
             SIKEParameters spParams = Utils.sikeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new SIKEPrivateKeyParameters(spParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntru))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            NTRUParameters spParams = Utils.ntruParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new NTRUPrivateKeyParameters(spParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.falcon))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            FalconParameters spParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new FalconPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {

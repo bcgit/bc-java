@@ -28,11 +28,7 @@ public class Picnic
 
             AsymmetricKeyInfoConverter keyFact = new PicnicKeyFactorySpi();
 
-            provider.addAlgorithm("Cipher.PICNIC", PREFIX + "PicnicCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.picnic, "PICNIC");
-
             registerOid(provider, BCObjectIdentifiers.picnic, "Picnic", keyFact);
-            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.picnic, "PICNIC");
         }
     }
 }

@@ -16,7 +16,7 @@ public class FalconKeyGenerationParameters
         this.params = parameters;
     }
 
-    public FalconParameters getParams()
+    public FalconParameters getParameters()
     {
         return this.params;
     }
