@@ -1,4 +1,3 @@
-
 stages:
   - check
   - test
@@ -6,9 +5,11 @@ stages:
 check-code:
   stage: check
   script:
-    - ". ~/envs/bc-java.sh; \ gradle check -x test;"
+    - "apply_overlay bc-java ./"
+    - ". cienv.sh; \ gradle check -x test;"
 
 test-code:
   stage: test
   script:
-    - ". ~/envs/bc-java.sh; \ gradle -stacktrace clean build;"
+    - "apply_overlay bc-java ./"
+    - ". cienv.sh; \ gradle -stacktrace clean build;"
