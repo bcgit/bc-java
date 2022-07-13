@@ -156,7 +156,7 @@ public class PicnicVectorTest
                         //
                         // Signature test
                         //
-                        PicnicSigner signer = new PicnicSigner(random);
+                        PicnicSigner signer = new PicnicSigner();
 
                         signer.init(true, privParams);
 
