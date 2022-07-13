@@ -8,8 +8,8 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.ntru.NTRUExtractor;
-import org.bouncycastle.pqc.crypto.ntru.NTRUGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
@@ -75,11 +75,13 @@ public class NTRUTest
 
                 // test encapsulate
                 NTRUPublicKeyParameters pk = new NTRUPublicKeyParameters(param, kat.pk);
-                NTRUGenerator encapsulator = new NTRUGenerator(random);
+                NTRUKEMGenerator encapsulator = new NTRUKEMGenerator(random);
                 SecretWithEncapsulation encapsulation = encapsulator.generateEncapsulated(pk);
+                byte[] secret = encapsulation.getSecret();
                 try
                 {
-                    Assert.assertTrue(Arrays.areEqual(kat.ss, encapsulation.getSecret()));
+                    // the KATs are based on 256 bit secrets
+                    Assert.assertTrue(Arrays.areEqual(kat.ss, 0, secret.length, secret, 0, secret.length));
                     Assert.assertTrue(Arrays.areEqual(kat.ct, encapsulation.getEncapsulation()));
                 }
                 catch (AssertionError e)
@@ -88,7 +90,7 @@ public class NTRUTest
                     System.err.println("KAT: " + katFiles[i]);
                     System.err.println("count: " + kat.count);
                     System.err.println("expected (ss): " + Hex.toHexString(kat.ss));
-                    System.err.println("actual (ss): " + Hex.toHexString(encapsulation.getSecret()));
+                    System.err.println("actual (ss): " + Hex.toHexString(secret));
                     System.err.println("expected (ct): " + Hex.toHexString(kat.ct));
                     System.err.println("actual (ct): " + Hex.toHexString(encapsulation.getEncapsulation()));
                     throw new AssertionError(e);
@@ -96,12 +98,12 @@ public class NTRUTest
 
                 // test decapsulate
                 NTRUPrivateKeyParameters sk = new NTRUPrivateKeyParameters(param, kat.sk);
-                NTRUExtractor decapsulator = new NTRUExtractor(sk);
+                NTRUKEMExtractor decapsulator = new NTRUKEMExtractor(sk);
                 byte[] ss = new byte[kat.ss.length];
                 try
                 {
                     ss = decapsulator.extractSecret(kat.ct);
-                    Assert.assertTrue(Arrays.areEqual(kat.ss, ss));
+                    Assert.assertTrue(Arrays.areEqual(kat.ss, 0, ss.length, ss, 0, ss.length));
                 }
                 catch (AssertionError e)
                 {

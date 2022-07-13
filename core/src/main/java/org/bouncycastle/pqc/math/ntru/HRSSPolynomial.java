@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.math.ntru;
 
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSSParameterSet;
 
-// TODO
 public class HRSSPolynomial
     extends Polynomial
 {

@@ -18,7 +18,7 @@ public class NTRUHPS4096821
             12,
             32,
             32,
-            32
+            32 // Category 5 (local model)
         );
     }
 

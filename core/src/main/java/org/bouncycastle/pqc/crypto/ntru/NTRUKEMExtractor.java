@@ -3,11 +3,12 @@ package org.bouncycastle.pqc.crypto.ntru;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
+import org.bouncycastle.util.Arrays;
 
 /**
  * NTRU secret encapsulation extractor.
  */
-public class NTRUExtractor
+public class NTRUKEMExtractor
     implements EncapsulatedSecretExtractor
 {
     private final NTRUParameters params;
@@ -19,7 +20,7 @@ public class NTRUExtractor
      *
      * @param ntruPrivateKey private key used to encapsulate the secret
      */
-    public NTRUExtractor(NTRUPrivateKeyParameters ntruPrivateKey)
+    public NTRUKEMExtractor(NTRUPrivateKeyParameters ntruPrivateKey)
     {
         this.params = ntruPrivateKey.getParameters();
         this.ntruPrivateKey = ntruPrivateKey;
@@ -31,7 +32,7 @@ public class NTRUExtractor
     {
         assert this.ntruPrivateKey != null;
         NTRUParameterSet parameterSet = this.params.parameterSet;
-        byte[] k = new byte[parameterSet.sharedKeyBytes()];
+
         byte[] sk = this.ntruPrivateKey.privateKey;
         int i, fail;
         byte[] rm;
@@ -45,6 +46,9 @@ public class NTRUExtractor
         /* See comment in owcpa_dec for details.                                */
 
         SHA3Digest sha3256 = new SHA3Digest(256);
+
+        byte[] k = new byte[sha3256.getDigestSize()];
+
         sha3256.update(rm, 0, rm.length);
         sha3256.doFinal(k, 0);
 
@@ -62,7 +66,12 @@ public class NTRUExtractor
         sha3256.doFinal(rm, 0);
 
         cmov(k, rm, (byte)fail);
-        return k;
+
+        byte[] sharedKey = Arrays.copyOfRange(k, 0, parameterSet.sharedKeyBytes());
+
+        Arrays.clear(k);
+
+        return sharedKey;
     }
 
     private void cmov(byte[] r, byte[] x, byte b)
@@ -72,5 +81,10 @@ public class NTRUExtractor
         {
             r[i] ^= b & (x[i] ^ r[i]);
         }
+    }
+
+    public int getInputSize()
+    {
+        return params.parameterSet.ntruCiphertextBytes();
     }
 }
