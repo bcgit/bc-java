@@ -188,7 +188,7 @@ class Fpx
     // Is x even? return 1 (TRUE) if condition is true, 0 (FALSE) otherwise.
     private static boolean is_felm_even(long[] x)
     {
-        return ((x[0] & 1) ^ 1) == 1;
+        return (x[0] & 1L) == 0L;
     }
 
     // Test if a is a square in GF(p^2) and return 1 if true, 0 otherwise
@@ -485,7 +485,7 @@ class Fpx
     private void rdc_mont(long[] ma, long[] mc)
     {
         int i, j, carry, count = engine.params.PRIME_ZERO_WORDS;
-        long t = 0, u = 0, v = 0;
+        long t = 0, u = 0, v = 0, temp;
         long[] UV = new long[2];
 
         for (i = 0; i < engine.params.NWORDS_FIELD; i++)
@@ -500,31 +500,27 @@ class Fpx
                 if (j < (i-engine.params.PRIME_ZERO_WORDS+1))
                 {
                     //MUL
-                    digit_x_digit(mc[j], engine.params.PRIMEp1[i-j], UV);
+                    digit_x_digit(mc[j], engine.params.PRIMEp1[i - j], UV);
 
                     //ADDC
-                    long tempReg = (UV[0]) + (0);
-                    v = (v) + tempReg;
-                    carry = (is_digit_lessthan_ct(tempReg, (0)) | is_digit_lessthan_ct((v), tempReg));
+                    temp = UV[0];
+                    v += temp;
+                    temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                     //ADDC
-                    tempReg = (UV[1]) + (carry);
-                    u = (u) + tempReg;
-                    carry = (is_digit_lessthan_ct(tempReg, (carry)) | is_digit_lessthan_ct((u), tempReg));
-
-                    t += carry;
+                    u += temp;
+                    t += is_digit_lessthan_ct(u, temp);
                 }
             }
 
             //ADDC
-            long tempReg = (v) + (0);
-            v = (ma[i]) + tempReg;
-            carry = (is_digit_lessthan_ct(tempReg, (0)) | is_digit_lessthan_ct((v), tempReg));
+            long tempReg = ma[i];
+            v += tempReg;
+            carry = is_digit_lessthan_ct(v, tempReg);
 
             //ADDC
-            tempReg = (u) + (carry);
-            u = (0) + tempReg;
-            carry = (is_digit_lessthan_ct(tempReg, (carry)) | is_digit_lessthan_ct((u), tempReg));
+            u += carry;
+            carry &= is_digit_zero_ct(u);
 
             t += carry;
             mc[i] = v;
@@ -544,45 +540,44 @@ class Fpx
                 if (j < (engine.params.NWORDS_FIELD-count))
                 {
                     //MUL
-                    digit_x_digit(mc[j], engine.params.PRIMEp1[i-j], UV);
+                    digit_x_digit(mc[j], engine.params.PRIMEp1[i - j], UV);
 
                     //ADDC
-                    long tempReg = (UV[0]) + (0);
-                    v = (v) + tempReg;
-                    carry = (is_digit_lessthan_ct(tempReg, (0)) | is_digit_lessthan_ct((v), tempReg));
+                    temp = UV[0];
+                    v += temp;
+                    temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                     //ADDC
-                    tempReg = (UV[1]) + (carry);
-                    u = (u) + tempReg;
-                    carry = (is_digit_lessthan_ct(tempReg, (carry)) | is_digit_lessthan_ct((u), tempReg));
-
-                    t += carry;
+                    u += temp;
+                    t += is_digit_lessthan_ct(u, temp);
                 }
             }
 
             //ADDC
-            long tempReg = (v) + (0);
-            v = (ma[i]) + tempReg;
-            carry = (is_digit_lessthan_ct(tempReg, (0)) | is_digit_lessthan_ct((v), tempReg));
+            long tempReg = ma[i];
+            v += tempReg;
+            carry = is_digit_lessthan_ct(v, tempReg);
 
             //ADDC
-            tempReg = (u) + (carry);
-            u = (0) + tempReg;
-            carry = (is_digit_lessthan_ct(tempReg, (carry)) | is_digit_lessthan_ct((u), tempReg));
+            u += carry;
+            carry &= is_digit_zero_ct(u);
 
             t += carry;
-            mc[i-engine.params.NWORDS_FIELD] = v;
+            mc[i - engine.params.NWORDS_FIELD] = v;
             v = u;
             u = t;
             t = 0;
         }
 
         //ADDC
-        long tempReg = (v) + (0);
-        v = (ma[2*engine.params.NWORDS_FIELD-1]) + tempReg;
-        carry = (is_digit_lessthan_ct(tempReg, (0)) | is_digit_lessthan_ct((v), tempReg));
+        long tempReg = ma[2*engine.params.NWORDS_FIELD-1];
+        v += tempReg;
+        carry = is_digit_lessthan_ct(v, tempReg);
+//        assert carry == 0;
 
         mc[engine.params.NWORDS_FIELD-1] = v;
+//        assert u == 0;
+//        assert t == 0;
     }
 
     protected static boolean subarrayEquals(long[] a, long[] b, int length)
@@ -960,8 +955,8 @@ class Fpx
     // NOTE: a and c CANNOT be the same variable!
     protected void multiply(long[] a, long[] b, long[] c, int nwords)
     {
-        int i, j, carry = 0;
-        long t = 0, u = 0, v = 0;
+        int i, j;
+        long t = 0, u = 0, v = 0, temp;
         long[] UV = new long[2];
 
         for (i = 0; i < nwords; i++)
@@ -969,19 +964,16 @@ class Fpx
             for (j = 0; j <= i; j++)
             {
                 //MUL
-                digit_x_digit(a[j], b[i-j], UV);
+                digit_x_digit(a[j], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = (v) + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = (u) + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
@@ -993,26 +985,25 @@ class Fpx
             for (j = i-nwords+1; j < nwords; j++)
             {
                 //MUL
-                digit_x_digit(a[j], b[i-j], UV);
+                digit_x_digit(a[j], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = (v) + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = (u) + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
             u = t;
             t = 0;
         }
-        c[2*nwords-1] = v;
+        c[2 * nwords - 1] = v;
+//        assert u == 0;
+//        assert t == 0;
     }
 
     // Is x = 0? return 1 (TRUE) if condition is true, 0 (FALSE) otherwise
@@ -1380,28 +1371,24 @@ class Fpx
     protected void mp_mul(long[] a, long[] b, long[] c, int nwords)
     {
         int i, j;
-        long t = 0, u = 0, v = 0;
+        long t = 0, u = 0, v = 0, temp;
         long[] UV = new long[2];
-        int carry = 0;
 
         for (i = 0; i < nwords; i++)
         {
             for (j = 0; j <= i; j++)
             {
                 //MUL
-                digit_x_digit(a[j], b[i-j], UV);
+                digit_x_digit(a[j], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = v + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = u + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
@@ -1414,54 +1401,49 @@ class Fpx
             for (j = i-nwords+1; j < nwords; j++)
             {
                 //MUL
-                digit_x_digit(a[j], b[i-j], UV);
+                digit_x_digit(a[j], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = v + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = u + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
             u = t;
             t = 0;
         }
-        c[2*nwords-1] = v;
+        c[2 * nwords - 1] = v;
+//        assert u == 0;
+//        assert t == 0;
     }
 
     // Multiprecision comba multiply, c = a*b, where lng(a) = lng(b) = nwords.
     protected void mp_mul(long[] a, int aOffset, long[] b, long[] c, int nwords)
     {
         int i, j;
-        long t = 0, u = 0, v = 0;
+        long t = 0, u = 0, v = 0, temp;
         long[] UV = new long[2];
-        int carry = 0;
 
         for (i = 0; i < nwords; i++)
         {
             for (j = 0; j <= i; j++)
             {
                 //MUL
-                digit_x_digit(a[j + aOffset], b[i-j], UV);
+                digit_x_digit(a[j + aOffset], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = v + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = u + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
@@ -1474,26 +1456,25 @@ class Fpx
             for (j = i-nwords+1; j < nwords; j++)
             {
                 //MUL
-                digit_x_digit(a[j + aOffset], b[i-j], UV);
+                digit_x_digit(a[j + aOffset], b[i - j], UV);
 
                 //ADDC
-                long tempReg = UV[0] + 0;
-                v = v + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, 0) | is_digit_lessthan_ct(v, tempReg));
+                temp = UV[0];
+                v += temp;
+                temp = UV[1] + is_digit_lessthan_ct(v, temp); // No overflow possible; high part of product < Long.MAX_VALUE 
 
                 //ADDC
-                tempReg = UV[1] + carry;
-                u = u + tempReg;
-                carry = (is_digit_lessthan_ct(tempReg, carry) | is_digit_lessthan_ct(u, tempReg));
-
-                t += carry;
+                u += temp;
+                t += is_digit_lessthan_ct(u, temp);
             }
             c[i] = v;
             v = u;
             u = t;
             t = 0;
         }
-        c[2*nwords-1] = v;
+        c[2 * nwords - 1] = v;
+//        assert u == 0;
+//        assert t == 0;
     }
 
     // GF(p^2) multiplication using Montgomery arithmetic, c = a*b in GF(p^2).
