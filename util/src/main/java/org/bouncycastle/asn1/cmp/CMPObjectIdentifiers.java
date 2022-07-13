@@ -152,6 +152,9 @@ public interface CMPObjectIdentifiers
      */
     ASN1ObjectIdentifier id_it_certProfile = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.21");
 
+    ASN1ObjectIdentifier id_it_crlStatusList = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.22");
+
+    ASN1ObjectIdentifier id_it_crls = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.4.23");
 
     // Not yet formally defined.
 
