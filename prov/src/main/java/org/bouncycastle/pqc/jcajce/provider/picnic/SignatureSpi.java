@@ -11,7 +11,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -63,14 +62,7 @@ public class SignatureSpi
             BCPicnicPrivateKey key = (BCPicnicPrivateKey)privateKey;
             CipherParameters param = key.getKeyParams();
             digest.reset();
-            if (random != null)
-            {
-                signer.init(true, new ParametersWithRandom(param, random));
-            }
-            else
-            {
-                signer.init(true, param);
-            }
+            signer.init(true, param);
         }
         else
         {
