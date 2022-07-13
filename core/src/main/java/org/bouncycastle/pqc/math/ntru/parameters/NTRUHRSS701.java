@@ -16,7 +16,7 @@ public class NTRUHRSS701
             13,
             32,
             32,
-            32
+            24 // Category 3 (local model) - KATs based on 256 bit
         );
     }
 }

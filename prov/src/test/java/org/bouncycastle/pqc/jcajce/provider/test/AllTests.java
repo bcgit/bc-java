@@ -56,7 +56,7 @@ public class AllTests
         suite.addTestSuite(SIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(FalconTest.class);
         suite.addTestSuite(FalconKeyPairGeneratorTest.class);
-        suite.addTestSuite(SIKETest.class);
+        suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);

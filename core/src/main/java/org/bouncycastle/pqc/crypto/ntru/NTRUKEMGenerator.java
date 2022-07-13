@@ -8,14 +8,15 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.math.ntru.Polynomial;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Encapsulate a secret using NTRU. returns a {@link SecretWithEncapsulation} as encapsulation.
  *
- * @see NTRUExtractor
+ * @see NTRUKEMExtractor
  * @see <a href="https://ntru.org/">NTRU website</a>
  */
-public class NTRUGenerator
+public class NTRUKEMGenerator
     implements EncapsulatedSecretGenerator
 {
     private final SecureRandom random;
@@ -25,7 +26,7 @@ public class NTRUGenerator
      *
      * @param random a secure random number generator
      */
-    public NTRUGenerator(SecureRandom random)
+    public NTRUKEMGenerator(SecureRandom random)
     {
         this.random = random;
     }
@@ -35,8 +36,6 @@ public class NTRUGenerator
     {
         NTRUParameterSet parameterSet = ((NTRUPublicKeyParameters)recipientKey).getParameters().parameterSet;
         NTRUSampling sampling = new NTRUSampling(parameterSet);
-
-        byte[] k = new byte[parameterSet.sharedKeyBytes()];
         NTRUOWCPA owcpa = new NTRUOWCPA(parameterSet);
         Polynomial r;
         Polynomial m;
@@ -53,13 +52,21 @@ public class NTRUGenerator
         System.arraycopy(rm1, 0, rm, 0, rm1.length);
         byte[] rm2 = m.s3ToBytes(rm.length - parameterSet.packTrinaryBytes());
         System.arraycopy(rm2, 0, rm, parameterSet.packTrinaryBytes(), rm2.length);
+
         SHA3Digest sha3256 = new SHA3Digest(256);
         sha3256.update(rm, 0, rm.length);
+
+        byte[] k = new byte[sha3256.getDigestSize()];
+
         sha3256.doFinal(k, 0);
 
         r.z3ToZq();
         byte[] c = owcpa.encrypt(r, m, ((NTRUPublicKeyParameters)recipientKey).publicKey);
 
-        return new NTRUEncapsulation(k, c);
+        byte[] sharedKey = Arrays.copyOfRange(k, 0, parameterSet.sharedKeyBytes());
+
+        Arrays.clear(k);
+        
+        return new NTRUEncapsulation(sharedKey, c);
     }
 }
