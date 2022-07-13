@@ -8,7 +8,7 @@ import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 
 public class NTRU
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".frodo.";
+    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".ntru.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider
@@ -30,6 +30,10 @@ public class NTRU
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_ntru, "NTRU");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_ntru, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhps2048509, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhps2048677, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhps4096821, "NTRU", keyFact);
+            registerOid(provider, BCObjectIdentifiers.ntruhrss701, "NTRU", keyFact);
         }
     }
 }
