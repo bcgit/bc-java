@@ -30,7 +30,6 @@ public class Frodo
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_frodo, "FRODO");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_frodo, "Frodo", keyFact);
-            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.pqc_kem_frodo, "FRODO");
         }
     }
 }

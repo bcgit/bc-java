@@ -25,4 +25,14 @@ public class NTRUPublicKeyParameters
     {
         return Arrays.clone(this.publicKey);
     }
+
+    /**
+     * Get the encoding of public key.
+     *
+     * @return a byte array containing public key encoding
+     */
+    public byte[] getEncoded()
+    {
+        return getPublicKey();
+    }
 }

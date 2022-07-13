@@ -25,11 +25,15 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -118,6 +122,8 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sikep503_compressed, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep610_compressed, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep751_compressed, new SIKEConverter());
+        converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
+        converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
     }
 
     /**
@@ -397,6 +403,34 @@ public class PublicKeyFactory
             PicnicParameters picnicParams = Utils.picnicParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new PicnicPublicKeyParameters(picnicParams, keyEnc);
+        }
+    }
+
+    private static class NtruConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            NTRUParameters ntruParams = Utils.ntruParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new NTRUPublicKeyParameters(ntruParams, keyEnc);
+        }
+    }
+
+    private static class FalconConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            FalconParameters falconParams = Utils.falconParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new FalconPublicKeyParameters(falconParams, keyEnc);
         }
     }
 }

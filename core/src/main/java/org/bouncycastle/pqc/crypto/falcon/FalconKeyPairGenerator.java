@@ -23,8 +23,8 @@ public class FalconKeyPairGenerator
     {
         this.params = (FalconKeyGenerationParameters)param;
         this.random = param.getRandom();
-        this.logn = ((FalconKeyGenerationParameters)param).getParams().getLogN();
-        this.noncelen = ((FalconKeyGenerationParameters)param).getParams().getNonceLength();
+        this.logn = ((FalconKeyGenerationParameters)param).getParameters().getLogN();
+        this.noncelen = ((FalconKeyGenerationParameters)param).getParameters().getNonceLength();
         this.nist = new FalconNIST(logn, noncelen, random);
         int n = 1 << this.logn;
         int sk_coeff_size = 8;
@@ -50,7 +50,7 @@ public class FalconKeyPairGenerator
         pk = new byte[pk_size];
         sk = new byte[sk_size];
         nist.crypto_sign_keypair(pk, 0, sk, 0);
-        FalconParameters p = ((FalconKeyGenerationParameters)this.params).getParams();
+        FalconParameters p = ((FalconKeyGenerationParameters)this.params).getParameters();
         FalconPrivateKeyParameters privk = new FalconPrivateKeyParameters(p, sk);
         FalconPublicKeyParameters pubk = new FalconPublicKeyParameters(p, pk);
         return new AsymmetricCipherKeyPair(pubk, privk);

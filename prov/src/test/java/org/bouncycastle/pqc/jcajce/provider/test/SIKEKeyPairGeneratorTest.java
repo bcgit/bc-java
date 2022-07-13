@@ -18,7 +18,7 @@ public class SIKEKeyPairGeneratorTest
         super.setUp();
     }
 
-    public void testKeyFacory()
+    public void testKeyFactory()
         throws Exception
     {
         kf = KeyFactory.getInstance("SIKE", "BCPQC");
