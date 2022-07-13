@@ -28,7 +28,8 @@ public class Falcon
 
             AsymmetricKeyInfoConverter keyFact = new FalconKeyFactorySpi();
 
-            registerOid(provider, BCObjectIdentifiers.falcon, "Falcon", keyFact);
+            registerOid(provider, BCObjectIdentifiers.falcon_512, "Falcon", keyFact);
+            registerOid(provider, BCObjectIdentifiers.falcon_1024, "Falcon", keyFact);
         }
     }
 }
