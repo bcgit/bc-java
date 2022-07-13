@@ -25,4 +25,14 @@ public class NTRUPrivateKeyParameters
     {
         return Arrays.clone(this.privateKey);
     }
+
+    /**
+     * Get the encoding of the private key.
+     *
+     * @return a byte array containing private key
+     */
+    public byte[] getEncoded()
+    {
+        return getPrivateKey();
+    }
 }

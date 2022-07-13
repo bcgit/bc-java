@@ -16,7 +16,9 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
@@ -58,6 +60,12 @@ class Utils
 
     static final Map sikeOids = new HashMap();
     static final Map sikeParams = new HashMap();
+
+    static final Map ntruOids = new HashMap();
+    static final Map ntruParams = new HashMap();
+
+    static final Map falconOids = new HashMap();
+    static final Map falconParams = new HashMap();
 
     static
     {
@@ -166,6 +174,22 @@ class Utils
         sikeParams.put(BCObjectIdentifiers.sikep503_compressed, SIKEParameters.sikep503_compressed);
         sikeParams.put(BCObjectIdentifiers.sikep610_compressed, SIKEParameters.sikep610_compressed);
         sikeParams.put(BCObjectIdentifiers.sikep751_compressed, SIKEParameters.sikep751_compressed);
+
+        ntruOids.put(NTRUParameters.ntruhps2048509, BCObjectIdentifiers.ntruhps2048509);
+        ntruOids.put(NTRUParameters.ntruhps2048677, BCObjectIdentifiers.ntruhps2048677);
+        ntruOids.put(NTRUParameters.ntruhps4096821, BCObjectIdentifiers.ntruhps4096821);
+        ntruOids.put(NTRUParameters.ntruhrss701, BCObjectIdentifiers.ntruhrss701);
+
+        ntruParams.put(BCObjectIdentifiers.ntruhps2048509, NTRUParameters.ntruhps2048509);
+        ntruParams.put(BCObjectIdentifiers.ntruhps2048677, NTRUParameters.ntruhps2048677);
+        ntruParams.put(BCObjectIdentifiers.ntruhps4096821, NTRUParameters.ntruhps4096821);
+        ntruParams.put(BCObjectIdentifiers.ntruhrss701, NTRUParameters.ntruhrss701);
+
+        falconOids.put(FalconParameters.falcon_512, BCObjectIdentifiers.falcon_512);
+        falconOids.put(FalconParameters.falcon_1024, BCObjectIdentifiers.falcon_1024);
+
+        falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
+        falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -383,5 +407,25 @@ class Utils
     static SIKEParameters sikeParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SIKEParameters)sikeParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier falconOidLookup(FalconParameters params)
+    {
+        return (ASN1ObjectIdentifier)falconOids.get(params);
+    }
+
+    static FalconParameters falconParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (FalconParameters)falconParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier ntruOidLookup(NTRUParameters params)
+    {
+        return (ASN1ObjectIdentifier)ntruOids.get(params);
+    }
+
+    static NTRUParameters ntruParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (NTRUParameters)ntruParams.get(oid);
     }
 }

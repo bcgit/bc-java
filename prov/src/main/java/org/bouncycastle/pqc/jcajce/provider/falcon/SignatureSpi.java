@@ -1,5 +1,6 @@
-package org.bouncycastle.pqc.jcajce.provider.picnic;
+package org.bouncycastle.pqc.jcajce.provider.falcon;
 
+import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -9,42 +10,37 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
+import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
 
 public class SignatureSpi
     extends java.security.Signature
 {
+    private ByteArrayOutputStream bOut;
+    private FalconSigner signer;
     private SecureRandom random;
-    private Digest digest;
-    private PicnicSigner signer;
 
-    protected SignatureSpi(Digest digest, PicnicSigner signer)
+    protected SignatureSpi(FalconSigner signer)
     {
-        super("Picnic");
-
-        this.digest = digest;
+        super("Falcon");
+        
+        this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
     }
 
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        if (publicKey instanceof BCPicnicPublicKey)
+        if (publicKey instanceof BCFalconPublicKey)
         {
-            BCPicnicPublicKey key = (BCPicnicPublicKey)publicKey;
+            BCFalconPublicKey key = (BCFalconPublicKey)publicKey;
             CipherParameters param = key.getKeyParams();
 
-            digest.reset();
             signer.init(false, param);
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to Picnic");
+            throw new InvalidKeyException("unknown public key passed to Falcon");
         }
     }
 
@@ -58,11 +54,11 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
-        if (privateKey instanceof BCPicnicPrivateKey)
+        if (privateKey instanceof BCFalconPrivateKey)
         {
-            BCPicnicPrivateKey key = (BCPicnicPrivateKey)privateKey;
+            BCFalconPrivateKey key = (BCFalconPrivateKey)privateKey;
             CipherParameters param = key.getKeyParams();
-            digest.reset();
+
             if (random != null)
             {
                 signer.init(true, new ParametersWithRandom(param, random));
@@ -74,35 +70,32 @@ public class SignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("unknown private key passed to Picnic");
+            throw new InvalidKeyException("unknown private key passed to Falcon");
         }
     }
 
     protected void engineUpdate(byte b)
             throws SignatureException
     {
-        digest.update(b);
+        bOut.write(b);
     }
 
     protected void engineUpdate(byte[] b, int off, int len)
             throws SignatureException
     {
-        digest.update(b, off, len);
+        bOut.write(b, off, len);
     }
-
 
     protected byte[] engineSign()
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
-
         try
         {
-            byte[] detachedSig = signer.generateSignature(hash);
-            byte[] attachedSig = Arrays.concatenate(Pack.intToLittleEndian(detachedSig.length), hash, detachedSig);
+            byte[] message = bOut.toByteArray();
 
-            return attachedSig;
+            bOut.reset();
+
+            return signer.generateSignature(message);
         }
         catch (Exception e)
         {
@@ -113,10 +106,11 @@ public class SignatureSpi
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
+        byte[] message = bOut.toByteArray();
 
-        return signer.verifySignature(hash, sigBytes);
+        bOut.reset();
+
+        return signer.verifySignature(message, sigBytes);
     }
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
@@ -140,14 +134,14 @@ public class SignatureSpi
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
+
     public static class Base
         extends SignatureSpi
     {
         public Base()
             throws NoSuchAlgorithmException
         {
-            super(new SHA512Digest(), new PicnicSigner());
+            super(new FalconSigner());
         }
     }
-
 }

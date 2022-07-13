@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
-import java.security.SecureRandom;
 import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -12,11 +11,8 @@ public class PicnicSigner
     private PicnicPrivateKeyParameters privKey;
     private PicnicPublicKeyParameters pubKey;
 
-    private SecureRandom random;
-
-    public PicnicSigner(SecureRandom random)
+    public PicnicSigner()
     {
-        this.random = random;
     }
 
     public void init(boolean forSigning, CipherParameters param)

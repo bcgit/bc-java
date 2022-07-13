@@ -19,6 +19,16 @@ public class FrodoParameterSpec
 
     private static Map parameters = new HashMap();
 
+    static
+    {
+        parameters.put("frodokem19888r3", frodokem19888r3);
+        parameters.put("frodokem19888shaker3", frodokem19888shaker3);
+        parameters.put("frodokem31296r3", frodokem31296r3);
+        parameters.put("frodokem31296shaker3", frodokem31296shaker3);
+        parameters.put("frodokem43088r3", frodokem43088r3);
+        parameters.put("frodokem43088shaker3", frodokem43088shaker3);
+    }
+
     private final String name;
 
     private FrodoParameterSpec(FrodoParameters parameters)
@@ -30,6 +40,7 @@ public class FrodoParameterSpec
     {
         return name;
     }
+
     public static FrodoParameterSpec fromName(String name)
     {
         return (FrodoParameterSpec) parameters.get(Strings.toLowerCase(name));

@@ -25,6 +25,22 @@ public class PicnicParameterSpec
 
     private static Map parameters = new HashMap();
 
+    static
+    {
+        parameters.put("picnicl1fs", picnicl1fs);
+        parameters.put("picnicl1ur", picnicl1ur);
+        parameters.put("picnicl3fs", picnicl3fs);
+        parameters.put("picnicl3ur", picnicl3ur);
+        parameters.put("picnicl5fs", picnicl5fs);
+        parameters.put("picnicl5ur", picnicl5ur);
+        parameters.put("picnic3l1", picnic3l1);
+        parameters.put("picnic3l3", picnic3l3);
+        parameters.put("picnic3l5", picnic3l5);
+        parameters.put("picnicl1full", picnicl1full);
+        parameters.put("picnicl3full", picnicl3full);
+        parameters.put("picnicl5full", picnicl5full);
+    }
+
     private final String name;
 
     private PicnicParameterSpec(PicnicParameters parameters)
@@ -36,10 +52,9 @@ public class PicnicParameterSpec
     {
         return name;
     }
+
     public static PicnicParameterSpec fromName(String name)
     {
         return (PicnicParameterSpec) parameters.get(Strings.toLowerCase(name));
     }
-
-
 }

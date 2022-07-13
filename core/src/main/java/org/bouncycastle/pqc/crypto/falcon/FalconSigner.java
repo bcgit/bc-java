@@ -11,7 +11,6 @@ public class FalconSigner
     private byte[] encodedkey;
     private FalconNIST nist;
 
-
     public void init(boolean forSigning, CipherParameters param)
     {
         if (forSigning)
@@ -20,16 +19,16 @@ public class FalconSigner
             {
                 FalconPrivateKeyParameters skparam = ((FalconPrivateKeyParameters)((ParametersWithRandom)param).getParameters());
                 encodedkey = skparam.getEncoded();
-                nist = new FalconNIST(skparam.getParams().getLogN(),
-                    skparam.getParams().getNonceLength(),
+                nist = new FalconNIST(skparam.getParameters().getLogN(),
+                    skparam.getParameters().getNonceLength(),
                     ((ParametersWithRandom)param).getRandom());
             }
             else
             {
                 FalconPrivateKeyParameters skparam = (FalconPrivateKeyParameters)param;
                 encodedkey = ((FalconPrivateKeyParameters)param).getEncoded();
-                nist = new FalconNIST(skparam.getParams().getLogN(),
-                    skparam.getParams().getNonceLength(),
+                nist = new FalconNIST(skparam.getParameters().getLogN(),
+                    skparam.getParameters().getNonceLength(),
                     CryptoServicesRegistrar.getSecureRandom());
             }
         }
@@ -37,8 +36,8 @@ public class FalconSigner
         {
             FalconPublicKeyParameters pkparam = (FalconPublicKeyParameters)param;
             encodedkey = pkparam.getEncoded();
-            nist = new FalconNIST(pkparam.getParams().getLogN(),
-                pkparam.getParams().getNonceLength(),
+            nist = new FalconNIST(pkparam.getParameters().getLogN(),
+                pkparam.getParameters().getNonceLength(),
                 CryptoServicesRegistrar.getSecureRandom());
         }
     }

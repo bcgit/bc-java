@@ -30,7 +30,6 @@ public class SIKE
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_sike, "SIKE");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_sike, "SIKE", keyFact);
-            registerOidAlgorithmParameters(provider, BCObjectIdentifiers.pqc_kem_sike, "SIKE");
         }
     }
 }

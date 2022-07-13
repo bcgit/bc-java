@@ -10,7 +10,7 @@ import org.bouncycastle.pqc.jcajce.spec.FrodoParameterSpec;
 /**
  * KeyFactory/KeyPairGenerator tests for Frodo with BCPQC provider.
  */
-public class FrodoKeyPairGeneratorTest
+public class FalconKeyPairGeneratorTest
     extends KeyPairGeneratorTest
 {
     protected void setUp()
