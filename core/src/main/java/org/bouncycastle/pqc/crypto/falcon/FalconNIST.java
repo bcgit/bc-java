@@ -25,16 +25,25 @@ class FalconNIST
         this.LOGN = logn;
         this.NONCELEN = noncelen;
         this.N = 1 << logn;
+        this.CRYPTO_PUBLICKEYBYTES = 1 + (14 * this.N / 8);
         if (logn == 10)
         {
             this.CRYPTO_SECRETKEYBYTES = 2305;
-            this.CRYPTO_PUBLICKEYBYTES = 1793;
             this.CRYPTO_BYTES = 1330;
+        }
+        else if (logn == 9 || logn == 8)
+        {
+            this.CRYPTO_SECRETKEYBYTES = 1 + (6 * this.N * 2 / 8) + this.N;
+            this.CRYPTO_BYTES = 690; // TODO find what the byte length is here when not at degree 9 or 10
+        }
+        else if (logn == 7 || logn == 6)
+        {
+            this.CRYPTO_SECRETKEYBYTES = 1 + (7 * this.N * 2 / 8) + this.N;
+            this.CRYPTO_BYTES = 690;
         }
         else
         {
-            this.CRYPTO_SECRETKEYBYTES = 1281;
-            this.CRYPTO_PUBLICKEYBYTES = 897;
+            this.CRYPTO_SECRETKEYBYTES = 1 + (this.N * 2) + this.N;
             this.CRYPTO_BYTES = 690;
         }
     }
@@ -214,7 +223,7 @@ class FalconNIST
          * Compute the signature.
          */
 //        Zf(sign_dyn)(r.sig, &sc, f, g, F, G, r.hm, 10, tmp.b);
-        sign.sign_dyn(sig, 0, sc, f, 0, g, 0, F, 0, G, 0, hm, 0, LOGN, new FalconFPR[18 * N], 0);
+        sign.sign_dyn(sig, 0, sc, f, 0, g, 0, F, 0, G, 0, hm, 0, LOGN, new FalconFPR[10 * N], 0);
 
 //        set_fpu_cw(savcw);
 
@@ -243,11 +252,9 @@ class FalconNIST
         return Arrays.copyOfRange(srcsm, 0, 1 + NONCELEN + sig_len);
     }
 
-    int crypto_sign_open(byte[] srcm, int m, int[] mlen,
-                         byte[] srcsm, int sm, int smlen,
+    int crypto_sign_open(byte[] sig_encoded, byte[] nonce, byte[] msg,
                          byte[] srcpk, int pk)
     {
-        int esig;
         short[] h = new short[N],
             hm = new short[N];
         short[] sig = new short[N];
@@ -273,27 +280,27 @@ class FalconNIST
         /*
          * Find nonce, signature, message length.
          */
-        if (smlen < 2 + NONCELEN)
-        {
-            return -1;
-        }
-        sig_len = (Byte.toUnsignedInt(srcsm[sm + 0]) << 8) | Byte.toUnsignedInt(srcsm[sm + 1]);
-        if (sig_len > (smlen - 2 - NONCELEN))
-        {
-            return -1;
-        }
-        msg_len = smlen - 2 - NONCELEN - sig_len;
+//        if (smlen < 2 + NONCELEN)
+//        {
+//            return -1;
+//        }
+//        sig_len = (Byte.toUnsignedInt(srcsm[sm + 0]) << 8) | Byte.toUnsignedInt(srcsm[sm + 1]);
+        sig_len = sig_encoded.length;
+//        if (sig_len > (smlen - 2 - NONCELEN))
+//        {
+//            return -1;
+//        }
+        msg_len = msg.length;
 
         /*
          * Decode signature.
          */
-        esig = sm + 2 + NONCELEN + msg_len;
-        if (sig_len < 1 || srcsm[esig + 0] != (byte)(0x20 + LOGN))
+        if (sig_len < 1 || sig_encoded[0] != (byte)(0x20 + LOGN))
         {
             return -1;
         }
         if (codec.comp_decode(sig, 0, LOGN,
-            srcsm, esig + 1, sig_len - 1) != sig_len - 1)
+            sig_encoded, 1, sig_len - 1) != sig_len - 1)
         {
             return -1;
         }
@@ -301,16 +308,11 @@ class FalconNIST
         /*
          * Hash nonce + message into a vector.
          */
-//        inner_shake256_init(&sc);
-//        inner_shake256_inject(&sc, sm + 2, NONCELEN + msg_len);
-//        inner_shake256_flip(&sc);
-//        Zf(hash_to_point_vartime)(&sc, hm, 10);
         sc.inner_shake256_init();
-        sc.inner_shake256_inject(srcsm, sm + 2, NONCELEN + msg_len);
+        sc.inner_shake256_inject(nonce, 0, NONCELEN);
+        sc.inner_shake256_inject(msg, 0, msg_len);
         sc.i_shake256_flip();
         common.hash_to_point_vartime(sc, hm, 0, LOGN); // TODO check if this needs to become ct
-
-//        System.out.println(String.format("%x %x %x %x %x %x %x %x", hm[0], hm[1], hm[2], hm[3], hm[4], hm[5], hm[6], hm[7]));
 
         /*
          * Verify signature.
@@ -323,9 +325,8 @@ class FalconNIST
         /*
          * Return plaintext.
          */
-//        memmove(m, sm + 2 + NONCELEN, msg_len);
-        System.arraycopy(srcsm, sm + 2 + NONCELEN, srcm, m, msg_len);
-        mlen[0] = msg_len;
+//        System.arraycopy(srcsm, sm + 2 + NONCELEN, srcm, m, msg_len);
+//        mlen[0] = msg_len;
         return 0;
     }
 }
