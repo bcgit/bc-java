@@ -44,18 +44,9 @@ public class FalconSigner
 
     public byte[] generateSignature(byte[] message)
     {
-        int smmaxlen;
-        smmaxlen = nist.CRYPTO_BYTES + message.length;
-        byte[] sm = new byte[smmaxlen];
-        int[] smlen = new int[1];
-        int[] siglen = new int[1];
-        nist.crypto_sign(sm, 0, smlen, siglen, message, 0, message.length, encodedkey, 0);
-        byte[] signature = new byte[siglen[0] + nist.NONCELEN + 1];
-        signature[0] = (byte)(0x30 + nist.LOGN);
-        System.arraycopy(sm, 2, signature, 1, nist.NONCELEN);
-        System.arraycopy(sm, 2 + nist.NONCELEN + message.length,
-            signature, nist.NONCELEN + 1, siglen[0]);
-        return signature;
+        byte[] sm = new byte[nist.CRYPTO_BYTES];
+
+        return nist.crypto_sign(sm, message, 0, message.length, encodedkey, 0);
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
