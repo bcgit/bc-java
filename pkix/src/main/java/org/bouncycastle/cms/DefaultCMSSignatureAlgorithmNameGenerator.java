@@ -240,6 +240,10 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         {
             return "COMPOSITE";
         }
+        if (BCObjectIdentifiers.falcon.equals(encryptionAlgOID))
+        {
+            return "Falcon";
+        }
 
         String digestName = getDigestAlgName(encryptionAlgOID);
 
