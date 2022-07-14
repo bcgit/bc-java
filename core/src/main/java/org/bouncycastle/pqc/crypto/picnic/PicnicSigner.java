@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
-import java.util.Arrays;
-
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.MessageSigner;
+import org.bouncycastle.util.Pack;
 
 public class PicnicSigner
     implements MessageSigner
@@ -43,8 +43,10 @@ public class PicnicSigner
     {
         PicnicEngine engine = pubKey.getParameters().getEngine();
         byte[] verify_message = new byte[message.length];
-        boolean verify = engine.crypto_sign_open(verify_message, signature, pubKey.getEncoded());
-        if(!Arrays.equals(message, verify_message))
+        byte[] attached_signature = Arrays.concatenate(Pack.intToLittleEndian(signature.length), message, signature);
+
+        boolean verify = engine.crypto_sign_open(verify_message, attached_signature, pubKey.getEncoded());
+        if(!Arrays.areEqual(message, verify_message))
         {
             return false;
         }

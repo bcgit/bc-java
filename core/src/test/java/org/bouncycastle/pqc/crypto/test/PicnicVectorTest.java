@@ -171,7 +171,7 @@ public class PicnicVectorTest
 
                         signer.init(false, pubParams);
 
-                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, attachedSig));
+                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigGenerated));
                         assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
 
                     }
