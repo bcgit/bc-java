@@ -3,6 +3,8 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 class FalconNIST
 {
 
@@ -112,16 +114,14 @@ class FalconNIST
         return 0;
     }
 
-    int crypto_sign(byte[] srcsm, int sm, int[] smlen, int[] siglen,
+    byte[] crypto_sign(byte[] srcsm,
                     byte[] srcm, int m, int mlen,
                     byte[] srcsk, int sk)
     {
-        byte[] b = new byte[72 * N];
-
         byte[] f = new byte[N],
-            g = new byte[N],
-            F = new byte[N],
-            G = new byte[N];
+               g = new byte[N],
+               F = new byte[N],
+               G = new byte[N];
 
         short[] sig = new short[N];
         short[] hm = new short[N];
@@ -141,38 +141,38 @@ class FalconNIST
          */
         if (srcsk[sk + 0] != (byte)(0x50 + LOGN))
         {
-            return -1;
+            throw new IllegalArgumentException("private key header incorrect");
         }
         u = 1;
         v = codec.trim_i8_decode(f, 0, LOGN, codec.max_fg_bits[LOGN],
             srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalStateException("f decode failed");
         }
         u += v;
         v = codec.trim_i8_decode(g, 0, LOGN, codec.max_fg_bits[LOGN],
             srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalStateException("g decode failed");
         }
         u += v;
         v = codec.trim_i8_decode(F, 0, LOGN, codec.max_FG_bits[LOGN],
             srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalArgumentException("F decode failed");
         }
         u += v;
         if (u != CRYPTO_SECRETKEYBYTES)
         {
-            return -1;
+            throw new IllegalStateException("full key not used");
         }
 
         if (vrfy.complete_private(G, 0, f, 0, g, 0, F, 0, LOGN, new short[2 * N], 0) == 0)
         {
-            return -1;
+            throw new IllegalStateException("complete_private failed");
         }
 
         /*
@@ -219,30 +219,28 @@ class FalconNIST
 //        set_fpu_cw(savcw);
 
         /*
-         * Encode the signature and bundle it with the message. Format is:
-         *   signature length     2 bytes, big-endian
+         * Encode the signature. Format is:
+         *   signature header     1 bytes
          *   nonce                40 bytes
-         *   message              mlen bytes
          *   signature            slen bytes
          */
         esig[0] = (byte)(0x20 + LOGN);
         sig_len = codec.comp_encode(esig, 1, esig.length - 1, sig, 0, LOGN);
         if (sig_len == 0)
         {
-            return -1;
+            throw new IllegalStateException("signature failed to generate");
         }
         sig_len++;
-//        memmove(sm + 2 + sizeof nonce, m, mlen);
-        System.arraycopy(srcm, m, srcsm, sm + 2 + NONCELEN, mlen);
-        srcsm[sm + 0] = (byte)(sig_len >>> 8);
-        srcsm[sm + 1] = (byte)sig_len;
-//        memcpy(sm + 2, nonce, sizeof nonce);
-        System.arraycopy(nonce, 0, srcsm, sm + 2, NONCELEN);
-//        memcpy(sm + 2 + (sizeof nonce) + mlen, esig, sig_len);
-        System.arraycopy(esig, 0, srcsm, sm + 2 + NONCELEN + mlen, sig_len);
-        smlen[0] = 2 + (NONCELEN) + mlen + sig_len;
-        siglen[0] = sig_len;
-        return 0;
+
+        // header
+        srcsm[0] = (byte)(0x30 + LOGN);
+        // nonce
+        System.arraycopy(nonce, 0, srcsm, 1, NONCELEN);
+
+        // signature
+        System.arraycopy(esig, 0, srcsm, 1 + NONCELEN, sig_len);
+
+        return Arrays.copyOfRange(srcsm, 0, 1 + NONCELEN + sig_len);
     }
 
     int crypto_sign_open(byte[] srcm, int m, int[] mlen,
