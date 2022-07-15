@@ -59,14 +59,7 @@ public class FalconSigner
         byte[] sig = new byte[signature.length - nist.NONCELEN - 1];
         System.arraycopy(signature, 1, nonce, 0, nist.NONCELEN);
         System.arraycopy(signature, nist.NONCELEN + 1, sig, 0, signature.length - nist.NONCELEN - 1);
-        byte[] sm = new byte[2 + message.length + signature.length - 1];
-        sm[0] = (byte)(sig.length >>> 8);
-        sm[1] = (byte)sig.length;
-        System.arraycopy(nonce, 0, sm, 2, nist.NONCELEN);
-        System.arraycopy(message, 0, sm, 2 + nist.NONCELEN, message.length);
-        System.arraycopy(sig, 0, sm, 2 + nist.NONCELEN + message.length, sig.length);
-        boolean res = nist.crypto_sign_open(new byte[message.length], 0, new int[1],
-            sm, 0, sm.length, encodedkey, 0) == 0;
+        boolean res = nist.crypto_sign_open(sig,nonce,message,encodedkey,0) == 0;
         return res;
     }
 }
