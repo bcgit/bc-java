@@ -95,7 +95,7 @@ public class PicnicTest
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("Picnic", "BCPQC");
+        Signature sig = Signature.getInstance("SHA3-512WITHPicnic", "BCPQC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -103,7 +103,7 @@ public class PicnicTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("Picnic", "BCPQC");
+        sig = Signature.getInstance("SHA3-512WITHPicnic", "BCPQC");
 
         sig.initVerify(kp.getPublic());
 
