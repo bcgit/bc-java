@@ -10,7 +10,10 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.crypto.picnic.PicnicSigner;
 
 public class SignatureSpi
@@ -129,13 +132,41 @@ public class SignatureSpi
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
+
     public static class Base
-        extends SignatureSpi
+            extends SignatureSpi
     {
         public Base()
-            throws NoSuchAlgorithmException
+                throws NoSuchAlgorithmException
+        {
+            super(new NullDigest(), new PicnicSigner());
+        }
+    }
+    public static class withShake256
+            extends SignatureSpi
+    {
+        public withShake256()
+                throws NoSuchAlgorithmException
+        {
+            super(new SHAKEDigest(512), new PicnicSigner());
+        }
+    }
+    public static class withSha512
+            extends SignatureSpi
+    {
+        public withSha512()
+                throws NoSuchAlgorithmException
         {
             super(new SHA512Digest(), new PicnicSigner());
+        }
+    }
+    public static class withSha3512
+            extends SignatureSpi
+    {
+        public withSha3512()
+                throws NoSuchAlgorithmException
+        {
+            super(new SHA3Digest(512), new PicnicSigner());
         }
     }
 
