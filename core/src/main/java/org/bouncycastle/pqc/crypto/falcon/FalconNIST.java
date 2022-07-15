@@ -88,26 +88,26 @@ class FalconNIST
             f, 0, LOGN, codec.max_fg_bits[LOGN]);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalStateException("f encode failed");
         }
         u += v;
         v = codec.trim_i8_encode(srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u,
             g, 0, LOGN, codec.max_fg_bits[LOGN]);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalStateException("g encode failed");
         }
         u += v;
         v = codec.trim_i8_encode(srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u,
             F, 0, LOGN, codec.max_FG_bits[LOGN]);
         if (v == 0)
         {
-            return -1;
+            throw new IllegalStateException("F encode failed");
         }
         u += v;
         if (u != CRYPTO_SECRETKEYBYTES)
         {
-            return -1;
+            throw new IllegalStateException("secret key encoding failed");
         }
 
         /*
@@ -117,7 +117,7 @@ class FalconNIST
         v = codec.modq_encode(srcpk, pk + 1, CRYPTO_PUBLICKEYBYTES - 1, h, 0, LOGN);
         if (v != CRYPTO_PUBLICKEYBYTES - 1)
         {
-            return -1;
+            throw new IllegalStateException("public key encoding failed");
         }
 
         return 0;
