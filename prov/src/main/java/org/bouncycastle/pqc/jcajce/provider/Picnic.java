@@ -24,6 +24,10 @@ public class Picnic
 
             addSignatureAlgorithm(provider, "PICNIC", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.picnic);
 
+            addSignatureAlgorithm(provider, "SHAKE256","PICNIC", PREFIX + "SignatureSpi$withShake256");
+            addSignatureAlgorithm(provider, "SHA512","PICNIC", PREFIX + "SignatureSpi$withSha512");
+            addSignatureAlgorithm(provider, "SHA3-512","PICNIC", PREFIX + "SignatureSpi$withSha3512");
+
             provider.addAlgorithm("KeyGenerator.PICNIC", PREFIX + "PicnicKeyGeneratorSpi");
 
             AsymmetricKeyInfoConverter keyFact = new PicnicKeyFactorySpi();
