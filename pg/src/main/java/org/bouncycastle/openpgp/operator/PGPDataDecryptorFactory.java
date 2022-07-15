@@ -20,6 +20,6 @@ public interface PGPDataDecryptorFactory
      * @throws PGPException if an error occurs initialising the decryption and integrity checking
      *             functions.
      */
-    public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
+    PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
         throws PGPException;
 }

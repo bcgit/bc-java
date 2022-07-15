@@ -5,5 +5,5 @@ package org.bouncycastle.bcpg;
  */
 public interface UserAttributeSubpacketTags 
 {
-    public static final int IMAGE_ATTRIBUTE = 1;
+    int IMAGE_ATTRIBUTE = 1;
 }
