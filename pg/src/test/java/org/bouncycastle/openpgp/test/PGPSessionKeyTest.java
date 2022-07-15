@@ -262,6 +262,6 @@ public class PGPSessionKeyTest
         PGPSessionKey sessionKey = PGPSessionKey.fromAsciiRepresentation(sessionKeyString);
         isEquals(9, sessionKey.getAlgorithm());
         isEquals("FCA4BEAF687F48059CACC14FB019125CD57392BAB7037C707835925CBF9F7BCD", Hex.toHexString(sessionKey.getKey()).toUpperCase());
-        //isEquals(sessionKeyString, sessionKey.toString());
+        isEquals(sessionKeyString, sessionKey.toString());
     }
 }

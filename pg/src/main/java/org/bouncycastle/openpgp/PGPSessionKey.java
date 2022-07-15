@@ -30,7 +30,7 @@ public class PGPSessionKey
 
     public String toString()
     {
-        return algorithm + ":" + sessionKey;
+        return algorithm + ":" + Hex.toHexString(sessionKey).toUpperCase();
     }
 
     public static PGPSessionKey fromAsciiRepresentation(String ascii)
