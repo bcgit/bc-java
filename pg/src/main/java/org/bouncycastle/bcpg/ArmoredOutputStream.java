@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.util.Strings;
 
@@ -106,7 +107,7 @@ public class ArmoredOutputStream
 
     String          version = "BCPG v@RELEASE_NAME@";
 
-    Hashtable       headers = new Hashtable();
+    Hashtable<String, List<String>> headers = new Hashtable<>();
 
     /**
      * Constructs an armored output stream with {@link #resetHeaders() default headers}.
@@ -134,17 +135,17 @@ public class ArmoredOutputStream
      *            headers}.
      */
     public ArmoredOutputStream(
-        OutputStream    out,
-        Hashtable       headers)
+        OutputStream out,
+        Hashtable<String, String> headers)
     {
         this(out);
 
-        Enumeration e = headers.keys();
+        Enumeration<String> e = headers.keys();
 
         while (e.hasMoreElements())
         {
-            Object key = e.nextElement();
-            ArrayList headerList = new ArrayList();
+            String key = e.nextElement();
+            List<String> headerList = new ArrayList<>();
             headerList.add(headers.get(key));
             this.headers.put(key, headerList);
         }
@@ -167,10 +168,10 @@ public class ArmoredOutputStream
         }
         else
         {
-            ArrayList valueList = (ArrayList)headers.get(name);
+            List<String> valueList = headers.get(name);
             if (valueList == null)
             {
-                valueList = new ArrayList();
+                valueList = new ArrayList<>();
                 headers.put(name, valueList);
             }
             else
@@ -204,10 +205,10 @@ public class ArmoredOutputStream
         {
             return;
         }
-        ArrayList valueList = (ArrayList)headers.get(name);
+        List<String> valueList = headers.get(name);
         if (valueList == null)
         {
-            valueList = new ArrayList();
+            valueList = new ArrayList<>();
             headers.put(name, valueList);
         }
         valueList.add(value);
@@ -219,7 +220,7 @@ public class ArmoredOutputStream
      */
     public void resetHeaders()
     {
-        ArrayList versions = (ArrayList)headers.get(VERSION_HDR);
+        List<String> versions = headers.get(VERSION_HDR);
 
         headers.clear();
 
@@ -231,55 +232,57 @@ public class ArmoredOutputStream
 
     /**
      * Start a clear text signed message.
-     * @param hashAlgorithm
+     * @param hashAlgorithms hash algorithms
      */
     public void beginClearText(
-        int    hashAlgorithm)
+        int... hashAlgorithms)
         throws IOException
     {
-        String    hash;
-
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithmTags.SHA1:
-            hash = "SHA1";
-            break;
-        case HashAlgorithmTags.SHA256:
-            hash = "SHA256";
-            break;
-        case HashAlgorithmTags.SHA384:
-            hash = "SHA384";
-            break;
-        case HashAlgorithmTags.SHA512:
-            hash = "SHA512";
-            break;
-        case HashAlgorithmTags.MD2:
-            hash = "MD2";
-            break;
-        case HashAlgorithmTags.MD5:
-            hash = "MD5";
-            break;
-        case HashAlgorithmTags.RIPEMD160:
-            hash = "RIPEMD160";
-            break;
-        case HashAlgorithmTags.SHA224:
-            hash = "SHA224";
-            break;
-        default:
-            throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
+        StringBuilder sb = new StringBuilder("-----BEGIN PGP SIGNED MESSAGE-----");
+        sb.append(nl);
+        for (int hashAlgorithm : hashAlgorithms) {
+            String hash;
+            switch (hashAlgorithm) {
+                case HashAlgorithmTags.SHA1:
+                    hash = "SHA1";
+                    break;
+                case HashAlgorithmTags.SHA256:
+                    hash = "SHA256";
+                    break;
+                case HashAlgorithmTags.SHA384:
+                    hash = "SHA384";
+                    break;
+                case HashAlgorithmTags.SHA512:
+                    hash = "SHA512";
+                    break;
+                case HashAlgorithmTags.SHA3_256:
+                    hash = "SHA3-256";
+                    break;
+                case HashAlgorithmTags.SHA3_512:
+                    hash = "SHA3-512";
+                    break;
+                case HashAlgorithmTags.MD2:
+                    hash = "MD2";
+                    break;
+                case HashAlgorithmTags.MD5:
+                    hash = "MD5";
+                    break;
+                case HashAlgorithmTags.RIPEMD160:
+                    hash = "RIPEMD160";
+                    break;
+                case HashAlgorithmTags.SHA224:
+                    hash = "SHA224";
+                    break;
+                default:
+                    throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
+            }
+            sb.append("Hash: ").append(hash).append(nl);
         }
+        sb.append(nl);
 
-        String armorHdr = "-----BEGIN PGP SIGNED MESSAGE-----" + nl;
-        String hdrs = "Hash: " + hash + nl + nl;
-
-        for (int i = 0; i != armorHdr.length(); i++)
+        for (int i = 0; i != sb.length(); i++)
         {
-            out.write(armorHdr.charAt(i));
-        }
-
-        for (int i = 0; i != hdrs.length(); i++)
-        {
-            out.write(hdrs.charAt(i));
+            out.write(sb.charAt(i));
         }
 
         clearText = true;
@@ -392,20 +395,20 @@ public class ArmoredOutputStream
 
             if (headers.containsKey(VERSION_HDR))
             {
-                writeHeaderEntry(VERSION_HDR, ((ArrayList)headers.get(VERSION_HDR)).get(0).toString());
+                writeHeaderEntry(VERSION_HDR, headers.get(VERSION_HDR).get(0));
             }
 
-            Enumeration e = headers.keys();
+            Enumeration<String> e = headers.keys();
             while (e.hasMoreElements())
             {
-                String  key = (String)e.nextElement();
+                String  key = e.nextElement();
 
                 if (!key.equals(VERSION_HDR))
                 {
-                    ArrayList values = (ArrayList)headers.get(key);
-                    for (Iterator it = values.iterator(); it.hasNext();)
+                    List<String> values = headers.get(key);
+                    for (Iterator<String> it = values.iterator(); it.hasNext();)
                     {
-                        writeHeaderEntry(key, it.next().toString());
+                        writeHeaderEntry(key, it.next());
                     }
                 }
             }
