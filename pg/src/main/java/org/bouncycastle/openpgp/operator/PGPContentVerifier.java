@@ -4,7 +4,7 @@ import java.io.OutputStream;
 
 public interface PGPContentVerifier
 {
-    public OutputStream getOutputStream();
+    OutputStream getOutputStream();
 
     int getHashAlgorithm();
 
