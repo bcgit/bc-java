@@ -196,25 +196,18 @@ public interface BCObjectIdentifiers
      * Picnic
      */
     public static final ASN1ObjectIdentifier picnic = bc_sig.branch("6");
-
-    public static final ASN1ObjectIdentifier picnic_parameters = picnic.branch("1");
-    public static final ASN1ObjectIdentifier picnicl1fs = picnic_parameters.branch("1");
-    public static final ASN1ObjectIdentifier picnicl1ur = picnic_parameters.branch("2");
-    public static final ASN1ObjectIdentifier picnicl3fs = picnic_parameters.branch("3");
-    public static final ASN1ObjectIdentifier picnicl3ur = picnic_parameters.branch("4");
-    public static final ASN1ObjectIdentifier picnicl5fs = picnic_parameters.branch("5");
-    public static final ASN1ObjectIdentifier picnicl5ur = picnic_parameters.branch("6");
-    public static final ASN1ObjectIdentifier picnic3l1 = picnic_parameters.branch("7");
-    public static final ASN1ObjectIdentifier picnic3l3 = picnic_parameters.branch("8");
-    public static final ASN1ObjectIdentifier picnic3l5 = picnic_parameters.branch("9");
-    public static final ASN1ObjectIdentifier picnicl1full = picnic_parameters.branch("10");
-    public static final ASN1ObjectIdentifier picnicl3full = picnic_parameters.branch("11");
-    public static final ASN1ObjectIdentifier picnicl5full = picnic_parameters.branch("12");
-
-    public static final ASN1ObjectIdentifier picnic_signature = picnic.branch("2");
-    public static final ASN1ObjectIdentifier picnic_with_sha512 = picnic_signature.branch("1");
-    public static final ASN1ObjectIdentifier picnic_with_shake256 = picnic_signature.branch("2");
-    public static final ASN1ObjectIdentifier picnic_with_sha3_512 = picnic_signature.branch("3");
+    public static final ASN1ObjectIdentifier picnicl1fs = picnic.branch("1");
+    public static final ASN1ObjectIdentifier picnicl1ur = picnic.branch("2");
+    public static final ASN1ObjectIdentifier picnicl3fs = picnic.branch("3");
+    public static final ASN1ObjectIdentifier picnicl3ur = picnic.branch("4");
+    public static final ASN1ObjectIdentifier picnicl5fs = picnic.branch("5");
+    public static final ASN1ObjectIdentifier picnicl5ur = picnic.branch("6");
+    public static final ASN1ObjectIdentifier picnic3l1 = picnic.branch("7");
+    public static final ASN1ObjectIdentifier picnic3l3 = picnic.branch("8");
+    public static final ASN1ObjectIdentifier picnic3l5 = picnic.branch("9");
+    public static final ASN1ObjectIdentifier picnicl1full = picnic.branch("10");
+    public static final ASN1ObjectIdentifier picnicl3full = picnic.branch("11");
+    public static final ASN1ObjectIdentifier picnicl5full = picnic.branch("12");
 
     /*
      * Falcon

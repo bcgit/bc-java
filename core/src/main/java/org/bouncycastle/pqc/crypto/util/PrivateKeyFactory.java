@@ -144,11 +144,10 @@ public class PrivateKeyFactory
 
             return new SPHINCSPlusPrivateKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
         }
-        else if (algOID.equals(BCObjectIdentifiers.picnic))
+        else if (algOID.on(BCObjectIdentifiers.picnic))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            PicnicParameters pParams = Utils.picnicParamsLookup(
-                ASN1ObjectIdentifier.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters()));
+            PicnicParameters pParams = Utils.picnicParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new PicnicPrivateKeyParameters(pParams, keyEnc);
         }
