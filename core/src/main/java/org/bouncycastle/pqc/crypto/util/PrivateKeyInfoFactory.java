@@ -139,7 +139,7 @@ public class PrivateKeyInfoFactory
             PicnicPrivateKeyParameters params = (PicnicPrivateKeyParameters)privateKey;
 
             byte[] encoding = params.getEncoded();
-             System.err.println("enc " + encoding.length);
+
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(
                 BCObjectIdentifiers.picnic, Utils.picnicOidLookup(params.getParameters()));
 
