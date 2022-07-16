@@ -191,7 +191,7 @@ public class SubjectPublicKeyInfoFactory
             PicnicPublicKeyParameters params = (PicnicPublicKeyParameters)publicKey;
 
             byte[] encoding = params.getEncoded();
-            System.err.println("enc pub " + encoding.length);
+
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(
                 BCObjectIdentifiers.picnic, Utils.picnicOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
