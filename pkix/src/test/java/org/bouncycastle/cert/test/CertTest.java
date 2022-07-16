@@ -3811,7 +3811,7 @@ public class CertTest
         //
         // create base certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("Falcon").setProvider("BCPQC").build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("Falcon-512").setProvider("BCPQC").build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
@@ -3822,7 +3822,7 @@ public class CertTest
 
         X509Certificate baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
-        isTrue("oid wrong", BCObjectIdentifiers.falcon.getId().equals(baseCert.getSigAlgOID()));
+        isTrue("oid wrong", BCObjectIdentifiers.falcon_512.getId().equals(baseCert.getSigAlgOID()));
         isTrue("params wrong", null == baseCert.getSigAlgParams());
         
         //

@@ -223,8 +223,8 @@ public interface BCObjectIdentifiers
      */
     public static final ASN1ObjectIdentifier falcon = bc_sig.branch("7");
 
-    public static final ASN1ObjectIdentifier falcon_512 = falcon.branch("1");
-    public static final ASN1ObjectIdentifier falcon_1024 = falcon.branch("2");
+    public static final ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.1");  // falcon.branch(1);
+    public static final ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.4"); // falcon.branch("2");
 
     /**
      * key_exchange(3) algorithms

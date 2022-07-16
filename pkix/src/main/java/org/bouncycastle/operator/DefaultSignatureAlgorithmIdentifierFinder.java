@@ -200,7 +200,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SPHINCS+", BCObjectIdentifiers.sphincsPlus);
         algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
 
-        algorithms.put("FALCON", BCObjectIdentifiers.falcon);
+        algorithms.put("FALCON-512", BCObjectIdentifiers.falcon_512);
+        algorithms.put("FALCON-1024", BCObjectIdentifiers.falcon_1024);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.

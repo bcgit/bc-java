@@ -201,7 +201,7 @@ public class PQCSignedDataTest
 
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("Falcon").setProvider(BCPQC).build(_origFalconKP.getPrivate()), _origFalconCert));
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("Falcon-512").setProvider(BCPQC).build(_origFalconKP.getPrivate()), _origFalconCert));
 
         gen.addCertificates(certs);
 
