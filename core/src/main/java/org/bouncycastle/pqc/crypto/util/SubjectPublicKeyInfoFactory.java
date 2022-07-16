@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -192,8 +191,7 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(
-                BCObjectIdentifiers.picnic, Utils.picnicOidLookup(params.getParameters()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.picnicOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof SIKEPublicKeyParameters)

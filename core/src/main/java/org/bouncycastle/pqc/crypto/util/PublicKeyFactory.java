@@ -102,7 +102,18 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.lightsaberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem256r3, new SABERConverter());
-        converters.put(BCObjectIdentifiers.picnic, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl1fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl1ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5fs, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5ur, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l1, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l3, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnic3l5, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl1full, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl3full, new PicnicConverter());
+        converters.put(BCObjectIdentifiers.picnicl5full, new PicnicConverter());
         converters.put(BCObjectIdentifiers.sikep434, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep503, new SIKEConverter());
         converters.put(BCObjectIdentifiers.sikep610, new SIKEConverter());
@@ -393,8 +404,7 @@ public class PublicKeyFactory
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            PicnicParameters picnicParams = Utils.picnicParamsLookup(
-                ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters()));
+            PicnicParameters picnicParams = Utils.picnicParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new PicnicPublicKeyParameters(picnicParams, keyEnc);
         }
