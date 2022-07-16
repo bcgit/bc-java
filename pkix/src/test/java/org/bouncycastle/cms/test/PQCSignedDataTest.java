@@ -24,7 +24,6 @@ import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
@@ -63,8 +62,6 @@ public class PQCSignedDataTest
 
     private static boolean _initialised = false;
 
-
-    List crlList = new ArrayList();
     private static final Set noParams = new HashSet();
 
     static
@@ -173,9 +170,6 @@ public class PQCSignedDataTest
 
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
-            JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider(BC);
-
-            sid = signer.getSID();
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
 
@@ -224,7 +218,6 @@ public class PQCSignedDataTest
 
         Collection c = signers.getSigners();
         Iterator it = c.iterator();
-        SignerId sid = null;
 
         while (it.hasNext())
         {
@@ -233,9 +226,6 @@ public class PQCSignedDataTest
 
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
-            JcaX509CertificateConverter converter = new JcaX509CertificateConverter().setProvider(BC);
-
-            sid = signer.getSID();
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
 
