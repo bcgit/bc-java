@@ -22,11 +22,11 @@ public class Picnic
             provider.addAlgorithm("KeyFactory.PICNIC", PREFIX + "PicnicKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.PICNIC", PREFIX + "PicnicKeyPairGeneratorSpi");
 
-            addSignatureAlgorithm(provider, "PICNIC", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.picnic);
+            addSignatureAlgorithm(provider, "PICNIC", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.picnic_signature);
 
-            addSignatureAlgorithm(provider, "SHAKE256","PICNIC", PREFIX + "SignatureSpi$withShake256");
-            addSignatureAlgorithm(provider, "SHA512","PICNIC", PREFIX + "SignatureSpi$withSha512");
-            addSignatureAlgorithm(provider, "SHA3-512","PICNIC", PREFIX + "SignatureSpi$withSha3512");
+            addSignatureAlgorithm(provider, "SHAKE256","PICNIC", PREFIX + "SignatureSpi$withShake256", BCObjectIdentifiers.picnic_with_shake256);
+            addSignatureAlgorithm(provider, "SHA512","PICNIC", PREFIX + "SignatureSpi$withSha512", BCObjectIdentifiers.picnic_with_sha512);
+            addSignatureAlgorithm(provider, "SHA3-512","PICNIC", PREFIX + "SignatureSpi$withSha3512", BCObjectIdentifiers.picnic_with_sha3_512);
 
             provider.addAlgorithm("KeyGenerator.PICNIC", PREFIX + "PicnicKeyGeneratorSpi");
 
