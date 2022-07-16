@@ -15,6 +15,12 @@ public class FalconParameterSpec
 
     private static Map parameters = new HashMap();
 
+    static
+    {
+        parameters.put("falcon-512", falcon_512);
+        parameters.put("falcon-1024", falcon_1024);
+    }
+
     private final String name;
 
     private FalconParameterSpec(FalconParameters parameters)

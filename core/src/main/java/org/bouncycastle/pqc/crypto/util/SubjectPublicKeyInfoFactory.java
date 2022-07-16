@@ -217,6 +217,7 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
+
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else

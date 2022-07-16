@@ -4,8 +4,7 @@ import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.pqc.jcajce.spec.FrodoParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 
 /**
  * KeyFactory/KeyPairGenerator tests for Frodo with BCPQC provider.
@@ -21,26 +20,21 @@ public class FalconKeyPairGeneratorTest
     public void testKeyFactory()
         throws Exception
     {
-        kf = KeyFactory.getInstance("Frodo", "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.pqc_kem_frodo.getId(), "BCPQC");
+        kf = KeyFactory.getInstance("Falcon", "BCPQC");
     }
 
     public void testKeyPairEncoding()
         throws Exception
     {
-        FrodoParameterSpec[] specs =
-            new FrodoParameterSpec[]
+        FalconParameterSpec[] specs =
+            new FalconParameterSpec[]
                 {
-                        FrodoParameterSpec.frodokem19888r3,
-                        FrodoParameterSpec.frodokem19888shaker3,
-                        FrodoParameterSpec.frodokem31296r3,
-                        FrodoParameterSpec.frodokem31296shaker3,
-                        FrodoParameterSpec.frodokem43088r3,
-                        FrodoParameterSpec.frodokem43088shaker3
+                        FalconParameterSpec.falcon_512,
+                        FalconParameterSpec.falcon_1024,
                 };
-        kf = KeyFactory.getInstance("Frodo", "BCPQC");
+        kf = KeyFactory.getInstance("Falcon", "BCPQC");
 
-        kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
+        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
 
         for (int i = 0; i != specs.length; i++)
         {

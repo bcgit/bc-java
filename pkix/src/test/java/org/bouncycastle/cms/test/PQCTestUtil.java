@@ -65,7 +65,7 @@ public class PQCTestUtil
         PrivateKey    issPriv = issKP.getPrivate();
         if (issPriv instanceof FalconKey)
         {
-            sigGen = new JcaContentSignerBuilder("Falcon").setProvider("BCPQC").build(issPriv);
+            sigGen = new JcaContentSignerBuilder(((FalconKey)issPriv).getParameterSpec().getName()).setProvider("BCPQC").build(issPriv);
         }
         else
         {
