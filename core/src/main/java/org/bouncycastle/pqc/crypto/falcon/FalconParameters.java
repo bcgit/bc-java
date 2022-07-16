@@ -6,8 +6,8 @@ public class FalconParameters
     implements CipherParameters
 {
 
-    public static final FalconParameters falcon_512 = new FalconParameters("falcon512", 9, 40);
-    public static final FalconParameters falcon_1024 = new FalconParameters("falcon1024", 10, 40);
+    public static final FalconParameters falcon_512 = new FalconParameters("falcon-512", 9, 40);
+    public static final FalconParameters falcon_1024 = new FalconParameters("falcon-1024", 10, 40);
 
     private final String name;
     private final int logn;

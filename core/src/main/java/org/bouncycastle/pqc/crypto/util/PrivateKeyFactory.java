@@ -186,7 +186,7 @@ public class PrivateKeyFactory
 
             return new NTRUPrivateKeyParameters(spParams, keyEnc);
         }
-        else if (algOID.on(BCObjectIdentifiers.falcon))
+        else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             FalconParameters spParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
