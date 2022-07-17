@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.Packet;
@@ -32,6 +33,8 @@ public class PGPPublicKeyRing
     extends PGPKeyRing
     implements Iterable<PGPPublicKey>
 {
+    private static final Logger LOG = Logger.getLogger(PGPPublicKeyRing.class.getName());
+
     List keys;
 
     public PGPPublicKeyRing(
@@ -117,10 +120,14 @@ public class PGPPublicKeyRing
             // Read subkeys
             while (pIn.nextPacketTag() == PacketTags.PUBLIC_SUBKEY)
             {
-                try {
+                try
+                {
                     keys.add(readSubkey(pIn, fingerPrintCalculator));
-                } catch (IOException e) {
+                }
+                catch (IOException e)
+                {
                     // Skip unrecognizable subkey
+                    LOG.fine("skipping unknown subkey: " + e.getMessage());
                 }
             }
         }
@@ -404,8 +411,8 @@ public class PGPPublicKeyRing
      * This method will ignore trust packets on the second copy of the certificate and instead
      * copy the local certificate's trust packets to the joined certificate.
      *
-     * @param first                 local copy of the certificate
-     * @param second                remote copy of the certificate (e.g. from a key server)
+     * @param first  local copy of the certificate
+     * @param second remote copy of the certificate (e.g. from a key server)
      * @return joined key ring
      * @throws PGPException
      */
@@ -446,14 +453,14 @@ public class PGPPublicKeyRing
         }
 
         Set<Long> secondKeys = new HashSet<Long>();
-        for (Iterator it = second.iterator(); it.hasNext();)
+        for (Iterator it = second.iterator(); it.hasNext(); )
         {
             PGPPublicKey key = (PGPPublicKey)it.next();
             secondKeys.add(Longs.valueOf(key.getKeyID()));
         }
 
         List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
-        for (Iterator it = first.iterator(); it.hasNext();)
+        for (Iterator it = first.iterator(); it.hasNext(); )
         {
             PGPPublicKey key = (PGPPublicKey)it.next();
             PGPPublicKey copy = second.getPublicKey(key.getKeyID());
@@ -468,7 +475,7 @@ public class PGPPublicKeyRing
             }
         }
 
-        for (Iterator it = secondKeys.iterator(); it.hasNext();)
+        for (Iterator it = secondKeys.iterator(); it.hasNext(); )
         {
             long additionalKeyId = ((Long)it.next()).longValue();
             merged.add(second.getPublicKey(additionalKeyId));
