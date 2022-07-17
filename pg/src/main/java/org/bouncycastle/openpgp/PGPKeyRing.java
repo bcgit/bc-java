@@ -6,22 +6,24 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
-import org.bouncycastle.bcpg.MarkerPacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.TrustPacket;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
-import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 
 /**
  * Parent class for PGP public and secret key rings.
  */
 public abstract class PGPKeyRing
 {
+    private static final Logger LOG = Logger.getLogger(PGPKeyRing.class.getName());
+
     PGPKeyRing()
     {
     }
@@ -53,8 +55,9 @@ public abstract class PGPKeyRing
 
         while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
         {
-            try {
-                SignaturePacket signaturePacket = (SignaturePacket) pIn.readPacket();
+            try
+            {
+                SignaturePacket signaturePacket = (SignaturePacket)pIn.readPacket();
                 TrustPacket trustPacket = readOptionalTrustPacket(pIn);
 
                 sigList.add(new PGPSignature(signaturePacket, trustPacket));
@@ -62,6 +65,7 @@ public abstract class PGPKeyRing
             catch (UnsupportedPacketVersionException e)
             {
                 // skip unsupported signatures
+                LOG.fine("skipping unknown signature: " + e.getMessage());
             }
         }
         return sigList;
@@ -143,11 +147,11 @@ public abstract class PGPKeyRing
     {
         switch (tag)
         {
-            case PacketTags.USER_ATTRIBUTE:
-            case PacketTags.USER_ID:
-                return true;
-            default:
-                return false;
+        case PacketTags.USER_ATTRIBUTE:
+        case PacketTags.USER_ID:
+            return true;
+        default:
+            return false;
         }
     }
 }

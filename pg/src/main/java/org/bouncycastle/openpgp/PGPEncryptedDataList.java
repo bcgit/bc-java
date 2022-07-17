@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
@@ -33,6 +34,8 @@ import org.bouncycastle.util.Iterable;
 public class PGPEncryptedDataList
     implements Iterable<PGPEncryptedData>
 {
+    private static final Logger LOG = Logger.getLogger(PGPEncryptedDataList.class.getName());
+
     List<PGPEncryptedData> methods = new ArrayList<PGPEncryptedData>();
     InputStreamPacket      data;
 
@@ -96,6 +99,7 @@ public class PGPEncryptedDataList
             catch (UnsupportedPacketVersionException e)
             {
                 // Skip unknown packet versions
+                LOG.fine("skipping unknown session packet: " + e.getMessage());
             }
         }
 
