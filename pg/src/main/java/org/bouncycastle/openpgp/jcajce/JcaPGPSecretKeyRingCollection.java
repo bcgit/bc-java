@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
@@ -24,8 +25,7 @@ public class JcaPGPSecretKeyRingCollection
         super(in, new JcaKeyFingerprintCalculator());
     }
 
-    public JcaPGPSecretKeyRingCollection(Collection collection)
-        throws IOException, PGPException
+    public JcaPGPSecretKeyRingCollection(Collection<PGPSecretKeyRing> collection)
     {
         super(collection);
     }

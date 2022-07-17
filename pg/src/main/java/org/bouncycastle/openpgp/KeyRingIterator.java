@@ -4,13 +4,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-class KeyRingIterator
-    implements Iterator
+class KeyRingIterator<T>
+    implements Iterator<T>
 {
     private final Iterator<Long> iterator;
-    private final Map rings;
+    private final Map<Long, T> rings;
 
-    KeyRingIterator(List<Long> ids, Map rings)
+    KeyRingIterator(List<Long> ids, Map<Long, T> rings)
     {
         this.iterator = ids.iterator();
         this.rings = rings;
@@ -21,7 +21,7 @@ class KeyRingIterator
         return iterator.hasNext();
     }
 
-    public Object next()
+    public T next()
     {
         return rings.get(iterator.next());
     }
