@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Collection;
 
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 
@@ -24,8 +25,7 @@ public class BcPGPPublicKeyRingCollection
         super(in, new BcKeyFingerprintCalculator());
     }
 
-    public BcPGPPublicKeyRingCollection(Collection collection)
-        throws IOException, PGPException
+    public BcPGPPublicKeyRingCollection(Collection<PGPPublicKeyRing> collection)
     {
         super(collection);
     }
