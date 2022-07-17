@@ -133,31 +133,31 @@ public class PGPSecretKeyRing
         while (pIn.nextPacketTag() == PacketTags.SECRET_SUBKEY
             || pIn.nextPacketTag() == PacketTags.PUBLIC_SUBKEY)
         {
-            if (pIn.nextPacketTag() == PacketTags.SECRET_SUBKEY)
-            {
-                SecretSubkeyPacket    sub = (SecretSubkeyPacket)pIn.readPacket();
+            try {
+                if (pIn.nextPacketTag() == PacketTags.SECRET_SUBKEY) {
+                    SecretSubkeyPacket sub = (SecretSubkeyPacket) pIn.readPacket();
 
-                //
-                // ignore GPG comment packets if found.
-                //
-                while (pIn.nextPacketTag() == PacketTags.EXPERIMENTAL_2)
-                {
-                    pIn.readPacket();
+                    //
+                    // ignore GPG comment packets if found.
+                    //
+                    while (pIn.nextPacketTag() == PacketTags.EXPERIMENTAL_2) {
+                        pIn.readPacket();
+                    }
+
+                    TrustPacket subTrust = readOptionalTrustPacket(pIn);
+                    List sigList = readSignaturesAndTrust(pIn);
+
+                    keys.add(new PGPSecretKey(sub, new PGPPublicKey(sub.getPublicKeyPacket(), subTrust, sigList, fingerPrintCalculator)));
+                } else {
+                    PublicSubkeyPacket sub = (PublicSubkeyPacket) pIn.readPacket();
+
+                    TrustPacket subTrust = readOptionalTrustPacket(pIn);
+                    List sigList = readSignaturesAndTrust(pIn);
+
+                    extraPubKeys.add(new PGPPublicKey(sub, subTrust, sigList, fingerPrintCalculator));
                 }
-
-                TrustPacket subTrust = readOptionalTrustPacket(pIn);
-                List        sigList = readSignaturesAndTrust(pIn);
-
-                keys.add(new PGPSecretKey(sub, new PGPPublicKey(sub.getPublicKeyPacket(), subTrust, sigList, fingerPrintCalculator)));
-            }
-            else
-            {
-                PublicSubkeyPacket sub = (PublicSubkeyPacket)pIn.readPacket();
-
-                TrustPacket subTrust = readOptionalTrustPacket(pIn);
-                List        sigList = readSignaturesAndTrust(pIn);
-
-                extraPubKeys.add(new PGPPublicKey(sub, subTrust, sigList, fingerPrintCalculator));
+            } catch (IOException e) {
+                // skip sub-keys with unrecognized algorithms to be upwards compatible
             }
         }
     }
