@@ -19,6 +19,10 @@ public class SymmetricKeyEncSessionPacket
         throws IOException
     {
         version = in.read();
+        if (version != 4)
+        {
+            throw new UnsupportedPacketVersionException("Unsupported PGP symmetric-key encrypted session key packet version encountered: " + version);
+        }
         encAlgorithm = in.read();
 
         s2k = new S2K(in);
