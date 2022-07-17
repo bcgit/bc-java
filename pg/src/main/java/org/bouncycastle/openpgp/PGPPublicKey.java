@@ -969,7 +969,7 @@ public class PGPPublicKey
         PGPPublicKey returnKey = new PGPPublicKey(key);
         boolean found = false;
 
-        for (int i = 0; i < returnKey.ids.size(); i++)
+        for (int i = returnKey.ids.size() - 1; i >= 0; i--)
         {
             if (id.equals(returnKey.ids.get(i)))
             {
