@@ -45,7 +45,9 @@ public class RegressionTest
         new PGPCanonicalizedDataGeneratorTest(),
         new RegexTest(),
         new PolicyURITest(),
-        new ArmoredOutputStreamUTF8Test()
+        new ArmoredOutputStreamUTF8Test(),
+        new UnrecognizableSubkeyParserTest(),
+        new IgnoreUnknownEncryptedSessionKeys()
     };
 
     public static void main(String[] args)

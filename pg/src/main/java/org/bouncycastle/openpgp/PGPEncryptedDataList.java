@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.util.Iterable;
 
 /**
@@ -88,7 +89,14 @@ public class PGPEncryptedDataList
         while (pIn.nextPacketTag() == PacketTags.PUBLIC_KEY_ENC_SESSION
             || pIn.nextPacketTag() == PacketTags.SYMMETRIC_KEY_ENC_SESSION)
         {
-            list.add(pIn.readPacket());
+            try
+            {
+                list.add(pIn.readPacket());
+            }
+            catch (UnsupportedPacketVersionException e)
+            {
+                // Skip unknown packet versions
+            }
         }
 
         Packet packet = pIn.readPacket();
