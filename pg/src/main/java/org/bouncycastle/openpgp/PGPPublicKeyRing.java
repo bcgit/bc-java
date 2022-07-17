@@ -117,7 +117,11 @@ public class PGPPublicKeyRing
             // Read subkeys
             while (pIn.nextPacketTag() == PacketTags.PUBLIC_SUBKEY)
             {
-                keys.add(readSubkey(pIn, fingerPrintCalculator));
+                try {
+                    keys.add(readSubkey(pIn, fingerPrintCalculator));
+                } catch (IOException e) {
+                    // Skip unrecognizable subkey
+                }
             }
         }
         catch (PGPException e)
