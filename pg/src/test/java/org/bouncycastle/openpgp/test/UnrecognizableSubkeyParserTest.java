@@ -25,12 +25,12 @@ public class UnrecognizableSubkeyParserTest
     {
         runTest(new UnrecognizableSubkeyParserTest());
     }
-
+    
     public String getName()
     {
         return getClass().getSimpleName();
     }
-
+    
     public void performTest()
         throws Exception
     {

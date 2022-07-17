@@ -24,8 +24,8 @@ import org.bouncycastle.util.Strings;
 public class PGPPublicKeyRingCollection
     implements Iterable<PGPPublicKeyRing>
 {
-    private Map<Long, PGPPublicKeyRing> pubRings = new HashMap<>();
-    private List<Long> order = new ArrayList<>();
+    private Map<Long, PGPPublicKeyRing> pubRings = new HashMap<Long, PGPPublicKeyRing>();
+    private List<Long> order = new ArrayList<Long>();
 
     private PGPPublicKeyRingCollection(
         Map<Long, PGPPublicKeyRing> pubRings,
