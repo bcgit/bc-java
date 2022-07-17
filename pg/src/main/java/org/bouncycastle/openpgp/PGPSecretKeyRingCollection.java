@@ -24,12 +24,12 @@ import org.bouncycastle.util.Strings;
 public class PGPSecretKeyRingCollection
     implements Iterable<PGPSecretKeyRing>
 {
-    private Map secretRings = new HashMap();
-    private List order = new ArrayList();
+    private Map<Long, PGPSecretKeyRing> secretRings = new HashMap<>();
+    private List<Long> order = new ArrayList<>();
 
     private PGPSecretKeyRingCollection(
-        Map secretRings,
-        List order)
+        Map<Long, PGPSecretKeyRing> secretRings,
+        List<Long> order)
     {
         this.secretRings = secretRings;
         this.order = order;
@@ -71,7 +71,7 @@ public class PGPSecretKeyRingCollection
             }
 
             PGPSecretKeyRing pgpSecret = (PGPSecretKeyRing)obj;
-            Long key = new Long(pgpSecret.getPublicKey().getKeyID());
+            Long key = pgpSecret.getPublicKey().getKeyID();
 
             secretRings.put(key, pgpSecret);
             order.add(key);
@@ -80,14 +80,13 @@ public class PGPSecretKeyRingCollection
 
     public PGPSecretKeyRingCollection(
         Collection<PGPSecretKeyRing> collection)
-        throws IOException, PGPException
     {
-        Iterator it = collection.iterator();
+        Iterator<PGPSecretKeyRing> it = collection.iterator();
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing pgpSecret = (PGPSecretKeyRing)it.next();
-            Long key = new Long(pgpSecret.getPublicKey().getKeyID());
+            PGPSecretKeyRing pgpSecret = it.next();
+            Long key = pgpSecret.getPublicKey().getKeyID();
 
             secretRings.put(key, pgpSecret);
             order.add(key);
@@ -117,11 +116,9 @@ public class PGPSecretKeyRingCollection
      *
      * @param userID the user ID to be matched.
      * @return an iterator (possibly empty) of key rings which matched.
-     * @throws PGPException
      */
     public Iterator<PGPSecretKeyRing> getKeyRings(
         String userID)
-        throws PGPException
     {
         return getKeyRings(userID, false, false);
     }
@@ -133,12 +130,10 @@ public class PGPSecretKeyRingCollection
      * @param userID       the user ID to be matched.
      * @param matchPartial if true userID need only be a substring of an actual ID string to match.
      * @return an iterator (possibly empty) of key rings which matched.
-     * @throws PGPException
      */
     public Iterator<PGPSecretKeyRing> getKeyRings(
         String userID,
         boolean matchPartial)
-        throws PGPException
     {
         return getKeyRings(userID, matchPartial, false);
     }
@@ -151,16 +146,14 @@ public class PGPSecretKeyRingCollection
      * @param matchPartial if true userID need only be a substring of an actual ID string to match.
      * @param ignoreCase   if true case is ignored in user ID comparisons.
      * @return an iterator (possibly empty) of key rings which matched.
-     * @throws PGPException
      */
     public Iterator<PGPSecretKeyRing> getKeyRings(
         String userID,
         boolean matchPartial,
         boolean ignoreCase)
-        throws PGPException
     {
-        Iterator it = this.getKeyRings();
-        List rings = new ArrayList();
+        Iterator<PGPSecretKeyRing> it = this.getKeyRings();
+        List<PGPSecretKeyRing> rings = new ArrayList<>();
 
         if (ignoreCase)
         {
@@ -169,12 +162,12 @@ public class PGPSecretKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secRing = (PGPSecretKeyRing)it.next();
-            Iterator uIt = secRing.getSecretKey().getUserIDs();
+            PGPSecretKeyRing secRing = it.next();
+            Iterator<String> uIt = secRing.getSecretKey().getUserIDs();
 
             while (uIt.hasNext())
             {
-                String next = (String)uIt.next();
+                String next = uIt.next();
                 if (ignoreCase)
                 {
                     next = Strings.toLowerCase(next);
@@ -182,7 +175,7 @@ public class PGPSecretKeyRingCollection
 
                 if (matchPartial)
                 {
-                    if (next.indexOf(userID) > -1)
+                    if (next.contains(userID))
                     {
                         rings.add(secRing);
                     }
@@ -203,19 +196,17 @@ public class PGPSecretKeyRingCollection
     /**
      * Return the PGP secret key associated with the given key id.
      *
-     * @param keyID
+     * @param keyID id of the secret key
      * @return the secret key
-     * @throws PGPException
      */
     public PGPSecretKey getSecretKey(
         long keyID)
-        throws PGPException
     {
-        Iterator it = this.getKeyRings();
+        Iterator<PGPSecretKeyRing> it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secRing = (PGPSecretKeyRing)it.next();
+            PGPSecretKeyRing secRing = it.next();
             PGPSecretKey sec = secRing.getSecretKey(keyID);
 
             if (sec != null)
@@ -230,26 +221,24 @@ public class PGPSecretKeyRingCollection
     /**
      * Return the secret key ring which contains the key referred to by keyID.
      *
-     * @param keyID
+     * @param keyID id of a secret key
      * @return the secret key ring
-     * @throws PGPException
      */
     public PGPSecretKeyRing getSecretKeyRing(
         long keyID)
-        throws PGPException
     {
-        Long id = new Long(keyID);
+        Long id = keyID;
 
         if (secretRings.containsKey(id))
         {
-            return (PGPSecretKeyRing)secretRings.get(id);
+            return secretRings.get(id);
         }
 
-        Iterator it = this.getKeyRings();
+        Iterator<PGPSecretKeyRing> it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secretRing = (PGPSecretKeyRing)it.next();
+            PGPSecretKeyRing secretRing = it.next();
             PGPSecretKey secret = secretRing.getSecretKey(keyID);
 
             if (secret != null)
@@ -268,7 +257,6 @@ public class PGPSecretKeyRingCollection
      * @return true if keyID present, false otherwise.
      */
     public boolean contains(long keyID)
-        throws PGPException
     {
         return getSecretKey(keyID) != null;
     }
@@ -298,10 +286,10 @@ public class PGPSecretKeyRingCollection
             out = new BCPGOutputStream(outStream);
         }
 
-        Iterator it = order.iterator();
+        Iterator<Long> it = order.iterator();
         while (it.hasNext())
         {
-            PGPSecretKeyRing sr = (PGPSecretKeyRing)secretRings.get(it.next());
+            PGPSecretKeyRing sr = secretRings.get(it.next());
 
             sr.encode(out);
         }
@@ -320,15 +308,15 @@ public class PGPSecretKeyRingCollection
         PGPSecretKeyRingCollection ringCollection,
         PGPSecretKeyRing secretKeyRing)
     {
-        Long key = new Long(secretKeyRing.getPublicKey().getKeyID());
+        Long key = secretKeyRing.getPublicKey().getKeyID();
 
         if (ringCollection.secretRings.containsKey(key))
         {
             throw new IllegalArgumentException("Collection already contains a key with a keyID for the passed in ring.");
         }
 
-        Map newSecretRings = new HashMap(ringCollection.secretRings);
-        List newOrder = new ArrayList(ringCollection.order);
+        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<>(ringCollection.secretRings);
+        List<Long> newOrder = new ArrayList<>(ringCollection.order);
 
         newSecretRings.put(key, secretKeyRing);
         newOrder.add(key);
@@ -349,21 +337,21 @@ public class PGPSecretKeyRingCollection
         PGPSecretKeyRingCollection ringCollection,
         PGPSecretKeyRing secretKeyRing)
     {
-        Long key = new Long(secretKeyRing.getPublicKey().getKeyID());
+        Long key = secretKeyRing.getPublicKey().getKeyID();
 
         if (!ringCollection.secretRings.containsKey(key))
         {
             throw new IllegalArgumentException("Collection does not contain a key with a keyID for the passed in ring.");
         }
 
-        Map newSecretRings = new HashMap(ringCollection.secretRings);
-        List newOrder = new ArrayList(ringCollection.order);
+        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<>(ringCollection.secretRings);
+        List<Long> newOrder = new ArrayList<>(ringCollection.order);
 
         newSecretRings.remove(key);
 
         for (int i = 0; i < newOrder.size(); i++)
         {
-            Long r = (Long)newOrder.get(i);
+            Long r = newOrder.get(i);
 
             if (r.longValue() == key.longValue())
             {
@@ -380,6 +368,6 @@ public class PGPSecretKeyRingCollection
      */
     public Iterator<PGPSecretKeyRing> iterator()
     {
-        return new KeyRingIterator(order, secretRings);
+        return new KeyRingIterator<>(order, secretRings);
     }
 }
