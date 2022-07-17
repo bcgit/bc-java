@@ -153,7 +153,7 @@ public class PGPSecretKeyRingCollection
         boolean ignoreCase)
     {
         Iterator<PGPSecretKeyRing> it = this.getKeyRings();
-        List<PGPSecretKeyRing> rings = new ArrayList<>();
+        List<PGPSecretKeyRing> rings = new ArrayList<PGPSecretKeyRing>();
 
         if (ignoreCase)
         {
@@ -315,8 +315,8 @@ public class PGPSecretKeyRingCollection
             throw new IllegalArgumentException("Collection already contains a key with a keyID for the passed in ring.");
         }
 
-        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<>(ringCollection.secretRings);
-        List<Long> newOrder = new ArrayList<>(ringCollection.order);
+        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<Long, PGPSecretKeyRing>(ringCollection.secretRings);
+        List<Long> newOrder = new ArrayList<Long>(ringCollection.order);
 
         newSecretRings.put(key, secretKeyRing);
         newOrder.add(key);
@@ -344,8 +344,8 @@ public class PGPSecretKeyRingCollection
             throw new IllegalArgumentException("Collection does not contain a key with a keyID for the passed in ring.");
         }
 
-        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<>(ringCollection.secretRings);
-        List<Long> newOrder = new ArrayList<>(ringCollection.order);
+        Map<Long, PGPSecretKeyRing> newSecretRings = new HashMap<Long, PGPSecretKeyRing>(ringCollection.secretRings);
+        List<Long> newOrder = new ArrayList<Long>(ringCollection.order);
 
         newSecretRings.remove(key);
 
@@ -368,6 +368,6 @@ public class PGPSecretKeyRingCollection
      */
     public Iterator<PGPSecretKeyRing> iterator()
     {
-        return new KeyRingIterator<>(order, secretRings);
+        return new KeyRingIterator<PGPSecretKeyRing>(order, secretRings);
     }
 }

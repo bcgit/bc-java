@@ -154,7 +154,7 @@ public class PGPPublicKeyRingCollection
         boolean ignoreCase)
     {
         Iterator<PGPPublicKeyRing> it = this.getKeyRings();
-        List<PGPPublicKeyRing> rings = new ArrayList<>();
+        List<PGPPublicKeyRing> rings = new ArrayList<PGPPublicKeyRing>();
 
         if (ignoreCase)
         {
@@ -309,7 +309,7 @@ public class PGPPublicKeyRingCollection
      */
     public Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID)
     {
-        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
 
         for (Iterator<PGPPublicKeyRing> it = this.iterator(); it.hasNext(); )
         {
@@ -401,8 +401,8 @@ public class PGPPublicKeyRingCollection
             throw new IllegalArgumentException("Collection already contains a key with a keyID for the passed in ring.");
         }
 
-        Map<Long, PGPPublicKeyRing> newPubRings = new HashMap<>(ringCollection.pubRings);
-        List<Long> newOrder = new ArrayList<>(ringCollection.order);
+        Map<Long, PGPPublicKeyRing> newPubRings = new HashMap<Long, PGPPublicKeyRing>(ringCollection.pubRings);
+        List<Long> newOrder = new ArrayList<Long>(ringCollection.order);
 
         newPubRings.put(key, publicKeyRing);
         newOrder.add(key);
@@ -430,8 +430,8 @@ public class PGPPublicKeyRingCollection
             throw new IllegalArgumentException("Collection does not contain a key with a keyID for the passed in ring.");
         }
 
-        Map<Long, PGPPublicKeyRing> newPubRings = new HashMap<>(ringCollection.pubRings);
-        List<Long> newOrder = new ArrayList<>(ringCollection.order);
+        Map<Long, PGPPublicKeyRing> newPubRings = new HashMap<Long, PGPPublicKeyRing>(ringCollection.pubRings);
+        List<Long> newOrder = new ArrayList<Long>(ringCollection.order);
 
         newPubRings.remove(key);
 
@@ -454,6 +454,6 @@ public class PGPPublicKeyRingCollection
      */
     public Iterator<PGPPublicKeyRing> iterator()
     {
-        return new KeyRingIterator<>(order, pubRings);
+        return new KeyRingIterator<PGPPublicKeyRing>(order, pubRings);
     }
 }
