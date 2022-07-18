@@ -17,10 +17,8 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -423,7 +421,7 @@ public class PSSTest
         isTrue("2 sha512 shake256 failed", s.verify(sig));
 
         AlgorithmParameters ap = AlgorithmParameters.getInstance("PSS");
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(p.getEncoded())));
+
         ap.init(p.getEncoded());
 
         s = Signature.getInstance("SHA512withRSAandSHAKE256");
