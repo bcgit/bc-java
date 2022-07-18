@@ -19,7 +19,9 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
+import org.bouncycastle.pqc.jcajce.interfaces.PicnicKey;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 
@@ -55,6 +57,16 @@ public class PQCTestUtil
         return kpGen.generateKeyPair();
     }
 
+    public static KeyPair makePicnicKeyPair()
+            throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Picnic", "BCPQC");
+        //TODO: divide into two with cases with digest and with parametersets
+        kpGen.initialize(PicnicParameterSpec.picnicl1full, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
     public static X509Certificate makeCertificate(KeyPair subKP, String subDN, KeyPair issKP, String issDN)
         throws Exception
     {
@@ -66,6 +78,11 @@ public class PQCTestUtil
         if (issPriv instanceof FalconKey)
         {
             sigGen = new JcaContentSignerBuilder(((FalconKey)issPriv).getParameterSpec().getName()).setProvider("BCPQC").build(issPriv);
+        }
+        else if (issPriv instanceof PicnicKey)
+        {
+//            sigGen = new JcaContentSignerBuilder(((PicnicKey)issPriv).getParameterSpec().getName()).setProvider("BCPQC").build(issPriv);
+            sigGen = new JcaContentSignerBuilder("PICNIC").setProvider("BCPQC").build(issPriv);
         }
         else
         {
