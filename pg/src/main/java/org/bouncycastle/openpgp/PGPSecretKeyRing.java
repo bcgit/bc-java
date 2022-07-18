@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -168,7 +169,10 @@ public class PGPSecretKeyRing
             catch (IOException e)
             {
                 // skip sub-keys with unrecognized algorithms to be upwards compatible
-                LOG.fine("skipping unknown subkey: " + e.getMessage());
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine("skipping unknown subkey: " + e.getMessage());
+                }
             }
         }
     }

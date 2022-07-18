@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -127,7 +128,10 @@ public class PGPPublicKeyRing
                 catch (IOException e)
                 {
                     // Skip unrecognizable subkey
-                    LOG.fine("skipping unknown subkey: " + e.getMessage());
+                    if (LOG.isLoggable(Level.FINE))
+                    {
+                        LOG.fine("skipping unknown subkey: " + e.getMessage());
+                    }
                 }
             }
         }

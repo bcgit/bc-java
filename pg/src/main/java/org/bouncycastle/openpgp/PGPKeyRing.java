@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -65,7 +66,10 @@ public abstract class PGPKeyRing
             catch (UnsupportedPacketVersionException e)
             {
                 // skip unsupported signatures
-                LOG.fine("skipping unknown signature: " + e.getMessage());
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine("skipping unknown signature: " + e.getMessage());
+                }
             }
         }
         return sigList;
