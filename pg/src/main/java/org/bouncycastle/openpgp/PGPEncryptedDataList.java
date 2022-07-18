@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -99,7 +100,10 @@ public class PGPEncryptedDataList
             catch (UnsupportedPacketVersionException e)
             {
                 // Skip unknown packet versions
-                LOG.fine("skipping unknown session packet: " + e.getMessage());
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine("skipping unknown session packet: " + e.getMessage());
+                }
             }
         }
 
