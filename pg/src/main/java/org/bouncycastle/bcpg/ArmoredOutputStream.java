@@ -107,7 +107,7 @@ public class ArmoredOutputStream
 
     String          version = "BCPG v@RELEASE_NAME@";
 
-    Hashtable<String, List<String>> headers = new Hashtable<>();
+    Hashtable<String, List<String>> headers = new Hashtable<String, List<String>>();
 
     /**
      * Constructs an armored output stream with {@link #resetHeaders() default headers}.
@@ -145,7 +145,7 @@ public class ArmoredOutputStream
         while (e.hasMoreElements())
         {
             String key = e.nextElement();
-            List<String> headerList = new ArrayList<>();
+            List<String> headerList = new ArrayList<String>();
             headerList.add(headers.get(key));
             this.headers.put(key, headerList);
         }
@@ -171,7 +171,7 @@ public class ArmoredOutputStream
             List<String> valueList = headers.get(name);
             if (valueList == null)
             {
-                valueList = new ArrayList<>();
+                valueList = new ArrayList<String>();
                 headers.put(name, valueList);
             }
             else
@@ -208,7 +208,7 @@ public class ArmoredOutputStream
         List<String> valueList = headers.get(name);
         if (valueList == null)
         {
-            valueList = new ArrayList<>();
+            valueList = new ArrayList<String>();
             headers.put(name, valueList);
         }
         valueList.add(value);
