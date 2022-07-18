@@ -5,6 +5,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 
 public interface PGPContentVerifierBuilder
 {
-    public PGPContentVerifier build(final PGPPublicKey publicKey)
+    PGPContentVerifier build(final PGPPublicKey publicKey)
         throws PGPException;
 }
