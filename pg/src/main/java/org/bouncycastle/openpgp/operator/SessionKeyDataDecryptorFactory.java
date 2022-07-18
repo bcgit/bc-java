@@ -5,5 +5,5 @@ import org.bouncycastle.openpgp.PGPSessionKey;
 public interface SessionKeyDataDecryptorFactory
     extends PGPDataDecryptorFactory
 {
-    public abstract PGPSessionKey getSessionKey();
+    PGPSessionKey getSessionKey();
 }
