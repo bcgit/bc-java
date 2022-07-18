@@ -3,6 +3,8 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -48,7 +50,12 @@ public class KeyAgreementSpi
     protected void doInitFromKey(Key key, AlgorithmParameterSpec params, SecureRandom secureRandom)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        AsymmetricKeyParameter priv = getLwXDHKeyPrivate(key);
+        if (!(key instanceof PrivateKey))
+        {
+            throw new InvalidKeyException("private XDH key required");
+        }
+
+        AsymmetricKeyParameter priv = EdECUtil.generatePrivateKeyParameter((PrivateKey)key);
 
         if (priv instanceof X25519PrivateKeyParameters)
         {
@@ -110,6 +117,11 @@ public class KeyAgreementSpi
     protected Key engineDoPhase(Key key, boolean lastPhase)
         throws InvalidKeyException, IllegalStateException
     {
+        if (!(key instanceof PublicKey))
+        {
+            throw new InvalidKeyException("public XDH key required");
+        }
+
         if (agreement == null)
         {
             throw new IllegalStateException(kaAlgorithm + " not initialised.");
@@ -120,7 +132,7 @@ public class KeyAgreementSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        AsymmetricKeyParameter pub = getLwXDHKeyPublic(key);
+        AsymmetricKeyParameter pub = EdECUtil.generatePublicKeyParameter((PublicKey)key);
 
         result = new byte[agreement.getAgreementSize()];
 
@@ -166,28 +178,6 @@ public class KeyAgreementSpi
                 return new X25519Agreement();
             }
         }
-    }
-
-    private static AsymmetricKeyParameter getLwXDHKeyPrivate(Key key)
-        throws InvalidKeyException
-    {
-        if (key instanceof BCXDHPrivateKey)
-        {
-            return ((BCXDHPrivateKey)key).engineGetKeyParameters();
-        }
-
-        throw new InvalidKeyException("cannot identify XDH private key");
-    }
-
-    private AsymmetricKeyParameter getLwXDHKeyPublic(Key key)
-        throws InvalidKeyException
-    {
-        if (key instanceof BCXDHPublicKey)
-        {
-            return ((BCXDHPublicKey)key).engineGetKeyParameters();
-        }
-
-        throw new InvalidKeyException("cannot identify XDH public key");
     }
 
     public final static class XDH

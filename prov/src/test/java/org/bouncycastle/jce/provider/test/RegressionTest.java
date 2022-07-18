@@ -91,7 +91,8 @@ public class RegressionTest
         new ZucTest(),
         new ChaCha20Poly1305Test(),
         new SipHash128Test(),
-        new XOFTest()
+        new XOFTest(),
+        new XIESTest()
     };
 
     public static void main(String[] args)
