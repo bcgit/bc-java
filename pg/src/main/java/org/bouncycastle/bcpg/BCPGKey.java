@@ -15,13 +15,13 @@ public interface BCPGKey
      * 
      * @return "RAW" or "PGP"
      */
-    public String getFormat();
+    String getFormat();
     
     /**
      * return a string of bytes giving the encoded format of the key, as described by it's format.
      * 
      * @return byte[]
      */
-    public byte[] getEncoded();
+    byte[] getEncoded();
     
 }

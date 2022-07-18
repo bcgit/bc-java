@@ -5,6 +5,6 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 
 public interface PGPContentSignerBuilder
 {
-    public PGPContentSigner build(final int signatureType, final PGPPrivateKey privateKey)
+    PGPContentSigner build(final int signatureType, final PGPPrivateKey privateKey)
         throws PGPException;
 }
