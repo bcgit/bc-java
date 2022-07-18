@@ -23,6 +23,7 @@ public class PicnicTest
     extends TestCase
 {
     byte[] msg = Strings.toByteArray("Hello World!");
+    //TODO: add one vector for each parameter set
 
     public void setUp()
     {
