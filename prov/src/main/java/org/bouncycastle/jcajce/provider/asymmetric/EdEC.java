@@ -75,6 +75,27 @@ public class EdEC
             provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X448, PREFIX + "KeyPairGeneratorSpi$X448");
             provider.addAlgorithm("KeyPairGenerator", EdECObjectIdentifiers.id_X25519, PREFIX + "KeyPairGeneratorSpi$X25519");
 
+            provider.addAlgorithm("Cipher.XIES", PREFIX + "IESCipher$XIES");
+            provider.addAlgorithm("Cipher.XIESwithSHA1", PREFIX + "IESCipher$XIES");
+            provider.addAlgorithm("Cipher.XIESWITHSHA1", PREFIX + "IESCipher$XIES");
+            provider.addAlgorithm("Cipher.XIESwithSHA256", PREFIX + "IESCipher$XIESwithSHA256");
+            provider.addAlgorithm("Cipher.XIESWITHSHA256", PREFIX + "IESCipher$XIESwithSHA256");
+            provider.addAlgorithm("Cipher.XIESwithSHA384", PREFIX + "IESCipher$XIESwithSHA384");
+            provider.addAlgorithm("Cipher.XIESWITHSHA384", PREFIX + "IESCipher$XIESwithSHA384");
+            provider.addAlgorithm("Cipher.XIESwithSHA512", PREFIX + "IESCipher$XIESwithSHA512");
+            provider.addAlgorithm("Cipher.XIESWITHSHA512", PREFIX + "IESCipher$XIESwithSHA512");
+
+            provider.addAlgorithm("Cipher.XIESwithAES-CBC", PREFIX + "IESCipher$XIESwithAESCBC");
+            provider.addAlgorithm("Cipher.XIESWITHAES-CBC", PREFIX + "IESCipher$XIESwithAESCBC");
+            provider.addAlgorithm("Cipher.XIESwithSHA1andAES-CBC", PREFIX + "IESCipher$XIESwithAESCBC");
+            provider.addAlgorithm("Cipher.XIESWITHSHA1ANDAES-CBC", PREFIX + "IESCipher$XIESwithAESCBC");
+            provider.addAlgorithm("Cipher.XIESwithSHA256andAES-CBC", PREFIX + "IESCipher$XIESwithSHA256andAESCBC");
+            provider.addAlgorithm("Cipher.XIESWITHSHA256ANDAES-CBC", PREFIX + "IESCipher$XIESwithSHA256andAESCBC");
+            provider.addAlgorithm("Cipher.XIESwithSHA384andAES-CBC", PREFIX + "IESCipher$XIESwithSHA384andAESCBC");
+            provider.addAlgorithm("Cipher.XIESWITHSHA384ANDAES-CBC", PREFIX + "IESCipher$XIESwithSHA384andAESCBC");
+            provider.addAlgorithm("Cipher.XIESwithSHA512andAES-CBC", PREFIX + "IESCipher$XIESwithSHA512andAESCBC");
+            provider.addAlgorithm("Cipher.XIESWITHSHA512ANDAES-CBC", PREFIX + "IESCipher$XIESwithSHA512andAESCBC");
+
             registerOid(provider, EdECObjectIdentifiers.id_X448, "XDH", new KeyFactorySpi.X448());
             registerOid(provider, EdECObjectIdentifiers.id_X25519, "XDH", new KeyFactorySpi.X25519());
             registerOid(provider, EdECObjectIdentifiers.id_Ed448, "EDDSA", new KeyFactorySpi.Ed448());
