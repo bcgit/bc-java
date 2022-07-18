@@ -4,7 +4,7 @@ import java.io.OutputStream;
 
 public interface PGPContentSigner
 {
-    public OutputStream getOutputStream();
+    OutputStream getOutputStream();
 
     byte[] getSignature();
 
