@@ -240,9 +240,11 @@ public class ArmoredOutputStream
     {
         StringBuilder sb = new StringBuilder("-----BEGIN PGP SIGNED MESSAGE-----");
         sb.append(nl);
-        for (int hashAlgorithm : hashAlgorithms) {
+        for (int hashAlgorithm : hashAlgorithms)
+        {
             String hash;
-            switch (hashAlgorithm) {
+            switch (hashAlgorithm)
+            {
                 case HashAlgorithmTags.SHA1:
                     hash = "SHA1";
                     break;
