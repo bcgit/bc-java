@@ -122,12 +122,7 @@ import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.*;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -3786,6 +3781,111 @@ public class CertTest
         doGenSelfSignedCert(privKey, pubKey, algs, oids);
     }
 
+    public void checkCreationPicnic()
+            throws Exception
+    {
+        if (Security.getProvider("BCPQC") == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
+        }
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Picnic", "BCPQC");
+
+        kpGen.initialize(PicnicParameterSpec.picnic3l1, new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create base certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("PICNIC").setProvider("BCPQC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+                .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                        new X509KeyUsage(X509KeyUsage.encipherOnly))
+                .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
+                        new DERSequence(KeyPurposeId.anyExtendedKeyUsage))
+                .addExtension(new ASN1ObjectIdentifier("2.5.29.17"), true,
+                        new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")));
+
+        X509Certificate baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        isTrue("oid wrong", BCObjectIdentifiers.picnic_signature.getId().equals(baseCert.getSigAlgOID()));
+        isTrue("params wrong", null == baseCert.getSigAlgParams());
+
+        //
+        // copy certificate
+        //
+
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+                .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
+                .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        cert.verify(cert.getPublicKey());
+
+        // check encoded works
+        cert.getEncoded();
+
+        if (!areEqual(baseCert.getExtensionValue("2.5.29.15"), cert.getExtensionValue("2.5.29.15")))
+        {
+            fail("2.5.29.15 differs");
+        }
+
+        if (!areEqual(baseCert.getExtensionValue("2.5.29.37"), cert.getExtensionValue("2.5.29.37")))
+        {
+            fail("2.5.29.37 differs");
+        }
+
+        //
+        // exception test
+        //
+
+        try
+        {
+            certGen.copyAndAddExtension(new ASN1ObjectIdentifier("2.5.99.99"), true, new JcaX509CertificateHolder(baseCert));
+
+            fail("exception not thrown on dud extension copy");
+        }
+        catch (NullPointerException e)
+        {
+            // expected
+        }
+
+        // certificate with NewHope key
+        kpGen = KeyPairGenerator.getInstance("NH", "BCPQC");
+
+        kpGen.initialize(1024, new SecureRandom());
+
+        KeyPair nhKp = kpGen.generateKeyPair();
+
+        certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), nhKp.getPublic())
+                .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.15"), true, baseCert)
+                .copyAndAddExtension(new ASN1ObjectIdentifier("2.5.29.37"), false, baseCert);
+
+        cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        cert.verify(pubKey);
+
+        isTrue(nhKp.getPublic().equals(cert.getPublicKey()));
+
+        // check encoded works
+        cert.getEncoded();
+    }
+
+
     public void checkCreationFalcon()
         throws Exception
     {
@@ -4902,6 +5002,7 @@ public class CertTest
 //        checkCreationRSAPSS();
 
         checkCreationFalcon();
+        checkCreationPicnic();
         
 //        checkSm3WithSm2Creation();
 //
