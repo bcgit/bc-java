@@ -143,6 +143,11 @@ public class BufferedBlockCipher
     public int getOutputSize(
         int length)
     {
+        if (pgpCFB && forEncryption)
+        {
+            return length + bufOff + (cipher.getBlockSize() + 2);
+        }
+
         // Note: Can assume partialBlockOkay is true for purposes of this calculation
         return length + bufOff;
     }
