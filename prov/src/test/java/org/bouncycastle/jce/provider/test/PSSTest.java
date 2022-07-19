@@ -420,7 +420,7 @@ public class PSSTest
 
         isTrue("2 sha512 shake256 failed", s.verify(sig));
 
-        AlgorithmParameters ap = AlgorithmParameters.getInstance("PSS");
+        AlgorithmParameters ap = AlgorithmParameters.getInstance("PSS", "BC");
 
         ap.init(p.getEncoded());
 
