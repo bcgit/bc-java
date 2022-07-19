@@ -7,65 +7,21 @@ check-code:
   script:
     - "apply_overlay bc-java ./"
     - ". cienv.sh; \ gradle check -x test;"
-  artifacts:
-    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
-    paths:
-      - ./core/build
-      - ./util/build
-      - ./mail/build
-      - ./pg/build
-      - ./pkix/build
-      - ./prov/build
-      - ./tls/build
-      - ./test/build
-
+  
 test-code-8:
   stage: test
   script:
     - "apply_overlay bc-java ./"
     - ". cienv-8.sh; \ gradle -stacktrace clean build;"
-  artifacts:
-    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
-    paths:
-      - ./core/build
-      - ./util/build
-      - ./mail/build
-      - ./pg/build
-      - ./pkix/build
-      - ./prov/build
-      - ./tls/build
-      - ./test/build
-
+  
 test-code-11:
   stage: test
   script:
     - "apply_overlay bc-java ./"
     - ". cienv-11.sh; \ gradle -stacktrace clean build;"
-  artifacts:
-   name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
-   paths:
-      - ./core/build
-      - ./util/build
-      - ./mail/build
-      - ./pg/build
-      - ./pkix/build
-      - ./prov/build
-      - ./tls/build
-      - ./test/build
-
+  
 test-code-17:
   stage: test
   script:
     - "apply_overlay bc-java ./"
     - ". cienv-17.sh; \ gradle -stacktrace clean build;"
-  artifacts:
-    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
-    paths:
-      - ./core/build
-      - ./util/build
-      - ./mail/build
-      - ./pg/build
-      - ./pkix/build
-      - ./prov/build
-      - ./tls/build
-      - ./test/build
