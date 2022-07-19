@@ -130,7 +130,7 @@ public class SphincsPlusTest
                             {
                                 throw new IllegalArgumentException("unknown complexity");
                             }
-                            System.out.println("testcase: " + count);
+
 
                             parameters = (SPHINCSPlusParameters)SPHINCSPlusParameters.class.getField(b.toString()).get(null);
 
