@@ -129,10 +129,10 @@ public class XIESTest
     private void sealedObjectTest()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("X25519");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("X25519", "BC");
         KeyPair keyPair = kpg.generateKeyPair();
 
-        Cipher cipher = Cipher.getInstance("XIES");
+        Cipher cipher = Cipher.getInstance("XIES", "BC");
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
 
         String toEncrypt = "Hello";
