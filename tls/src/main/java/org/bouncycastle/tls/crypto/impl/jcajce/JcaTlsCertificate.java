@@ -358,7 +358,11 @@ public class JcaTlsCertificate
         PublicKey publicKey = getPublicKey();
         if (!"Ed25519".equals(publicKey.getAlgorithm()))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            // Oracle provider (Java 15+) returns the key as an EdDSA one
+            if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed25519") >= 0))
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
         }
         return publicKey;
     }
@@ -368,7 +372,11 @@ public class JcaTlsCertificate
         PublicKey publicKey = getPublicKey();
         if (!"Ed448".equals(publicKey.getAlgorithm()))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            // Oracle provider (Java 15+) returns the key as an EdDSA one
+            if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed448") >= 0))
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
         }
         return publicKey;
     }
