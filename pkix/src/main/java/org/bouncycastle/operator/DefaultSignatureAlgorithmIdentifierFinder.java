@@ -203,6 +203,13 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("FALCON-512", BCObjectIdentifiers.falcon_512);
         algorithms.put("FALCON-1024", BCObjectIdentifiers.falcon_1024);
 
+
+        algorithms.put("PICNIC", BCObjectIdentifiers.picnic_signature);
+        algorithms.put("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
+        algorithms.put("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
+        algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
+        //add other digests "SHAKE256WITHPICNIC
+
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
         // The parameters field SHALL be NULL for RSA based signature algorithms.
@@ -258,10 +265,21 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha_256);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha_512);
 
+        //
+        // Falcon
+        //
         noParams.add(BCObjectIdentifiers.falcon);
         noParams.add(BCObjectIdentifiers.falcon_512);
         noParams.add(BCObjectIdentifiers.falcon_1024);
-        
+
+        //
+        // Picnic
+        //
+        noParams.add(BCObjectIdentifiers.picnic_signature);
+        noParams.add(BCObjectIdentifiers.picnic_with_sha512);
+        noParams.add(BCObjectIdentifiers.picnic_with_sha3_512);
+        noParams.add(BCObjectIdentifiers.picnic_with_shake256);
+
         //
         // XMSS
         //
