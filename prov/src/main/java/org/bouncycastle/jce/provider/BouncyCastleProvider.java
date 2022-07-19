@@ -27,6 +27,7 @@ import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceCCA2KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.qtesla.QTESLAKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.rainbow.RainbowKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
@@ -274,6 +275,7 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_I, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_III, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi());
     }
@@ -346,7 +348,13 @@ public final class BouncyCastleProvider extends Provider
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)
         throws IOException
     {
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
+        ASN1ObjectIdentifier publicKeyAlgorithm = publicKeyInfo.getAlgorithm().getAlgorithm();
+        if (publicKeyAlgorithm.on(BCObjectIdentifiers.picnic_key))
+        {
+            return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
+        }
+        
+        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyAlgorithm);
 
         if (converter == null)
         {
