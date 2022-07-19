@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.edec;
 import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
-import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -74,26 +73,16 @@ public class SignatureSpi
         signer.init(true, priv);
     }
 
-    private static AsymmetricKeyParameter getLwEdDSAKeyPrivate(Key key)
+    private static AsymmetricKeyParameter getLwEdDSAKeyPrivate(PrivateKey key)
         throws InvalidKeyException
     {
-        if (key instanceof BCEdDSAPrivateKey)
-        {
-            return ((BCEdDSAPrivateKey)key).engineGetKeyParameters();
-        }
-
-        throw new InvalidKeyException("cannot identify EdDSA private key");
+        return EdECUtil.generatePrivateKeyParameter(key);
     }
 
-    private static AsymmetricKeyParameter getLwEdDSAKeyPublic(Key key)
+    private static AsymmetricKeyParameter getLwEdDSAKeyPublic(PublicKey key)
         throws InvalidKeyException
     {
-        if (key instanceof BCEdDSAPublicKey)
-        {
-            return ((BCEdDSAPublicKey)key).engineGetKeyParameters();
-        }
-
-        throw new InvalidKeyException("cannot identify EdDSA public key");
+        return EdECUtil.generatePublicKeyParameter(key);
     }
 
     private Signer getSigner(String alg)
