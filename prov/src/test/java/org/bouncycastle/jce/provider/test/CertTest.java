@@ -36,9 +36,8 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
-
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
@@ -1802,7 +1801,7 @@ public class CertTest
         System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "true");
 
         checkCertificate(9, x25519Cert,
-            KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+            KeyFactory.getInstance("EdDSA", "BC").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
 
         System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "false");
 
@@ -1812,7 +1811,7 @@ public class CertTest
 
             Certificate cert = fact.generateCertificate(new ByteArrayInputStream(x25519Cert));
 
-            cert.verify(KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+            cert.verify(KeyFactory.getInstance("EdDSA", "BC").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
 
             fail("no exception");
         }
