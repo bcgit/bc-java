@@ -7,9 +7,21 @@ check-code:
   script:
     - "apply_overlay bc-java ./"
     - ". cienv.sh; \ gradle check -x test;"
-
-test-code:
+  
+test-code-8:
   stage: test
   script:
     - "apply_overlay bc-java ./"
-    - ". cienv.sh; \ gradle -stacktrace clean build;"
+    - ". cienv-8.sh; \ gradle -stacktrace clean build;"
+  
+test-code-11:
+  stage: test
+  script:
+    - "apply_overlay bc-java ./"
+    - ". cienv-11.sh; \ gradle -stacktrace clean build;"
+  
+test-code-17:
+  stage: test
+  script:
+    - "apply_overlay bc-java ./"
+    - ". cienv-17.sh; \ gradle -stacktrace clean build;"

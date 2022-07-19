@@ -53,12 +53,16 @@ public class PQCSignedDataTest
     private static X509Certificate _origCert;
     private static KeyPair _origFalconKP;
     private static X509Certificate _origFalconCert;
+    private static KeyPair _origPicnicKP;
+    private static X509Certificate _origPicnicCert;
 
     private static String _signDN;
     private static KeyPair _signKP;
     private static X509Certificate _signCert;
     private static KeyPair _signFalconKP;
     private static X509Certificate _signFalconCert;
+    private static KeyPair _signPicnicKP;
+    private static X509Certificate _signPicnicCert;
 
     private static boolean _initialised = false;
 
@@ -126,6 +130,12 @@ public class PQCSignedDataTest
 
             _signFalconKP = PQCTestUtil.makeFalconKeyPair();
             _signFalconCert = PQCTestUtil.makeCertificate(_signFalconKP, _signDN, _origFalconKP, _origDN);
+
+            _origPicnicKP = PQCTestUtil.makePicnicKeyPair();
+            _origPicnicCert = PQCTestUtil.makeCertificate(_origPicnicKP, _origDN, _origPicnicKP, _origDN);
+
+            _signPicnicKP = PQCTestUtil.makePicnicKeyPair();
+            _signPicnicCert = PQCTestUtil.makeCertificate(_signPicnicKP, _signDN, _origPicnicKP, _origDN);
         }
     }
 
@@ -226,6 +236,65 @@ public class PQCSignedDataTest
 
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
+
+            //
+            // check content digest
+            //
+
+            byte[] contentDigest = (byte[])gen.getGeneratedDigests().get(signer.getDigestAlgOID());
+
+            AttributeTable table = signer.getSignedAttributes();
+            Attribute hash = table.get(CMSAttributes.messageDigest);
+
+            assertTrue(MessageDigest.isEqual(contentDigest, ((ASN1OctetString)hash.getAttrValues().getObjectAt(0)).getOctets()));
+        }
+    }
+
+    public void testPicnicEncapsulated()
+            throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origPicnicCert);
+        certList.add(_signPicnicCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("PICNIC").setProvider(BCPQC).build(_origPicnicKP.getPrivate()), _origPicnicCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(bIn);
+
+        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+
+        certs = s.getCertificates();
+
+        SignerInformationStore signers = s.getSignerInfos();
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certs.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            cert.getSubjectPublicKeyInfo();
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
 
