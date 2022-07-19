@@ -7,6 +7,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -44,7 +45,6 @@ import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.parsers.XIESPublicKeyParser;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.interfaces.XDHKey;
-import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
@@ -312,9 +312,9 @@ public class IESCipher
         // Parse the recipient's key
         if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof XDHPublicKey)
+            if (key instanceof PublicKey)
             {
-                this.key = EdECUtil.generatePublicKeyParameter((XDHPublicKey)key);
+                this.key = EdECUtil.generatePublicKeyParameter((PublicKey)key);
             }
             else
             {
