@@ -137,6 +137,8 @@ import org.bouncycastle.util.test.SimpleTest;
 public class CertTest
     extends SimpleTest
 {
+    private static long SIX_MONTHS = 6 * 30 * 24 * 60 * 60 * 1000L;
+
     private static final String BC = org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
 
     // test CA
@@ -3812,7 +3814,11 @@ public class CertTest
         // create base certificate - version 3
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("Falcon-512").setProvider("BCPQC").build(privKey);
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            builder.build(), BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + SIX_MONTHS),
+            builder.build(), pubKey)
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.encipherOnly))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
