@@ -208,7 +208,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         algorithms.put("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
-        //add other digests "SHAKE256WITHPICNIC
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
