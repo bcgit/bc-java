@@ -116,6 +116,10 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         addEntries(BCObjectIdentifiers.sphincs256_with_SHA512, "SHA512", "SPHINCS256");
         addEntries(BCObjectIdentifiers.sphincs256_with_SHA3_512, "SHA3-512", "SPHINCS256");
 
+        addEntries(BCObjectIdentifiers.picnic_with_shake256, "SHAKE256", "Picnic");
+        addEntries(BCObjectIdentifiers.picnic_with_sha512, "SHA512", "Picnic");
+        addEntries(BCObjectIdentifiers.picnic_with_sha3_512, "SHA3-512", "Picnic");
+
         encryptionAlgs.put(X9ObjectIdentifiers.id_dsa, "DSA");
         encryptionAlgs.put(PKCSObjectIdentifiers.rsaEncryption, "RSA");
         encryptionAlgs.put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm, "RSA");
@@ -247,6 +251,11 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         if (BCObjectIdentifiers.falcon_1024.equals(encryptionAlgOID))
         {
             return "Falcon-1024";
+        }
+
+        if (BCObjectIdentifiers.picnic_signature.equals(encryptionAlgOID))
+        {
+            return "Picnic";
         }
 
         String digestName = getDigestAlgName(encryptionAlgOID);

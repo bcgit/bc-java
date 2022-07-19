@@ -88,6 +88,7 @@ subprojects {
   test {
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
 
     finalizedBy jacocoTestReport
 

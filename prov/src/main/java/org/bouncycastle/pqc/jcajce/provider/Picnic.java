@@ -32,7 +32,19 @@ public class Picnic
 
             AsymmetricKeyInfoConverter keyFact = new PicnicKeyFactorySpi();
 
-            registerOid(provider, BCObjectIdentifiers.picnic, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnic_key, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl1fs, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl1ur, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl3fs, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl3ur, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl5fs, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl5ur, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnic3l1, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnic3l3, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnic3l5, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl1full, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl3full, "Picnic", keyFact);
+            registerOid(provider, BCObjectIdentifiers.picnicl5full, "Picnic", keyFact);
         }
     }
 }
