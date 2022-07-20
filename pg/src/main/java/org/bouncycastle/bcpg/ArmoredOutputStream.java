@@ -89,7 +89,7 @@ public class ArmoredOutputStream
     OutputStream    out;
     int[]           buf = new int[3];
     int             bufPtr = 0;
-    CRC24           crc = new CRC24();
+    CRC24           crc = CRC24.getInstance();
     int             chunkCount = 0;
     int             lastb;
 

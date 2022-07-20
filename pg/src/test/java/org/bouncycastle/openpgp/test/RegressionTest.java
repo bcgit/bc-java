@@ -47,7 +47,8 @@ public class RegressionTest
         new PolicyURITest(),
         new ArmoredOutputStreamUTF8Test(),
         new UnrecognizableSubkeyParserTest(),
-        new IgnoreUnknownEncryptedSessionKeys()
+        new IgnoreUnknownEncryptedSessionKeys(),
+        new CRC24Test()
     };
 
     public static void main(String[] args)
