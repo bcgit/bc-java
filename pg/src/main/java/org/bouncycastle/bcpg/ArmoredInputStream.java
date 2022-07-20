@@ -137,7 +137,7 @@ public class ArmoredInputStream
     boolean        start = true;
     int[]          outBuf = new int[3];
     int            bufPtr = 3;
-    CRC24          crc = new CRC24();
+    CRC24          crc = CRC24.getInstance();
     boolean        crcFound = false;
     boolean        hasHeaders = true;
     String         header = null;
