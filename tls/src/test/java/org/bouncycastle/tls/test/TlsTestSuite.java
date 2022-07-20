@@ -52,7 +52,7 @@ public class TlsTestSuite extends TestSuite
         else
         {
             // remove the old one.
-            Security.removeProvider("BC");
+            Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
 
             // make sure BC provider is at the end
             Security.addProvider(new BouncyCastleProvider());
