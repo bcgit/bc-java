@@ -4,6 +4,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Vector;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -15,9 +17,6 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class TlsTestSuite extends TestSuite
 {
@@ -48,6 +47,14 @@ public class TlsTestSuite extends TestSuite
     {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+        else
+        {
+            // remove the old one.
+            Security.removeProvider("BC");
+
+            // make sure BC provider is at the end
             Security.addProvider(new BouncyCastleProvider());
         }
 
