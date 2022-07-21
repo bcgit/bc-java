@@ -26,9 +26,10 @@ public final class CryptoServicesRegistrar
     private static final Permission CanSetDefaultRandom = new CryptoServicesPermission(CryptoServicesPermission.DEFAULT_RANDOM);
 
     private static final ThreadLocal threadProperties = new ThreadLocal();
-    private static final Map globalProperties = Collections.synchronizedMap(new HashMap());
+    private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
 
-    private static volatile SecureRandom defaultSecureRandom;
+    private static final Object cacheLock = new Object();
+    private static SecureRandomProvider defaultSecureRandomProvider;
 
     static
     {
@@ -103,28 +104,34 @@ public final class CryptoServicesRegistrar
      * Return the default source of randomness.
      *
      * @return the default SecureRandom
-     * @throws IllegalStateException if no source of randomness has been provided.
      */
     public static SecureRandom getSecureRandom()
     {
-        if (defaultSecureRandom == null)
+        synchronized (cacheLock)
         {
-            return new SecureRandom();
+            if (null != defaultSecureRandomProvider)
+            {
+                return defaultSecureRandomProvider.get();
+            }
         }
-        
-        return defaultSecureRandom;
-    }
 
-    /**
-     * Set a default secure random to be used where none is otherwise provided.
-     *
-     * @param secureRandom the SecureRandom to use as the default.
-     */
-    public static void setSecureRandom(SecureRandom secureRandom)
-    {
-        checkPermission(CanSetDefaultRandom);
+        final SecureRandom tmp = new SecureRandom();
 
-        defaultSecureRandom = secureRandom;
+        synchronized (cacheLock)
+        {
+            if (null == defaultSecureRandomProvider)
+            {
+                defaultSecureRandomProvider = new SecureRandomProvider()
+                {
+                    public SecureRandom get()
+                    {
+                        return tmp;
+                    }
+                };
+            }
+
+            return defaultSecureRandomProvider.get();
+        }
     }
 
     /**
@@ -137,12 +144,53 @@ public final class CryptoServicesRegistrar
     {
         return null == secureRandom ? getSecureRandom() : secureRandom;
     }
+
+    /**
+     * Set a default secure random to be used where none is otherwise provided.
+     *
+     * @param secureRandom the SecureRandom to use as the default.
+     */
+    public static void setSecureRandom(final SecureRandom secureRandom)
+    {
+        checkPermission(CanSetDefaultRandom);
+
+        synchronized (cacheLock)
+        {
+            if (secureRandom == null)
+            {
+                defaultSecureRandomProvider = null;
+            }
+            else
+            {
+                defaultSecureRandomProvider = new SecureRandomProvider()
+                {
+                    public SecureRandom get()
+                    {
+                        return secureRandom;
+                    }
+                };
+            }
+        }
+    }
     
+    /**
+     * Set a default secure random provider to be used where none is otherwise provided.
+     *
+     * @param secureRandomProvider a provider SecureRandom to use when a default SecureRandom is requested.
+     */
+    public static void setSecureRandomProvider(SecureRandomProvider secureRandomProvider)
+    {
+        checkPermission(CanSetDefaultRandom);
+
+        defaultSecureRandomProvider = secureRandomProvider;
+    }
+
     /**
      * Return the default value for a particular property if one exists. The look up is done on the thread's local
      * configuration first and then on the global configuration in no local configuration exists.
      *
      * @param property the property to look up.
+     * @param <T> the type to be returned
      * @return null if the property is not set, the default value otherwise,
      */
     public static Object getProperty(Property property)
@@ -159,7 +207,7 @@ public final class CryptoServicesRegistrar
 
     private static Object[] lookupProperty(Property property)
     {
-        Map properties = (Map)threadProperties.get();
+        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
         Object[] values;
 
         if (properties == null || !properties.containsKey(property.name))
@@ -181,7 +229,7 @@ public final class CryptoServicesRegistrar
      * @param <T> the base type of the array to be returned.
      * @return null if the property is not set, an array of the current values otherwise.
      */
-    public static  Object[] getSizedProperty(Property property)
+    public static Object[] getSizedProperty(Property property)
     {
         Object[] values = lookupProperty(property);
 
@@ -190,11 +238,7 @@ public final class CryptoServicesRegistrar
             return null;
         }
 
-        Object[] rv = new Object[values.length];
-
-        System.arraycopy(values, 0, rv, 0, rv.length);
-
-        return rv;
+        return (Object[])values.clone();
     }
 
     /**
@@ -203,6 +247,7 @@ public final class CryptoServicesRegistrar
      *
      * @param property the name of the property to look up.
      * @param size the size (in bits) of the defining value in the property type.
+     * @param <T> the type of the value to be returned.
      * @return the current value for the size, null if there is no value set,
      */
     public static Object getSizedProperty(Property property, int size)
@@ -260,11 +305,7 @@ public final class CryptoServicesRegistrar
             throw new IllegalArgumentException("Bad property value passed");
         }
 
-        Object[] rv = new Object[propertyValue.length];
-
-        System.arraycopy(propertyValue, 0, rv, 0, rv.length);
-
-        localSetThread(property, rv);
+        localSetThread(property, (Object[])propertyValue.clone());
     }
 
     /**
@@ -274,25 +315,22 @@ public final class CryptoServicesRegistrar
      *
      * @param property the name of the property to set.
      * @param propertyValue the values to assign to the property.
+     * @param <T> the base type of the property value.
      */
     public static void setGlobalProperty(Property property, Object[] propertyValue)
     {
         checkPermission(CanSetDefaultProperty);
 
-        Object[] rv = new Object[propertyValue.length];
-
-        System.arraycopy(propertyValue, 0, rv, 0, rv.length);
-
-        localSetGlobalProperty(property, rv);
+        localSetGlobalProperty(property, (Object[])propertyValue.clone());
     }
 
     private static void localSetThread(Property property, Object[] propertyValue)
     {
-        Map properties = (Map)threadProperties.get();
+        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
 
         if (properties == null)
         {
-            properties = new HashMap();
+            properties = new HashMap<String, Object[]>();
             threadProperties.set(properties);
         }
 
@@ -340,16 +378,16 @@ public final class CryptoServicesRegistrar
     {
         checkPermission(CanSetThreadProperty);
 
-        return localClearThreadProperty(property);
+        return (Object[])localClearThreadProperty(property);
     }
 
     private static Object[] localClearThreadProperty(Property property)
     {
-        Map properties = (Map)threadProperties.get();
+        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
 
         if (properties == null)
         {
-            properties = new HashMap();
+            properties = new HashMap<String, Object[]>();
             threadProperties.set(properties);
         }
 
@@ -362,7 +400,7 @@ public final class CryptoServicesRegistrar
 
         if (securityManager != null)
         {
-            AccessController.doPrivileged(new PrivilegedAction()
+            AccessController.doPrivileged(new PrivilegedAction<Object>()
             {
                 public Object run()
                 {
@@ -386,7 +424,7 @@ public final class CryptoServicesRegistrar
     private static int chooseLowerBound(int pSize)
     {
         int m = 160;
-        if (pSize > 512)
+        if (pSize > 1024)
         {
             if (pSize <= 2048)
             {

@@ -25,6 +25,11 @@ public class CryptoServicesPermission
      */
     public static final String DEFAULT_RANDOM = "defaultRandomConfig";
 
+    /**
+     * Enable the setting of the constraints.
+     */
+    public static final String CONSTRAINTS = "constraints";
+
     private final Set<String> actions = new HashSet<String>();
 
     public CryptoServicesPermission(String name)
