@@ -181,7 +181,8 @@ public class RegressionTest
             new KangarooTest(),
             new SP80038GTest(),
             new TupleHashTest(),
-            new ParallelHashTest()
+            new ParallelHashTest(),
+            new CryptoServiceConstraintsTest()
         };
 
     public static void main(String[] args)
