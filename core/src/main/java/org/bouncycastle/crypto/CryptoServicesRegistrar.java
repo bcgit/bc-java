@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.DHParameters;
@@ -24,12 +25,20 @@ public final class CryptoServicesRegistrar
     private static final Permission CanSetDefaultProperty = new CryptoServicesPermission(CryptoServicesPermission.GLOBAL_CONFIG);
     private static final Permission CanSetThreadProperty = new CryptoServicesPermission(CryptoServicesPermission.THREAD_LOCAL_CONFIG);
     private static final Permission CanSetDefaultRandom = new CryptoServicesPermission(CryptoServicesPermission.DEFAULT_RANDOM);
+    private static final Permission CanSetConstraints = new CryptoServicesPermission(CryptoServicesPermission.CONSTRAINTS);
 
     private static final ThreadLocal<Map<String, Object[]>> threadProperties = new ThreadLocal<Map<String, Object[]>>();
     private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
+    private static final SecureRandomProvider defaultRandomProviderImpl = new SecureRandomProvider()
+    {
+        public SecureRandom get()
+        {
+            return new SecureRandom();
+        }
+    };
 
-    private static final Object cacheLock = new Object();
-    private static SecureRandomProvider defaultSecureRandomProvider;
+    private static AtomicReference<SecureRandomProvider> defaultSecureRandomProvider = new AtomicReference<SecureRandomProvider>();
+    private static AtomicReference<CryptoServicesConstraints> servicesConstraints = new AtomicReference<CryptoServicesConstraints>();
 
     static
     {
@@ -43,56 +52,58 @@ public final class CryptoServicesRegistrar
 
         DSAParameters def768Params = new DSAParameters(
             new BigInteger("e9e642599d355f37c97ffd3567120b8e25c9cd43e927b3a9670fbec5" +
-                           "d890141922d2c3b3ad2480093799869d1e846aab49fab0ad26d2ce6a" +
-                           "22219d470bce7d777d4a21fbe9c270b57f607002f3cef8393694cf45" +
-                           "ee3688c11a8c56ab127a3daf", 16),
+                "d890141922d2c3b3ad2480093799869d1e846aab49fab0ad26d2ce6a" +
+                "22219d470bce7d777d4a21fbe9c270b57f607002f3cef8393694cf45" +
+                "ee3688c11a8c56ab127a3daf", 16),
             new BigInteger("9cdbd84c9f1ac2f38d0f80f42ab952e7338bf511", 16),
             new BigInteger("30470ad5a005fb14ce2d9dcd87e38bc7d1b1c5facbaecbe95f190aa7" +
-                           "a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d366844577" +
-                           "1f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a" +
-                           "7064f316933a346d3f529252", 16),
+                "a31d23c4dbbcbe06174544401a5b2c020965d8c2bd2171d366844577" +
+                "1f74ba084d2029d83c1c158547f3a9f1a2715be23d51ae4d3e5a1f6a" +
+                "7064f316933a346d3f529252", 16),
             new DSAValidationParameters(Hex.decodeStrict("77d0f8c4dad15eb8c4f2f8d6726cefd96d5bb399"), 263));
 
         DSAParameters def1024Params = new DSAParameters(
             new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80" +
-                            "b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b" +
-                            "801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c6" +
-                            "1bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675" +
-                            "f3ae2b61d72aeff22203199dd14801c7", 16),
+                "b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b" +
+                "801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c6" +
+                "1bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675" +
+                "f3ae2b61d72aeff22203199dd14801c7", 16),
             new BigInteger("9760508f15230bccb292b982a2eb840bf0581cf5", 16),
             new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b" +
-                            "3d0782675159578ebad4594fe67107108180b449167123e84c281613" +
-                            "b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f" +
-                            "0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06" +
-                            "928b665e807b552564014c3bfecf492a", 16),
+                "3d0782675159578ebad4594fe67107108180b449167123e84c281613" +
+                "b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f" +
+                "0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06" +
+                "928b665e807b552564014c3bfecf492a", 16),
             new DSAValidationParameters(Hex.decodeStrict("8d5155894229d5e689ee01e6018a237e2cae64cd"), 92));
 
         DSAParameters def2048Params = new DSAParameters(
             new BigInteger("95475cf5d93e596c3fcd1d902add02f427f5f3c7210313bb45fb4d5b" +
-                            "b2e5fe1cbd678cd4bbdd84c9836be1f31c0777725aeb6c2fc38b85f4" +
-                            "8076fa76bcd8146cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
-                            "c9c94d137b054a8d8096adb8d51952398eeca852a0af12df83e475aa" +
-                            "65d4ec0c38a9560d5661186ff98b9fc9eb60eee8b030376b236bc73b" +
-                            "e3acdbd74fd61c1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
-                            "506ade51edbb5443a563927dbc4ba520086746175c8885925ebc64c6" +
-                            "147906773496990cb714ec667304e261faee33b3cbdf008e0c3fa906" +
-                            "50d97d3909c9275bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
-                            "a406cb0b", 16),
+                "b2e5fe1cbd678cd4bbdd84c9836be1f31c0777725aeb6c2fc38b85f4" +
+                "8076fa76bcd8146cc89a6fb2f706dd719898c2083dc8d896f84062e2" +
+                "c9c94d137b054a8d8096adb8d51952398eeca852a0af12df83e475aa" +
+                "65d4ec0c38a9560d5661186ff98b9fc9eb60eee8b030376b236bc73b" +
+                "e3acdbd74fd61c1d2475fa3077b8f080467881ff7e1ca56fee066d79" +
+                "506ade51edbb5443a563927dbc4ba520086746175c8885925ebc64c6" +
+                "147906773496990cb714ec667304e261faee33b3cbdf008e0c3fa906" +
+                "50d97d3909c9275bf4ac86ffcb3d03e6dfc8ada5934242dd6d3bcca2" +
+                "a406cb0b", 16),
             new BigInteger("f8183668ba5fc5bb06b5981e6d8b795d30b8978d43ca0ec572e37e09939a9773", 16),
             new BigInteger("42debb9da5b3d88cc956e08787ec3f3a09bba5f48b889a74aaf53174" +
-                            "aa0fbe7e3c5b8fcd7a53bef563b0e98560328960a9517f4014d3325f" +
-                            "c7962bf1e049370d76d1314a76137e792f3f0db859d095e4a5b93202" +
-                            "4f079ecf2ef09c797452b0770e1350782ed57ddf794979dcef23cb96" +
-                            "f183061965c4ebc93c9c71c56b925955a75f94cccf1449ac43d586d0" +
-                            "beee43251b0b2287349d68de0d144403f13e802f4146d882e057af19" +
-                            "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f695e347d8d1cf9" +
-                            "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
-                            "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
-                            "78693c7a", 16),
+                "aa0fbe7e3c5b8fcd7a53bef563b0e98560328960a9517f4014d3325f" +
+                "c7962bf1e049370d76d1314a76137e792f3f0db859d095e4a5b93202" +
+                "4f079ecf2ef09c797452b0770e1350782ed57ddf794979dcef23cb96" +
+                "f183061965c4ebc93c9c71c56b925955a75f94cccf1449ac43d586d0" +
+                "beee43251b0b2287349d68de0d144403f13e802f4146d882e057af19" +
+                "b6f6275c6676c8fa0e3ca2713a3257fd1b27d0639f695e347d8d1cf9" +
+                "ac819a26ca9b04cb0eb9b7b035988d15bbac65212a55239cfc7e58fa" +
+                "e38d7250ab9991ffbc97134025fe8ce04c4399ad96569be91a546f49" +
+                "78693c7a", 16),
             new DSAValidationParameters(Hex.decodeStrict("b0b4417601b59cbc9d8ac8f935cadaec4f5fbb2f23785609ae466748d9b5a536"), 497));
 
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, def512Params, def768Params, def1024Params, def2048Params);
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params));
+
+        servicesConstraints.set(new DefaultConstraints());
     }
 
     private CryptoServicesRegistrar()
@@ -107,32 +118,9 @@ public final class CryptoServicesRegistrar
      */
     public static SecureRandom getSecureRandom()
     {
-        synchronized (cacheLock)
-        {
-            if (null != defaultSecureRandomProvider)
-            {
-                return defaultSecureRandomProvider.get();
-            }
-        }
+        defaultSecureRandomProvider.compareAndSet(null, defaultRandomProviderImpl);
 
-        final SecureRandom tmp = new SecureRandom();
-
-        synchronized (cacheLock)
-        {
-            if (null == defaultSecureRandomProvider)
-            {
-                defaultSecureRandomProvider = new SecureRandomProvider()
-                {
-                    @Override
-                    public SecureRandom get()
-                    {
-                        return tmp;
-                    }
-                };
-            }
-
-            return defaultSecureRandomProvider.get();
-        }
+        return defaultSecureRandomProvider.get().get();
     }
 
     /**
@@ -155,26 +143,22 @@ public final class CryptoServicesRegistrar
     {
         checkPermission(CanSetDefaultRandom);
 
-        synchronized (cacheLock)
+        if (secureRandom == null)
         {
-            if (secureRandom == null)
+            defaultSecureRandomProvider.set(defaultRandomProviderImpl);
+        }
+        else
+        {
+            defaultSecureRandomProvider.set(new SecureRandomProvider()
             {
-                defaultSecureRandomProvider = null;
-            }
-            else
-            {
-                defaultSecureRandomProvider = new SecureRandomProvider()
+                public SecureRandom get()
                 {
-                    @Override
-                    public SecureRandom get()
-                    {
-                        return secureRandom;
-                    }
-                };
-            }
+                    return secureRandom;
+                }
+            });
         }
     }
-    
+
     /**
      * Set a default secure random provider to be used where none is otherwise provided.
      *
@@ -184,7 +168,29 @@ public final class CryptoServicesRegistrar
     {
         checkPermission(CanSetDefaultRandom);
 
-        defaultSecureRandomProvider = secureRandomProvider;
+        defaultSecureRandomProvider.set(secureRandomProvider);
+    }
+
+    /**
+     * Return the current algorithm/services constraints.
+     *
+     * @return the algorithm/services constraints.
+     */
+    public static CryptoServicesConstraints getServicesConstraints()
+    {
+        return servicesConstraints.get();
+    }
+
+    /**
+     * Return the current algorithm constraints.
+     *
+     * @return the algorithm constraints.
+     */
+    public static void setServicesConstraints(CryptoServicesConstraints constraints)
+    {
+        checkPermission(CanSetConstraints);
+
+        servicesConstraints.set((constraints == null) ? new NoConstraints() : constraints);
     }
 
     /**
@@ -192,7 +198,7 @@ public final class CryptoServicesRegistrar
      * configuration first and then on the global configuration in no local configuration exists.
      *
      * @param property the property to look up.
-     * @param <T> the type to be returned
+     * @param <T>      the type to be returned
      * @return null if the property is not set, the default value otherwise,
      */
     public static <T> T getProperty(Property property)
@@ -228,7 +234,7 @@ public final class CryptoServicesRegistrar
      * DSA_DEFAULT_PARAMS.
      *
      * @param property the name of the property to look up.
-     * @param <T> the base type of the array to be returned.
+     * @param <T>      the base type of the array to be returned.
      * @return null if the property is not set, an array of the current values otherwise.
      */
     public static <T> T[] getSizedProperty(Property property)
@@ -248,8 +254,8 @@ public final class CryptoServicesRegistrar
      * DSA_DEFAULT_PARAMS.
      *
      * @param property the name of the property to look up.
-     * @param size the size (in bits) of the defining value in the property type.
-     * @param <T> the type of the value to be returned.
+     * @param size     the size (in bits) of the defining value in the property type.
+     * @param <T>      the type of the value to be returned.
      * @return the current value for the size, null if there is no value set,
      */
     public static <T> T getSizedProperty(Property property, int size)
@@ -294,9 +300,9 @@ public final class CryptoServicesRegistrar
      * one value can be passed in for a sized property. If more than one value is provided the
      * first value in the argument list becomes the default value.
      *
-     * @param property the name of the property to set.
+     * @param property      the name of the property to set.
      * @param propertyValue the values to assign to the property.
-     * @param <T> the base type of the property value.
+     * @param <T>           the base type of the property value.
      */
     public static <T> void setThreadProperty(Property property, T... propertyValue)
     {
@@ -315,9 +321,9 @@ public final class CryptoServicesRegistrar
      * one value can be passed in for a sized property. If more than one value is provided the
      * first value in the argument list becomes the default value.
      *
-     * @param property the name of the property to set.
+     * @param property      the name of the property to set.
      * @param propertyValue the values to assign to the property.
-     * @param <T> the base type of the property value.
+     * @param <T>           the base type of the property value.
      */
     public static <T> void setGlobalProperty(Property property, T... propertyValue)
     {
@@ -356,7 +362,7 @@ public final class CryptoServicesRegistrar
      * Clear the global value for the passed in property.
      *
      * @param property the property to be cleared.
-     * @param <T> the base type of the property value
+     * @param <T>      the base type of the property value
      * @return an array of T if a value was previously set, null otherwise.
      */
     public static <T> T[] clearGlobalProperty(Property property)
@@ -373,7 +379,7 @@ public final class CryptoServicesRegistrar
      * Clear the thread local value for the passed in property.
      *
      * @param property the property to be cleared.
-     * @param <T> the base type of the property value
+     * @param <T>      the base type of the property value
      * @return an array of T if a value was previously set, null otherwise.
      */
     public static <T> T[] clearThreadProperty(Property property)
@@ -448,6 +454,24 @@ public final class CryptoServicesRegistrar
         return m;
     }
 
+    private static final class DefaultConstraints
+        implements CryptoServicesConstraints
+    {
+        public void check(CryptoService service)
+        {
+            // TODO: set from system/security properties
+        }
+    }
+
+    private static final class NoConstraints
+        implements CryptoServicesConstraints
+    {
+        public void check(CryptoService service)
+        {
+            // no action as anything goes.
+        }
+    }
+
     /**
      * Available properties that can be set.
      */
@@ -460,11 +484,11 @@ public final class CryptoServicesRegistrar
         /**
          * The default parameters for a particular size of Diffie-Hellman key.This is a sized property.
          */
-        public static final Property DH_DEFAULT_PARAMS= new Property("dhDefaultParams", DHParameters.class);
+        public static final Property DH_DEFAULT_PARAMS = new Property("dhDefaultParams", DHParameters.class);
         /**
          * The default parameters for a particular size of DSA key. This is a sized property.
          */
-        public static final Property DSA_DEFAULT_PARAMS= new Property("dsaDefaultParams", DSAParameters.class);
+        public static final Property DSA_DEFAULT_PARAMS = new Property("dsaDefaultParams", DSAParameters.class);
         private final String name;
         private final Class type;
 
