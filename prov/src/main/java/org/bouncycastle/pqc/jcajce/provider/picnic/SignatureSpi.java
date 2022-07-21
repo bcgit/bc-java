@@ -148,7 +148,7 @@ public class SignatureSpi
         public withShake256()
                 throws NoSuchAlgorithmException
         {
-            super(new SHAKEDigest(512), new PicnicSigner());
+            super(new SHAKEDigest(256), new PicnicSigner());
         }
     }
     public static class withSha512
