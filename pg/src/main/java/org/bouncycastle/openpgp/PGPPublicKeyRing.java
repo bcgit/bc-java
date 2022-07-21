@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
+import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
@@ -35,7 +36,7 @@ public class PGPPublicKeyRing
 {
     private static final Logger LOG = Logger.getLogger(PGPPublicKeyRing.class.getName());
 
-    List keys;
+    List<PGPPublicKey> keys;
 
     public PGPPublicKeyRing(
         byte[] encoding,
@@ -45,13 +46,13 @@ public class PGPPublicKeyRing
         this(new ByteArrayInputStream(encoding), fingerPrintCalculator);
     }
 
-    private static List checkKeys(List keys)
+    private static List<PGPPublicKey> checkKeys(List<PGPPublicKey> keys)
     {
-        List rv = new ArrayList(keys.size());
+        List<PGPPublicKey> rv = new ArrayList<>(keys.size());
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = keys.get(i);
 
             if (i == 0)
             {
@@ -90,7 +91,7 @@ public class PGPPublicKeyRing
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException
     {
-        this.keys = new ArrayList();
+        this.keys = new ArrayList<PGPPublicKey>();
 
         BCPGInputStream pIn = wrap(in);
 
@@ -106,11 +107,11 @@ public class PGPPublicKeyRing
         TrustPacket trustPk = readOptionalTrustPacket(pIn);
 
         // direct signatures and revocations
-        List keySigs = readSignaturesAndTrust(pIn);
+        List<PGPSignature> keySigs = readSignaturesAndTrust(pIn);
 
-        List ids = new ArrayList();
-        List idTrusts = new ArrayList();
-        List idSigs = new ArrayList();
+        List<UserDataPacket> ids = new ArrayList<UserDataPacket>();
+        List<TrustPacket> idTrusts = new ArrayList<TrustPacket>();
+        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>();
         readUserIDs(pIn, ids, idTrusts, idSigs);
 
         try
@@ -144,7 +145,7 @@ public class PGPPublicKeyRing
      */
     public PGPPublicKey getPublicKey()
     {
-        return (PGPPublicKey)keys.get(0);
+        return keys.get(0);
     }
 
     /**
@@ -159,7 +160,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = keys.get(i);
 
             if (keyID == k.getKeyID())
             {
@@ -181,7 +182,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = keys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getFingerprint()))
             {
@@ -200,13 +201,13 @@ public class PGPPublicKeyRing
      */
     public Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID)
     {
-        List keysWithSigs = new ArrayList();
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = keys.get(i);
 
-            Iterator sigIt = k.getSignaturesForKeyID(keyID);
+            Iterator<PGPSignature> sigIt = k.getSignaturesForKeyID(keyID);
 
             if (sigIt.hasNext())
             {
@@ -283,7 +284,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = (PGPPublicKey)keys.get(i);
+            PGPPublicKey k = keys.get(i);
 
             k.encode(outStream, forTransfer);
         }
@@ -301,13 +302,13 @@ public class PGPPublicKeyRing
         PGPPublicKeyRing pubRing,
         PGPPublicKey pubKey)
     {
-        List keys = new ArrayList(pubRing.keys);
+        List<PGPPublicKey> keys = new ArrayList<>(pubRing.keys);
         boolean found = false;
         boolean masterFound = false;
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey key = (PGPPublicKey)keys.get(i);
+            PGPPublicKey key = keys.get(i);
 
             if (key.getKeyID() == pubKey.getKeyID())
             {
@@ -355,12 +356,12 @@ public class PGPPublicKeyRing
         int count = pubRing.keys.size();
         long keyID = pubKey.getKeyID();
 
-        ArrayList result = new ArrayList(count);
+        ArrayList<PGPPublicKey> result = new ArrayList<>(count);
         boolean found = false;
 
         for (int i = 0; i < count; ++i)
         {
-            PGPPublicKey key = (PGPPublicKey)pubRing.keys.get(i);
+            PGPPublicKey key = pubRing.keys.get(i);
 
             if (key.getKeyID() == keyID)
             {
@@ -398,7 +399,7 @@ public class PGPPublicKeyRing
         TrustPacket kTrust = readOptionalTrustPacket(in);
 
         // PGP 8 actually leaves out the signature.
-        List sigList = readSignaturesAndTrust(in);
+        List<PGPSignature> sigList = readSignaturesAndTrust(in);
 
         return new PGPPublicKey(pk, kTrust, sigList, fingerPrintCalculator);
     }
@@ -453,16 +454,16 @@ public class PGPPublicKeyRing
         }
 
         Set<Long> secondKeys = new HashSet<Long>();
-        for (Iterator it = second.iterator(); it.hasNext(); )
+        for (Iterator<PGPPublicKey> it = second.iterator(); it.hasNext(); )
         {
-            PGPPublicKey key = (PGPPublicKey)it.next();
+            PGPPublicKey key = it.next();
             secondKeys.add(Longs.valueOf(key.getKeyID()));
         }
 
         List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
-        for (Iterator it = first.iterator(); it.hasNext(); )
+        for (Iterator<PGPPublicKey> it = first.iterator(); it.hasNext(); )
         {
-            PGPPublicKey key = (PGPPublicKey)it.next();
+            PGPPublicKey key = it.next();
             PGPPublicKey copy = second.getPublicKey(key.getKeyID());
             if (copy != null)
             {
@@ -475,9 +476,9 @@ public class PGPPublicKeyRing
             }
         }
 
-        for (Iterator it = secondKeys.iterator(); it.hasNext(); )
+        for (Iterator<Long> it = secondKeys.iterator(); it.hasNext(); )
         {
-            long additionalKeyId = ((Long)it.next()).longValue();
+            long additionalKeyId = it.next();
             merged.add(second.getPublicKey(additionalKeyId));
         }
 

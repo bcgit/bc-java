@@ -15,6 +15,7 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.bcpg.UserAttributePacket;
+import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 
 /**
@@ -47,11 +48,11 @@ public abstract class PGPKeyRing
         return tag == PacketTags.TRUST ? (TrustPacket)pIn.readPacket() : null;
     }
 
-    static List readSignaturesAndTrust(
+    static List<PGPSignature> readSignaturesAndTrust(
         BCPGInputStream pIn)
         throws IOException
     {
-        List sigList = new ArrayList();
+        List<PGPSignature> sigList = new ArrayList<PGPSignature>();
 
         while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
         {
@@ -73,9 +74,9 @@ public abstract class PGPKeyRing
 
     static void readUserIDs(
         BCPGInputStream pIn,
-        List ids,
-        List idTrusts,
-        List idSigs)
+        List<UserDataPacket> ids,
+        List<TrustPacket> idTrusts,
+        List<List<PGPSignature>> idSigs)
         throws IOException
     {
         while (isUserTag(pIn.skipMarkerPackets()))
