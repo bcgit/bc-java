@@ -348,13 +348,12 @@ public final class BouncyCastleProvider extends Provider
     public static PublicKey getPublicKey(SubjectPublicKeyInfo publicKeyInfo)
         throws IOException
     {
-        ASN1ObjectIdentifier publicKeyAlgorithm = publicKeyInfo.getAlgorithm().getAlgorithm();
-        if (publicKeyAlgorithm.on(BCObjectIdentifiers.picnic_key))
+        if (publicKeyInfo.getAlgorithm().getAlgorithm().on(BCObjectIdentifiers.picnic_key))
         {
             return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
         }
         
-        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyAlgorithm);
+        AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
         if (converter == null)
         {
