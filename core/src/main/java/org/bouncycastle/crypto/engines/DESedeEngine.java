@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoService;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -9,7 +12,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * a class that provides a basic DESede (or Triple DES) engine.
  */
 public class DESedeEngine
-    extends DESEngine
+    extends DESBase
+    implements BlockCipher, CryptoService
 {
     protected static final int  BLOCK_SIZE = 8;
 
@@ -24,6 +28,7 @@ public class DESedeEngine
      */
     public DESedeEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(this);
     }
 
     /**
@@ -123,5 +128,17 @@ public class DESedeEngine
 
     public void reset()
     {
+    }
+
+    // Service Definitions
+
+    public int bitsOfSecurity()
+    {
+        return 112;
+    }
+
+    public String getServiceName()
+    {
+        return getAlgorithmName();
     }
 }

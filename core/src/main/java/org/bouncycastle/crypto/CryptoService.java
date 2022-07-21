@@ -4,5 +4,5 @@ public interface CryptoService
 {
     int bitsOfSecurity();
 
-    String getName();
+    String getServiceName();
 }
