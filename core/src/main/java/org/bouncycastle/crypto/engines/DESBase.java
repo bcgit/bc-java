@@ -1,98 +1,18 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoService;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
 
 /**
  * a class that provides a basic DES engine.
  */
-public class DESEngine
-    extends DESBase
-    implements BlockCipher, CryptoService
+class DESBase
 {
     protected static final int  BLOCK_SIZE = 8;
-
-    private int[]               workingKey = null;
 
     /**
      * standard constructor.
      */
-    public DESEngine()
-    {
-        CryptoServicesRegistrar.checkConstraints(this);
-    }
-
-    /**
-     * initialise a DES cipher.
-     *
-     * @param encrypting whether or not we are for encryption.
-     * @param params the parameters required to set up the cipher.
-     * @exception IllegalArgumentException if the params argument is
-     * inappropriate.
-     */
-    public void init(
-        boolean           encrypting,
-        CipherParameters  params)
-    {
-        if (params instanceof KeyParameter)
-        {
-            if (((KeyParameter)params).getKey().length > 8)
-            {
-                throw new IllegalArgumentException("DES key too long - should be 8 bytes");
-            }
-            
-            workingKey = generateWorkingKey(encrypting,
-                                  ((KeyParameter)params).getKey());
-
-            return;
-        }
-
-        throw new IllegalArgumentException("invalid parameter passed to DES init - " + params.getClass().getName());
-    }
-
-    public String getAlgorithmName()
-    {
-        return "DES";
-    }
-
-    public int getBlockSize()
-    {
-        return BLOCK_SIZE;
-    }
-
-    public int processBlock(
-        byte[] in,
-        int inOff,
-        byte[] out,
-        int outOff)
-    {
-        if (workingKey == null)
-        {
-            throw new IllegalStateException("DES engine not initialised");
-        }
-
-        if ((inOff + BLOCK_SIZE) > in.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-
-        if ((outOff + BLOCK_SIZE) > out.length)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
-
-        desFunc(workingKey, in, inOff, out, outOff);
-
-        return BLOCK_SIZE;
-    }
-
-    public void reset()
+    public DESBase()
     {
     }
 
@@ -483,15 +403,5 @@ public class DESEngine
 
         Pack.intToBigEndian(right, out, outOff);
         Pack.intToBigEndian(left, out, outOff + 4);
-    }
-
-    public int bitsOfSecurity()
-    {
-        return 56;
-    }
-    
-    public String getServiceName()
-    {
-        return getAlgorithmName();
     }
 }

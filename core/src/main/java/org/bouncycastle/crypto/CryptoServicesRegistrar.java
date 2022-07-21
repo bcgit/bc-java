@@ -9,12 +9,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -22,6 +24,8 @@ import org.bouncycastle.util.encoders.Hex;
  */
 public final class CryptoServicesRegistrar
 {
+    private static final Logger LOG = Logger.getLogger(CryptoServicesRegistrar.class.getName());
+
     private static final Permission CanSetDefaultProperty = new CryptoServicesPermission(CryptoServicesPermission.GLOBAL_CONFIG);
     private static final Permission CanSetThreadProperty = new CryptoServicesPermission(CryptoServicesPermission.THREAD_LOCAL_CONFIG);
     private static final Permission CanSetDefaultRandom = new CryptoServicesPermission(CryptoServicesPermission.DEFAULT_RANDOM);
@@ -37,8 +41,17 @@ public final class CryptoServicesRegistrar
         }
     };
 
-    private static AtomicReference<SecureRandomProvider> defaultSecureRandomProvider = new AtomicReference<SecureRandomProvider>();
-    private static AtomicReference<CryptoServicesConstraints> servicesConstraints = new AtomicReference<CryptoServicesConstraints>();
+    private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
+    {
+        public void check(CryptoService service)
+        {
+             // anything goes.
+        }
+    };
+
+    private static final AtomicReference<SecureRandomProvider> defaultSecureRandomProvider = new AtomicReference<SecureRandomProvider>();
+    private static final boolean preconfiguredConstraints;
+    private static final AtomicReference<CryptoServicesConstraints> servicesConstraints = new AtomicReference<CryptoServicesConstraints>();
 
     static
     {
@@ -103,7 +116,8 @@ public final class CryptoServicesRegistrar
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, def512Params, def768Params, def1024Params, def2048Params);
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params));
 
-        servicesConstraints.set(new DefaultConstraints());
+        servicesConstraints.set(getDefaultConstraints());
+        preconfiguredConstraints = (servicesConstraints.get() != noConstraintsImpl);
     }
 
     private CryptoServicesRegistrar()
@@ -182,15 +196,41 @@ public final class CryptoServicesRegistrar
     }
 
     /**
-     * Return the current algorithm constraints.
+     * Check a service to make sure it meets the current constraints.
      *
-     * @return the algorithm constraints.
+     * @param cryptoService the service to be checked.
+     * @throws CryptoServiceConstraintsException if the service violates the current constraints.
+     */
+    public static void checkConstraints(CryptoService cryptoService)
+    {
+        servicesConstraints.get().check(cryptoService);
+    }
+
+    /**
+     * Set the current algorithm constraints.
      */
     public static void setServicesConstraints(CryptoServicesConstraints constraints)
     {
         checkPermission(CanSetConstraints);
 
-        servicesConstraints.set((constraints == null) ? new NoConstraints() : constraints);
+        CryptoServicesConstraints newConstraints = (constraints == null) ? noConstraintsImpl : constraints;
+
+        if (preconfiguredConstraints)
+        {
+            if (Properties.isOverrideSet("org.bouncycastle.constraints.allow_override"))
+            {
+                servicesConstraints.set(newConstraints);
+            }
+            else
+            {
+                LOG.warning("attempt to override pre-configured constraints ignored");
+            }
+        }
+        else
+        {
+            // TODO: should this only be allowed once?
+            servicesConstraints.set(newConstraints);
+        }
     }
 
     /**
@@ -454,22 +494,11 @@ public final class CryptoServicesRegistrar
         return m;
     }
 
-    private static final class DefaultConstraints
-        implements CryptoServicesConstraints
+    private static CryptoServicesConstraints getDefaultConstraints()
     {
-        public void check(CryptoService service)
-        {
-            // TODO: set from system/security properties
-        }
-    }
+        // TODO: return one based on system/security properties if set.
 
-    private static final class NoConstraints
-        implements CryptoServicesConstraints
-    {
-        public void check(CryptoService service)
-        {
-            // no action as anything goes.
-        }
+        return noConstraintsImpl;
     }
 
     /**
