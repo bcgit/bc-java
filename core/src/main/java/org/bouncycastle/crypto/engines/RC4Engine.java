@@ -1,12 +1,15 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoService;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-public class RC4Engine implements StreamCipher
+public class RC4Engine
+    implements StreamCipher, CryptoService
 {
     private final static int STATE_LENGTH = 256;
 
@@ -20,6 +23,11 @@ public class RC4Engine implements StreamCipher
     private int         y = 0;
     private byte[]      workingKey = null;
 
+    public RC4Engine()
+    {
+        CryptoServicesRegistrar.checkConstraints(this);
+    }
+
     /**
      * initialise a RC4 cipher.
      *
@@ -30,8 +38,7 @@ public class RC4Engine implements StreamCipher
      */
     public void init(
         boolean             forEncryption, 
-        CipherParameters     params
-   )
+        CipherParameters     params)
     {
         if (params instanceof KeyParameter)
         {
@@ -142,5 +149,15 @@ public class RC4Engine implements StreamCipher
             engineState[i2] = tmp;
             i1 = (i1+1) % keyBytes.length; 
         }
+    }
+
+    public int bitsOfSecurity()
+    {
+        return 20;
+    }
+
+    public String getServiceName()
+    {
+        return getAlgorithmName();
     }
 }

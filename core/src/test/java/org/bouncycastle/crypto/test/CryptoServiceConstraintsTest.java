@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class CryptoServiceConstraintsTest
@@ -25,6 +26,16 @@ public class CryptoServiceConstraintsTest
     private void test112bits()
     {
         CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(112));
+
+        try
+        {
+            new RC4Engine();
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 112 bits of security only 20", e.getMessage());
+        }
 
         try
         {
