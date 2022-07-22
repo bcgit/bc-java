@@ -9,6 +9,8 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -16,6 +18,9 @@ import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.CryptoService;
+import org.bouncycastle.crypto.CryptoServiceConstraintsException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
@@ -62,6 +67,8 @@ import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
+    private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
+
     private static String info = "BouncyCastle Security Provider v1.72b";
 
     public static final String PROVIDER_NAME = "BC";
@@ -87,12 +94,17 @@ public final class BouncyCastleProvider extends Provider
         "SipHash", "SipHash128", "Poly1305"
     };
 
-    private static final String[] SYMMETRIC_CIPHERS =
+    private static final CryptoService[] SYMMETRIC_CIPHERS =
     {
-        "AES", "ARC4", "ARIA", "Blowfish", "Camellia", "CAST5", "CAST6", "ChaCha", "DES", "DESede",
-        "GOST28147", "Grainv1", "Grain128", "HC128", "HC256", "IDEA", "Noekeon", "RC2", "RC5",
-        "RC6", "Rijndael", "Salsa20", "SEED", "Serpent", "Shacal2", "Skipjack", "SM4", "TEA", "Twofish", "Threefish",
-        "VMPC", "VMPCKSA3", "XTEA", "XSalsa20", "OpenSSLPBKDF", "DSTU7624", "GOST3412_2015", "Zuc"
+        // TODO: these numbers need a bit more work, we cap at 256 bits.
+        service("AES", 256), service("ARC4", 20), service("ARIA", 256), service("Blowfish", 128), service("Camellia", 256),
+        service("CAST5", 128), service("CAST6", 256), service("ChaCha", 128), service("DES", 56),  service("DESede", 112),
+        service("GOST28147", 128), service("Grainv1", 128), service("Grain128", 128), service("HC128", 128), service("HC256", 256),
+        service("IDEA", 128), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
+        service("Rijndael", 256), service("Salsa20", 128), service("SEED", 128), service("Serpent", 256), service("Shacal2", 128),
+        service("Skipjack", 80), service("SM4", 128), service("TEA", 128), service("Twofish", 256), service("Threefish", 128),
+        service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("OpenSSLPBKDF", 128),
+        service("DSTU7624", 256), service("GOST3412_2015", 256), service("Zuc", 128)
     };
 
      /*
@@ -240,19 +252,45 @@ public final class BouncyCastleProvider extends Provider
     {
         for (int i = 0; i != names.length; i++)
         {
-            Class clazz = ClassUtil.loadClass(BouncyCastleProvider.class, packageName + names[i] + "$Mappings");
+            loadServiceClass(packageName, names[i]);
+        }
+    }
 
-            if (clazz != null)
+    private void loadAlgorithms(String packageName, CryptoService[] services)
+    {
+        for (int i = 0; i != services.length; i++)
+        {
+            CryptoService service = services[i];
+            try
             {
-                try
+                CryptoServicesRegistrar.checkConstraints(service);
+
+                loadServiceClass(packageName, service.getServiceName());
+            }
+            catch (CryptoServiceConstraintsException e)
+            {
+                if (LOG.isLoggable(Level.FINE))
                 {
-                    ((AlgorithmProvider)clazz.newInstance()).configure(this);
+                    LOG.fine("service for " + service.getServiceName() + " ignored due to constraints");
                 }
-                catch (Exception e)
-                {   // this should never ever happen!!
-                    throw new InternalError("cannot create instance of "
-                        + packageName + names[i] + "$Mappings : " + e);
-                }
+            }
+        }
+    }
+
+    private void loadServiceClass(String packageName, String serviceName)
+    {
+        Class clazz = ClassUtil.loadClass(BouncyCastleProvider.class, packageName + serviceName + "$Mappings");
+
+        if (clazz != null)
+        {
+            try
+            {
+                ((AlgorithmProvider)clazz.newInstance()).configure(this);
+            }
+            catch (Exception e)
+            {   // this should never ever happen!!
+                throw new InternalError("cannot create instance of "
+                    + packageName + serviceName + "$Mappings : " + e);
             }
         }
     }
@@ -374,5 +412,34 @@ public final class BouncyCastleProvider extends Provider
         }
 
         return converter.generatePrivate(privateKeyInfo);
+    }
+
+    private static CryptoService service(String name, int bitsOfSecurity)
+    {
+        return new JcaCryptoService(name, bitsOfSecurity);
+    }
+
+    private static class JcaCryptoService
+        implements CryptoService
+    {
+
+        private final String name;
+        private final int bitsOfSecurity;
+
+        JcaCryptoService(String name, int bitsOfSecurity)
+        {
+            this.name = name;
+            this.bitsOfSecurity = bitsOfSecurity;
+        }
+
+        public int bitsOfSecurity()
+        {
+            return bitsOfSecurity;
+        }
+
+        public String getServiceName()
+        {
+            return name;
+        }
     }
 }
