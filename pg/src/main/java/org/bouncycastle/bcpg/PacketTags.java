@@ -23,6 +23,7 @@ public interface PacketTags
       int USER_ATTRIBUTE = 17;           // User attribute
       int SYM_ENC_INTEGRITY_PRO = 18;    // Symmetric encrypted, integrity protected
       int MOD_DETECTION_CODE = 19;       // Modification detection code
+      int AEAD_ENC_DATA = 20;            // AEAD Encrypted Data (seems deprecated)
       int PADDING = 21;                  // Padding Packet
       
       int EXPERIMENTAL_1 = 60;           // Private or Experimental Values

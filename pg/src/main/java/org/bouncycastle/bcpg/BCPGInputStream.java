@@ -283,6 +283,8 @@ public class BCPGInputStream
             return new SymmetricEncIntegrityPacket(objStream);
         case MOD_DETECTION_CODE:
             return new ModDetectionCodePacket(objStream);
+        case AEAD_ENC_DATA:
+            return new AEADEncDataPacket(objStream);
         case EXPERIMENTAL_1:
         case EXPERIMENTAL_2:
         case EXPERIMENTAL_3:

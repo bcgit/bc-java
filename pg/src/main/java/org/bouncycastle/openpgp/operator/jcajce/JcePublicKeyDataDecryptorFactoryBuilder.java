@@ -139,6 +139,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
              {
                  return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
              }
+
+             public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+                 throws PGPException
+             {
+                 return contentHelper.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
+             }
          };
     }
 
@@ -163,6 +169,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                  throws PGPException
              {
                  return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
+             }
+
+             public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+                 throws PGPException
+             {
+                 return contentHelper.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
              }
          };
     }

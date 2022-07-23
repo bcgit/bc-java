@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
@@ -13,10 +14,13 @@ import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.CipherInputStream;
@@ -26,6 +30,9 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.io.Streams;
 
 class OperatorHelper
 {
@@ -176,6 +183,122 @@ class OperatorHelper
         return createCipher(cName);
     }
 
+
+    static long getChunkLength(int chunkSize)
+    {
+        return 1L << (chunkSize + 6);
+    }
+
+    PGPDataDecryptor createDataDecryptor(final int aeadAlgorithm, final byte[] iv, final int chunkSize, final int encAlgorithm, byte[] key)
+        throws PGPException
+    {
+        try
+        {
+            final SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+
+            final Cipher c = createAEADCipher(encAlgorithm, aeadAlgorithm);
+
+            // TODO: get this working for more than one chunk!
+            return new PGPDataDecryptor()
+            {
+                public InputStream getInputStream(InputStream in)
+                {
+                    long chunkIndex = 0;
+                    byte[] data;
+                    try
+                    {
+                        data = Streams.readAll(in);
+
+                        c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
+
+                        byte[] adata = new byte[13];
+
+                        adata[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+                        adata[1] = 0x01;   // packet version
+                        adata[2] = (byte)encAlgorithm;
+                        adata[3] = (byte)aeadAlgorithm;
+                        adata[4] = (byte)chunkSize;
+
+                        xorChunkId(adata, chunkIndex);
+
+                        c.updateAAD(adata);
+
+                        byte[] decData = c.doFinal(data, 0, data.length - 16);
+
+                        chunkIndex++;
+
+                        adata = new byte[13];
+
+                        adata[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+                        adata[1] = 0x01;  // packet version
+                        adata[2] = (byte)encAlgorithm;
+                        adata[3] = (byte)aeadAlgorithm;
+                        adata[4] = (byte)chunkSize;
+
+                        xorChunkId(adata, chunkIndex);
+
+                        c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
+
+                        c.updateAAD(adata);
+                        c.updateAAD(Pack.longToBigEndian(decData.length));
+
+                        c.doFinal(data, data.length - 16, 16); // check final tag
+
+                        return new ByteArrayInputStream(decData);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        throw new IllegalStateException("unable to read AEAD data");
+                    }
+                }
+
+                public int getBlockSize()
+                {
+                    return c.getBlockSize();
+                }
+
+                public PGPDigestCalculator getIntegrityCalculator()
+                {
+                    return new SHA1PGPDigestCalculator();
+                }
+            };
+        }
+        catch (PGPException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception creating cipher", e);
+        }
+    }
+
+    Cipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
+        throws PGPException
+    {
+        String mode;
+        switch (aeadAlgorithm)
+        {
+        case AEADAlgorithmTags.EAX:
+            mode = "EAX";
+            break;
+        case AEADAlgorithmTags.OCB:
+            mode = "OCB";
+            break;
+        case AEADAlgorithmTags.GCM:
+            mode = "GCM";
+            break;
+        default:
+            throw new PGPException("encountered unknown AEAD algorithm: " + aeadAlgorithm);
+        }
+
+        String cName = PGPUtil.getSymmetricCipherName(encAlgorithm)
+            + "/" + mode + "/NoPadding";
+
+        return createCipher(cName);
+    }
+
     Cipher createCipher(String cipherName)
         throws PGPException
     {
@@ -283,5 +406,28 @@ class OperatorHelper
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
         return helper.createAlgorithmParameters(algorithm);
+    }
+
+    public byte[] getNonce(byte[] iv, long chunkIndex)
+    {
+        byte[] nonce = Arrays.clone(iv);
+
+        xorChunkId(nonce, chunkIndex);
+
+        return nonce;
+    }
+
+    private void xorChunkId(byte[] nonce, long chunkIndex)
+    {
+        int index = nonce.length - 8;
+
+        nonce[index++] ^= (byte)(chunkIndex >> 56);
+        nonce[index++] ^= (byte)(chunkIndex >> 48);
+        nonce[index++] ^= (byte)(chunkIndex >> 40);
+        nonce[index++] ^= (byte)(chunkIndex >> 32);
+        nonce[index++] ^= (byte)(chunkIndex >> 24);
+        nonce[index++] ^= (byte)(chunkIndex >> 16);
+        nonce[index++] ^= (byte)(chunkIndex >> 8);
+        nonce[index++] ^= (byte)(chunkIndex);
     }
 }
