@@ -248,7 +248,6 @@ class OperatorHelper
                     }
                     catch (Exception e)
                     {
-                        e.printStackTrace();
                         throw new IllegalStateException("unable to read AEAD data");
                     }
                 }
