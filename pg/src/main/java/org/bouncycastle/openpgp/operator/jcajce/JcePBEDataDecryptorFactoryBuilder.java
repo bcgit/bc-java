@@ -125,6 +125,12 @@ public class JcePBEDataDecryptorFactoryBuilder
              {
                  return helper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
              }
+
+             public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+                 throws PGPException
+             {
+                 return helper.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
+             }
          };
     }
 }
