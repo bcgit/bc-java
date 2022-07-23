@@ -43,4 +43,10 @@ public class BcSessionKeyDataDecryptorFactory
 
         return BcUtil.createDataDecryptor(withIntegrityPacket, engine, key);
     }
+    
+    public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+        throws PGPException
+    {
+        return null;
+    }
 }

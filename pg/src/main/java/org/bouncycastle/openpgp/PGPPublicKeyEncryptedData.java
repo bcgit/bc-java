@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp;
 import java.io.EOFException;
 import java.io.InputStream;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
@@ -131,61 +132,79 @@ public class PGPPublicKeyEncryptedData
         {
             try
             {
-                boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
-
-                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
-
-                BCPGInputStream encIn = encData.getInputStream();
-
-                encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
-
-                if (withIntegrityPacket)
+                if (encData instanceof AEADEncDataPacket)
                 {
-                    truncStream = new TruncatedStream(encStream);
+                    AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
 
-                    integrityCalculator = dataDecryptor.getIntegrityCalculator();
+                    if (aeadData.getAlgorithm() != sessionKey.getAlgorithm())
+                    {
+                        throw new PGPException("session key and AEAD algorithm mismatch");
+                    }
 
-                    encStream = new TeeInputStream(truncStream, integrityCalculator.getOutputStream());
+                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData.getAEADAlgorithm(), aeadData.getIV(), aeadData.getChunkSize(), sessionKey.getAlgorithm(), sessionKey.getKey());
+
+                    BCPGInputStream encIn = encData.getInputStream();
+
+                    encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
                 }
-
-                byte[] iv = new byte[dataDecryptor.getBlockSize()];
-
-                for (int i = 0; i != iv.length; i++)
+                else
                 {
-                    int ch = encStream.read();
+                    boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
 
-                    if (ch < 0)
+                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
+
+                    BCPGInputStream encIn = encData.getInputStream();
+
+                    encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+
+                    if (withIntegrityPacket)
+                    {
+                        truncStream = new TruncatedStream(encStream);
+
+                        integrityCalculator = dataDecryptor.getIntegrityCalculator();
+
+                        encStream = new TeeInputStream(truncStream, integrityCalculator.getOutputStream());
+                    }
+
+                    byte[] iv = new byte[dataDecryptor.getBlockSize()];
+
+                    for (int i = 0; i != iv.length; i++)
+                    {
+                        int ch = encStream.read();
+
+                        if (ch < 0)
+                        {
+                            throw new EOFException("unexpected end of stream.");
+                        }
+
+                        iv[i] = (byte)ch;
+                    }
+
+                    int v1 = encStream.read();
+                    int v2 = encStream.read();
+
+                    if (v1 < 0 || v2 < 0)
                     {
                         throw new EOFException("unexpected end of stream.");
                     }
 
-                    iv[i] = (byte)ch;
-                }
+                    //
+                    // some versions of PGP appear to produce 0 for the extra
+                    // bytes rather than repeating the two previous bytes
+                    //
+                    /*
+                     * Commented out in the light of the oracle attack.
+                    if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
+                    {
+                        throw new PGPDataValidationException("data check failed.");
+                    }
 
-                int v1 = encStream.read();
-                int v2 = encStream.read();
-
-                if (v1 < 0 || v2 < 0)
-                {
-                    throw new EOFException("unexpected end of stream.");
+                    if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
+                    {
+                        throw new PGPDataValidationException("data check failed.");
+                    }
+                    */
                 }
-
-                //
-                // some versions of PGP appear to produce 0 for the extra
-                // bytes rather than repeating the two previous bytes
-                //
-                /*
-                 * Commented out in the light of the oracle attack.
-                if (iv[iv.length - 2] != (byte)v1 && v1 != 0)
-                {
-                    throw new PGPDataValidationException("data check failed.");
-                }
-
-                if (iv[iv.length - 1] != (byte)v2 && v2 != 0)
-                {
-                    throw new PGPDataValidationException("data check failed.");
-                }
-                */
 
                 return encStream;
             }
