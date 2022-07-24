@@ -264,17 +264,35 @@ public class GCMBlockCipher
     {
         checkStatus();
 
-        for (int i = 0; i < len; ++i)
+        if (atBlockPos > 0)
         {
-            atBlock[atBlockPos] = in[inOff + i];
-            if (++atBlockPos == BLOCK_SIZE)
+            int available = BLOCK_SIZE - atBlockPos;
+            if (len < available)
             {
-                // Hash each block as it fills
-                gHASHBlock(S_at, atBlock);
-                atBlockPos = 0;
-                atLength += BLOCK_SIZE;
+                System.arraycopy(in, inOff, atBlock, atBlockPos, len);
+                atBlockPos += len;
+                return;
             }
+
+            System.arraycopy(in, inOff, atBlock, atBlockPos, available);
+            gHASHBlock(S_at, atBlock);
+            atLength += BLOCK_SIZE;
+            inOff += available;
+            len -= available;
+            //atBlockPos = 0;
         }
+
+        int inLimit = inOff + len - BLOCK_SIZE;
+
+        while (inOff <= inLimit)
+        {
+            gHASHBlock(S_at, in, inOff);
+            atLength += BLOCK_SIZE;
+            inOff += BLOCK_SIZE;
+        }
+
+        atBlockPos = BLOCK_SIZE + inLimit - inOff;
+        System.arraycopy(in, inOff, atBlock, 0, atBlockPos);
     }
 
     private void initCipher()
@@ -306,13 +324,14 @@ public class GCMBlockCipher
         bufBlock[bufOff] = in;
         if (++bufOff == bufBlock.length)
         {
-            processBlock(bufBlock, 0, out, outOff);
             if (forEncryption)
             {
+                encryptBlock(bufBlock, 0, out, outOff);
                 bufOff = 0;
             }
             else
             {
+                decryptBlock(bufBlock, 0, out, outOff);
                 System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, macSize);
                 bufOff = macSize;
             }
@@ -335,49 +354,79 @@ public class GCMBlockCipher
 
         if (forEncryption)
         {
-            if (bufOff != 0)
+            if (bufOff > 0)
             {
-                while (len > 0)
+                int available = BLOCK_SIZE - bufOff;
+                if (len < available)
                 {
-                    --len;
-                    bufBlock[bufOff] = in[inOff++];
-                    if (++bufOff == BLOCK_SIZE)
-                    {
-                        processBlock(bufBlock, 0, out, outOff);
-                        bufOff = 0;
-                        resultLen += BLOCK_SIZE;
-                        break;
-                    }
+                    System.arraycopy(in, inOff, bufBlock, bufOff, len);
+                    bufOff += len;
+                    return 0;
                 }
+
+                System.arraycopy(in, inOff, bufBlock, bufOff, available);
+                encryptBlock(bufBlock, 0, out, outOff);
+                inOff += available;
+                len -= available;
+                resultLen = BLOCK_SIZE;
+                //bufOff = 0;
             }
 
-            while (len >= BLOCK_SIZE)
+            int inLimit = inOff + len - BLOCK_SIZE;
+
+            while (inOff <= inLimit)
             {
-                processBlock(in, inOff, out, outOff + resultLen);
+                encryptBlock(in, inOff, out, outOff + resultLen);
                 inOff += BLOCK_SIZE;
-                len -= BLOCK_SIZE;
                 resultLen += BLOCK_SIZE;
             }
 
-            if (len > 0)
-            {
-                System.arraycopy(in, inOff, bufBlock, 0, len);
-                bufOff = len;
-            }
+            bufOff = BLOCK_SIZE + inLimit - inOff;
+            System.arraycopy(in, inOff, bufBlock, 0, bufOff);
         }
         else
         {
-            for (int i = 0; i < len; ++i)
+            int available = bufBlock.length - bufOff;
+            if (len < available)
             {
-                bufBlock[bufOff] = in[inOff + i];
-                if (++bufOff == bufBlock.length)
+                System.arraycopy(in, inOff, bufBlock, bufOff, len);
+                bufOff += len;
+                return 0;
+            }
+
+            if (bufOff >= BLOCK_SIZE)
+            {
+                decryptBlock(bufBlock, 0, out, outOff);
+                System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, bufOff -= BLOCK_SIZE);
+                resultLen = BLOCK_SIZE;
+
+                available += BLOCK_SIZE;
+                if (len < available)
                 {
-                    processBlock(bufBlock, 0, out, outOff + resultLen);
-                    System.arraycopy(bufBlock, BLOCK_SIZE, bufBlock, 0, macSize);
-                    bufOff = macSize;
-                    resultLen += BLOCK_SIZE;
+                    System.arraycopy(in, inOff, bufBlock, bufOff, len);
+                    bufOff += len;
+                    return resultLen;
                 }
             }
+
+            int inLimit = inOff + len - bufBlock.length;
+
+            available = BLOCK_SIZE - bufOff;
+            System.arraycopy(in, inOff, bufBlock, bufOff, available);
+            decryptBlock(bufBlock, 0, out, outOff + resultLen);
+            inOff += available;
+            resultLen += BLOCK_SIZE;
+            //bufOff = 0;
+
+            while (inOff <= inLimit)
+            {
+                decryptBlock(in, inOff, out, outOff + resultLen);
+                inOff += BLOCK_SIZE;
+                resultLen += BLOCK_SIZE;
+            }
+
+            bufOff = bufBlock.length + inLimit - inOff;
+            System.arraycopy(in, inOff, bufBlock, 0, bufOff);
         }
 
         return resultLen;
@@ -550,7 +599,7 @@ public class GCMBlockCipher
         }
     }
 
-    private void processBlock(byte[] buf, int bufOff, byte[] out, int outOff)
+    private void decryptBlock(byte[] buf, int bufOff, byte[] out, int outOff)
     {
         if ((out.length - outOff) < BLOCK_SIZE)
         {
@@ -564,17 +613,29 @@ public class GCMBlockCipher
         byte[] ctrBlock = new byte[BLOCK_SIZE];
         getNextCTRBlock(ctrBlock);
 
-        if (forEncryption)
+        gHASHBlock(S, buf, bufOff);
+        GCMUtil.xor(ctrBlock, 0, buf, bufOff, out, outOff);
+
+        totalLength += BLOCK_SIZE;
+    }
+
+    private void encryptBlock(byte[] buf, int bufOff, byte[] out, int outOff)
+    {
+        if ((out.length - outOff) < BLOCK_SIZE)
         {
-            GCMUtil.xor(ctrBlock, buf, bufOff);
-            gHASHBlock(S, ctrBlock);
-            System.arraycopy(ctrBlock, 0, out, outOff, BLOCK_SIZE);
+            throw new OutputLengthException("Output buffer too short");
         }
-        else
+        if (totalLength == 0)
         {
-            gHASHBlock(S, buf, bufOff);
-            GCMUtil.xor(ctrBlock, 0, buf, bufOff, out, outOff);
+            initCipher();
         }
+
+        byte[] ctrBlock = new byte[BLOCK_SIZE];
+
+        getNextCTRBlock(ctrBlock);
+        GCMUtil.xor(ctrBlock, buf, bufOff);
+        gHASHBlock(S, ctrBlock);
+        System.arraycopy(ctrBlock, 0, out, outOff, BLOCK_SIZE);
 
         totalLength += BLOCK_SIZE;
     }
