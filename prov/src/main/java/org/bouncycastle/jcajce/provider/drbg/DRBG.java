@@ -9,6 +9,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -77,6 +78,17 @@ public class DRBG
         }
 
         return null;
+    }
+
+    private static EntropyDaemon entropyDaemon = null;
+    private static Thread entropyThread = null;
+
+    static
+    {
+        entropyDaemon = new EntropyDaemon();
+        entropyThread = new Thread(entropyDaemon, "BC FIPS Entropy Daemon");
+        entropyThread.setDaemon(true);
+        entropyThread.start();
     }
 
     private static class CoreSecureRandom
@@ -192,14 +204,21 @@ public class DRBG
         }
         else
         {
-            SecureRandom randomSource = new HybridSecureRandom();   // needs to be done late, can't use static
+            EntropySource source = new HybridEntropySource(entropyDaemon, 256);
 
-            byte[] personalisationString = isPredictionResistant ? generateDefaultPersonalizationString(randomSource.generateSeed(16))
-                                                                 : generateNonceIVPersonalizationString(randomSource.generateSeed(16));
+            byte[] personalisationString = isPredictionResistant ? generateDefaultPersonalizationString(source.getEntropy())
+                                                                 : generateNonceIVPersonalizationString(source.getEntropy());
 
-            return new SP800SecureRandomBuilder(randomSource, true)
+            return new SP800SecureRandomBuilder(new EntropySourceProvider()
+                {
+                    @Override
+                    public EntropySource get(int bitsRequired)
+                    {
+                        return new HybridEntropySource(entropyDaemon, bitsRequired);
+                    }
+                })
                 .setPersonalizationString(personalisationString)
-                .buildHash(new SHA512Digest(), randomSource.generateSeed(32), isPredictionResistant);
+                .buildHash(new SHA512Digest(), source.getEntropy(), isPredictionResistant);
         }
     }
 
@@ -365,48 +384,88 @@ public class DRBG
         }
     }
 
-    private static class HybridSecureRandom
-        extends SecureRandom
+    private static class EntropyDaemon
+        implements Runnable
+    {
+        private final ConcurrentLinkedDeque<Runnable> tasks = new ConcurrentLinkedDeque<Runnable>();
+
+        void addTask(Runnable task)
+        {
+            tasks.add(task);
+        }
+
+        @Override
+        public void run()
+        {
+            for (; ; )
+            {
+                Runnable task = tasks.pollFirst();
+
+                if (task != null)
+                {
+                    try
+                    {
+                        task.run();
+                    }
+                    catch (Throwable e)
+                    {
+                        // ignore
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        Thread.sleep(5000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+    }
+
+    private static class HybridEntropySource
+        implements EntropySource
     {
         private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
         private final AtomicInteger samples = new AtomicInteger(0);
-        private final SecureRandom baseRandom = createInitialEntropySource();
 
         private final SP800SecureRandom drbg;
+        private final SignallingEntropySource entropySource;
+        private final int bytesRequired;
+        private final byte[] additionalInput = Pack.longToBigEndian(System.currentTimeMillis());
 
-        HybridSecureRandom()
+        HybridEntropySource(final EntropyDaemon entropyDaemon, final int bitsRequired)
         {
-            super(null, new HybridRandomProvider());
+            SecureRandom baseRandom = createCoreSecureRandom();
+
+            bytesRequired = (bitsRequired + 7) / 8;
+            // remember for the seed generator we need the correct security strength for SHA-512
+            entropySource = new SignallingEntropySource(entropyDaemon, seedAvailable, baseRandom, 256);
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
                 {
                     public EntropySource get(final int bitsRequired)
                     {
-                        return new SignallingEntropySource(bitsRequired);
+                        return entropySource;
                     }
                 })
                 .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
                 .buildHMAC(new HMac(new SHA512Digest()), baseRandom.generateSeed(32), false);     // 32 byte nonce
         }
 
-        public void setSeed(byte[] seed)
+        @Override
+        public boolean isPredictionResistant()
         {
-            if (drbg != null)
-            {
-                drbg.setSeed(seed);
-            }
+            return true;
         }
 
-        public void setSeed(long seed)
+        @Override
+        public byte[] getEntropy()
         {
-            if (drbg != null)
-            {
-                drbg.setSeed(seed);
-            }
-        }
-
-        public byte[] generateSeed(int numBytes)
-        {
-            byte[] data = new byte[numBytes];
+            byte[] entropy = new byte[bytesRequired];
 
             // after 20 samples we'll start to check if there is new seed material.
             if (samples.getAndIncrement() > 20)
@@ -414,24 +473,40 @@ public class DRBG
                 if (seedAvailable.getAndSet(false))
                 {
                     samples.set(0);
-                    drbg.reseed((byte[])null);    // need for Java 1.9
+                    drbg.reseed(additionalInput);
+                }
+                else
+                {
+                    entropySource.schedule();
                 }
             }
 
-            drbg.nextBytes(data);
+            drbg.nextBytes(entropy);
 
-            return data;
+            return entropy;
+        }
+
+        @Override
+        public int entropySize()
+        {
+            return bytesRequired * 8;
         }
 
         private class SignallingEntropySource
             implements EntropySource
         {
+            private final EntropyDaemon entropyDaemon;
+            private final AtomicBoolean seedAvailable;
+            private final SecureRandom baseRandom;
             private final int byteLength;
             private final AtomicReference entropy = new AtomicReference();
             private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
-            SignallingEntropySource(int bitsRequired)
+            SignallingEntropySource(EntropyDaemon entropyDaemon, AtomicBoolean seedAvailable, SecureRandom baseRandom, int bitsRequired)
             {
+                this.entropyDaemon = entropyDaemon;
+                this.seedAvailable = seedAvailable;
+                this.baseRandom = baseRandom;
                 this.byteLength = (bitsRequired + 7) / 8;
             }
 
@@ -453,85 +528,93 @@ public class DRBG
                     scheduled.set(false);
                 }
 
-                if (!scheduled.getAndSet(true))
-                {
-                    // don't try to be clever here - things change in Java 11!
-                    Thread gatherer = new Thread(new EntropyGatherer(byteLength), "BC-ENTROPY-GATHERER");
-                    gatherer.setDaemon(true);
-                    gatherer.start();
-                }
+                schedule();
 
                 return seed;
+            }
+
+            void schedule()
+            {
+                if (!scheduled.getAndSet(true))
+                {
+                    entropyDaemon.addTask(new EntropyGatherer(byteLength, baseRandom, seedAvailable, entropy));
+                }
             }
 
             public int entropySize()
             {
                 return byteLength * 8;
             }
+        }
 
-            private class EntropyGatherer
-                implements Runnable
+        private class EntropyGatherer
+            implements Runnable
+        {
+            private final int numBytes;
+            private final SecureRandom baseRandom;
+            private final AtomicBoolean seedAvailable;
+            private final AtomicReference<byte[]> entropy;
+
+            EntropyGatherer(int numBytes, SecureRandom baseRandom, AtomicBoolean seedAvailable, AtomicReference<byte[]> entropy)
             {
-                private final int numBytes;
+                this.numBytes = numBytes;
+                this.baseRandom = baseRandom;
+                this.seedAvailable = seedAvailable;
+                this.entropy = entropy;
+            }
 
-                EntropyGatherer(int numBytes)
+            private void sleep(long ms)
+            {
+                try
                 {
-                    this.numBytes = numBytes;
+                    Thread.sleep(ms);
                 }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
+            }
 
-                private void sleep(long ms)
+            public void run()
+            {
+                long ms;
+                String pause = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
+
+                if (pause != null)
                 {
                     try
                     {
-                        Thread.sleep(ms);
+                        ms = Long.parseLong(pause) * 1000;
                     }
-                    catch (InterruptedException e)
-                    {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
-                public void run()
-                {
-                    long ms;
-                    String pause = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
-
-                    if (pause != null)
-                    {
-                        try
-                        {
-                            ms = Long.parseLong(pause) * 1000;
-                        }
-                        catch (Exception e)
-                        {
-                            ms = 5000;
-                        }
-                    }
-                    else
+                    catch (Exception e)
                     {
                         ms = 5000;
                     }
-
-                    byte[] seed = new byte[numBytes];
-                    for (int i = 0; i < byteLength / 8; i++)
-                    {
-                        // we need to be mindful that we may not be the only thread/process looking for entropy
-                        sleep(ms);
-                        byte[] rn = baseRandom.generateSeed(8);
-                        System.arraycopy(rn, 0, seed, i * 8, rn.length);
-                    }
-
-                    int extra = byteLength - ((byteLength / 8) * 8);
-                    if (extra != 0)
-                    {
-                        sleep(ms);
-                        byte[] rn = baseRandom.generateSeed(extra);
-                        System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
-                    }
-
-                    entropy.set(seed);
-                    seedAvailable.set(true);
                 }
+                else
+                {
+                    ms = 5000;
+                }
+
+                byte[] seed = new byte[numBytes];
+                for (int i = 0; i < numBytes / 8; i++)
+                {
+                    // we need to be mindful that we may not be the only thread/process looking for entropy
+                    sleep(ms);
+                    byte[] rn = baseRandom.generateSeed(8);
+                    System.arraycopy(rn, 0, seed, i * 8, rn.length);
+                }
+
+                int extra = numBytes - ((numBytes / 8) * 8);
+                if (extra != 0)
+                {
+                    sleep(ms);
+                    byte[] rn = baseRandom.generateSeed(extra);
+                    System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
+                }
+
+                entropy.set(seed);
+                seedAvailable.set(true);
             }
         }
     }
