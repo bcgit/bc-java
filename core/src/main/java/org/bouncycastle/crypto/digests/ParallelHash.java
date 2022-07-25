@@ -115,7 +115,7 @@ public class ParallelHash
 
         if (i < len)
         {
-            while (len - i > B)
+            while (len - i >= B)
             {
                 compress(in, inOff + i, B);
                 i += B;

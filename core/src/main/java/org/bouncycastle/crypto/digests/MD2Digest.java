@@ -148,7 +148,7 @@ public class MD2Digest
         //
         // process whole words.
         //
-        while (len > 16)
+        while (len >= 16)
         {
             System.arraycopy(in,inOff,M,0,16);
             processCheckSum(M);
