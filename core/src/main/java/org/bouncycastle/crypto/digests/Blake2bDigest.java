@@ -392,7 +392,6 @@ public class Blake2bDigest
      */
     public int doFinal(byte[] out, int outOffset)
     {
-
         f0 = 0xFFFFFFFFFFFFFFFFL;
         t0 += bufferPos;
         if (bufferPos > 0 && t0 == 0)
@@ -403,9 +402,10 @@ public class Blake2bDigest
         Arrays.fill(buffer, (byte)0);// Holds eventually the key if input is null
         Arrays.fill(internalState, 0L);
 
+        byte[] bytes = new byte[8];
         for (int i = 0; i < chainValue.length && (i * 8 < digestLength); i++)
         {
-            byte[] bytes = Pack.longToLittleEndian(chainValue[i]);
+            Pack.longToLittleEndian(chainValue[i], bytes, 0);
 
             if (i * 8 < digestLength - 8)
             {
@@ -447,14 +447,10 @@ public class Blake2bDigest
 
     private void compress(byte[] message, int messagePos)
     {
-
         initializeInternalState();
 
         long[] m = new long[16];
-        for (int j = 0; j < 16; j++)
-        {
-            m[j] = Pack.littleEndianToLong(message, messagePos + j * 8);
-        }
+        Pack.littleEndianToLong(message, messagePos, m);
 
         for (int round = 0; round < ROUNDS; round++)
         {
