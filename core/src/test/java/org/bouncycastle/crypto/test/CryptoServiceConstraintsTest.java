@@ -10,10 +10,12 @@ import org.bouncycastle.crypto.constraints.LegacyBitsOfSecurityConstraint;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -33,6 +35,7 @@ public class CryptoServiceConstraintsTest
         test128bits();
         testLegacy128bits();
         test1024bitDSA();
+        test1024bitRSA();
     }
 
     private void test112bits()
@@ -156,6 +159,49 @@ public class CryptoServiceConstraintsTest
         // legacy usage allowed for verification.
         signer.init(false, pk);
         
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void test1024bitRSA()
+    {
+        BigInteger mod = new BigInteger("dbe3d9e35c7b3791e235e9146a5e27be06f202bbd2bc4c772e892b6d613da42cea1f0bffdd45220c1e7e9a21f94b0d86363986238e07d8b28fabde84ed35f1620daef807f27e021be84c7dffecc1106ab414a004a06c410f7cf96c720fbc70a2b357a4edd709ed23c7dc6e6e01433cd8a3e5b49b09ef4f4b6b0086f2fb07b4d9", 16);
+        BigInteger pubExp = new BigInteger("10001", 16);
+        BigInteger privExp = new BigInteger("2f06cbd29434c5edad335a65c359dfa604563dbf6d9257c8256bb09df3edfaeea02383ad74e514230362901433fc9927daf0f27f282105772ac2d71416a732b820163b22f7e808fa27af5d5e7952ba9f8ecd8e0724469a57bd0d3de828d4953aad0be5ed63ad5b726b012abf5540d4a766b6009124077aac577bcf2ef677531", 16);
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(112, 80));
+
+        RSAKeyParameters pk = new RSAKeyParameters(false, mod, pubExp);
+        RSAKeyParameters sk = new RSAKeyParameters(true, mod, privExp);
+        RSAEngine rsaEngine = new RSAEngine();
+
+        // signing - fail private key for encryption
+        try
+        {
+            rsaEngine.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 112 bits of security only 80", e.getMessage());
+        }
+
+        // legacy usage allowed for verification.
+        rsaEngine.init(false, pk);
+
+        // encryption - fail public key for encryption
+        try
+        {
+            rsaEngine.init(true, pk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 112 bits of security only 80", e.getMessage());
+        }
+
+        // legacy usage allowed for decryption.
+        rsaEngine.init(false, sk);
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
