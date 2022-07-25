@@ -43,7 +43,7 @@ public final class CryptoServicesRegistrar
 
     private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
     {
-        public void check(CryptoService service)
+        public void check(CryptoServiceProperties service)
         {
              // anything goes.
         }
@@ -201,7 +201,7 @@ public final class CryptoServicesRegistrar
      * @param cryptoService the service to be checked.
      * @throws CryptoServiceConstraintsException if the service violates the current constraints.
      */
-    public static void checkConstraints(CryptoService cryptoService)
+    public static void checkConstraints(CryptoServiceProperties cryptoService)
     {
         servicesConstraints.get().check(cryptoService);
     }

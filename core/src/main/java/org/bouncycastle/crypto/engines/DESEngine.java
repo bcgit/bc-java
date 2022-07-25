@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoService;
+import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -14,10 +14,11 @@ import org.bouncycastle.util.Pack;
  */
 public class DESEngine
     extends DESBase
-    implements BlockCipher, CryptoService
+    implements BlockCipher
 {
     protected static final int  BLOCK_SIZE = 8;
 
+    private boolean             forEncryption;
     private int[]               workingKey = null;
 
     /**
@@ -25,7 +26,7 @@ public class DESEngine
      */
     public DESEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(this);
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -46,9 +47,12 @@ public class DESEngine
             {
                 throw new IllegalArgumentException("DES key too long - should be 8 bytes");
             }
-            
+
+            forEncryption = encrypting;
             workingKey = generateWorkingKey(encrypting,
                                   ((KeyParameter)params).getKey());
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
 
             return;
         }
@@ -485,13 +489,27 @@ public class DESEngine
         Pack.intToBigEndian(left, out, outOff + 4);
     }
 
-    public int bitsOfSecurity()
+    private class DefaultProperties
+        implements CryptoServiceProperties
     {
-        return 56;
-    }
-    
-    public String getServiceName()
-    {
-        return getAlgorithmName();
+        public int bitsOfSecurity()
+        {
+            return 56;
+        }
+
+        public String getServiceName()
+        {
+            return getAlgorithmName();
+        }
+
+        public Purpose getPurpose()
+        {
+            if (workingKey == null)
+            {
+                return Purpose.BOTH;
+            }
+
+            return forEncryption ? Purpose.ENCRYPTION : Purpose.DECRYPTION;
+        }
     }
 }

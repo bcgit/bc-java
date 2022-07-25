@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoService;
+import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public class RC4Engine
-    implements StreamCipher, CryptoService
+    implements StreamCipher
 {
     private final static int STATE_LENGTH = 256;
 
@@ -22,10 +22,11 @@ public class RC4Engine
     private int         x = 0;
     private int         y = 0;
     private byte[]      workingKey = null;
+    private boolean     forEncryption;
 
     public RC4Engine()
     {
-        CryptoServicesRegistrar.checkConstraints(this);
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -47,7 +48,8 @@ public class RC4Engine
              * symmetrical, so the 'forEncryption' is 
              * irrelevant.
              */
-            workingKey = ((KeyParameter)params).getKey();
+            this.workingKey = ((KeyParameter)params).getKey();
+            this.forEncryption = forEncryption;
             setKey(workingKey);
 
             return;
@@ -151,13 +153,27 @@ public class RC4Engine
         }
     }
 
-    public int bitsOfSecurity()
+    private class DefaultProperties
+        implements CryptoServiceProperties
     {
-        return 20;
-    }
+        public int bitsOfSecurity()
+        {
+            return 20;
+        }
 
-    public String getServiceName()
-    {
-        return getAlgorithmName();
+        public String getServiceName()
+        {
+            return getAlgorithmName();
+        }
+
+        public Purpose getPurpose()
+        {
+            if (workingKey == null)
+            {
+                return Purpose.BOTH;
+            }
+
+            return forEncryption ? Purpose.ENCRYPTION : Purpose.DECRYPTION;
+        }
     }
 }
