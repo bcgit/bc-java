@@ -138,6 +138,10 @@ public class DESedeEngine
     {
         public int bitsOfSecurity()
         {
+            if (workingKey1 != null && workingKey1 == workingKey3)
+            {
+                return 80;
+            }
             return 112;
         }
 
