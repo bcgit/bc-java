@@ -38,6 +38,7 @@ public class AllTests
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUParametersTest.class);
         suite.addTestSuite(FalconTest.class);
+        suite.addTestSuite(CrystalsKyberTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
