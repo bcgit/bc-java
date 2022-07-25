@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.engines;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -39,6 +41,8 @@ class RSACoreEngine
         }
 
         this.forEncryption = forEncryption;
+
+        CryptoServicesRegistrar.checkConstraints(new RSASignerProperties(key, forEncryption));
     }
 
     /**
@@ -208,6 +212,64 @@ class RSACoreEngine
         {
             return input.modPow(
                         key.getExponent(), key.getModulus());
+        }
+    }
+
+    private static class RSASignerProperties
+        implements CryptoServiceProperties
+    {
+        private final int mBits;
+
+        private final boolean forEncryption;
+        private final boolean isEncryption;
+        private final boolean isSigning;
+        private final boolean isVerifying;
+
+        RSASignerProperties(RSAKeyParameters rsaKey, boolean forEncryption)
+        {
+            this.mBits = rsaKey.getModulus().bitLength();
+            this.forEncryption = forEncryption;
+            this.isSigning = rsaKey.isPrivate() && forEncryption;
+            this.isEncryption = !rsaKey.isPrivate() && forEncryption;
+            this.isVerifying = !rsaKey.isPrivate() && !forEncryption;
+        }
+
+        public int bitsOfSecurity()
+        {
+            if (mBits >= 2048)
+            {
+                return (mBits >= 3072) ?
+                    ((mBits >= 7680) ?
+                        ((mBits >= 15360) ? 256
+                            : 192)
+                        : 128)
+                    : 112;
+            }
+
+            return (mBits >= 1024) ? 80 : 20;      // TODO: possibly a bit harsh...
+        }
+
+        public String getServiceName()
+        {
+            return "RSA";
+        }
+
+        public Purpose getPurpose()
+        {
+            if (isSigning)
+            {
+                return Purpose.SIGNING;
+            }
+            if (isEncryption)
+            {
+                return Purpose.ENCRYPTION;
+            }
+            if (isVerifying)
+            {
+                return Purpose.VERIFYING;
+            }
+
+            return Purpose.DECRYPTION;
         }
     }
 }
