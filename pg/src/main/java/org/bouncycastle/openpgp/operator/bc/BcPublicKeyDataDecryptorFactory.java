@@ -1,11 +1,16 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
@@ -13,6 +18,12 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.EAXBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.OCBBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -23,10 +34,14 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * A decryptor factory for handling public key decryption operations.
@@ -186,10 +201,140 @@ public class BcPublicKeyDataDecryptorFactory
 
         return BcUtil.createDataDecryptor(withIntegrityPacket, engine, key);
     }
-    
-    public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+
+    private long getChunkLength(int chunkSize)
+    {
+        return 1L << (chunkSize + 6);
+    }
+
+    public PGPDataDecryptor createDataDecryptor(final int aeadAlgorithm, final byte[] iv, final int chunkSize, final int encAlgorithm, byte[] key)
         throws PGPException
     {
-        return null;
+        try
+        {
+            final KeyParameter secretKey = new KeyParameter(key);
+
+            final AEADBlockCipher c = createAEADCipher(encAlgorithm, aeadAlgorithm);
+
+            // TODO: get this working for more than one chunk!
+            return new PGPDataDecryptor()
+            {
+                public InputStream getInputStream(InputStream in)
+                {
+                    long chunkIndex = 0;
+                    byte[] data;
+                    try
+                    {
+                        data = Streams.readAllLimited(in, (int)getChunkLength(chunkSize));
+
+                        c.init(false, new AEADParameters(secretKey, 128, getNonce(iv, chunkIndex)));  // always full tag.
+
+                        byte[] adata = new byte[13];
+
+                        adata[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+                        adata[1] = 0x01;   // packet version
+                        adata[2] = (byte)encAlgorithm;
+                        adata[3] = (byte)aeadAlgorithm;
+                        adata[4] = (byte)chunkSize;
+
+                        xorChunkId(adata, chunkIndex);
+
+                        c.processAADBytes(adata, 0, adata.length);
+
+                        byte[] decData = new byte[data.length - 2 * 16];
+
+                        int len = c.processBytes(data, 0, data.length - 16, decData, 0); // check final tag
+
+                        c.doFinal(decData, len);
+                        
+                        chunkIndex++;
+
+                        adata = new byte[13];
+
+                        adata[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+                        adata[1] = 0x01;  // packet version
+                        adata[2] = (byte)encAlgorithm;
+                        adata[3] = (byte)aeadAlgorithm;
+                        adata[4] = (byte)chunkSize;
+
+                        xorChunkId(adata, chunkIndex);
+
+                        c.init(false, new AEADParameters(secretKey, 128, getNonce(iv, chunkIndex)));
+
+                        c.processAADBytes(adata, 0, adata.length);
+                        c.processAADBytes(Pack.longToBigEndian(decData.length), 0, 8);
+
+                        c.processBytes(data, data.length - 16, 16, data, data.length - 16);
+
+                        c.doFinal(data, data.length - 16);
+
+                        return new ByteArrayInputStream(decData);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IllegalStateException("unable to read AEAD data");
+                    }
+                }
+
+                public int getBlockSize()
+                {
+                    return c.getUnderlyingCipher().getBlockSize();
+                }
+
+                public PGPDigestCalculator getIntegrityCalculator()
+                {
+                    return new SHA1PGPDigestCalculator();
+                }
+            };
+        }
+        catch (Exception e)
+        {
+            throw new PGPException("Exception creating cipher", e);
+        }
+    }
+
+    public AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
+    {
+        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
+           && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+           && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+        {
+            throw new IllegalArgumentException("AEAD only supported for AES based algorithms");
+        }
+
+        switch (aeadAlgorithm)
+        {
+        case AEADAlgorithmTags.EAX:
+            return new EAXBlockCipher(new AESEngine());
+        case AEADAlgorithmTags.OCB:
+            return new OCBBlockCipher(new AESEngine(), new AESEngine());
+        case AEADAlgorithmTags.GCM:
+            return new GCMBlockCipher(new AESEngine());
+        default:
+            throw new IllegalArgumentException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+        }
+    }
+
+    public byte[] getNonce(byte[] iv, long chunkIndex)
+    {
+        byte[] nonce = Arrays.clone(iv);
+
+        xorChunkId(nonce, chunkIndex);
+
+        return nonce;
+    }
+
+    private void xorChunkId(byte[] nonce, long chunkIndex)
+    {
+        int index = nonce.length - 8;
+
+        nonce[index++] ^= (byte)(chunkIndex >> 56);
+        nonce[index++] ^= (byte)(chunkIndex >> 48);
+        nonce[index++] ^= (byte)(chunkIndex >> 40);
+        nonce[index++] ^= (byte)(chunkIndex >> 32);
+        nonce[index++] ^= (byte)(chunkIndex >> 24);
+        nonce[index++] ^= (byte)(chunkIndex >> 16);
+        nonce[index++] ^= (byte)(chunkIndex >> 8);
+        nonce[index++] ^= (byte)(chunkIndex);
     }
 }
