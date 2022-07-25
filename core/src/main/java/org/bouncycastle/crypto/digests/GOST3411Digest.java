@@ -91,7 +91,7 @@ public class GOST3411Digest
             len--;
         }
 
-        while (len > xBuf.length)
+        while (len >= xBuf.length)
         {
             System.arraycopy(in, inOff, xBuf, 0, xBuf.length);
 

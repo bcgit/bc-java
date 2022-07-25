@@ -637,7 +637,7 @@ public class TigerDigest
         //
         // process whole words.
         //
-        while (len > 8)
+        while (len >= 8)
         {
             processWord(in, inOff);
 
