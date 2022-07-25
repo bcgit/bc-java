@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.DSAKeyParameters;
@@ -67,6 +68,8 @@ public class DSASigner
         {
             this.key = (DSAPublicKeyParameters)param;
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DSAServiceProperties(key));
 
         this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);
     }
@@ -178,5 +181,39 @@ public class DSASigner
         int randomBits = 7;
 
         return BigIntegers.createRandomBigInteger(randomBits, CryptoServicesRegistrar.getSecureRandom(provided)).add(BigInteger.valueOf(128)).multiply(q);
+    }
+
+    private static class DSAServiceProperties
+          implements CryptoServiceProperties
+    {
+        private boolean forSigning;
+        private int pBits;
+
+        DSAServiceProperties(DSAKeyParameters dsaKey)
+        {
+            this.pBits = dsaKey.getParameters().getP().bitLength();
+            this.forSigning = dsaKey.isPrivate();
+        }
+
+        public int bitsOfSecurity()
+        {
+            if (pBits >= 2048)
+            {
+                return (pBits >= 3072) ?
+                            ((pBits >= 8192) ? 192 : 128) : 112;
+            }
+
+            return pBits >= 1024 ? 80 : 20;      // TODO: possibly a bit harsh...
+        }
+
+        public String getServiceName()
+        {
+            return "DSA";
+        }
+
+        public Purpose getPurpose()
+        {
+            return forSigning ? Purpose.SIGNING : Purpose.VERIFYING;
+        }
     }
 }

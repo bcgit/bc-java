@@ -18,8 +18,8 @@ import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CryptoService;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
+import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -94,7 +94,7 @@ public final class BouncyCastleProvider extends Provider
         "SipHash", "SipHash128", "Poly1305"
     };
 
-    private static final CryptoService[] SYMMETRIC_CIPHERS =
+    private static final CryptoServiceProperties[] SYMMETRIC_CIPHERS =
     {
         // TODO: these numbers need a bit more work, we cap at 256 bits.
         service("AES", 256), service("ARC4", 20), service("ARIA", 256), service("Blowfish", 128), service("Camellia", 256),
@@ -256,11 +256,11 @@ public final class BouncyCastleProvider extends Provider
         }
     }
 
-    private void loadAlgorithms(String packageName, CryptoService[] services)
+    private void loadAlgorithms(String packageName, CryptoServiceProperties[] services)
     {
         for (int i = 0; i != services.length; i++)
         {
-            CryptoService service = services[i];
+            CryptoServiceProperties service = services[i];
             try
             {
                 CryptoServicesRegistrar.checkConstraints(service);
@@ -414,13 +414,13 @@ public final class BouncyCastleProvider extends Provider
         return converter.generatePrivate(privateKeyInfo);
     }
 
-    private static CryptoService service(String name, int bitsOfSecurity)
+    private static CryptoServiceProperties service(String name, int bitsOfSecurity)
     {
         return new JcaCryptoService(name, bitsOfSecurity);
     }
 
     private static class JcaCryptoService
-        implements CryptoService
+        implements CryptoServiceProperties
     {
 
         private final String name;
@@ -440,6 +440,11 @@ public final class BouncyCastleProvider extends Provider
         public String getServiceName()
         {
             return name;
+        }
+
+        public Purpose getPurpose()
+        {
+            return Purpose.BOTH;
         }
     }
 }
