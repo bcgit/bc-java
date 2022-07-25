@@ -183,8 +183,7 @@ class OperatorHelper
         return createCipher(cName);
     }
 
-
-    static long getChunkLength(int chunkSize)
+    long getChunkLength(int chunkSize)
     {
         return 1L << (chunkSize + 6);
     }
@@ -207,7 +206,7 @@ class OperatorHelper
                     byte[] data;
                     try
                     {
-                        data = Streams.readAll(in);
+                        data = Streams.readAllLimited(in, (int)getChunkLength(chunkSize));
 
                         c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
 
