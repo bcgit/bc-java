@@ -93,7 +93,7 @@ public abstract class GeneralDigest
         //
         // process whole words.
         //
-        int limit = ((len - i) & ~3) + i;
+        int limit = len - 3;
         for (; i < limit; i += 4)
         {
             processWord(in, inOff + i);
