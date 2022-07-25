@@ -433,9 +433,10 @@ public class Blake2sDigest
         Arrays.fill(buffer, (byte)0);// Holds eventually the key if input is null
         Arrays.fill(internalState, 0);
 
+        byte[] bytes = new byte[4];
         for (int i = 0; i < chainValue.length && (i * 4 < digestLength); i++)
         {
-            byte[] bytes = Pack.intToLittleEndian(chainValue[i]);
+            Pack.intToLittleEndian(chainValue[i], bytes, 0);
 
             if (i * 4 < digestLength - 4)
             {
@@ -443,8 +444,7 @@ public class Blake2sDigest
             }
             else
             {
-                System.arraycopy(bytes, 0, out, outOffset + i * 4,
-                    digestLength - (i * 4));
+                System.arraycopy(bytes, 0, out, outOffset + i * 4, digestLength - (i * 4));
             }
         }
 
@@ -481,14 +481,10 @@ public class Blake2sDigest
         initializeInternalState();
 
         int[] m = new int[16];
-        for (int j = 0; j < 16; j++)
-        {
-            m[j] = Pack.littleEndianToInt(message, messagePos + j * 4);
-        }
+        Pack.littleEndianToInt(message, messagePos, m);
 
         for (int round = 0; round < ROUNDS; round++)
         {
-
             // G apply to columns of internalState:m[blake2s_sigma[round][2 *
             // blockPos]] /+1
             G(m[blake2s_sigma[round][0]], m[blake2s_sigma[round][1]], 0, 4, 8, 12);
