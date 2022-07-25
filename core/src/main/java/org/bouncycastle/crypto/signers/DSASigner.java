@@ -207,7 +207,7 @@ public class DSASigner
                        : 112;
             }
 
-            return pBits >= 1024 ? 80 : 20;      // TODO: possibly a bit harsh...
+            return (pBits >= 1024) ? 80 : 20;      // TODO: possibly a bit harsh...
         }
 
         public String getServiceName()
