@@ -200,7 +200,11 @@ public class DSASigner
             if (pBits >= 2048)
             {
                 return (pBits >= 3072) ?
-                            ((pBits >= 8192) ? 192 : 128) : 112;
+                            ((pBits >= 7680) ?
+                                ((pBits >= 15360) ? 256
+                                : 192)
+                            : 128)
+                       : 112;
             }
 
             return pBits >= 1024 ? 80 : 20;      // TODO: possibly a bit harsh...
