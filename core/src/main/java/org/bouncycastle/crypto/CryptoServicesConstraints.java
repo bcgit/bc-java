@@ -2,5 +2,5 @@ package org.bouncycastle.crypto;
 
 public interface CryptoServicesConstraints
 {
-    void check(CryptoService service);
+    void check(CryptoServiceProperties service);
 }
