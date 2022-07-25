@@ -27,7 +27,7 @@ abstract public class ServicesConstraint
         }
         else
         {
-            this.exceptions = new HashSet<>(exceptions.size());
+            this.exceptions = new HashSet<String>(exceptions.size());
             for (Iterator it = exceptions.iterator(); it.hasNext();)
             {
                 this.exceptions.add(Strings.toUpperCase(it.next().toString()));
