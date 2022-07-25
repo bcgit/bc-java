@@ -147,7 +147,7 @@ public abstract class LongDigest
         //
         // process whole words.
         //
-        while (len > xBuf.length)
+        while (len >= xBuf.length)
         {
             processWord(in, inOff);
 
