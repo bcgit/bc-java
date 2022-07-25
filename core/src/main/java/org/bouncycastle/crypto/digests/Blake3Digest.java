@@ -706,10 +706,7 @@ public class Blake3Digest
                        final int pMsgPos)
     {
         /* Copy message bytes into word array */
-        for (int i = 0; i < NUMWORDS << 1; i++)
-        {
-            theM[i] = Pack.littleEndianToInt(pMessage, pMsgPos + i * Integers.BYTES);
-        }
+        Pack.littleEndianToInt(pMessage, pMsgPos, theM);
     }
 
     /**
@@ -728,10 +725,7 @@ public class Blake3Digest
             }
 
             /* Output state to buffer */
-            for (int i = 0; i < NUMWORDS << 1; i++)
-            {
-                Pack.intToLittleEndian(theV[i], theBuffer, i * Integers.BYTES);
-            }
+            Pack.intToLittleEndian(theV, theBuffer, 0);
             thePos = 0;
 
             /* Else just build chain value */
@@ -814,10 +808,7 @@ public class Blake3Digest
     private void initKey(final byte[] pKey)
     {
         /* Copy message bytes into word array */
-        for (int i = 0; i < NUMWORDS; i++)
-        {
-            theK[i] = Pack.littleEndianToInt(pKey, i * Integers.BYTES);
-        }
+        Pack.littleEndianToInt(pKey, 0, theK);
         theMode = KEYEDHASH;
     }
 
