@@ -117,9 +117,7 @@ public class SM3Digest
         this.xOff = 0;
     }
 
-
-    public int doFinal(byte[] out,
-                       int outOff)
+    public int doFinal(byte[] out, int outOff)
     {
         finish();
 
@@ -130,19 +128,9 @@ public class SM3Digest
         return DIGEST_LENGTH;
     }
 
-
-    protected void processWord(byte[] in,
-                               int inOff)
+    protected void processWord(byte[] in, int inOff)
     {
-        // Note: Inlined for performance
-        // this.inwords[xOff] = Pack.bigEndianToInt(in, inOff);
-        int n = (((in[inOff] & 0xff) << 24) |
-            ((in[++inOff] & 0xff) << 16) |
-            ((in[++inOff] & 0xff) << 8) |
-            ((in[++inOff] & 0xff)));
-
-        this.inwords[this.xOff] = n;
-        ++this.xOff;
+        inwords[xOff++] = Pack.bigEndianToInt(in, inOff);
 
         if (this.xOff >= 16)
         {
