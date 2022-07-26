@@ -58,6 +58,8 @@ public class AllTests
         suite.addTestSuite(FalconKeyPairGeneratorTest.class);
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
+        suite.addTestSuite(KyberTest.class);
+        suite.addTestSuite(KyberKeyPairGeneratorTest.class);
 
         return new BCTestSetup(suite);
     }
