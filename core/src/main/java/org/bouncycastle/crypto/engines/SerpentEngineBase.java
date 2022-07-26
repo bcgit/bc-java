@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StatelessProcessing;
@@ -17,10 +19,11 @@ public abstract class SerpentEngineBase
 
     protected boolean encrypting;
     protected int[] wKey;
+    protected int keyBits;
 
     SerpentEngineBase()
     {
-
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
     }
 
     /**
@@ -38,7 +41,10 @@ public abstract class SerpentEngineBase
         if (params instanceof KeyParameter)
         {
             this.encrypting = encrypting;
-            this.wKey = makeWorkingKey(((KeyParameter)params).getKey());
+            byte[] keyBytes = ((KeyParameter)params).getKey();
+            this.wKey = makeWorkingKey(keyBytes);
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(keyBytes.length * 8));
             return;
         }
 
@@ -482,4 +488,36 @@ public abstract class SerpentEngineBase
     protected abstract void encryptBlock(byte[] input, int inOff, byte[] output, int outOff);
 
     protected abstract void decryptBlock(byte[] input, int inOff, byte[] output, int outOff);
+
+    // Service Definitions
+    private class DefaultProperties
+        implements CryptoServiceProperties
+    {
+        private final int bitsOfSecurity;
+
+        public DefaultProperties(int bitsOfSecurity)
+        {
+            this.bitsOfSecurity = bitsOfSecurity;
+        }
+
+        public int bitsOfSecurity()
+        {
+            return bitsOfSecurity;
+        }
+
+        public String getServiceName()
+        {
+            return getAlgorithmName();
+        }
+
+        public Purpose getPurpose()
+        {
+            if (wKey == null)
+            {
+                return Purpose.BOTH;
+            }
+
+            return encrypting ? Purpose.ENCRYPTION : Purpose.DECRYPTION;
+        }
+    }
 }
