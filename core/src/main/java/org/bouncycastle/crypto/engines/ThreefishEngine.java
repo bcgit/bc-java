@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.TweakableBlockCipherParameters;
+import org.bouncycastle.util.Pack;
 
 /**
  * Implementation of the Threefish tweakable large block cipher in 256, 512 and 1024 bit block
@@ -190,10 +191,7 @@ public class ThreefishEngine
                     + " bytes)");
             }
             keyWords = new long[blocksizeWords];
-            for (int i = 0; i < keyWords.length; i++)
-            {
-                keyWords[i] = bytesToWord(keyBytes, i * 8);
-            }
+            Pack.littleEndianToLong(keyBytes, 0, keyWords);
         }
         if (tweakBytes != null)
         {
@@ -201,7 +199,8 @@ public class ThreefishEngine
             {
                 throw new IllegalArgumentException("Threefish tweak must be " + TWEAK_SIZE_BYTES + " bytes");
             }
-            tweakWords = new long[]{bytesToWord(tweakBytes, 0), bytesToWord(tweakBytes, 8)};
+            tweakWords = new long[2];
+            Pack.littleEndianToLong(tweakBytes, 0, tweakWords);
         }
         init(forEncryption, keyWords, tweakWords);
     }
@@ -296,16 +295,9 @@ public class ThreefishEngine
             throw new OutputLengthException("Output buffer too short");
         }
 
-        for (int i = 0; i < blocksizeBytes; i += 8)
-        {
-            currentBlock[i >> 3] = bytesToWord(in, inOff + i);
-        }
+        Pack.littleEndianToLong(in, inOff, currentBlock);
         processBlock(this.currentBlock, this.currentBlock);
-        for (int i = 0; i < blocksizeBytes; i += 8)
-        {
-            wordToBytes(this.currentBlock[i >> 3], out, outOff + i);
-        }
-
+        Pack.longToLittleEndian(currentBlock, out, outOff);
         return blocksizeBytes;
     }
 
@@ -349,52 +341,22 @@ public class ThreefishEngine
 
     /**
      * Read a single 64 bit word from input in LSB first order.
+     * 
+     * @deprecated Will be removed
      */
-    // At least package protected for efficient access from inner class
     public static long bytesToWord(final byte[] bytes, final int off)
     {
-        if ((off + 8) > bytes.length)
-        {
-            // Help the JIT avoid index checks
-            throw new IllegalArgumentException();
-        }
-
-        long word = 0;
-        int index = off;
-
-        word = (bytes[index++] & 0xffL);
-        word |= (bytes[index++] & 0xffL) << 8;
-        word |= (bytes[index++] & 0xffL) << 16;
-        word |= (bytes[index++] & 0xffL) << 24;
-        word |= (bytes[index++] & 0xffL) << 32;
-        word |= (bytes[index++] & 0xffL) << 40;
-        word |= (bytes[index++] & 0xffL) << 48;
-        word |= (bytes[index++] & 0xffL) << 56;
-
-        return word;
+        return Pack.littleEndianToLong(bytes, off);
     }
 
     /**
      * Write a 64 bit word to output in LSB first order.
+     * 
+     * @deprecated Will be removed
      */
-    // At least package protected for efficient access from inner class
     public static void wordToBytes(final long word, final byte[] bytes, final int off)
     {
-        if ((off + 8) > bytes.length)
-        {
-            // Help the JIT avoid index checks
-            throw new IllegalArgumentException();
-        }
-        int index = off;
-
-        bytes[index++] = (byte)word;
-        bytes[index++] = (byte)(word >> 8);
-        bytes[index++] = (byte)(word >> 16);
-        bytes[index++] = (byte)(word >> 24);
-        bytes[index++] = (byte)(word >> 32);
-        bytes[index++] = (byte)(word >> 40);
-        bytes[index++] = (byte)(word >> 48);
-        bytes[index++] = (byte)(word >> 56);
+        Pack.longToLittleEndian(word, bytes, off);
     }
 
     /**
