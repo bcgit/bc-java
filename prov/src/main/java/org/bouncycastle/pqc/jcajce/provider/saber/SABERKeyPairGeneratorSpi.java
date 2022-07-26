@@ -1,17 +1,22 @@
 package org.bouncycastle.pqc.jcajce.provider.saber;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.pqc.crypto.saber.*;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
-import org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.pqc.crypto.saber.SABERKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
+import org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class SABERKeyPairGeneratorSpi
         extends java.security.KeyPairGenerator
@@ -54,19 +59,22 @@ public class SABERKeyPairGeneratorSpi
             SecureRandom random)
             throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof SABERParameterSpec))
+        String name = getNameFromParams(params);
+
+        if (name != null)
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a SABERParameterSpec");
+            param = new SABERKeyGenerationParameters(random, (SABERParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
         }
-
-        param = new SABERKeyGenerationParameters(random, (SABERParameters)parameters.get(getNameFromParams(params)));
-
-        engine.init(param);
-        initialised = true;
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-        throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof SABERParameterSpec)
         {
@@ -75,7 +83,7 @@ public class SABERKeyPairGeneratorSpi
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

@@ -17,14 +17,14 @@ import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.FrodoParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * KEM tests for Frodo with the BCPQC provider.
+ * KEM tests for Kyber with the BCPQC provider.
  */
-public class FrodoTest
+public class KyberTest
     extends TestCase
 {
     public void setUp()
@@ -38,44 +38,44 @@ public class FrodoTest
     public void testBasicKEMAES()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem640aes, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("AES"));
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("AES-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES-KWP"));
 
-        kpg.initialize(FrodoParameterSpec.frodokem976shake, new SecureRandom());
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("AES"));
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("AES-KWP"));
+        kpg.initialize(KyberParameterSpec.kyber768, new SecureRandom());
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES-KWP"));
     }
 
     public void testBasicKEMCamellia()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem640aes, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("Camellia"));
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("Camellia-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("Camellia"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("Camellia-KWP"));
     }
 
     public void testBasicKEMSEED()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem640shake, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("SEED"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("SEED"));
     }
 
     public void testBasicKEMARIA()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem640aes, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("ARIA"));
-        performKEMScipher(kpg.generateKeyPair(), "Frodo", new KEMParameterSpec("ARIA-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("ARIA"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("ARIA-KWP"));
     }
 
     private void performKEMScipher(KeyPair kp, String algorithm, KEMParameterSpec ktsParameterSpec)
@@ -110,12 +110,12 @@ public class FrodoTest
     public void testGenerateAES()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem640shake, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyGenerator keyGen = KeyGenerator.getInstance("Frodo", "BCPQC");
+        KeyGenerator keyGen = KeyGenerator.getInstance("Kyber", "BCPQC");
 
         keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
 
@@ -136,12 +136,12 @@ public class FrodoTest
     public void testGenerateAES256()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Frodo", "BCPQC");
-        kpg.initialize(FrodoParameterSpec.frodokem1344shake, new SecureRandom());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        kpg.initialize(KyberParameterSpec.kyber1024, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyGenerator keyGen = KeyGenerator.getInstance("Frodo", "BCPQC");
+        KeyGenerator keyGen = KeyGenerator.getInstance("Kyber", "BCPQC");
 
         keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
 

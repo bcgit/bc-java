@@ -26,7 +26,6 @@ public class CMCEParameters
     private final int m;
     private final int n;
     private final int t;
-    private final int[] poly;
     private final boolean usePivots;
     private final int defaultKeySize;
     private final CMCEEngine engine;
@@ -37,7 +36,6 @@ public class CMCEParameters
         this.m = m;
         this.n = n;
         this.t = t;
-        this.poly = p;
         this.usePivots = usePivots;
         this.defaultKeySize = defaultKeySize;
         this.engine = new CMCEEngine(m, n, t, p, usePivots, defaultKeySize);
@@ -73,7 +71,7 @@ public class CMCEParameters
         return (usePivots) ? 64 : 0;
     }
 
-    public int getDefaultKeySize()
+    public int getSessionKeySize()
     {
         return defaultKeySize;
     }

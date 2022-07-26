@@ -9,7 +9,8 @@ import org.bouncycastle.util.Pack;
 class FrodoEngine
 {
     // constant parameters
-    private static final int nbar = 8;
+    static final int nbar = 8;
+
     private static final int mbar = 8;
     private static final int len_seedA = 128;
     private static final int len_z = 128;

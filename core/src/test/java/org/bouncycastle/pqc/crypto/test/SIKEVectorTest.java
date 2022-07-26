@@ -26,6 +26,19 @@ import org.bouncycastle.util.encoders.Hex;
 public class SIKEVectorTest
         extends TestCase
 {
+    public void testParameters()
+        throws Exception
+    {
+        assertEquals(128, SIKEParameters.sikep434.getSessionKeySize());
+        assertEquals(128, SIKEParameters.sikep434_compressed.getSessionKeySize());
+        assertEquals(192, SIKEParameters.sikep503.getSessionKeySize());
+        assertEquals(192, SIKEParameters.sikep503_compressed.getSessionKeySize());
+        assertEquals(192, SIKEParameters.sikep610.getSessionKeySize());
+        assertEquals(192, SIKEParameters.sikep610_compressed.getSessionKeySize());
+        assertEquals(256, SIKEParameters.sikep751.getSessionKeySize());
+        assertEquals(256, SIKEParameters.sikep751_compressed.getSessionKeySize());
+    }
+
     public void testVector()
             throws Exception
     {

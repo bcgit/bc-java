@@ -30,16 +30,16 @@ public class CMCEVectorTest
     public void testParameters()
         throws Exception
     {
-        assertEquals(128, CMCEParameters.mceliece348864r3.getDefaultKeySize());
-        assertEquals(128, CMCEParameters.mceliece348864fr3.getDefaultKeySize());
-        assertEquals(192, CMCEParameters.mceliece460896r3.getDefaultKeySize());
-        assertEquals(192, CMCEParameters.mceliece460896fr3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece6688128r3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece6688128fr3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece6960119r3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece6960119fr3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece8192128r3.getDefaultKeySize());
-        assertEquals(256, CMCEParameters.mceliece8192128fr3.getDefaultKeySize());
+        assertEquals(128, CMCEParameters.mceliece348864r3.getSessionKeySize());
+        assertEquals(128, CMCEParameters.mceliece348864fr3.getSessionKeySize());
+        assertEquals(192, CMCEParameters.mceliece460896r3.getSessionKeySize());
+        assertEquals(192, CMCEParameters.mceliece460896fr3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece6688128r3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece6688128fr3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece6960119r3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece6960119fr3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece8192128r3.getSessionKeySize());
+        assertEquals(256, CMCEParameters.mceliece8192128fr3.getSessionKeySize());
     }
 
     public void testVectors()

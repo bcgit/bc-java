@@ -12,8 +12,6 @@ class KyberEngine
 
     private SecureRandom random;
     private KyberIndCpa indCpa;
-    private PolyVec polyVec;
-    private byte[] seed;
     private SHA3Digest sha3Digest256 = new SHA3Digest(256);
     private SHA3Digest sha3Digest512 = new SHA3Digest(512);
     private SHAKEDigest shakeDigest = new SHAKEDigest(256);
@@ -52,6 +50,8 @@ class KyberEngine
     private final int CryptoSecretKeyBytes;
     private final int CryptoPublicKeyBytes;
     private final int CryptoCipherTextBytes;
+
+    private final int sessionKeyLength;
 
     public static int getKyberEta2()
     {
@@ -148,16 +148,19 @@ class KyberEngine
             KyberEta1 = 3;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
+            sessionKeyLength = 16;
             break;
         case 3:
             KyberEta1 = 2;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
+            sessionKeyLength = 24;
             break;
         case 4:
             KyberEta1 = 2;
             KyberPolyCompressedBytes = 160;
             KyberPolyVecCompressedBytes = k * 352;
+            sessionKeyLength = 32;
             break;
         default:
             throw new IllegalArgumentException("K: " + k + " is not supported for Crystals Kyber");
@@ -193,12 +196,6 @@ class KyberEngine
         this.random = random;
     }
 
-    public void updateSeed(byte[] seed)
-    {
-        this.seed = seed;
-        random.setSeed(seed);
-    }
-
     public byte[][] generateKemKeyPair()
     {
         byte[][] indCpaKeyPair = indCpa.generateKeyPair();
@@ -227,7 +224,6 @@ class KyberEngine
     public byte[][] kemEncrypt(byte[] publicKeyInput)
     {
         byte[] outputCipherText;
-        byte[] outputSharedSecret = new byte[CryptoBytes];
 
         byte[] buf = new byte[2 * KyberSymBytes];
         byte[] kr = new byte[2 * KyberSymBytes];
@@ -262,8 +258,10 @@ class KyberEngine
         sha3Digest256.update(outputCipherText, 0, CryptoCipherTextBytes);
         sha3Digest256.doFinal(kr, KyberSymBytes);
 
+        byte[] outputSharedSecret = new byte[sessionKeyLength];
+
         shakeDigest.update(kr, 0, 2 * KyberSymBytes);
-        shakeDigest.doFinal(outputSharedSecret, 0, KyberSymBytes);
+        shakeDigest.doFinal(outputSharedSecret, 0, sessionKeyLength);
 
         byte[][] outBuf = new byte[2][];
         outBuf[0] = outputSharedSecret;
@@ -274,7 +272,6 @@ class KyberEngine
 
     public byte[] kemDecrypt(byte[] cipherText, byte[] secretKey)
     {
-        byte[] outputSharedSecret = new byte[KyberSharedSecretBytes];
         byte[] buf = new byte[2 * KyberSymBytes],
             kr = new byte[2 * KyberSymBytes];
 
@@ -302,8 +299,10 @@ class KyberEngine
 
         cmov(kr, Arrays.copyOfRange(secretKey, KyberSecretKeyBytes - KyberSymBytes, KyberSecretKeyBytes), KyberSymBytes, fail);
 
+        byte[] outputSharedSecret = new byte[sessionKeyLength];
+
         shakeDigest.update(kr, 0, 2 * KyberSymBytes);
-        shakeDigest.doFinal(outputSharedSecret, 0, KyberSymBytes);
+        shakeDigest.doFinal(outputSharedSecret, 0, sessionKeyLength);
 
         return outputSharedSecret;
     }
