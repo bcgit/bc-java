@@ -11,6 +11,10 @@ import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.engines.SkipjackEngine;
+import org.bouncycastle.crypto.engines.TnepresEngine;
+import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -36,6 +40,9 @@ public class CryptoServiceConstraintsTest
         testLegacy128bits();
         test1024bitDSA();
         test1024bitRSA();
+        testSerpent();
+        testTwofish();
+        testSkipjack();
     }
 
     private void test112bits()
@@ -201,6 +208,89 @@ public class CryptoServiceConstraintsTest
 
         // legacy usage allowed for decryption.
         rsaEngine.init(false, sk);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testSerpent()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        SerpentEngine engine = new SerpentEngine();
+
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[12]));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[12]));
+
+        engine.init(true, new KeyParameter(new byte[16]));
+
+        TnepresEngine tengine = new TnepresEngine();
+
+        try
+        {
+            tengine.init(true, new KeyParameter(new byte[12]));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+
+        tengine.init(false, new KeyParameter(new byte[12]));
+
+        tengine.init(true, new KeyParameter(new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testTwofish()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192, 80));
+
+        TwofishEngine engine = new TwofishEngine();
+
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testSkipjack()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        SkipjackEngine engine = new SkipjackEngine();
+
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[10]));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[10]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
