@@ -87,6 +87,14 @@ public class CrystalsKyberTest
         assertTrue(Arrays.areEqual(randBytes, testBytes));
     }
 
+    public void testParameters()
+        throws Exception
+    {
+        assertEquals(128, KyberParameters.kyber512.getSessionKeySize());
+        assertEquals(192, KyberParameters.kyber768.getSessionKeySize());
+        assertEquals(256, KyberParameters.kyber1024.getSessionKeySize());
+    }
+
     public void testVectors()
         throws Exception
     {
@@ -95,6 +103,7 @@ public class CrystalsKyberTest
             KyberParameters.kyber768,
             KyberParameters.kyber1024,
         };
+
         String[] files = new String[]{
             "kyber512.rsp",
             "kyber768.rsp",
@@ -154,14 +163,14 @@ public class CrystalsKyberTest
                         byte[] generated_cipher_text = secWenc.getEncapsulation();
                         assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
                         byte[] secret = secWenc.getSecret();
-                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, secret));
+                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, 0, secret.length, secret, 0, secret.length));
 
                         // KEM Dec
                         KyberKEMExtractor KyberDecCipher = new KyberKEMExtractor(privParams);
 
                         byte[] dec_key = KyberDecCipher.extractSecret(generated_cipher_text);
 
-                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
+                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(ss, 0, dec_key.length, dec_key, 0, dec_key.length));
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                         // } 
                         // catch (AssertionError e) {

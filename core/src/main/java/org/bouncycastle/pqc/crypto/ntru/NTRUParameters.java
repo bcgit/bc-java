@@ -47,4 +47,9 @@ public class NTRUParameters
     {
         return name;
     }
+
+    public int getSessionKeySize()
+    {
+        return parameterSet.sharedKeyBytes() * 8;
+    }
 }

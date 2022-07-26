@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class FalconKeyPairGeneratorSpi
         extends java.security.KeyPairGenerator
@@ -51,20 +52,22 @@ public class FalconKeyPairGeneratorSpi
             SecureRandom random)
             throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof FalconParameterSpec))
+        String name = getNameFromParams(params);
+
+        if (name != null)
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a FalconParameterSpec");
+            param = new FalconKeyGenerationParameters(random, (FalconParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
         }
-
-        param = new FalconKeyGenerationParameters(random, (FalconParameters)parameters.get(getNameFromParams(params)));
-
-        engine.init(param);
-        
-        initialised = true;
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-            throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof FalconParameterSpec)
         {
@@ -73,7 +76,7 @@ public class FalconKeyPairGeneratorSpi
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

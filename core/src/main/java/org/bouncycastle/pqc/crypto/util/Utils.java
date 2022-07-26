@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
@@ -67,6 +68,9 @@ class Utils
     static final Map falconOids = new HashMap();
     static final Map falconParams = new HashMap();
 
+    static final Map kyberOids = new HashMap();
+    static final Map kyberParams = new HashMap();
+
     static
     {
         categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
@@ -95,19 +99,19 @@ class Utils
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128_r3, CMCEParameters.mceliece8192128r3);
         mcElieceParams.put(BCObjectIdentifiers.mceliece8192128f_r3, CMCEParameters.mceliece8192128fr3);
 
-        frodoOids.put(FrodoParameters.frodokem19888r3, BCObjectIdentifiers.frodokem19888r3);
-        frodoOids.put(FrodoParameters.frodokem19888shaker3, BCObjectIdentifiers.frodokem19888shaker3);
-        frodoOids.put(FrodoParameters.frodokem31296r3, BCObjectIdentifiers.frodokem31296r3);
-        frodoOids.put(FrodoParameters.frodokem31296shaker3, BCObjectIdentifiers.frodokem31296shaker3);
-        frodoOids.put(FrodoParameters.frodokem43088r3, BCObjectIdentifiers.frodokem43088r3);
-        frodoOids.put(FrodoParameters.frodokem43088shaker3, BCObjectIdentifiers.frodokem43088shaker3);
+        frodoOids.put(FrodoParameters.frodokem640aes, BCObjectIdentifiers.frodokem640aes);
+        frodoOids.put(FrodoParameters.frodokem640shake, BCObjectIdentifiers.frodokem640shake);
+        frodoOids.put(FrodoParameters.frodokem976aes, BCObjectIdentifiers.frodokem976aes);
+        frodoOids.put(FrodoParameters.frodokem976shake, BCObjectIdentifiers.frodokem976shake);
+        frodoOids.put(FrodoParameters.frodokem1344aes, BCObjectIdentifiers.frodokem1344aes);
+        frodoOids.put(FrodoParameters.frodokem1344shake, BCObjectIdentifiers.frodokem1344shake);
 
-        frodoParams.put(BCObjectIdentifiers.frodokem19888r3, FrodoParameters.frodokem19888r3);
-        frodoParams.put(BCObjectIdentifiers.frodokem19888shaker3, FrodoParameters.frodokem19888shaker3);
-        frodoParams.put(BCObjectIdentifiers.frodokem31296r3, FrodoParameters.frodokem31296r3);
-        frodoParams.put(BCObjectIdentifiers.frodokem31296shaker3, FrodoParameters.frodokem31296shaker3);
-        frodoParams.put(BCObjectIdentifiers.frodokem43088r3, FrodoParameters.frodokem43088r3);
-        frodoParams.put(BCObjectIdentifiers.frodokem43088shaker3, FrodoParameters.frodokem43088shaker3);
+        frodoParams.put(BCObjectIdentifiers.frodokem640aes, FrodoParameters.frodokem640aes);
+        frodoParams.put(BCObjectIdentifiers.frodokem640shake, FrodoParameters.frodokem640shake);
+        frodoParams.put(BCObjectIdentifiers.frodokem976aes, FrodoParameters.frodokem976aes);
+        frodoParams.put(BCObjectIdentifiers.frodokem976shake, FrodoParameters.frodokem976shake);
+        frodoParams.put(BCObjectIdentifiers.frodokem1344aes, FrodoParameters.frodokem1344aes);
+        frodoParams.put(BCObjectIdentifiers.frodokem1344shake, FrodoParameters.frodokem1344shake);
 
 
         saberOids.put(SABERParameters.lightsaberkem128r3, BCObjectIdentifiers.lightsaberkem128r3);
@@ -190,6 +194,14 @@ class Utils
 
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
+
+        kyberOids.put(KyberParameters.kyber512, BCObjectIdentifiers.kyber512);
+        kyberOids.put(KyberParameters.kyber768, BCObjectIdentifiers.kyber768);
+        kyberOids.put(KyberParameters.kyber1024, BCObjectIdentifiers.kyber1024);
+
+        kyberParams.put(BCObjectIdentifiers.kyber512, KyberParameters.kyber512);
+        kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
+        kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -427,5 +439,15 @@ class Utils
     static NTRUParameters ntruParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (NTRUParameters)ntruParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier kyberOidLookup(KyberParameters params)
+    {
+        return (ASN1ObjectIdentifier)kyberOids.get(params);
+    }
+
+    static KyberParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (KyberParameters)kyberParams.get(oid);
     }
 }

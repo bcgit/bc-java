@@ -25,30 +25,18 @@ import org.bouncycastle.util.encoders.Hex;
 public class SABERVectorTest
     extends TestCase
 {
-    public void testParamaters()
+    public void testParameters()
         throws Exception
     {
-        SABERParameters[] params = new SABERParameters[] {
-                SABERParameters.lightsaberkem128r3,
-                SABERParameters.saberkem128r3,
-                SABERParameters.firesaberkem128r3,
-                SABERParameters.lightsaberkem192r3,
-                SABERParameters.saberkem192r3,
-                SABERParameters.firesaberkem192r3,
-                SABERParameters.lightsaberkem256r3,
-                SABERParameters.saberkem256r3,
-                SABERParameters.firesaberkem256r3,
-            };
-
-        assertEquals(128, SABERParameters.lightsaberkem128r3.getDefaultKeySize());
-        assertEquals(128, SABERParameters.saberkem128r3.getDefaultKeySize());
-        assertEquals(128, SABERParameters.firesaberkem128r3.getDefaultKeySize());
-        assertEquals(192, SABERParameters.lightsaberkem192r3.getDefaultKeySize());
-        assertEquals(192, SABERParameters.saberkem192r3.getDefaultKeySize());
-        assertEquals(192, SABERParameters.firesaberkem192r3.getDefaultKeySize());
-        assertEquals(256, SABERParameters.lightsaberkem256r3.getDefaultKeySize());
-        assertEquals(256, SABERParameters.saberkem256r3.getDefaultKeySize());
-        assertEquals(256, SABERParameters.firesaberkem256r3.getDefaultKeySize());
+        assertEquals(128, SABERParameters.lightsaberkem128r3.getSessionKeySize());
+        assertEquals(128, SABERParameters.saberkem128r3.getSessionKeySize());
+        assertEquals(128, SABERParameters.firesaberkem128r3.getSessionKeySize());
+        assertEquals(192, SABERParameters.lightsaberkem192r3.getSessionKeySize());
+        assertEquals(192, SABERParameters.saberkem192r3.getSessionKeySize());
+        assertEquals(192, SABERParameters.firesaberkem192r3.getSessionKeySize());
+        assertEquals(256, SABERParameters.lightsaberkem256r3.getSessionKeySize());
+        assertEquals(256, SABERParameters.saberkem256r3.getSessionKeySize());
+        assertEquals(256, SABERParameters.firesaberkem256r3.getSessionKeySize());
     }
 
     public void testVectors()

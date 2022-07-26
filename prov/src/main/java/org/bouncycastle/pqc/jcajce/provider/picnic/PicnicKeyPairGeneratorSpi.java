@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class PicnicKeyPairGeneratorSpi
         extends java.security.KeyPairGenerator
@@ -61,19 +62,22 @@ public class PicnicKeyPairGeneratorSpi
             SecureRandom random)
             throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof PicnicParameterSpec))
+        String name = getNameFromParams(params);
+
+        if (name != null)
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a PicnicParameterSpec");
+            param = new PicnicKeyGenerationParameters(random, (PicnicParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
         }
-
-        param = new PicnicKeyGenerationParameters(random, (PicnicParameters)parameters.get(getNameFromParams(params)));
-
-        engine.init(param);
-        initialised = true;
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-            throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof PicnicParameterSpec)
         {
@@ -82,7 +86,7 @@ public class PicnicKeyPairGeneratorSpi
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

@@ -41,7 +41,7 @@ public class SABERParameters
         return l;
     }
 
-    public int getDefaultKeySize()
+    public int getSessionKeySize()
     {
         return defaultKeySize;
     }
