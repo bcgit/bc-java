@@ -86,139 +86,22 @@ public class DRBG
     static
     {
         entropyDaemon = new EntropyDaemon();
-        entropyThread = new Thread(entropyDaemon, "BC FIPS Entropy Daemon");
+        entropyThread = new Thread(entropyDaemon, "BC Entropy Daemon");
         entropyThread.setDaemon(true);
         entropyThread.start();
     }
 
-    private static class CoreSecureRandom
-        extends SecureRandom
+    public static class Mappings
+        extends AsymmetricAlgorithmProvider
     {
-        CoreSecureRandom(Object[] initialEntropySourceAndSpi)
+        public Mappings()
         {
-            super((SecureRandomSpi)initialEntropySourceAndSpi[1], (Provider)initialEntropySourceAndSpi[0]);
         }
-    }
 
-    // unfortunately new SecureRandom() can cause a regress and it's the only reliable way of getting access
-    // to the JVM's seed generator.
-    private static SecureRandom createInitialEntropySource()
-    {
-        boolean hasGetInstanceStrong = AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+        public void configure(ConfigurableProvider provider)
         {
-            public Boolean run()
-            {
-                try
-                {
-                    Class def = SecureRandom.class;
-
-                    return def.getMethod("getInstanceStrong") != null;
-                }
-                catch (Exception e)
-                {
-                    return false;
-                }
-            }
-        });
-
-        if (hasGetInstanceStrong)
-        {
-            return AccessController.doPrivileged(new PrivilegedAction<SecureRandom>()
-            {
-                public SecureRandom run()
-                {
-                    try
-                    {
-                        return (SecureRandom)SecureRandom.class.getMethod("getInstanceStrong").invoke(null);
-                    }
-                    catch (Exception e)
-                    {
-                        return createCoreSecureRandom();
-                    }
-                }
-            });
-        }
-        else
-        {
-            return createCoreSecureRandom();
-        }
-    }
-
-    private static SecureRandom createCoreSecureRandom()
-    {
-        if (Security.getProperty("securerandom.source") == null)
-        {
-            return new CoreSecureRandom(findSource());
-        }
-        else
-        {
-            try
-            {
-                String source = Security.getProperty("securerandom.source");
-
-                return new URLSeededSecureRandom(new URL(source));
-            }
-            catch (Exception e)
-            {
-                return new CoreSecureRandom(findSource());
-            }
-        }
-    }
-
-    private static EntropySourceProvider createEntropySource()
-    {
-        final String sourceClass = Properties.getPropertyValue("org.bouncycastle.drbg.entropysource");
-
-        return AccessController.doPrivileged(new PrivilegedAction<EntropySourceProvider>()
-        {
-            public EntropySourceProvider run()
-            {
-                try
-                {
-                    Class clazz = ClassUtil.loadClass(DRBG.class, sourceClass);
-
-                    return (EntropySourceProvider)clazz.newInstance();
-                }
-                catch (Exception e)
-                {
-                    throw new IllegalStateException("entropy source " + sourceClass + " not created: " + e.getMessage(), e);
-                }
-            }
-        });
-    }
-
-    private static SecureRandom createBaseRandom(boolean isPredictionResistant)
-    {
-        if (Properties.getPropertyValue("org.bouncycastle.drbg.entropysource") != null)
-        {
-            EntropySourceProvider entropyProvider = createEntropySource();
-
-            EntropySource initSource = entropyProvider.get(16 * 8);
-
-            byte[] personalisationString = isPredictionResistant ? generateDefaultPersonalizationString(initSource.getEntropy())
-                                                                 : generateNonceIVPersonalizationString(initSource.getEntropy());
-
-            return new SP800SecureRandomBuilder(entropyProvider)
-                                .setPersonalizationString(personalisationString)
-                                .buildHash(new SHA512Digest(), Arrays.concatenate(initSource.getEntropy(), initSource.getEntropy()), isPredictionResistant);
-        }
-        else
-        {
-            EntropySource source = new HybridEntropySource(entropyDaemon, 256);
-
-            byte[] personalisationString = isPredictionResistant ? generateDefaultPersonalizationString(source.getEntropy())
-                                                                 : generateNonceIVPersonalizationString(source.getEntropy());
-
-            return new SP800SecureRandomBuilder(new EntropySourceProvider()
-                {
-                    @Override
-                    public EntropySource get(int bitsRequired)
-                    {
-                        return new HybridEntropySource(entropyDaemon, bitsRequired);
-                    }
-                })
-                .setPersonalizationString(personalisationString)
-                .buildHash(new SHA512Digest(), source.getEntropy(), isPredictionResistant);
+            provider.addAlgorithm("SecureRandom.DEFAULT", PREFIX + "$Default");
+            provider.addAlgorithm("SecureRandom.NONCEANDIV", PREFIX + "$NonceAndIV");
         }
     }
 
@@ -272,18 +155,130 @@ public class DRBG
         }
     }
 
-    public static class Mappings
-        extends AsymmetricAlgorithmProvider
+    private static SecureRandom createBaseRandom(boolean isPredictionResistant)
     {
-        public Mappings()
+        if (Properties.getPropertyValue("org.bouncycastle.drbg.entropysource") != null)
         {
-        }
+            EntropySourceProvider entropyProvider = createEntropySource();
 
-        public void configure(ConfigurableProvider provider)
-        {
-            provider.addAlgorithm("SecureRandom.DEFAULT", PREFIX + "$Default");
-            provider.addAlgorithm("SecureRandom.NONCEANDIV", PREFIX + "$NonceAndIV");
+            EntropySource initSource = entropyProvider.get(16 * 8);
+
+            byte[] personalisationString = isPredictionResistant
+                ? generateDefaultPersonalizationString(initSource.getEntropy())
+                : generateNonceIVPersonalizationString(initSource.getEntropy());
+
+            return new SP800SecureRandomBuilder(entropyProvider)
+                .setPersonalizationString(personalisationString)
+                .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
         }
+        else
+        {
+            EntropySource source = new HybridEntropySource(entropyDaemon, 256);
+
+            byte[] personalisationString = isPredictionResistant
+                ? generateDefaultPersonalizationString(source.getEntropy())
+                : generateNonceIVPersonalizationString(source.getEntropy());
+
+            return new SP800SecureRandomBuilder(new EntropySourceProvider()
+            {
+                @Override
+                public EntropySource get(int bitsRequired)
+                {
+                    return new HybridEntropySource(entropyDaemon, bitsRequired);
+                }
+            })
+                .setPersonalizationString(personalisationString)
+                .buildHash(new SHA512Digest(), source.getEntropy(), isPredictionResistant);
+        }
+    }
+
+    // unfortunately new SecureRandom() can cause a regress and it's the only reliable way of getting access
+    // to the JVM's seed generator.
+    private static EntropySourceProvider createInitialEntropySource()
+    {
+        boolean hasGetInstanceStrong = AccessController.doPrivileged(new PrivilegedAction<Boolean>()
+        {
+            public Boolean run()
+            {
+                try
+                {
+                    Class def = SecureRandom.class;
+
+                    return def.getMethod("getInstanceStrong") != null;
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+            }
+        });
+
+        if (hasGetInstanceStrong)
+        {
+            SecureRandom strong = AccessController.doPrivileged(new PrivilegedAction<SecureRandom>()
+            {
+                public SecureRandom run()
+                {
+                    try
+                    {
+                        return (SecureRandom)SecureRandom.class.getMethod("getInstanceStrong").invoke(null);
+                    }
+                    catch (Exception e)
+                    {
+                        return new CoreSecureRandom(findSource());
+                    }
+                }
+            });
+
+            return new IncrementalEntropySourceProvider(strong, true);
+        }
+        else
+        {
+            return new IncrementalEntropySourceProvider(new CoreSecureRandom(findSource()), true);
+        }
+    }
+
+    private static EntropySourceProvider createCoreEntropySourceProvider()
+    {
+        if (Security.getProperty("securerandom.source") == null)
+        {
+            return createInitialEntropySource();
+        }
+        else
+        {
+            try
+            {
+                String source = Security.getProperty("securerandom.source");
+
+                return new URLSeededEntropySourceProvider(new URL(source));
+            }
+            catch (Exception e)
+            {
+                return createInitialEntropySource();
+            }
+        }
+    }
+
+    private static EntropySourceProvider createEntropySource()
+    {
+        final String sourceClass = Properties.getPropertyValue("org.bouncycastle.drbg.entropysource");
+
+        return AccessController.doPrivileged(new PrivilegedAction<EntropySourceProvider>()
+        {
+            public EntropySourceProvider run()
+            {
+                try
+                {
+                    Class clazz = ClassUtil.loadClass(DRBG.class, sourceClass);
+
+                    return (EntropySourceProvider)clazz.newInstance();
+                }
+                catch (Exception e)
+                {
+                    throw new IllegalStateException("entropy source " + sourceClass + " not created: " + e.getMessage(), e);
+                }
+            }
+        });
     }
 
     private static byte[] generateDefaultPersonalizationString(byte[] seed)
@@ -296,92 +291,6 @@ public class DRBG
     {
         return Arrays.concatenate(Strings.toByteArray("Nonce"), seed,
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
-    }
-
-    private static class HybridRandomProvider
-        extends Provider
-    {
-        protected HybridRandomProvider()
-        {
-            super("BCHEP", 1.0, "Bouncy Castle Hybrid Entropy Provider");
-        }
-    }
-
-    private static class URLSeededSecureRandom
-        extends SecureRandom
-    {
-        private final InputStream seedStream;
-
-        URLSeededSecureRandom(final URL url)
-        {
-            super(null, new HybridRandomProvider());
-
-            this.seedStream = AccessController.doPrivileged(new PrivilegedAction<InputStream>()
-            {
-                public InputStream run()
-                {
-                    try
-                    {
-                        return url.openStream();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new IllegalStateException("unable to open random source");
-                    }
-                }
-            });
-        }
-
-        public void setSeed(byte[] seed)
-        {
-            // ignore
-        }
-
-        public void setSeed(long seed)
-        {
-            // ignore
-        }
-
-        public byte[] generateSeed(int numBytes)
-        {
-            synchronized (this)
-            {
-                byte[] data = new byte[numBytes];
-
-                int off = 0;
-                int len;
-
-                while (off != data.length && (len = privilegedRead(data, off, data.length - off)) > -1)
-                {
-                    off += len;
-                }
-
-                if (off != data.length)
-                {
-                    throw new InternalError("unable to fully read random source");
-                }
-
-                return data;
-            }
-        }
-
-        private int privilegedRead(final byte[] data, final int off, final int len)
-        {
-            return AccessController.doPrivileged(new PrivilegedAction<Integer>()
-            {
-                public Integer run()
-                {
-                    try
-                    {
-                        return seedStream.read(data, off, len);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new InternalError("unable to read random source");
-                    }
-                }
-            });
-        }
     }
 
     private static class EntropyDaemon
@@ -427,6 +336,142 @@ public class DRBG
         }
     }
 
+    private static class CoreSecureRandom
+        extends SecureRandom
+    {
+        CoreSecureRandom(Object[] initialEntropySourceAndSpi)
+        {
+            super((SecureRandomSpi)initialEntropySourceAndSpi[1], (Provider)initialEntropySourceAndSpi[0]);
+        }
+    }
+
+    private static long getPause()
+    {
+        String pauseSetting = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
+
+        if (pauseSetting != null)
+        {
+            try
+            {
+                return Long.parseLong(pauseSetting) * 1000;
+            }
+            catch (Exception e)
+            {
+                return 5000;
+            }
+        }
+        return 5000;
+    }
+
+    private static void sleep(long ms)
+    {
+        try
+        {
+            Thread.sleep(ms);
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static class URLSeededEntropySourceProvider
+        implements EntropySourceProvider
+    {
+        private final InputStream seedStream;
+
+        URLSeededEntropySourceProvider(final URL url)
+        {
+            this.seedStream = AccessController.doPrivileged(new PrivilegedAction<InputStream>()
+            {
+                public InputStream run()
+                {
+                    try
+                    {
+                        return url.openStream();
+                    }
+                    catch (IOException e)
+                    {
+                        throw new IllegalStateException("unable to open random source");
+                    }
+                }
+            });
+        }
+
+        private int privilegedRead(final byte[] data, final int off, final int len)
+        {
+            return AccessController.doPrivileged(new PrivilegedAction<Integer>()
+            {
+                public Integer run()
+                {
+                    try
+                    {
+                        return seedStream.read(data, off, len);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new InternalError("unable to read random source");
+                    }
+                }
+            });
+        }
+
+        public EntropySource get(final int bitsRequired)
+        {
+            return new IncrementalEntropySource()
+            {
+                private final int numBytes = (bitsRequired + 7) / 8;
+
+                public boolean isPredictionResistant()
+                {
+                    return true;
+                }
+
+                public byte[] getEntropy()
+                {
+                    return getEntropy(0);
+                }
+
+                public byte[] getEntropy(long pause)
+                {
+                    byte[] data = new byte[numBytes];
+
+                    int off = 0;
+                    int len;
+
+                    while (off != data.length && (len = privilegedRead(data, off, data.length - off)) > -1)
+                    {
+                        off += len;
+                        sleep(pause);
+                    }
+
+                    if (off != data.length)
+                    {
+                        throw new InternalError("unable to fully read random source");
+                    }
+
+                    return data;
+                }
+
+                public int entropySize()
+                {
+                    return bitsRequired;
+                }
+            };
+        }
+    }
+
+    private interface IncrementalEntropySource
+        extends EntropySource
+    {
+        /**
+         * Pause allows for a gap between fetches. We only want this after we've initialised.
+         * @param pause time in milliseconds to pause in build up seed.
+         * @return the resulting seed
+         */
+        byte[] getEntropy(long pause);
+    }
+
     private static class HybridEntropySource
         implements EntropySource
     {
@@ -440,20 +485,19 @@ public class DRBG
 
         HybridEntropySource(final EntropyDaemon entropyDaemon, final int bitsRequired)
         {
-            SecureRandom baseRandom = createCoreSecureRandom();
-
+            EntropySourceProvider entropyProvider = createCoreEntropySourceProvider();
             bytesRequired = (bitsRequired + 7) / 8;
             // remember for the seed generator we need the correct security strength for SHA-512
-            entropySource = new SignallingEntropySource(entropyDaemon, seedAvailable, baseRandom, 256);
+            entropySource = new SignallingEntropySource(entropyDaemon, seedAvailable, entropyProvider, 256);
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
+            {
+                public EntropySource get(final int bitsRequired)
                 {
-                    public EntropySource get(final int bitsRequired)
-                    {
-                        return entropySource;
-                    }
-                })
-                .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
-                .buildHMAC(new HMac(new SHA512Digest()), baseRandom.generateSeed(32), false);     // 32 byte nonce
+                    return entropySource;
+                }
+            })
+            .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
+            .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
         }
 
         @Override
@@ -493,21 +537,23 @@ public class DRBG
         }
 
         private class SignallingEntropySource
-            implements EntropySource
+            implements IncrementalEntropySource
         {
             private final EntropyDaemon entropyDaemon;
             private final AtomicBoolean seedAvailable;
-            private final SecureRandom baseRandom;
+            private final IncrementalEntropySource entropySource;
             private final int byteLength;
             private final AtomicReference entropy = new AtomicReference();
             private final AtomicBoolean scheduled = new AtomicBoolean(false);
+            private final long pause;
 
-            SignallingEntropySource(EntropyDaemon entropyDaemon, AtomicBoolean seedAvailable, SecureRandom baseRandom, int bitsRequired)
+            SignallingEntropySource(EntropyDaemon entropyDaemon, AtomicBoolean seedAvailable, EntropySourceProvider baseRandom, int bitsRequired)
             {
                 this.entropyDaemon = entropyDaemon;
                 this.seedAvailable = seedAvailable;
-                this.baseRandom = baseRandom;
+                this.entropySource = (IncrementalEntropySource)baseRandom.get(bitsRequired);
                 this.byteLength = (bitsRequired + 7) / 8;
+                this.pause = getPause();
             }
 
             public boolean isPredictionResistant()
@@ -517,11 +563,16 @@ public class DRBG
 
             public byte[] getEntropy()
             {
+                 return getEntropy(0);
+            }
+            
+            public byte[] getEntropy(long pause)
+            {
                 byte[] seed = (byte[])entropy.getAndSet(null);
 
                 if (seed == null || seed.length != byteLength)
                 {
-                    seed = baseRandom.generateSeed(byteLength);
+                    seed = entropySource.getEntropy(pause);
                 }
                 else
                 {
@@ -537,7 +588,7 @@ public class DRBG
             {
                 if (!scheduled.getAndSet(true))
                 {
-                    entropyDaemon.addTask(new EntropyGatherer(byteLength, baseRandom, seedAvailable, entropy));
+                    entropyDaemon.addTask(new EntropyGatherer(entropySource));
                 }
             }
 
@@ -545,77 +596,94 @@ public class DRBG
             {
                 return byteLength * 8;
             }
+
+            private class EntropyGatherer
+                implements Runnable
+            {
+                private final IncrementalEntropySource baseRandom;
+
+                EntropyGatherer(IncrementalEntropySource baseRandom)
+                {
+                    this.baseRandom = baseRandom;
+                }
+
+                public void run()
+                {
+                    entropy.set(baseRandom.getEntropy(pause));
+                    seedAvailable.set(true);
+                }
+            }
+        }
+    }
+
+    private static class IncrementalEntropySourceProvider
+        implements EntropySourceProvider
+    {
+        private final SecureRandom random;
+        private final boolean predictionResistant;
+
+        /**
+         * Create a entropy source provider based on the passed in SecureRandom.
+         *
+         * @param random                the SecureRandom to base EntropySource construction on.
+         * @param isPredictionResistant boolean indicating if the SecureRandom is based on prediction resistant entropy or not (true if it is).
+         */
+        public IncrementalEntropySourceProvider(SecureRandom random, boolean isPredictionResistant)
+        {
+            this.random = random;
+            this.predictionResistant = isPredictionResistant;
         }
 
-        private class EntropyGatherer
-            implements Runnable
+        /**
+         * Return an entropy source that will create bitsRequired bits of entropy on
+         * each invocation of getEntropy().
+         *
+         * @param bitsRequired size (in bits) of entropy to be created by the provided source.
+         * @return an EntropySource that generates bitsRequired bits of entropy on each call to its getEntropy() method.
+         */
+        public EntropySource get(final int bitsRequired)
         {
-            private final int numBytes;
-            private final SecureRandom baseRandom;
-            private final AtomicBoolean seedAvailable;
-            private final AtomicReference<byte[]> entropy;
-
-            EntropyGatherer(int numBytes, SecureRandom baseRandom, AtomicBoolean seedAvailable, AtomicReference<byte[]> entropy)
+            return new IncrementalEntropySource()
             {
-                this.numBytes = numBytes;
-                this.baseRandom = baseRandom;
-                this.seedAvailable = seedAvailable;
-                this.entropy = entropy;
-            }
+                final int numBytes = (bitsRequired + 7) / 8;
 
-            private void sleep(long ms)
-            {
-                try
+                public boolean isPredictionResistant()
                 {
-                    Thread.sleep(ms);
+                    return predictionResistant;
                 }
-                catch (InterruptedException e)
+
+                public byte[] getEntropy()
                 {
-                    Thread.currentThread().interrupt();
+                    return getEntropy(0);
                 }
-            }
 
-            public void run()
-            {
-                long ms;
-                String pause = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
-
-                if (pause != null)
+                public byte[] getEntropy(long pause)
                 {
-                    try
+                    byte[] seed = new byte[numBytes];
+                    for (int i = 0; i < numBytes / 8; i++)
                     {
-                        ms = Long.parseLong(pause) * 1000;
+                        // we need to be mindful that we may not be the only thread/process looking for entropy
+                        sleep(pause);
+                        byte[] rn = random.generateSeed(8);
+                        System.arraycopy(rn, 0, seed, i * 8, rn.length);
                     }
-                    catch (Exception e)
+
+                    int extra = numBytes - ((numBytes / 8) * 8);
+                    if (extra != 0)
                     {
-                        ms = 5000;
+                        sleep(pause);
+                        byte[] rn = random.generateSeed(extra);
+                        System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
                     }
-                }
-                else
-                {
-                    ms = 5000;
+
+                    return seed;
                 }
 
-                byte[] seed = new byte[numBytes];
-                for (int i = 0; i < numBytes / 8; i++)
+                public int entropySize()
                 {
-                    // we need to be mindful that we may not be the only thread/process looking for entropy
-                    sleep(ms);
-                    byte[] rn = baseRandom.generateSeed(8);
-                    System.arraycopy(rn, 0, seed, i * 8, rn.length);
+                    return bitsRequired;
                 }
-
-                int extra = numBytes - ((numBytes / 8) * 8);
-                if (extra != 0)
-                {
-                    sleep(ms);
-                    byte[] rn = baseRandom.generateSeed(extra);
-                    System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
-                }
-
-                entropy.set(seed);
-                seedAvailable.set(true);
-            }
+            };
         }
     }
 }
