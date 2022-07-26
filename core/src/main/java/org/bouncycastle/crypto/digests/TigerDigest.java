@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Memoable;
+import org.bouncycastle.util.Pack;
 
 /**
  * implementation of Tiger based on:
@@ -584,18 +585,9 @@ public class TigerDigest
         return DIGEST_LENGTH;
     }
 
-    private void processWord(
-        byte[]  b,
-        int     off)
+    private void processWord(byte[] b, int off)
     {
-        x[xOff++] = ((long)(b[off + 7] & 0xff) << 56)
-             | ((long)(b[off + 6] & 0xff) << 48)
-             | ((long)(b[off + 5] & 0xff) << 40)
-             | ((long)(b[off + 4] & 0xff) << 32)
-             | ((long)(b[off + 3] & 0xff) << 24)
-             | ((long)(b[off + 2] & 0xff) << 16)
-             | ((long)(b[off + 1] & 0xff) << 8)
-             | ((b[off + 0] & 0xff));
+        x[xOff++] = Pack.littleEndianToLong(b, off);
 
         if (xOff == x.length)
         {
@@ -774,21 +766,6 @@ public class TigerDigest
         }
     }
 
-    public void unpackWord(
-        long    r,
-        byte[]  out,
-        int     outOff)
-    {
-        out[outOff + 7]     = (byte)(r >> 56);
-        out[outOff + 6] = (byte)(r >> 48);
-        out[outOff + 5] = (byte)(r >> 40);
-        out[outOff + 4] = (byte)(r >> 32);
-        out[outOff + 3] = (byte)(r >> 24);
-        out[outOff + 2] = (byte)(r >> 16);
-        out[outOff + 1] = (byte)(r >> 8);
-        out[outOff] = (byte)r;
-    }
-        
     private void processLength(
         long    bitLength)
     {
@@ -817,9 +794,9 @@ public class TigerDigest
     {
         finish();
 
-        unpackWord(a, out, outOff);
-        unpackWord(b, out, outOff + 8);
-        unpackWord(c, out, outOff + 16);
+        Pack.longToLittleEndian(a, out, outOff);
+        Pack.longToLittleEndian(b, out, outOff + 8);
+        Pack.longToLittleEndian(c, out, outOff + 16);
 
         reset();
 
