@@ -83,17 +83,9 @@ public class SHA1Digest
         return DIGEST_LENGTH;
     }
 
-    protected void processWord(
-        byte[]  in,
-        int     inOff)
+    protected void processWord(byte[] in, int inOff)
     {
-        // Note: Inlined for performance
-//        X[xOff] = Pack.bigEndianToInt(in, inOff);
-        int n = in[  inOff] << 24;
-        n |= (in[++inOff] & 0xff) << 16;
-        n |= (in[++inOff] & 0xff) << 8;
-        n |= (in[++inOff] & 0xff);
-        X[xOff] = n;
+        X[xOff] = Pack.bigEndianToInt(in, inOff);
 
         if (++xOff == 16)
         {
@@ -113,9 +105,7 @@ public class SHA1Digest
         X[15] = (int)bitLength;
     }
 
-    public int doFinal(
-        byte[]  out,
-        int     outOff)
+    public int doFinal(byte[] out, int outOff)
     {
         finish();
 
