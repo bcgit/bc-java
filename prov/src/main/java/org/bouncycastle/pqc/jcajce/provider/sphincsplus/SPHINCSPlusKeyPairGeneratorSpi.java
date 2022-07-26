@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class SPHINCSPlusKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -76,15 +77,19 @@ public class SPHINCSPlusKeyPairGeneratorSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof SPHINCSPlusParameterSpec))
-        {
-            throw new InvalidAlgorithmParameterException("parameter object not a CMCEParameterSpec");
-        }
-        
-        param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(getNameFromParams(params)));
+        String name = getNameFromParams(params);
 
-        engine.init(param);
-        initialised = true;
+        if (name != null)
+        {
+            param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     public KeyPair generateKeyPair()
@@ -105,7 +110,6 @@ public class SPHINCSPlusKeyPairGeneratorSpi
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-        throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof SPHINCSPlusParameterSpec)
         {
@@ -114,7 +118,7 @@ public class SPHINCSPlusKeyPairGeneratorSpi
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 }

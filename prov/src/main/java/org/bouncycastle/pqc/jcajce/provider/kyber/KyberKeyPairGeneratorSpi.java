@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.ntru;
+package org.bouncycastle.pqc.jcajce.provider.kyber;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
@@ -9,37 +9,36 @@ import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
-import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Strings;
 
-public class NTRUKeyPairGeneratorSpi
+public class KyberKeyPairGeneratorSpi
         extends java.security.KeyPairGenerator
 {
     private static Map parameters = new HashMap();
 
     static
     {
-        parameters.put(NTRUParameterSpec.ntruhps2048509.getName(), NTRUParameters.ntruhps2048509);
-        parameters.put(NTRUParameterSpec.ntruhps2048677.getName(), NTRUParameters.ntruhps2048677);
-        parameters.put(NTRUParameterSpec.ntruhps4096821.getName(), NTRUParameters.ntruhps4096821);
-        parameters.put(NTRUParameterSpec.ntruhrss701.getName(), NTRUParameters.ntruhrss701);
+        parameters.put(KyberParameterSpec.kyber512.getName(), KyberParameters.kyber512);
+        parameters.put(KyberParameterSpec.kyber768.getName(), KyberParameters.kyber768);
+        parameters.put(KyberParameterSpec.kyber1024.getName(), KyberParameters.kyber1024);
     }
 
-    NTRUKeyGenerationParameters param;
-    NTRUKeyPairGenerator engine = new NTRUKeyPairGenerator();
+    KyberKeyGenerationParameters param;
+    KyberKeyPairGenerator engine = new KyberKeyPairGenerator();
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
-    public NTRUKeyPairGeneratorSpi()
+    public KyberKeyPairGeneratorSpi()
     {
-        super("NTRU");
+        super("Kyber");
     }
 
     public void initialize(
@@ -58,7 +57,7 @@ public class NTRUKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new NTRUKeyGenerationParameters(random, (NTRUParameters)parameters.get(name));
+            param = new KyberKeyGenerationParameters(random, (KyberParameters)parameters.get(getNameFromParams(params)));
 
             engine.init(param);
             initialised = true;
@@ -71,10 +70,10 @@ public class NTRUKeyPairGeneratorSpi
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
     {
-        if (paramSpec instanceof NTRUParameterSpec)
+        if (paramSpec instanceof KyberParameterSpec)
         {
-            NTRUParameterSpec frodoParams = (NTRUParameterSpec)paramSpec;
-            return frodoParams.getName();
+            KyberParameterSpec kyberParams = (KyberParameterSpec)paramSpec;
+            return kyberParams.getName();
         }
         else
         {
@@ -86,16 +85,16 @@ public class NTRUKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new NTRUKeyGenerationParameters(random, NTRUParameters.ntruhps2048509);
+            param = new KyberKeyGenerationParameters(random, KyberParameters.kyber1024);
 
             engine.init(param);
             initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();
-        NTRUPublicKeyParameters pub = (NTRUPublicKeyParameters)pair.getPublic();
-        NTRUPrivateKeyParameters priv = (NTRUPrivateKeyParameters)pair.getPrivate();
+        KyberPublicKeyParameters pub = (KyberPublicKeyParameters)pair.getPublic();
+        KyberPrivateKeyParameters priv = (KyberPrivateKeyParameters)pair.getPrivate();
 
-        return new KeyPair(new BCNTRUPublicKey(pub), new BCNTRUPrivateKey(priv));
+        return new KeyPair(new BCKyberPublicKey(pub), new BCKyberPrivateKey(priv));
     }
 }

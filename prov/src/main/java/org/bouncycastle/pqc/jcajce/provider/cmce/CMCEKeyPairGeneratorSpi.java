@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class CMCEKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -59,28 +60,32 @@ public class CMCEKeyPairGeneratorSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof CMCEParameterSpec))
+        String name = getNameFromParams(params);
+
+        if (name != null)
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a CMCEParameterSpec");
+            param = new CMCEKeyGenerationParameters(random, (CMCEParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
         }
-
-        param = new CMCEKeyGenerationParameters(random, (CMCEParameters)parameters.get(getNameFromParams(params)));
-
-        engine.init(param);
-        initialised = true;
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-        throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof CMCEParameterSpec)
         {
             CMCEParameterSpec cmceParams = (CMCEParameterSpec)paramSpec;
+
             return cmceParams.getName();
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

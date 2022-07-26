@@ -25,22 +25,14 @@ public class FrodoVectorTest
     public void testParameters()
         throws Exception
     {
-        FrodoParameters[] params = new FrodoParameters[]{
-                FrodoParameters.frodokem19888r3,
-                FrodoParameters.frodokem19888shaker3,
-                FrodoParameters.frodokem31296r3,
-                FrodoParameters.frodokem31296shaker3,
-                FrodoParameters.frodokem43088r3,
-                FrodoParameters.frodokem43088shaker3
-        };
-
-        assertEquals(64, FrodoParameters.frodokem19888r3.getDefaultKeySize());
-        assertEquals(64, FrodoParameters.frodokem19888shaker3.getDefaultKeySize());
-        assertEquals(96, FrodoParameters.frodokem31296r3.getDefaultKeySize());
-        assertEquals(96, FrodoParameters.frodokem31296shaker3.getDefaultKeySize());
-        assertEquals(128, FrodoParameters.frodokem43088r3.getDefaultKeySize());
-        assertEquals(128, FrodoParameters.frodokem43088shaker3.getDefaultKeySize());
+        assertEquals(128, FrodoParameters.frodokem640aes.getSessionKeySize());
+        assertEquals(128, FrodoParameters.frodokem640shake.getSessionKeySize());
+        assertEquals(192, FrodoParameters.frodokem976aes.getSessionKeySize());
+        assertEquals(192, FrodoParameters.frodokem976shake.getSessionKeySize());
+        assertEquals(256, FrodoParameters.frodokem1344aes.getSessionKeySize());
+        assertEquals(256, FrodoParameters.frodokem1344shake.getSessionKeySize());
     }
+
     public void testVectors()
         throws Exception
     {
@@ -54,12 +46,12 @@ public class FrodoVectorTest
         };
 
         FrodoParameters[] params = new FrodoParameters[]{
-            FrodoParameters.frodokem19888r3,
-            FrodoParameters.frodokem31296r3,
-            FrodoParameters.frodokem43088r3,
-            FrodoParameters.frodokem19888shaker3,
-            FrodoParameters.frodokem31296shaker3,
-            FrodoParameters.frodokem43088shaker3
+            FrodoParameters.frodokem640aes,
+            FrodoParameters.frodokem976aes,
+            FrodoParameters.frodokem1344aes,
+            FrodoParameters.frodokem640shake,
+            FrodoParameters.frodokem976shake,
+            FrodoParameters.frodokem1344shake
         };
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {

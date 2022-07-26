@@ -15,20 +15,24 @@ public class SIKEParameters
     private final String name;
     private final SIKEEngine engine;
 
-    public SIKEParameters(int ver, boolean isCompressed, String name)
+    private SIKEParameters(int ver, boolean isCompressed, String name)
     {
         this.name = name;
         this.engine = new SIKEEngine(ver, isCompressed);
     }
 
-    public SIKEEngine getEngine()
+    SIKEEngine getEngine()
     {
         return engine;
     }
 
-
     public String getName()
     {
         return name;
+    }
+
+    public int getSessionKeySize()
+    {
+        return engine.getDefaultSessionKeySize();
     }
 }

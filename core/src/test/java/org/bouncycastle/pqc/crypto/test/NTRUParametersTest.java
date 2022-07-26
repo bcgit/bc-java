@@ -1,12 +1,23 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import junit.framework.TestCase;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048509;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSS701;
 
 public class NTRUParametersTest
     extends TestCase
 {
+    public void testParameters()
+        throws Exception
+    {
+        assertEquals(128, NTRUParameters.ntruhps2048509.getSessionKeySize());
+        assertEquals(192, NTRUParameters.ntruhps2048677.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps4096821.getSessionKeySize());
+
+        assertEquals(192, NTRUParameters.ntruhrss701.getSessionKeySize());
+    }
+
     public void testHpsParameters()
     {
         NTRUHPS2048509 hps2048509 = new NTRUHPS2048509();

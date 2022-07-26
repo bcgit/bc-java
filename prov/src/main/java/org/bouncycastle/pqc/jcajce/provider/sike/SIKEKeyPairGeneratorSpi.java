@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.sike.SIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.SIKEParameterSpec;
+import org.bouncycastle.util.Strings;
 
 public class SIKEKeyPairGeneratorSpi
         extends java.security.KeyPairGenerator
@@ -57,19 +58,22 @@ public class SIKEKeyPairGeneratorSpi
             SecureRandom random)
             throws InvalidAlgorithmParameterException
     {
-        if (!(params instanceof SIKEParameterSpec))
+        String name = getNameFromParams(params);
+
+        if (name != null)
         {
-            throw new InvalidAlgorithmParameterException("parameter object not a SIKEParameterSpec");
+            param = new SIKEKeyGenerationParameters(random, (SIKEParameters)parameters.get(name));
+
+            engine.init(param);
+            initialised = true;
         }
-
-        param = new SIKEKeyGenerationParameters(random, (SIKEParameters)parameters.get(getNameFromParams(params)));
-
-        engine.init(param);
-        initialised = true;
+        else
+        {
+            throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
-            throws InvalidAlgorithmParameterException
     {
         if (paramSpec instanceof SIKEParameterSpec)
         {
@@ -78,7 +82,7 @@ public class SIKEKeyPairGeneratorSpi
         }
         else
         {
-            return SpecUtil.getNameFrom(paramSpec);
+            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 
@@ -86,7 +90,7 @@ public class SIKEKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new SIKEKeyGenerationParameters(random, SIKEParameters.sikep434);
+            param = new SIKEKeyGenerationParameters(random, SIKEParameters.sikep751);
 
             engine.init(param);
             initialised = true;

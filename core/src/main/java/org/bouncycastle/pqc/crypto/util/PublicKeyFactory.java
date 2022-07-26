@@ -25,6 +25,8 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -87,12 +89,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.mceliece6960119f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece8192128f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.frodokem19888r3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem19888shaker3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem31296r3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem31296shaker3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem43088r3, new FrodoConverter());
-        converters.put(BCObjectIdentifiers.frodokem43088shaker3, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem640aes, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem640shake, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem976aes, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem976shake, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem1344aes, new FrodoConverter());
+        converters.put(BCObjectIdentifiers.frodokem1344shake, new FrodoConverter());
         converters.put(BCObjectIdentifiers.lightsaberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem128r3, new SABERConverter());
@@ -128,6 +130,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhrss701, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
+        converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
+        converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
+        converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
     }
 
     /**
@@ -435,6 +440,20 @@ public class PublicKeyFactory
             FalconParameters falconParams = Utils.falconParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new FalconPublicKeyParameters(falconParams, keyEnc);
+        }
+    }
+
+    private static class KyberConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new KyberPublicKeyParameters(kyberParams, keyEnc);
         }
     }
 }
