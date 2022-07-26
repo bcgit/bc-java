@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -226,6 +228,8 @@ public final class TwofishEngine
 
     public TwofishEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
+
         // calculate the MDS matrix
         int[] m1 = new int[2];
         int[] mX = new int[2];
@@ -285,6 +289,8 @@ public final class TwofishEngine
             default:
                 throw new IllegalArgumentException("Key length not 128/192/256 bits.");
             }
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(keyBits));
 
             this.k64Cnt = this.workingKey.length / 8;
             setKey(this.workingKey);
@@ -662,5 +668,36 @@ public final class TwofishEngine
                gSBox[ 0x001 + 2*(x & 0xff) ] ^
                gSBox[ 0x200 + 2*((x >>> 8) & 0xff) ] ^
                gSBox[ 0x201 + 2*((x >>> 16) & 0xff) ];
+    }
+
+    private class DefaultProperties
+        implements CryptoServiceProperties
+    {
+        private final int bitsOfSecurity;
+
+        public DefaultProperties(int bitsOfSecurity)
+        {
+            this.bitsOfSecurity = bitsOfSecurity;
+        }
+
+        public int bitsOfSecurity()
+        {
+            return bitsOfSecurity;
+        }
+
+        public String getServiceName()
+        {
+            return getAlgorithmName();
+        }
+
+        public Purpose getPurpose()
+        {
+            if (workingKey == null)
+            {
+                return Purpose.BOTH;
+            }
+
+            return encrypting ? Purpose.ENCRYPTION : Purpose.DECRYPTION;
+        }
     }
 }
