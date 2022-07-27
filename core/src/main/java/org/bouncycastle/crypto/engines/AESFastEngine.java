@@ -1007,7 +1007,11 @@ public class AESFastEngine
     {
         public int bitsOfSecurity()
         {
-            return 20;
+            if (WorkingKey == null)
+            {
+                return 256;
+            }
+            return (WorkingKey.length -7) << 5;
         }
 
         public String getServiceName()
