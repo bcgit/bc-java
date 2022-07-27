@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -442,9 +443,9 @@ public final class BouncyCastleProvider extends Provider
             return name;
         }
 
-        public Purpose getPurpose()
+        public CryptoServicePurpose getPurpose()
         {
-            return Purpose.BOTH;
+            return CryptoServicePurpose.ALL;
         }
     }
 }

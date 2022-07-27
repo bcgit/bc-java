@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.MemoableResetException;
 import org.bouncycastle.util.Pack;
@@ -19,6 +22,11 @@ public class SHA512tDigest
      */
     public SHA512tDigest(int bitLength)
     {
+        this(bitLength, CryptoServicePurpose.ALL);
+    }
+
+    public SHA512tDigest(int bitLength, CryptoServicePurpose purpose)
+    {
         if (bitLength >= 512)
         {
             throw new IllegalArgumentException("bitLength cannot be >= 512");
@@ -36,6 +44,8 @@ public class SHA512tDigest
 
         this.digestLength = bitLength / 8;
 
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         tIvGenerate(digestLength * 8);
 
         reset();
@@ -51,18 +61,23 @@ public class SHA512tDigest
 
         this.digestLength = t.digestLength;
 
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         reset(t);
     }
 
     public SHA512tDigest(byte[] encodedState)
     {
-        this(readDigestLength(encodedState));
+        this(readDigestLength(encodedState), CryptoServicePurpose.values()[encodedState[encodedState.length - 1]]);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         restoreState(encodedState);
     }
 
     private static int readDigestLength(byte[] encodedState)
     {
-        return Pack.bigEndianToInt(encodedState, encodedState.length - 4);
+        return Pack.bigEndianToInt(encodedState, encodedState.length - 5);
     }
 
     public String getAlgorithmName()
@@ -218,10 +233,22 @@ public class SHA512tDigest
     public byte[] getEncodedState()
     {
         final int baseSize = getEncodedStateSize();
-        byte[] encoded = new byte[baseSize + 4];
+        byte[] encoded = new byte[baseSize + 4 + 1];
         populateState(encoded);
         Pack.intToBigEndian(digestLength * 8, encoded, baseSize);
+
+        encoded[encoded.length - 1] = (byte)purpose.ordinal();
+
         return encoded;
     }
 
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        if (digestLength < 32)
+        {
+            return Utils.getDefaultProperties(this, 192, purpose);
+        }
+
+        return Utils.getDefaultProperties(this, 256, purpose);
+    }
 }

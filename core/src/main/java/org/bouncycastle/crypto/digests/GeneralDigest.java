@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
@@ -13,6 +15,8 @@ public abstract class GeneralDigest
 {
     private static final int BYTE_LENGTH = 64;
 
+    protected final CryptoServicePurpose purpose;
+
     private final byte[]  xBuf = new byte[4];
     private int           xBufOff;
 
@@ -23,6 +27,13 @@ public abstract class GeneralDigest
      */
     protected GeneralDigest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    protected GeneralDigest(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+
         xBufOff = 0;
     }
 
@@ -33,11 +44,16 @@ public abstract class GeneralDigest
      */
     protected GeneralDigest(GeneralDigest t)
     {
+        this.purpose = t.purpose;
+
         copyIn(t);
     }
 
     protected GeneralDigest(byte[] encodedState)
     {
+        CryptoServicePurpose[] values = CryptoServicePurpose.values();
+        this.purpose = values[encodedState[encodedState.length - 1]];
+
         System.arraycopy(encodedState, 0, xBuf, 0, xBuf.length);
         xBufOff = Pack.bigEndianToInt(encodedState, 4);
         byteCount = Pack.bigEndianToLong(encodedState, 8);
@@ -157,4 +173,6 @@ public abstract class GeneralDigest
     protected abstract void processLength(long bitLength);
 
     protected abstract void processBlock();
+
+    protected abstract CryptoServiceProperties cryptoServiceProperties();
 }

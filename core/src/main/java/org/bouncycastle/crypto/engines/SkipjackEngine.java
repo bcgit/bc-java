@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -280,14 +281,14 @@ public class SkipjackEngine
             return getAlgorithmName();
         }
 
-        public Purpose getPurpose()
+        public CryptoServicePurpose getPurpose()
         {
             if (key0 == null)
             {
-                return Purpose.BOTH;
+                return CryptoServicePurpose.ALL;
             }
 
-            return encrypting ? Purpose.ENCRYPTION : Purpose.DECRYPTION;
+            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
         }
     }
 }

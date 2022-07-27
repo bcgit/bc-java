@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Xof;
 
 
@@ -29,6 +31,11 @@ public class SHAKEDigest
         this(128);
     }
 
+    public SHAKEDigest(CryptoServicePurpose purpose)
+    {
+        this(128, purpose);
+    }
+
     /**
      * Base constructor.
      *
@@ -36,7 +43,12 @@ public class SHAKEDigest
      */
     public SHAKEDigest(int bitLength)
     {
-        super(checkBitLength(bitLength));
+        super(checkBitLength(bitLength), CryptoServicePurpose.ALL);
+    }
+
+    public SHAKEDigest(int bitLength, CryptoServicePurpose purpose)
+    {
+        super(checkBitLength(bitLength), purpose);
     }
 
     /**
@@ -123,5 +135,10 @@ public class SHAKEDigest
         reset();
 
         return outLen;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, purpose);
     }
 }
