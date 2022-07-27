@@ -594,8 +594,9 @@ private static final int[] Tinv0 =
         public int bitsOfSecurity()
         {
             if (WorkingKey == null)
-                return 128;
-            //TODO: Check security for aes using precomputed tables
+            {
+                return 256;
+            }
             return (WorkingKey.length -7) << 5;
         }
 
