@@ -483,7 +483,9 @@ public class AESLightEngine
         public int bitsOfSecurity()
         {
             if (WorkingKey == null)
-                return 128;
+            {
+                return 256;
+            }
             return (WorkingKey.length -7) << 5;
         }
 
