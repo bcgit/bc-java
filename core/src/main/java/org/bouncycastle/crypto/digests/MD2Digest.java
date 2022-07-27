@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Memoable;
 
 /**
@@ -11,6 +13,7 @@ public class MD2Digest
     implements ExtendedDigest, Memoable
 {
     private static final int DIGEST_LENGTH = 16;
+    private final CryptoServicePurpose purpose;
 
     /* X buffer */
     private byte[]   X = new byte[48];
@@ -24,11 +27,24 @@ public class MD2Digest
 
     public MD2Digest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    public MD2Digest(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, DIGEST_LENGTH * 4, purpose));
+
         reset();
     }
 
     public MD2Digest(MD2Digest t)
     {
+        this.purpose = t.purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, DIGEST_LENGTH * 4, purpose));
+
         copyIn(t);
     }
 

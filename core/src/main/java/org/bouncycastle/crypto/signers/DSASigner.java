@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSAExt;
 import org.bouncycastle.crypto.params.DSAKeyParameters;
@@ -215,9 +216,9 @@ public class DSASigner
             return "DSA";
         }
 
-        public Purpose getPurpose()
+        public CryptoServicePurpose getPurpose()
         {
-            return forSigning ? Purpose.SIGNING : Purpose.VERIFYING;
+            return forSigning ? CryptoServicePurpose.SIGNING : CryptoServicePurpose.VERIFYING;
         }
     }
 }

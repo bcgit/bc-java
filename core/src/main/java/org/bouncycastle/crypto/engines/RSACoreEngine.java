@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -254,22 +255,22 @@ class RSACoreEngine
             return "RSA";
         }
 
-        public Purpose getPurpose()
+        public CryptoServicePurpose getPurpose()
         {
             if (isSigning)
             {
-                return Purpose.SIGNING;
+                return CryptoServicePurpose.SIGNING;
             }
             if (isEncryption)
             {
-                return Purpose.ENCRYPTION;
+                return CryptoServicePurpose.ENCRYPTION;
             }
             if (isVerifying)
             {
-                return Purpose.VERIFYING;
+                return CryptoServicePurpose.VERIFYING;
             }
 
-            return Purpose.DECRYPTION;
+            return CryptoServicePurpose.DECRYPTION;
         }
     }
 }

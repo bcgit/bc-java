@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
@@ -25,6 +28,8 @@ public class DSTU7564Digest
     /* Number of rounds for 1024-bit state */
     private static final int NR_1024 = 14;
 
+    private final CryptoServicePurpose purpose;
+
     private int hashSize;
     private int blockSize;
 
@@ -42,7 +47,11 @@ public class DSTU7564Digest
 
     public DSTU7564Digest(DSTU7564Digest digest)
     {
+        this.purpose = digest.purpose;
+
         copyIn(digest);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
     private void copyIn(DSTU7564Digest digest)
@@ -71,6 +80,13 @@ public class DSTU7564Digest
 
     public DSTU7564Digest(int hashSizeBits)
     {
+        this(hashSizeBits, CryptoServicePurpose.ALL);
+    }
+
+    public DSTU7564Digest(int hashSizeBits, CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+        
         if (hashSizeBits == 256 || hashSizeBits == 384 || hashSizeBits == 512)
         {
             this.hashSize = hashSizeBits >>> 3;
@@ -100,6 +116,8 @@ public class DSTU7564Digest
         this.tempState2 = new long[columns];
 
         this.buf = new byte[blockSize];
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
     public String getAlgorithmName()
@@ -573,5 +591,10 @@ public class DSTU7564Digest
         DSTU7564Digest d = (DSTU7564Digest)other;
 
         copyIn(d);
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, 256, purpose);
     }
 }
