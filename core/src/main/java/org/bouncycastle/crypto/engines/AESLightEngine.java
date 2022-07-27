@@ -1,10 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
 
@@ -321,6 +317,7 @@ public class AESLightEngine
      */
     public AESLightEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -339,6 +336,9 @@ public class AESLightEngine
         {
             WorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
             this.forEncryption = forEncryption;
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+
             return;
         }
 
@@ -475,5 +475,26 @@ public class AESLightEngine
     public BlockCipher newInstance()
     {
         return new AESLightEngine();
+    }
+
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            if (WorkingKey == null)
+                return 128;
+            return (WorkingKey.length -7) << 5;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
+
     }
 }

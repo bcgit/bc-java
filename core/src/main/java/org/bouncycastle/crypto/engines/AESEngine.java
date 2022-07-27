@@ -1,10 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -424,6 +420,7 @@ private static final int[] Tinv0 =
      */
     public AESEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -450,6 +447,9 @@ private static final int[] Tinv0 =
             {
                 s = Arrays.clone(Si);
             }
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+
             return;
         }
 
@@ -587,4 +587,27 @@ private static final int[] Tinv0 =
     {
         return new AESEngine();
     }
+
+    private class DefaultProperties
+        implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            if (WorkingKey == null)
+                return 128;
+            //TODO: Check security for aes using precomputed tables
+            return (WorkingKey.length -7) << 5;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
+
+    }
+
 }
