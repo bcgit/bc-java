@@ -6,8 +6,7 @@ import java.util.logging.Level;
 
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServiceProperties;
-
-import static org.bouncycastle.crypto.CryptoServiceProperties.Purpose.BOTH;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 
 /**
  * Legacy bits of security constraint. By default, legacy algorithms are all acceptable but can only
@@ -78,19 +77,19 @@ public class LegacyBitsOfSecurityConstraint
             return;
         }
 
-        CryptoServiceProperties.Purpose purpose = service.getPurpose();
+        CryptoServicePurpose purpose = service.getPurpose();
 
-        // BOTH is allowed as we assume verifying/encryption will be blocked later.
+        // ALL is allowed as we assume verifying/encryption will be blocked later.
         switch (purpose)
         {
-        case BOTH:
+        case ALL:
         case VERIFYING:
         case DECRYPTION:
             if (service.bitsOfSecurity() < legacyRequiredBitsOfSecurity)
             {
                 throw new CryptoServiceConstraintsException("service does not provide " + requiredBitsOfSecurity + " bits of security only " + service.bitsOfSecurity());
             }
-            if (purpose != BOTH && LOG.isLoggable(Level.FINE))
+            if (purpose != CryptoServicePurpose.ALL && LOG.isLoggable(Level.FINE))
             {
                 LOG.fine("usage of legacy cryptography service for algorithm " + service.getServiceName());
             }

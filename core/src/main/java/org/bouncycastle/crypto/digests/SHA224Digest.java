@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -32,6 +35,18 @@ public class SHA224Digest
      */
     public SHA224Digest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    /**
+     * Standard constructor, with purpose
+     */
+    public SHA224Digest(CryptoServicePurpose purpose)
+    {
+        super(purpose);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         reset();
     }
 
@@ -42,6 +57,8 @@ public class SHA224Digest
     public SHA224Digest(SHA224Digest t)
     {
         super(t);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
 
         doCopy(t);
     }
@@ -71,6 +88,8 @@ public class SHA224Digest
     public SHA224Digest(byte[] encodedState)
     {
         super(encodedState);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
 
         H1 = Pack.bigEndianToInt(encodedState, 16);
         H2 = Pack.bigEndianToInt(encodedState, 20);
@@ -326,7 +345,7 @@ public class SHA224Digest
 
     public byte[] getEncodedState()
     {
-        byte[] state = new byte[52 + xOff * 4];
+        byte[] state = new byte[52 + xOff * 4 + 1];
 
         super.populateState(state);
 
@@ -345,7 +364,14 @@ public class SHA224Digest
             Pack.intToBigEndian(X[i], state, 52 + (i * 4));
         }
 
+        state[state.length - 1] = (byte)purpose.ordinal();
+
         return state;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, 192, purpose);
     }
 }
 

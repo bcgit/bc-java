@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -18,6 +21,7 @@ public class KeccakDigest
         0x000000008000808bL, 0x800000000000008bL, 0x8000000000008089L, 0x8000000000008003L, 0x8000000000008002L,
         0x8000000000000080L, 0x000000000000800aL, 0x800000008000000aL, 0x8000000080008081L, 0x8000000000008080L,
         0x0000000080000001L, 0x8000000080008008L };
+    protected final CryptoServicePurpose purpose;
 
     protected long[] state = new long[25];
     protected byte[] dataQueue = new byte[192];
@@ -28,22 +32,38 @@ public class KeccakDigest
 
     public KeccakDigest()
     {
-        this(288);
+        this(288, CryptoServicePurpose.ALL);
+    }
+
+    public KeccakDigest(CryptoServicePurpose purpose)
+    {
+        this(288, purpose);
     }
 
     public KeccakDigest(int bitLength)
     {
+        this(bitLength, CryptoServicePurpose.ALL);
+    }
+
+    public KeccakDigest(int bitLength, CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
         init(bitLength);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
     public KeccakDigest(KeccakDigest source)
     {
+        this.purpose = source.purpose;
         System.arraycopy(source.state, 0, this.state, 0, source.state.length);
         System.arraycopy(source.dataQueue, 0, this.dataQueue, 0, source.dataQueue.length);
         this.rate = source.rate;
         this.bitsInQueue = source.bitsInQueue;
         this.fixedOutputLength = source.fixedOutputLength;
         this.squeezing = source.squeezing;
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
     }
 
     public String getAlgorithmName()
@@ -414,5 +434,15 @@ public class KeccakDigest
         A[10] = a10; A[11] = a11; A[12] = a12; A[13] = a13; A[14] = a14;
         A[15] = a15; A[16] = a16; A[17] = a17; A[18] = a18; A[19] = a19;
         A[20] = a20; A[21] = a21; A[22] = a22; A[23] = a23; A[24] = a24;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        if (getDigestSize() < 32)
+        {
+            return Utils.getDefaultProperties(this, 192, purpose);
+        }
+
+        return Utils.getDefaultProperties(this, 256, purpose);
     }
 }

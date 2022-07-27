@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -20,7 +21,20 @@ public class CSHAKEDigest
      */
     public CSHAKEDigest(int bitLength, byte[] N, byte[] S)
     {
-        super(bitLength);
+        this(bitLength, CryptoServicePurpose.ALL, N, S);
+    }
+
+    /**
+     * Base constructor.
+     *
+     * @param bitLength security strength (in bits) of the underlying SHAKE function, 128 or 256.
+     * @param purpose   the purpose for constructing the CSHAKEDigest
+     * @param N         the function name string, note this is reserved for use by NIST. Avoid using it if not required.
+     * @param S         the customization string - available for local use.
+     */
+    public CSHAKEDigest(int bitLength, CryptoServicePurpose purpose, byte[] N, byte[] S)
+    {
+        super(bitLength, purpose);
 
         if ((N == null || N.length == 0) && (S == null || S.length == 0))
         {

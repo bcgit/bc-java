@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -23,6 +26,15 @@ public class MD5Digest
      */
     public MD5Digest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    public MD5Digest(CryptoServicePurpose purpose)
+    {
+        super(purpose);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, DIGEST_LENGTH * 4, purpose));
+
         reset();
     }
 
@@ -325,7 +337,7 @@ public class MD5Digest
 
     public byte[] getEncodedState()
     {
-        byte[] state = new byte[36 + xOff * 4];
+        byte[] state = new byte[36 + xOff * 4 + 1];
 
         super.populateState(state);
 
@@ -340,6 +352,13 @@ public class MD5Digest
             Pack.intToBigEndian(X[i], state, 36 + (i * 4));
         }
 
+        state[state.length - 1] = (byte)purpose.ordinal();
+
         return state;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, purpose);
     }
 }

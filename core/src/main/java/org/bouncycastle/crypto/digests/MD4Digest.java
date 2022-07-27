@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.digests;
 
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -21,21 +24,25 @@ public class MD4Digest
     private int[]   X = new int[16];
     private int     xOff;
 
-    /**
-     * Standard constructor
-     */
     public MD4Digest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    public MD4Digest(CryptoServicePurpose purpose)
+    {
+        super(purpose);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, DIGEST_LENGTH * 4, purpose));
+
         reset();
     }
 
-    /**
-     * Copy constructor.  This will copy the state of the provided
-     * message digest.
-     */
     public MD4Digest(MD4Digest t)
     {
-        super(t);
+        super(t.purpose);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, DIGEST_LENGTH * 4, purpose));
 
         copyIn(t);
     }
@@ -272,5 +279,10 @@ public class MD4Digest
         MD4Digest d = (MD4Digest)other;
 
         copyIn(d);
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, purpose);
     }
 }

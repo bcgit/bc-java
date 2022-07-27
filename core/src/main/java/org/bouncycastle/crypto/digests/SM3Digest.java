@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -46,12 +49,23 @@ public class SM3Digest
         }
     }
 
-
     /**
      * Standard constructor
      */
     public SM3Digest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    /**
+     * Standard constructor, with Purpose
+     */
+    public SM3Digest(CryptoServicePurpose purpose)
+    {
+        super(purpose);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         reset();
     }
 
@@ -62,6 +76,8 @@ public class SM3Digest
     public SM3Digest(SM3Digest t)
     {
         super(t);
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
 
         copyIn(t);
     }
@@ -82,7 +98,6 @@ public class SM3Digest
     {
         return DIGEST_LENGTH;
     }
-
 
     public Memoable copy()
     {
@@ -309,5 +324,10 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
         this.V[7] ^= H;
 
         this.xOff = 0;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, 256, purpose);
     }
 }

@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
@@ -543,6 +546,8 @@ public class TigerDigest
 
     private static final int    DIGEST_LENGTH = 24;
 
+    private final CryptoServicePurpose purpose;
+
     //
     // registers
     //
@@ -563,6 +568,18 @@ public class TigerDigest
      */
     public TigerDigest()
     {
+        this(CryptoServicePurpose.ALL);
+    }
+
+    /**
+     * Standard constructor, with Purpose
+     */
+    public TigerDigest(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         reset();
     }
 
@@ -572,6 +589,10 @@ public class TigerDigest
      */
     public TigerDigest(TigerDigest t)
     {
+        this.purpose = t.purpose;
+
+        CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
+
         this.reset(t);
     }
 
@@ -852,5 +873,10 @@ public class TigerDigest
         bOff = t.bOff;
 
         byteCount = t.byteCount;
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, 256, purpose);
     }
 }

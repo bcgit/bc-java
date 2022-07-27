@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -477,5 +478,10 @@ public class RIPEMD256Digest
         RIPEMD256Digest d = (RIPEMD256Digest)other;
 
         copyIn(d);
+    }
+
+    protected CryptoServiceProperties cryptoServiceProperties()
+    {
+        return Utils.getDefaultProperties(this, purpose);
     }
 }
