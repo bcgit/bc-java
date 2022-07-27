@@ -47,6 +47,6 @@ public class BcSessionKeyDataDecryptorFactory
     public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
         throws PGPException
     {
-        return null;
+        return BcUtil.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
     }
 }
