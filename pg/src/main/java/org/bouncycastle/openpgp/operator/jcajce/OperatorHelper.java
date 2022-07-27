@@ -389,7 +389,7 @@ class OperatorHelper
             this.in = in;
             this.iv = iv;
             this.chunkLength = (int)getChunkLength(chunkSize);
-            this.buf = new byte[chunkLength + 16];
+            this.buf = new byte[chunkLength + 32]; // allow room for chunk tag and message tag
             this.c = c;
             this.secretKey = secretKey;
 
@@ -401,8 +401,8 @@ class OperatorHelper
             aaData[3] = (byte)aeadAlgorithm;
             aaData[4] = (byte)chunkSize;
 
-            // prime with tag len bytes.
-            Streams.readFully(in, buf, 0, 16);
+            // prime with 2 * tag len bytes.
+            Streams.readFully(in, buf, 0, 32);
 
             // load the first block
             this.data = readBlock();
@@ -482,11 +482,12 @@ class OperatorHelper
         {
             // we initialise with the first 16 bytes as there is an additional 16 bytes following
             // the last chunk (which may not be the exact chunklength).
-            int dataLen = Streams.readFully(in, buf, 16, chunkLength);
+            int dataLen = Streams.readFully(in, buf, 32, chunkLength);
             if (dataLen == 0)
             {
                 return null;
             }
+
             byte[] adata = new byte[13];
             System.arraycopy(aaData, 0, adata, 0, aaData.length);
 
@@ -499,17 +500,17 @@ class OperatorHelper
 
                 c.updateAAD(adata);
 
-                decData = c.doFinal(buf, 0, dataLen);
+                decData = c.doFinal(buf, 0, dataLen + 16);
             }
             catch (GeneralSecurityException e)
             {
-                throw new IOException("exception processing block: " + e.getMessage());
+                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
             }
 
             totalBytes += decData.length;
             chunkIndex++;
 
-            System.arraycopy(buf, dataLen, buf, 0, 16); // copy back the "tag"
+            System.arraycopy(buf, dataLen + 16, buf, 0, 16); // copy back the "tag"
             
             if (dataLen != chunkLength)     // it's our last block
             {
@@ -531,6 +532,10 @@ class OperatorHelper
                 {
                     throw new IOException("exception processing final tag: " + e.getMessage());
                 }
+            }
+            else
+            {
+                Streams.readFully(in, buf, 16, 16);   // read the next tag bytes
             }
 
             return decData;
@@ -556,7 +561,7 @@ class OperatorHelper
             nonce[index++] ^= (byte)(chunkIndex >> 24);
             nonce[index++] ^= (byte)(chunkIndex >> 16);
             nonce[index++] ^= (byte)(chunkIndex >> 8);
-            nonce[index++] ^= (byte)(chunkIndex);
+            nonce[index] ^= (byte)(chunkIndex);
         }
     }
 }
