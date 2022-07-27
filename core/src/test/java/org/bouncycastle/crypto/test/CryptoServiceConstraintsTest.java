@@ -20,14 +20,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.engines.RSAEngine;
-import org.bouncycastle.crypto.engines.SerpentEngine;
-import org.bouncycastle.crypto.engines.SkipjackEngine;
-import org.bouncycastle.crypto.engines.TnepresEngine;
-import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -67,6 +60,10 @@ public class CryptoServiceConstraintsTest
         testSHA512();
         testSHA3();
         testDSTU7564();
+        testAES();
+        testAESFast();
+        testAESLight();
+        testARIA();
     }
 
     private void test112bits()
@@ -315,6 +312,105 @@ public class CryptoServiceConstraintsTest
         }
 
         engine.init(false, new KeyParameter(new byte[10]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testAES()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        AESEngine engine = new AESEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+        engine.init(false, new KeyParameter(new byte[24]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testAESFast()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128));
+
+        AESFastEngine engine = new AESFastEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 20", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testAESLight()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        AESLightEngine engine = new AESLightEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+        engine.init(false, new KeyParameter(new byte[24]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testARIA()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        AESEngine engine = new AESEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+        engine.init(false, new KeyParameter(new byte[24]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
