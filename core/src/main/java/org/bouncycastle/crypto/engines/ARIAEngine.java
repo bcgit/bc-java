@@ -1,9 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -143,6 +140,12 @@ public class ARIAEngine
     private byte[][] roundKeys;
     //private boolean forEncryption;
 
+    boolean forEncryption;
+    public ARIAEngine()
+    {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+    }
+
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
     {
         if (!(params instanceof KeyParameter))
@@ -151,8 +154,9 @@ public class ARIAEngine
                 "invalid parameter passed to ARIA init - " + params.getClass().getName());
         }
 
-        //this.forEncryption = forEncryption;
+        this.forEncryption = forEncryption;
         this.roundKeys = keySchedule(forEncryption, ((KeyParameter)params).getKey());
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     public String getAlgorithmName()
@@ -420,5 +424,27 @@ public class ARIAEngine
         {
             z[i] ^= x[i];
         }
+    }
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            return roundKeys.length > 13 ?
+                    (roundKeys.length > 15 ? 256
+                            : 192)
+                    : 128;
+
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
+
     }
 }
