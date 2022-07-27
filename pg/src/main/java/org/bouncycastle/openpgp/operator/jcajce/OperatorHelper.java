@@ -197,7 +197,6 @@ class OperatorHelper
 
             final Cipher c = createAEADCipher(encAlgorithm, aeadAlgorithm);
 
-            // TODO: get this working for more than one chunk!
             return new PGPDataDecryptor()
             {
                 public InputStream getInputStream(InputStream in)
