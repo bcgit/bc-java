@@ -20,7 +20,17 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESLightEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
+import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.engines.SkipjackEngine;
+import org.bouncycastle.crypto.engines.TnepresEngine;
+import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -344,7 +354,7 @@ public class CryptoServiceConstraintsTest
 
     private void testAESFast()
     {
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128));
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
 
         AESFastEngine engine = new AESFastEngine();
         try
@@ -354,7 +364,7 @@ public class CryptoServiceConstraintsTest
         }
         catch (CryptoServiceConstraintsException e)
         {
-            isEquals("service does not provide 128 bits of security only 20", e.getMessage());
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
         }
 
 
