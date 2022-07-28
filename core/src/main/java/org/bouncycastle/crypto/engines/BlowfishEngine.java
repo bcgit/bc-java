@@ -1,9 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -315,6 +312,7 @@ implements BlockCipher
         S2 = new int[SBOX_SK];
         S3 = new int[SBOX_SK];
         P = new int[P_SZ];
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -335,6 +333,7 @@ implements BlockCipher
             this.workingKey = ((KeyParameter)params).getKey();
             setKey(this.workingKey);
 
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
             return;
         }
 
@@ -580,4 +579,24 @@ implements BlockCipher
         b[offset + 1] = (byte)(in >> 16);
         b[offset]     = (byte)(in >> 24);
     }
+
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            return 64;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
+
+    }
+
 }
