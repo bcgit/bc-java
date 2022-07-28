@@ -1,9 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -313,6 +310,7 @@ public class CAST5Engine
 
     public CAST5Engine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     /**
@@ -333,6 +331,7 @@ public class CAST5Engine
             _workingKey = ((KeyParameter)params).getKey();
 
             setKey(_workingKey);
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
 
             return;
         }
@@ -825,5 +824,27 @@ public class CAST5Engine
             ((b[i+1] & 0xff) << 16) |
             ((b[i+2] & 0xff) << 8) |
             ((b[i+3] & 0xff));
+    }
+
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            if (_workingKey == null)
+            {
+                return 256;
+            }
+            return (_workingKey.length -1) * 8;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return _encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
     }
 }

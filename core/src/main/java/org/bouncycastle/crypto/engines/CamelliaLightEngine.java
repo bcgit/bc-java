@@ -1,10 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -16,8 +12,9 @@ public class CamelliaLightEngine
 {
     private static final int BLOCK_SIZE = 16;
     private static final int MASK8 = 0xff;
-    private boolean initialized;
-    private boolean _keyis128;
+    private boolean initialized = false;
+    private int _keySize;
+    private boolean forEncryption;
 
     private int[] subkey = new int[24 * 4];
     private int[] kw = new int[4 * 2]; // for whitening
@@ -265,11 +262,11 @@ public class CamelliaLightEngine
         int[] ka = new int[4];
         int[] kb = new int[4];
         int[] t = new int[4];
+        _keySize = key.length;
 
         switch (key.length)
         {
             case 16:
-                _keyis128 = true;
                 k[0] = bytes2int(key, 0);
                 k[1] = bytes2int(key, 4);
                 k[2] = bytes2int(key, 8);
@@ -285,7 +282,6 @@ public class CamelliaLightEngine
                 k[5] = bytes2int(key, 20);
                 k[6] = ~k[4];
                 k[7] = ~k[5];
-                _keyis128 = false;
                 break;
             case 32:
                 k[0] = bytes2int(key, 0);
@@ -296,7 +292,6 @@ public class CamelliaLightEngine
                 k[5] = bytes2int(key, 20);
                 k[6] = bytes2int(key, 24);
                 k[7] = bytes2int(key, 28);
-                _keyis128 = false;
                 break;
             default:
                 throw new
@@ -315,7 +310,7 @@ public class CamelliaLightEngine
         }
         camelliaF2(ka, SIGMA, 4);
 
-        if (_keyis128)
+        if (_keySize == 16)
         {
             if (forEncryption)
             {
@@ -536,6 +531,7 @@ public class CamelliaLightEngine
 
     public CamelliaLightEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     public String getAlgorithmName()
@@ -557,6 +553,8 @@ public class CamelliaLightEngine
 
         setKey(forEncryption, ((KeyParameter)params).getKey());
         initialized = true;
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
     }
 
     public int processBlock(byte[] in, int inOff,
@@ -579,7 +577,7 @@ public class CamelliaLightEngine
             throw new OutputLengthException("output buffer too short");
         }
         
-        if (_keyis128)
+        if (_keySize == 16)
         {
             return processBlock128(in, inOff, out, outOff);
         }
@@ -596,5 +594,23 @@ public class CamelliaLightEngine
     public BlockCipher newInstance()
     {
         return new CamelliaLightEngine();
+    }
+
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        public int bitsOfSecurity()
+        {
+            return _keySize * 8;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+        }
     }
 }
