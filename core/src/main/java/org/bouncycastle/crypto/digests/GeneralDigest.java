@@ -27,7 +27,7 @@ public abstract class GeneralDigest
      */
     protected GeneralDigest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     protected GeneralDigest(CryptoServicePurpose purpose)

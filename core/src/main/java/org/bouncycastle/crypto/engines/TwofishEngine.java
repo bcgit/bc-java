@@ -695,7 +695,7 @@ public final class TwofishEngine
         {
             if (workingKey == null)
             {
-                return CryptoServicePurpose.ALL;
+                return CryptoServicePurpose.ANY;
             }
 
             return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;

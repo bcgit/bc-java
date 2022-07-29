@@ -54,7 +54,7 @@ public class SM3Digest
      */
     public SM3Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

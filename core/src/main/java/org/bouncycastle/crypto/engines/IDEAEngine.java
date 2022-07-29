@@ -1,6 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -28,7 +34,7 @@ public class IDEAEngine
      */
     public IDEAEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(128));
     }
 
     /**
@@ -377,6 +383,11 @@ public class IDEAEngine
         }
         public CryptoServicePurpose getPurpose()
         {
+            if (workingKey == null)
+            {
+                return CryptoServicePurpose.ANY;
+            }
+
             return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
         }
     }

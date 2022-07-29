@@ -285,7 +285,7 @@ public class SkipjackEngine
         {
             if (key0 == null)
             {
-                return CryptoServicePurpose.ALL;
+                return CryptoServicePurpose.ANY;
             }
 
             return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;

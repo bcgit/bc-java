@@ -82,14 +82,14 @@ public class LegacyBitsOfSecurityConstraint
         // ALL is allowed as we assume verifying/encryption will be blocked later.
         switch (purpose)
         {
-        case ALL:
+        case ANY:
         case VERIFYING:
         case DECRYPTION:
             if (service.bitsOfSecurity() < legacyRequiredBitsOfSecurity)
             {
                 throw new CryptoServiceConstraintsException("service does not provide " + requiredBitsOfSecurity + " bits of security only " + service.bitsOfSecurity());
             }
-            if (purpose != CryptoServicePurpose.ALL && LOG.isLoggable(Level.FINE))
+            if (purpose != CryptoServicePurpose.ANY && LOG.isLoggable(Level.FINE))
             {
                 LOG.fine("usage of legacy cryptography service for algorithm " + service.getServiceName());
             }

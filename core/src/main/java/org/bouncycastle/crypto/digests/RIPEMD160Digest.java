@@ -25,7 +25,7 @@ public class RIPEMD160Digest
      */
     public RIPEMD160Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**
