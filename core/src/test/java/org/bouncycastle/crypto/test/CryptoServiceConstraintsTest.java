@@ -20,17 +20,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.engines.AESLightEngine;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.engines.RSAEngine;
-import org.bouncycastle.crypto.engines.SerpentEngine;
-import org.bouncycastle.crypto.engines.SkipjackEngine;
-import org.bouncycastle.crypto.engines.TnepresEngine;
-import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -74,6 +64,11 @@ public class CryptoServiceConstraintsTest
         testAESFast();
         testAESLight();
         testARIA();
+        testIDEA();
+//        testCAST5();
+//        testCamelliaLight();
+//        testCamellia();
+//        testBlowfish();
     }
 
     private void test112bits()
@@ -419,6 +414,120 @@ public class CryptoServiceConstraintsTest
         engine.init(true, new KeyParameter(new byte[24]));
         engine.init(false, new KeyParameter(new byte[24]));
 
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testBlowfish()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        BlowfishEngine engine = new BlowfishEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+        engine.init(false, new KeyParameter(new byte[24]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testCamellia()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
+        CamelliaEngine engine = new CamelliaEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testCamelliaLight()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
+        CamelliaLightEngine engine = new CamelliaLightEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testCAST5()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
+        CAST5Engine engine = new CAST5Engine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testIDEA()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
+        IDEAEngine engine = new IDEAEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+
+        engine.init(false, new KeyParameter(new byte[16]));
         engine.init(true, new KeyParameter(new byte[32]));
         engine.init(false, new KeyParameter(new byte[32]));
 
