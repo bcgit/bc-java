@@ -15,9 +15,9 @@ import org.bouncycastle.oer.its.etsi103097.extension.EtsiOriginatingHeaderInfoEx
 /**
  * ContributedExtensionBlock ::= SEQUENCE {
  * contributorId IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION.
- * &id({Ieee1609Dot2HeaderInfoContributedExtensions}),
+ * &amp;id({Ieee1609Dot2HeaderInfoContributedExtensions}),
  * extns   SEQUENCE (SIZE(1..MAX)) OF IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION.
- * &Extn({Ieee1609Dot2HeaderInfoContributedExtensions}{@.contributorId})
+ * &amp;Extn({Ieee1609Dot2HeaderInfoContributedExtensions}{&#64;.contributorId})
  * }
  */
 public class ContributedExtensionBlock

@@ -45,7 +45,7 @@ public interface PGPDataEncryptorBuilder
 
     /**
      * Sets whether or not the resulting encrypted data will be protected using an AEAD mode.
-     * The chunkSize is used as a power of two, result in blocks (1 << chunkSize) containing data
+     * The chunkSize is used as a power of two, result in blocks (1 &lt;&lt; chunkSize) containing data
      * with an extra 16 bytes for the tag. The minimum chunkSize is 6.
      *
      * @param aeadAlgorithm the AEAD mode to use.
