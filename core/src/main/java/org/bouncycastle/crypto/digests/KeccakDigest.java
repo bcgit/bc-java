@@ -32,7 +32,7 @@ public class KeccakDigest
 
     public KeccakDigest()
     {
-        this(288, CryptoServicePurpose.ALL);
+        this(288, CryptoServicePurpose.ANY);
     }
 
     public KeccakDigest(CryptoServicePurpose purpose)
@@ -42,7 +42,7 @@ public class KeccakDigest
 
     public KeccakDigest(int bitLength)
     {
-        this(bitLength, CryptoServicePurpose.ALL);
+        this(bitLength, CryptoServicePurpose.ANY);
     }
 
     public KeccakDigest(int bitLength, CryptoServicePurpose purpose)

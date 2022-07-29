@@ -43,7 +43,7 @@ public class SHAKEDigest
      */
     public SHAKEDigest(int bitLength)
     {
-        super(checkBitLength(bitLength), CryptoServicePurpose.ALL);
+        super(checkBitLength(bitLength), CryptoServicePurpose.ANY);
     }
 
     public SHAKEDigest(int bitLength, CryptoServicePurpose purpose)

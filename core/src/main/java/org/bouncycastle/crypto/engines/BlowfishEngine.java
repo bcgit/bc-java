@@ -1,6 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -585,7 +591,11 @@ implements BlockCipher
     {
         public int bitsOfSecurity()
         {
-            return 64;
+            if (workingKey == null)
+            {
+                return 256;
+            }
+            return (workingKey.length > 32) ? 256 : workingKey.length * 8;
         }
 
         public String getServiceName()
@@ -594,6 +604,10 @@ implements BlockCipher
         }
         public CryptoServicePurpose getPurpose()
         {
+            if (workingKey == null)
+            {
+                return CryptoServicePurpose.ANY;
+            }
             return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
         }
 

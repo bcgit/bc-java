@@ -6,6 +6,6 @@ public enum CryptoServicePurpose
     DECRYPTION,
     SIGNING,
     VERIFYING,
-    ALL,
+    ANY,
     PRF
 }

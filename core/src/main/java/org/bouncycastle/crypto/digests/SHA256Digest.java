@@ -35,7 +35,7 @@ public class SHA256Digest
      */
     public SHA256Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

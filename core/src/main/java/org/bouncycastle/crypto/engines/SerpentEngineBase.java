@@ -515,7 +515,7 @@ public abstract class SerpentEngineBase
         {
             if (wKey == null)
             {
-                return CryptoServicePurpose.ALL;
+                return CryptoServicePurpose.ANY;
             }
 
             return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;

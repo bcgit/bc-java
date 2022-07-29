@@ -32,7 +32,7 @@ public abstract class LongDigest
      */
     protected LongDigest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

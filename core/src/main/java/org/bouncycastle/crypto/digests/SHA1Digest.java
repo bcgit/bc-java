@@ -28,7 +28,7 @@ public class SHA1Digest
      */
     public SHA1Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

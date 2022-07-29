@@ -26,7 +26,7 @@ public class MD5Digest
      */
     public MD5Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     public MD5Digest(CryptoServicePurpose purpose)

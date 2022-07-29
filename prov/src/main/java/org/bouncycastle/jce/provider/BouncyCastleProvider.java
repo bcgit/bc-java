@@ -445,7 +445,7 @@ public final class BouncyCastleProvider extends Provider
 
         public CryptoServicePurpose getPurpose()
         {
-            return CryptoServicePurpose.ALL;
+            return CryptoServicePurpose.ANY;
         }
     }
 }

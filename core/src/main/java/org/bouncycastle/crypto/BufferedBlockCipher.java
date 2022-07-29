@@ -14,8 +14,9 @@ public class BufferedBlockCipher
     protected byte[]        buf;
     protected int           bufOff;
 
-    protected boolean       forEncryption;
-    protected BlockCipher   cipher;
+    protected boolean          forEncryption;
+    protected BlockCipher      cipher;
+    protected MultiBlockCipher mbCipher;
 
     protected boolean       partialBlockOkay;
     protected boolean       pgpCFB;
@@ -37,7 +38,17 @@ public class BufferedBlockCipher
     {
         this.cipher = cipher;
 
-        buf = new byte[cipher.getBlockSize()];
+        if (cipher instanceof MultiBlockCipher)
+        {
+            this.mbCipher = (MultiBlockCipher)cipher;
+            buf = new byte[mbCipher.getMultiBlockSize()];
+        }
+        else
+        {
+            this.mbCipher = null;
+            buf = new byte[cipher.getBlockSize()];
+        }
+
         bufOff = 0;
 
         //
@@ -230,12 +241,29 @@ public class BufferedBlockCipher
             len -= gapLen;
             inOff += gapLen;
 
-            while (len > buf.length)
+            if (mbCipher != null)
             {
-                resultLen += cipher.processBlock(in, inOff, out, outOff + resultLen);
+                int blockCount = len / mbCipher.getMultiBlockSize();
 
-                len -= blockSize;
-                inOff += blockSize;
+                if (blockCount > 0)
+                {
+                    resultLen += mbCipher.processBlocks(in, inOff, blockCount, out, outOff + resultLen);
+
+                    int processed = blockCount * mbCipher.getMultiBlockSize();
+
+                    len -= processed;
+                    inOff += processed;
+                }
+            }
+            else
+            {
+                while (len > buf.length)
+                {
+                    resultLen += cipher.processBlock(in, inOff, out, outOff + resultLen);
+
+                    len -= blockSize;
+                    inOff += blockSize;
+                }
             }
         }
 

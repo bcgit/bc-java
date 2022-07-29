@@ -28,7 +28,7 @@ public class SHA384Digest
      */
     public SHA384Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**
