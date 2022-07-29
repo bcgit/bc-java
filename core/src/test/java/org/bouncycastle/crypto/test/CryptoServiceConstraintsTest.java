@@ -1,11 +1,14 @@
 package org.bouncycastle.crypto.test;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Collections;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
 import org.bouncycastle.crypto.constraints.LegacyBitsOfSecurityConstraint;
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
@@ -20,14 +23,45 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.*;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESLightEngine;
+import org.bouncycastle.crypto.engines.BlowfishEngine;
+import org.bouncycastle.crypto.engines.CAST5Engine;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
+import org.bouncycastle.crypto.engines.CamelliaLightEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
+import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.IDEAEngine;
+import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.engines.SerpentEngine;
+import org.bouncycastle.crypto.engines.SkipjackEngine;
+import org.bouncycastle.crypto.engines.TnepresEngine;
+import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.KMAC;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
+import org.bouncycastle.crypto.signers.Ed25519ctxSigner;
+import org.bouncycastle.crypto.signers.Ed25519phSigner;
+import org.bouncycastle.crypto.signers.Ed448Signer;
+import org.bouncycastle.crypto.signers.Ed448phSigner;
+import org.bouncycastle.crypto.signers.GenericSigner;
+import org.bouncycastle.crypto.signers.ISO9796d2PSSSigner;
+import org.bouncycastle.crypto.signers.ISO9796d2Signer;
+import org.bouncycastle.crypto.signers.PSSSigner;
+import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.crypto.signers.X931Signer;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -69,6 +103,7 @@ public class CryptoServiceConstraintsTest
 //        testCamelliaLight();
 //        testCamellia();
 //        testBlowfish();
+        testEdwards();
     }
 
     private void test112bits()
@@ -232,10 +267,32 @@ public class CryptoServiceConstraintsTest
             isEquals("service does not provide 112 bits of security only 80", e.getMessage());
         }
 
+        signer1024Test(pk, sk, new RSADigestSigner(new SHA256Digest()));
+        signer1024Test(pk, sk, new PSSSigner(new RSAEngine(), new SHA256Digest(), 20));
+        signer1024Test(pk, sk, new ISO9796d2PSSSigner(new RSAEngine(), new SHA256Digest(), 20));
+        signer1024Test(pk, sk, new ISO9796d2Signer(new RSAEngine(), new SHA256Digest()));
+        signer1024Test(pk, sk, new X931Signer(new RSAEngine(), new SHA256Digest()));
+        signer1024Test(pk, sk, new GenericSigner(new RSAEngine(), new SHA256Digest()));
+
         // legacy usage allowed for decryption.
         rsaEngine.init(false, sk);
 
         CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void signer1024Test(RSAKeyParameters pk, RSAKeyParameters sk, Signer signer)
+    {
+        signer.init(false, pk);  // should be allowed (legacy)
+
+        try
+        {
+            signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 112 bits of security only 80", e.getMessage());
+        }
     }
 
     private void testSerpent()
@@ -481,7 +538,6 @@ public class CryptoServiceConstraintsTest
         {
             isEquals("service does not provide 256 bits of security only 128", e.getMessage());
         }
-
 
         engine.init(false, new KeyParameter(new byte[16]));
 
@@ -800,6 +856,42 @@ public class CryptoServiceConstraintsTest
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
+    private void testEdwards()
+    {
+        SecureRandom random = new SecureRandom();
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+
+        Ed25519KeyPairGenerator ed25519kpGen = new Ed25519KeyPairGenerator();
+        ed25519kpGen.init(new Ed25519KeyGenerationParameters(random));
+
+        AsymmetricCipherKeyPair kp = ed25519kpGen.generateKeyPair();
+        edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519Signer(), "128");
+        edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519phSigner(new byte[1]), "128");
+        edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519ctxSigner(new byte[1]), "128");
+
+        Ed448KeyPairGenerator ed448kpGen = new Ed448KeyPairGenerator();
+        ed448kpGen.init(new Ed448KeyGenerationParameters(random));
+        kp = ed448kpGen.generateKeyPair();
+        edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448Signer(new byte[1]), "224");
+        edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448phSigner(new byte[1]), "224");
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void edwardsSignerTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, Signer signer, String sBits)
+    {
+        signer.init(false, pk);  // should be allowed (legacy)
+
+        try
+        {
+            signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only " + sBits, e.getMessage());
+        }
+    }
 
     public static void main(
          String[] args)

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.signers;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -37,6 +38,8 @@ public class Ed25519phSigner
             this.privateKey = null;
             this.publicKey = (Ed25519PublicKeyParameters)parameters;
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed25519", 128, forSigning));
 
         reset();
     }
