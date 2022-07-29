@@ -1,6 +1,13 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -258,6 +265,7 @@ public class CamelliaLightEngine
 
     private void setKey(boolean forEncryption, byte[] key)
     {
+        this.forEncryption = forEncryption;
         int[] k = new int[8];
         int[] ka = new int[4];
         int[] kb = new int[4];
@@ -610,6 +618,11 @@ public class CamelliaLightEngine
         }
         public CryptoServicePurpose getPurpose()
         {
+            if (!initialized)
+            {
+                return CryptoServicePurpose.ANY;
+            }
+
             return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
         }
     }

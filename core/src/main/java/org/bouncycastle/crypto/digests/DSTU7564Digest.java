@@ -80,7 +80,7 @@ public class DSTU7564Digest
 
     public DSTU7564Digest(int hashSizeBits)
     {
-        this(hashSizeBits, CryptoServicePurpose.ALL);
+        this(hashSizeBits, CryptoServicePurpose.ANY);
     }
 
     public DSTU7564Digest(int hashSizeBits, CryptoServicePurpose purpose)

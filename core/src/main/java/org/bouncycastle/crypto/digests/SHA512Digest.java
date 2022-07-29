@@ -28,7 +28,7 @@ public class SHA512Digest
      */
     public SHA512Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

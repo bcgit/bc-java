@@ -26,7 +26,7 @@ public class MD4Digest
 
     public MD4Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     public MD4Digest(CryptoServicePurpose purpose)

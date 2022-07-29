@@ -38,7 +38,7 @@ public class GOST3411Digest
      */
     public GOST3411Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     public GOST3411Digest(CryptoServicePurpose purpose)
@@ -59,7 +59,7 @@ public class GOST3411Digest
      */
     public GOST3411Digest(byte[] sBoxParam)
     {
-        this(sBoxParam, CryptoServicePurpose.ALL);
+        this(sBoxParam, CryptoServicePurpose.ANY);
     }
 
     /**

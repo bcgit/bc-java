@@ -27,7 +27,7 @@ public class MD2Digest
 
     public MD2Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     public MD2Digest(CryptoServicePurpose purpose)

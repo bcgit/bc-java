@@ -155,7 +155,7 @@ public class DESedeEngine
         {
             if (workingKey1 == null)
             {
-                return CryptoServicePurpose.ALL;
+                return CryptoServicePurpose.ANY;
             }
 
             return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;

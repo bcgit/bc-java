@@ -507,7 +507,7 @@ public class DESEngine
         {
             if (workingKey == null)
             {
-                return CryptoServicePurpose.ALL;
+                return CryptoServicePurpose.ANY;
             }
 
             return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;

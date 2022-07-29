@@ -27,7 +27,7 @@ public class SHA3Digest
 
     public SHA3Digest()
     {
-        this(256, CryptoServicePurpose.ALL);
+        this(256, CryptoServicePurpose.ANY);
     }
 
     public SHA3Digest(CryptoServicePurpose purpose)
@@ -37,7 +37,7 @@ public class SHA3Digest
 
     public SHA3Digest(int bitLength)
     {
-        super(checkBitLength(bitLength), CryptoServicePurpose.ALL);
+        super(checkBitLength(bitLength), CryptoServicePurpose.ANY);
     }
 
     public SHA3Digest(int bitLength, CryptoServicePurpose purpose)

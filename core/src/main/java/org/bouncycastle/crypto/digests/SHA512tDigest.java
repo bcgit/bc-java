@@ -22,7 +22,7 @@ public class SHA512tDigest
      */
     public SHA512tDigest(int bitLength)
     {
-        this(bitLength, CryptoServicePurpose.ALL);
+        this(bitLength, CryptoServicePurpose.ANY);
     }
 
     public SHA512tDigest(int bitLength, CryptoServicePurpose purpose)

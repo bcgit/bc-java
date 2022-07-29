@@ -21,7 +21,7 @@ public class CSHAKEDigest
      */
     public CSHAKEDigest(int bitLength, byte[] N, byte[] S)
     {
-        this(bitLength, CryptoServicePurpose.ALL, N, S);
+        this(bitLength, CryptoServicePurpose.ANY, N, S);
     }
 
     /**

@@ -35,7 +35,7 @@ public class SHA224Digest
      */
     public SHA224Digest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**

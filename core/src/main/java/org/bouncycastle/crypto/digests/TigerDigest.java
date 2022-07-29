@@ -568,7 +568,7 @@ public class TigerDigest
      */
     public TigerDigest()
     {
-        this(CryptoServicePurpose.ALL);
+        this(CryptoServicePurpose.ANY);
     }
 
     /**
