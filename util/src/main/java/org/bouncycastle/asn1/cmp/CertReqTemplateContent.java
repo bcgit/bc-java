@@ -8,8 +8,8 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 
 /**
- * GenMsg:    {id-it 19}, < absent >
- * GenRep:    {id-it 19}, CertReqTemplateContent | < absent >
+ * GenMsg:    {id-it 19}, &lt; absent &gt;
+ * GenRep:    {id-it 19}, CertReqTemplateContent | &lt; absent &gt;
  * <p>
  * CertReqTemplateValue  ::= CertReqTemplateContent
  * <p>

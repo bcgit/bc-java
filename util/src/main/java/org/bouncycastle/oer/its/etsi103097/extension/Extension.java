@@ -8,8 +8,8 @@ import org.bouncycastle.asn1.DERSequence;
 
 /**
  * Extension {EXT-TYPE : ExtensionTypes} ::= SEQUENCE {
- * id      EXT-TYPE.&extId({ExtensionTypes}),
- * content EXT-TYPE.&ExtContent({ExtensionTypes}{@.id})
+ * id      EXT-TYPE.&amp;extId({ExtensionTypes}),
+ * content EXT-TYPE.&amp;ExtContent({ExtensionTypes}{&#64;.id})
  * }
  * <p>
  * Where:

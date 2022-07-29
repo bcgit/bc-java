@@ -12,8 +12,8 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
- * GenMsg:    {id-it 20}, RootCaCertValue | < absent >
- * GenRep:    {id-it 18}, RootCaKeyUpdateContent | < absent >
+ * GenMsg:    {id-it 20}, RootCaCertValue | &lt; absent &gt;
+ * GenRep:    {id-it 18}, RootCaKeyUpdateContent | &lt; absent &gt;
  * <p>
  * RootCaCertValue ::= CMPCertificate
  * <p>
