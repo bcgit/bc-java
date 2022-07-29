@@ -11,6 +11,7 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -68,16 +69,16 @@ public class PGPEncryptedDataGenerator
      */
     public static final int S2K_SHA512 = HashAlgorithmTags.SHA512;
 
-    private BCPGOutputStream     pOut;
-    private OutputStream         cOut;
-    private boolean              oldFormat = false;
+    private BCPGOutputStream pOut;
+    private OutputStream cOut;
+    private boolean oldFormat = false;
     private PGPDigestCalculator digestCalc;
-    private OutputStream            genOut;
+    private OutputStream genOut;
     private PGPDataEncryptorBuilder dataEncryptorBuilder;
 
-    private List            methods = new ArrayList();
-    private int             defAlgorithm;
-    private SecureRandom    rand;
+    private List methods = new ArrayList();
+    private int defAlgorithm;
+    private SecureRandom rand;
 
     /**
      * Base constructor.
@@ -116,9 +117,9 @@ public class PGPEncryptedDataGenerator
     }
 
     private void addCheckSum(
-        byte[]    sessionInfo)
+        byte[] sessionInfo)
     {
-        int    check = 0;
+        int check = 0;
 
         for (int i = 1; i != sessionInfo.length - 2; i++)
         {
@@ -130,11 +131,11 @@ public class PGPEncryptedDataGenerator
     }
 
     private byte[] createSessionInfo(
-        int     algorithm,
-        byte[]  keyBytes)
+        int algorithm,
+        byte[] keyBytes)
     {
         byte[] sessionInfo = new byte[keyBytes.length + 3];
-        sessionInfo[0] = (byte) algorithm;
+        sessionInfo[0] = (byte)algorithm;
         System.arraycopy(keyBytes, 0, sessionInfo, 1, keyBytes.length);
         addCheckSum(sessionInfo);
         return sessionInfo;
@@ -142,30 +143,30 @@ public class PGPEncryptedDataGenerator
 
     /**
      * Create an OutputStream based on the configured methods.
-     *
+     * <p>
      * If the supplied buffer is non <code>null</code> the stream returned will write a sequence of
      * partial packets, otherwise the length will be used to output a fixed length packet.
      * <p>
      * The stream created can be closed off by either calling close() on the stream or close() on
      * the generator. Closing the returned stream does not close off the OutputStream parameter out.
      *
-     * @param out the stream to write encrypted packets to.
+     * @param out    the stream to write encrypted packets to.
      * @param length the length of the data to be encrypted. Ignored if buffer is non
-     *            <code>null</code>.
+     *               <code>null</code>.
      * @param buffer a buffer to use to buffer and write partial packets.
      * @return the generator's output stream.
-     * @throws IOException if an error occurs writing stream header information to the provider
-     *             output stream.
-     * @throws PGPException if an error occurs initialising PGP encryption for the configured
-     *             encryption methods.
+     * @throws IOException           if an error occurs writing stream header information to the provider
+     *                               output stream.
+     * @throws PGPException          if an error occurs initialising PGP encryption for the configured
+     *                               encryption methods.
      * @throws IllegalStateException if this generator already has an open OutputStream, or no
-     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
-     *             configured.
+     *                               {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *                               configured.
      */
     private OutputStream open(
-        OutputStream    out,
-        long            length,
-        byte[]          buffer)
+        OutputStream out,
+        long length,
+        byte[] buffer)
         throws IOException, PGPException, IllegalStateException
     {
         if (cOut != null)
@@ -187,7 +188,6 @@ public class PGPEncryptedDataGenerator
 
         if (methods.size() == 1)
         {
-
             if (methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
             {
                 PBEKeyEncryptionMethodGenerator m = (PBEKeyEncryptionMethodGenerator)methods.get(0);
@@ -224,50 +224,80 @@ public class PGPEncryptedDataGenerator
 
             digestCalc = dataEncryptor.getIntegrityCalculator();
 
-            if (buffer == null)
+            if (dataEncryptor instanceof PGPAEADDataEncryptor)
             {
-                //
-                // we have to add block size + 2 for the generated IV and + 1 + 22 if integrity protected
-                //
-                if (digestCalc != null)
-                {
-                    pOut = new ClosableBCPGOutputStream(out, PacketTags.SYM_ENC_INTEGRITY_PRO, length + dataEncryptor.getBlockSize() + 2 + 1 + 22);
+                PGPAEADDataEncryptor encryptor = (PGPAEADDataEncryptor)dataEncryptor;
 
-                    pOut.write(1);        // version number
+                byte[] iv = encryptor.getIV();
+                
+                if (buffer != null)
+                {
+                    pOut = new ClosableBCPGOutputStream(out, PacketTags.AEAD_ENC_DATA, buffer);
                 }
                 else
                 {
-                    pOut = new ClosableBCPGOutputStream(out, PacketTags.SYMMETRIC_KEY_ENC, length + dataEncryptor.getBlockSize() + 2, oldFormat);
+                    long chunkLength = 1L << (encryptor.getChunkSize() + 6);
+                    long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16 + 16; // data blocks + final tag
+                    pOut = new ClosableBCPGOutputStream(out, PacketTags.AEAD_ENC_DATA, (length + tagLengths + 4 + iv.length));
                 }
+
+                pOut.write(1);           // version
+                pOut.write(dataEncryptorBuilder.getAlgorithm());
+                pOut.write(encryptor.getAEADAlgorithm());
+                pOut.write(encryptor.getChunkSize());
+                pOut.write(iv);
+
+                genOut = cOut = dataEncryptor.getOutputStream(pOut);
+
+                return new WrappedGeneratorStream(genOut, this);
             }
             else
             {
-                if (digestCalc != null)
+                if (buffer == null)
                 {
-                    pOut = new ClosableBCPGOutputStream(out, PacketTags.SYM_ENC_INTEGRITY_PRO, buffer);
-                    pOut.write(1);        // version number
+                    //
+                    // we have to add block size + 2 for the generated IV and + 1 + 22 if integrity protected
+                    //
+                    if (digestCalc != null)
+                    {
+                        pOut = new ClosableBCPGOutputStream(out, PacketTags.SYM_ENC_INTEGRITY_PRO, length + dataEncryptor.getBlockSize() + 2 + 1 + 22);
+
+                        pOut.write(1);        // version number
+                    }
+                    else
+                    {
+                        pOut = new ClosableBCPGOutputStream(out, PacketTags.SYMMETRIC_KEY_ENC, length + dataEncryptor.getBlockSize() + 2, oldFormat);
+                    }
                 }
                 else
                 {
-                    pOut = new ClosableBCPGOutputStream(out, PacketTags.SYMMETRIC_KEY_ENC, buffer);
+                    if (digestCalc != null)
+                    {
+                        pOut = new ClosableBCPGOutputStream(out, PacketTags.SYM_ENC_INTEGRITY_PRO, buffer);
+                        pOut.write(1);        // version number
+                    }
+                    else
+                    {
+                        pOut = new ClosableBCPGOutputStream(out, PacketTags.SYMMETRIC_KEY_ENC, buffer);
+                    }
                 }
+
+                genOut = cOut = dataEncryptor.getOutputStream(pOut);
+
+                if (digestCalc != null)
+                {
+                    genOut = new TeeOutputStream(digestCalc.getOutputStream(), cOut);
+                }
+
+                byte[] inLineIv = new byte[dataEncryptor.getBlockSize() + 2];
+                rand.nextBytes(inLineIv);
+                inLineIv[inLineIv.length - 1] = inLineIv[inLineIv.length - 3];
+                inLineIv[inLineIv.length - 2] = inLineIv[inLineIv.length - 4];
+
+                genOut.write(inLineIv);
+
+                return new WrappedGeneratorStream(genOut, this);
             }
-
-            genOut = cOut = dataEncryptor.getOutputStream(pOut);
-
-            if (digestCalc != null)
-            {
-                genOut = new TeeOutputStream(digestCalc.getOutputStream(), cOut);
-            }
-
-            byte[] inLineIv = new byte[dataEncryptor.getBlockSize() + 2];
-            rand.nextBytes(inLineIv);
-            inLineIv[inLineIv.length - 1] = inLineIv[inLineIv.length - 3];
-            inLineIv[inLineIv.length - 2] = inLineIv[inLineIv.length - 4];
-
-            genOut.write(inLineIv);
-
-            return new WrappedGeneratorStream(genOut, this);
         }
         catch (Exception e)
         {
@@ -283,20 +313,20 @@ public class PGPEncryptedDataGenerator
      * The stream created can be closed off by either calling close() on the stream or close() on
      * the generator. Closing the returned stream does not close off the OutputStream parameter out.
      *
-     * @param out the stream to write encrypted packets to.
+     * @param out    the stream to write encrypted packets to.
      * @param length the length of the data to be encrypted.
      * @return the output stream to write data to for encryption.
-     * @throws IOException if an error occurs writing stream header information to the provider
-     *             output stream.
-     * @throws PGPException if an error occurs initialising PGP encryption for the configured
-     *             encryption methods.
+     * @throws IOException           if an error occurs writing stream header information to the provider
+     *                               output stream.
+     * @throws PGPException          if an error occurs initialising PGP encryption for the configured
+     *                               encryption methods.
      * @throws IllegalStateException if this generator already has an open OutputStream, or no
-     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
-     *             configured.
+     *                               {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *                               configured.
      */
     public OutputStream open(
-        OutputStream    out,
-        long            length)
+        OutputStream out,
+        long length)
         throws IOException, PGPException
     {
         return this.open(out, length, null);
@@ -312,22 +342,22 @@ public class PGPEncryptedDataGenerator
      * <p>
      * <b>Note</b>: if the buffer is not a power of 2 in length only the largest power of 2 bytes
      * worth of the buffer will be used.
-     * 
-     * @param out the stream to write encrypted packets to.
+     *
+     * @param out    the stream to write encrypted packets to.
      * @param buffer a buffer to use to buffer and write partial packets. The returned stream takes
-     *            ownership of the buffer and will use it to buffer plaintext data for encryption.
+     *               ownership of the buffer and will use it to buffer plaintext data for encryption.
      * @return the output stream to write data to for encryption.
-     * @throws IOException if an error occurs writing stream header information to the provider
-     *             output stream.
-     * @throws PGPException if an error occurs initialising PGP encryption for the configured
-     *             encryption methods.
+     * @throws IOException           if an error occurs writing stream header information to the provider
+     *                               output stream.
+     * @throws PGPException          if an error occurs initialising PGP encryption for the configured
+     *                               encryption methods.
      * @throws IllegalStateException if this generator already has an open OutputStream, or no
-     *             {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
-     *             configured.
+     *                               {@link #addMethod(PGPKeyEncryptionMethodGenerator) encryption methods} are
+     *                               configured.
      */
     public OutputStream open(
-        OutputStream    out,
-        byte[]          buffer)
+        OutputStream out,
+        byte[] buffer)
         throws IOException, PGPException
     {
         return this.open(out, 0, buffer);
@@ -341,7 +371,7 @@ public class PGPEncryptedDataGenerator
      * created by the <code>open()</code> method.
      *
      * @throws IOException if an error occurs writing trailing information (such as integrity check
-     *             information) to the underlying stream.
+     *                     information) to the underlying stream.
      */
     public void close()
         throws IOException
@@ -393,7 +423,7 @@ public class PGPEncryptedDataGenerator
         public void close()
             throws IOException
         {
-             this.finish();
+            this.finish();
         }
     }
 }

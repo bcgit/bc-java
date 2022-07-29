@@ -3,14 +3,19 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.io.CipherOutputStream;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Arrays;
 
 /**
  * {@link PGPDataEncryptorBuilder} implementation that uses the Bouncy Castle lightweight API to
@@ -22,6 +27,8 @@ public class BcPGPDataEncryptorBuilder
     private SecureRandom   random;
     private boolean withIntegrityPacket;
     private int encAlgorithm;
+    private int aeadAlgorithm = -1;
+    private int chunkSize;
 
     /**
      * Constructs a new data encryptor builder for a specified cipher type.
@@ -48,6 +55,26 @@ public class BcPGPDataEncryptorBuilder
     public BcPGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket)
     {
         this.withIntegrityPacket = withIntegrityPacket;
+
+        return this;
+    }
+
+    public BcPGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
+    {
+        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+        {
+            throw new IllegalStateException("AEAD algorithms can only be used with AES");
+        }
+
+        if (chunkSize < 6)
+        {
+            throw new IllegalArgumentException("minimum chunkSize is 6");
+        }
+
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.chunkSize = chunkSize - 6;
 
         return this;
     }
@@ -85,6 +112,11 @@ public class BcPGPDataEncryptorBuilder
     public PGPDataEncryptor build(byte[] keyBytes)
         throws PGPException
     {
+        if (aeadAlgorithm > 0)
+        {
+            return new MyAeadDataEncryptor(keyBytes);
+        }
+
         return new MyPGPDataEncryptor(keyBytes);
     }
 
@@ -126,6 +158,61 @@ public class BcPGPDataEncryptorBuilder
         public int getBlockSize()
         {
             return c.getBlockSize();
+        }
+    }
+
+    private class MyAeadDataEncryptor
+        implements PGPAEADDataEncryptor
+    {
+        private final AEADBlockCipher c;
+        private final byte[] keyBytes;
+        private final byte[] iv;
+
+        MyAeadDataEncryptor(byte[] keyBytes)
+            throws PGPException
+        {
+            this.keyBytes = keyBytes;
+            this.c = BcUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+            this.iv = new byte[AEADEncDataPacket.getIVLength((byte)aeadAlgorithm)];
+
+            getSecureRandom().nextBytes(iv);
+        }
+
+        public OutputStream getOutputStream(OutputStream out)
+        {
+            try
+            {
+                return new BcUtil.PGPAeadOutputStream(out, c, new KeyParameter(keyBytes), encAlgorithm, aeadAlgorithm, chunkSize, iv);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateException("unable to process stream: " + e.getMessage());
+            }
+        }
+
+        public PGPDigestCalculator getIntegrityCalculator()
+        {
+            return null;
+        }
+
+        public int getBlockSize()
+        {
+            return c.getUnderlyingCipher().getBlockSize();
+        }
+
+        public int getAEADAlgorithm()
+        {
+            return aeadAlgorithm;
+        }
+
+        public int getChunkSize()
+        {
+            return chunkSize;
+        }
+
+        public byte[] getIV()
+        {
+            return Arrays.clone(iv);
         }
     }
 }

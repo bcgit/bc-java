@@ -2,6 +2,8 @@ package org.bouncycastle.bcpg;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Packet representing AEAD encrypted data. At the moment this appears to exist in the following
  * expired draft only, but it's appearing despite this.
@@ -37,19 +39,14 @@ public class AEADEncDataPacket
         in.read(iv, 0, iv.length);
     }
 
-    private int getIVLength(byte mode)
+    public AEADEncDataPacket(int algorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
     {
-        switch (mode)
-        {
-        case EAX:
-            return 16;
-        case OCB:
-            return 15;
-        case GCM:
-            return 12;
-        default:
-            throw new IllegalArgumentException("unknown mode: " + mode);
-        }
+        super(null);
+        this.version = 1;
+        this.algorithm = (byte)algorithm;
+        this.aeadAlgorithm = (byte)aeadAlgorithm;
+        this.chunkSize = (byte)chunkSize;
+        this.iv = Arrays.clone(iv);
     }
 
     public byte getVersion()
@@ -75,5 +72,20 @@ public class AEADEncDataPacket
     public byte[] getIV()
     {
         return iv;
+    }
+
+    public static int getIVLength(byte aeadAlgorithm)
+    {
+        switch (aeadAlgorithm)
+        {
+        case EAX:
+            return 16;
+        case OCB:
+            return 15;
+        case GCM:
+            return 12;
+        default:
+            throw new IllegalArgumentException("unknown mode: " + aeadAlgorithm);
+        }
     }
 }
