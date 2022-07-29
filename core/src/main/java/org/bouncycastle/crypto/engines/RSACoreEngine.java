@@ -43,7 +43,7 @@ class RSACoreEngine
 
         this.forEncryption = forEncryption;
 
-        CryptoServicesRegistrar.checkConstraints(new RSASignerProperties(key, forEncryption));
+        CryptoServicesRegistrar.checkConstraints(new RSACoreProperties(key, forEncryption));
     }
 
     /**
@@ -216,20 +216,18 @@ class RSACoreEngine
         }
     }
 
-    private static class RSASignerProperties
+    private static class RSACoreProperties
         implements CryptoServiceProperties
     {
         private final int mBits;
 
-        private final boolean forEncryption;
         private final boolean isEncryption;
         private final boolean isSigning;
         private final boolean isVerifying;
 
-        RSASignerProperties(RSAKeyParameters rsaKey, boolean forEncryption)
+        RSACoreProperties(RSAKeyParameters rsaKey, boolean forEncryption)
         {
             this.mBits = rsaKey.getModulus().bitLength();
-            this.forEncryption = forEncryption;
             this.isSigning = rsaKey.isPrivate() && forEncryption;
             this.isEncryption = !rsaKey.isPrivate() && forEncryption;
             this.isVerifying = !rsaKey.isPrivate() && !forEncryption;

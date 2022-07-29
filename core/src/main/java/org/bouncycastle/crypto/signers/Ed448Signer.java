@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.signers;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
@@ -39,6 +40,8 @@ public class Ed448Signer
             this.privateKey = null;
             this.publicKey = (Ed448PublicKeyParameters)parameters;
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed448", 224, forSigning));
 
         reset();
     }

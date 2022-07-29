@@ -74,6 +74,8 @@ public class ECDSASigner
             this.key = (ECPublicKeyParameters)param;
         }
 
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSTU4145", key.getParameters().getCurve(), forSigning));
+
         this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);
     }
 
