@@ -23,9 +23,9 @@ import org.bouncycastle.util.Arrays;
  * Updated for RFC 5246:
  * <pre>
  * struct {
- *     ClientCertificateType certificate_types<1..2^8-1>;
- *     SignatureAndHashAlgorithm supported_signature_algorithms<2^16-1>;
- *     DistinguishedName certificate_authorities<0..2^16-1>;
+ *     ClientCertificateType certificate_types&lt;1..2^8-1&gt;;
+ *     SignatureAndHashAlgorithm supported_signature_algorithms&lt;2^16-1&gt;;
+ *     DistinguishedName certificate_authorities&lt;0..2^16-1&gt;;
  * } CertificateRequest;
  * </pre>
  * Revised for RFC 8446:
