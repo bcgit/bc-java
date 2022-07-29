@@ -1,20 +1,40 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Date;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPBEEncryptedData;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -30,9 +50,134 @@ public class PGPEncryptedDataTest
         return "PGPEncryptedData";
     }
 
-    @Override
     public void performTest()
         throws Exception
+    {
+        encryptDecryptTest();
+        encryptDecryptMultiChunkTest();
+        knownDataTest();
+    }
+
+    private void encryptDecryptTest()
+        throws IOException, PGPException
+    {
+        char[] pass = "AEAD".toCharArray();
+        byte[] msg = Strings.toByteArray("Hello, AEAD!");
+
+        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+        JcePGPDataEncryptorBuilder encryptorBuilder = new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(new SecureRandom()).setProvider("BC");
+
+        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 10);
+
+        PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
+
+        cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
+
+        ByteArrayOutputStream ldbOut = new ByteArrayOutputStream();
+        PGPLiteralDataGenerator ldGen = new PGPLiteralDataGenerator();
+
+        OutputStream ldOut = ldGen.open(ldbOut, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, (long)msg.length, new Date());
+
+        ldOut.write(msg);
+
+        ldOut.close();
+
+        byte[] litData = ldbOut.toByteArray();
+
+        OutputStream cOut = cPk.open(cbOut, litData.length);
+
+        cOut.write(litData);
+
+        cOut.close();
+        
+        // decrypt
+        PGPObjectFactory oIn = new JcaPGPObjectFactory(new ByteArrayInputStream(cbOut.toByteArray()));
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)oIn.nextObject();
+
+        PGPPBEEncryptedData encP = (PGPPBEEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new JcePBEDataDecryptorFactoryBuilder().setProvider("BC").build(pass));
+
+       // System.err.println(Hex.toHexString(Streams.readAll(clear)));
+        PGPObjectFactory pgpFact = new JcaPGPObjectFactory(clear);
+
+        PGPLiteralData ld = (PGPLiteralData)pgpFact.nextObject();
+
+        isEquals("wrong filename", PGPLiteralData.CONSOLE, ld.getFileName());
+
+        byte[] data = Streams.readAll(ld.getDataStream());
+
+        isTrue(Strings.fromUTF8ByteArray(data), Arrays.areEqual(msg, data));
+    }
+
+    private void encryptDecryptMultiChunkTest()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] msg = new byte[60000];
+
+        random.nextBytes(msg);
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpGen.initialize(2048);
+
+        PGPKeyPair pgpKp = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL , kpGen.generateKeyPair(), new Date());
+
+        PGPPublicKey pubKey = pgpKp.getPublicKey();
+
+        PGPPrivateKey privKey = pgpKp.getPrivateKey();
+
+        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+        JcePGPDataEncryptorBuilder encryptorBuilder = new JcePGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random).setProvider("BC");
+
+        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+
+        PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
+
+        cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pubKey).setProvider("BC"));
+
+        ByteArrayOutputStream ldbOut = new ByteArrayOutputStream();
+        PGPLiteralDataGenerator ldGen = new PGPLiteralDataGenerator();
+
+        OutputStream ldOut = ldGen.open(ldbOut, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, (long)msg.length, new Date());
+
+        ldOut.write(msg);
+
+        ldOut.close();
+
+        byte[] litData = ldbOut.toByteArray();
+
+        OutputStream cOut = cPk.open(cbOut, litData.length);
+
+        cOut.write(litData);
+
+        cOut.close();
+
+        // decrypt
+        PGPObjectFactory oIn = new JcaPGPObjectFactory(new ByteArrayInputStream(cbOut.toByteArray()));
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)oIn.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(privKey));
+
+        // System.err.println(Hex.toHexString(Streams.readAll(clear)));
+        PGPObjectFactory pgpFact = new JcaPGPObjectFactory(clear);
+
+        PGPLiteralData ld = (PGPLiteralData)pgpFact.nextObject();
+
+        isEquals("wrong filename", PGPLiteralData.CONSOLE, ld.getFileName());
+
+        byte[] data = Streams.readAll(ld.getDataStream());
+
+        isTrue("msg mismatch", Arrays.areEqual(msg, data));
+    }
+
+    private void knownDataTest()
+        throws IOException, PGPException
     {
         // AEAD Test
         byte[] key = Base64.decode("lIYEYtpQnxYJKwYBBAHaRw8BAQdA207jla1mpSFwMxffhBxMCar0p8rogMEoeLJd\n" +
@@ -76,7 +221,7 @@ public class PGPEncryptedDataTest
 
         isTrue(Arrays.areEqual(Strings.toByteArray("Test Content"), data));
     }
-    
+
     public static void main(
         String[]    args)
     {

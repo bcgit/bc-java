@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -186,6 +187,29 @@ class OperatorHelper
     static long getChunkLength(int chunkSize)
     {
         return 1L << (chunkSize + 6);
+    }
+
+    static byte[] getNonce(byte[] iv, long chunkIndex)
+    {
+        byte[] nonce = Arrays.clone(iv);
+
+        xorChunkId(nonce, chunkIndex);
+
+        return nonce;
+    }
+
+    static void xorChunkId(byte[] nonce, long chunkIndex)
+    {
+        int index = nonce.length - 8;
+
+        nonce[index++] ^= (byte)(chunkIndex >> 56);
+        nonce[index++] ^= (byte)(chunkIndex >> 48);
+        nonce[index++] ^= (byte)(chunkIndex >> 40);
+        nonce[index++] ^= (byte)(chunkIndex >> 32);
+        nonce[index++] ^= (byte)(chunkIndex >> 24);
+        nonce[index++] ^= (byte)(chunkIndex >> 16);
+        nonce[index++] ^= (byte)(chunkIndex >> 8);
+        nonce[index] ^= (byte)(chunkIndex);
     }
 
     PGPDataDecryptor createDataDecryptor(final int aeadAlgorithm, final byte[] iv, final int chunkSize, final int encAlgorithm, byte[] key)
@@ -472,7 +496,7 @@ class OperatorHelper
             {
                 return -1;
             }
-            
+
             return data.length - dataOff;
         }
 
@@ -510,7 +534,7 @@ class OperatorHelper
             chunkIndex++;
 
             System.arraycopy(buf, dataLen + 16, buf, 0, 16); // copy back the "tag"
-            
+
             if (dataLen != chunkLength)     // it's our last block
             {
                 adata = new byte[13];
@@ -539,28 +563,148 @@ class OperatorHelper
 
             return decData;
         }
+    }
 
-        private byte[] getNonce(byte[] iv, long chunkIndex)
+    static class PGPAeadOutputStream
+        extends OutputStream
+    {
+        private final OutputStream out;
+        private final byte[] data;
+        private final Cipher c;
+        private final SecretKey secretKey;
+        private final byte[] aaData;
+        private final byte[] iv;
+        private final int chunkLength;
+
+        private int dataOff;
+        private long chunkIndex = 0;
+        private long totalBytes = 0;
+
+        public PGPAeadOutputStream(OutputStream out, Cipher c, SecretKey secretKey, int encAlgorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
         {
-            byte[] nonce = Arrays.clone(iv);
+            this.out = out;
+            this.iv = iv;
+            this.chunkLength = (int)getChunkLength(chunkSize);
+            this.data = new byte[chunkLength];
+            this.c = c;
+            this.secretKey = secretKey;
 
-            xorChunkId(nonce, chunkIndex);
+            aaData = new byte[5];
 
-            return nonce;
+            aaData[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+            aaData[1] = 0x01;   // packet version
+            aaData[2] = (byte)encAlgorithm;
+            aaData[3] = (byte)aeadAlgorithm;
+            aaData[4] = (byte)chunkSize;
         }
 
-        private void xorChunkId(byte[] nonce, long chunkIndex)
+        public void write(int b)
+            throws IOException
         {
-            int index = nonce.length - 8;
+            if (dataOff == data.length)
+            {
+                writeBlock();
+            }
+            data[dataOff++] = (byte)b;
+        }
 
-            nonce[index++] ^= (byte)(chunkIndex >> 56);
-            nonce[index++] ^= (byte)(chunkIndex >> 48);
-            nonce[index++] ^= (byte)(chunkIndex >> 40);
-            nonce[index++] ^= (byte)(chunkIndex >> 32);
-            nonce[index++] ^= (byte)(chunkIndex >> 24);
-            nonce[index++] ^= (byte)(chunkIndex >> 16);
-            nonce[index++] ^= (byte)(chunkIndex >> 8);
-            nonce[index] ^= (byte)(chunkIndex);
+        public void write(byte[] b, int off, int len)
+            throws IOException
+        {
+            if (dataOff == data.length)
+            {
+                writeBlock();
+            }
+
+            if (len < data.length - dataOff)
+            {
+                System.arraycopy(b, off, data, dataOff, len);
+                dataOff += len;
+            }
+            else
+            {
+                int gap = data.length - dataOff;
+                System.arraycopy(b, off, data, dataOff, gap);
+                dataOff += gap;
+                writeBlock();
+
+                len -= gap;
+                off += gap;
+
+                while (len >= data.length)
+                {
+                    System.arraycopy(b, off, data, 0, data.length);
+                    dataOff = data.length;
+                    writeBlock();
+                    len -= data.length;
+                    off += data.length;
+                }
+
+                if (len > 0)
+                {
+                    System.arraycopy(b, off, data, 0, len);
+                    dataOff = len;
+                }
+            }
+        }
+
+        public void close()
+            throws IOException
+        {
+            finish();
+        }
+
+        private void writeBlock()
+            throws IOException
+        {
+            byte[] adata = new byte[13];
+            System.arraycopy(aaData, 0, adata, 0, aaData.length);
+
+            xorChunkId(adata, chunkIndex);
+
+            try
+            {
+                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
+
+                c.updateAAD(adata);
+
+                out.write(c.doFinal(data, 0, dataOff));
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+            }
+
+            totalBytes += dataOff;
+            chunkIndex++;
+            dataOff = 0;
+        }
+
+        private void finish()
+            throws IOException
+        {
+            if (dataOff > 0)
+            {
+                writeBlock();
+            }
+
+            byte[] adata = new byte[13];
+            System.arraycopy(aaData, 0, adata, 0, aaData.length);
+
+            xorChunkId(adata, chunkIndex);
+            try
+            {
+                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
+
+                c.updateAAD(adata);
+                c.updateAAD(Pack.longToBigEndian(totalBytes));
+
+                out.write(c.doFinal(aaData, 0, 0)); // output final tag
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IOException("exception processing final tag: " + e.getMessage());
+            }
         }
     }
 }
