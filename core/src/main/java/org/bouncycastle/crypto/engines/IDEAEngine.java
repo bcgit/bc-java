@@ -1,9 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -24,11 +21,14 @@ public class IDEAEngine
 
     private int[]               workingKey = null;
 
+    private boolean forEncryption;
+
     /**
      * standard constructor.
      */
     public IDEAEngine()
     {
+        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
     }
 
     /**
@@ -45,8 +45,12 @@ public class IDEAEngine
     {
         if (params instanceof KeyParameter)
         {
+            byte[] key = ((KeyParameter)params).getKey();
             workingKey = generateWorkingKey(forEncryption,
-                                  ((KeyParameter)params).getKey());
+                                  key);
+            this.forEncryption = forEncryption;
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(key.length * 8));
             return;
         }
 
@@ -352,6 +356,28 @@ public class IDEAEngine
         else
         {
             return invertKey(expandKey(userKey));
+        }
+    }
+    private class DefaultProperties
+            implements CryptoServiceProperties
+    {
+        DefaultProperties(int bitsOfSecurity)
+        {
+            this.bitsOfSecurity = bitsOfSecurity;
+        }
+        int bitsOfSecurity;
+        public int bitsOfSecurity()
+        {
+            return bitsOfSecurity;
+        }
+
+        public String getServiceName()
+        {
+            return  getAlgorithmName();
+        }
+        public CryptoServicePurpose getPurpose()
+        {
+            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
         }
     }
 }
