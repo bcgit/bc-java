@@ -4,10 +4,12 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Collections;
 
+import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
 import org.bouncycastle.crypto.constraints.LegacyBitsOfSecurityConstraint;
@@ -39,6 +41,7 @@ import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.KMAC;
@@ -46,11 +49,17 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
+import org.bouncycastle.crypto.signers.DSTU4145Signer;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.ECGOST3410Signer;
+import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed25519ctxSigner;
 import org.bouncycastle.crypto.signers.Ed25519phSigner;
@@ -61,6 +70,7 @@ import org.bouncycastle.crypto.signers.ISO9796d2PSSSigner;
 import org.bouncycastle.crypto.signers.ISO9796d2Signer;
 import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
+import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.crypto.signers.X931Signer;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -104,6 +114,7 @@ public class CryptoServiceConstraintsTest
 //        testCamellia();
 //        testBlowfish();
         testEdwards();
+        testEC();
     }
 
     private void test112bits()
@@ -860,7 +871,6 @@ public class CryptoServiceConstraintsTest
     {
         SecureRandom random = new SecureRandom();
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
-
         Ed25519KeyPairGenerator ed25519kpGen = new Ed25519KeyPairGenerator();
         ed25519kpGen.init(new Ed25519KeyGenerationParameters(random));
 
@@ -890,6 +900,58 @@ public class CryptoServiceConstraintsTest
         catch (CryptoServiceConstraintsException e)
         {
             isEquals("service does not provide 256 bits of security only " + sBits, e.getMessage());
+        }
+    }
+
+    private void testEC()
+    {
+        SecureRandom random = new SecureRandom();
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        ECKeyPairGenerator ecKp = new ECKeyPairGenerator();
+
+        ecKp.init(new ECKeyGenerationParameters(new ECDomainParameters(X962NamedCurves.getByName("prime192v1")), random));
+
+        AsymmetricCipherKeyPair kp = ecKp.generateKeyPair();
+
+        // Note: some of these signers do not work with the passed in curve - the constraints test will trigger failure
+        // first though.
+        ecSignerTest(kp.getPublic(), kp.getPrivate(), new ECDSASigner());
+        ecSignerTest(kp.getPublic(), kp.getPrivate(), new DSTU4145Signer());
+        ecSignerTest(kp.getPublic(), kp.getPrivate(), new ECGOST3410_2012Signer());
+        ecSignerTest(kp.getPublic(), kp.getPrivate(), new ECGOST3410Signer());
+        ecSignerTest(kp.getPublic(), kp.getPrivate(), new SM2Signer());
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void ecSignerTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, DSA signer)
+    {
+        signer.init(false, pk);  // should be allowed (legacy)
+
+        try
+        {
+            signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecSignerTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, Signer signer)
+    {
+        signer.init(false, pk);  // should be allowed (legacy)
+
+        try
+        {
+            signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
         }
     }
 
