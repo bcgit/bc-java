@@ -5,7 +5,8 @@ package org.bouncycastle.crypto;
  * a streaming mode.
  */
 public abstract class StreamBlockCipher
-    implements BlockCipher, StreamCipher
+    extends DefaultMultiBlockCipher
+    implements StreamCipher
 {
     private final BlockCipher cipher;
 
