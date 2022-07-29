@@ -107,6 +107,8 @@ public class SM2Signer
             pubPoint = ((ECPublicKeyParameters)ecKey).getQ();
         }
 
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECNR", ecParams.getCurve(), forSigning));
+
         z = getZ(userID);
         
         digest.update(z, 0, z.length);

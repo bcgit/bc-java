@@ -87,7 +87,7 @@ public class LegacyBitsOfSecurityConstraint
         case DECRYPTION:
             if (service.bitsOfSecurity() < legacyRequiredBitsOfSecurity)
             {
-                throw new CryptoServiceConstraintsException("service does not provide " + requiredBitsOfSecurity + " bits of security only " + service.bitsOfSecurity());
+                throw new CryptoServiceConstraintsException("service does not provide " + legacyRequiredBitsOfSecurity + " bits of security only " + service.bitsOfSecurity());
             }
             if (purpose != CryptoServicePurpose.ANY && LOG.isLoggable(Level.FINE))
             {

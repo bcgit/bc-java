@@ -47,6 +47,8 @@ public class GOST3410Signer
             {
                 this.key = (GOST3410PublicKeyParameters)param;
             }
+
+            CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("GOST3410", key.getParameters().getP(), forSigning));
         }
 
         public BigInteger getOrder()
