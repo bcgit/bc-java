@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp;
 import java.io.EOFException;
 import java.io.InputStream;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
@@ -92,10 +93,31 @@ public class PGPPBEEncryptedData
         try
         {
             PGPSessionKey sessionKey = getSessionKey(dataDecryptorFactory);
-            boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
-            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-            return getDataStream(withIntegrityPacket, dataDecryptor);
+            if (encData instanceof AEADEncDataPacket)
+            {
+                AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
+
+                if (aeadData.getAlgorithm() != sessionKey.getAlgorithm())
+                {
+                    throw new PGPException("session key and AEAD algorithm mismatch");
+                }
+
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData.getAEADAlgorithm(), aeadData.getIV(), aeadData.getChunkSize(), sessionKey.getAlgorithm(), sessionKey.getKey());
+
+                BCPGInputStream encIn = encData.getInputStream();
+
+                encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+            }
+            else
+            {
+                boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
+                PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
+
+                encStream =  getDataStream(withIntegrityPacket, dataDecryptor);
+            }
+
+            return encStream;
         }
         catch (PGPException e)
         {

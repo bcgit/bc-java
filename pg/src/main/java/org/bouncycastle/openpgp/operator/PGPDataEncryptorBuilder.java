@@ -42,4 +42,14 @@ public interface PGPDataEncryptorBuilder
      * @return the current builder.
      */
     PGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket);
+
+    /**
+     * Sets whether or not the resulting encrypted data will be protected using an AEAD mode.
+     * The chunkSize is used as a power of two, result in blocks (1 << chunkSize) containing data
+     * with an extra 16 bytes for the tag. The minimum chunkSize is 6.
+     *
+     * @param aeadAlgorithm the AEAD mode to use.
+     * @param chunkSize the size of the chunks to be processed with each nonce.
+     */
+    PGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize);
 }

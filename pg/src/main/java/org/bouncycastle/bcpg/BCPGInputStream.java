@@ -244,7 +244,7 @@ public class BCPGInputStream
             objStream = new BCPGInputStream(
                 new BufferedInputStream(new PartialInputStream(this, partial, bodyLen)));
         }
-
+  
         switch (tag)
         {
         case RESERVED:

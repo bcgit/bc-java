@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -27,6 +28,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
@@ -119,6 +121,7 @@ class BcUtil
     }
 
     static PGPDataDecryptor createDataDecryptor(final int aeadAlgorithm, final byte[] iv, final int chunkSize, final int encAlgorithm, final byte[] key)
+        throws PGPException
     {
         final KeyParameter secretKey = new KeyParameter(key);
 
@@ -151,12 +154,13 @@ class BcUtil
     }
 
     static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
+        throws PGPException
     {
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
-            throw new IllegalArgumentException("AEAD only supported for AES based algorithms");
+            throw new PGPException("AEAD only supported for AES based algorithms");
         }
 
         switch (aeadAlgorithm)
@@ -168,8 +172,31 @@ class BcUtil
         case AEADAlgorithmTags.GCM:
             return new GCMBlockCipher(new AESEngine());
         default:
-            throw new IllegalArgumentException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+            throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
         }
+    }
+
+    static byte[] getNonce(byte[] iv, long chunkIndex)
+    {
+        byte[] nonce = Arrays.clone(iv);
+
+        xorChunkId(nonce, chunkIndex);
+
+        return nonce;
+    }
+
+    static void xorChunkId(byte[] nonce, long chunkIndex)
+    {
+        int index = nonce.length - 8;
+
+        nonce[index++] ^= (byte)(chunkIndex >> 56);
+        nonce[index++] ^= (byte)(chunkIndex >> 48);
+        nonce[index++] ^= (byte)(chunkIndex >> 40);
+        nonce[index++] ^= (byte)(chunkIndex >> 32);
+        nonce[index++] ^= (byte)(chunkIndex >> 24);
+        nonce[index++] ^= (byte)(chunkIndex >> 16);
+        nonce[index++] ^= (byte)(chunkIndex >> 8);
+        nonce[index] ^= (byte)(chunkIndex);
     }
 
     private static class PGPAeadInputStream
@@ -349,28 +376,156 @@ class BcUtil
 
             return decData;
         }
+    }
 
-        private byte[] getNonce(byte[] iv, long chunkIndex)
+    static class PGPAeadOutputStream
+        extends OutputStream
+    {
+        private final OutputStream out;
+        private final byte[] data;
+        private final AEADBlockCipher c;
+        private final KeyParameter secretKey;
+        private final byte[] aaData;
+        private final byte[] iv;
+        private final int chunkLength;
+
+        private int dataOff;
+        private long chunkIndex = 0;
+        private long totalBytes = 0;
+
+        public PGPAeadOutputStream(OutputStream out, AEADBlockCipher c, KeyParameter secretKey, int encAlgorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
         {
-            byte[] nonce = Arrays.clone(iv);
+            this.out = out;
+            this.iv = iv;
+            this.chunkLength = (int)getChunkLength(chunkSize);
+            this.data = new byte[chunkLength];
+            this.c = c;
+            this.secretKey = secretKey;
 
-            xorChunkId(nonce, chunkIndex);
+            aaData = new byte[5];
 
-            return nonce;
+            aaData[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+            aaData[1] = 0x01;   // packet version
+            aaData[2] = (byte)encAlgorithm;
+            aaData[3] = (byte)aeadAlgorithm;
+            aaData[4] = (byte)chunkSize;
         }
 
-        private void xorChunkId(byte[] nonce, long chunkIndex)
+        public void write(int b)
+            throws IOException
         {
-            int index = nonce.length - 8;
+            if (dataOff == data.length)
+            {
+                writeBlock();
+            }
+            data[dataOff++] = (byte)b;
+        }
 
-            nonce[index++] ^= (byte)(chunkIndex >> 56);
-            nonce[index++] ^= (byte)(chunkIndex >> 48);
-            nonce[index++] ^= (byte)(chunkIndex >> 40);
-            nonce[index++] ^= (byte)(chunkIndex >> 32);
-            nonce[index++] ^= (byte)(chunkIndex >> 24);
-            nonce[index++] ^= (byte)(chunkIndex >> 16);
-            nonce[index++] ^= (byte)(chunkIndex >> 8);
-            nonce[index] ^= (byte)(chunkIndex);
+        public void write(byte[] b, int off, int len)
+            throws IOException
+        {
+            if (dataOff == data.length)
+            {
+                writeBlock();
+            }
+
+            if (len < data.length - dataOff)
+            {
+                System.arraycopy(b, off, data, dataOff, len);
+                dataOff += len;
+            }
+            else
+            {
+                int gap = data.length - dataOff;
+                System.arraycopy(b, off, data, dataOff, gap);
+                dataOff += gap;
+                writeBlock();
+
+                len -= gap;
+                off += gap;
+
+                while (len >= data.length)
+                {
+                    System.arraycopy(b, off, data, 0, data.length);
+                    dataOff = data.length;
+                    writeBlock();
+                    len -= data.length;
+                    off += data.length;
+                }
+
+                if (len > 0)
+                {
+                    System.arraycopy(b, off, data, 0, len);
+                    dataOff = len;
+                }
+            }
+        }
+        
+        public void close()
+            throws IOException
+        {
+            finish();
+        }
+
+        private void writeBlock()
+            throws IOException
+        {
+            byte[] adata = new byte[13];
+            System.arraycopy(aaData, 0, adata, 0, aaData.length);
+
+            xorChunkId(adata, chunkIndex);
+
+            try
+            {
+                c.init(true, new AEADParameters(secretKey, 128, getNonce(iv, chunkIndex)));  // always full tag.
+
+                c.processAADBytes(adata, 0,adata.length);
+
+                int len = c.processBytes(data, 0, dataOff, data, 0);
+
+                out.write(data, 0, len);
+
+                len = c.doFinal(data, 0);
+
+                out.write(data, 0, len);
+            }
+            catch (InvalidCipherTextException e)
+            {                      e.printStackTrace();
+                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
+            }
+
+            totalBytes += dataOff;
+            chunkIndex++;
+            dataOff = 0;
+        }
+
+        private void finish()
+            throws IOException
+        {
+            if (dataOff > 0)
+            {
+                writeBlock();
+            }
+
+            byte[] adata = new byte[13];
+            System.arraycopy(aaData, 0, adata, 0, aaData.length);
+
+            xorChunkId(adata, chunkIndex);
+            try
+            {
+                c.init(true, new AEADParameters(secretKey, 128, getNonce(iv, chunkIndex)));  // always full tag.
+
+                c.processAADBytes(adata, 0, adata.length);
+                c.processAADBytes(Pack.longToBigEndian(totalBytes), 0, 8);
+
+                c.doFinal(data, 0);
+
+                out.write(data, 0, 16); // output final tag
+            }
+            catch (InvalidCipherTextException e)
+            {
+                throw new IOException("exception processing final tag: " + e.getMessage());
+            }
         }
     }
 }
