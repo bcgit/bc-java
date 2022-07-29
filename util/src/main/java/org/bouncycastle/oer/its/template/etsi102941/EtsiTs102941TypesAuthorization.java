@@ -14,7 +14,7 @@ public class EtsiTs102941TypesAuthorization
 
     /**
      * ok(0),
-     * -- ITS->AA
+     * -- ITS-&gt;AA
      * its-aa-cantparse, -- valid for any structure
      * its-aa-badcontenttype, -- not encrypted, not signed, not authorizationrequest
      * its-aa-imnottherecipient, -- the "recipients" of the outermost encrypted data doesn't include me
@@ -27,9 +27,9 @@ public class EtsiTs102941TypesAuthorization
      * its-aa-unknownea, -- the EA identified by eaId is unknown to me
      * its-aa-invalidea, -- the EA certificate is revoked
      * its-aa-deniedpermissions, -- I, the AA, deny the requested permissions
-     * -- AA->EA
+     * -- AA-&gt;EA
      * aa-ea-cantreachea, -- the EA is unreachable (network error?)
-     * -- EA->AA
+     * -- EA-&gt;AA
      * ea-aa-cantparse, -- valid for any structure
      * ea-aa-badcontenttype, -- not encrypted, not signed, not authorizationrequest
      * ea-aa-imnottherecipient, -- the "recipients" of the outermost encrypted data doesn't include me
