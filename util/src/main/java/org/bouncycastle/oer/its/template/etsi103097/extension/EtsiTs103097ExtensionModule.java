@@ -60,8 +60,8 @@ public class EtsiTs103097ExtensionModule
 
     /**
      * Extension {EXT-TYPE : ExtensionTypes} ::= SEQUENCE {
-     * id      EXT-TYPE.&extId({ExtensionTypes}),
-     * content EXT-TYPE.&ExtContent({ExtensionTypes}{@.id})
+     * id      EXT-TYPE.&amp;extId({ExtensionTypes}),
+     * content EXT-TYPE.&amp;ExtContent({ExtensionTypes}{&#64;.id})
      * }
      * <p>
      * This uses a switch to determine which OER definition to use based on the value of id.

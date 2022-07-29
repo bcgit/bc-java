@@ -106,15 +106,15 @@ public class IEEE1609dot2
 
     /**
      * IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION ::= CLASS {
-     * &id    HeaderInfoContributorId UNIQUE,
-     * &Extn
-     * } WITH SYNTAX {&Extn IDENTIFIED BY &id}
+     * &amp;id    HeaderInfoContributorId UNIQUE,
+     * &amp;Extn
+     * } WITH SYNTAX {&amp;Extn IDENTIFIED BY &amp;id}
      * <p>
      * ContributedExtensionBlock ::= SEQUENCE {
      * contributorId IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION.
-     * &id({Ieee1609Dot2HeaderInfoContributedExtensions}),
+     * &amp;id({Ieee1609Dot2HeaderInfoContributedExtensions}),
      * extns   SEQUENCE (SIZE(1..MAX)) OF IEEE1609DOT2-HEADERINFO-CONTRIBUTED-EXTENSION.
-     * &Extn({Ieee1609Dot2HeaderInfoContributedExtensions}{@.contributorId})
+     * &amp;Extn({Ieee1609Dot2HeaderInfoContributedExtensions}{&#64;.contributorId})
      * }
      */
     public static final OERDefinition.Builder ContributedExtensionBlock = OERDefinition.seq(

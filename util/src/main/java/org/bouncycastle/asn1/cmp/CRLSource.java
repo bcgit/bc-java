@@ -11,7 +11,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 /**
  * GenMsg:    {id-it TBD1}, SEQUENCE SIZE (1..MAX) OF CRLStatus
  * GenRep:    {id-it TBD2}, SEQUENCE SIZE (1..MAX) OF
- * CertificateList  |  < absent >
+ * CertificateList  |  &lt; absent &gt;
  * <p>
  * CRLSource ::= CHOICE {
  * dpn          [0] DistributionPointName,
