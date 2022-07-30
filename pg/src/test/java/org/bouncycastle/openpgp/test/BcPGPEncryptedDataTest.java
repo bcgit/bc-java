@@ -60,6 +60,7 @@ public class BcPGPEncryptedDataTest
     {
         encryptDecryptTest();
         encryptDecryptMultiChunkTest();
+        encryptDecryptMultiChunkBoundaryTest();
         knownDataTest();
     }
 
@@ -121,6 +122,72 @@ public class BcPGPEncryptedDataTest
     {
         SecureRandom random = new SecureRandom();
         byte[] msg = new byte[60000];
+
+        random.nextBytes(msg);
+
+        AsymmetricCipherKeyPairGenerator kpGen = new RSAKeyPairGenerator();
+
+        kpGen.init(new RSAKeyGenerationParameters(new BigInteger("10001", 16), random, 2048, 100));
+
+        PGPKeyPair pgpKp = new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpGen.generateKeyPair(), new Date());
+
+        PGPPublicKey pubKey = pgpKp.getPublicKey();
+
+        PGPPrivateKey privKey = pgpKp.getPrivateKey();
+
+        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+        BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random);
+
+        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+
+        PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
+
+        cPk.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(pubKey));
+
+        ByteArrayOutputStream ldbOut = new ByteArrayOutputStream();
+        PGPLiteralDataGenerator ldGen = new PGPLiteralDataGenerator();
+
+        OutputStream ldOut = ldGen.open(ldbOut, PGPLiteralData.BINARY, PGPLiteralData.CONSOLE, (long)msg.length, new Date());
+
+        ldOut.write(msg);
+
+        ldOut.close();
+
+        byte[] litData = ldbOut.toByteArray();
+
+        OutputStream cOut = cPk.open(cbOut, litData.length);
+
+        cOut.write(litData);
+
+        cOut.close();
+
+        // decrypt
+        PGPObjectFactory oIn = new BcPGPObjectFactory(new ByteArrayInputStream(cbOut.toByteArray()));
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)oIn.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(privKey));
+
+        // System.err.println(Hex.toHexString(Streams.readAll(clear)));
+        PGPObjectFactory pgpFact = new BcPGPObjectFactory(clear);
+
+        PGPLiteralData ld = (PGPLiteralData)pgpFact.nextObject();
+
+        isEquals("wrong filename", PGPLiteralData.CONSOLE, ld.getFileName());
+
+        byte[] data = Streams.readAll(ld.getDataStream());
+
+        isTrue("msg mismatch", Arrays.areEqual(msg, data));
+    }
+
+    // check for exact multiple of chunks in encryption
+    private void encryptDecryptMultiChunkBoundaryTest()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] msg = new byte[(1 << 6) * 5 - 17];     // take of literal data header
 
         random.nextBytes(msg);
 
