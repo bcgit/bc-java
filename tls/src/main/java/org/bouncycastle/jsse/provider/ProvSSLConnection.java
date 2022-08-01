@@ -28,6 +28,11 @@ class ProvSSLConnection
 
     public byte[] getChannelBinding(String channelBinding)
     {
+        if (channelBinding.equals("tls-exporter"))
+        {
+            return tlsContext.exportChannelBinding(ChannelBinding.tls_exporter);
+        }
+
         if (channelBinding.equals("tls-server-end-point"))
         {
             return tlsContext.exportChannelBinding(ChannelBinding.tls_server_end_point);
