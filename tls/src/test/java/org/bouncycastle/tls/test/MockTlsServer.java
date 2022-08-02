@@ -173,6 +173,9 @@ class MockTlsServer
 
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
         System.out.println("Server 'tls-unique': " + hex(tlsUnique));
+
+        byte[] tlsExporter = context.exportChannelBinding(ChannelBinding.tls_exporter);
+        System.out.println("Server 'tls-exporter': " + hex(tlsExporter));
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException
