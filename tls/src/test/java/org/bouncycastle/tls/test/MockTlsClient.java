@@ -195,6 +195,9 @@ class MockTlsClient
 
             byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
             System.out.println("Client 'tls-unique': " + hex(tlsUnique));
+
+            byte[] tlsExporter = context.exportChannelBinding(ChannelBinding.tls_exporter);
+            System.out.println("Client 'tls-exporter': " + hex(tlsExporter));
         }
     }
 
