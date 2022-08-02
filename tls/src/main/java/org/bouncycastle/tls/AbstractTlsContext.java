@@ -196,6 +196,11 @@ abstract class AbstractTlsContext
             throw new IllegalStateException("Export of channel bindings unavailable before handshake completion");
         }
 
+        if (ChannelBinding.tls_exporter == channelBinding)
+        {
+            return exportKeyingMaterial("EXPORTER-Channel-Binding", TlsUtils.EMPTY_BYTES, 32);
+        }
+
         if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {
             return null;

@@ -16,6 +16,11 @@ class ProvSSLConnection
         this.session = session;
     }
 
+    public byte[] exportKeyingMaterial(String asciiLabel, byte[] context_value, int length)
+    {
+        return tlsContext.exportKeyingMaterial(asciiLabel, context_value, length);
+    }
+
     public String getApplicationProtocol()
     {
         return JsseUtils.getApplicationProtocol(tlsContext.getSecurityParametersConnection());
@@ -23,6 +28,11 @@ class ProvSSLConnection
 
     public byte[] getChannelBinding(String channelBinding)
     {
+        if (channelBinding.equals("tls-exporter"))
+        {
+            return tlsContext.exportChannelBinding(ChannelBinding.tls_exporter);
+        }
+
         if (channelBinding.equals("tls-server-end-point"))
         {
             return tlsContext.exportChannelBinding(ChannelBinding.tls_server_end_point);
