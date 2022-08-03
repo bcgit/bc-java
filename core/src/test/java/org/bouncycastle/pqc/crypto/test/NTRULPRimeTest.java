@@ -1,0 +1,91 @@
+package org.bouncycastle.pqc.crypto.test;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Objects;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMGenerator;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+
+public class NTRULPRimeTest
+    extends TestCase
+{
+    private static final String resourcePath = "/org/bouncycastle/pqc/crypto/test/ntruprime/ntrulpr/";
+
+    public void testKEM()
+            throws Exception
+    {
+        NTRULPRimeParameters[] paramList = new NTRULPRimeParameters[]
+        {
+                NTRULPRimeParameters.NTRULPR653,
+                NTRULPRimeParameters.NTRULPR761,
+                NTRULPRimeParameters.NTRULPR857,
+                NTRULPRimeParameters.NTRULPR953,
+                NTRULPRimeParameters.NTRULPR1013,
+                NTRULPRimeParameters.NTRULPR1277
+        };
+
+        for (NTRULPRimeParameters paramSpec : paramList)
+        {
+            System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
+            InputStream resource = NTRULPRimeTest.class.getResourceAsStream(resourcePath + paramSpec.getName().toLowerCase() + ".rsp");
+            BufferedReader resourceReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(resource)));
+
+            String line;
+            while ((line = resourceReader.readLine()) != null)
+            {
+                if (! line.startsWith("count"))
+                    continue;
+                int count = Integer.parseInt(line.split("=")[1].trim());
+                line = resourceReader.readLine();
+                byte[] seed = Hex.decode(line.split("=")[1].trim());
+                line = resourceReader.readLine();
+                byte[] pk = Hex.decode(line.split("=")[1].trim());
+                line = resourceReader.readLine();
+                byte[] sk = Hex.decode(line.split("=")[1].trim());
+                line = resourceReader.readLine();
+                byte[] ct = Hex.decode(line.split("=")[1].trim());
+                line = resourceReader.readLine();
+                byte[] ss = Hex.decode(line.split("=")[1].trim());
+
+                System.out.println("Running Test-" + count + " ...");
+                NISTSecureRandom random = new NISTSecureRandom(seed, null);
+                NTRULPRimeKeyPairGenerator keyPairGenerator = new NTRULPRimeKeyPairGenerator();
+                keyPairGenerator.init(new NTRULPRimeKeyGenerationParameters(random, paramSpec));
+
+                AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
+                assertTrue(Arrays.areEqual(pk, ((NTRULPRimePublicKeyParameters)keyPair.getPublic()).getKey()));
+                System.out.println("- Public Key matched ...");
+                assertTrue(Arrays.areEqual(sk, ((NTRULPRimePrivateKeyParameters)keyPair.getPrivate()).getKey()));
+                System.out.println("- Private Key matched ...");
+
+                NTRULPRimeKEMGenerator kemGenerator = new NTRULPRimeKEMGenerator(random);
+                SecretWithEncapsulation secretEncapsulation = kemGenerator.generateEncapsulated(keyPair.getPublic());
+
+                assertTrue(Arrays.areEqual(ct, secretEncapsulation.getEncapsulation()));
+                System.out.println("- Encapsulation Cipher Text matched ...");
+                assertTrue(Arrays.areEqual(ss, secretEncapsulation.getSecret()));
+                System.out.println("- Encapsulation Shared Secret matched ...");
+
+                NTRULPRimeKEMExtractor kemExtractor = new NTRULPRimeKEMExtractor((NTRULPRimePrivateKeyParameters)keyPair.getPrivate());
+                byte[] decryptedSecret = kemExtractor.extractSecret(ct);
+
+                assertTrue(Arrays.areEqual(ss, decryptedSecret));
+                System.out.println("- Decapsulation Shared Secret matched ...");
+            }
+
+            resource.close();
+        }
+    }
+}
