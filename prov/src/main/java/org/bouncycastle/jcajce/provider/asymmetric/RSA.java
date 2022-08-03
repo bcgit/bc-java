@@ -4,12 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -23,7 +23,7 @@ public class RSA
 
     static
     {
-        generalRsaAttributes.put("SupportedKeyClasses", "javax.crypto.interfaces.RSAPublicKey|javax.crypto.interfaces.RSAPrivateKey");
+        generalRsaAttributes.put("SupportedKeyClasses", "java.security.interfaces.RSAPublicKey|java.security.interfaces.RSAPrivateKey");
         generalRsaAttributes.put("SupportedKeyFormats", "PKCS#8|X.509");
     }
 
@@ -65,13 +65,13 @@ public class RSA
             provider.addAlgorithm("Cipher.RSA", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/RAW", PREFIX + "CipherSpi$NoPadding");
             provider.addAlgorithm("Cipher.RSA/PKCS1", PREFIX + "CipherSpi$PKCS1v1_5Padding");
-            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.rsaEncryption, PREFIX + "CipherSpi$PKCS1v1_5Padding");
-            provider.addAlgorithm("Cipher", X509ObjectIdentifiers.id_ea_rsa, PREFIX + "CipherSpi$PKCS1v1_5Padding");
+            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.rsaEncryption, PREFIX + "CipherSpi$PKCS1v1_5Padding", generalRsaAttributes);
+            provider.addAlgorithm("Cipher", X509ObjectIdentifiers.id_ea_rsa, PREFIX + "CipherSpi$PKCS1v1_5Padding", generalRsaAttributes);
             provider.addAlgorithm("Cipher.RSA/1", PREFIX + "CipherSpi$PKCS1v1_5Padding_PrivateOnly");
             provider.addAlgorithm("Cipher.RSA/2", PREFIX + "CipherSpi$PKCS1v1_5Padding_PublicOnly");
-            provider.addAlgorithm("Cipher.RSA/OAEP", PREFIX + "CipherSpi$OAEPPadding");
-            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.id_RSAES_OAEP, PREFIX + "CipherSpi$OAEPPadding");
-            provider.addAlgorithm("Cipher.RSA/ISO9796-1", PREFIX + "CipherSpi$ISO9796d1Padding");
+            provider.addAlgorithm("Cipher.RSA/OAEP", PREFIX + "CipherSpi$OAEPPadding", generalRsaAttributes);
+            provider.addAlgorithm("Cipher", PKCSObjectIdentifiers.id_RSAES_OAEP, PREFIX + "CipherSpi$OAEPPadding", generalRsaAttributes);
+            provider.addAlgorithm("Cipher.RSA/ISO9796-1", PREFIX + "CipherSpi$ISO9796d1Padding", generalRsaAttributes);
 
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//RAW", "RSA");
             provider.addAlgorithm("Alg.Alias.Cipher.RSA//NOPADDING", "RSA");
@@ -97,12 +97,12 @@ public class RSA
             registerOidAlgorithmParameters(provider, PKCSObjectIdentifiers.id_RSAES_OAEP, "OAEP");
             registerOidAlgorithmParameters(provider, PKCSObjectIdentifiers.id_RSASSA_PSS, "PSS");
 
-            provider.addAlgorithm("Signature.RSASSA-PSS", PREFIX + "PSSSignatureSpi$PSSwithRSA");
-            provider.addAlgorithm("Signature." + PKCSObjectIdentifiers.id_RSASSA_PSS, PREFIX + "PSSSignatureSpi$PSSwithRSA");
-            provider.addAlgorithm("Signature.OID." + PKCSObjectIdentifiers.id_RSASSA_PSS, PREFIX + "PSSSignatureSpi$PSSwithRSA");
+            provider.addAlgorithm("Signature.RSASSA-PSS", PREFIX + "PSSSignatureSpi$PSSwithRSA", generalRsaAttributes);
+            provider.addAlgorithm("Alg.Alias.Signature." + PKCSObjectIdentifiers.id_RSASSA_PSS, "RSASSA-PSS");
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + PKCSObjectIdentifiers.id_RSASSA_PSS, "RSASSA-PSS");
 
-            provider.addAlgorithm("Signature.RSA", PREFIX + "DigestSignatureSpi$noneRSA");
-            provider.addAlgorithm("Signature.RAWRSASSA-PSS", PREFIX + "PSSSignatureSpi$nonePSS");
+            provider.addAlgorithm("Signature.RSA", PREFIX + "DigestSignatureSpi$noneRSA", generalRsaAttributes);
+            provider.addAlgorithm("Signature.RAWRSASSA-PSS", PREFIX + "PSSSignatureSpi$nonePSS", generalRsaAttributes);
 
             provider.addAlgorithm("Alg.Alias.Signature.RAWRSA", "RSA");
             provider.addAlgorithm("Alg.Alias.Signature.NONEWITHRSA", "RSA");
@@ -271,6 +271,7 @@ public class RSA
                 provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
                 provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
             }
+            provider.addAttributes("Signature." + mainName, generalRsaAttributes);
         }
 
         private void addISO9796Signature(
@@ -281,6 +282,7 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/ISO9796-2", digest + "WITHRSA/ISO9796-2");
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/ISO9796-2", digest + "WITHRSA/ISO9796-2");
             provider.addAlgorithm("Signature." + digest + "WITHRSA/ISO9796-2", className);
+            provider.addAttributes("Signature." + digest + "WITHRSA/ISO9796-2", generalRsaAttributes);
         }
 
         private void addPSSSignature(
@@ -293,6 +295,7 @@ public class RSA
             {
                 provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/PSS", digest + stem);
                 provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/PSS", digest + stem);
+                provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSA/PSS", digest + stem);
                 provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSASSA-PSS", digest + stem);
                 provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSASSA-PSS", digest + stem);
                 provider.addAlgorithm("Alg.Alias.Signature." + digest + "WITHRSASSA-PSS", digest + stem);
@@ -302,6 +305,7 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSAAnd" + mgf, digest + stem);
 
             provider.addAlgorithm("Signature." + digest + "WITHRSAAND" + mgf, className);
+            provider.addAttributes("Signature." + digest + "WITHRSAAND" + mgf, generalRsaAttributes);
         }
 
         private void addPSSSignature(
@@ -318,6 +322,7 @@ public class RSA
 
             provider.addAlgorithm("Signature", sigOid, className);
             provider.addAlgorithm("Signature." + digest + "WITHRSAPSS", className);
+            provider.addAttributes("Signature." + digest + "WITHRSAPSS", generalRsaAttributes);
         }
 
         private void addX931Signature(
@@ -328,6 +333,7 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "withRSA/X9.31", digest + "WITHRSA/X9.31");
             provider.addAlgorithm("Alg.Alias.Signature." + digest + "WithRSA/X9.31", digest + "WITHRSA/X9.31");
             provider.addAlgorithm("Signature." + digest + "WITHRSA/X9.31", className);
+            provider.addAttributes("Signature." + digest + "WITHRSA/X9.31", generalRsaAttributes);
         }
     }
 }

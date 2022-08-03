@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,22 @@ public class BouncyCastleProviderTest
     protected void tearDown()
     {
         Security.removeProvider(provider.getName());
+    }
+
+    public void testCheckAttributesPropagatingToAliases()
+    {
+        Provider fipsProv = new BouncyCastleProvider();
+
+        assertEquals("Software", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSA/PSS")).getAttribute("ImplementedIn"));
+        assertEquals("PKCS#8|X.509", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSA/PSS")).getAttribute("SupportedKeyFormats"));
+        assertEquals("java.security.interfaces.RSAPublicKey|java.security.interfaces.RSAPrivateKey", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSA/PSS")).getAttribute("SupportedKeyClasses"));
+        assertEquals("Software", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSAANDMGF1")).getAttribute("ImplementedIn"));
+        assertEquals("PKCS#8|X.509", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSAANDMGF1")).getAttribute("SupportedKeyFormats"));
+        assertEquals("java.security.interfaces.RSAPublicKey|java.security.interfaces.RSAPrivateKey", ((Provider.Service)fipsProv.getService("Signature", "SHA256WITHRSAANDMGF1")).getAttribute("SupportedKeyClasses"));
+
+        assertEquals("Software", ((Provider.Service)fipsProv.getService("Signature", "ECDSA")).getAttribute("ImplementedIn"));
+        assertEquals("PKCS#8|X.509", ((Provider.Service)fipsProv.getService("Signature", "ECDSA")).getAttribute("SupportedKeyFormats"));
+        assertEquals("java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey", ((Provider.Service)fipsProv.getService("Signature", "ECDSA")).getAttribute("SupportedKeyClasses"));
     }
 
     public void testRegisteredClasses()

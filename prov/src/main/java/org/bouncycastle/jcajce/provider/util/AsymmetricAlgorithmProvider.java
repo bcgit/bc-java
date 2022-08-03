@@ -1,5 +1,7 @@
 package org.bouncycastle.jcajce.provider.util;
 
+import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 
@@ -47,6 +49,31 @@ public abstract class AsymmetricAlgorithmProvider
             provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
             provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
         }
+    }
+
+    protected void addSignatureAlgorithm(
+        ConfigurableProvider provider,
+        String digest,
+        String algorithm,
+        String className,
+        ASN1ObjectIdentifier oid,
+        Map<String, String> attributes)
+    {
+        String mainName = digest + "WITH" + algorithm;
+        String jdk11Variation1 = digest + "with" + algorithm;
+        String jdk11Variation2 = digest + "With" + algorithm;
+        String alias = digest + "/" + algorithm;
+
+        provider.addAlgorithm("Signature." + mainName, className);
+        provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation1, mainName);
+        provider.addAlgorithm("Alg.Alias.Signature." + jdk11Variation2, mainName);
+        provider.addAlgorithm("Alg.Alias.Signature." + alias, mainName);
+        if (oid != null)
+        {
+            provider.addAlgorithm("Alg.Alias.Signature." + oid, mainName);
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, mainName);
+        }
+        provider.addAttributes("Signature." + mainName, attributes);
     }
 
     protected void registerOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)
