@@ -9,23 +9,23 @@ public class NTRULPRimeParameters
     implements CipherParameters
 {
     public static final NTRULPRimeParameters NTRULPR653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
-                                                                                    2175, 113, 2031, 290,
-                                                                                    865, 897, 1125);
+        2175, 113, 2031, 290,
+        865, 897, 1125);
     public static final NTRULPRimeParameters NTRULPR761 = new NTRULPRimeParameters("ntrulpr761", 761, 4591, 250, 292,
-                                                                                    2156, 114, 2007, 287,
-                                                                                    1007, 1039, 1294);
+        2156, 114, 2007, 287,
+        1007, 1039, 1294);
     public static final NTRULPRimeParameters NTRULPR857 = new NTRULPRimeParameters("ntrulpr857", 857, 5167, 281, 329,
-                                                                                    2433, 101, 2265, 324,
-                                                                                    1152, 1184, 1463);
+        2433, 101, 2265, 324,
+        1152, 1184, 1463);
     public static final NTRULPRimeParameters NTRULPR953 = new NTRULPRimeParameters("ntrulpr953", 953, 6343, 345, 404,
-                                                                                    2997, 82, 2798, 400,
-                                                                                    1317, 1349, 1652);
+        2997, 82, 2798, 400,
+        1317, 1349, 1652);
     public static final NTRULPRimeParameters NTRULPR1013 = new NTRULPRimeParameters("ntrulpr1013", 1013, 7177, 392, 450,
-                                                                                    3367, 73, 3143, 449,
-                                                                                    1423, 1455, 1773);
+        3367, 73, 3143, 449,
+        1423, 1455, 1773);
     public static final NTRULPRimeParameters NTRULPR1277 = new NTRULPRimeParameters("ntrulpr1277", 1277, 7879, 429, 502,
-                                                                                    3724, 66, 3469, 496,
-                                                                                    1815, 1847, 2231);
+        3724, 66, 3469, 496,
+        1815, 1847, 2231);
 
     private final String name;
     private final int p;
@@ -72,39 +72,48 @@ public class NTRULPRimeParameters
         this.privateKeyBytes = privateKeyBytes;
     }
 
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
-    public int getP() {
+    public int getP()
+    {
         return p;
     }
 
-    public int getQ() {
+    public int getQ()
+    {
         return q;
     }
 
-    public int getW() {
+    public int getW()
+    {
         return w;
     }
 
-    public int getDelta() {
+    public int getDelta()
+    {
         return delta;
     }
 
-    public int getTau0() {
+    public int getTau0()
+    {
         return tau0;
     }
 
-    public int getTau1() {
+    public int getTau1()
+    {
         return tau1;
     }
 
-    public int getTau2() {
+    public int getTau2()
+    {
         return tau2;
     }
 
-    public int getTau3() {
+    public int getTau3()
+    {
         return tau3;
     }
 
