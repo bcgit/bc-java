@@ -342,12 +342,25 @@ public final class BouncyCastleProvider extends Provider
         put(key, value);
     }
 
+    public void addAlgorithm(String key, String value, Map<String, String> attributes)
+    {
+        addAlgorithm(key, value);
+        addAttributes(key, attributes);
+    }
+
     public void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className)
     {
         addAlgorithm(type + "." + oid, className);
         addAlgorithm(type + ".OID." + oid, className);
     }
 
+    public void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className, Map<String, String> attributes)
+    {
+        addAlgorithm(type, oid, className);
+        addAttributes(type + "." + oid, attributes);
+        addAttributes(type + ".OID." + oid, attributes);
+    }
+    
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
         synchronized (keyInfoConverters)
@@ -363,6 +376,8 @@ public final class BouncyCastleProvider extends Provider
 
     public void addAttributes(String key, Map<String, String> attributeMap)
     {
+        put(key + " ImplementedIn", "Software");
+
         for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
         {
             String attributeName = (String)it.next();

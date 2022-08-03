@@ -45,7 +45,11 @@ public interface ConfigurableProvider
 
     void addAlgorithm(String key, String value);
 
+    void addAlgorithm(String key, String value, Map<String, String> attributes);
+
     void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className);
+
+    void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className, Map<String, String> attributes);
 
     boolean hasAlgorithm(String type, String name);
 
