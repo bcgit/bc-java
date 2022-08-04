@@ -14,95 +14,103 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 public interface UAObjectIdentifiers
 {
     /** Base OID: 1.2.804.2.1.1.1 */
-    static final ASN1ObjectIdentifier UaOid = new ASN1ObjectIdentifier("1.2.804.2.1.1.1");
+    ASN1ObjectIdentifier UaOid = new ASN1ObjectIdentifier("1.2.804.2.1.1.1");
 
     /** DSTU4145 Little Endian presentation.  OID: 1.2.804.2.1.1.1.1.3.1.1 */
-    static final ASN1ObjectIdentifier dstu4145le = UaOid.branch("1.3.1.1");
+    ASN1ObjectIdentifier dstu4145le = UaOid.branch("1.3.1.1");
     /** DSTU4145 Big Endian presentation.  OID: 1.2.804.2.1.1.1.1.3.1.1.1 */
-    static final ASN1ObjectIdentifier dstu4145be = UaOid.branch("1.3.1.1.1.1");
+    ASN1ObjectIdentifier dstu4145be = UaOid.branch("1.3.1.1.1.1");
     
     /** DSTU7564 256-bit digest presentation. */
-    static final ASN1ObjectIdentifier dstu7564digest_256 = UaOid.branch("1.2.2.1");
+    ASN1ObjectIdentifier dstu7564digest_256 = UaOid.branch("1.2.2.1");
     /** DSTU7564 384-bit digest presentation. */
-    static final ASN1ObjectIdentifier dstu7564digest_384 = UaOid.branch("1.2.2.2");
+    ASN1ObjectIdentifier dstu7564digest_384 = UaOid.branch("1.2.2.2");
     /** DSTU7564 512-bit digest presentation. */
-    static final ASN1ObjectIdentifier dstu7564digest_512 = UaOid.branch("1.2.2.3");
+    ASN1ObjectIdentifier dstu7564digest_512 = UaOid.branch("1.2.2.3");
 
     /** DSTU7564 256-bit mac presentation. */
-    static final ASN1ObjectIdentifier dstu7564mac_256 = UaOid.branch("1.2.2.4");
+    ASN1ObjectIdentifier dstu7564mac_256 = UaOid.branch("1.2.2.4");
     /** DSTU7564 384-bit mac presentation. */
-    static final ASN1ObjectIdentifier dstu7564mac_384 = UaOid.branch("1.2.2.5");
+    ASN1ObjectIdentifier dstu7564mac_384 = UaOid.branch("1.2.2.5");
     /** DSTU7564 512-bit mac presentation. */
-    static final ASN1ObjectIdentifier dstu7564mac_512 = UaOid.branch("1.2.2.6");
+    ASN1ObjectIdentifier dstu7564mac_512 = UaOid.branch("1.2.2.6");
 
 
     /** DSTU7624 in ECB mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ecb_128 = UaOid.branch("1.1.3.1.1");
+    ASN1ObjectIdentifier dstu7624ecb_128 = UaOid.branch("1.1.3.1.1");
     /** DSTU7624 in ECB mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ecb_256 = UaOid.branch("1.1.3.1.2");
+    ASN1ObjectIdentifier dstu7624ecb_256 = UaOid.branch("1.1.3.1.2");
     /** DSTU7624 in ECB mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ecb_512 = UaOid.branch("1.1.3.1.3");
+    ASN1ObjectIdentifier dstu7624ecb_512 = UaOid.branch("1.1.3.1.3");
 
     /** DSTU7624 in CTR mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ctr_128 = UaOid.branch("1.1.3.2.1");
+    ASN1ObjectIdentifier dstu7624ctr_128 = UaOid.branch("1.1.3.2.1");
     /** DSTU7624 in CTR mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ctr_256 = UaOid.branch("1.1.3.2.2");
+    ASN1ObjectIdentifier dstu7624ctr_256 = UaOid.branch("1.1.3.2.2");
     /** DSTU7624 in CTR mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ctr_512 = UaOid.branch("1.1.3.2.3");
+    ASN1ObjectIdentifier dstu7624ctr_512 = UaOid.branch("1.1.3.2.3");
 
     /** DSTU7624 in CFB mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cfb_128 = UaOid.branch("1.1.3.3.1");
+    ASN1ObjectIdentifier dstu7624cfb_128 = UaOid.branch("1.1.3.3.1");
     /** DSTU7624 in CFB mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cfb_256 = UaOid.branch("1.1.3.3.2");
+    ASN1ObjectIdentifier dstu7624cfb_256 = UaOid.branch("1.1.3.3.2");
     /** DSTU7624 in CFB mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cfb_512 = UaOid.branch("1.1.3.3.3");
+    ASN1ObjectIdentifier dstu7624cfb_512 = UaOid.branch("1.1.3.3.3");
 
     /** DSTU7624 in MAC mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cmac_128 = UaOid.branch("1.1.3.4.1");
+    ASN1ObjectIdentifier dstu7624cmac_128 = UaOid.branch("1.1.3.4.1");
     /** DSTU7624 in MAC mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cmac_256 = UaOid.branch("1.1.3.4.2");
+    ASN1ObjectIdentifier dstu7624cmac_256 = UaOid.branch("1.1.3.4.2");
     /** DSTU7624 in MAC mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cmac_512 = UaOid.branch("1.1.3.4.3");
+    ASN1ObjectIdentifier dstu7624cmac_512 = UaOid.branch("1.1.3.4.3");
 
     /** DSTU7624 in CBC mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cbc_128 = UaOid.branch("1.1.3.5.1");
+    ASN1ObjectIdentifier dstu7624cbc_128 = UaOid.branch("1.1.3.5.1");
     /** DSTU7624 in CBC mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cbc_256 = UaOid.branch("1.1.3.5.2");
+    ASN1ObjectIdentifier dstu7624cbc_256 = UaOid.branch("1.1.3.5.2");
     /** DSTU7624 in CBC mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624cbc_512 = UaOid.branch("1.1.3.5.3");
+    ASN1ObjectIdentifier dstu7624cbc_512 = UaOid.branch("1.1.3.5.3");
 
     /** DSTU7624 in OFB mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ofb_128 = UaOid.branch("1.1.3.6.1");
+    ASN1ObjectIdentifier dstu7624ofb_128 = UaOid.branch("1.1.3.6.1");
     /** DSTU7624 in OFB mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ofb_256 = UaOid.branch("1.1.3.6.2");
+    ASN1ObjectIdentifier dstu7624ofb_256 = UaOid.branch("1.1.3.6.2");
     /** DSTU7624 in OFB mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ofb_512 = UaOid.branch("1.1.3.6.3");
+    ASN1ObjectIdentifier dstu7624ofb_512 = UaOid.branch("1.1.3.6.3");
 
     /** DSTU7624 in GMAC (GCM witout encryption) mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624gmac_128 = UaOid.branch("1.1.3.7.1");
+    ASN1ObjectIdentifier dstu7624gmac_128 = UaOid.branch("1.1.3.7.1");
     /** DSTU7624 in GMAC (GCM witout encryption) mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624gmac_256 = UaOid.branch("1.1.3.7.2");
+    ASN1ObjectIdentifier dstu7624gmac_256 = UaOid.branch("1.1.3.7.2");
     /** DSTU7624 in GMAC (GCM witout encryption) mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624gmac_512 = UaOid.branch("1.1.3.7.3");
+    ASN1ObjectIdentifier dstu7624gmac_512 = UaOid.branch("1.1.3.7.3");
 
     /** DSTU7624 in CCM mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ccm_128 = UaOid.branch("1.1.3.8.1");
+    ASN1ObjectIdentifier dstu7624ccm_128 = UaOid.branch("1.1.3.8.1");
     /** DSTU7624 in CCM mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ccm_256 = UaOid.branch("1.1.3.8.2");
+    ASN1ObjectIdentifier dstu7624ccm_256 = UaOid.branch("1.1.3.8.2");
     /** DSTU7624 in CCM mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624ccm_512 = UaOid.branch("1.1.3.8.3");
+    ASN1ObjectIdentifier dstu7624ccm_512 = UaOid.branch("1.1.3.8.3");
 
     /** DSTU7624 in XTS mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624xts_128 = UaOid.branch("1.1.3.9.1");
+    ASN1ObjectIdentifier dstu7624xts_128 = UaOid.branch("1.1.3.9.1");
     /** DSTU7624 in XTS mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624xts_256 = UaOid.branch("1.1.3.9.2");
+    ASN1ObjectIdentifier dstu7624xts_256 = UaOid.branch("1.1.3.9.2");
     /** DSTU7624 in XTS mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624xts_512 = UaOid.branch("1.1.3.9.3");
+    ASN1ObjectIdentifier dstu7624xts_512 = UaOid.branch("1.1.3.9.3");
 
     /** DSTU7624 in key wrap (KW) mode with 128 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624kw_128 = UaOid.branch("1.1.3.10.1");
+    ASN1ObjectIdentifier dstu7624kw_128 = UaOid.branch("1.1.3.10.1");
     /** DSTU7624 in key wrap (KW) mode with 256 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624kw_256 = UaOid.branch("1.1.3.10.2");
+    ASN1ObjectIdentifier dstu7624kw_256 = UaOid.branch("1.1.3.10.2");
     /** DSTU7624 in key wrap (KW) mode with 512 bit block/key presentation */
-    static final ASN1ObjectIdentifier dstu7624kw_512 = UaOid.branch("1.1.3.10.3");
+    ASN1ObjectIdentifier dstu7624kw_512 = UaOid.branch("1.1.3.10.3");
+    
+    ASN1ObjectIdentifier alg_id = UaOid.branch("1");              /* 1.2.804.2.1.1.1.1 */
+
+    ASN1ObjectIdentifier sym_id = alg_id.branch("1");             /* 1.2.804.2.1.1.1.1.1 */
+    ASN1ObjectIdentifier hmac_gost3411_id = sym_id.branch("2");   /* 1.2.804.2.1.1.1.1.1.2 */
+
+    ASN1ObjectIdentifier hash_id = alg_id.branch("2");            /* 1.2.804.2.1.1.1.1.2 */
+    ASN1ObjectIdentifier gost3411_id = hash_id.branch("1");       /* 1.2.804.2.1.1.1.1.2.1 */
 }
