@@ -6,11 +6,14 @@ import java.util.Collections;
 
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSA;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.agreement.DHBasicAgreement;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
 import org.bouncycastle.crypto.constraints.LegacyBitsOfSecurityConstraint;
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
@@ -41,11 +44,15 @@ import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
+import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
+import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
@@ -115,6 +122,8 @@ public class CryptoServiceConstraintsTest
 //        testBlowfish();
         testEdwards();
         testEC();
+        testDSA();
+        testDH();
     }
 
     private void test112bits()
@@ -199,30 +208,30 @@ public class CryptoServiceConstraintsTest
     {
         BigInteger p = new BigInteger(
             "17801190547854226652823756245015999014523215636912067427327445031"
-            + "444286578873702077061269525212346307956715678477846644997065077092072"
-            + "785705000966838814403412974522117181850604723115003930107995935806739"
-            + "534871706631980226201971496652413506094591370759495651467285569060679"
-            + "4135837542707371727429551343320695239");
+                + "444286578873702077061269525212346307956715678477846644997065077092072"
+                + "785705000966838814403412974522117181850604723115003930107995935806739"
+                + "534871706631980226201971496652413506094591370759495651467285569060679"
+                + "4135837542707371727429551343320695239");
         BigInteger q = new BigInteger("864205495604807476120572616017955259175325408501");
         BigInteger g = new BigInteger(
             "17406820753240209518581198012352343653860449079456135097849583104"
-            + "059995348845582314785159740894095072530779709491575949236830057425243"
-            + "876103708447346718014887611810308304375498519098347260155049469132948"
-            + "808339549231385000036164648264460849230407872181895999905649609776936"
-            + "8017749273708962006689187956744210730");
+                + "059995348845582314785159740894095072530779709491575949236830057425243"
+                + "876103708447346718014887611810308304375498519098347260155049469132948"
+                + "808339549231385000036164648264460849230407872181895999905649609776936"
+                + "8017749273708962006689187956744210730");
         BigInteger x = new BigInteger("774290984479563168206130828532207106685994961942");
         BigInteger y = new BigInteger(
             "11413953692062257086993806233172330674938775529337393031977771373"
-            + "129746946910914240113023221721777732136818444139744393157698465044933"
-            + "013442758757568273862367115354816009554808091206304096963365266649829"
-            + "966917085474283297375073085459703201287235180005340124397005934806133"
-            + "1526243448471205166130497310892424132");
+                + "129746946910914240113023221721777732136818444139744393157698465044933"
+                + "013442758757568273862367115354816009554808091206304096963365266649829"
+                + "966917085474283297375073085459703201287235180005340124397005934806133"
+                + "1526243448471205166130497310892424132");
 
         DSAPublicKeyParameters pk = new DSAPublicKeyParameters(y, new DSAParameters(p, q, g));
         DSAPrivateKeyParameters sk = new DSAPrivateKeyParameters(x, new DSAParameters(p, q, g));
 
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128));
-        
+
         DSASigner signer = new DSASigner();
 
         try
@@ -237,7 +246,7 @@ public class CryptoServiceConstraintsTest
 
         // legacy usage allowed for verification.
         signer.init(false, pk);
-        
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
@@ -536,6 +545,7 @@ public class CryptoServiceConstraintsTest
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
+
     private void testCamelliaLight()
     {
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
@@ -557,6 +567,7 @@ public class CryptoServiceConstraintsTest
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
+
     private void testCAST5()
     {
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256));
@@ -648,7 +659,7 @@ public class CryptoServiceConstraintsTest
         {
             isEquals(e.getMessage(), "service does not provide 128 bits of security only 64", e.getMessage());
         }
-        
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
@@ -835,7 +846,7 @@ public class CryptoServiceConstraintsTest
         new SHAKEDigest(256);
         new CSHAKEDigest(256, new byte[0], new byte[0]);
         new KMAC(256, new byte[0]);
-        
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
@@ -861,7 +872,7 @@ public class CryptoServiceConstraintsTest
         {
             isEquals("service does not provide 256 bits of security only 192", e.getMessage());
         }
-        
+
         new DSTU7564Digest(512);
 
         CryptoServicesRegistrar.setServicesConstraints(null);
@@ -955,9 +966,99 @@ public class CryptoServiceConstraintsTest
         }
     }
 
+    private void testDSA()
+    {
+        DSAParameters dsaParams = new DSAParameters(
+            new BigInteger(
+                "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+                    "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+                    "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+                    "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+                    "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+                    "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+                    "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+                    "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+                    "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+                    "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+                    "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16),
+            new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16),
+            new BigInteger(
+                "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+                    "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+                    "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+                    "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+                    "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+                    "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+                    "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+                    "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+                    "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+                    "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+                    "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)
+        );
+
+        SecureRandom random = new SecureRandom();
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        DSAKeyPairGenerator dsaKp = new DSAKeyPairGenerator();
+
+        dsaKp.init(new DSAKeyGenerationParameters(random, dsaParams));
+
+        AsymmetricCipherKeyPair kp = dsaKp.generateKeyPair();
+
+        dsaSignerTest(kp.getPublic(), kp.getPrivate(), new DSASigner());
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void dsaSignerTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, DSA signer)
+    {
+        signer.init(false, pk);  // should be allowed (legacy)
+
+        try
+        {
+            signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 112", e.getMessage());
+        }
+    }
+
+    private void testDH()
+    {
+        SecureRandom random = new SecureRandom();
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        DHKeyPairGenerator dsaKp = new DHKeyPairGenerator();
+
+        dsaKp.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_1024));
+
+        AsymmetricCipherKeyPair kp = dsaKp.generateKeyPair();
+
+        dhTest(kp.getPublic(), kp.getPrivate(), new DHBasicAgreement());
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void dhTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, BasicAgreement agreement)
+    {
+
+        try
+        {
+            agreement.init(sk);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+    }
+
     public static void main(
-         String[] args)
-     {
-         runTest(new CryptoServiceConstraintsTest());
-     }
+        String[] args)
+    {
+        runTest(new CryptoServiceConstraintsTest());
+    }
 }
