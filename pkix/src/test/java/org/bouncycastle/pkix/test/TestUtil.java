@@ -163,4 +163,20 @@ public class TestUtil
 
         return new JcaX509CRLConverter().setProvider("BC").getCRL(crlGen.build(new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC").build(sigKey)));
     }
+
+    public static X509CRL makeCrl(X509Certificate issuer, Date issueDate, PrivateKey sigKey, BigInteger revoked)
+        throws Exception
+    {
+        Date now = new Date();
+        X509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(issuer.getSubjectX500Principal(), issueDate);
+        JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
+
+        crlGen.setNextUpdate(new Date(now.getTime() + 100000));
+
+        crlGen.addCRLEntry(revoked, now, CRLReason.privilegeWithdrawn);
+
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extensionUtils.createAuthorityKeyIdentifier(issuer));
+
+        return new JcaX509CRLConverter().setProvider("BC").getCRL(crlGen.build(new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC").build(sigKey)));
+    }
 }
