@@ -149,7 +149,7 @@ public class ARIAEngine
     boolean forEncryption;
     public ARIAEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity()));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
     }
 
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
