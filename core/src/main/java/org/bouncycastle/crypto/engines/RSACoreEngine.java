@@ -3,10 +3,11 @@ package org.bouncycastle.crypto.engines;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -18,21 +19,21 @@ import org.bouncycastle.util.Arrays;
 class RSACoreEngine
 {
     private RSAKeyParameters key;
-    private boolean          forEncryption;
+    private boolean forEncryption;
 
     /**
      * initialise the RSA engine.
      *
      * @param forEncryption true if we are encrypting, false otherwise.
-     * @param param the necessary RSA key parameters.
+     * @param param         the necessary RSA key parameters.
      */
     public void init(
-        boolean          forEncryption,
+        boolean forEncryption,
         CipherParameters param)
     {
         if (param instanceof ParametersWithRandom)
         {
-            ParametersWithRandom    rParam = (ParametersWithRandom)param;
+            ParametersWithRandom rParam = (ParametersWithRandom)param;
 
             key = (RSAKeyParameters)rParam.getParameters();
         }
@@ -43,7 +44,7 @@ class RSACoreEngine
 
         this.forEncryption = forEncryption;
 
-        CryptoServicesRegistrar.checkConstraints(new RSACoreProperties(key, forEncryption));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSA", ConstraintUtils.bitsOfSecurityFor(key.getModulus()), key, getPurpose(key.isPrivate(), forEncryption)));
     }
 
     /**
@@ -55,7 +56,7 @@ class RSACoreEngine
      */
     public int getInputBlockSize()
     {
-        int     bitSize = key.getModulus().bitLength();
+        int bitSize = key.getModulus().bitLength();
 
         if (forEncryption)
         {
@@ -76,7 +77,7 @@ class RSACoreEngine
      */
     public int getOutputBlockSize()
     {
-        int     bitSize = key.getModulus().bitLength();
+        int bitSize = key.getModulus().bitLength();
 
         if (forEncryption)
         {
@@ -89,9 +90,9 @@ class RSACoreEngine
     }
 
     public BigInteger convertInput(
-        byte[]  in,
-        int     inOff,
-        int     inLen)
+        byte[] in,
+        int inOff,
+        int inLen)
     {
         if (inLen > (getInputBlockSize() + 1))
         {
@@ -102,7 +103,7 @@ class RSACoreEngine
             throw new DataLengthException("input too large for RSA cipher.");
         }
 
-        byte[]  block;
+        byte[] block;
 
         if (inOff != 0 || inLen != in.length)
         {
@@ -127,13 +128,13 @@ class RSACoreEngine
     public byte[] convertOutput(
         BigInteger result)
     {
-        byte[]      output = result.toByteArray();
+        byte[] output = result.toByteArray();
 
         if (forEncryption)
         {
             if (output[0] == 0 && output.length > getOutputBlockSize())        // have ended up with an extra zero byte, copy down.
             {
-                byte[]  tmp = new byte[output.length - 1];
+                byte[] tmp = new byte[output.length - 1];
 
                 System.arraycopy(output, 1, tmp, 0, tmp.length);
 
@@ -142,7 +143,7 @@ class RSACoreEngine
 
             if (output.length < getOutputBlockSize())     // have ended up with less bytes than normal, lengthen
             {
-                byte[]  tmp = new byte[getOutputBlockSize()];
+                byte[] tmp = new byte[getOutputBlockSize()];
 
                 System.arraycopy(output, 0, tmp, tmp.length - output.length, output.length);
 
@@ -153,7 +154,7 @@ class RSACoreEngine
         }
         else
         {
-            byte[]  rv;
+            byte[] rv;
             if (output[0] == 0)        // have ended up with an extra zero byte, copy down.
             {
                 rv = new byte[output.length - 1];
@@ -212,63 +213,29 @@ class RSACoreEngine
         else
         {
             return input.modPow(
-                        key.getExponent(), key.getModulus());
+                key.getExponent(), key.getModulus());
         }
     }
 
-    private static class RSACoreProperties
-        implements CryptoServiceProperties
+    private CryptoServicePurpose getPurpose(boolean isPrivate, boolean forEncryption)
     {
-        private final int mBits;
+        boolean isSigning = isPrivate && forEncryption;
+        boolean isEncryption = !isPrivate && forEncryption;
+        boolean isVerifying = !isPrivate && !forEncryption;
 
-        private final boolean isEncryption;
-        private final boolean isSigning;
-        private final boolean isVerifying;
-
-        RSACoreProperties(RSAKeyParameters rsaKey, boolean forEncryption)
+        if (isSigning)
         {
-            this.mBits = rsaKey.getModulus().bitLength();
-            this.isSigning = rsaKey.isPrivate() && forEncryption;
-            this.isEncryption = !rsaKey.isPrivate() && forEncryption;
-            this.isVerifying = !rsaKey.isPrivate() && !forEncryption;
+            return CryptoServicePurpose.SIGNING;
+        }
+        if (isEncryption)
+        {
+            return CryptoServicePurpose.ENCRYPTION;
+        }
+        if (isVerifying)
+        {
+            return CryptoServicePurpose.VERIFYING;
         }
 
-        public int bitsOfSecurity()
-        {
-            if (mBits >= 2048)
-            {
-                return (mBits >= 3072) ?
-                    ((mBits >= 7680) ?
-                        ((mBits >= 15360) ? 256
-                            : 192)
-                        : 128)
-                    : 112;
-            }
-
-            return (mBits >= 1024) ? 80 : 20;      // TODO: possibly a bit harsh...
-        }
-
-        public String getServiceName()
-        {
-            return "RSA";
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (isSigning)
-            {
-                return CryptoServicePurpose.SIGNING;
-            }
-            if (isEncryption)
-            {
-                return CryptoServicePurpose.ENCRYPTION;
-            }
-            if (isVerifying)
-            {
-                return CryptoServicePurpose.VERIFYING;
-            }
-
-            return CryptoServicePurpose.DECRYPTION;
-        }
+        return CryptoServicePurpose.DECRYPTION;
     }
 }

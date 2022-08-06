@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -318,7 +318,7 @@ implements BlockCipher
         S2 = new int[SBOX_SK];
         S3 = new int[SBOX_SK];
         P = new int[P_SZ];
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity()));
     }
 
     /**
@@ -339,7 +339,7 @@ implements BlockCipher
             this.workingKey = ((KeyParameter)params).getKey();
             setKey(this.workingKey);
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
             return;
         }
 
@@ -586,31 +586,21 @@ implements BlockCipher
         b[offset]     = (byte)(in >> 24);
     }
 
-    private class DefaultProperties
-            implements CryptoServiceProperties
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
+        if (workingKey == null)
         {
-            if (workingKey == null)
-            {
-                return 256;
-            }
-            return (workingKey.length > 32) ? 256 : workingKey.length * 8;
+            return 256;
         }
-
-        public String getServiceName()
-        {
-            return  getAlgorithmName();
-        }
-        public CryptoServicePurpose getPurpose()
-        {
-            if (workingKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
-
+        return (workingKey.length > 32) ? 256 : workingKey.length * 8;
     }
 
+    private CryptoServicePurpose getPurpose()
+    {
+        if (workingKey == null)
+        {
+            return CryptoServicePurpose.ANY;
+        }
+        return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
+    }
 }

@@ -40,7 +40,7 @@ public class Ed25519ctxSigner
             this.publicKey = (Ed25519PublicKeyParameters)parameters;
         }
 
-        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed25519", 128, forSigning));
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed25519", 128, parameters, forSigning));
 
         reset();
     }

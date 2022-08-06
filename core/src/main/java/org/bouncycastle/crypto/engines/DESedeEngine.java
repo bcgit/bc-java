@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -16,33 +16,33 @@ public class DESedeEngine
     extends DESBase
     implements BlockCipher
 {
-    protected static final int  BLOCK_SIZE = 8;
+    protected static final int BLOCK_SIZE = 8;
 
-    private int[]               workingKey1 = null;
-    private int[]               workingKey2 = null;
-    private int[]               workingKey3 = null;
+    private int[] workingKey1 = null;
+    private int[] workingKey2 = null;
+    private int[] workingKey3 = null;
 
-    private boolean             forEncryption;
+    private boolean forEncryption;
 
     /**
      * standard constructor.
      */
     public DESedeEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity()));
     }
 
     /**
      * initialise a DESede cipher.
      *
      * @param encrypting whether or not we are for encryption.
-     * @param params the parameters required to set up the cipher.
-     * @exception IllegalArgumentException if the params argument is
-     * inappropriate.
+     * @param params     the parameters required to set up the cipher.
+     * @throws IllegalArgumentException if the params argument is
+     *                                  inappropriate.
      */
     public void init(
-        boolean           encrypting,
-        CipherParameters  params)
+        boolean encrypting,
+        CipherParameters params)
     {
         if (!(params instanceof KeyParameter))
         {
@@ -76,8 +76,8 @@ public class DESedeEngine
         {
             workingKey3 = workingKey1;
         }
-        
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
     }
 
     public String getAlgorithmName()
@@ -134,31 +134,22 @@ public class DESedeEngine
     }
 
     // Service Definitions
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
+        if (workingKey1 != null && workingKey1 == workingKey3)
         {
-            if (workingKey1 != null && workingKey1 == workingKey3)
-            {
-                return 80;
-            }
-            return 112;
+            return 80;
+        }
+        return 112;
+    }
+
+    private CryptoServicePurpose getPurpose()
+    {
+        if (workingKey1 == null)
+        {
+            return CryptoServicePurpose.ANY;
         }
 
-        public String getServiceName()
-        {
-            return getAlgorithmName();
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (workingKey1 == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

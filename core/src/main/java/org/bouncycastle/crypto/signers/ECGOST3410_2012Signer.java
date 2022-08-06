@@ -53,7 +53,7 @@ public class ECGOST3410_2012Signer
             this.key = (ECPublicKeyParameters)param;
         }
 
-        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECGOST3410_2012", key.getParameters().getCurve(), forSigning));
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECGOST3410_2012", key, forSigning));
     }
 
     public BigInteger getOrder()

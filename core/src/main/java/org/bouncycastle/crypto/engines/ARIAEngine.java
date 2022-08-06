@@ -1,6 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -143,7 +149,7 @@ public class ARIAEngine
     boolean forEncryption;
     public ARIAEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity()));
     }
 
     public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
@@ -156,7 +162,7 @@ public class ARIAEngine
 
         this.forEncryption = forEncryption;
         this.roundKeys = keySchedule(forEncryption, ((KeyParameter)params).getKey());
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
     }
 
     public String getAlgorithmName()
@@ -425,26 +431,18 @@ public class ARIAEngine
             z[i] ^= x[i];
         }
     }
-    private class DefaultProperties
-            implements CryptoServiceProperties
+
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
-        {
-            return roundKeys.length > 13 ?
-                    (roundKeys.length > 15 ? 256
-                            : 192)
-                    : 128;
+        return roundKeys.length > 13 ?
+            (roundKeys.length > 15 ? 256
+                : 192)
+            : 128;
 
-        }
+    }
 
-        public String getServiceName()
-        {
-            return  getAlgorithmName();
-        }
-        public CryptoServicePurpose getPurpose()
-        {
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
-
+    private CryptoServicePurpose getPurpose()
+    {
+        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

@@ -1,55 +1,20 @@
 package org.bouncycastle.crypto.agreement;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.CryptoServiceProperties;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.constraints.ConstraintUtils;
-import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
+import org.bouncycastle.crypto.params.DHKeyParameters;
+import org.bouncycastle.crypto.params.ECKeyParameters;
 
 class Utils
 {
-    static CryptoServiceProperties getDefaultProperties(String algorithm, BigInteger p)
+    static CryptoServiceProperties getDefaultProperties(String algorithm, ECKeyParameters k)
     {
-        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(p));
+        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(k.getParameters().getCurve()), k);
     }
 
-    static CryptoServiceProperties getDefaultProperties(String algorithm, ECCurve curve)
+    static CryptoServiceProperties getDefaultProperties(String algorithm, DHKeyParameters k)
     {
-        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(curve));
-    }
-
-    static CryptoServiceProperties getDefaultProperties(String algorithm, int bitsOfSecurity)
-    {
-        return new DefaultServiceProperties(algorithm, bitsOfSecurity);
-    }
-
-    // Service Definitions
-    private static class DefaultServiceProperties
-        implements CryptoServiceProperties
-    {
-        private final String algorithm;
-        private final int bitsOfSecurity;
-
-        DefaultServiceProperties(String algorithm, int bitsOfSecurity)
-        {
-            this.algorithm = algorithm;
-            this.bitsOfSecurity = bitsOfSecurity;
-        }
-
-        public int bitsOfSecurity()
-        {
-            return bitsOfSecurity;
-        }
-
-        public String getServiceName()
-        {
-            return algorithm;
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            return CryptoServicePurpose.ENCRYPTION;
-        }
+        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(k.getParameters().getP()), k);
     }
 }

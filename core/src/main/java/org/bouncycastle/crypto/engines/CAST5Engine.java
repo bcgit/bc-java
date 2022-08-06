@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -316,7 +316,7 @@ public class CAST5Engine
 
     public CAST5Engine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 128));
     }
 
     /**
@@ -337,7 +337,7 @@ public class CAST5Engine
             _workingKey = ((KeyParameter)params).getKey();
 
             setKey(_workingKey);
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
 
             return;
         }
@@ -832,29 +832,21 @@ public class CAST5Engine
             ((b[i+3] & 0xff));
     }
 
-    private class DefaultProperties
-            implements CryptoServiceProperties
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
+        if (_workingKey == null)
         {
-            if (_workingKey == null)
-            {
-                return 128;
-            }
-            return _workingKey.length * 8;
+            return 128;
         }
+        return _workingKey.length * 8;
+    }
 
-        public String getServiceName()
+    private CryptoServicePurpose getPurpose()
+    {
+        if (_workingKey == null)
         {
-            return  getAlgorithmName();
+            return CryptoServicePurpose.ANY;
         }
-        public CryptoServicePurpose getPurpose()
-        {
-            if (_workingKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-            return _encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return _encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

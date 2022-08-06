@@ -57,7 +57,7 @@ public class DSTU4145Signer
             this.key = (ECPublicKeyParameters)param;
         }
 
-        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSTU4145", key.getParameters().getCurve(), forSigning));
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSTU4145", key, forSigning));
     }
 
     public BigInteger getOrder()

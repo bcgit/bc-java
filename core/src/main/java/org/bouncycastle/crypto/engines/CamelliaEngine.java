@@ -2,12 +2,12 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -625,7 +625,7 @@ public class CamelliaEngine
 
     public CamelliaEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity()));
     }
 
     public void init(boolean forEncryption, CipherParameters params)
@@ -639,7 +639,7 @@ public class CamelliaEngine
         setKey(forEncryption, ((KeyParameter)params).getKey());
         initialised = true;
         this.forEncryption = forEncryption;
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
 
     }
 
@@ -696,26 +696,18 @@ public class CamelliaEngine
         return new CamelliaEngine();
     }
 
-    private class DefaultProperties
-            implements CryptoServiceProperties
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
+        return _keySize * 8;
+    }
+
+    private CryptoServicePurpose getPurpose()
+    {
+        if (!initialised)
         {
-            return _keySize * 8;
+            return CryptoServicePurpose.ANY;
         }
 
-        public String getServiceName()
-        {
-            return  getAlgorithmName();
-        }
-        public CryptoServicePurpose getPurpose()
-        {
-            if (!initialised)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-            
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }
