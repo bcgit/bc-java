@@ -39,7 +39,7 @@ public class Ed448phSigner
             this.publicKey = (Ed448PublicKeyParameters)parameters;
         }
 
-        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed448", 224, forSigning));
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("Ed448", 224, parameters, forSigning));
 
         reset();
     }

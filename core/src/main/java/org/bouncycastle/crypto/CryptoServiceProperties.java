@@ -7,4 +7,6 @@ public interface CryptoServiceProperties
     String getServiceName();
 
     CryptoServicePurpose getPurpose();
+
+    CipherParameters getParams();
 }

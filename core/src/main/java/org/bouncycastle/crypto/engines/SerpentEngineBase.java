@@ -2,12 +2,12 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public abstract class SerpentEngineBase
@@ -24,7 +24,7 @@ public abstract class SerpentEngineBase
 
     SerpentEngineBase()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
     }
 
     /**
@@ -45,7 +45,7 @@ public abstract class SerpentEngineBase
             byte[] keyBytes = ((KeyParameter)params).getKey();
             this.wKey = makeWorkingKey(keyBytes);
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(keyBytes.length * 8));
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), keyBytes.length * 8, params, getPurpose()));
             return;
         }
 
@@ -491,34 +491,13 @@ public abstract class SerpentEngineBase
     protected abstract void decryptBlock(byte[] input, int inOff, byte[] output, int outOff);
 
     // Service Definitions
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private CryptoServicePurpose getPurpose()
     {
-        private final int bitsOfSecurity;
-
-        public DefaultProperties(int bitsOfSecurity)
+        if (wKey == null)
         {
-            this.bitsOfSecurity = bitsOfSecurity;
+            return CryptoServicePurpose.ANY;
         }
 
-        public int bitsOfSecurity()
-        {
-            return bitsOfSecurity;
-        }
-
-        public String getServiceName()
-        {
-            return getAlgorithmName();
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (wKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
@@ -461,6 +462,11 @@ public final class BouncyCastleProvider extends Provider
         public CryptoServicePurpose getPurpose()
         {
             return CryptoServicePurpose.ANY;
+        }
+
+        public CipherParameters getParams()
+        {
+            return null;
         }
     }
 }

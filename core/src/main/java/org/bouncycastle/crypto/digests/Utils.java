@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Digest;
@@ -52,6 +53,11 @@ class Utils
         {
             return purpose;
         }
+
+        public CipherParameters getParams()
+        {
+            return null;
+        }
     }
 
     // Service Definitions
@@ -82,6 +88,11 @@ class Utils
         public CryptoServicePurpose getPurpose()
         {
             return purpose;
+        }
+
+        public CipherParameters getParams()
+        {
+            return null;
         }
     }
 }

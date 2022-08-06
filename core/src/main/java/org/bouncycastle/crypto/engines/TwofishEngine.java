@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -229,7 +229,7 @@ public final class TwofishEngine
 
     public TwofishEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(256));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
 
         // calculate the MDS matrix
         int[] m1 = new int[2];
@@ -291,7 +291,7 @@ public final class TwofishEngine
                 throw new IllegalArgumentException("Key length not 128/192/256 bits.");
             }
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(keyBits));
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), keyBits, params, getPurpose()));
 
             this.k64Cnt = this.workingKey.length / 8;
             setKey(this.workingKey);
@@ -671,34 +671,13 @@ public final class TwofishEngine
                gSBox[ 0x201 + 2*((x >>> 16) & 0xff) ];
     }
 
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private CryptoServicePurpose getPurpose()
     {
-        private final int bitsOfSecurity;
-
-        public DefaultProperties(int bitsOfSecurity)
+        if (workingKey == null)
         {
-            this.bitsOfSecurity = bitsOfSecurity;
+            return CryptoServicePurpose.ANY;
         }
 
-        public int bitsOfSecurity()
-        {
-            return bitsOfSecurity;
-        }
-
-        public String getServiceName()
-        {
-            return getAlgorithmName();
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (workingKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }
