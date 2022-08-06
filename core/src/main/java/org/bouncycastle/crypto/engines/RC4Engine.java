@@ -1,12 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public class RC4Engine
@@ -27,7 +27,7 @@ public class RC4Engine
 
     public RC4Engine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 20));
     }
 
     /**
@@ -52,6 +52,8 @@ public class RC4Engine
             this.workingKey = ((KeyParameter)params).getKey();
             this.forEncryption = forEncryption;
             setKey(workingKey);
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 20, params, getPurpose()));
 
             return;
         }
@@ -154,27 +156,13 @@ public class RC4Engine
         }
     }
 
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private CryptoServicePurpose getPurpose()
     {
-        public int bitsOfSecurity()
+        if (workingKey == null)
         {
-            return 20;
+            return CryptoServicePurpose.ANY;
         }
 
-        public String getServiceName()
-        {
-            return getAlgorithmName();
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (workingKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

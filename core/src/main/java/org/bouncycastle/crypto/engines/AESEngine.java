@@ -1,6 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -420,7 +426,7 @@ private static final int[] Tinv0 =
      */
     public AESEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
     }
 
     /**
@@ -448,7 +454,7 @@ private static final int[] Tinv0 =
                 s = Arrays.clone(Si);
             }
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
 
             return;
         }
@@ -588,27 +594,12 @@ private static final int[] Tinv0 =
         return new AESEngine();
     }
 
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private int bitsOfSecurity()
     {
-        public int bitsOfSecurity()
+        if (WorkingKey == null)
         {
-            if (WorkingKey == null)
-            {
-                return 256;
-            }
-            return (WorkingKey.length -7) << 5;
+            return 256;
         }
-
-        public String getServiceName()
-        {
-            return  getAlgorithmName();
-        }
-        public CryptoServicePurpose getPurpose()
-        {
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
-
+        return (WorkingKey.length - 7) << 5;
     }
-
 }

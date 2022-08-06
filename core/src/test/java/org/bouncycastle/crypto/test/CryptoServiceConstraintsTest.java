@@ -116,7 +116,7 @@ public class CryptoServiceConstraintsTest
         testAESLight();
         testARIA();
         testIDEA();
-//        testCAST5();
+        testCAST5();
 //        testCamelliaLight();
 //        testCamellia();
 //        testBlowfish();
@@ -584,8 +584,6 @@ public class CryptoServiceConstraintsTest
 
 
         engine.init(false, new KeyParameter(new byte[16]));
-        engine.init(true, new KeyParameter(new byte[32]));
-        engine.init(false, new KeyParameter(new byte[32]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -1028,7 +1026,7 @@ public class CryptoServiceConstraintsTest
     private void testDH()
     {
         SecureRandom random = new SecureRandom();
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 112));
 
         DHKeyPairGenerator dsaKp = new DHKeyPairGenerator();
 
@@ -1052,7 +1050,7 @@ public class CryptoServiceConstraintsTest
         }
         catch (CryptoServiceConstraintsException e)
         {
-            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+            isEquals(e.getMessage(), "service does not provide 112 bits of security only 80", e.getMessage());
         }
     }
 

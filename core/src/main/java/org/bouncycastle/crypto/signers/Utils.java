@@ -1,57 +1,38 @@
 package org.bouncycastle.crypto.signers;
 
-import java.math.BigInteger;
-
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.constraints.ConstraintUtils;
-import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
+import org.bouncycastle.crypto.params.DSAKeyParameters;
+import org.bouncycastle.crypto.params.ECKeyParameters;
+import org.bouncycastle.crypto.params.GOST3410KeyParameters;
 
 class Utils
 {
-    static CryptoServiceProperties getDefaultProperties(String algorithm, BigInteger p, boolean forSigning)
+    static CryptoServiceProperties getDefaultProperties(String algorithm, DSAKeyParameters k, boolean forSigning)
     {
-        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(p), forSigning);
+        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(k.getParameters().getP()), k, getPurpose(forSigning));
     }
 
-    static CryptoServiceProperties getDefaultProperties(String algorithm, ECCurve curve, boolean forSigning)
+    static CryptoServiceProperties getDefaultProperties(String algorithm, GOST3410KeyParameters k, boolean forSigning)
     {
-        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(curve), forSigning);
+        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(k.getParameters().getP()), k, getPurpose(forSigning));
     }
 
-    static CryptoServiceProperties getDefaultProperties(String algorithm, int bitsOfSecurity, boolean forSigning)
+    static CryptoServiceProperties getDefaultProperties(String algorithm, ECKeyParameters k, boolean forSigning)
     {
-        return new DefaultServiceProperties(algorithm, bitsOfSecurity, forSigning);
+        return new DefaultServiceProperties(algorithm, ConstraintUtils.bitsOfSecurityFor(k.getParameters().getCurve()), k, getPurpose(forSigning));
     }
 
-    // Service Definitions
-    private static class DefaultServiceProperties
-        implements CryptoServiceProperties
+    static CryptoServiceProperties getDefaultProperties(String algorithm, int bitsOfSecurity, CipherParameters k, boolean forSigning)
     {
-        private boolean forSigning;
-        private final String algorithm;
-        private final int bitsOfSecurity;
+        return new DefaultServiceProperties(algorithm, bitsOfSecurity, k, getPurpose(forSigning));
+    }
 
-        DefaultServiceProperties(String algorithm, int bitsOfSecurity, boolean forSigning)
-        {
-            this.algorithm = algorithm;
-            this.bitsOfSecurity = bitsOfSecurity;
-            this.forSigning = forSigning;
-        }
-
-        public int bitsOfSecurity()
-        {
-            return bitsOfSecurity;
-        }
-
-        public String getServiceName()
-        {
-            return algorithm;
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            return forSigning ? CryptoServicePurpose.SIGNING : CryptoServicePurpose.VERIFYING;
-        }
+    static CryptoServicePurpose getPurpose(boolean forSigning)
+    {
+        return forSigning ? CryptoServicePurpose.SIGNING : CryptoServicePurpose.VERIFYING;
     }
 }

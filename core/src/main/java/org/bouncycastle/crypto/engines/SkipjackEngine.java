@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -42,7 +42,7 @@ public class SkipjackEngine
 
     public SkipjackEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 80));
     }
 
     /**
@@ -82,7 +82,7 @@ public class SkipjackEngine
             key3[i] = keyBytes[(i * 4 + 3) % 10] & 0xff;
         }
 
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 80, params, getPurpose()));
     }
 
     public String getAlgorithmName()
@@ -268,27 +268,13 @@ public class SkipjackEngine
         return BLOCK_SIZE;
     }
 
-    private class DefaultProperties
-        implements CryptoServiceProperties
+    private CryptoServicePurpose getPurpose()
     {
-        public int bitsOfSecurity()
+        if (key0 == null)
         {
-            return 80;
+            return CryptoServicePurpose.ANY;
         }
 
-        public String getServiceName()
-        {
-            return getAlgorithmName();
-        }
-
-        public CryptoServicePurpose getPurpose()
-        {
-            if (key0 == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

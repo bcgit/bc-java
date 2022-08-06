@@ -2,11 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -34,7 +34,7 @@ public class IDEAEngine
      */
     public IDEAEngine()
     {
-        CryptoServicesRegistrar.checkConstraints(new DefaultProperties(128));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 128));
     }
 
     /**
@@ -56,7 +56,7 @@ public class IDEAEngine
                                   key);
             this.forEncryption = forEncryption;
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultProperties(key.length * 8));
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), key.length * 8, params, getPurpose()));
             return;
         }
 
@@ -364,31 +364,14 @@ public class IDEAEngine
             return invertKey(expandKey(userKey));
         }
     }
-    private class DefaultProperties
-            implements CryptoServiceProperties
+
+    private CryptoServicePurpose getPurpose()
     {
-        DefaultProperties(int bitsOfSecurity)
+        if (workingKey == null)
         {
-            this.bitsOfSecurity = bitsOfSecurity;
-        }
-        int bitsOfSecurity;
-        public int bitsOfSecurity()
-        {
-            return bitsOfSecurity;
+            return CryptoServicePurpose.ANY;
         }
 
-        public String getServiceName()
-        {
-            return  getAlgorithmName();
-        }
-        public CryptoServicePurpose getPurpose()
-        {
-            if (workingKey == null)
-            {
-                return CryptoServicePurpose.ANY;
-            }
-
-            return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
-        }
+        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }
