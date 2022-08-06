@@ -1,9 +1,6 @@
 package org.bouncycastle.pkix.jcajce;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.net.URL;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -34,13 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.DistributionPoint;
@@ -49,6 +46,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.jcajce.PKIXCRLStore;
+import org.bouncycastle.jcajce.PKIXCRLStoreSelector;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -102,6 +100,7 @@ public class X509RevocationChecker
         private boolean canSoftFail;
         private long failLogMaxTime;
         private long failHardMaxTime;
+        private Date validityDate = new Date();
 
         /**
          * Base constructor.
@@ -166,6 +165,19 @@ public class X509RevocationChecker
         public Builder addCrls(Store<CRL> crls)
         {
             this.crls.add(crls);
+
+            return this;
+        }
+
+        /**
+         * Set the current date for checking if not today.
+         *
+         * @param validityDate date we are validating for.
+         * @return the current builder instance.
+         */
+        public Builder setDate(Date validityDate)
+        {
+            this.validityDate = new Date(validityDate.getTime());
 
             return this;
         }
@@ -274,8 +286,6 @@ public class X509RevocationChecker
     }
 
     private static Logger LOG = Logger.getLogger(X509RevocationChecker.class.getName());
-    private static final Map<GeneralName, WeakReference<X509CRL>> crlCache = Collections.synchronizedMap(
-                                                        new WeakHashMap<GeneralName, WeakReference<X509CRL>>());
 
     private final Map<X500Principal, Long> failures = new HashMap<X500Principal, Long>();
     private final Set<TrustAnchor> trustAnchors;
@@ -287,6 +297,7 @@ public class X509RevocationChecker
     private final boolean canSoftFail;
     private final long failLogMaxTime;
     private final long failHardMaxTime;
+    private final Date validationDate;
 
     private Date currentDate;
     private X500Principal workingIssuerName;
@@ -303,6 +314,7 @@ public class X509RevocationChecker
         this.canSoftFail = bldr.canSoftFail;
         this.failLogMaxTime = bldr.failLogMaxTime;
         this.failHardMaxTime = bldr.failHardMaxTime;
+        this.validationDate = bldr.validityDate;
 
         if (bldr.provider != null)
         {
@@ -387,7 +399,7 @@ public class X509RevocationChecker
         {
             PKIXParameters pkixParams = new PKIXParameters(trustAnchors);
             pkixParams.setRevocationEnabled(false);
-            pkixParams.setDate(currentDate);
+            pkixParams.setDate(validationDate);
 
             for (int i = 0; i != crlCertStores.size(); i++)
             {
@@ -436,7 +448,7 @@ public class X509RevocationChecker
 
         PKIXExtendedParameters pkixParams = pkixBuilder.build();
 
-        Date validityDate = RevocationUtilities.getValidityDate(pkixParams, currentDate);
+        Date validityDate = RevocationUtilities.getValidityDate(pkixParams, validationDate);
 
         try
         {
@@ -453,10 +465,10 @@ public class X509RevocationChecker
                 throw e;
             }
 
-            CRL crl;
+            Set<CRL> crls;
             try
             {
-                crl = downloadCRLs(cert.getIssuerX500Principal(), currentDate,
+                crls = downloadCRLs(cert.getIssuerX500Principal(), validityDate,
                     RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
             }
             catch(AnnotatedException e1)
@@ -464,15 +476,15 @@ public class X509RevocationChecker
                 throw new CertPathValidatorException(e1.getMessage(), e1.getCause());
             }
 
-            if (crl != null)
+            if (!crls.isEmpty())
             {
                 try
                 {
-                    pkixBuilder.addCRLStore(new LocalCRLStore(new CollectionStore<CRL>(Collections.singleton(crl))));
+                    pkixBuilder.addCRLStore(new LocalCRLStore(new CollectionStore<CRL>(crls)));
 
                     pkixParams = pkixBuilder.build();
 
-                    validityDate = RevocationUtilities.getValidityDate(pkixParams, currentDate);
+                    validityDate = RevocationUtilities.getValidityDate(pkixParams, validationDate);
 
                     checkCRLs(pkixParams, currentDate, validityDate, cert, signingCert, workingPublicKey,
                         new ArrayList(), helper);
@@ -562,16 +574,40 @@ public class X509RevocationChecker
         });
     }
 
-    private CRL downloadCRLs(X500Principal issuer, Date currentDate, ASN1Primitive crlDpPrimitive, JcaJceHelper helper)
+    private Set<CRL> downloadCRLs(X500Principal issuer, Date currentDate, ASN1Primitive crlDpPrimitive, JcaJceHelper helper)
     {
         CRLDistPoint crlDp = CRLDistPoint.getInstance(crlDpPrimitive);
         DistributionPoint[] points = crlDp.getDistributionPoints();
 
+        CertificateFactory certFact;
+         try
+         {
+             certFact = helper.createCertificateFactory("X.509");
+         }
+         catch (Exception e)
+         {
+             if (LOG.isLoggable(Level.FINE))
+             {
+                 LOG.log(Level.FINE, "could not create certFact: " + e.getMessage(), e);
+             }
+             else
+             {
+                 LOG.log(Level.INFO, "could not create certFact: " + e.getMessage());
+             }
+             return null;
+         }
+
+        X509CRLSelector crlSelector = new X509CRLSelector();
+        crlSelector.addIssuer(issuer);
+
+        PKIXCRLStoreSelector crlselect = new PKIXCRLStoreSelector.Builder(crlSelector).build();
+        Set crls = new HashSet();
+
         for (int i = 0; i != points.length; i++)
         {
             DistributionPoint dp = points[i];
-
             DistributionPointName dpn = dp.getDistributionPoint();
+
             if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
             {
                 GeneralName[] names = GeneralNames.getInstance(dpn.getName()).getNames();
@@ -581,42 +617,21 @@ public class X509RevocationChecker
                     GeneralName name = names[n];
                     if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                     {
-                        X509CRL crl;
-
-                        WeakReference<X509CRL> crlRef = crlCache.get(name);
-                        if (crlRef != null)
-                        {
-                            crl = crlRef.get();
-                            if (crl != null
-                                && !currentDate.before(crl.getThisUpdate())
-                                && !currentDate.after(crl.getNextUpdate()))
-                            {
-                                return crl;
-                            }
-                            crlCache.remove(name); // delete expired/out-of-range entry
-                        }
-
-                        URL url = null;
+                        URI url = null;
                         try
                         {
-                            url = new URL(name.getName().toString());
-            
-                            CertificateFactory certFact = helper.createCertificateFactory("X.509");
+                            url = new URI(((ASN1String)name.getName()).getString());
 
-                            InputStream urlStream = url.openStream();
+                            PKIXCRLStore store = CrlCache.getCrl(certFact, validationDate, url);
 
-                            crl = (X509CRL)certFact.generateCRL(new BufferedInputStream(urlStream));
-
-                            urlStream.close();
-
-                            LOG.log(Level.INFO, "downloaded CRL from CrlDP " + url + " for issuer \"" + issuer + "\"");
-
-                            crlCache.put(name, new WeakReference<X509CRL>(crl));
-
-                            return crl;
+                            if (store != null)
+                            {
+                                crls.addAll(PKIXCRLUtil.findCRLs(crlselect, currentDate, Collections.EMPTY_LIST,
+                                    Collections.singletonList(store)));
+                            }
                         }
                         catch (Exception e)
-                        {
+                        {                    e.printStackTrace();
                             if (LOG.isLoggable(Level.FINE))
                             {
                                 LOG.log(Level.FINE, "CrlDP " + url + " ignored: " + e.getMessage(), e);
@@ -631,7 +646,7 @@ public class X509RevocationChecker
             }
         }
 
-        return null;
+        return crls;
     }
     
     protected static final String[] crlReasons = new String[]{
@@ -694,7 +709,7 @@ public class X509RevocationChecker
      *
      * @param pkixParams       PKIX parameters.
      * @param cert             Certificate to check if it is revoked.
-     * @param validDate        The date when the certificate revocation status should be
+     * @param validityDate     The date when the certificate revocation status should be
      *                         checked.
      * @param sign             The issuer certificate of the certificate <code>cert</code>.
      * @param workingPublicKey The public key of the issuer certificate <code>sign</code>.
@@ -770,7 +785,7 @@ public class X509RevocationChecker
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
-                    {
+                    {                     e.printStackTrace();
                         lastException = e;
                     }
                 }
