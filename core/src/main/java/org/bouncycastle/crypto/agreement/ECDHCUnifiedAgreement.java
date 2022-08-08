@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.agreement;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
 import org.bouncycastle.util.BigIntegers;
@@ -18,6 +19,8 @@ public class ECDHCUnifiedAgreement
         CipherParameters key)
     {
         this.privParams = (ECDHUPrivateParameters)key;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECCDHU", this.privParams.getStaticPrivateKey()));
     }
 
     public int getFieldSize()

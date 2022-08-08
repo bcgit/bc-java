@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.agreement;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
@@ -13,6 +14,8 @@ public final class X25519Agreement
     public void init(CipherParameters parameters)
     {
         this.privateKey = (X25519PrivateKeyParameters)parameters;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("X25519", this.privateKey));
     }
 
     public int getAgreementSize()

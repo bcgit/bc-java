@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.agreement;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -67,6 +68,8 @@ public class SM2KeyExchange
         ephemeralPubPoint = baseParam.getEphemeralPublicPoint();
 
         w = ecParams.getCurve().getFieldSize() / 2 - 1;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("SM2KE", this.staticKey));
     }
 
     public byte[] calculateKey(int kLen, CipherParameters pubParam)
