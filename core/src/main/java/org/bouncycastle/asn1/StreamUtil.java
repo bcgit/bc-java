@@ -8,8 +8,6 @@ import java.nio.channels.FileChannel;
 
 class StreamUtil
 {
-    private static final long  MAX_MEMORY = Runtime.getRuntime().maxMemory();
-
     /**
      * Find out possible longest length, capped by available memory.
      *
@@ -48,11 +46,12 @@ class StreamUtil
             }
         }
 
-        if (MAX_MEMORY > Integer.MAX_VALUE)
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        if (maxMemory > Integer.MAX_VALUE)
         {
             return Integer.MAX_VALUE;
         }
 
-        return (int)MAX_MEMORY;
+        return (int)maxMemory;
     }
 }
