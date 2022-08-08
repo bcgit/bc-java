@@ -465,7 +465,7 @@ public class RevocationTest
 
         try
         {
-            Thread.sleep(1000);     // make sure some time ellapses between first and second failure.
+            Thread.sleep(1000);     // make sure some time elapses between first and second failure.
         }
         catch (Exception e)
         {
