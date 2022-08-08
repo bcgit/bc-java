@@ -43,6 +43,8 @@ public class XDHBasicAgreement
         }
 
         this.key = (AsymmetricKeyParameter)key;
+
+        agreement.init(key);
     }
 
     public int getFieldSize()
@@ -53,8 +55,6 @@ public class XDHBasicAgreement
     public BigInteger calculateAgreement(
         CipherParameters pubKey)
     {
-        agreement.init(key);
-
         byte[] Z = new byte[fieldSize];
         agreement.calculateAgreement(pubKey, Z, 0);
 
