@@ -39,7 +39,7 @@ public class DHMQVPrivateParameters
         if (ephemeralPublicKey == null)
         {
             ephemeralPublicKey = new DHPublicKeyParameters(
-                parameters.getG().multiply(ephemeralPrivateKey.getX()),
+                parameters.getG().modPow(ephemeralPrivateKey.getX(), parameters.getP()),    // dhParams.getG().modPow(x, dhParams.getP());
                 parameters);
         }
         else if (!parameters.equals(ephemeralPublicKey.getParameters()))
