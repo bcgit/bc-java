@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.agreement;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.StagedAgreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -20,6 +21,8 @@ public class ECDHCStagedAgreement
         CipherParameters key)
     {
         this.key = (ECPrivateKeyParameters)key;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECCDH", this.key));
     }
 
     public int getFieldSize()

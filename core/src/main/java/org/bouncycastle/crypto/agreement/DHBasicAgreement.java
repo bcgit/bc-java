@@ -49,7 +49,7 @@ public class DHBasicAgreement
         this.key = (DHPrivateKeyParameters)kParam;
         this.dhParams = key.getParameters();
 
-        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DH", key));
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DHB", key));
     }
 
     public int getFieldSize()

@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.agreement;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -34,6 +35,8 @@ public class ECVKOAgreement
 
         this.key = (ECPrivateKeyParameters)p.getParameters();
         this.ukm = toInteger(p.getUKM());
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECVKO", this.key));
     }
 
     public int getFieldSize()

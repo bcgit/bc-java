@@ -21,6 +21,8 @@ public class XDHUnifiedAgreement
         CipherParameters key)
     {
         this.privParams = (XDHUPrivateParameters)key;
+
+        xAgreement.init(privParams.getStaticPrivateKey());  // constraint check
     }
 
     public int getAgreementSize()

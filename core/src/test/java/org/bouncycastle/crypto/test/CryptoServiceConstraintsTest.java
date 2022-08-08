@@ -7,13 +7,28 @@ import java.util.Collections;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BasicAgreement;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.agreement.DHAgreement;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCStagedAgreement;
+import org.bouncycastle.crypto.agreement.ECDHCUnifiedAgreement;
+import org.bouncycastle.crypto.agreement.ECMQVBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECVKOAgreement;
+import org.bouncycastle.crypto.agreement.MQVBasicAgreement;
+import org.bouncycastle.crypto.agreement.X25519Agreement;
+import org.bouncycastle.crypto.agreement.X448Agreement;
+import org.bouncycastle.crypto.agreement.XDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.XDHUnifiedAgreement;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
 import org.bouncycastle.crypto.constraints.LegacyBitsOfSecurityConstraint;
 import org.bouncycastle.crypto.digests.CSHAKEDigest;
@@ -49,19 +64,38 @@ import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
+import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
+import org.bouncycastle.crypto.params.DHMQVPrivateParameters;
+import org.bouncycastle.crypto.params.DHMQVPublicParameters;
+import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
+import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.crypto.params.DHUPrivateParameters;
+import org.bouncycastle.crypto.params.DHUPublicParameters;
 import org.bouncycastle.crypto.params.DSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
+import org.bouncycastle.crypto.params.ECDHUPublicParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.MQVPrivateParameters;
+import org.bouncycastle.crypto.params.MQVPublicParameters;
+import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.crypto.params.XDHUPrivateParameters;
+import org.bouncycastle.crypto.params.XDHUPublicParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.DSTU4145Signer;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -894,6 +928,23 @@ public class CryptoServiceConstraintsTest
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448Signer(new byte[1]), "224");
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448phSigner(new byte[1]), "224");
 
+        X25519KeyPairGenerator x25519kpGen = new X25519KeyPairGenerator();
+        x25519kpGen.init(new X25519KeyGenerationParameters(random));
+
+        kp = x25519kpGen.generateKeyPair();
+        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new X25519Agreement(), "128");
+        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new XDHBasicAgreement(), "128");
+        edwardsAgreementTest(
+            new XDHUPublicParameters(kp.getPublic(), kp.getPublic()),
+            new XDHUPrivateParameters(kp.getPrivate(), kp.getPrivate()), new XDHUnifiedAgreement(new X25519Agreement()), "128");
+
+        X448KeyPairGenerator x448kpGen = new X448KeyPairGenerator();
+        x448kpGen.init(new X448KeyGenerationParameters(random));
+        kp = x448kpGen.generateKeyPair();
+        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new X448Agreement(), "224");
+        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new XDHBasicAgreement(), "224");
+//        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new XDHUnifiedAgreement(new X448Agreement()), "224");
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
@@ -904,6 +955,32 @@ public class CryptoServiceConstraintsTest
         try
         {
             signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only " + sBits, e.getMessage());
+        }
+    }
+
+    private void edwardsAgreementTest(CipherParameters pk, CipherParameters sk, RawAgreement agreement, String sBits)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only " + sBits, e.getMessage());
+        }
+    }
+
+    private void edwardsAgreementTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, XDHBasicAgreement agreement, String sBits)
+    {
+        try
+        {
+            agreement.init(sk);
             fail("no exception");
         }
         catch (CryptoServiceConstraintsException e)
@@ -931,6 +1008,13 @@ public class CryptoServiceConstraintsTest
         ecSignerTest(kp.getPublic(), kp.getPrivate(), new ECGOST3410Signer());
         ecSignerTest(kp.getPublic(), kp.getPrivate(), new SM2Signer());
 
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHBasicAgreement());
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHCBasicAgreement());
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECDHCStagedAgreement());
+        ecAgreementTest(new ECDHUPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new ECDHUPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECDHCUnifiedAgreement());
+        ecAgreementTest(new MQVPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new MQVPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECMQVBasicAgreement());
+        ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECVKOAgreement(new SHA256Digest()));
+
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
@@ -941,6 +1025,58 @@ public class CryptoServiceConstraintsTest
         try
         {
             signer.init(true, sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecAgreementTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, BasicAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecAgreementTest(MQVPublicParameters pk, MQVPrivateParameters sk, ECMQVBasicAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecAgreementTest(ECDHUPublicParameters pk, ECDHUPrivateParameters sk, ECDHCUnifiedAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 96", e.getMessage());
+        }
+    }
+
+    private void ecAgreementTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, ECVKOAgreement agreement)
+    {
+        try
+        {
+            agreement.init(new ParametersWithUKM(sk, new byte[32]));
             fail("no exception");
         }
         catch (CryptoServiceConstraintsException e)
@@ -1028,20 +1164,22 @@ public class CryptoServiceConstraintsTest
         SecureRandom random = new SecureRandom();
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 112));
 
-        DHKeyPairGenerator dsaKp = new DHKeyPairGenerator();
+        DHKeyPairGenerator dhKp = new DHKeyPairGenerator();
 
-        dsaKp.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_1024));
+        dhKp.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_1024));
 
-        AsymmetricCipherKeyPair kp = dsaKp.generateKeyPair();
+        AsymmetricCipherKeyPair kp = dhKp.generateKeyPair();
 
+        dhTest(kp.getPublic(), kp.getPrivate(), new DHAgreement());
         dhTest(kp.getPublic(), kp.getPrivate(), new DHBasicAgreement());
+        dhTest(new DHUPublicParameters((DHPublicKeyParameters)kp.getPublic(), (DHPublicKeyParameters)kp.getPublic()), new DHUPrivateParameters((DHPrivateKeyParameters)kp.getPrivate(), (DHPrivateKeyParameters)kp.getPrivate()), new DHUnifiedAgreement());
+        dhTest(new DHMQVPublicParameters((DHPublicKeyParameters)kp.getPublic(), (DHPublicKeyParameters)kp.getPublic()), new DHMQVPrivateParameters((DHPrivateKeyParameters)kp.getPrivate(), (DHPrivateKeyParameters)kp.getPrivate()), new MQVBasicAgreement());
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
-    private void dhTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, BasicAgreement agreement)
+    private void dhTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, DHAgreement agreement)
     {
-
         try
         {
             agreement.init(sk);
@@ -1050,7 +1188,49 @@ public class CryptoServiceConstraintsTest
         }
         catch (CryptoServiceConstraintsException e)
         {
-            isEquals(e.getMessage(), "service does not provide 112 bits of security only 80", e.getMessage());
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+    }
+
+    private void dhTest(AsymmetricKeyParameter pk, AsymmetricKeyParameter sk, BasicAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+    }
+
+    private void dhTest(CipherParameters pk, CipherParameters sk, MQVBasicAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+    }
+
+    private void dhTest(CipherParameters pk, CipherParameters sk, DHUnifiedAgreement agreement)
+    {
+        try
+        {
+            agreement.init(sk);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
         }
     }
 

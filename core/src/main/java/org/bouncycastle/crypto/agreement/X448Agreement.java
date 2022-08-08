@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.agreement;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
@@ -13,6 +14,8 @@ public final class X448Agreement
     public void init(CipherParameters parameters)
     {
         this.privateKey = (X448PrivateKeyParameters)parameters;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("X448", this.privateKey));
     }
 
     public int getAgreementSize()
