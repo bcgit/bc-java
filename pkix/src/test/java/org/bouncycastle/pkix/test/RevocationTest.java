@@ -463,6 +463,15 @@ public class RevocationTest
         PKIXCertPathValidatorResult result =
                 (PKIXCertPathValidatorResult)cpv.validate(cp, param);
 
+        try
+        {
+            Thread.sleep(1000);     // make sure some time ellapses between first and second failure.
+        }
+        catch (Exception e)
+        {
+            Thread.currentThread().interrupt();
+        }
+
         // should fail on the second attempt.
         try
         {
