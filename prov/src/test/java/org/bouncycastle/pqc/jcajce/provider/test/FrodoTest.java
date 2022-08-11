@@ -124,7 +124,7 @@ public class FrodoTest
         assertEquals("AES", secEnc1.getAlgorithm());
         assertEquals(16, secEnc1.getEncoded().length);
 
-        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
 
         SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
@@ -150,7 +150,7 @@ public class FrodoTest
         assertEquals("AES", secEnc1.getAlgorithm());
         assertEquals(32, secEnc1.getEncoded().length);
 
-        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
 
         SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
