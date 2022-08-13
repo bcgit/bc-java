@@ -631,7 +631,7 @@ public class X509RevocationChecker
                             }
                         }
                         catch (Exception e)
-                        {                    e.printStackTrace();
+                        {
                             if (LOG.isLoggable(Level.FINE))
                             {
                                 LOG.log(Level.FINE, "CrlDP " + url + " ignored: " + e.getMessage(), e);
@@ -785,7 +785,7 @@ public class X509RevocationChecker
                         validCrlFound = true;
                     }
                     catch (AnnotatedException e)
-                    {                     e.printStackTrace();
+                    {
                         lastException = e;
                     }
                 }

@@ -16,6 +16,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
@@ -127,6 +128,11 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_256, "SHA3-256WITHDSA"},
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_384, "SHA3-384WITHDSA"},
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA"},
+            new Object[]{BCObjectIdentifiers.falcon_512, "FALCON"},
+            new Object[]{BCObjectIdentifiers.falcon_1024, "FALCON"},
+            new Object[]{BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCS+"},
+            new Object[]{BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCS+"},
+            new Object[]{BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCS+"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
 
             new Object[]{PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC"},
