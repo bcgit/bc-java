@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
@@ -43,6 +44,11 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_256, "SHA256WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_384, "SHA384WITHCVC-ECDSA");
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
+        algorithms.put(BCObjectIdentifiers.falcon_512, "FALCON");
+        algorithms.put(BCObjectIdentifiers.falcon_1024, "FALCON");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCS+");
 
         algorithms.put(NISTObjectIdentifiers.id_sha224, "SHA224");
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");
