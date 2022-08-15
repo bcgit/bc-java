@@ -466,8 +466,7 @@ class DilithiumEngine
 
     public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] publicKey)
     {
-        int i;
-        byte[] buf = new byte[DilithiumK * DilithiumPolyW1PackedBytes],
+        byte[] buf,
             rho,
             mu = new byte[CrhBytes],
             c,
@@ -573,7 +572,7 @@ class DilithiumEngine
         // Helper.printByteArray(c2);
 
 
-        for (i = 0; i < SeedBytes; ++i)
+        for (int i = 0; i < SeedBytes; ++i)
         {
             if (c[i] != c2[i])
             {
