@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.constraints;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 
@@ -9,7 +8,7 @@ public class DefaultServiceProperties
 {
     private final String algorithm;
     private final int bitsOfSecurity;
-    private final CipherParameters params;
+    private final Object params;
     private final CryptoServicePurpose purpose;
 
     public DefaultServiceProperties(String algorithm, int bitsOfSecurity)
@@ -17,12 +16,12 @@ public class DefaultServiceProperties
         this(algorithm, bitsOfSecurity, null, CryptoServicePurpose.ANY);
     }
 
-    public DefaultServiceProperties(String algorithm, int bitsOfSecurity, CipherParameters params)
+    public DefaultServiceProperties(String algorithm, int bitsOfSecurity, Object params)
     {
         this(algorithm, bitsOfSecurity, params, CryptoServicePurpose.ANY);
     }
 
-    public DefaultServiceProperties(String algorithm, int bitsOfSecurity, CipherParameters params, CryptoServicePurpose purpose)
+    public DefaultServiceProperties(String algorithm, int bitsOfSecurity, Object params, CryptoServicePurpose purpose)
     {
         this.algorithm = algorithm;
         this.bitsOfSecurity = bitsOfSecurity;
@@ -45,7 +44,7 @@ public class DefaultServiceProperties
         return purpose;
     }
 
-    public CipherParameters getParams()
+    public Object getParams()
     {
         return params;
     }

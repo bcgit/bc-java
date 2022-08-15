@@ -5,6 +5,7 @@ public enum CryptoServicePurpose
     AGREEMENT,
     ENCRYPTION,
     DECRYPTION,
+    KEYGEN,
     SIGNING,
     VERIFYING,
     PRF,

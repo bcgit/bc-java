@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DSA;
+import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.agreement.DHAgreement;
@@ -52,6 +53,7 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.CamelliaLightEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RSAEngine;
@@ -59,11 +61,17 @@ import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.generators.DESKeyGenerator;
+import org.bouncycastle.crypto.generators.DESedeKeyGenerator;
+import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
+import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
+import org.bouncycastle.crypto.generators.GOST3410KeyPairGenerator;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.macs.KMAC;
@@ -87,10 +95,15 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
+import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ElGamalParameters;
+import org.bouncycastle.crypto.params.GOST3410KeyGenerationParameters;
+import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
@@ -106,6 +119,7 @@ import org.bouncycastle.crypto.signers.Ed25519ctxSigner;
 import org.bouncycastle.crypto.signers.Ed25519phSigner;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.Ed448phSigner;
+import org.bouncycastle.crypto.signers.GOST3410Signer;
 import org.bouncycastle.crypto.signers.GenericSigner;
 import org.bouncycastle.crypto.signers.ISO9796d2PSSSigner;
 import org.bouncycastle.crypto.signers.ISO9796d2Signer;
@@ -132,6 +146,7 @@ public class CryptoServiceConstraintsTest
         testLegacy128bits();
         test1024bitDSA();
         test1024bitRSA();
+        testDES();
         testSerpent();
         testTwofish();
         testSkipjack();
@@ -158,6 +173,9 @@ public class CryptoServiceConstraintsTest
         testEC();
         testDSA();
         testDH();
+        testElgamal();
+        testGost3410();
+        testRSA();
     }
 
     private void test112bits()
@@ -234,6 +252,52 @@ public class CryptoServiceConstraintsTest
         }
 
         eng.init(false, dKey);     // this should work as we are decrypting
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testDES()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128));
+
+        DESedeEngine eng = new DESedeEngine();
+        KeyParameter dKey = new KeyParameter(Hex.decode("01020304050607080102030405060708"));
+
+        try
+        {
+            eng.init(true, dKey);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        eng.init(false, dKey);     // this should work as we are decrypting
+
+        try
+        {
+            DESKeyGenerator kg = new DESKeyGenerator();
+
+            kg.init(new KeyGenerationParameters(new SecureRandom(), 56));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 56", e.getMessage());
+        }
+
+        try
+        {
+            DESedeKeyGenerator kg = new DESedeKeyGenerator();
+
+            kg.init(new KeyGenerationParameters(new SecureRandom(), 192));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 112", e.getMessage());
+        }
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -913,23 +977,30 @@ public class CryptoServiceConstraintsTest
     private void testEdwards()
     {
         SecureRandom random = new SecureRandom();
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+
         Ed25519KeyPairGenerator ed25519kpGen = new Ed25519KeyPairGenerator();
         ed25519kpGen.init(new Ed25519KeyGenerationParameters(random));
+        
+        Ed448KeyPairGenerator ed448kpGen = new Ed448KeyPairGenerator();
+        ed448kpGen.init(new Ed448KeyGenerationParameters(random));
+
+        X25519KeyPairGenerator x25519kpGen = new X25519KeyPairGenerator();
+        x25519kpGen.init(new X25519KeyGenerationParameters(random));
+
+        X448KeyPairGenerator x448kpGen = new X448KeyPairGenerator();
+        x448kpGen.init(new X448KeyGenerationParameters(random));
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
 
         AsymmetricCipherKeyPair kp = ed25519kpGen.generateKeyPair();
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519Signer(), "128");
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519phSigner(new byte[1]), "128");
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed25519ctxSigner(new byte[1]), "128");
 
-        Ed448KeyPairGenerator ed448kpGen = new Ed448KeyPairGenerator();
-        ed448kpGen.init(new Ed448KeyGenerationParameters(random));
         kp = ed448kpGen.generateKeyPair();
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448Signer(new byte[1]), "224");
         edwardsSignerTest(kp.getPublic(), kp.getPrivate(), new Ed448phSigner(new byte[1]), "224");
 
-        X25519KeyPairGenerator x25519kpGen = new X25519KeyPairGenerator();
-        x25519kpGen.init(new X25519KeyGenerationParameters(random));
 
         kp = x25519kpGen.generateKeyPair();
         edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new X25519Agreement(), "128");
@@ -938,12 +1009,51 @@ public class CryptoServiceConstraintsTest
             new XDHUPublicParameters(kp.getPublic(), kp.getPublic()),
             new XDHUPrivateParameters(kp.getPrivate(), kp.getPrivate()), new XDHUnifiedAgreement(new X25519Agreement()), "128");
 
-        X448KeyPairGenerator x448kpGen = new X448KeyPairGenerator();
-        x448kpGen.init(new X448KeyGenerationParameters(random));
         kp = x448kpGen.generateKeyPair();
+
         edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new X448Agreement(), "224");
         edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new XDHBasicAgreement(), "224");
 //        edwardsAgreementTest(kp.getPublic(), kp.getPrivate(), new XDHUnifiedAgreement(new X448Agreement()), "224");
+
+        try
+        {
+            ed25519kpGen.init(new Ed25519KeyGenerationParameters(random));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        
+        try
+        {
+            ed448kpGen.init(new Ed448KeyGenerationParameters(random));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 224", e.getMessage());
+        }
+
+        try
+        {
+            x25519kpGen.init(new X25519KeyGenerationParameters(random));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        try
+        {
+            x448kpGen.init(new X448KeyGenerationParameters(random));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 224", e.getMessage());
+        }
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -992,11 +1102,11 @@ public class CryptoServiceConstraintsTest
     private void testEC()
     {
         SecureRandom random = new SecureRandom();
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
-
         ECKeyPairGenerator ecKp = new ECKeyPairGenerator();
 
         ecKp.init(new ECKeyGenerationParameters(new ECDomainParameters(X962NamedCurves.getByName("prime192v1")), random));
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
 
         AsymmetricCipherKeyPair kp = ecKp.generateKeyPair();
 
@@ -1014,6 +1124,16 @@ public class CryptoServiceConstraintsTest
         ecAgreementTest(new ECDHUPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new ECDHUPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECDHCUnifiedAgreement());
         ecAgreementTest(new MQVPublicParameters((ECPublicKeyParameters)kp.getPublic(), (ECPublicKeyParameters)kp.getPublic()), new MQVPrivateParameters((ECPrivateKeyParameters)kp.getPrivate(), (ECPrivateKeyParameters)kp.getPrivate()), new ECMQVBasicAgreement());
         ecAgreementTest(kp.getPublic(), kp.getPrivate(), new ECVKOAgreement(new SHA256Digest()));
+
+        try
+        {
+            ecKp.init(new ECKeyGenerationParameters(new ECDomainParameters(X962NamedCurves.getByName("prime192v1")), random));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 96", e.getMessage());
+        }
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -1131,15 +1251,28 @@ public class CryptoServiceConstraintsTest
         );
 
         SecureRandom random = new SecureRandom();
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
 
         DSAKeyPairGenerator dsaKp = new DSAKeyPairGenerator();
 
         dsaKp.init(new DSAKeyGenerationParameters(random, dsaParams));
 
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+        
         AsymmetricCipherKeyPair kp = dsaKp.generateKeyPair();
 
         dsaSignerTest(kp.getPublic(), kp.getPrivate(), new DSASigner());
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            dsaKp.init(new DSAKeyGenerationParameters(random, dsaParams));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 112", e.getMessage());
+        }
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -1159,14 +1292,72 @@ public class CryptoServiceConstraintsTest
         }
     }
 
+    private void testGost3410()
+    {
+        GOST3410Parameters gostParams = new GOST3410Parameters(
+            new BigInteger(
+                "F56C2A7D366E3EBDEAA1891FD2A0D099" +
+                    "436438A673FED4D75F594959CFFEBCA7BE0FC72E4FE67D91" +
+                    "D801CBA0693AC4ED9E411B41D19E2FD1699C4390AD27D94C" +
+                    "69C0B143F1DC88932CFE2310C886412047BD9B1C7A67F8A2" +
+                    "5909132627F51A0C866877E672E555342BDF9355347DBD43" +
+                    "B47156B2C20BAD9D2B071BC2FDCF9757F75C168C5D9FC431" +
+                    "31BE162A0756D1BDEC2CA0EB0E3B018A8B38D3EF2487782A" +
+                    "EB9FBF99D8B30499C55E4F61E5C7DCEE2A2BB55BD7F75FCD" +
+                    "F00E48F2E8356BDB59D86114028F67B8E07B127744778AFF" +
+                    "1CF1399A4D679D92FDE7D941C5C85C5D7BFF91BA69F9489D" +
+                    "531D1EBFA727CFDA651390F8021719FA9F7216CEB177BD75", 16),
+            new BigInteger("C24ED361870B61E0D367F008F99F8A1F75525889C89DB1B673C45AF5867CB467", 16),
+            new BigInteger(
+                "8DC6CC814CAE4A1C05A3E186A6FE27EA" +
+                    "BA8CDB133FDCE14A963A92E809790CBA096EAA26140550C1" +
+                    "29FA2B98C16E84236AA33BF919CD6F587E048C52666576DB" +
+                    "6E925C6CBE9B9EC5C16020F9A44C9F1C8F7A8E611C1F6EC2" +
+                    "513EA6AA0B8D0F72FED73CA37DF240DB57BBB27431D61869" +
+                    "7B9E771B0B301D5DF05955425061A30DC6D33BB6D2A32BD0" +
+                    "A75A0A71D2184F506372ABF84A56AEEEA8EB693BF29A6403" +
+                    "45FA1298A16E85421B2208D00068A5A42915F82CF0B858C8" +
+                    "FA39D43D704B6927E0B2F916304E86FB6A1B487F07D8139E" +
+                    "428BB096C6D67A76EC0B8D4EF274B8A2CF556D279AD267CC" +
+                    "EF5AF477AFED029F485B5597739F5D0240F67C2D948A6279", 16)
+        );
+
+        SecureRandom random = new SecureRandom();
+
+        GOST3410KeyPairGenerator gost3410 = new GOST3410KeyPairGenerator();
+
+        gost3410.init(new GOST3410KeyGenerationParameters(random, gostParams));
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        AsymmetricCipherKeyPair kp = gost3410.generateKeyPair();
+
+        dsaSignerTest(kp.getPublic(), kp.getPrivate(), new GOST3410Signer());
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            gost3410.init(new GOST3410KeyGenerationParameters(random, gostParams));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 112", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
     private void testDH()
     {
         SecureRandom random = new SecureRandom();
-        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 112));
 
         DHKeyPairGenerator dhKp = new DHKeyPairGenerator();
 
         dhKp.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_1024));
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 112));
 
         AsymmetricCipherKeyPair kp = dhKp.generateKeyPair();
 
@@ -1174,6 +1365,28 @@ public class CryptoServiceConstraintsTest
         dhTest(kp.getPublic(), kp.getPrivate(), new DHBasicAgreement());
         dhTest(new DHUPublicParameters((DHPublicKeyParameters)kp.getPublic(), (DHPublicKeyParameters)kp.getPublic()), new DHUPrivateParameters((DHPrivateKeyParameters)kp.getPrivate(), (DHPrivateKeyParameters)kp.getPrivate()), new DHUnifiedAgreement());
         dhTest(new DHMQVPublicParameters((DHPublicKeyParameters)kp.getPublic(), (DHPublicKeyParameters)kp.getPublic()), new DHMQVPrivateParameters((DHPrivateKeyParameters)kp.getPrivate(), (DHPrivateKeyParameters)kp.getPrivate()), new MQVBasicAgreement());
+
+        try
+        {
+            dhKp.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_768));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 20", e.getMessage());
+        }
+
+        try
+        {
+            DHBasicKeyPairGenerator bKg = new DHBasicKeyPairGenerator();
+
+            bKg.init(new DHKeyGenerationParameters(random, DHStandardGroups.rfc2409_768));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 20", e.getMessage());
+        }
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
@@ -1234,6 +1447,88 @@ public class CryptoServiceConstraintsTest
         }
     }
 
+    private void testElgamal()
+    {
+        SecureRandom random = new SecureRandom();
+
+        ElGamalKeyPairGenerator eKpg = new ElGamalKeyPairGenerator();
+
+        eKpg.init(new ElGamalKeyGenerationParameters(random,
+            new ElGamalParameters(DHStandardGroups.rfc2409_1024.getP(), DHStandardGroups.rfc2409_1024.getG())));
+
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        AsymmetricCipherKeyPair kp = eKpg.generateKeyPair();
+
+        ElGamalEngine eEngine = new ElGamalEngine();
+
+        try
+        {
+            eEngine.init(true, kp.getPublic());
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        // will pass as decryption
+        eEngine.init(false, kp.getPrivate());
+        
+        try
+        {
+            eKpg.init(new ElGamalKeyGenerationParameters(random,
+                  new ElGamalParameters(DHStandardGroups.rfc2409_1024.getP(), DHStandardGroups.rfc2409_1024.getG())));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testRSA()
+    {
+        SecureRandom random = new SecureRandom();
+
+        RSAKeyPairGenerator rsaKpg = new RSAKeyPairGenerator();
+
+        rsaKpg.init(new RSAKeyGenerationParameters(BigInteger.valueOf(0x10001), random, 1024, 100));
+     
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(128, 80));
+
+        AsymmetricCipherKeyPair kp = rsaKpg.generateKeyPair();
+
+        RSAEngine rsaEngine = new RSAEngine();
+
+        try
+        {
+            rsaEngine.init(true, kp.getPublic());
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        // will pass as decryption
+        rsaEngine.init(false, kp.getPrivate());
+
+        try
+        {
+            rsaKpg.init(new RSAKeyGenerationParameters(BigInteger.valueOf(0x10001), random, 1024, 100));
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 128 bits of security only 80", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    
     public static void main(
         String[] args)
     {
