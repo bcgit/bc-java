@@ -7,10 +7,6 @@
 
 <center>
 <h1>Bouncy Castle Crypto Package - Release Notes</h1>
-<font size=1>
-<pre>
-</pre>
-</font>
 </center>
 <h2>1.0 Introduction</h2>
 <p>
@@ -22,13 +18,13 @@ to conform the algorithms to the JCE framework.
 </p>
 <h2>2.0 Release History</h2>
 
-<a name="r1rv72"><h3>2.1.1 Version</h3></a>
+<a id="r1rv72"><h3>2.1.1 Version</h3></a>
 Release: 1.72<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>There were parameter errors in XMSS^MT OIDs for XMSSMT_SHA2_40/4_256 and XMSSMT_SHA2_60/3_256. These have been fixed.</li>
-<li>There was an error in Merkle tree construction for the Evidence Records (ERS) implementation which could result in invalid roots been timestamped. ERS now produces an ArchiveTimeStamp for each data object/group with an associated reduced hash tree.</li>
+<li>There was an error in Merkle tree construction for the Evidence Records (ERS) implementation which could result in invalid roots been timestamped. ERS now produces an ArchiveTimeStamp for each data object/group with an associated reduced hash tree. The reduced hash tree is now calculated as a simple path to the root of the tree for each record.</li>
 <li>OpenPGP will now ignore signatures marked as non-exportable on encoding.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
@@ -41,14 +37,15 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The SIKE Alternative Candidate NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
 <li>The NTRU Round 3 Finalist Candidate NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
 <li>The Falcon Finalist NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
-<li>The Kyber Finalist NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
+<li>The CRYSTALS-Kyber Finalist NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
 <li>Argon2 Support has been added to the OpenPGP API.</li>
 <li>XDH IES has now been added to the BC provider.</li>
 <li>The OpenPGP API now supports AEAD encryption and decryption.</li>
 <li>The NTRU Prime Alternative Candidate NIST Post Quantum Algorithm has been added to the low-level API.</li>
+<li>The CRYSTALS-Dilithium Finalist NIST Post Quantum Algorithm has been added to the low-level API.</li>
 </ul>
 
-<a name="r1rv71"><h3>2.2.1 Version</h3></a>
+<a id="r1rv71"><h3>2.2.1 Version</h3></a>
 Release: 1.71<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, March 31st.
 <h3>2.2.2 Defects Fixed</h3>
@@ -93,6 +90,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, March 31st.
 <li>BCJSSE: Added boolean system properties "org.bouncycastle.jsse.client.dh.disableDefaultSuites" and "org.bouncycastle.jsse.server.dh.disableDefaultSuites".
 Default "false". Set to "true" to disable inclusion of DH cipher suites in the default cipher suites for client/server respectively.</li>
 <li>ASN.1 object support has been added for the Lightweight Certificate Management Protocol (CMP), currently in draft.</li>
+<li>A HybridValueParamterSpec class has been added for use with KeyAgreement to support SP 800-56C hybrid (so classical/post-quantum) key agreement.</li>
 </ul>
 <h3>2.2.4 Notes</h3>
 <ul>
@@ -100,7 +98,7 @@ Default "false". Set to "true" to disable inclusion of DH cipher suites in the d
 <li>The <a href="https://groups.google.com/u/1/a/list.nist.gov/g/pqc-forum/c/F9ZUtWCij54">submission update to SPHINCS+</a> has been added. This changes the generation of signatures - particularly deterministic ones.</li>
 </ul>
 
-<a name="r1rv70"><h3>2.3.1 Version</h3></a>
+<a id="r1rv70"><h3>2.3.1 Version</h3></a>
 Release: 1.70<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2021, November 29th.
 <h3>2.3.2 Defects Fixed</h3>
@@ -161,7 +159,7 @@ re-implemented in terms of TaggedObject.</li>
 <li>While this release should maintain source code compatibility, developers making use of some parts of the ASN.1 library will find that some classes need recompiling. Apologies for the inconvenience.</li>
 </ul>
 
-<a name="r1rv69"><h3>2.4.1 Version</h3></a>
+<a id="r1rv69"><h3>2.4.1 Version</h3></a>
 Release: 1.69<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2021, June 7th.
 <h3>2.4.2 Defects Fixed</h3>
@@ -232,7 +230,7 @@ the org.bouncycastle.tsp.ers package.</li>
 <li>Some work has been done on moving out code that does not need to be in the provider jar. This has reduced the size of the provider jar and should also make it easier for developers to patch the classes involved as they no longer need to be signed. bcpkix and bctls are both dependent on the new bcutil jar.</li>
 </ul>
 
-<a name="r1rv68"><h3>2.5.1 Version</h3></a>
+<a id="r1rv68"><h3>2.5.1 Version</h3></a>
 Release: 1.68<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, December 21st.
 <h3>2.5.2 Defects Fixed</h3>
@@ -253,7 +251,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, December 21st.
 </ul>
 
 
-<a name="r1rv67"><h3>2.6.1 Version</h3></a>
+<a id="r1rv67"><h3>2.6.1 Version</h3></a>
 Release: 1.67<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <h3>2.6.2 Defects Fixed</h3>
@@ -291,7 +289,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <li>As described in CVE-2020-28052, the OpenBSDBCrypt.checkPassword() method had a flaw in it due to a change for BC 1.65. BC 1.66 is also affected. The issue is fixed in BC 1.67. If you are using OpenBSDBCrypt.checkPassword() and you are using BC 1.65 or BC 1.66 we strongly advise moving to BC 1.67 or later.</li>
 </ul>
 
-<a name="r1rv66"><h3>2.7.1 Version</h3></a>
+<a id="r1rv66"><h3>2.7.1 Version</h3></a>
 Release: 1.66<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, July 4th.
 <h3>2.7.2 Defects Fixed</h3>
@@ -335,7 +333,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, July 4th.
 The qTESLA update breaks compatibility with previous versions. Private keys now include a hash of the public key at the end, and signatures are no longer interoperable with previous versions.
 </p>
 
-<a name="r1rv65"><h3>2.8.1 Version</h3></a>
+<a id="r1rv65"><h3>2.8.1 Version</h3></a>
 Release: 1.65<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, March 31st.
 <h3>2.8.2 Defects Fixed</h3>
@@ -364,7 +362,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, March 31st.
 <li>TLS: DSA in JcaTlsCrypto now falls back to stream signing to work around NoneWithDSA limitations in default provider.</li>
 </ul>
 
-<a name="r1rv64"><h3>2.9.1 Version</h3></a>
+<a id="r1rv64"><h3>2.9.1 Version</h3></a>
 Release: 1.64<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, October 7th.
 <h3>2.9.2 Defects Fixed</h3>
@@ -398,7 +396,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, October 7th.
 <li>A change to the ASN.1 parser in 1.63 introduced a regression that can cause an OutOfMemoryError to occur on parsing ASN.1 data. We recommend upgrading to 1.64, particularly where an application might be parsing untrusted ASN.1 data from third parties.</li>
 </ul>
 
-<a name="r1rv63"><h3>2.10.1 Version</h3></a>
+<a id="r1rv63"><h3>2.10.1 Version</h3></a>
 Release: 1.63<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, September 10th.
 <h3>2.10.2 Defects Fixed</h3>
@@ -433,7 +431,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, September 10th.
 <li>The valid path for EST services has been updated to cope with the characters used in the Aruba clearpass EST implementation.</li>
 </ul>
 
-<a name="r1rv62"><h3>2.11.1 Version</h3></a>
+<a id="r1rv62"><h3>2.11.1 Version</h3></a>
 Release: 1.62<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, June 3rd.
 <h3>2.11.2 Defects Fixed</h3>
@@ -474,7 +472,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, June 3rd.
 <li>Support for the Ethereum flavor of IES has been added to the lightweight API.</li>
 </ul>
 
-<a name="r1rv61"><h3>2.12.1 Version</h3></a>
+<a id="r1rv61"><h3>2.12.1 Version</h3></a>
 Release: 1.61<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, February 4th.
 <h3>2.12.2 Defects Fixed</h3>
@@ -527,7 +525,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2019, February 4th.
 <li>Deprecated methods for EC point construction independent of curves have been removed.</li>
 </ul>
 
-<a name="r1rv60"><h3>2.13.1 Version</h3></a>
+<a id="r1rv60"><h3>2.13.1 Version</h3></a>
 Release: 1.60<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
 <h3>2.13.2 Defects Fixed</h3>
@@ -585,7 +583,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2018, June 30
 <li>CVE-2018-1000613: lack of class checking in deserialization of XMSS/XMSS^MT private keys with BDS state information.</li>
 </ul>
 
-<a name="r1rv59"><h3>2.14.1 Version</h3></a>
+<a id="r1rv59"><h3>2.14.1 Version</h3></a>
 Release: 1.59 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, December 28
 <h3>2.14.2 Defects Fixed</h3>
@@ -626,7 +624,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, December 28
 <li>CVE-2017-13098 ("ROBOT"), a Bleichenbacher oracle in TLS when RSA key exchange is negotiated. This potentially affected BCJSSE servers and any other TLS servers configured to use JCE for the underlying crypto - note the two TLS implementations using the BC lightweight APIs are not affected by this.</li>
 </ul>
 
-<a name="r1rv58"><h3>2.15.1 Version</h3></a>
+<a id="r1rv58"><h3>2.15.1 Version</h3></a>
 Release: 1.58 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <h3>2.15.2 Defects Fixed</h3>
@@ -669,7 +667,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, August 18
 <li>Per RFC 7568, removed support for SSLv3 in the new TLS API.</li>
 </ul>
 
-<a name="r1rv57"><h3>2.16.1 Version</h3></a>
+<a id="r1rv57"><h3>2.16.1 Version</h3></a>
 Release: 1.57 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, May 11
 <h3>2.16.2 Defects Fixed</h3>
@@ -705,7 +703,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2017, May 11
 <li>Further work has been done on preventing accidental re-use of a GCM cipher without first changing its key or iv.</li>
 </ul>
 
-<a name="r1rv56"><h3>2.17.1 Version</h3></a>
+<a id="r1rv56"><h3>2.17.1 Version</h3></a>
 Release: 1.56 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <h3>2.17.2 Defects Fixed</h3>
@@ -731,7 +729,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, December 23
 <li>SHA-3 support has been added to BcDefaultDigestProvider.</li>
 <li>A higher level TLS API and JSSE provider have been added to the project.</li>
 </ul>
-<a name="CVE156"><h3>2.17.4 Security Related Changes and CVE's Addressed by this Release</h3></a>
+<a id="CVE156"><h3>2.17.4 Security Related Changes and CVE's Addressed by this Release</h3></a>
 <ul>
 <li>It is now possible to configure the provider to only import keys for specific named curves.</li>
 <li>Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.</li>
@@ -750,13 +748,12 @@ Carry propagation bugs in the implementation of squaring for several raw math cl
 <li>CVE-2016-1000346: Other party DH public key not fully validated. This can cause issues as invalid keys can be used to reveal details about the other party's private key where static Diffie-Hellman is in use. As of this release the key parameters are checked on agreement calculation.</li>
 <li>CVE-2016-1000352: ECIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.</li>
 </ul>
-</ul>
 <h3>2.17.5 Security Advisory</h3>
 <ul>
 <li>We consider the carry propagation bugs fixed in this release to have been exploitable in previous releases (1.51-1.55), for static ECDH, to reveal the long-term key, per <a href="https://eprint.iacr.org/2011/633">"Practical realisation and elimination of an ECC-related software bug attack", Brumley et.al.</a>. The most common case of this would be the non-ephemeral ECDH ciphersuites in TLS. These are not enabled by default in our TLS implementations, but they can be enabled explicitly by users. We recommend that users DO NOT enable static ECDH ciphersuites for TLS.</li>
 </ul>
 
-<a name="r1rv55"><h3>2.18.1 Version</h3></a>
+<a id="r1rv55"><h3>2.18.1 Version</h3></a>
 Release: 1.55 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, August 18
 <h3>2.18.2 Defects Fixed</h3>
@@ -798,7 +795,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2016, August 18
 <li>Additional search methods have been added to PGP public and secret key rings.</li>
 </ul>
 
-<a name="r1rv54"><h3>2.19.1 Version</h3></a>
+<a id="r1rv54"><h3>2.19.1 Version</h3></a>
 Release: 1.54 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, December 29
 <h3>2.19.2 Defects Fixed</h3>
@@ -829,7 +826,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, December 29
 If you have been using Serpent, you will need to either change to Tnepres, or take into account the fact that Serpent is now byte-swapped compared to what it was before.
 </p>
 
-<a name="r1rv53"><h3>2.20.1 Version</h3></a>
+<a id="r1rv53"><h3>2.20.1 Version</h3></a>
 Release: 1.53 <br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 <h3>2.20.2 Defects Fixed</h3>
@@ -878,7 +875,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, October 10
 It turns out there was a similar, but different, issue in Crypto++ to the BC issue with ECIES. Crypto++ 6.0 now offers a corrected version of ECIES which is compatible with that which is now in BC.
 </p>
 
-<a name="r1rv52"><h3>2.21.1 Version</h3></a>
+<a id="r1rv52"><h3>2.21.1 Version</h3></a>
 Release: 1.52<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, March 2
 <h3>2.21.2 Defects Fixed</h3>
@@ -930,7 +927,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2015, March 2
 <li>The CTR DRBGs would not populate some bytes in the requested block of random bytes if the size of the block requested was not an exact multiple of the block size of the underlying cipher being used in the DRBG. If you are using the CTR DRBGs with "odd" keysizes, we strongly advise upgrading to this release, or contacting us for a work around.</li>
 </ul>
 
-<a name="r1rv51"><h3>2.22.1 Version</h3></a>
+<a id="r1rv51"><h3>2.22.1 Version</h3></a>
 Release: 1.51<br />
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2014, July 28
 <h3>2.22.2 Defects Fixed</h3>
@@ -982,7 +979,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2014, July 28
 <li>There has been further clean out of deprecated methods in this release. If your code has previously been flagged as using a deprecated method you may need to change it. The OpenPGP API is the most heavily affected.</li>
 </ul>
 
-<a name="r1rv50"><h3>2.23.1 Version</h3></a>
+<a id="r1rv50"><h3>2.23.1 Version</h3></a>
 Release: 1.50<br />
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, December 3
 <h3>2.23.2 Defects Fixed</h3>
@@ -1029,7 +1026,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, December 3
 <li>ECDH support for OpenPGP should still be regarded as experimental. It is still possible there will be compliance issues with other implementations.</li>
 </ul>
 
-<a name="r1rv49"><h3>2.24.1 Version</h3></a>
+<a id="r1rv49"><h3>2.24.1 Version</h3></a>
 Release: 1.49<br />
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, May 31
 <h3>2.24.2 Defects Fixed</h3>
@@ -1078,7 +1075,7 @@ class NonMemoableDigest has been added which hides the Memoable interface where 
 <li>The change to PEMParser to support explicit EC curves is not backward compatible. If you run into a named curve you need to use org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID() to look the curve up if required.</li>
 </ul>
 
-<a name="r1rv48"><h3>2.25.1 Version</h3></a>
+<a id="r1rv48"><h3>2.25.1 Version</h3></a>
 Release: 1.48<br />
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, February 10
 <h3>2.25.2 Defects Fixed</h3>
@@ -1107,7 +1104,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2013, February 10
 <li>T61String now uses UTF-8 encoding by default rather than a simple 8 bit transform.</li>
 </ul>
 
-<a name="r1rv47"><h3>2.26.1 Version</h3></a>
+<a id="r1rv47"><h3>2.26.1 Version</h3></a>
 Release: 1.47<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2012, March 30
 <h3>2.26.2 Defects Fixed</h3>
@@ -1152,8 +1149,8 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2012, March 30
 Okay, so we have had to do another release. The issue we have run into is that we probably didn't go far enough in 1.46, but we are now confident that moving from this release to 2.0 should be largely just getting rid of deprecated methods. While this release does change a lot it is relatively straight forward to do a port and we have a <a href="https://github.com/bcgit/bc-java/wiki/Porting-From-Earlier-BC-Releases-to-1.47-and-Later">porting guide</a> which explains the important ones. The area there has been the most change in is the ASN.1 library which was in bad need of a rewrite after 10 years of patching. On the bright side the rewrite did allow us to eliminate a few problems and bugs in the ASN.1 library, so we have some hope anyone porting to it will also have similar benefits. As with 1.46 the other point of emphasis has been making sure interface support is available for operations across the major APIs, so the lightweight API or some local role your own methods can be used instead for doing encryption and signing.
 </p>
 
-<a name="r1rv46"><h3>2.27.1 Version</h3></a>
-Release: 1.46</br>
+<a id="r1rv46"><h3>2.27.1 Version</h3></a>
+Release: 1.46<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2011, February 23
 <h3>2.27.2 Defects Fixed</h3>
 <ul>
@@ -1198,8 +1195,7 @@ So there are four things useful to know about this release:
 <li>The X509Name class will utlimately be replacde with the X500Name class, the getInstance() methods on both these classes allow conversion from one type to another.</li>
 <li>The org.bouncycastle.cms.RecipientId class now has a collection of subclasses to allow for more specific recipient matching. If you are creating your own recipient ids you should use the constructors for the subclasses rather than relying on the set methods inherited from X509CertSelector. The dependencies on X509CertSelector and CertStore will be removed from the version 2 CMS API.</li>
 </ul>
-</p>
-<a name="r1rv45"><h3>2.28.1 Version</h3></a>
+<a id="r1rv45"><h3>2.28.1 Version</h3></a>
 Release: 1.45<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2010, January 12
 <h3>2.28.2 Defects Fixed</h3>
@@ -1218,7 +1214,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2010, January 12
 <li>This version of the provider has been specifically reviewed to eliminate possible timing attacks on algorithms such as GCM and CCM mode.</li>
 </ul>
 
-<a name="r1rv44"><h3>2.29.1 Version</h3></a>
+<a id="r1rv44"><h3>2.29.1 Version</h3></a>
 Release: 1.44<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, October 9
 <h3>2.29.2 Defects Fixed</h3>
@@ -1253,7 +1249,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, October 9
 <li>Support for raw signatures has been extended to RSA and RSA-PSS in the provider. RSA support can be used in CMSSignedDataStreamGenerator to support signatures without signed attributes.</li>
 </ul>
 
-<a name="r1rv43"><h3>2.30.1 Version</h3></a>
+<a id="r1rv43"><h3>2.30.1 Version</h3></a>
 Release: 1.43<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, April 13
 <h3>2.30.2 Defects Fixed</h3>
@@ -1267,7 +1263,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, April 13
 <li>The effect of the sign extension bug was to decrease the key space the HC-128 and HC-256 ciphers were operating in and the byte swapping inverted every 32 bits of the generated stream. If you are using either HC-128 or HC-256 you must upgrade to this release.</li>
 </ul>
 
-<a name="r1rv42"><h3>2.31.1 Version</h3></a>
+<a id="r1rv42"><h3>2.31.1 Version</h3></a>
 Release: 1.42<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, March 16
 <h3>2.31.2 Defects Fixed</h3>
@@ -1294,7 +1290,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2009, March 16
 <li>Support for the SRP-6a protocol has been added to the lightweight API.</li>
 </ul>
 
-<a name="r1rv41"><h3>2.32.1 Version</h3></a>
+<a id="r1rv41"><h3>2.32.1 Version</h3></a>
 Release: 1.41<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, October 1
 <h3>2.32.2 Defects Fixed</h3>
@@ -1319,7 +1315,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, October 1
 <li>Support for reading and extracting personalised certificates in PGP Secret Key rings has been added.</li>
 </ul>
 
-<a name="r1rv40"><h3>2.33.1 Version</h3></a>
+<a id="r1rv40"><h3>2.33.1 Version</h3></a>
 Release: 1.40<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, July 12
 <h3>2.33.2 Defects Fixed</h3>
@@ -1351,7 +1347,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, July 12
 <li>Due to problems for some users caused by the presence of the IDEA algorithm, an implementation is no longer included in the default signed jars. Only the providers of the form bcprov-ext-*-*.jar now include IDEA.</li>
 </ul>
 
-<a name="r1rv39"><h3>2.34.1 Version</h3></a>
+<a id="r1rv39"><h3>2.34.1 Version</h3></a>
 Release: 1.39<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, March 29
 <h3>2.34.2 Defects Fixed</h3>
@@ -1383,7 +1379,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, March 29
 <li>Support has been added to the provider for the VMPC MAC.</li>
 </ul>
 
-<a name="r1rv38"><h3>2.35.1 Version</h3></a>
+<a id="r1rv38"><h3>2.35.1 Version</h3></a>
 Release: 1.38<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, November 7
 <h3>2.35.2 Defects Fixed</h3>
@@ -1411,7 +1407,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, November 7
 <li>CertPathReviewer has better handling for problem trust anchors.</li>
 <li>Base64 encoder now does initial size calculations to try to improve resource usage.</li>
 </ul>
-<a name="r1rv37"><h3>2.36.1 Version</h3></a>
+<a id="r1rv37"><h3>2.36.1 Version</h3></a>
 Release: 1.37<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, June 15
 <h3>2.36.2 Defects Fixed</h3>
@@ -1447,7 +1443,7 @@ the file to be signed. This has been fixed.</li>
 <li>The JCE provider now supports RIPEMD160withECDSA.</li>
 </ul>
 
-<a name="r1rv36"><h3>2.37.1 Version</h3></a>
+<a id="r1rv36"><h3>2.37.1 Version</h3></a>
 Release: 1.36<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2007, March 16
 <h3>2.37.2 Defects Fixed</h3>
@@ -1480,7 +1476,7 @@ regression for processing some messages with embedded multiparts that contained 
 <li>DSASigner now handles long messages. SHA2 family digest support for DSA has been added to the provider.</li>
 </ul>
 
-<a name="r1rv35"><h3>2.38.1 Version</h3></a>
+<a id="r1rv35"><h3>2.38.1 Version</h3></a>
 Release: 1.35<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, December 16
 <h3>2.38.2 Defects Fixed</h3>
@@ -1520,7 +1516,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, December 16
 <li>PGP packet streams can now be closed off using close() on the returned stream as well as closing the generator.</li>
 </ul>
 
-<a name="r1rv34"><h3>2.39.1 Version</h3></a>
+<a id="r1rv34"><h3>2.39.1 Version</h3></a>
 Release: 1.34<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, October 2
 <h3>2.39.2 Defects Fixed</h3>
@@ -1561,7 +1557,7 @@ The build scripts now run this target by default.
 will be possible for attackers to exploit some of Bleichenbacher's RSA signature forgery attacks on your applications.</li>
 </ul>
 
-<a name="r1rv33"><h3>2.40.1 Version</h3></a>
+<a id="r1rv33"><h3>2.40.1 Version</h3></a>
 Release: 1.33<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, May 3
 <h3>2.40.2 Defects Fixed</h3>
@@ -1581,7 +1577,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, May 3
 <li>DERUTF8String now supports surrogate pairs.
 </ul>
 
-<a name="r1rv32"><h3>2.41.1 Version</h3></a>
+<a id="r1rv32"><h3>2.41.1 Version</h3></a>
 Release: 1.32<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, March 27
 <h3>2.41.2 Defects Fixed</h3>
@@ -1616,7 +1612,7 @@ which has a dispose method on it which should allow removal of the file backing 
 Owing to patent issues in some jurisdictions, they are now generated with point compression disabled by default.
 </ul>
 
-<a name="r1rv31"><h3>2.42.1 Version</h3></a>
+<a id="r1rv31"><h3>2.42.1 Version</h3></a>
 Release: 1.31<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, December 29
 <h3>2.42.2 Defects Fixed</h3>
@@ -1641,7 +1637,7 @@ This has been fixed.
 <li>CertPathValidator has been updated to better support path validation as defined in RFC 3280.
 </ul>
 
-<a name="r1rv30"><h3>2.43.1 Version</h3></a>
+<a id="r1rv30"><h3>2.43.1 Version</h3></a>
 Release: 1.30<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, September 18
 <h3>2.43.2 Defects Fixed</h3>
@@ -1667,7 +1663,7 @@ ASN.1 encoding. This has been fixed.
 <li>Both the lightweight API and the provider now support the Camellia encryption algorithm.
 </ul>
 
-<a name="r1rv29"><h3>2.44.1 Version</h3></a>
+<a id="r1rv29"><h3>2.44.1 Version</h3></a>
 Release: 1.29<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, June 27
 <h3>2.44.2 Defects Fixed</h3>
@@ -1695,7 +1691,7 @@ HMac-SHA512.
 lightweight API.
 </ul> 
 
-<a name="r1rv28"><h3>2.45.1 Version</h3></a>
+<a id="r1rv28"><h3>2.45.1 Version</h3></a>
 Release: 1.28<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, April 20
 <h3>2.45.2 Defects Fixed</h3>
@@ -1731,7 +1727,7 @@ as some S/MIME 3.1 recommendations have also been introduced for header creation
 <li>GOST private keys are probably not encoding correctly and can be expected to change.
 </ul>
 
-<a name="r1rv27"><h3>2.46.1 Version</h3></a>
+<a id="r1rv27"><h3>2.46.1 Version</h3></a>
 Release: 1.27<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, February 20
 <h3>2.46.2 Defects Fixed</h3>
@@ -1769,7 +1765,7 @@ with a JCE interface with the same method signature. The getParams() method in p
 were using these previously you should use SHA256WithRSAAndMGF1, SHA384WithRSAAndMGF1, or SHA512WithRSAAndMGF1.
 </ul>
 
-<a name="r1rv26"><h3>2.47.1 Version</h3></a>
+<a id="r1rv26"><h3>2.47.1 Version</h3></a>
 Release: 1.26<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, January 15
 <h3>2.47.2 Defects Fixed</h3>
@@ -1796,7 +1792,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2005, January 15
 <li>The JDK 1.5 version of the provider now supports the new Elliptic Curve classes found in the java.security packages. Note: while we have tried to preserve some backwards compatibility people using Elliptic curve are likely to find some minor code changes are required when moving code from JDK 1.4 to JDK 1.5 as the java.security APIs have changed.
 </ul>
 
-<a name="r1rv25"><h3>2.48.1 Version</h3></a>
+<a id="r1rv25"><h3>2.48.1 Version</h3></a>
 Release: 1.25<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, October 1
 <h3>2.48.2 Defects Fixed</h3>
@@ -1841,7 +1837,7 @@ having to convert the original object down to its base ASN.1 equivalents.
 <li>OID components of up to 2^63 bits are now supported.
 </ul>
 
-<a name="r1rv24"><h3>2.49.1 Version</h3></a>
+<a id="r1rv24"><h3>2.49.1 Version</h3></a>
 Release: 1.24<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, June 12
 <h3>2.49.2 Defects Fixed</h3>
@@ -1868,7 +1864,7 @@ KeyUsage extension has been fixed.
 <li>ZeroPadding for encrypting ASCII data has been added.
 </ul>
 
-<a name="r1rv23"><h3>2.50.1 Version</h3></a>
+<a id="r1rv23"><h3>2.50.1 Version</h3></a>
 Release: 1.23<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, April 10
 <h3>2.50.2 Defects Fixed</h3>
@@ -1905,7 +1901,7 @@ certifications has been added.
 <li>DERGeneralizedTime getTime() method now handles a broader range of input strings.
 </ul>
 
-<a name="r1rv22"><h3>2.51.1 Version</h3></a>
+<a id="r1rv22"><h3>2.51.1 Version</h3></a>
 Release: 1.22<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2004, February 7
 <h3>2.51.2 Defects Fixed</h3>
@@ -1926,7 +1922,7 @@ a non-null reason, rather than a null one. This has been fixed.
 <li>Support for ElGamal encryption/decryption has been added to the PGP package.
 </ul>
 
-<a name="r1rv21"><h3>2.52.1 Version</h3></a>
+<a id="r1rv21"><h3>2.52.1 Version</h3></a>
 Release: 1.21<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, December 6
 <h3>2.52.2 Defects Fixed</h3>
@@ -1944,7 +1940,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, December 6
 <li>The ASN.1 library now supports policy qualifiers and policy info objects.
 </ul>
 
-<a name="r1rv20"><h3>2.53.1 Version</h3></a>
+<a id="r1rv20"><h3>2.53.1 Version</h3></a>
 Release: 1.20<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, October 8
 <h3>2.53.2 Defects Fixed</h3>
@@ -1965,7 +1961,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, October 8
 <li>Addition of a Null block cipher to the light weight API.
 </ul>
 
-<a name="r1rv19"><h3>2.54.1 Version</h3></a>
+<a id="r1rv19"><h3>2.54.1 Version</h3></a>
 Release: 1.19<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, June 7
 <h3>2.54.2 Defects Fixed</h3>
@@ -1988,7 +1984,7 @@ and the processing of responses. Response generation is also provided, but shoul
 in order to find algorithms.
 </ul>
 
-<a name="r1rv18"><h3>2.55.1 Version</h3></a>
+<a id="r1rv18"><h3>2.55.1 Version</h3></a>
 Release: 1.18<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, February 8
 <h3>2.55.2 Defects Fixed</h3>
@@ -2014,7 +2010,7 @@ of "application/pkcs7-mime; smime-type=signed-data;" signatures.
 Sun BigInteger library.
 </ul>
 
-<a name="r1rv17"><h3>2.56.1 Version</h3></a>
+<a id="r1rv17"><h3>2.56.1 Version</h3></a>
 Release: 1.17<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2003, January 8
 <h3>2.56.2 Defects Fixed</h3>
@@ -2048,7 +2044,7 @@ be set when a string is converted as well as changeable lookup tables for
 string to OID conversion.
 </ul>
 
-<a name="r1rv16"><h3>2.57.1 Version</h3></a>
+<a id="r1rv16"><h3>2.57.1 Version</h3></a>
 Release: 1.16<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, November 30
 <h3>2.57.2 Defects Fixed</h3>
@@ -2083,7 +2079,7 @@ of the Cert Path API, remove code suited to inclusion in the provider,
 and to support multiple recipients/signers.
 </ul>
 
-<a name="r1rv15"><h3>2.58.1 Version</h3></a>
+<a id="r1rv15"><h3>2.58.1 Version</h3></a>
 Release: 1.15<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, September 6
 <h3>2.58.2 Defects Fixed</h3>
@@ -2118,7 +2114,7 @@ The local name now takes precedence.
 <li>Both the provider and the lightweight library now support a basic SIC mode for block ciphers.
 </ul>
 
-<a name="r1rv14"><h3>2.59.1 Version</h3></a>
+<a id="r1rv14"><h3>2.59.1 Version</h3></a>
 Release: 1.14<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, June 17
 <h3>2.59.2 Defects Fixed</h3>
@@ -2156,7 +2152,7 @@ These deal with implicit/explicit tagging ambiguities with constructed types.
 object identifiers.
 </ul>
 
-<a name="r1rv13"><h3>2.60.1 Version</h3></a>
+<a id="r1rv13"><h3>2.60.1 Version</h3></a>
 Release: 1.13<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, April 19
 <h3>2.60.2 Defects Fixed</h3>
@@ -2183,7 +2179,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, April 19
     length certificate chains for signing keys.
 </ul>
 
-<a name="r1rv12"><h3>2.61.1 Version</h3></a>
+<a id="r1rv12"><h3>2.61.1 Version</h3></a>
 Release: 1.12<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, February 8
 <h3>2.61.2 Defects Fixed</h3>
@@ -2219,7 +2215,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2002, February 8
     for details).
 </ul>
 
-<a name="r1rv11"><h3>2.62.1 Version</h3></a>
+<a id="r1rv11"><h3>2.62.1 Version</h3></a>
 Release: 1.11<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, December 10
 <h3>2.62.2 Defects Fixed</h3>
@@ -2270,7 +2266,7 @@ more generic method getPublicKeyData has been added and getPublicKey now
 throws an IOException if there is a problem.
 </ul>
 
-<a name="r1rv10"><h3>2.63.1 Version</h3></a>
+<a id="r1rv10"><h3>2.63.1 Version</h3></a>
 Release: 1.10<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, October 20
 <h3>2.63.2 Defects Fixed</h3>
@@ -2291,7 +2287,7 @@ be kept long term as it may be adjusted.
 <li>Support for the generation of PKCS10 certification requests has been added.
 </ul>
 
-<a name="r1rv09"><h3>2.64.1 Version</h3></a>
+<a id="r1rv09"><h3>2.64.1 Version</h3></a>
 Release: 1.09<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, October 6
 <h3>2.64.2 Defects Fixed</h3>
@@ -2331,7 +2327,7 @@ currently consists of a class showing how to generate a PKCS12 file.
 resource hungry and faster - whether it's fast enough remains to be seen!
 </ul>
 
-<a name="r1rv08"><h3>2.65.1 Version</h3></a>
+<a id="r1rv08"><h3>2.65.1 Version</h3></a>
 Release: 1.08<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, September 9
 <h3>2.65.2 Defects Fixed</h3>
@@ -2359,7 +2355,7 @@ the collections class was not present. Thanks to a donated collections API
 this is fixed.
 </ul>
 
-<a name="r1rv07"><h3>2.66.1 Version</h3></a>
+<a id="r1rv07"><h3>2.66.1 Version</h3></a>
 Release: 1.07<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, July 9
 <h3>2.66.2 Defects Fixed</h3>
@@ -2373,7 +2369,7 @@ call. If you want an example of how to deal with this as a migration issue
 have a look in org.bouncycastle.jce.provider.JDKKeyStore lines 201-291.
 </ul>
 
-<a name="r1rv06"><h3>2.67.1 Version</h3></a>
+<a id="r1rv06"><h3>2.67.1 Version</h3></a>
 Release: 1.06<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, July 2
 <h3>2.67.2 Defects Fixed</h3>
@@ -2405,7 +2401,7 @@ as well.
 <li>The Blowfish implementation is now somewhat faster.
 </ul>
 
-<a name="r1rv05"><h3>2.68.1 Version</h3></a>
+<a id="r1rv05"><h3>2.68.1 Version</h3></a>
 Release: 1.05<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, April 17
 <h3>2.68.2 Defects Fixed</h3>
@@ -2430,8 +2426,8 @@ Concerning the PKCS12 fix: in a few cases this may cause some backward
 compatibility issues - if this happens to you, drop us a line at
 <a href="mailto:feedback-crypto@bouncycastle.org">feedback-crypto@bouncycastle.org</a>
 and we will help you get it sorted out.
-
-<a name="r1rv04"><h3>2.69.1 Version</h3></a>
+</p>
+<a id="r1rv04"><h3>2.69.1 Version</h3></a>
 Release: 1.04<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, March 11
 <h3>2.69.2 Defects Fixed</h3>
@@ -2475,7 +2471,7 @@ to lightweight library.
 <li>The certificate generators now support ECDSA and DSA certs as well.
 </ul>
 
-<a name="r1rv03"><h3>2.70.1 Version</h3></a>
+<a id="r1rv03"><h3>2.70.1 Version</h3></a>
 Release: 1.03<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2001, January 7
 <h3>2.70.2 Defects Fixed</h3>
@@ -2488,7 +2484,7 @@ In short, it provides another way of generating cipher text the same
 length as the plain text.
 </ul>
 
-<a name="r1rv02"><h3>2.70.1 Version</h3></a>
+<a id="r1rv02"><h3>2.70.1 Version</h3></a>
 Release: 1.02<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, November 7
 <h3>2.70.2 Defects Fixed</h3>
@@ -2497,7 +2493,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, November 7
 requested size. This is now fixed.
 </ul>
 
-<a name="r1rv01"><h3>2.70.1 Version</h3></a>
+<a id="r1rv01"><h3>2.70.1 Version</h3></a>
 Release: 1.01<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, October 15
 <h3>2.70.2 Defects Fixed</h3>
@@ -2507,7 +2503,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, October 15
 on a doFinal. This has been fixed.
 </ul>
 
-<a name="r1rv00"><h3>2.71.1 Version</h3></a>
+<a id="r1rv00"><h3>2.71.1 Version</h3></a>
 Release: 1.00<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2000, October 13
 <h3>2.71.2 Defects Fixed</h3>
