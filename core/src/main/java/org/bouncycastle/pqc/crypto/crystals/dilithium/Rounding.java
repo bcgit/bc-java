@@ -2,9 +2,9 @@ package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
 class Rounding
 {
-    public static int[] power2Round(int a0, int a)
+    public static int[] power2Round(int a)
     {
-        int out[] = new int[2];
+        int[] out = new int[2];
 
         out[0] = (a + (1 << (DilithiumEngine.DilithiumD - 1)) - 1) >> DilithiumEngine.DilithiumD;
         out[1] = a - (out[0] << DilithiumEngine.DilithiumD);
