@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 
 /**
- * KeyFactory/KeyPairGenerator tests for Frodo with BCPQC provider.
+ * KeyFactory/KeyPairGenerator tests for Falcon with BCPQC provider.
  */
 public class FalconKeyPairGeneratorTest
     extends KeyPairGeneratorTest
