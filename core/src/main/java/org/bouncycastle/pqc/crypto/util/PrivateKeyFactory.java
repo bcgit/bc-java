@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -23,6 +24,8 @@ import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -194,6 +197,21 @@ public class PrivateKeyFactory
             KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new KyberPrivateKeyParameters(spParams, keyEnc);
+        }
+        else if (algOID.equals(BCObjectIdentifiers.dilithium2)
+            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+        {
+            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+
+            DilithiumParameters spParams = Utils.dilithiumParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new DilithiumPrivateKeyParameters(spParams,
+                ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets());
         }
         else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))
         {

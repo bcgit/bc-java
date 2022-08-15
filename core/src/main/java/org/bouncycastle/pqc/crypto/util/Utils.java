@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -70,6 +71,9 @@ class Utils
 
     static final Map kyberOids = new HashMap();
     static final Map kyberParams = new HashMap();
+
+    static final Map dilithiumOids = new HashMap();
+    static final Map dilithiumParams = new HashMap();
 
     static
     {
@@ -202,6 +206,14 @@ class Utils
         kyberParams.put(BCObjectIdentifiers.kyber512, KyberParameters.kyber512);
         kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
         kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
+        
+        dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
+        dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
+        dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
+
+        dilithiumParams.put(BCObjectIdentifiers.dilithium2, DilithiumParameters.dilithium2);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium3, DilithiumParameters.dilithium3);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium5, DilithiumParameters.dilithium5);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -449,5 +461,15 @@ class Utils
     static KyberParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (KyberParameters)kyberParams.get(oid);
+    }
+    
+    static ASN1ObjectIdentifier dilithiumOidLookup(DilithiumParameters params)
+    {
+        return (ASN1ObjectIdentifier)dilithiumOids.get(params);
+    }
+
+    static DilithiumParameters dilithiumParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (DilithiumParameters)dilithiumParams.get(oid);
     }
 }

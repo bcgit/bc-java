@@ -25,6 +25,8 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -133,6 +135,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
+        converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
+        converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
+        converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
     }
 
     /**
@@ -454,6 +459,20 @@ public class PublicKeyFactory
             KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new KyberPublicKeyParameters(kyberParams, keyEnc);
+        }
+    }
+
+    private static class DilithiumConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new DilithiumPublicKeyParameters(dilithiumParams, keyEnc);
         }
     }
 }
