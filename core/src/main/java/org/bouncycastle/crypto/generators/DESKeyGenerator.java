@@ -1,7 +1,10 @@
 package org.bouncycastle.crypto.generators;
 
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.DESParameters;
 
 public class DESKeyGenerator
@@ -29,6 +32,8 @@ public class DESKeyGenerator
                     + (DESParameters.DES_KEY_LENGTH * 8)
                     + " bits long.");
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("DESKeyGen", 56, null, CryptoServicePurpose.KEYGEN));
     }
 
     public byte[] generateKey()

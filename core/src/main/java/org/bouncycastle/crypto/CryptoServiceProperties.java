@@ -8,5 +8,5 @@ public interface CryptoServiceProperties
 
     CryptoServicePurpose getPurpose();
 
-    CipherParameters getParams();
+    Object getParams();
 }
