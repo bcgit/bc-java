@@ -8,9 +8,9 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 class DilithiumEngine
 {
 
-    private SecureRandom random;
-    private SHAKEDigest shake128Digest = new SHAKEDigest(128);
-    private SHAKEDigest shake256Digest = new SHAKEDigest(256);
+    private final SecureRandom random;
+    private final SHAKEDigest shake128Digest = new SHAKEDigest(128);
+    private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
     public final static int DilithiumQ = 8380417;
@@ -142,7 +142,7 @@ class DilithiumEngine
         return this.shake128Digest;
     }
 
-    public DilithiumEngine(int mode)
+    public DilithiumEngine(int mode, SecureRandom random)
     {
         this.DilithiumMode = mode;
         switch (mode)
@@ -190,6 +190,7 @@ class DilithiumEngine
             throw new IllegalArgumentException("The mode " + mode + "is not supported by Crystals Dilithium!");
         }
 
+        this.random = random;
         this.DilithiumPolyVecHPackedBytes = this.DilithiumOmega + this.DilithiumK;
         this.CryptoPublicKeyBytes = SeedBytes + this.DilithiumK * DilithiumPolyT1PackedBytes;
         this.CryptoSecretKeyBytes =
@@ -214,11 +215,6 @@ class DilithiumEngine
             throw new RuntimeException("Wrong Dilithium Gamma1!");
         }
 
-    }
-
-    void init(SecureRandom random)
-    {
-        this.random = random;
     }
 
     public byte[][] generateKeyPair()

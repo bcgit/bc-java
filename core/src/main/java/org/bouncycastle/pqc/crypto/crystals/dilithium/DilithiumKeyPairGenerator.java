@@ -23,9 +23,7 @@ public class DilithiumKeyPairGenerator
 
     private AsymmetricCipherKeyPair genKeyPair()
     {
-        DilithiumEngine engine = dilithiumParams.getEngine();
-
-        engine.init(random);
+        DilithiumEngine engine = dilithiumParams.getEngine(random);
 
         byte[][] keyPair = engine.generateKeyPair();
         // System.out.println("pk gen = ");
