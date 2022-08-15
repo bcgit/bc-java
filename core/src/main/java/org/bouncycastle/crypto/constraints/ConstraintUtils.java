@@ -14,19 +14,7 @@ public class ConstraintUtils
      */
     public static int bitsOfSecurityFor(BigInteger p)
     {
-        int pBits = p.bitLength();
-
-        if (pBits >= 2048)
-        {
-            return (pBits >= 3072) ?
-                        ((pBits >= 7680) ?
-                            ((pBits >= 15360) ? 256
-                            : 192)
-                        : 128)
-                   : 112;
-        }
-
-        return (pBits >= 1024) ? 80 : 20;      // TODO: possibly a bit harsh...
+        return bitsOfSecurityForFF(p.bitLength());
     }
 
     /**
@@ -39,6 +27,21 @@ public class ConstraintUtils
     {
         int sBits = (curve.getFieldSize() + 1) / 2;
 
-        return sBits > 256 ? 256 : sBits;
+        return (sBits > 256) ? 256 : sBits;
+    }
+
+    public static int bitsOfSecurityForFF(int strength)
+    {
+        if (strength >= 2048)
+        {
+            return (strength >= 3072) ?
+                        ((strength >= 7680) ?
+                            ((strength >= 15360) ? 256
+                            : 192)
+                        : 128)
+                   : 112;
+        }
+
+        return (strength >= 1024) ? 80 : 20;      // TODO: possibly a bit harsh...
     }
 }
