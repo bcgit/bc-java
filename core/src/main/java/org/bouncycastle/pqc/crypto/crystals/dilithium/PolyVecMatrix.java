@@ -2,20 +2,18 @@ package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
 class PolyVecMatrix
 {
-    private DilithiumEngine engine;
-    private int dilithiumK;
-    private int dilithiumL;
+    private final int dilithiumK;
+    private final int dilithiumL;
 
-    PolyVecL[] mat;
+    private final PolyVecL[] mat;
 
     /**
      * PolyVecL Matrix of size K
      *
-     * @param engine
+     * @param engine source engine for the matrix to be used by.
      */
     public PolyVecMatrix(DilithiumEngine engine)
     {
-        this.engine = engine;
         this.dilithiumK = engine.getDilithiumK();
         this.dilithiumL = engine.getDilithiumL();
         this.mat = new PolyVecL[dilithiumK];
