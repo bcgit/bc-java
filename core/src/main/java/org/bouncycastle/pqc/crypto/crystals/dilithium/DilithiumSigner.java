@@ -42,14 +42,15 @@ public class DilithiumSigner
 
     public byte[] generateSignature(byte[] message)
     {
-        DilithiumEngine engine = privKey.getParameters().getEngine();
+        DilithiumEngine engine = privKey.getParameters().getEngine(random);
+
 
         return engine.sign(message, message.length, privKey.getPrivateKey());
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        DilithiumEngine engine = pubKey.getParameters().getEngine();
+        DilithiumEngine engine = pubKey.getParameters().getEngine(random);
 
         return engine.signOpen(message, signature, signature.length, pubKey.getPublicKey());
     }

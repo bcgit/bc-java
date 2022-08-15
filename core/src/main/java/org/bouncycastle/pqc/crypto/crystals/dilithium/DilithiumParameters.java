@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
+import java.security.SecureRandom;
+
 public class DilithiumParameters
 {
     public static final DilithiumParameters dilithium2 = new DilithiumParameters(2);
@@ -13,8 +15,8 @@ public class DilithiumParameters
         this.k = k;
     }
 
-    DilithiumEngine getEngine()
+    DilithiumEngine getEngine(SecureRandom random)
     {
-        return new DilithiumEngine(k);
+        return new DilithiumEngine(k, random);
     }
 }
