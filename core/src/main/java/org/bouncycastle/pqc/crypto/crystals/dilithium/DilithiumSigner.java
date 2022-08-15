@@ -44,8 +44,8 @@ public class DilithiumSigner
     {
         DilithiumEngine engine = privKey.getParameters().getEngine(random);
 
-
-        return engine.sign(message, message.length, privKey.getPrivateKey());
+        // TODO: finish unpacking secret key
+        return engine.sign(message, message.length, privKey.rho, privKey.k, privKey.tr, privKey.getPrivateKey());
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)

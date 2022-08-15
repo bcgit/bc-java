@@ -2,8 +2,11 @@ package org.bouncycastle.pqc.crypto.util;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -18,6 +21,7 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
@@ -243,6 +247,23 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof DilithiumPrivateKeyParameters)
+        {
+            DilithiumPrivateKeyParameters params = (DilithiumPrivateKeyParameters)privateKey;
+
+            ASN1EncodableVector v = new ASN1EncodableVector();
+
+            v.add(new DERBitString(params.getRho()));
+            v.add(new DERBitString(params.getK()));
+            v.add(new DERBitString(params.getTr()));
+            v.add(new DERBitString(params.getS1()));
+            v.add(new DERBitString(params.getS2()));
+            v.add(new DERBitString(params.getT0()));
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
         }
         else
         {

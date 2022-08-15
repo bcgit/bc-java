@@ -60,6 +60,8 @@ public class AllTests
         suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
         suite.addTestSuite(KyberTest.class);
         suite.addTestSuite(KyberKeyPairGeneratorTest.class);
+        suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
+        suite.addTestSuite(DilithiumTest.class);
 
         return new BCTestSetup(suite);
     }
