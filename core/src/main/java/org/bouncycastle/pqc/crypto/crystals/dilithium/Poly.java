@@ -248,7 +248,7 @@ class Poly
     {
         for (int i = 0; i < dilithiumN; ++i)
         {
-            int[] p2r = Rounding.power2Round(a.getCoeffIndex(i), this.getCoeffIndex(i));
+            int[] p2r = Rounding.power2Round(this.getCoeffIndex(i));
             this.setCoeffIndex(i, p2r[0]);
             a.setCoeffIndex(i, p2r[1]);
         }
