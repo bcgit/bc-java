@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public class DilithiumKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private DilithiumParameters params;
+    private final DilithiumParameters params;
 
     public DilithiumKeyGenerationParameters(
         SecureRandom random,

@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 public class DilithiumKeyParameters
     extends AsymmetricKeyParameter
 {
-    private DilithiumParameters params;
+    private final DilithiumParameters params;
 
     public DilithiumKeyParameters(
         boolean isPrivate,

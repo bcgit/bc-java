@@ -5,7 +5,7 @@ import org.bouncycastle.util.Arrays;
 public class DilithiumPrivateKeyParameters
     extends DilithiumKeyParameters
 {
-    private byte[] privateKey;
+    private final byte[] privateKey;
 
     public byte[] getPrivateKey()
     {
