@@ -214,7 +214,6 @@ class DilithiumEngine
         {
             throw new RuntimeException("Wrong Dilithium Gamma1!");
         }
-
     }
 
     public byte[][] generateKeyPair()
@@ -286,26 +285,18 @@ class DilithiumEngine
         shake256Digest.update(pk, 0, CryptoPublicKeyBytes);
         shake256Digest.doFinal(tr, 0, SeedBytes);
 
-        byte[] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
+        byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
         // System.out.println("sk engine = ");
         // Helper.printByteArray(sk);
 
-        return new byte[][]{pk, sk};
+        return new byte[][]{pk, sk[0], sk[1], sk[2], sk[3], sk[4], sk[5]};
     }
 
-    public void sign(int signMsglen, byte[] msg, int msglen, byte[] sk)
-    {
-        byte[] out = new byte[signMsglen];
-        System.arraycopy(msg, 0, out, CryptoBytes, msglen);
-        signSignature(msg, msglen, sk);
-    }
-
-    public byte[] signSignature(byte[] msg, int msglen, byte[] secretKey)
+    public byte[] signSignature(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
     {
         int n;
         byte[] outSig = new byte[CryptoBytes + msglen];
-        byte[] seedBuf = new byte[3 * DilithiumEngine.SeedBytes + 2 * DilithiumEngine.CrhBytes];
-        byte[] rho, tr, key, mu = new byte[CrhBytes], rhoPrime = new byte[CrhBytes];
+        byte[] mu = new byte[CrhBytes], rhoPrime = new byte[CrhBytes];
         short nonce = 0;
         PolyVecL s1 = new PolyVecL(this), y = new PolyVecL(this), z = new PolyVecL(this);
         PolyVecK t0 = new PolyVecK(this), s2 = new PolyVecK(this), w1 = new PolyVecK(this), w0 = new PolyVecK(this), h = new PolyVecK(this);
@@ -313,11 +304,7 @@ class DilithiumEngine
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
         boolean rej = true;
 
-
-        byte[][] temp = Packing.unpackSecretKey(t0, s1, s2, secretKey, this);
-        rho = temp[0];
-        tr = temp[1];
-        key = temp[2];
+        Packing.unpackSecretKey(t0, s1, s2, secretKey, this);
 
         // System.out.print("rho = ");
         // Helper.printByteArray(rho);
@@ -452,11 +439,11 @@ class DilithiumEngine
 
     }
 
-    public byte[] sign(byte[] msg, int mlen, byte[] secretKey)
+    public byte[] sign(byte[] msg, int mlen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
     {
         byte[] signedMessage = new byte[CryptoBytes];
 
-        System.arraycopy(signSignature(msg, mlen, secretKey), 0, signedMessage, 0, CryptoBytes);
+        System.arraycopy(signSignature(msg, mlen, rho, key, tr, secretKey), 0, signedMessage, 0, CryptoBytes);
         return signedMessage;
     }
 

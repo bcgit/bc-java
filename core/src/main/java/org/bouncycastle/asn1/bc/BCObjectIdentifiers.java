@@ -226,6 +226,16 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.1");  // falcon.branch("1");
     public static final ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.4"); // falcon.branch("2");
 
+    /*
+     * Dilithium
+     */
+    public static final ASN1ObjectIdentifier dilithium = bc_sig.branch("8");
+
+    // OpenSSL OIDs
+    public static ASN1ObjectIdentifier dilithium2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.4.4"); // dilithium.branch("1");
+    public static ASN1ObjectIdentifier dilithium3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.6.5"); // dilithium.branch("2");
+    public static ASN1ObjectIdentifier dilithium5 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.8.7"); // dilithium.branch("3");
+
     /**
      * key_exchange(3) algorithms
      */
@@ -320,7 +330,7 @@ public interface BCObjectIdentifiers
     public static final ASN1ObjectIdentifier ntruhrss701 = pqc_kem_ntru.branch("4");
 
     /**
-     * NTRU
+     * Kyber
      */
     public static final ASN1ObjectIdentifier pqc_kem_kyber = bc_kem.branch("6");
 

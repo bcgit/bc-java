@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
@@ -227,6 +228,15 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof DilithiumPublicKeyParameters)
+        {
+            DilithiumPublicKeyParameters params = (DilithiumPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
