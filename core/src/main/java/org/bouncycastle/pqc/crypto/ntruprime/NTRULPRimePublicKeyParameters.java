@@ -8,7 +8,14 @@ public class NTRULPRimePublicKeyParameters
     private final byte[] seed;
     private final byte[] roundEncA;
 
-    public NTRULPRimePublicKeyParameters(NTRULPRimeParameters params, byte[] seed, byte[] roundEncA)
+    public NTRULPRimePublicKeyParameters(NTRULPRimeParameters params, byte[] encoding)
+    {
+        super(false, params);
+        this.seed = Arrays.copyOfRange(encoding, 0, 32);
+        this.roundEncA = Arrays.copyOfRange(encoding, seed.length, encoding.length);
+    }
+
+    NTRULPRimePublicKeyParameters(NTRULPRimeParameters params, byte[] seed, byte[] roundEncA)
     {
         super(false, params);
         this.seed = Arrays.clone(seed);

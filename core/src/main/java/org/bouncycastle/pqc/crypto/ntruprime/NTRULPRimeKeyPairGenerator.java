@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.ntruprime;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.util.Arrays;
 
 public class NTRULPRimeKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -78,7 +79,7 @@ public class NTRULPRimeKeyPairGenerator
         byte[] hash = Utils.getHashWithPrefix(prefix, publicKey.getEncoded());
 
         NTRULPRimePrivateKeyParameters privateKey = new NTRULPRimePrivateKeyParameters(params.getNtrulprParams(), enca, publicKey.getEncoded(),
-                                                                                        rho, "SHA-512", hash);
+                                                                                        rho, Arrays.copyOfRange(hash, 0, hash.length / 2));
 
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }

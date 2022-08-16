@@ -10,22 +10,22 @@ public class NTRULPRimeParameters
 {
     public static final NTRULPRimeParameters ntrulpr653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
         2175, 113, 2031, 290,
-        865, 897, 1125);
+        865, 897, 1125, 16);
     public static final NTRULPRimeParameters ntrulpr761 = new NTRULPRimeParameters("ntrulpr761", 761, 4591, 250, 292,
         2156, 114, 2007, 287,
-        1007, 1039, 1294);
+        1007, 1039, 1294, 16);
     public static final NTRULPRimeParameters ntrulpr857 = new NTRULPRimeParameters("ntrulpr857", 857, 5167, 281, 329,
         2433, 101, 2265, 324,
-        1152, 1184, 1463);
+        1152, 1184, 1463, 16);
     public static final NTRULPRimeParameters ntrulpr953 = new NTRULPRimeParameters("ntrulpr953", 953, 6343, 345, 404,
         2997, 82, 2798, 400,
-        1317, 1349, 1652);
+        1317, 1349, 1652, 24);
     public static final NTRULPRimeParameters ntrulpr1013 = new NTRULPRimeParameters("ntrulpr1013", 1013, 7177, 392, 450,
         3367, 73, 3143, 449,
-        1423, 1455, 1773);
+        1423, 1455, 1773, 24);
     public static final NTRULPRimeParameters ntrulpr1277 = new NTRULPRimeParameters("ntrulpr1277", 1277, 7879, 429, 502,
         3724, 66, 3469, 496,
-        1815, 1847, 2231);
+        1815, 1847, 2231, 32);
 
     private final String name;
     private final int p;
@@ -39,6 +39,7 @@ public class NTRULPRimeParameters
     private final int roundedPolynomialBytes;
     private final int publicKeyBytes;
     private final int privateKeyBytes;
+    private final int sharedKeyBytes;
 
     /**
      * Construct Parameter set and initialize engine
@@ -56,7 +57,7 @@ public class NTRULPRimeParameters
      * @param publicKeyBytes         Public Key byte length
      * @param privateKeyBytes        Private Key byte length
      */
-    private NTRULPRimeParameters(String name, int p, int q, int w, int delta, int tau0, int tau1, int tau2, int tau3, int roundedPolynomialBytes, int publicKeyBytes, int privateKeyBytes)
+    private NTRULPRimeParameters(String name, int p, int q, int w, int delta, int tau0, int tau1, int tau2, int tau3, int roundedPolynomialBytes, int publicKeyBytes, int privateKeyBytes, int sharedKeyBytes)
     {
         this.name = name;
         this.p = p;
@@ -70,6 +71,7 @@ public class NTRULPRimeParameters
         this.roundedPolynomialBytes = roundedPolynomialBytes;
         this.publicKeyBytes = publicKeyBytes;
         this.privateKeyBytes = privateKeyBytes;
+        this.sharedKeyBytes = sharedKeyBytes;
     }
 
     public String getName()
@@ -131,4 +133,10 @@ public class NTRULPRimeParameters
     {
         return roundedPolynomialBytes;
     }
+
+    public int getSessionKeySize()
+    {
+        return sharedKeyBytes * 8;
+    }
+
 }

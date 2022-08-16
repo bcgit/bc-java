@@ -8,42 +8,35 @@ public class NTRULPRimePrivateKeyParameters
     private final byte[] enca;
     private final byte[] pk;
     private final byte[] rho;
-    private final String hashAlgorithm;
     private final byte[] hash;
 
-    public NTRULPRimePrivateKeyParameters(NTRULPRimeParameters params, byte[] enca, byte[] pk, byte[] rho, String hashAlgorithm, byte[] hash)
+    public NTRULPRimePrivateKeyParameters(NTRULPRimeParameters params, byte[] enca, byte[] pk, byte[] rho, byte[] hash)
     {
         super(true, params);
         this.enca = Arrays.clone(enca);
         this.pk = Arrays.clone(pk);
         this.rho = Arrays.clone(rho);
-        this.hashAlgorithm = hashAlgorithm;
         this.hash = Arrays.clone(hash);
     }
 
-    byte[] getEnca()
+    public byte[] getEnca()
     {
-        return enca;
+        return Arrays.clone(enca);
     }
 
-    byte[] getPk()
+    public byte[] getPk()
     {
-        return pk;
+        return Arrays.clone(pk);
     }
 
-    byte[] getRho()
+    public byte[] getRho()
     {
-        return rho;
+        return Arrays.clone(rho);
     }
 
-    String getHashAlgorithm()
+    public byte[] getHash()
     {
-        return hashAlgorithm;
-    }
-
-    byte[] getHash()
-    {
-        return hash;
+        return Arrays.clone(hash);
     }
 
     public byte[] getEncoded()
@@ -52,7 +45,7 @@ public class NTRULPRimePrivateKeyParameters
         System.arraycopy(enca, 0, key, 0, enca.length);
         System.arraycopy(pk, 0, key, enca.length, pk.length);
         System.arraycopy(rho, 0, key, enca.length + pk.length, rho.length);
-        System.arraycopy(hash, 0, key, enca.length + pk.length + rho.length, hash.length / 2);
+        System.arraycopy(hash, 0, key, enca.length + pk.length + rho.length, hash.length);
         return key;
     }
 }

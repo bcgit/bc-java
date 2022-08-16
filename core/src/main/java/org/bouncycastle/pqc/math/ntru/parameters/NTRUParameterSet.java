@@ -92,7 +92,6 @@ public abstract class NTRUParameterSet
         return sharedKeyBytes;
     }
 
-
     /**
      * @return {@code sample_iid_bits/8}
      */
