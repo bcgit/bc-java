@@ -131,9 +131,9 @@ public class NTRULPRimeKEMExtractor
          * hc = SHA-512(2 | encR | cache[0:32])
          */
 
-        byte[] hcInput = new byte[encR.length + (privateKey.getHash().length / 2)];
+        byte[] hcInput = new byte[encR.length + (privateKey.getHash().length)];
         System.arraycopy(encR, 0, hcInput, 0, encR.length);
-        System.arraycopy(privateKey.getHash(), 0, hcInput, encR.length, privateKey.getHash().length / 2);
+        System.arraycopy(privateKey.getHash(), 0, hcInput, encR.length, privateKey.getHash().length);
 
         byte[] hcPrefix = {2};
         byte[] hc = Utils.getHashWithPrefix(hcPrefix, hcInput);
@@ -167,6 +167,11 @@ public class NTRULPRimeKEMExtractor
         byte[] ssPrefix = {1};
         byte[] ssHash = Utils.getHashWithPrefix(ssPrefix, ssInput);
 
-        return Arrays.copyOfRange(ssHash, 0, ssHash.length / 2);
+        return Arrays.copyOfRange(ssHash, 0, params.getSessionKeySize() / 8);
+    }
+
+    public int getInputSize()
+    {
+        return privateKey.getParameters().getRoundedPolynomialBytes() + 128 + 32;
     }
 }

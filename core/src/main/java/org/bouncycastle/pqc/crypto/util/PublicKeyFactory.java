@@ -38,6 +38,8 @@ import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -135,6 +137,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr653, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr761, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr857, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr953, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr1013, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.ntrulpr1277, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
@@ -459,6 +467,20 @@ public class PublicKeyFactory
             KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new KyberPublicKeyParameters(kyberParams, keyEnc);
+        }
+    }
+
+    private static class NTRULPrimeConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            NTRULPRimeParameters ntruLPRimeParams = Utils.ntrulprimeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new NTRULPRimePublicKeyParameters(ntruLPRimeParams, keyEnc);
         }
     }
 

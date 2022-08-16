@@ -21,6 +21,7 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
@@ -71,6 +72,9 @@ class Utils
 
     static final Map kyberOids = new HashMap();
     static final Map kyberParams = new HashMap();
+
+    static final Map ntruprimeOids = new HashMap();
+    static final Map ntruprimeParams = new HashMap();
 
     static final Map dilithiumOids = new HashMap();
     static final Map dilithiumParams = new HashMap();
@@ -207,6 +211,20 @@ class Utils
         kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
         kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
         
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr857, BCObjectIdentifiers.ntrulpr857);
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr953, BCObjectIdentifiers.ntrulpr953);
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr1013, BCObjectIdentifiers.ntrulpr1013);
+        ntruprimeOids.put(NTRULPRimeParameters.ntrulpr1277, BCObjectIdentifiers.ntrulpr1277);
+
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr653, NTRULPRimeParameters.ntrulpr653);
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr761, NTRULPRimeParameters.ntrulpr761);
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr857, NTRULPRimeParameters.ntrulpr857);
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr953, NTRULPRimeParameters.ntrulpr953);
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr1013, NTRULPRimeParameters.ntrulpr1013);
+        ntruprimeParams.put(BCObjectIdentifiers.ntrulpr1277, NTRULPRimeParameters.ntrulpr1277);
+
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
         dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
@@ -461,6 +479,16 @@ class Utils
     static KyberParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (KyberParameters)kyberParams.get(oid);
+    }
+    
+    static ASN1ObjectIdentifier ntrulprimeOidLookup(NTRULPRimeParameters params)
+    {
+        return (ASN1ObjectIdentifier)ntruprimeOids.get(params);
+    }
+
+    static NTRULPRimeParameters ntrulprimeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (NTRULPRimeParameters)ntruprimeParams.get(oid);
     }
     
     static ASN1ObjectIdentifier dilithiumOidLookup(DilithiumParameters params)

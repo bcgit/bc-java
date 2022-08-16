@@ -27,6 +27,7 @@ import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
@@ -228,6 +229,15 @@ public class SubjectPublicKeyInfoFactory
 
             byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof NTRULPRimePublicKeyParameters)
+        {
+            NTRULPRimePublicKeyParameters params = (NTRULPRimePublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntrulprimeOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
