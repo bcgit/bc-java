@@ -182,7 +182,8 @@ public class RegressionTest
             new SP80038GTest(),
             new TupleHashTest(),
             new ParallelHashTest(),
-            new CryptoServiceConstraintsTest()
+            new CryptoServiceConstraintsTest(),
+            new RadixConverterTest()
         };
 
     public static void main(String[] args)
