@@ -18,7 +18,7 @@ public class SNTRUPrimePublicKeyParameters
         return encH;
     }
 
-    public byte[] getKey()
+    public byte[] getEncoded()
     {
         return Arrays.clone(encH);
     }

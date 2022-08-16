@@ -9,18 +9,16 @@ public class SNTRUPrimePrivateKeyParameters
     private final byte[] ginv;
     private final byte[] pk;
     private final byte[] rho;
-    private final String hashAlgorithm;
     private final byte[] hash;
 
     public SNTRUPrimePrivateKeyParameters(SNTRUPrimeParameters params, byte[] f, byte[] ginv,
-                                          byte[] pk, byte[] rho, String hashAlgorithm, byte[] hash)
+                                          byte[] pk, byte[] rho, byte[] hash)
     {
         super(true, params);
         this.f = Arrays.clone(f);
         this.ginv = Arrays.clone(ginv);
         this.pk = Arrays.clone(pk);
         this.rho = Arrays.clone(rho);
-        this.hashAlgorithm = hashAlgorithm;
         this.hash = Arrays.clone(hash);
     }
 
@@ -44,17 +42,12 @@ public class SNTRUPrimePrivateKeyParameters
         return rho;
     }
 
-    String getHashAlgorithm()
-    {
-        return hashAlgorithm;
-    }
-
     byte[] getHash()
     {
         return Arrays.clone(hash);
     }
 
-    public byte[] getKey()
+    public byte[] getEncoded()
     {
         byte[] key = new byte[getParameters().getPrivateKeyBytes()];
         System.arraycopy(f, 0, key, 0, f.length);

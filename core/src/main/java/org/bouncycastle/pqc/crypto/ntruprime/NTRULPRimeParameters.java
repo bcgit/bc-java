@@ -8,22 +8,22 @@ import org.bouncycastle.crypto.CipherParameters;
 public class NTRULPRimeParameters
     implements CipherParameters
 {
-    public static final NTRULPRimeParameters NTRULPR653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
+    public static final NTRULPRimeParameters ntrulpr653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
         2175, 113, 2031, 290,
         865, 897, 1125);
-    public static final NTRULPRimeParameters NTRULPR761 = new NTRULPRimeParameters("ntrulpr761", 761, 4591, 250, 292,
+    public static final NTRULPRimeParameters ntrulpr761 = new NTRULPRimeParameters("ntrulpr761", 761, 4591, 250, 292,
         2156, 114, 2007, 287,
         1007, 1039, 1294);
-    public static final NTRULPRimeParameters NTRULPR857 = new NTRULPRimeParameters("ntrulpr857", 857, 5167, 281, 329,
+    public static final NTRULPRimeParameters ntrulpr857 = new NTRULPRimeParameters("ntrulpr857", 857, 5167, 281, 329,
         2433, 101, 2265, 324,
         1152, 1184, 1463);
-    public static final NTRULPRimeParameters NTRULPR953 = new NTRULPRimeParameters("ntrulpr953", 953, 6343, 345, 404,
+    public static final NTRULPRimeParameters ntrulpr953 = new NTRULPRimeParameters("ntrulpr953", 953, 6343, 345, 404,
         2997, 82, 2798, 400,
         1317, 1349, 1652);
-    public static final NTRULPRimeParameters NTRULPR1013 = new NTRULPRimeParameters("ntrulpr1013", 1013, 7177, 392, 450,
+    public static final NTRULPRimeParameters ntrulpr1013 = new NTRULPRimeParameters("ntrulpr1013", 1013, 7177, 392, 450,
         3367, 73, 3143, 449,
         1423, 1455, 1773);
-    public static final NTRULPRimeParameters NTRULPR1277 = new NTRULPRimeParameters("ntrulpr1277", 1277, 7879, 429, 502,
+    public static final NTRULPRimeParameters ntrulpr1277 = new NTRULPRimeParameters("ntrulpr1277", 1277, 7879, 429, 502,
         3724, 66, 3469, 496,
         1815, 1847, 2231);
 

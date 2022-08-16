@@ -25,7 +25,7 @@ public class NTRULPRimePublicKeyParameters
         return roundEncA;
     }
 
-    public byte[] getKey()
+    public byte[] getEncoded()
     {
         byte[] key = new byte[getParameters().getPublicKeyBytes()];
         System.arraycopy(seed, 0, key, 0, seed.length);

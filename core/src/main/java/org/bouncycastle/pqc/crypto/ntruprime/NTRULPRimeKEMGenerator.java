@@ -37,7 +37,7 @@ public class NTRULPRimeKEMGenerator
          * cache = SHA-512(4|pk)
          */
         byte[] cachePrefix = {4};
-        byte[] cache = Utils.getHashWithPrefix(cachePrefix, publicKey.getKey());
+        byte[] cache = Utils.getHashWithPrefix(cachePrefix, publicKey.getEncoded());
 
         /*
          * Generate Random Inputs r

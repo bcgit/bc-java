@@ -31,7 +31,7 @@ public class NTRULPRimeKEMExtractor
          * a = Decode(pk)
          */
         byte[] a = new byte[p];
-        Utils.getDecodedSmallPolynomial(a, privateKey.getKey(), p);
+        Utils.getDecodedSmallPolynomial(a, privateKey.getEncoded(), p);
 
         /*
          * B = Decode(encB)
