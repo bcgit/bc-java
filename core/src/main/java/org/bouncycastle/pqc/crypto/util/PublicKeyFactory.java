@@ -40,6 +40,8 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -143,6 +145,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntrulpr953, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr1013, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr1277, new NTRULPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup653, new SNTRUPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup761, new SNTRUPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup857, new SNTRUPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup953, new SNTRUPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup1013, new SNTRUPrimeConverter());
+        converters.put(BCObjectIdentifiers.sntrup1277, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
@@ -484,6 +492,20 @@ public class PublicKeyFactory
         }
     }
 
+    private static class SNTRUPrimeConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            SNTRUPrimeParameters ntruLPRimeParams = Utils.sntruprimeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SNTRUPrimePublicKeyParameters(ntruLPRimeParams, keyEnc);
+        }
+    }
+    
     private static class DilithiumConverter
         extends SubjectPublicKeyInfoConverter
     {

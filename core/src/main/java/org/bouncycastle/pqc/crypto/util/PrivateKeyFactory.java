@@ -39,6 +39,8 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
@@ -200,7 +202,7 @@ public class PrivateKeyFactory
 
             return new KyberPrivateKeyParameters(spParams, keyEnc);
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntruprime))
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
             ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
@@ -211,6 +213,19 @@ public class PrivateKeyFactory
                             ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                             ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                             ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets());
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_sntruprime))
+        {
+            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+
+            SNTRUPrimeParameters spParams = Utils.sntruprimeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new SNTRUPrimePrivateKeyParameters(spParams,
+                            ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                            ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                            ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                            ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                            ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
             || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
