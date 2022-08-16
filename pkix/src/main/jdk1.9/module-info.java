@@ -3,7 +3,7 @@ module org.bouncycastle.pkix
     requires java.logging;
     requires java.naming;
     requires org.bouncycastle.provider;
-    requires org.bouncycastle.util;
+    requires transitive org.bouncycastle.util;
 
     exports org.bouncycastle.cert;
     exports org.bouncycastle.cmc;
