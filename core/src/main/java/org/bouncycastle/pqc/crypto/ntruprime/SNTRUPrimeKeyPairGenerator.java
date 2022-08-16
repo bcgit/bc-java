@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.ntruprime;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.util.Arrays;
 
 public class SNTRUPrimeKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -84,7 +85,7 @@ public class SNTRUPrimeKeyPairGenerator
         byte[] hash = Utils.getHashWithPrefix(prefix, pk);
 
         SNTRUPrimePrivateKeyParameters privateKey = new SNTRUPrimePrivateKeyParameters(params.getSntrupParams(), encF, encGinv,
-                                                                                        pk, rho, hash);
+                                                                                        pk, rho, Arrays.copyOfRange(hash, 0, hash.length / 2));
 
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }

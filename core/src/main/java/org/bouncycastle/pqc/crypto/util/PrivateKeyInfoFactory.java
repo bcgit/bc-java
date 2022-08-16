@@ -31,6 +31,7 @@ import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPrivateKeyParameters;
@@ -261,6 +262,22 @@ public class PrivateKeyInfoFactory
             v.add(new DEROctetString(params.getHash()));
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntrulprimeOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
+        }
+        else if (privateKey instanceof SNTRUPrimePrivateKeyParameters)
+        {
+            SNTRUPrimePrivateKeyParameters params = (SNTRUPrimePrivateKeyParameters)privateKey;
+
+            ASN1EncodableVector v = new ASN1EncodableVector();
+
+            v.add(new DEROctetString(params.getF()));
+            v.add(new DEROctetString(params.getGinv()));
+            v.add(new DEROctetString(params.getPk()));
+            v.add(new DEROctetString(params.getRho()));
+            v.add(new DEROctetString(params.getHash()));
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sntruprimeOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
         }

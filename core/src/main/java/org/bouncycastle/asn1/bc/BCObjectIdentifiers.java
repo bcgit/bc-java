@@ -232,9 +232,9 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier dilithium = bc_sig.branch("8");
 
     // OpenSSL OIDs
-    public static ASN1ObjectIdentifier dilithium2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.4.4"); // dilithium.branch("1");
-    public static ASN1ObjectIdentifier dilithium3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.6.5"); // dilithium.branch("2");
-    public static ASN1ObjectIdentifier dilithium5 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.8.7"); // dilithium.branch("3");
+    ASN1ObjectIdentifier dilithium2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.4.4"); // dilithium.branch("1");
+    ASN1ObjectIdentifier dilithium3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.6.5"); // dilithium.branch("2");
+    ASN1ObjectIdentifier dilithium5 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.8.7"); // dilithium.branch("3");
 
     /**
      * key_exchange(3) algorithms
@@ -339,14 +339,23 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier kyber1024 = pqc_kem_kyber.branch("3");
     
     /**
-     * NTRU
+     * NTRUPrime
      */
     ASN1ObjectIdentifier pqc_kem_ntruprime = bc_kem.branch("7");
 
-    ASN1ObjectIdentifier ntrulpr653 = pqc_kem_ntruprime.branch("1");
-    ASN1ObjectIdentifier ntrulpr761 = pqc_kem_ntruprime.branch("2");
-    ASN1ObjectIdentifier ntrulpr857 = pqc_kem_ntruprime.branch("3");
-    ASN1ObjectIdentifier ntrulpr953 = pqc_kem_ntruprime.branch("4");
-    ASN1ObjectIdentifier ntrulpr1013 = pqc_kem_ntruprime.branch("5");
-    ASN1ObjectIdentifier ntrulpr1277 = pqc_kem_ntruprime.branch("6");
+    ASN1ObjectIdentifier pqc_kem_ntrulprime = pqc_kem_ntruprime.branch("1");
+    ASN1ObjectIdentifier ntrulpr653 = pqc_kem_ntrulprime.branch("1");
+    ASN1ObjectIdentifier ntrulpr761 = pqc_kem_ntrulprime.branch("2");
+    ASN1ObjectIdentifier ntrulpr857 = pqc_kem_ntrulprime.branch("3");
+    ASN1ObjectIdentifier ntrulpr953 = pqc_kem_ntrulprime.branch("4");
+    ASN1ObjectIdentifier ntrulpr1013 = pqc_kem_ntrulprime.branch("5");
+    ASN1ObjectIdentifier ntrulpr1277 = pqc_kem_ntrulprime.branch("6");
+    
+    ASN1ObjectIdentifier pqc_kem_sntruprime = pqc_kem_ntruprime.branch("2");
+    ASN1ObjectIdentifier sntrup653 = pqc_kem_sntruprime.branch("1");
+    ASN1ObjectIdentifier sntrup761 = pqc_kem_sntruprime.branch("2");
+    ASN1ObjectIdentifier sntrup857 = pqc_kem_sntruprime.branch("3");
+    ASN1ObjectIdentifier sntrup953 = pqc_kem_sntruprime.branch("4");
+    ASN1ObjectIdentifier sntrup1013 = pqc_kem_sntruprime.branch("5");
+    ASN1ObjectIdentifier sntrup1277 = pqc_kem_sntruprime.branch("6");
 }

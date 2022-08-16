@@ -100,7 +100,7 @@ public class SNTRUPrimeKEMGenerator
 
         byte[] ssPrefix = {1};
         byte[] ssHash = Utils.getHashWithPrefix(ssPrefix, ssInput);
-        byte[] ss = Arrays.copyOfRange(ssHash, 0, ssHash.length / 2);
+        byte[] ss = Arrays.copyOfRange(ssHash, 0, params.getSessionKeySize() / 8);
 
         return new SecretWithEncapsulationImpl(ss, ct);
     }
