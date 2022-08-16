@@ -30,6 +30,7 @@ import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPrivateKeyParameters;
@@ -247,6 +248,21 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
+        {
+            NTRULPRimePrivateKeyParameters params = (NTRULPRimePrivateKeyParameters)privateKey;
+
+            ASN1EncodableVector v = new ASN1EncodableVector();
+
+            v.add(new DEROctetString(params.getEnca()));
+            v.add(new DEROctetString(params.getPk()));
+            v.add(new DEROctetString(params.getRho()));
+            v.add(new DEROctetString(params.getHash()));
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntrulprimeOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
         }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {
