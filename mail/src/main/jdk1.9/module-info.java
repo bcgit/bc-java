@@ -1,7 +1,7 @@
 module org.bouncycastle.mail
 {
     requires org.bouncycastle.provider;
-    requires org.bouncycastle.pkix;
+    requires transitive org.bouncycastle.pkix;
 
     exports org.bouncycastle.mail.smime;
     exports org.bouncycastle.mail.smime.examples;
