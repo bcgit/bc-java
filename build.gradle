@@ -7,6 +7,7 @@ buildscript {
 }
 
 plugins {
+  id "application"
   id "io.spring.nohttp" version "0.0.8"
   id "checkstyle"
   id "jacoco"
