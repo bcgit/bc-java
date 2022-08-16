@@ -58,6 +58,10 @@ public class AllTests
         suite.addTestSuite(FalconKeyPairGeneratorTest.class);
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUKeyPairGeneratorTest.class);
+        suite.addTestSuite(NTRULPRimeTest.class);
+        suite.addTestSuite(NTRULPRimeKeyPairGeneratorTest.class);
+        suite.addTestSuite(SNTRUPrimeTest.class);
+        suite.addTestSuite(SNTRUPrimeKeyPairGeneratorTest.class);
         suite.addTestSuite(KyberTest.class);
         suite.addTestSuite(KyberKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
