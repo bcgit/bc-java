@@ -28,12 +28,12 @@ public class NTRULPRimeTest
     {
         NTRULPRimeParameters[] paramList = new NTRULPRimeParameters[]
         {
-                NTRULPRimeParameters.NTRULPR653,
-                NTRULPRimeParameters.NTRULPR761,
-                NTRULPRimeParameters.NTRULPR857,
-                NTRULPRimeParameters.NTRULPR953,
-                NTRULPRimeParameters.NTRULPR1013,
-                NTRULPRimeParameters.NTRULPR1277
+                NTRULPRimeParameters.ntrulpr653,
+                NTRULPRimeParameters.ntrulpr761,
+                NTRULPRimeParameters.ntrulpr857,
+                NTRULPRimeParameters.ntrulpr953,
+                NTRULPRimeParameters.ntrulpr1013,
+                NTRULPRimeParameters.ntrulpr1277
         };
 
         for (NTRULPRimeParameters paramSpec : paramList)
@@ -65,9 +65,9 @@ public class NTRULPRimeTest
                 keyPairGenerator.init(new NTRULPRimeKeyGenerationParameters(random, paramSpec));
 
                 AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
-                assertTrue(Arrays.areEqual(pk, ((NTRULPRimePublicKeyParameters)keyPair.getPublic()).getKey()));
+                assertTrue(Arrays.areEqual(pk, ((NTRULPRimePublicKeyParameters)keyPair.getPublic()).getEncoded()));
                 System.out.println("- Public Key matched ...");
-                assertTrue(Arrays.areEqual(sk, ((NTRULPRimePrivateKeyParameters)keyPair.getPrivate()).getKey()));
+                assertTrue(Arrays.areEqual(sk, ((NTRULPRimePrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
                 System.out.println("- Private Key matched ...");
 
                 NTRULPRimeKEMGenerator kemGenerator = new NTRULPRimeKEMGenerator(random);

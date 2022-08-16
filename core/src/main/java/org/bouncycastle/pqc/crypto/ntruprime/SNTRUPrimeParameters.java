@@ -8,17 +8,17 @@ import org.bouncycastle.crypto.CipherParameters;
 public class SNTRUPrimeParameters
     implements CipherParameters
 {
-    public static final SNTRUPrimeParameters SNTRUP653 = new SNTRUPrimeParameters("sntrup653", 653, 4621, 288,
+    public static final SNTRUPrimeParameters sntrup653 = new SNTRUPrimeParameters("sntrup653", 653, 4621, 288,
                                                                     994, 865, 994, 1518);
-    public static final SNTRUPrimeParameters SNTRUP761 = new SNTRUPrimeParameters("sntrup761", 761, 4591, 286,
+    public static final SNTRUPrimeParameters sntrup761 = new SNTRUPrimeParameters("sntrup761", 761, 4591, 286,
                                                                     1158, 1007, 1158, 1763);
-    public static final SNTRUPrimeParameters SNTRUP857 = new SNTRUPrimeParameters("sntrup857", 857, 5167, 322,
+    public static final SNTRUPrimeParameters sntrup857 = new SNTRUPrimeParameters("sntrup857", 857, 5167, 322,
                                                                     1322, 1152, 1322, 1999);
-    public static final SNTRUPrimeParameters SNTRUP953 = new SNTRUPrimeParameters("sntrup953", 953, 6343, 396,
+    public static final SNTRUPrimeParameters sntrup953 = new SNTRUPrimeParameters("sntrup953", 953, 6343, 396,
                                                                     1505, 1317, 1505, 2254);
-    public static final SNTRUPrimeParameters SNTRUP1013 = new SNTRUPrimeParameters("sntrup1013", 1013, 7177, 448,
+    public static final SNTRUPrimeParameters sntrup1013 = new SNTRUPrimeParameters("sntrup1013", 1013, 7177, 448,
                                                                     1623, 1423, 1623, 2417);
-    public static final SNTRUPrimeParameters SNTRUP1277 = new SNTRUPrimeParameters("sntrup1277", 1277, 7879, 492,
+    public static final SNTRUPrimeParameters sntrup1277 = new SNTRUPrimeParameters("sntrup1277", 1277, 7879, 492,
                                                                     2067, 1815, 2067, 3059);
 
     private final String name;

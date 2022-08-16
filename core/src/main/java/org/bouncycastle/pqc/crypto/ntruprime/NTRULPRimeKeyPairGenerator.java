@@ -75,9 +75,9 @@ public class NTRULPRimeKeyPairGenerator
         params.getRandom().nextBytes(rho);
 
         byte[] prefix = {4};
-        byte[] hash = Utils.getHashWithPrefix(prefix, publicKey.getKey());
+        byte[] hash = Utils.getHashWithPrefix(prefix, publicKey.getEncoded());
 
-        NTRULPRimePrivateKeyParameters privateKey = new NTRULPRimePrivateKeyParameters(params.getNtrulprParams(), enca, publicKey.getKey(),
+        NTRULPRimePrivateKeyParameters privateKey = new NTRULPRimePrivateKeyParameters(params.getNtrulprParams(), enca, publicKey.getEncoded(),
                                                                                         rho, "SHA-512", hash);
 
         return new AsymmetricCipherKeyPair(publicKey, privateKey);

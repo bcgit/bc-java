@@ -46,7 +46,7 @@ public class NTRULPRimePrivateKeyParameters
         return hash;
     }
 
-    public byte[] getKey()
+    public byte[] getEncoded()
     {
         byte[] key = new byte[getParameters().getPrivateKeyBytes()];
         System.arraycopy(enca, 0, key, 0, enca.length);

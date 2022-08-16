@@ -84,7 +84,7 @@ public class SNTRUPrimeKeyPairGenerator
         byte[] hash = Utils.getHashWithPrefix(prefix, pk);
 
         SNTRUPrimePrivateKeyParameters privateKey = new SNTRUPrimePrivateKeyParameters(params.getSntrupParams(), encF, encGinv,
-                                                                                        pk, rho, "SHA-512", hash);
+                                                                                        pk, rho, hash);
 
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }
