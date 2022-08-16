@@ -28,12 +28,12 @@ public class SNTRUPrimeTest
     {
         SNTRUPrimeParameters[] paramList = new SNTRUPrimeParameters[]
         {
-                SNTRUPrimeParameters.SNTRUP653,
-                SNTRUPrimeParameters.SNTRUP761,
-                SNTRUPrimeParameters.SNTRUP857,
-                SNTRUPrimeParameters.SNTRUP953,
-                SNTRUPrimeParameters.SNTRUP1013,
-                SNTRUPrimeParameters.SNTRUP1277
+                SNTRUPrimeParameters.sntrup653,
+                SNTRUPrimeParameters.sntrup761,
+                SNTRUPrimeParameters.sntrup857,
+                SNTRUPrimeParameters.sntrup953,
+                SNTRUPrimeParameters.sntrup1013,
+                SNTRUPrimeParameters.sntrup1277
         };
 
         for (SNTRUPrimeParameters paramSpec : paramList)
@@ -66,9 +66,9 @@ public class SNTRUPrimeTest
                 keyPairGenerator.init(new SNTRUPrimeKeyGenerationParameters(random, paramSpec));
 
                 AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
-                assertTrue(Arrays.areEqual(pk, ((SNTRUPrimePublicKeyParameters)keyPair.getPublic()).getKey()));
+                assertTrue(Arrays.areEqual(pk, ((SNTRUPrimePublicKeyParameters)keyPair.getPublic()).getEncoded()));
                 System.out.println("- Public Key matched ...");
-                assertTrue(Arrays.areEqual(sk, ((SNTRUPrimePrivateKeyParameters)keyPair.getPrivate()).getKey()));
+                assertTrue(Arrays.areEqual(sk, ((SNTRUPrimePrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
                 System.out.println("- Private Key matched ...");
 
                 SNTRUPrimeKEMGenerator kemGenerator = new SNTRUPrimeKEMGenerator(random);
