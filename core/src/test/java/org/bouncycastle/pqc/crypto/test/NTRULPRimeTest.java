@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Objects;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
@@ -77,7 +76,7 @@ public class NTRULPRimeTest
                 assertTrue(Arrays.areEqual(ct, secretEncapsulation.getEncapsulation()));
                 System.out.println("- Encapsulation Cipher Text matched ...");
                 byte[] secret = secretEncapsulation.getSecret();
-                Assert.assertTrue(Arrays.areEqual(ss, 0, secret.length, secret, 0, secret.length));
+                assertTrue(Arrays.areEqual(ss, 0, secret.length, secret, 0, secret.length));
                 System.out.println("- Encapsulation Shared Secret matched ...");
 
                 NTRULPRimeKEMExtractor kemExtractor = new NTRULPRimeKEMExtractor((NTRULPRimePrivateKeyParameters)keyPair.getPrivate());

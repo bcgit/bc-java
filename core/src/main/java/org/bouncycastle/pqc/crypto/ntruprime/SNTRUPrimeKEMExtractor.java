@@ -102,9 +102,9 @@ public class SNTRUPrimeKEMExtractor
         byte[] innerHCPrefix = {3};
         byte[] innerHCHash = Utils.getHashWithPrefix(innerHCPrefix, encR);
 
-        byte[] hcInput = new byte[(innerHCHash.length / 2) + (privateKey.getHash().length / 2)];
+        byte[] hcInput = new byte[(innerHCHash.length / 2) + privateKey.getHash().length];
         System.arraycopy(innerHCHash, 0, hcInput, 0, innerHCHash.length / 2);
-        System.arraycopy(privateKey.getHash(), 0, hcInput, innerHCHash.length / 2, privateKey.getHash().length / 2);
+        System.arraycopy(privateKey.getHash(), 0, hcInput, innerHCHash.length / 2, privateKey.getHash().length);
 
         byte[] hcPrefix = {2};
         byte[] hc = Utils.getHashWithPrefix(hcPrefix, hcInput);
@@ -140,6 +140,11 @@ public class SNTRUPrimeKEMExtractor
         byte[] ssPrefix = {(byte)(mask + 1)};
         byte[] ssHash = Utils.getHashWithPrefix(ssPrefix, ssInput);
 
-        return Arrays.copyOfRange(ssHash, 0, ssHash.length / 2);
+        return Arrays.copyOfRange(ssHash, 0, params.getSessionKeySize() / 8);
+    }
+    
+    public int getInputSize()
+    {
+        return privateKey.getParameters().getRoundedPolynomialBytes() + 32;
     }
 }

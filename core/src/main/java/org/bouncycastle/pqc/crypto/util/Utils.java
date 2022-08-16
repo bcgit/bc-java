@@ -22,6 +22,7 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
@@ -75,6 +76,9 @@ class Utils
 
     static final Map ntruprimeOids = new HashMap();
     static final Map ntruprimeParams = new HashMap();
+
+    static final Map sntruprimeOids = new HashMap();
+    static final Map sntruprimeParams = new HashMap();
 
     static final Map dilithiumOids = new HashMap();
     static final Map dilithiumParams = new HashMap();
@@ -225,6 +229,20 @@ class Utils
         ntruprimeParams.put(BCObjectIdentifiers.ntrulpr1013, NTRULPRimeParameters.ntrulpr1013);
         ntruprimeParams.put(BCObjectIdentifiers.ntrulpr1277, NTRULPRimeParameters.ntrulpr1277);
 
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup653, BCObjectIdentifiers.sntrup653);
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup761, BCObjectIdentifiers.sntrup761);
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup857, BCObjectIdentifiers.sntrup857);
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup953, BCObjectIdentifiers.sntrup953);
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup1013, BCObjectIdentifiers.sntrup1013);
+        sntruprimeOids.put(SNTRUPrimeParameters.sntrup1277, BCObjectIdentifiers.sntrup1277);
+
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup653, SNTRUPrimeParameters.sntrup653);
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup761, SNTRUPrimeParameters.sntrup761);
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup857, SNTRUPrimeParameters.sntrup857);
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup953, SNTRUPrimeParameters.sntrup953);
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup1013, SNTRUPrimeParameters.sntrup1013);
+        sntruprimeParams.put(BCObjectIdentifiers.sntrup1277, SNTRUPrimeParameters.sntrup1277);
+         
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
         dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
@@ -490,7 +508,17 @@ class Utils
     {
         return (NTRULPRimeParameters)ntruprimeParams.get(oid);
     }
-    
+
+    static ASN1ObjectIdentifier sntruprimeOidLookup(SNTRUPrimeParameters params)
+    {
+        return (ASN1ObjectIdentifier)sntruprimeOids.get(params);
+    }
+
+    static SNTRUPrimeParameters sntruprimeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SNTRUPrimeParameters)sntruprimeParams.get(oid);
+    }
+
     static ASN1ObjectIdentifier dilithiumOidLookup(DilithiumParameters params)
     {
         return (ASN1ObjectIdentifier)dilithiumOids.get(params);

@@ -22,27 +22,27 @@ public class SNTRUPrimePrivateKeyParameters
         this.hash = Arrays.clone(hash);
     }
 
-    byte[] getF()
+    public byte[] getF()
     {
-        return f;
+        return Arrays.clone(f);
     }
 
-    byte[] getGinv()
+    public byte[] getGinv()
     {
-        return ginv;
+        return Arrays.clone(ginv);
     }
 
-    byte[] getPk()
+    public byte[] getPk()
     {
-        return pk;
+        return Arrays.clone(pk);
     }
 
-    byte[] getRho()
+    public byte[] getRho()
     {
-        return rho;
+        return Arrays.clone(rho);
     }
 
-    byte[] getHash()
+    public byte[] getHash()
     {
         return Arrays.clone(hash);
     }
@@ -54,7 +54,7 @@ public class SNTRUPrimePrivateKeyParameters
         System.arraycopy(ginv, 0, key, f.length, ginv.length);
         System.arraycopy(pk, 0, key, f.length + ginv.length, pk.length);
         System.arraycopy(rho, 0, key, f.length + ginv.length + pk.length, rho.length);
-        System.arraycopy(hash, 0, key, f.length + ginv.length + pk.length + rho.length, hash.length / 2);
+        System.arraycopy(hash, 0, key, f.length + ginv.length + pk.length + rho.length, hash.length);
         return key;
     }
 }
