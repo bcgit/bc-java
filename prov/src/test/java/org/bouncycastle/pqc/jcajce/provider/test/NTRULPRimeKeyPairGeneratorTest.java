@@ -10,7 +10,7 @@ import org.bouncycastle.pqc.jcajce.spec.NTRULPRimeParameterSpec;
 /**
  * KeyFactory/KeyPairGenerator tests for NTRULPRime with BCPQC provider.
  */
-public class NTRULPrimeKeyPairGeneratorTest
+public class NTRULPRimeKeyPairGeneratorTest
     extends KeyPairGeneratorTest
 {
     protected void setUp()
