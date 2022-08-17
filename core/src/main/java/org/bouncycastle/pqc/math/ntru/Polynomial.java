@@ -10,8 +10,10 @@ public abstract class Polynomial
     /**
      * An array of coefficients
      */
+    // TODO: maybe the maths library needs to move.
     public short[] coeffs;
-    NTRUParameterSet params;
+    
+    protected NTRUParameterSet params;
 
     public Polynomial(NTRUParameterSet params)
     {
@@ -412,11 +414,11 @@ public abstract class Polynomial
 
             for (i = 0; i < n; ++i)
             {
-                g.coeffs[i] = mod3((short)(g.coeffs[i] + sign * f.coeffs[i]));
+                g.coeffs[i] = mod3((byte)(g.coeffs[i] + sign * f.coeffs[i]));
             }
             for (i = 0; i < n; ++i)
             {
-                w.coeffs[i] = mod3((short)(w.coeffs[i] + sign * v.coeffs[i]));
+                w.coeffs[i] = mod3((byte)(w.coeffs[i] + sign * v.coeffs[i]));
             }
             for (i = 0; i < n - 1; ++i)
             {
