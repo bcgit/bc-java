@@ -36,6 +36,8 @@ public class NTRULPRimeTest
                 NTRULPRimeParameters.ntrulpr1277
         };
 
+        TestSampler sampler = new TestSampler();
+
         for (NTRULPRimeParameters paramSpec : paramList)
         {
             System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
@@ -58,6 +60,11 @@ public class NTRULPRimeTest
                 byte[] ct = Hex.decode(line.split("=")[1].trim());
                 line = resourceReader.readLine();
                 byte[] ss = Hex.decode(line.split("=")[1].trim());
+
+                if (sampler.skipTest(count))
+                {
+                    continue;
+                }
 
                 System.out.println("Running Test-" + count + " ...");
                 NISTSecureRandom random = new NISTSecureRandom(seed, null);

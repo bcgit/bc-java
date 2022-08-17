@@ -31,6 +31,8 @@ public class NTRUKAT
      */
     public byte[] ss;
 
+    private static final TestSampler sampler = new TestSampler();
+
     public static List<NTRUKAT> getKAT(InputStream src)
     {
         List<NTRUKAT> kats = new ArrayList<NTRUKAT>();
@@ -55,6 +57,12 @@ public class NTRUKAT
                         kat.sk = Hex.decode(buf.get("sk"));     // private key
                         kat.ct = Hex.decode(buf.get("ct"));
                         kat.ss = Hex.decode(buf.get("ss"));
+
+                        if (sampler.skipTest(kat.count))
+                        {
+                            continue;
+                        }
+
                         kats.add(kat);
                     }
                     buf.clear();
