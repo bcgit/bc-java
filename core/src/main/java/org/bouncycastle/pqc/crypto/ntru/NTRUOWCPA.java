@@ -38,9 +38,7 @@ class NTRUOWCPA
         int q = this.params.q();
         int i;
         PolynomialPair pair;
-        Polynomial x1, x2, x3, x4, x5;
-        x1 = this.params.createPolynomial();
-        x2 = this.params.createPolynomial();
+        Polynomial x3, x4, x5;
         x3 = this.params.createPolynomial();
         x4 = this.params.createPolynomial();
         x5 = this.params.createPolynomial();
