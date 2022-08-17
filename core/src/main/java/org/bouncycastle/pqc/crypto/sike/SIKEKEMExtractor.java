@@ -14,6 +14,7 @@ public class SIKEKEMExtractor
 
     public SIKEKEMExtractor(SIKEPrivateKeyParameters privParams)
     {
+        // -DM System.err.println
         System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKEM", 0, privParams, CryptoServicePurpose.DECRYPTION));
 
