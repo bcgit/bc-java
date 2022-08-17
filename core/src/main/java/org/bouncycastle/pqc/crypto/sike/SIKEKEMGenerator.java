@@ -24,6 +24,7 @@ public class SIKEKEMGenerator
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
+        // -DM System.err.println
         System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKEM", 0, recipientKey, CryptoServicePurpose.ENCRYPTION));
 

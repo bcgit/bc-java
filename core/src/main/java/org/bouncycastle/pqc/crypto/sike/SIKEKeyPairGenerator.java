@@ -24,6 +24,7 @@ public class SIKEKeyPairGenerator
 
     private AsymmetricCipherKeyPair genKeyPair()
     {
+        // -DM System.err.println
         System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKeyGen", 0, sikeParams.getParameters(), CryptoServicePurpose.KEYGEN));
 
