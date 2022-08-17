@@ -54,11 +54,6 @@ public class SphincsPlusTest
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
-
-            if (name.contains("shake") || name.contains("sha2"))
-            {
-                continue;
-            }
             InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             System.out.println(name);
