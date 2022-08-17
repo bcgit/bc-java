@@ -108,8 +108,8 @@ public class SPHINCSPlusParameters
     private static final Integer sphincsPlus_haraka_256f_simple = Integers.valueOf(0x030205);
     private static final Integer sphincsPlus_haraka_256s_simple = Integers.valueOf(0x030206);
 
-    private static final Map oidToParams = new HashMap();
-    private static final Map paramsToOid = new HashMap();
+    private static final Map<Integer, SPHINCSPlusParameters> oidToParams = new HashMap<Integer, SPHINCSPlusParameters>();
+    private static final Map<SPHINCSPlusParameters, Integer> paramsToOid = new HashMap<SPHINCSPlusParameters, Integer>();
 
     static
     {
