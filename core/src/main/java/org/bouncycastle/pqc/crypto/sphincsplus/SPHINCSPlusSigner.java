@@ -60,6 +60,8 @@ public class SPHINCSPlusSigner
 
         SPHINCSPlusEngine engine = privKey.getParameters().getEngine();
 
+        engine.init(privKey.pk.seed);
+
         // generate randomizer
         byte[] optRand = new byte[engine.N];
         if (random != null)
@@ -118,6 +120,8 @@ public class SPHINCSPlusSigner
 
         // init
         SPHINCSPlusEngine engine = pubKey.getParameters().getEngine();
+
+        engine.init(pubKey.getSeed());
 
         ADRS adrs = new ADRS();
         SIG sig = new SIG(engine.N, engine.K, engine.A, engine.D, engine.H_PRIME, engine.WOTS_LEN, signature);

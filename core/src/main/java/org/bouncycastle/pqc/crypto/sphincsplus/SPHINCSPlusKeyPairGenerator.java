@@ -21,14 +21,34 @@ public class SPHINCSPlusKeyPairGenerator
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         SPHINCSPlusEngine engine = parameters.getEngine();
+        byte[] pkSeed;
+        SK sk;
 
-        SK sk = new SK(sec_rand(engine.N), sec_rand(engine.N));
-        byte[] pkSeed = sec_rand(engine.N);
+        if (engine instanceof SPHINCSPlusEngine.HarakaSEngine)
+        {
+            // required to pass kat tests
+            byte[] tmparray = sec_rand(engine.N * 3);
+            byte[] skseed = new byte[engine.N];
+            byte[] skprf = new byte[engine.N];
+            pkSeed = new byte[engine.N];
+            System.arraycopy(tmparray, 0, skseed, 0, engine.N);
+            System.arraycopy(tmparray, engine.N, skprf, 0, engine.N);
+            System.arraycopy(tmparray, engine.N << 1, pkSeed, 0, engine.N);
+            sk = new SK(skseed, skprf);
+        }
+        else
+        {
+            sk = new SK(sec_rand(engine.N), sec_rand(engine.N));
+            pkSeed = sec_rand(engine.N);
+        }
+
+        engine.init(pkSeed);
+
         // TODO
         PK pk = new PK(pkSeed, new HT(engine, sk.seed, pkSeed).htPubKey);
 
         return new AsymmetricCipherKeyPair(new SPHINCSPlusPublicKeyParameters(parameters, pk),
-                            new SPHINCSPlusPrivateKeyParameters(parameters, sk, pk));
+            new SPHINCSPlusPrivateKeyParameters(parameters, sk, pk));
     }
 
     private byte[] sec_rand(int n)
