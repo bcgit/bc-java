@@ -85,6 +85,8 @@ public class CrystalsDilithiumTest
             DilithiumParameters.dilithium3,
             DilithiumParameters.dilithium5
         };
+
+        TestSampler sampler = new TestSampler();
         for (int fileindex = 0; fileindex < files.length; fileindex++)
         {
             String name = files[fileindex];
@@ -106,6 +108,10 @@ public class CrystalsDilithiumTest
                     if (buf.size() > 0)
                     {
                         String count = buf.get("count");
+                        if (sampler.skipTest(count))
+                        {
+                            continue;
+                        }
                         System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode(buf.get("seed")); // seed for Dilithium secure random

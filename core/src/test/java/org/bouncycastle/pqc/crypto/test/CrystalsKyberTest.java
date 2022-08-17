@@ -110,6 +110,7 @@ public class CrystalsKyberTest
             "kyber1024.rsp",
         };
 
+        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -132,6 +133,10 @@ public class CrystalsKyberTest
                     if (buf.size() > 0)
                     {
                         String count = buf.get("count");
+                        if (sampler.skipTest(count))
+                        {
+                            continue;
+                        }
                         System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode(buf.get("seed")); // seed for Kyber secure random
