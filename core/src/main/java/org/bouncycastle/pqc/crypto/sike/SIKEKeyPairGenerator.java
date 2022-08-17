@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 
 public class SIKEKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -21,6 +24,9 @@ public class SIKEKeyPairGenerator
 
     private AsymmetricCipherKeyPair genKeyPair()
     {
+        System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKeyGen", 0, sikeParams.getParameters(), CryptoServicePurpose.KEYGEN));
+
         SIKEEngine engine = sikeParams.getParameters().getEngine();
         byte[] sk = new byte[engine.getPrivateKeySize()];
         byte[] pk = new byte[engine.getPublicKeySize()];
