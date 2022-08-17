@@ -34,23 +34,19 @@ public class SphincsPlusTest
     public void testVectors()
         throws Exception
     {
-        boolean full = System.getProperty("test.full", "false").equals("true");
-
         String files = "sha2-128f-robust.rsp sha2-192f-robust.rsp sha2-256f-robust.rsp shake-128f-robust.rsp shake-192f-robust.rsp" +
             " shake-256f-robust.rsp sha2-128f-simple.rsp sha2-192f-simple.rsp sha2-256f-simple.rsp shake-128f-simple.rsp" +
             " shake-192f-simple.rsp shake-256f-simple.rsp sha2-128s-robust.rsp sha2-192s-robust.rsp sha2-256s-robust.rsp" +
             " shake-128s-robust.rsp shake-192s-robust.rsp shake-256s-robust.rsp sha2-128s-simple.rsp sha2-192s-simple.rsp" +
             " sha2-256s-simple.rsp shake-128s-simple.rsp shake-192s-simple.rsp shake-256s-simple.rsp" +
-            " haraka-128f-robust.rsp  haraka-192s-robust.rsp " +
-            "haraka-128f-simple.rsp  haraka-192s-simple.rsp " +
-            "haraka-128s-robust.rsp  haraka-256f-robust.rsp " +
-            "haraka-128s-simple.rsp  haraka-256f-simple.rsp " +
-            "haraka-192f-robust.rsp  haraka-256s-robust.rsp " +
-            "haraka-192f-simple.rsp  haraka-256s-simple.rsp";
+            " haraka-128f-robust.rsp  haraka-192s-robust.rsp haraka-128f-simple.rsp  haraka-192s-simple.rsp" +
+            " haraka-128s-robust.rsp  haraka-256f-robust.rsp haraka-128s-simple.rsp  haraka-256f-simple.rsp" +
+            " haraka-192f-robust.rsp  haraka-256s-robust.rsp haraka-192f-simple.rsp  haraka-256s-simple.rsp";
 
-        full = true;
+        TestSampler sampler = new TestSampler();
+
         String[] fileList = splitOn(files, ' ');
-        long startTime = System.currentTimeMillis();
+        //long startTime = System.currentTimeMillis();
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
@@ -61,7 +57,6 @@ public class SphincsPlusTest
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)
             {
-
                 line = line.trim();
 
                 if (line.startsWith("#"))
@@ -79,10 +74,11 @@ public class SphincsPlusTest
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));
                         byte[] oprR = Hex.decode((String)buf.get("optrand"));
 
-                        if ((Integer.parseInt(count) % 9 != 0))
+                        if (sampler.skipTest(count))
                         {
                             continue;
                         }
+
                         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
                         SecureRandom random = new FixedSecureRandom(sk);
 
@@ -196,7 +192,7 @@ public class SphincsPlusTest
             }
             src.close();
         }
-        System.err.println(System.currentTimeMillis() - startTime);
+        //System.err.println(System.currentTimeMillis() - startTime);
     }
 
     public void testBasicKeyGeneration()

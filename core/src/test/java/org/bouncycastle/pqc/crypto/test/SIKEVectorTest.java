@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -78,6 +77,8 @@ public class SIKEVectorTest
                 SIKEParameters.sikep751_compressed,
         };
 
+        TestSampler sampler = new TestSampler();
+
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -87,7 +88,6 @@ public class SIKEVectorTest
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            Random rnd = new Random(System.currentTimeMillis());
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -101,13 +101,9 @@ public class SIKEVectorTest
                     if (buf.size() > 0)
                     {
                         String count = (String)buf.get("count");
-                        if (!"0".equals(count))
+                        if (sampler.skipTest(count))
                         {
-                            // randomly skip tests after zero.
-                            if (rnd.nextBoolean())
-                            {
-                                continue;
-                            }
+                            continue;
                         }
                         System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for sike secure random

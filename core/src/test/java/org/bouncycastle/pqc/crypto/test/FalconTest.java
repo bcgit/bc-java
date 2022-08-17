@@ -31,6 +31,9 @@ public class FalconTest
             FalconParameters.falcon_512,
             FalconParameters.falcon_1024
         };
+
+        TestSampler sampler = new TestSampler();
+
         for (int fileindex = 0; fileindex < files.length; fileindex++)
         {
             String name = files[fileindex];
@@ -52,6 +55,10 @@ public class FalconTest
                     if (buf.size() > 0)
                     {
                         String count = buf.get("count");
+                        if (sampler.skipTest(count))
+                        {
+                            continue;
+                        }
                         System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode(buf.get("seed")); // seed for Falcon secure random

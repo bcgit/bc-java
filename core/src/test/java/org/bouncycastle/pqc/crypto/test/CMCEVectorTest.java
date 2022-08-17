@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -45,13 +44,7 @@ public class CMCEVectorTest
     public void testVectors()
         throws Exception
     {
-
-        boolean full = System.getProperty("test.full", "false").equals("true");
-
-        String[] files;
-        if (full)
-        {
-            files = new String[]{
+        String[]  files = new String[]{
                 "3488-64-cmce.rsp",
                 "3488-64-f-cmce.rsp",
                 "4608-96-cmce.rsp",
@@ -63,14 +56,6 @@ public class CMCEVectorTest
                 "8192-128-cmce.rsp",
                 "8192-128-f-cmce.rsp"
             };
-        }
-        else
-        {
-            files = new String[]{
-                "3488-64-cmce.rsp",
-                "3488-64-f-cmce.rsp",
-            };
-        }
 
         CMCEParameters[] params = new CMCEParameters[]{
             CMCEParameters.mceliece348864r3,
@@ -88,6 +73,7 @@ public class CMCEVectorTest
 //        files = "6960-119-cmce.rsp";// 8192-128-cmce.rsp";
 //        files = "8192-128-cmce.rsp";
 //        String files = "4608-96-cmce.rsp";// 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
+        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -97,7 +83,6 @@ public class CMCEVectorTest
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            Random rnd = new Random(System.currentTimeMillis());
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -111,13 +96,9 @@ public class CMCEVectorTest
                     if (buf.size() > 0)
                     {
                         String count = (String)buf.get("count");
-                        if (!"0".equals(count))
+                        if (sampler.skipTest(count))
                         {
-                            // randomly skip tests after zero.
-                            if (rnd.nextBoolean())
-                            {
-                                continue;
-                            }
+                            continue;
                         }
                         System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for cmce secure random
