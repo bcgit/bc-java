@@ -33,16 +33,6 @@ abstract class SPHINCSPlusEngine
 
     final int T; // T = 1 << A
 
-    protected static byte[] xor(byte[] m, byte[] mask)
-    {
-        byte[] r = Arrays.clone(m);
-        for (int t = 0; t < m.length; t++)
-        {
-            r[t] ^= mask[t];
-        }
-        return r;
-    }
-
     public SPHINCSPlusEngine(boolean robust, int n, int w, int d, int a, int k, int h)
     {
         this.N = n;
@@ -119,7 +109,6 @@ abstract class SPHINCSPlusEngine
     static class Sha2Engine
         extends SPHINCSPlusEngine
     {
-        private final byte[] padding = new byte[128];
         private final HMac treeHMac;
         private final MGF1BytesGenerator mgf1;
         private final byte[] hmacBuf;
@@ -156,6 +145,8 @@ abstract class SPHINCSPlusEngine
 
         void init(byte[] pkSeed)
         {
+            final byte[] padding = new byte[bl];
+
             msgDigest.update(pkSeed, 0, pkSeed.length);
             msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
             msgMemo = ((Memoable)msgDigest).copy();
