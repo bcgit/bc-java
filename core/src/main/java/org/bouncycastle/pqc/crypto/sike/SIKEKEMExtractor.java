@@ -1,6 +1,9 @@
 package org.bouncycastle.pqc.crypto.sike;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 
 public class SIKEKEMExtractor
     implements EncapsulatedSecretExtractor
@@ -11,6 +14,9 @@ public class SIKEKEMExtractor
 
     public SIKEKEMExtractor(SIKEPrivateKeyParameters privParams)
     {
+        System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKEM", 0, privParams, CryptoServicePurpose.DECRYPTION));
+
         this.key = privParams;
         initCipher(key.getParameters());
     }

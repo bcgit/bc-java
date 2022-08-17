@@ -2,8 +2,11 @@ package org.bouncycastle.pqc.crypto.sike;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 
@@ -21,6 +24,9 @@ public class SIKEKEMGenerator
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
+        System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SIKEKEM", 0, recipientKey, CryptoServicePurpose.ENCRYPTION));
+
         SIKEPublicKeyParameters key = (SIKEPublicKeyParameters)recipientKey;
         SIKEEngine engine = key.getParameters().getEngine();
 
