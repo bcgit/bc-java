@@ -102,6 +102,8 @@ abstract class SPHINCSPlusEngine
         this.T = 1 << a;
     }
 
+    abstract void init(byte[] pkSeed);
+
     abstract byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1);
 
     abstract byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2);
@@ -118,29 +120,21 @@ abstract class SPHINCSPlusEngine
         extends SPHINCSPlusEngine
     {
         private final byte[] padding = new byte[128];
-        private final Digest treeDigest;
         private final HMac treeHMac;
         private final MGF1BytesGenerator mgf1;
         private final byte[] hmacBuf;
         private final Digest msgDigest;
-
-        private Memoable msgMemo;
         private final byte[] msgDigestBuf;
         private final int bl;
-
-        private SHA256Digest sha256 = new SHA256Digest();
+        private final Digest sha256 = new SHA256Digest();
         private final byte[] sha256Buf = new byte[sha256.getDigestSize()];
 
+        private Memoable msgMemo;
         private Memoable sha256Memo;
-
-        private boolean msgStateSaved = false;
-        private boolean sha256StateSaved = false;
 
         public Sha2Engine(boolean robust, int n, int w, int d, int a, int k, int h)
         {
             super(robust, n, w, d, a, k, h);
-
-            this.treeDigest = new SHA256Digest();
             if (n == 16)
             {
                 this.msgDigest = new SHA256Digest();
@@ -156,9 +150,23 @@ abstract class SPHINCSPlusEngine
                 this.bl = 128;
             }
 
-
             this.hmacBuf = new byte[treeHMac.getMacSize()];
             this.msgDigestBuf = new byte[msgDigest.getDigestSize()];
+        }
+
+        void init(byte[] pkSeed)
+        {
+            msgDigest.update(pkSeed, 0, pkSeed.length);
+            msgDigest.update(padding, 0, bl - N); // toByte(0, 64 - n)
+            msgMemo = ((Memoable)msgDigest).copy();
+            
+            msgDigest.reset();
+
+            sha256.update(pkSeed, 0, pkSeed.length);
+            sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
+            sha256Memo = ((Memoable)sha256).copy();
+
+            sha256.reset();
         }
 
         public byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
@@ -170,19 +178,11 @@ abstract class SPHINCSPlusEngine
                 m1 = bitmask256(Arrays.concatenate(pkSeed, compressedADRS), m1);
             }
 
-            if(!sha256StateSaved)
-            {
-                sha256.update(pkSeed, 0, pkSeed.length);
-                sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
-                sha256Memo = sha256.copy();
-                sha256StateSaved = true;
-            }
-            sha256.reset(sha256Memo);
+            ((Memoable)sha256).reset(sha256Memo);
 
             sha256.update(compressedADRS, 0, compressedADRS.length);
             sha256.update(m1, 0, m1.length);
             sha256.doFinal(sha256Buf, 0);
-
 
             return Arrays.copyOfRange(sha256Buf, 0, N);
         }
@@ -191,15 +191,7 @@ abstract class SPHINCSPlusEngine
         {
             byte[] compressedADRS = compressedADRS(adrs);
 
-            if(!msgStateSaved)
-            {
-                msgDigest.update(pkSeed, 0, pkSeed.length);
-                msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
-                msgMemo = ((Memoable)msgDigest).copy();
-//                msgStateSaved = true;
-            }
-//            ((Memoable)msgDigest).reset(sha256Memo);
-
+            ((Memoable)msgDigest).reset(msgMemo);
 
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
             if (robust)
@@ -260,14 +252,7 @@ abstract class SPHINCSPlusEngine
                 m = bitmask(Arrays.concatenate(pkSeed, compressedADRS), m);
             }
 
-            if(!msgStateSaved)
-            {
-                msgDigest.update(pkSeed, 0, pkSeed.length);
-                msgDigest.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
-                msgMemo = ((Memoable)msgDigest).copy();
-//                msgStateSaved = true;
-            }
-//            ((Memoable)msgDigest).reset(sha256Memo);
+            ((Memoable)msgDigest).reset(msgMemo);
 
             msgDigest.update(compressedADRS, 0, compressedADRS.length);
             msgDigest.update(m, 0, m.length);
@@ -280,14 +265,7 @@ abstract class SPHINCSPlusEngine
         {
             int n = skSeed.length;
 
-            if(!sha256StateSaved)
-            {
-                sha256.update(pkSeed, 0, pkSeed.length);
-                sha256.update(padding, 0, 64 - pkSeed.length); // toByte(0, 64 - n)
-                sha256Memo = sha256.copy();
-                sha256StateSaved = true;
-            }
-            sha256.reset(sha256Memo);
+            ((Memoable)sha256).reset(sha256Memo);
 
             byte[] compressedADRS = compressedADRS(adrs);
 
@@ -385,6 +363,11 @@ abstract class SPHINCSPlusEngine
 
             this.treeDigest = new SHAKEDigest(256);
             this.maskDigest = new SHAKEDigest(256);
+        }
+
+        void init(byte[] pkSeed)
+        {
+
         }
 
         byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
@@ -536,6 +519,132 @@ abstract class SPHINCSPlusEngine
             }
 
             return mask;
+        }
+    }
+
+    static class HarakaSEngine
+        extends SPHINCSPlusEngine
+    {
+        public HarakaSXof harakaSXof;
+        public HarakaS256Digest harakaS256Digest;
+        public HarakaS512Digest harakaS512Digest;
+
+        public HarakaSEngine(boolean robust, int n, int w, int d, int a, int k, int h)
+        {
+            super(robust, n, w, d, a, k, h);
+        }
+
+        void init(byte[] pkSeed)
+        {
+            harakaSXof = new HarakaSXof(pkSeed);
+            harakaS256Digest = new HarakaS256Digest(harakaSXof);
+            harakaS512Digest = new HarakaS512Digest(harakaSXof);
+        }
+
+        public byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
+        {
+            byte[] rv = new byte[64];
+            harakaS512Digest.update(adrs.value, 0, adrs.value.length);
+            if (robust)
+            {
+                byte[] mask = new byte[m1.length];
+                harakaS256Digest.update(adrs.value, 0, adrs.value.length);
+                harakaS256Digest.doFinal(mask, 0);
+                for (int i = 0; i < m1.length; ++i)
+                {
+                    mask[i] ^= m1[i];
+                }
+                harakaS512Digest.update(mask, 0, mask.length);
+            }
+            else
+            {
+                harakaS512Digest.update(m1, 0, m1.length);
+            }
+            harakaS512Digest.doFinal(rv, 0);
+            return Arrays.copyOf(rv, N);
+        }
+
+        public byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
+        {
+            byte[] rv = new byte[N];
+            byte[] m = new byte[m1.length + m2.length];
+            System.arraycopy(m1, 0, m, 0, m1.length);
+            System.arraycopy(m2, 0, m, m1.length, m2.length);
+            m = bitmask(adrs, m);
+            harakaSXof.update(adrs.value, 0, adrs.value.length);
+            harakaSXof.update(m, 0, m.length);
+            harakaSXof.doFinal(rv, 0, rv.length);
+            return rv;
+        }
+
+        IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] message)
+        {
+            int forsMsgBytes = ((A * K) + 7) >> 3;
+            int leafBits = H / D;
+            int treeBits = H - leafBits;
+            int leafBytes = (leafBits + 7) >> 3;
+            int treeBytes = (treeBits + 7) >> 3;
+            byte[] out = new byte[forsMsgBytes + leafBytes + treeBytes];
+            harakaSXof.update(prf, 0, prf.length);
+            harakaSXof.update(pkRoot, 0, pkRoot.length);
+            harakaSXof.update(message, 0, message.length);
+            harakaSXof.doFinal(out, 0, out.length);
+            byte[] treeIndexBuf = new byte[8];
+            System.arraycopy(out, forsMsgBytes, treeIndexBuf, 8 - treeBytes, treeBytes);
+            long treeIndex = Pack.bigEndianToLong(treeIndexBuf, 0);
+            treeIndex &= (~0L) >>> (64 - treeBits);
+
+            byte[] leafIndexBuf = new byte[4];
+            System.arraycopy(out, forsMsgBytes + treeBytes, leafIndexBuf, 4 - leafBytes, leafBytes);
+
+            int leafIndex = Pack.bigEndianToInt(leafIndexBuf, 0);
+            leafIndex &= (~0) >>> (32 - leafBits);
+            return new IndexedDigest(treeIndex, leafIndex, Arrays.copyOfRange(out, 0, forsMsgBytes));
+        }
+
+        public byte[] T_l(byte[] pkSeed, ADRS adrs, byte[] m)
+        {
+            byte[] rv = new byte[N];
+            m = bitmask(adrs, m);
+            harakaSXof.update(adrs.value, 0, adrs.value.length);
+            harakaSXof.update(m, 0, m.length);
+            harakaSXof.doFinal(rv, 0, rv.length);
+            return rv;
+        }
+
+        byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
+        {
+            byte[] rv = new byte[64];
+            harakaS512Digest.update(adrs.value, 0, adrs.value.length);
+            harakaS512Digest.update(skSeed, 0, skSeed.length);
+            harakaS512Digest.doFinal(rv, 0);
+            return Arrays.copyOf(rv, N);
+        }
+
+        public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message)
+        {
+            byte[] rv = new byte[N];
+            harakaSXof.update(prf, 0, prf.length);
+            harakaSXof.update(randomiser, 0, randomiser.length);
+            harakaSXof.update(message, 0, message.length);
+            harakaSXof.doFinal(rv, 0, rv.length);
+            return rv;
+        }
+
+        protected byte[] bitmask(ADRS adrs, byte[] m)
+        {
+            if (robust)
+            {
+                byte[] mask = new byte[m.length];
+                harakaSXof.update(adrs.value, 0, adrs.value.length);
+                harakaSXof.doFinal(mask, 0, mask.length);
+                for (int i = 0; i < m.length; ++i)
+                {
+                    m[i] ^= mask[i];
+                }
+                return m;
+            }
+            return m;
         }
     }
 }
