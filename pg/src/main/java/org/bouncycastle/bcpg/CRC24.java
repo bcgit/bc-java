@@ -2,11 +2,18 @@ package org.bouncycastle.bcpg;
 
 public class CRC24
 {
-    private static final int CRC24_INIT = 0x0b704ce;
-    private static final int CRC24_POLY = 0x1864cfb;
-                                                                                
-    private int crc = CRC24_INIT;
-                                                                                
+    protected static final int CRC24_INIT = 0x0b704ce;
+    protected static final int CRC24_POLY = 0x1864cfb;
+
+    protected int crc = CRC24_INIT;
+
+    /**
+     * Default, iterative CRC-24 implementation as described in RFC4880.
+     * This implementation mimics the use of a feedback shift register in software.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-6.1">
+     * RFC4880 §6.1. An Implementation of the CRC-24 in "C"</a>
+     */
     public CRC24()
     {
     }
@@ -27,7 +34,7 @@ public class CRC24
 
     public int getValue()
     {
-        return crc;
+        return crc & 0xFFFFFF;
     }
 
     public void reset()
