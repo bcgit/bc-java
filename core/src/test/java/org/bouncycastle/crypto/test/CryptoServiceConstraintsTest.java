@@ -58,12 +58,14 @@ import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.engines.SM4Engine;
+import org.bouncycastle.crypto.engines.Salsa20Engine;
 import org.bouncycastle.crypto.engines.SerpentEngine;
 import org.bouncycastle.crypto.engines.SkipjackEngine;
 import org.bouncycastle.crypto.engines.TEAEngine;
 import org.bouncycastle.crypto.engines.ThreefishEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.engines.XSalsa20Engine;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
 import org.bouncycastle.crypto.generators.DESedeKeyGenerator;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
@@ -108,6 +110,7 @@ import org.bouncycastle.crypto.params.GOST3410Parameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -187,6 +190,7 @@ public class CryptoServiceConstraintsTest
         testSM4();
         testTEA();
         testThreefish();
+        testSalsa20AndXSalsa20();
     }
 
     private void test112bits()
@@ -1676,6 +1680,28 @@ public class CryptoServiceConstraintsTest
         }
 
         engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testSalsa20AndXSalsa20()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        Salsa20Engine engine = new Salsa20Engine();
+        XSalsa20Engine xengine = new XSalsa20Engine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        xengine.init(true, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[24]));
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
