@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.RC5Parameters;
 
 /**
@@ -10,8 +12,6 @@ import org.bouncycastle.crypto.params.RC5Parameters;
  * <em>https://www.rsasecurity.com/rsalabs/cryptobytes</em>.
  * <p>
  * This implementation is set to work with a 64 bit word size.
- * <p>
- * Implementation courtesy of Tito Pena.
  */
 public class RC564Engine
     implements BlockCipher
@@ -86,7 +86,10 @@ public class RC564Engine
 
         _noRounds     = p.getRounds();
 
-        setKey(p.getKey());
+        byte[] key = p.getKey();
+        setKey(key);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), key.length * 8, params, Utils.getPurpose(forEncryption)));
     }
 
     public int processBlock(

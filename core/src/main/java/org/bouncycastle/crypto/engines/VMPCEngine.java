@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -63,6 +65,9 @@ public class VMPCEngine implements StreamCipher
         this.workingKey = key.getKey();
 
         initKey(this.workingKey, this.workingIV);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(),
+            (workingKey.length >= 32) ? 256 : workingKey.length * 8, params, Utils.getPurpose(forEncryption)));
     }
 
     protected void initKey(byte[] keyBytes, byte[] ivBytes)
