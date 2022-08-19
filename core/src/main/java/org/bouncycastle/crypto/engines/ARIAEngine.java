@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -162,7 +161,7 @@ public class ARIAEngine
 
         this.forEncryption = forEncryption;
         this.roundKeys = keySchedule(forEncryption, ((KeyParameter)params).getKey());
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
     }
 
     public String getAlgorithmName()
@@ -439,10 +438,5 @@ public class ARIAEngine
                 : 192)
             : 128;
 
-    }
-
-    private CryptoServicePurpose getPurpose()
-    {
-        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

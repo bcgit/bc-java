@@ -2,8 +2,10 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -562,8 +564,10 @@ public class RijndaelEngine
     {
         if (params instanceof KeyParameter)
         {
-            workingKey = generateWorkingKey(((KeyParameter)params).getKey());
+            byte[] key = ((KeyParameter)params).getKey();
+            workingKey = generateWorkingKey(key);
             this.forEncryption = forEncryption;
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), key.length * 8, params, Utils.getPurpose(forEncryption)));
             return;
         }
 

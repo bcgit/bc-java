@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -639,7 +638,7 @@ public class CamelliaEngine
         setKey(forEncryption, ((KeyParameter)params).getKey());
         initialised = true;
         this.forEncryption = forEncryption;
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
 
     }
 
@@ -699,15 +698,5 @@ public class CamelliaEngine
     private int bitsOfSecurity()
     {
         return _keySize * 8;
-    }
-
-    private CryptoServicePurpose getPurpose()
-    {
-        if (!initialised)
-        {
-            return CryptoServicePurpose.ANY;
-        }
-
-        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

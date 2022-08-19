@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -53,7 +52,7 @@ public class RC4Engine
             this.forEncryption = forEncryption;
             setKey(workingKey);
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 20, params, getPurpose()));
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 20, params, Utils.getPurpose(forEncryption)));
 
             return;
         }
@@ -154,15 +153,5 @@ public class RC4Engine
             engineState[i2] = tmp;
             i1 = (i1+1) % keyBytes.length; 
         }
-    }
-
-    private CryptoServicePurpose getPurpose()
-    {
-        if (workingKey == null)
-        {
-            return CryptoServicePurpose.ANY;
-        }
-
-        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -77,7 +76,7 @@ public class DESedeEngine
             workingKey3 = workingKey1;
         }
 
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, getPurpose()));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
     }
 
     public String getAlgorithmName()
@@ -141,15 +140,5 @@ public class DESedeEngine
             return 80;
         }
         return 112;
-    }
-
-    private CryptoServicePurpose getPurpose()
-    {
-        if (workingKey1 == null)
-        {
-            return CryptoServicePurpose.ANY;
-        }
-
-        return forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.constraints.ConstraintUtils;
@@ -75,7 +74,7 @@ public class ElGamalEngine
             }
         }
 
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSA", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, forEncryption ? CryptoServicePurpose.ENCRYPTION: CryptoServicePurpose.DECRYPTION));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSA", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, Utils.getPurpose(forEncryption)));
     }
 
     /**

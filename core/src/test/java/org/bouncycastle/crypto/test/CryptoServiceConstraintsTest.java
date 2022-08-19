@@ -56,7 +56,10 @@ import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
+import org.bouncycastle.crypto.engines.RC532Engine;
+import org.bouncycastle.crypto.engines.RC564Engine;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.engines.RijndaelEngine;
 import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.engines.Salsa20Engine;
 import org.bouncycastle.crypto.engines.SerpentEngine;
@@ -65,7 +68,11 @@ import org.bouncycastle.crypto.engines.TEAEngine;
 import org.bouncycastle.crypto.engines.ThreefishEngine;
 import org.bouncycastle.crypto.engines.TnepresEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.engines.VMPCEngine;
+import org.bouncycastle.crypto.engines.VMPCKSA3Engine;
 import org.bouncycastle.crypto.engines.XSalsa20Engine;
+import org.bouncycastle.crypto.engines.Zuc128Engine;
+import org.bouncycastle.crypto.engines.Zuc256Engine;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
 import org.bouncycastle.crypto.generators.DESedeKeyGenerator;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
@@ -112,6 +119,7 @@ import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.crypto.params.RC5Parameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
@@ -191,6 +199,10 @@ public class CryptoServiceConstraintsTest
         testTEA();
         testThreefish();
         testSalsa20AndXSalsa20();
+        testZuc128AndZuc256();
+        testVMPCAndVMPCKSA();
+        testRC532AndRC564();
+        testRijndael();
     }
 
     private void test112bits()
@@ -1702,6 +1714,102 @@ public class CryptoServiceConstraintsTest
         xengine.init(true, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[24]));
 
         engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testZuc128AndZuc256()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        Zuc128Engine engine = new Zuc128Engine();
+        Zuc256Engine xengine = new Zuc256Engine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(),"service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        xengine.init(true, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[25]));
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testVMPCAndVMPCKSA()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        VMPCEngine engine = new VMPCEngine();
+        VMPCKSA3Engine xengine = new VMPCKSA3Engine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(),"service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        xengine.init(true, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[25]));
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testRC532AndRC564()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        RC532Engine engine = new RC532Engine();
+        RC564Engine xengine = new RC564Engine();
+        try
+        {
+            engine.init(true, new RC5Parameters(new byte[16], 16));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(),"service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(),"service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        xengine.init(true, new RC5Parameters(new byte[32], 12));
+
+        engine.init(false, new RC5Parameters(new byte[16], 16));
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testRijndael()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        RijndaelEngine engine = new RijndaelEngine(256);
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[16]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }

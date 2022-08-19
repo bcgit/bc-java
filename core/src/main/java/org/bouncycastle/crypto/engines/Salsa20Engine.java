@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.MaxBytesExceededException;
@@ -128,7 +127,7 @@ public class Salsa20Engine
             setKey(key, iv);
 
             CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-                        this.getAlgorithmName(), key.length * 8, null, forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION));
+                        this.getAlgorithmName(), key.length * 8, params, Utils.getPurpose(forEncryption)));
         }
         else
         {
