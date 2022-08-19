@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -291,7 +290,7 @@ public final class TwofishEngine
                 throw new IllegalArgumentException("Key length not 128/192/256 bits.");
             }
 
-            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), keyBits, params, getPurpose()));
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), keyBits, params, Utils.getPurpose(encrypting)));
 
             this.k64Cnt = this.workingKey.length / 8;
             setKey(this.workingKey);
@@ -669,15 +668,5 @@ public final class TwofishEngine
                gSBox[ 0x001 + 2*(x & 0xff) ] ^
                gSBox[ 0x200 + 2*((x >>> 8) & 0xff) ] ^
                gSBox[ 0x201 + 2*((x >>> 16) & 0xff) ];
-    }
-
-    private CryptoServicePurpose getPurpose()
-    {
-        if (workingKey == null)
-        {
-            return CryptoServicePurpose.ANY;
-        }
-
-        return encrypting ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION;
     }
 }

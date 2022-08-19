@@ -1,9 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Memoable;
@@ -115,8 +118,7 @@ public class Zuc128CoreEngine
                      final CipherParameters params)
     {
         /*
-         * encryption and decryption is completely symmetrical, so the 'forEncryption' is
-         * irrelevant. (Like 90% of stream ciphers)
+         * encryption and decryption is completely symmetrical.
          */
 
         /* Determine parameters */
@@ -139,6 +141,9 @@ public class Zuc128CoreEngine
         theIndex = 0;
         theIterations = 0;
         setKeyAndIV(newKey, newIV);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), newKey.length * 8,
+            params, forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION));
 
         /* Save reset state */
         theResetState = (Zuc128CoreEngine)copy();
