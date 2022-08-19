@@ -1,0 +1,9 @@
+apply plugin: 'application'
+
+dependencies {
+    implementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.33'
+    annotationProcessor group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.33'
+}
+application {
+    mainClass.set("org.bouncycastle.crypto.fpe.SP80038GMicroBenchmark")
+}
