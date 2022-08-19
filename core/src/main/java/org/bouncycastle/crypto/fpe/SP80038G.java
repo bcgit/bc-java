@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.fpe;
 
 import java.math.BigInteger;
-
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -18,6 +17,7 @@ import org.bouncycastle.util.Pack;
  */
 class SP80038G
 {
+
     static final String FPE_DISABLED = "org.bouncycastle.fpe.disable";
     static final String FF1_DISABLED = "org.bouncycastle.fpe.disable_ff1";
 
@@ -25,9 +25,9 @@ class SP80038G
     protected static final double LOG2 = Math.log(2.0);
     protected static final double TWO_TO_96 = Math.pow(2, 96);
 
-    static byte[] decryptFF1(BlockCipher cipher, int radix, byte[] tweak, byte[] buf, int off, int len)
+    static byte[] decryptFF1(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, true, radix, buf, off, len);
+        checkArgs(cipher, true, radixConverter.getRadix(), buf, off, len);
 
         // Algorithm 8
         int n = len;
@@ -36,14 +36,14 @@ class SP80038G
         short[] A = toShort(buf, off, u);
         short[] B = toShort(buf, off + u, v);
 
-        short[] rv = decFF1(cipher, radix, tweak, n, u, v, A, B);
+        short[] rv = decFF1(cipher, radixConverter, tweak, n, u, v, A, B);
 
         return toByte(rv);
     }
 
-    static short[] decryptFF1w(BlockCipher cipher, int radix, byte[] tweak, short[] buf, int off, int len)
+    static short[] decryptFF1w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak, short[] buf, int off, int len)
     {
-        checkArgs(cipher, true, radix, buf, off, len);
+        checkArgs(cipher, true, radixConverter.getRadix(), buf, off, len);
 
         // Algorithm 8
         int n = len;
@@ -55,16 +55,17 @@ class SP80038G
         System.arraycopy(buf, off, A, 0, u);
         System.arraycopy(buf, off + u, B, 0, v);
 
-        return decFF1(cipher, radix, tweak, n, u, v, A, B);
+        return decFF1(cipher, radixConverter, tweak, n, u, v, A, B);
     }
 
-    static short[] decFF1(BlockCipher cipher, int radix, byte[] T, int n, int u, int v, short[] A, short[] B)
+    static short[] decFF1(BlockCipher cipher, RadixConverter radixConverter, byte[] T, int n, int u, int v, short[] A, short[] B)
     {
+        int radix = radixConverter.getRadix();
         int t = T.length;
-        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
+        int b = ((int) Math.ceil(Math.log((double) radix) * (double) v / LOG2) + 7) / 8;
         int d = (((b + 3) / 4) * 4) + 4;
 
-        byte[] P = calculateP_FF1(radix, (byte)u, n, t);
+        byte[] P = calculateP_FF1(radix, (byte) u, n, t);
 
         BigInteger bigRadix = BigInteger.valueOf(radix);
         BigInteger[] modUV = calculateModUV(bigRadix, u, v);
@@ -74,40 +75,40 @@ class SP80038G
         for (int i = 9; i >= 0; --i)
         {
             // i. - iv.
-            BigInteger y = calculateY_FF1(cipher, bigRadix, T, b, d, i, P, A);
+            BigInteger y = calculateY_FF1(cipher, T, b, d, i, P, A, radixConverter);
 
             // v.
             m = n - m;
             BigInteger modulus = modUV[i & 1];
 
             // vi.
-            BigInteger c = num(bigRadix, B).subtract(y).mod(modulus);
+            BigInteger c = radixConverter.num(B).subtract(y).mod(modulus);
 
             // vii. - ix.
             short[] C = B;
             B = A;
             A = C;
-            str(bigRadix, c, m, C, 0);
+            radixConverter.str(c, m, C);
         }
 
         return Arrays.concatenate(A, B);
     }
 
-    static byte[] decryptFF3(BlockCipher cipher, int radix, byte[] tweak64, byte[] buf, int off, int len)
+    static byte[] decryptFF3(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak64.length != 8)
         {
             throw new IllegalArgumentException();
         }
 
-        return implDecryptFF3(cipher, radix, tweak64, buf, off, len);
+        return implDecryptFF3(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static byte[] decryptFF3_1(BlockCipher cipher, int radix, byte[] tweak56, byte[] buf, int off, int len)
+    static byte[] decryptFF3_1(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak56, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak56.length != 7)
         {
@@ -116,12 +117,12 @@ class SP80038G
 
         byte[] tweak64 = calculateTweak64_FF3_1(tweak56);
 
-        return implDecryptFF3(cipher, radix, tweak64, buf, off, len);
+        return implDecryptFF3(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static short[] decryptFF3_1w(BlockCipher cipher, int radix, byte[] tweak56, short[] buf, int off, int len)
+    static short[] decryptFF3_1w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak56, short[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak56.length != 7)
         {
@@ -130,12 +131,12 @@ class SP80038G
 
         byte[] tweak64 = calculateTweak64_FF3_1(tweak56);
 
-        return implDecryptFF3w(cipher, radix, tweak64, buf, off, len);
+        return implDecryptFF3w(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static byte[] encryptFF1(BlockCipher cipher, int radix, byte[] tweak, byte[] buf, int off, int len)
+    static byte[] encryptFF1(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, true, radix, buf, off, len);
+        checkArgs(cipher, true, radixConverter.getRadix(), buf, off, len);
 
         // Algorithm 7
         int n = len;
@@ -144,12 +145,12 @@ class SP80038G
         short[] A = toShort(buf, off, u);
         short[] B = toShort(buf, off + u, v);
 
-        return toByte(encFF1(cipher, radix, tweak, n, u, v, A, B));
+        return toByte(encFF1(cipher, radixConverter, tweak, n, u, v, A, B));
     }
 
-    static short[] encryptFF1w(BlockCipher cipher, int radix, byte[] tweak, short[] buf, int off, int len)
+    static short[] encryptFF1w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak, short[] buf, int off, int len)
     {
-        checkArgs(cipher, true, radix, buf, off, len);
+        checkArgs(cipher, true, radixConverter.getRadix(), buf, off, len);
 
         // Algorithm 7
         int n = len;
@@ -161,17 +162,18 @@ class SP80038G
         System.arraycopy(buf, off, A, 0, u);
         System.arraycopy(buf, off + u, B, 0, v);
 
-        return encFF1(cipher, radix, tweak, n, u, v, A, B);
+        return encFF1(cipher, radixConverter, tweak, n, u, v, A, B);
     }
 
-    private static short[] encFF1(BlockCipher cipher, int radix, byte[] T, int n, int u, int v, short[] A, short[] B)
+    private static short[] encFF1(BlockCipher cipher, RadixConverter radixConverter, byte[] T, int n, int u, int v, short[] A, short[] B)
     {
+        int radix = radixConverter.getRadix();
         int t = T.length;
 
-        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
+        int b = ((int) Math.ceil(Math.log((double) radix) * (double) v / LOG2) + 7) / 8;
         int d = (((b + 3) / 4) * 4) + 4;
 
-        byte[] P = calculateP_FF1(radix, (byte)u, n, t);
+        byte[] P = calculateP_FF1(radix, (byte) u, n, t);
 
         BigInteger bigRadix = BigInteger.valueOf(radix);
         BigInteger[] modUV = calculateModUV(bigRadix, u, v);
@@ -181,52 +183,53 @@ class SP80038G
         for (int i = 0; i < 10; ++i)
         {
             // i. - iv.
-            BigInteger y = calculateY_FF1(cipher, bigRadix, T, b, d, i, P, B);
+            BigInteger y = calculateY_FF1(cipher, T, b, d, i, P, B, radixConverter);
 
             // v.
             m = n - m;
             BigInteger modulus = modUV[i & 1];
 
             // vi.
-            BigInteger c = num(bigRadix, A).add(y).mod(modulus);
+            BigInteger num = radixConverter.num(A);
+            BigInteger c = num.add(y).mod(modulus);
 
             // vii. - ix.
             short[] C = A;
             A = B;
             B = C;
-            str(bigRadix, c, m, C, 0);
+            radixConverter.str(c, m, C);
         }
 
         return Arrays.concatenate(A, B);
     }
 
-    static byte[] encryptFF3(BlockCipher cipher, int radix, byte[] tweak64, byte[] buf, int off, int len)
+    static byte[] encryptFF3(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak64.length != 8)
         {
             throw new IllegalArgumentException();
         }
 
-        return implEncryptFF3(cipher, radix, tweak64, buf, off, len);
+        return implEncryptFF3(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static short[] encryptFF3w(BlockCipher cipher, int radix, byte[] tweak64, short[] buf, int off, int len)
+    static short[] encryptFF3w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, short[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak64.length != 8)
         {
             throw new IllegalArgumentException();
         }
 
-        return implEncryptFF3w(cipher, radix, tweak64, buf, off, len);
+        return implEncryptFF3w(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static short[] encryptFF3_1w(BlockCipher cipher, int radix, byte[] tweak56, short[] buf, int off, int len)
+    static short[] encryptFF3_1w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak56, short[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak56.length != 7)
         {
@@ -234,12 +237,12 @@ class SP80038G
         }
         byte[] tweak64 = calculateTweak64_FF3_1(tweak56);
 
-        return encryptFF3w(cipher, radix, tweak64, buf, off, len);
+        return encryptFF3w(cipher, radixConverter, tweak64, buf, off, len);
     }
 
-    static byte[] encryptFF3_1(BlockCipher cipher, int radix, byte[] tweak56, byte[] buf, int off, int len)
+    static byte[] encryptFF3_1(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak56, byte[] buf, int off, int len)
     {
-        checkArgs(cipher, false, radix, buf, off, len);
+        checkArgs(cipher, false, radixConverter.getRadix(), buf, off, len);
 
         if (tweak56.length != 7)
         {
@@ -248,7 +251,7 @@ class SP80038G
 
         byte[] tweak64 = calculateTweak64_FF3_1(tweak56);
 
-        return encryptFF3(cipher, radix, tweak64, buf, off, len);
+        return encryptFF3(cipher, radixConverter, tweak64, buf, off, len);
     }
 
     protected static BigInteger[] calculateModUV(BigInteger bigRadix, int u, int v)
@@ -272,8 +275,8 @@ class SP80038G
 
         // Radix
         P[3] = 0;
-        P[4] = (byte)(radix >> 8);
-        P[5] = (byte)radix;
+        P[4] = (byte) (radix >> 8);
+        P[5] = (byte) radix;
 
         P[6] = 10;
         P[7] = uLow;
@@ -288,27 +291,28 @@ class SP80038G
         tweak64[0] = tweak56[0];
         tweak64[1] = tweak56[1];
         tweak64[2] = tweak56[2];
-        tweak64[3] = (byte)(tweak56[3] & 0xF0);
+        tweak64[3] = (byte) (tweak56[3] & 0xF0);
         tweak64[4] = tweak56[4];
         tweak64[5] = tweak56[5];
         tweak64[6] = tweak56[6];
-        tweak64[7] = (byte)(tweak56[3] << 4);
+        tweak64[7] = (byte) (tweak56[3] << 4);
 
         return tweak64;
     }
 
-    protected static BigInteger calculateY_FF1(BlockCipher cipher, BigInteger bigRadix, byte[] T, int b, int d, int round, byte[] P, short[] AB)
+    protected static BigInteger calculateY_FF1(BlockCipher cipher, byte[] T, int b, int d, int round, byte[] P, short[] AB,
+            RadixConverter radixConverter)
     {
         int t = T.length;
 
         // i.
-        BigInteger numAB = num(bigRadix, AB);
+        BigInteger numAB = radixConverter.num(AB);
         byte[] bytesAB = BigIntegers.asUnsignedByteArray(numAB);
 
         int zeroes = -(t + b + 1) & 15;
         byte[] Q = new byte[t + zeroes + 1 + b];
         System.arraycopy(T, 0, Q, 0, t);
-        Q[t + zeroes] = (byte)round;
+        Q[t + zeroes] = (byte) round;
         System.arraycopy(bytesAB, 0, Q, Q.length - bytesAB.length, bytesAB.length);
 
         // ii.
@@ -337,13 +341,13 @@ class SP80038G
         return num(sBlocks, 0, d);
     }
 
-    protected static BigInteger calculateY_FF3(BlockCipher cipher, BigInteger bigRadix, byte[] T, int wOff, int round, short[] AB)
+    protected static BigInteger calculateY_FF3(BlockCipher cipher, byte[] T, int wOff, int round, short[] AB, RadixConverter radixConverter)
     {
         // ii.
         byte[] P = new byte[BLOCK_SIZE];
         Pack.intToBigEndian(round, P, 0);
         xor(T, wOff, P, 0, 4);
-        BigInteger numAB = num(bigRadix, AB);
+        BigInteger numAB = radixConverter.num(AB);
 
         byte[] bytesAB = BigIntegers.asUnsignedByteArray(numAB);
 
@@ -425,7 +429,7 @@ class SP80038G
         }
         if (!isFF1)
         {
-            int maxLen = 2 * (int)(Math.floor(Math.log(TWO_TO_96) / Math.log(radix)));
+            int maxLen = 2 * (int) (Math.floor(Math.log(TWO_TO_96) / Math.log(radix)));
             if (len > maxLen)
             {
                 throw new IllegalArgumentException("maximum input length is " + maxLen);
@@ -433,7 +437,7 @@ class SP80038G
         }
     }
 
-    protected static byte[] implDecryptFF3(BlockCipher cipher, int radix, byte[] tweak64, byte[] buf, int off, int len)
+    protected static byte[] implDecryptFF3(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, byte[] buf, int off, int len)
     {
         // Algorithm 10
         byte[] T = tweak64;
@@ -443,12 +447,12 @@ class SP80038G
         short[] A = toShort(buf, off, u);
         short[] B = toShort(buf, off + u, v);
 
-        short[] rv = decFF3_1(cipher, radix, T, n, v, u, A, B);
+        short[] rv = decFF3_1(cipher, radixConverter, T, n, v, u, A, B);
 
         return toByte(rv);
     }
 
-    protected static short[] implDecryptFF3w(BlockCipher cipher, int radix, byte[] tweak64, short[] buf, int off, int len)
+    protected static short[] implDecryptFF3w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, short[] buf, int off, int len)
     {
         // Algorithm 10
         byte[] T = tweak64;
@@ -461,12 +465,12 @@ class SP80038G
         System.arraycopy(buf, off, A, 0, u);
         System.arraycopy(buf, off + u, B, 0, v);
 
-        return decFF3_1(cipher, radix, T, n, v, u, A, B);
+        return decFF3_1(cipher, radixConverter, T, n, v, u, A, B);
     }
 
-    private static short[] decFF3_1(BlockCipher cipher, int radix, byte[] T, int n, int v, int u, short[] A, short[] B)
+    private static short[] decFF3_1(BlockCipher cipher, RadixConverter radixConverter, byte[] T, int n, int v, int u, short[] A, short[] B)
     {
-        BigInteger bigRadix = BigInteger.valueOf(radix);
+        BigInteger bigRadix = BigInteger.valueOf(radixConverter.getRadix());
         BigInteger[] modVU = calculateModUV(bigRadix, v, u);
 
         int m = u;
@@ -483,16 +487,16 @@ class SP80038G
             int wOff = 4 - ((i & 1) * 4);
 
             // ii. - iv.
-            BigInteger y = calculateY_FF3(cipher, bigRadix, T, wOff, i, A);
+            BigInteger y = calculateY_FF3(cipher, T, wOff, i, A, radixConverter);
 
             // v.
-            BigInteger c = num(bigRadix, B).subtract(y).mod(modulus);
+            BigInteger c = radixConverter.num(B).subtract(y).mod(modulus);
 
             // vi. - viii.
             short[] C = B;
             B = A;
             A = C;
-            str(bigRadix, c, m, C, 0);
+            radixConverter.str(c, m, C);
         }
 
         rev(A);
@@ -501,7 +505,7 @@ class SP80038G
         return Arrays.concatenate(A, B);
     }
 
-    protected static byte[] implEncryptFF3(BlockCipher cipher, int radix, byte[] tweak64, byte[] buf, int off, int len)
+    protected static byte[] implEncryptFF3(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, byte[] buf, int off, int len)
     {
         // Algorithm 9
         byte[] T = tweak64;
@@ -511,12 +515,12 @@ class SP80038G
         short[] A = toShort(buf, off, u);
         short[] B = toShort(buf, off + u, v);
 
-        short[] rv = encFF3_1(cipher, radix, T, n, v, u, A, B);
+        short[] rv = encFF3_1(cipher, radixConverter, T, n, v, u, A, B);
 
         return toByte(rv);
     }
 
-    protected static short[] implEncryptFF3w(BlockCipher cipher, int radix, byte[] tweak64, short[] buf, int off, int len)
+    protected static short[] implEncryptFF3w(BlockCipher cipher, RadixConverter radixConverter, byte[] tweak64, short[] buf, int off, int len)
     {
         // Algorithm 9
         byte[] T = tweak64;
@@ -529,12 +533,12 @@ class SP80038G
         System.arraycopy(buf, off, A, 0, u);
         System.arraycopy(buf, off + u, B, 0, v);
 
-        return encFF3_1(cipher, radix, T, n, v, u, A, B);
+        return encFF3_1(cipher, radixConverter, T, n, v, u, A, B);
     }
 
-    private static short[] encFF3_1(BlockCipher cipher, int radix, byte[] t, int n, int v, int u, short[] a, short[] b)
+    private static short[] encFF3_1(BlockCipher cipher, RadixConverter radixConverter, byte[] t, int n, int v, int u, short[] a, short[] b)
     {
-        BigInteger bigRadix = BigInteger.valueOf(radix);
+        BigInteger bigRadix = BigInteger.valueOf(radixConverter.getRadix());
         BigInteger[] modVU = calculateModUV(bigRadix, v, u);
 
         int m = v;
@@ -551,16 +555,16 @@ class SP80038G
             int wOff = 4 - ((i & 1) * 4);
 
             // ii. - iv.
-            BigInteger y = calculateY_FF3(cipher, bigRadix, t, wOff, i, b);
+            BigInteger y = calculateY_FF3(cipher, t, wOff, i, b, radixConverter);
 
             // v.
-            BigInteger c = num(bigRadix, a).add(y).mod(modulus);
+            BigInteger c = radixConverter.num(a).add(y).mod(modulus);
 
             // vi. - viii.
             short[] C = a;
             a = b;
             b = C;
-            str(bigRadix, c, m, C, 0);
+            radixConverter.str(c, m, C);
         }
 
         rev(a);
@@ -572,16 +576,6 @@ class SP80038G
     protected static BigInteger num(byte[] buf, int off, int len)
     {
         return new BigInteger(1, Arrays.copyOfRange(buf, off, off + len));
-    }
-
-    protected static BigInteger num(BigInteger R, short[] x)
-    {
-        BigInteger result = BigIntegers.ZERO;
-        for (int i = 0; i < x.length; ++i)
-        {
-            result = result.multiply(R).add(BigInteger.valueOf(x[i] & 0xFFFF));
-        }
-        return result;
     }
 
     protected static byte[] prf(BlockCipher c, byte[] x)
@@ -633,24 +627,6 @@ class SP80038G
         }
     }
 
-    protected static void str(BigInteger R, BigInteger x, int m, short[] output, int off)
-    {
-        if (x.signum() < 0)
-        {
-            throw new IllegalArgumentException();
-        }
-        for (int i = 1; i <= m; ++i)
-        {
-            BigInteger[] qr = x.divideAndRemainder(R);
-            output[off + m - i] = (short)qr[1].intValue();
-            x = qr[0];
-        }
-        if (x.signum() != 0)
-        {
-            throw new IllegalArgumentException();
-        }
-    }
-
     protected static void xor(byte[] x, int xOff, byte[] y, int yOff, int len)
     {
         for (int i = 0; i < len; ++i)
@@ -665,7 +641,7 @@ class SP80038G
 
         for (int i = 0; i != s.length; i++)
         {
-            s[i] = (byte)buf[i];
+            s[i] = (byte) buf[i];
         }
 
         return s;
@@ -677,7 +653,7 @@ class SP80038G
 
         for (int i = 0; i != s.length; i++)
         {
-            s[i] = (short)(buf[off + i] & 0xFF);
+            s[i] = (short) (buf[off + i] & 0xFF);
         }
 
         return s;
