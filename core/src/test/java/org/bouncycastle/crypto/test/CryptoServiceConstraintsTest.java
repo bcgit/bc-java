@@ -44,37 +44,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
-import org.bouncycastle.crypto.engines.AESLightEngine;
-import org.bouncycastle.crypto.engines.BlowfishEngine;
-import org.bouncycastle.crypto.engines.CAST5Engine;
-import org.bouncycastle.crypto.engines.CamelliaEngine;
-import org.bouncycastle.crypto.engines.CamelliaLightEngine;
-import org.bouncycastle.crypto.engines.ChaCha7539Engine;
-import org.bouncycastle.crypto.engines.ChaChaEngine;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.engines.DESedeEngine;
-import org.bouncycastle.crypto.engines.ElGamalEngine;
-import org.bouncycastle.crypto.engines.IDEAEngine;
-import org.bouncycastle.crypto.engines.RC4Engine;
-import org.bouncycastle.crypto.engines.RC532Engine;
-import org.bouncycastle.crypto.engines.RC564Engine;
-import org.bouncycastle.crypto.engines.RSAEngine;
-import org.bouncycastle.crypto.engines.RijndaelEngine;
-import org.bouncycastle.crypto.engines.SM4Engine;
-import org.bouncycastle.crypto.engines.Salsa20Engine;
-import org.bouncycastle.crypto.engines.SerpentEngine;
-import org.bouncycastle.crypto.engines.SkipjackEngine;
-import org.bouncycastle.crypto.engines.TEAEngine;
-import org.bouncycastle.crypto.engines.ThreefishEngine;
-import org.bouncycastle.crypto.engines.TnepresEngine;
-import org.bouncycastle.crypto.engines.TwofishEngine;
-import org.bouncycastle.crypto.engines.VMPCEngine;
-import org.bouncycastle.crypto.engines.VMPCKSA3Engine;
-import org.bouncycastle.crypto.engines.XSalsa20Engine;
-import org.bouncycastle.crypto.engines.Zuc128Engine;
-import org.bouncycastle.crypto.engines.Zuc256Engine;
+import org.bouncycastle.crypto.engines.*;
 import org.bouncycastle.crypto.generators.DESKeyGenerator;
 import org.bouncycastle.crypto.generators.DESedeKeyGenerator;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
@@ -205,6 +175,7 @@ public class CryptoServiceConstraintsTest
         testVMPCAndVMPCKSA();
         testRC532AndRC564();
         testRijndael();
+        testHC128AndHC256();
     }
 
     private void test112bits()
@@ -1851,6 +1822,31 @@ public class CryptoServiceConstraintsTest
         }
 
         engine.init(false, new KeyParameter(new byte[16]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testHC128AndHC256()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        HC256Engine engine = new HC256Engine();
+        HC128Engine xengine = new HC128Engine();
+        try
+        {
+            xengine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(),"service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        xengine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+
+        engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+
+        engine.init(true, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[32]));
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[32]), new byte[32]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
