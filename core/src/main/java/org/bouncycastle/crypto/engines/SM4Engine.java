@@ -2,8 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
 
@@ -190,6 +193,9 @@ public class SM4Engine
         {
             throw new IllegalArgumentException("invalid parameter passed to SM4 init - " + params.getClass().getName());
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+            this.getAlgorithmName(), 128, null, forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION));
     }
 
     public String getAlgorithmName()
