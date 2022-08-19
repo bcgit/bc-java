@@ -1,9 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -168,6 +166,9 @@ public class HC256Engine
         {
             key = ((KeyParameter)keyParam).getKey();
             init();
+
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                    this.getAlgorithmName(), key.length * 8, params, Utils.getPurpose(forEncryption)));
         }
         else
         {
