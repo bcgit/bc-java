@@ -48,7 +48,8 @@ public class RegressionTest
         new ArmoredOutputStreamUTF8Test(),
         new UnrecognizableSubkeyParserTest(),
         new IgnoreUnknownEncryptedSessionKeys(),
-        new PGPEncryptedDataTest()
+        new PGPEncryptedDataTest(),
+        new CRC24Test()
     };
 
     public static void main(String[] args)
