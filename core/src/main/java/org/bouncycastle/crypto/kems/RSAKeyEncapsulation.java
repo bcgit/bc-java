@@ -1,25 +1,26 @@
 package org.bouncycastle.crypto.kems;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.KeyEncapsulation;
-import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * The RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
+ * @deprecated use RSAKEMGenerator, RSAKEMExtractor
  */
 public class RSAKeyEncapsulation
     implements KeyEncapsulation
 {
-    private static final BigInteger ZERO = BigInteger.valueOf(0);
-    private static final BigInteger ONE = BigInteger.valueOf(1);
-
     private DerivationFunction kdf;
     private SecureRandom rnd;
     private RSAKeyParameters key;
@@ -52,6 +53,8 @@ public class RSAKeyEncapsulation
         }
 
         this.key = (RSAKeyParameters)key;
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSAKem",
+            ConstraintUtils.bitsOfSecurityFor(this.key.getModulus()), key, this.key.isPrivate() ? CryptoServicePurpose.DECRYPTION : CryptoServicePurpose.ENCRYPTION));
     }
 
     /**
@@ -70,18 +73,14 @@ public class RSAKeyEncapsulation
             throw new IllegalArgumentException("Public key required for encryption");
         }
 
-        BigInteger n = key.getModulus();
-        BigInteger e = key.getExponent();
+        RSAKEMGenerator kemGen = new RSAKEMGenerator(keyLen, kdf, rnd);
 
-        // Generate the ephemeral random and encode it    
-        BigInteger r = BigIntegers.createRandomInRange(ZERO, n.subtract(ONE), rnd);
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(key);
 
-        // Encrypt the random and encode it     
-        BigInteger c = r.modPow(e, n);
-        byte[] C = BigIntegers.asUnsignedByteArray((n.bitLength() + 7) / 8, c);
-        System.arraycopy(C, 0, out, outOff, C.length);
+        byte[] encLen = secEnc.getEncapsulation();
+        System.arraycopy(encLen, 0, out, outOff, encLen.length);
 
-        return generateKey(n, r, keyLen);
+        return new KeyParameter(secEnc.getSecret());
     }
 
     /**
@@ -113,18 +112,11 @@ public class RSAKeyEncapsulation
             throw new IllegalArgumentException("Private key required for decryption");
         }
 
-        BigInteger n = key.getModulus();
-        BigInteger d = key.getExponent();
+        RSAKEMExtractor kemGen = new RSAKEMExtractor(key, keyLen, kdf);
 
-        // Decode the input
-        byte[] C = new byte[inLen];
-        System.arraycopy(in, inOff, C, 0, C.length);
-        BigInteger c = new BigInteger(1, C);
+        byte[] secEnc = kemGen.extractSecret(Arrays.copyOfRange(in, inOff, inOff + inLen));
 
-        // Decrypt the ephemeral random and encode it
-        BigInteger r = c.modPow(d, n);
-
-        return generateKey(n, r, keyLen);
+        return new KeyParameter(secEnc);
     }
 
     /**
@@ -137,19 +129,5 @@ public class RSAKeyEncapsulation
     public CipherParameters decrypt(byte[] in, int keyLen)
     {
         return decrypt(in, 0, in.length, keyLen);
-    }
-
-    protected KeyParameter generateKey(BigInteger n, BigInteger r, int keyLen)
-    {
-        byte[] R = BigIntegers.asUnsignedByteArray((n.bitLength() + 7) / 8, r);
-
-        // Initialise the KDF
-        kdf.init(new KDFParameters(R, null));
-
-        // Generate the secret key
-        byte[] K = new byte[keyLen];
-        kdf.generateBytes(K, 0, K.length);
-
-        return new KeyParameter(K);
     }
 }

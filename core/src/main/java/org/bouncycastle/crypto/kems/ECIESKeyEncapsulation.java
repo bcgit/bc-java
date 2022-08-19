@@ -1,32 +1,28 @@
 package org.bouncycastle.crypto.kems;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.KeyEncapsulation;
-import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECMultiplier;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * The ECIES Key Encapsulation Mechanism (ECIES-KEM) from ISO 18033-2.
+ * @deprecated use ECIESKEMGenerator, ECIESKEMExtractor
  */
 public class ECIESKeyEncapsulation
     implements KeyEncapsulation
 {
-    private static final BigInteger ONE = BigInteger.valueOf(1);
-
     private DerivationFunction kdf;
     private SecureRandom rnd;
     private ECKeyParameters key;
@@ -101,6 +97,9 @@ public class ECIESKeyEncapsulation
         {
             this.key = (ECKeyParameters)key;
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("ECIESKem",
+            ConstraintUtils.bitsOfSecurityFor(this.key.getParameters().getCurve()), key, CryptoServicePurpose.ANY));
     }
 
     /**
@@ -110,6 +109,7 @@ public class ECIESKeyEncapsulation
      * @param outOff the offset for the output buffer.
      * @param keyLen the length of the session key.
      * @return the random session key.
+     * @deprecated use ECIESKEMGenerator
      */
     public CipherParameters encrypt(byte[] out, int outOff, int keyLen)
         throws IllegalArgumentException
@@ -119,38 +119,14 @@ public class ECIESKeyEncapsulation
             throw new IllegalArgumentException("Public key required for encryption");
         }
 
-        ECPublicKeyParameters ecPubKey = (ECPublicKeyParameters)key;
-        ECDomainParameters ecParams = ecPubKey.getParameters();
-        ECCurve curve = ecParams.getCurve();
-        BigInteger n = ecParams.getN();
-        BigInteger h = ecParams.getH();
+        ECIESKEMGenerator kemGen = new ECIESKEMGenerator(keyLen, kdf, rnd, CofactorMode, OldCofactorMode, SingleHashMode);
 
-        // Generate the ephemeral key pair    
-        BigInteger r = BigIntegers.createRandomInRange(ONE, n, rnd);
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(key);
 
-        // Compute the static-ephemeral key agreement
-        BigInteger rPrime = OldCofactorMode ? r.multiply(h).mod(n) : r;
+        byte[] encLen = secEnc.getEncapsulation();
+        System.arraycopy(encLen, 0, out, outOff, encLen.length);
 
-        ECMultiplier basePointMultiplier = createBasePointMultiplier();
-
-        ECPoint[] ghTilde = new ECPoint[]{ 
-            basePointMultiplier.multiply(ecParams.getG(), r),
-            ecPubKey.getQ().multiply(rPrime)
-        };
-
-        // NOTE: More efficient than normalizing each individually
-        curve.normalizeAll(ghTilde);
-
-        ECPoint gTilde = ghTilde[0], hTilde = ghTilde[1];
-
-        // Encode the ephemeral public key
-        byte[] C = gTilde.getEncoded(false);
-        System.arraycopy(C, 0, out, outOff, C.length);
-
-        // Encode the shared secret value
-        byte[] PEH = hTilde.getAffineXCoord().getEncoded();
-
-        return deriveKey(keyLen, C, PEH);
+        return new KeyParameter(secEnc.getSecret());
     }
 
     /**
@@ -159,6 +135,7 @@ public class ECIESKeyEncapsulation
      * @param out    the output buffer for the encapsulated key.
      * @param keyLen the length of the session key.
      * @return the random session key.
+     * @deprecated use ECIESKEMGenerator
      */
     public CipherParameters encrypt(byte[] out, int keyLen)
     {
@@ -173,6 +150,7 @@ public class ECIESKeyEncapsulation
      * @param inLen  the length of the encapsulated key.
      * @param keyLen the length of the session key.
      * @return the session key.
+     * @deprecated use ECIESKEMExtractor
      */
     public CipherParameters decrypt(byte[] in, int inOff, int inLen, int keyLen)
         throws IllegalArgumentException
@@ -181,39 +159,13 @@ public class ECIESKeyEncapsulation
         {
             throw new IllegalArgumentException("Private key required for encryption");
         }
+        ECPrivateKeyParameters prvKey = (ECPrivateKeyParameters)key;
 
-        ECPrivateKeyParameters ecPrivKey = (ECPrivateKeyParameters)key;
-        ECDomainParameters ecParams = ecPrivKey.getParameters();
-        ECCurve curve = ecParams.getCurve();
-        BigInteger n = ecParams.getN();
-        BigInteger h = ecParams.getH();
+        ECIESKEMExtractor kemExt = new ECIESKEMExtractor(prvKey, keyLen, kdf, CofactorMode, OldCofactorMode, SingleHashMode);
 
-        // Decode the ephemeral public key
-        byte[] C = new byte[inLen];
-        System.arraycopy(in, inOff, C, 0, inLen);
-
-        // NOTE: Decoded points are already normalized (i.e in affine form)
-        ECPoint gTilde = curve.decodePoint(C);
-
-        // Compute the static-ephemeral key agreement
-        ECPoint gHat = gTilde;
-        if ((CofactorMode) || (OldCofactorMode))
-        {
-            gHat = gHat.multiply(h);
-        }
-
-        BigInteger xHat = ecPrivKey.getD();
-        if (CofactorMode)
-        {
-            xHat = xHat.multiply(ecParams.getHInv()).mod(n);
-        }
-
-        ECPoint hTilde = gHat.multiply(xHat).normalize();
-
-        // Encode the shared secret value
-        byte[] PEH = hTilde.getAffineXCoord().getEncoded();
-
-        return deriveKey(keyLen, C, PEH);
+        byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(in, inOff, inOff + inLen));
+        
+        return new KeyParameter(secret);
     }
 
     /**
@@ -222,41 +174,10 @@ public class ECIESKeyEncapsulation
      * @param in     the input buffer for the encapsulated key.
      * @param keyLen the length of the session key.
      * @return the session key.
+     * @deprecated use ECIESKEMExtractor
      */
     public CipherParameters decrypt(byte[] in, int keyLen)
     {
         return decrypt(in, 0, in.length, keyLen);
-    }
-
-    protected ECMultiplier createBasePointMultiplier()
-    {
-        return new FixedPointCombMultiplier();
-    }
-
-    protected KeyParameter deriveKey(int keyLen, byte[] C, byte[] PEH)
-    {
-        byte[] kdfInput = PEH;
-        if (!SingleHashMode)
-        {
-            kdfInput = Arrays.concatenate(C, PEH);
-            Arrays.fill(PEH, (byte)0);
-        }
-
-        try
-        {
-            // Initialise the KDF
-            kdf.init(new KDFParameters(kdfInput, null));
-    
-            // Generate the secret key
-            byte[] K = new byte[keyLen];
-            kdf.generateBytes(K, 0, K.length);
-
-            // Return the ciphertext
-            return new KeyParameter(K);
-        }
-        finally
-        {
-            Arrays.fill(kdfInput, (byte)0);
-        }
     }
 }

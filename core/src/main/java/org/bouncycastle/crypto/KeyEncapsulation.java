@@ -2,6 +2,7 @@ package org.bouncycastle.crypto;
 
 /**
  * The basic interface for key encapsulation mechanisms.
+ * @deprecated use {@link EncapsulatedSecretGenerator} and {@link EncapsulatedSecretExtractor}
  */
 public interface KeyEncapsulation
 {
