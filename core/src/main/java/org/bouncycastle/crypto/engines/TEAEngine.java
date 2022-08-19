@@ -2,8 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -66,6 +69,9 @@ public class TEAEngine
         KeyParameter       p = (KeyParameter)params;
 
         setKey(p.getKey());
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+            this.getAlgorithmName(), 128, null, forEncryption ? CryptoServicePurpose.ENCRYPTION : CryptoServicePurpose.DECRYPTION));
     }
 
     public int processBlock(

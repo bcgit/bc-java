@@ -26,6 +26,10 @@ public class DefaultServiceProperties
         this.algorithm = algorithm;
         this.bitsOfSecurity = bitsOfSecurity;
         this.params = params;
+        if (params instanceof CryptoServicePurpose)
+        {
+            throw new IllegalArgumentException("params should not be CryptoServicePurpose");
+        }
         this.purpose = purpose;
     }
 
