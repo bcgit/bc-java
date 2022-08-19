@@ -14,6 +14,7 @@ import org.bouncycastle.util.Properties;
 public class FPEFF3_1Engine
     extends FPEEngine
 {
+
     /**
      * Base constructor - the engine will use AES.
      */
@@ -67,11 +68,11 @@ public class FPEFF3_1Engine
 
         if (fpeParameters.getRadix() > 256)
         {
-            enc = toByteArray(SP80038G.encryptFF3_1w(baseCipher, fpeParameters.getRadix(), fpeParameters.getTweak(), toShortArray(inBuf), inOff, length / 2));
+            enc = toByteArray(SP80038G.encryptFF3_1w(baseCipher, fpeParameters.getRadixConverter(), fpeParameters.getTweak(), toShortArray(inBuf), inOff, length / 2));
         }
         else
         {
-            enc = SP80038G.encryptFF3_1(baseCipher, fpeParameters.getRadix(), fpeParameters.getTweak(), inBuf, inOff, length);
+            enc = SP80038G.encryptFF3_1(baseCipher, fpeParameters.getRadixConverter(), fpeParameters.getTweak(), inBuf, inOff, length);
         }
 
         System.arraycopy(enc, 0, outBuf, outOff, length);
@@ -85,11 +86,11 @@ public class FPEFF3_1Engine
 
         if (fpeParameters.getRadix() > 256)
         {
-            dec = toByteArray(SP80038G.decryptFF3_1w(baseCipher, fpeParameters.getRadix(), fpeParameters.getTweak(), toShortArray(inBuf), inOff, length / 2));
+            dec = toByteArray(SP80038G.decryptFF3_1w(baseCipher, fpeParameters.getRadixConverter(), fpeParameters.getTweak(), toShortArray(inBuf), inOff, length / 2));
         }
         else
         {
-            dec = SP80038G.decryptFF3_1(baseCipher, fpeParameters.getRadix(), fpeParameters.getTweak(), inBuf, inOff, length);
+            dec = SP80038G.decryptFF3_1(baseCipher, fpeParameters.getRadixConverter(), fpeParameters.getTweak(), inBuf, inOff, length);
         }
 
         System.arraycopy(dec, 0, outBuf, outOff, length);
