@@ -1100,7 +1100,80 @@ public final class Arrays
     {
         return null == array || array.length < 1;
     }
-        
+
+    /**
+     * Make a copy of a range of bytes from the passed in array. The range can extend beyond the end
+     * of the input array, in which case the returned array will be padded with zeroes.
+     *
+     * @param original
+     *            the array from which the data is to be copied.
+     * @param from
+     *            the start index at which the copying should take place.
+     * @param to
+     *            the final index of the range (exclusive).
+     *
+     * @return a new byte array containing the range given.
+     */
+    public static byte[] copyOfRange(byte[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        byte[] copy = new byte[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    public static char[] copyOfRange(char[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        char[] copy = new char[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    public static int[] copyOfRange(int[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        int[] copy = new int[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    public static long[] copyOfRange(long[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        long[] copy = new long[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    public static short[] copyOfRange(short[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        short[] copy = new short[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    public static BigInteger[] copyOfRange(BigInteger[] original, int from, int to)
+    {
+        int newLength = getLength(from, to);
+        BigInteger[] copy = new BigInteger[newLength];
+        System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
+        return copy;
+    }
+
+    private static int getLength(int from, int to)
+    {
+        int newLength = to - from;
+        if (newLength < 0)
+        {
+            StringBuffer sb = new StringBuffer(from);
+            sb.append(" > ").append(to);
+            throw new IllegalArgumentException(sb.toString());
+        }
+        return newLength;
+    }
+    
     /**
      * Iterator backed by a specific array.
      */

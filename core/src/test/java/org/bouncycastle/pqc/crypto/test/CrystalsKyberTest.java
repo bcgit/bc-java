@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.TestCase;
@@ -198,6 +199,29 @@ public class CrystalsKyberTest
                 }
             }
             System.out.println("testing successful!");
+        }
+    }
+
+    public void testKyberRandom()
+    {
+        SecureRandom random = new SecureRandom();
+        KyberKeyPairGenerator keyGen = new KyberKeyPairGenerator();
+
+        keyGen.init(new KyberKeyGenerationParameters(random, KyberParameters.kyber1024));
+
+        for (int i = 0; i != 1000; i++)
+        {
+            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
+
+            KyberKEMGenerator kemGen = new KyberKEMGenerator(random);
+
+            SecretWithEncapsulation secretEncap = kemGen.generateEncapsulated(keyPair.getPublic());
+
+            KyberKEMExtractor kemExtract = new KyberKEMExtractor((KyberPrivateKeyParameters)keyPair.getPrivate());
+
+            byte[] decryptedSharedSecret = kemExtract.extractSecret(secretEncap.getEncapsulation());
+
+            assertTrue(Arrays.areEqual(secretEncap.getSecret(), decryptedSharedSecret));
         }
     }
 }

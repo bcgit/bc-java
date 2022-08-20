@@ -49,7 +49,7 @@ public class PGPPublicKeyRing
 
     private static List<PGPPublicKey> checkKeys(List<PGPPublicKey> keys)
     {
-        List<PGPPublicKey> rv = new ArrayList<>(keys.size());
+        List<PGPPublicKey> rv = new ArrayList<PGPPublicKey>(keys.size());
 
         for (int i = 0; i != keys.size(); i++)
         {
@@ -306,7 +306,7 @@ public class PGPPublicKeyRing
         PGPPublicKeyRing pubRing,
         PGPPublicKey pubKey)
     {
-        List<PGPPublicKey> keys = new ArrayList<>(pubRing.keys);
+        List<PGPPublicKey> keys = new ArrayList<PGPPublicKey>(pubRing.keys);
         boolean found = false;
         boolean masterFound = false;
 
