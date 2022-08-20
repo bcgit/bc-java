@@ -1,13 +1,14 @@
 package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.Arrays;
 
 public final class FPEParameters
     implements CipherParameters
 {
     private final KeyParameter key;
-    private final int radix;
+    private final RadixConverter radixConverter;
     private final byte[] tweak;
     private final boolean useInverse;
 
@@ -18,8 +19,13 @@ public final class FPEParameters
 
     public FPEParameters(KeyParameter key, int radix, byte[] tweak, boolean useInverse)
     {
+        this(key, new RadixConverter(radix), tweak, useInverse);
+    }
+
+    public FPEParameters(KeyParameter key, RadixConverter radixConverter, byte[] tweak, boolean useInverse)
+    {
         this.key = key;
-        this.radix = radix;
+        this.radixConverter = radixConverter;
         this.tweak = Arrays.clone(tweak);
         this.useInverse = useInverse;
     }
@@ -31,7 +37,12 @@ public final class FPEParameters
 
     public int getRadix()
     {
-        return radix;
+        return radixConverter.getRadix();
+    }
+
+    public RadixConverter getRadixConverter()
+    {
+        return radixConverter;
     }
 
     public byte[] getTweak()
