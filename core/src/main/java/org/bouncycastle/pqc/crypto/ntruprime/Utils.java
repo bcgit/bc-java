@@ -572,14 +572,20 @@ class Utils
     protected static void checkForSmallPolynomial(byte[] r, byte[] ev, int p, int w)
     {
         int weight = 0;
-        for (byte b : ev)
-            weight += b & 1;
+        for (int i = 0; i != ev.length; i++)
+        {
+            weight += ev[i] & 1;
+        }
 
         int mask = (weight == w) ? 0 : -1;
         for (int i = 0; i < w; i++)
+        {
             r[i] = (byte)(((ev[i] ^ 1) & ~mask) ^ 1);
+        }
         for (int i = w; i < p; i++)
+        {
             r[i] = (byte)(ev[i] & ~mask);
+        }
     }
 
     protected static void updateDiffMask(byte[] encR, byte[] rho, int mask)
