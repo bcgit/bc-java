@@ -183,7 +183,7 @@ public class PGPPublicKey
 
         if (pubKey.subSigs != null)
         {
-            this.subSigs = new ArrayList<>(pubKey.subSigs.size());
+            this.subSigs = new ArrayList<PGPSignature>(pubKey.subSigs.size());
             this.subSigs.addAll(pubKey.subSigs);
         }
 
