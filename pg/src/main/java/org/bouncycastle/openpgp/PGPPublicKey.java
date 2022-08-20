@@ -641,7 +641,7 @@ public class PGPPublicKey
     {
         if (subSigs == null)
         {
-            List<PGPSignature> sigs = new ArrayList<>(keySigs);
+            List<PGPSignature> sigs = new ArrayList<PGPSignature>(keySigs);
 
             for (int i = 0; i != idSigs.size(); i++)
             {
@@ -665,7 +665,7 @@ public class PGPPublicKey
     {
         if (subSigs == null)
         {
-            List<PGPSignature> sigs = new ArrayList<>(keySigs);
+            List<PGPSignature> sigs = new ArrayList<PGPSignature>(keySigs);
 
             return sigs.iterator();
         }
@@ -1179,11 +1179,11 @@ public class PGPPublicKey
         }
 
         TrustPacket trustPk = key.trustPk;
-        List<PGPSignature> keySigs = new ArrayList<>(key.keySigs);
-        List<UserDataPacket> ids = new ArrayList<>(key.ids);
-        List<TrustPacket> idTrusts = new ArrayList<>(key.idTrusts);
-        List<List<PGPSignature>> idSigs = new ArrayList<>(key.idSigs);
-        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<>(key.subSigs);
+        List<PGPSignature> keySigs = new ArrayList<PGPSignature>(key.keySigs);
+        List<UserDataPacket> ids = new ArrayList<UserDataPacket>(key.ids);
+        List<TrustPacket> idTrusts = new ArrayList<TrustPacket>(key.idTrusts);
+        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>(key.idSigs);
+        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<PGPSignature>(key.subSigs);
 
         if (joinTrustPackets)
         {
@@ -1222,7 +1222,7 @@ public class PGPPublicKey
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
         {
             UserDataPacket copyId = copy.ids.get(idIdx);
-            List<PGPSignature> copyIdSigs = new ArrayList<>(copy.idSigs.get(idIdx));
+            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>(copy.idSigs.get(idIdx));
             TrustPacket copyTrust = copy.idTrusts.get(idIdx);
 
             int existingIdIndex = -1;
@@ -1293,7 +1293,7 @@ public class PGPPublicKey
         {
             if (subSigs == null && allowSubkeySigsOnNonSubkey)
             {
-                subSigs = new ArrayList<>(copy.subSigs);
+                subSigs = new ArrayList<PGPSignature>(copy.subSigs);
             }
             else
             {
