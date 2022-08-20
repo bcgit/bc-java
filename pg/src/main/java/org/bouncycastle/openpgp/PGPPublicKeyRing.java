@@ -360,7 +360,7 @@ public class PGPPublicKeyRing
         int count = pubRing.keys.size();
         long keyID = pubKey.getKeyID();
 
-        ArrayList<PGPPublicKey> result = new ArrayList<>(count);
+        ArrayList<PGPPublicKey> result = new ArrayList<PGPPublicKey>(count);
         boolean found = false;
 
         for (int i = 0; i < count; ++i)
