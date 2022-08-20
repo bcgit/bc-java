@@ -20,10 +20,10 @@ class FalconConversions
     int bytes_to_int(byte[] src, int pos)
     {
         int acc = 0;
-        acc = Byte.toUnsignedInt(src[pos + 0]) << 0 |
-            Byte.toUnsignedInt(src[pos + 1]) << 8 |
-            Byte.toUnsignedInt(src[pos + 2]) << 16 |
-            Byte.toUnsignedInt(src[pos + 3]) << 24;
+        acc = toUnsignedInt(src[pos + 0]) << 0 |
+            toUnsignedInt(src[pos + 1]) << 8 |
+            toUnsignedInt(src[pos + 2]) << 16 |
+            toUnsignedInt(src[pos + 3]) << 24;
         return acc;
     }
 
@@ -54,14 +54,24 @@ class FalconConversions
     long bytes_to_long(byte[] src, int pos)
     {
         long acc = 0;
-        acc = Byte.toUnsignedLong(src[pos + 0]) << 0 |
-            Byte.toUnsignedLong(src[pos + 1]) << 8 |
-            Byte.toUnsignedLong(src[pos + 2]) << 16 |
-            Byte.toUnsignedLong(src[pos + 3]) << 24 |
-            Byte.toUnsignedLong(src[pos + 4]) << 32 |
-            Byte.toUnsignedLong(src[pos + 5]) << 40 |
-            Byte.toUnsignedLong(src[pos + 6]) << 48 |
-            Byte.toUnsignedLong(src[pos + 7]) << 56;
+        acc = toUnsignedLong(src[pos + 0]) << 0 |
+            toUnsignedLong(src[pos + 1]) << 8 |
+            toUnsignedLong(src[pos + 2]) << 16 |
+            toUnsignedLong(src[pos + 3]) << 24 |
+            toUnsignedLong(src[pos + 4]) << 32 |
+            toUnsignedLong(src[pos + 5]) << 40 |
+            toUnsignedLong(src[pos + 6]) << 48 |
+            toUnsignedLong(src[pos + 7]) << 56;
         return acc;
+    }
+    
+    private int toUnsignedInt(byte b)
+    {
+        return b & 0xff;
+    }
+    
+    private long toUnsignedLong(byte b)
+    {
+        return b & 0xffL;
     }
 }
