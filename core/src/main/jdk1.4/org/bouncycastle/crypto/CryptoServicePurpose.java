@@ -17,4 +17,9 @@ public final class CryptoServicePurpose
     {
         this.ord = ord;
     }
+
+    public int ordinal()
+    {
+        return ord;
+    }
 }

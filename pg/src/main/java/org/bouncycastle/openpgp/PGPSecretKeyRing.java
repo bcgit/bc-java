@@ -42,7 +42,7 @@ public class PGPSecretKeyRing
 
     private static List<PGPSecretKey> checkKeys(List<PGPSecretKey> keys)
     {
-        List<PGPSecretKey> rv = new ArrayList<>(keys.size());
+        List<PGPSecretKey> rv = new ArrayList<PGPSecretKey>(keys.size());
 
         for (int i = 0; i != keys.size(); i++)
         {
@@ -411,7 +411,7 @@ public class PGPSecretKeyRing
      */
     public static PGPSecretKeyRing replacePublicKeys(PGPSecretKeyRing secretRing, PGPPublicKeyRing publicRing)
     {
-        List<PGPSecretKey> newList = new ArrayList<>(secretRing.keys.size());
+        List<PGPSecretKey> newList = new ArrayList<PGPSecretKey>(secretRing.keys.size());
 
         for (Iterator<PGPSecretKey> it = secretRing.keys.iterator(); it.hasNext(); )
         {
@@ -439,7 +439,7 @@ public class PGPSecretKeyRing
 
         if (secretKey != null)
         {
-            List<PGPSecretKey> newList = new ArrayList<>(secretRing.keys.size());
+            List<PGPSecretKey> newList = new ArrayList<PGPSecretKey>(secretRing.keys.size());
             for (Iterator<PGPSecretKey> it = secretRing.getSecretKeys(); it.hasNext(); )
             {
                 PGPSecretKey sk = (PGPSecretKey)it.next();
@@ -454,7 +454,7 @@ public class PGPSecretKeyRing
         }
         else
         {
-            List<PGPPublicKey> extras = new ArrayList<>(secretRing.extraPubKeys.size());
+            List<PGPPublicKey> extras = new ArrayList<PGPPublicKey>(secretRing.extraPubKeys.size());
             boolean found = false;
 
             for (Iterator<PGPPublicKey> it = secretRing.getExtraPublicKeys(); it.hasNext(); )
@@ -476,7 +476,7 @@ public class PGPSecretKeyRing
                 extras.add(publicKey);
             }
 
-            return new PGPSecretKeyRing(new ArrayList<>(secretRing.keys), extras);
+            return new PGPSecretKeyRing(new ArrayList<PGPSecretKey>(secretRing.keys), extras);
         }
     }
 
@@ -495,7 +495,7 @@ public class PGPSecretKeyRing
         PBESecretKeyEncryptor newKeyEncryptor)
         throws PGPException
     {
-        List<PGPSecretKey> newKeys = new ArrayList<>(ring.keys.size());
+        List<PGPSecretKey> newKeys = new ArrayList<PGPSecretKey>(ring.keys.size());
 
         for (Iterator<PGPSecretKey> keys = ring.getSecretKeys(); keys.hasNext(); )
         {
@@ -526,7 +526,7 @@ public class PGPSecretKeyRing
         PGPSecretKeyRing secRing,
         PGPSecretKey secKey)
     {
-        List<PGPSecretKey> keys = new ArrayList<>(secRing.keys);
+        List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>(secRing.keys);
         boolean found = false;
         boolean masterFound = false;
 
@@ -580,7 +580,7 @@ public class PGPSecretKeyRing
         int count = secRing.keys.size();
         long keyID = secKey.getKeyID();
 
-        ArrayList<PGPSecretKey> result = new ArrayList<>(count);
+        ArrayList<PGPSecretKey> result = new ArrayList<PGPSecretKey>(count);
         boolean found = false;
 
         for (int i = 0; i < count; ++i)
