@@ -47,13 +47,6 @@ public class CrystalsDilithiumTest
 
         assertTrue(Arrays.areEqual(Hex.decode(sk), ((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getPrivateKey()));
         assertTrue(Arrays.areEqual(Hex.decode(pk), ((DilithiumPublicKeyParameters)keyPair.getPublic()).getPublicKey()));
-        // System.out.print("public key = ");
-        // Helper.printByteArray(((DilithiumPublicKeyParameters)keyPair.getPublic()).getPublicKey());
-
-        // System.out.print("secret Key = ");
-        // Helper.printByteArray(((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getPrivateKey());
-
-
     }
 
     public void testRNG()
@@ -225,4 +218,34 @@ public class CrystalsDilithiumTest
             System.out.println("testing successful!");
         }
     }
+
+//    public void testDilithiumRandom()
+//    {
+//        byte[] msg = Strings.toByteArray("Hello World!");
+//        DilithiumKeyPairGenerator keyGen = new DilithiumKeyPairGenerator();
+//
+//        SecureRandom random = new SecureRandom();
+//
+//        keyGen.init(new DilithiumKeyGenerationParameters(random, DilithiumParameters.dilithium3));
+//
+//        for (int i = 0; i != 1000; i++)
+//        {
+//            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
+//
+//            // sign
+//            DilithiumSigner signer = new DilithiumSigner();
+//            DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)keyPair.getPrivate();
+//            ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
+//            signer.init(true, skwrand);
+//
+//            byte[] sigGenerated = signer.generateSignature(msg);
+//
+//            // verify
+//            DilithiumSigner verifier = new DilithiumSigner();
+//            DilithiumPublicKeyParameters pkparam = (DilithiumPublicKeyParameters)keyPair.getPublic();
+//            verifier.init(false, pkparam);
+//
+//            assertTrue("count = " + i, verifier.verifySignature(msg, sigGenerated));
+//        }
+//    }
 }
