@@ -178,7 +178,7 @@ public class PGPPublicKey
         this.idSigs = new ArrayList<List<PGPSignature>>(pubKey.idSigs.size());
         for (int i = 0; i != pubKey.idSigs.size(); i++)
         {
-            this.idSigs.add(new ArrayList<>(pubKey.idSigs.get(i)));
+            this.idSigs.add(new ArrayList<PGPSignature>(pubKey.idSigs.get(i)));
         }
 
         if (pubKey.subSigs != null)
