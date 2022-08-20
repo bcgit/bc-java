@@ -105,8 +105,8 @@ class FalconKeyGen
         long z, w;
         int d;
 
-        z = Integer.toUnsignedLong(a) * Integer.toUnsignedLong(b);
-        w = ((z * p0i) & Integer.toUnsignedLong(0x7FFFFFFF)) * p;
+        z = toUnsignedLong(a) * toUnsignedLong(b);
+        w = ((z * p0i) & toUnsignedLong(0x7FFFFFFF)) * p;
         d = (int)((z + w) >>> 31) - p;
         d += p & -(d >>> 31);
         return d;
@@ -576,7 +576,7 @@ class FalconKeyGen
         {
             long z;
 
-            z = Integer.toUnsignedLong(srcm[m + u]) * Integer.toUnsignedLong(x) + cc;
+            z = toUnsignedLong(srcm[m + u]) * toUnsignedLong(x) + cc;
             srcm[m + u] = (int)z & 0x7FFFFFFF;
             cc = (int)(z >> 31);
         }
@@ -655,7 +655,7 @@ class FalconKeyGen
 
             xw = srcx[x + u];
             yw = srcy[y + u];
-            z = Integer.toUnsignedLong(yw) * Integer.toUnsignedLong(s) + Integer.toUnsignedLong(xw) + Integer.toUnsignedLong(cc);
+            z = toUnsignedLong(yw) * toUnsignedLong(s) + toUnsignedLong(xw) + toUnsignedLong(cc);
             srcx[x + u] = (int)z & 0x7FFFFFFF;
             cc = (int)(z >>> 31);
         }
@@ -946,9 +946,9 @@ class FalconKeyGen
             wa = srca[a + u];
             wb = srcb[b + u];
             za = wa * xa + wb * xb
-                + srcm[m + u] * Integer.toUnsignedLong(fa) + cca;
+                + srcm[m + u] * toUnsignedLong(fa) + cca;
             zb = wa * ya + wb * yb
-                + srcm[m + u] * Integer.toUnsignedLong(fb) + ccb;
+                + srcm[m + u] * toUnsignedLong(fb) + ccb;
             if (u > 0)
             {
                 srca[a + u - 1] = (int)za & 0x7FFFFFFF;
@@ -1203,8 +1203,8 @@ class FalconKeyGen
             a0 &= ~c1;
             b1 |= b0 & c1;
             b0 &= ~c1;
-            a_hi = (Integer.toUnsignedLong(a0) << 31) + Integer.toUnsignedLong(a1);
-            b_hi = (Integer.toUnsignedLong(b0) << 31) + Integer.toUnsignedLong(b1);
+            a_hi = (toUnsignedLong(a0) << 31) + toUnsignedLong(a1);
+            b_hi = (toUnsignedLong(b0) << 31) + toUnsignedLong(b1);
             a_lo = srctmp[a + 0];
             b_lo = srctmp[b + 0];
 
@@ -1265,11 +1265,11 @@ class FalconKeyGen
                  * Conditional subtractions.
                  */
                 a_lo -= b_lo & -cAB;
-                a_hi -= b_hi & -Integer.toUnsignedLong(cAB);
+                a_hi -= b_hi & -toUnsignedLong(cAB);
                 pa -= qa & -(long)cAB;
                 pb -= qb & -(long)cAB;
                 b_lo -= a_lo & -cBA;
-                b_hi -= a_hi & -Integer.toUnsignedLong(cBA);
+                b_hi -= a_hi & -toUnsignedLong(cBA);
                 qa -= pa & -(long)cBA;
                 qb -= pb & -(long)cBA;
 
@@ -1279,11 +1279,11 @@ class FalconKeyGen
                 a_lo += a_lo & (cA - 1);
                 pa += pa & ((long)cA - 1);
                 pb += pb & ((long)cA - 1);
-                a_hi ^= (a_hi ^ (a_hi >> 1)) & -Integer.toUnsignedLong(cA);
+                a_hi ^= (a_hi ^ (a_hi >> 1)) & -toUnsignedLong(cA);
                 b_lo += b_lo & -cA;
                 qa += qa & -(long)cA;
                 qb += qb & -(long)cA;
-                b_hi ^= (b_hi ^ (b_hi >> 1)) & (Integer.toUnsignedLong(cA) - 1);
+                b_hi ^= (b_hi ^ (b_hi >> 1)) & (toUnsignedLong(cA) - 1);
             }
 
             /*
@@ -1359,7 +1359,7 @@ class FalconKeyGen
             /*
              * The expression below does not overflow.
              */
-            z = (Integer.toUnsignedLong(wys) * (long)k + Integer.toUnsignedLong(srcx[x + u]) + cc);
+            z = (toUnsignedLong(wys) * (long)k + toUnsignedLong(srcx[x + u]) + cc);
             srcx[x + u] = (int)z & 0x7FFFFFFF;
 
             /*
@@ -3781,5 +3781,10 @@ class FalconKeyGen
              */
             break;
         }
+    }
+
+    private long toUnsignedLong(int x)
+    {
+        return x & 0xffffffffL;
     }
 }
