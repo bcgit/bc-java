@@ -10,6 +10,7 @@ import org.bouncycastle.util.Strings;
  */
 public class UserIDPacket 
     extends ContainedPacket
+    implements UserDataPacket
 {    
     private byte[]    idData;
     
