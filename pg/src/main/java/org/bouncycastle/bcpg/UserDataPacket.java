@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
-public interface UserDataPacket {
+public interface UserDataPacket
+{
 
 }

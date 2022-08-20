@@ -46,7 +46,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPSecretKey k = keys.get(i);
+            PGPSecretKey k = (PGPSecretKey)keys.get(i);
 
             if (i == 0)
             {
@@ -281,7 +281,7 @@ public class PGPSecretKeyRing
 
         for (Iterator<PGPSecretKey> it = getSecretKeys(); it.hasNext(); )
         {
-            PGPPublicKey key = it.next().getPublicKey();
+            PGPPublicKey key = ((PGPSecretKey)it.next()).getPublicKey();
             pubKeys.add(key);
         }
 
@@ -297,7 +297,7 @@ public class PGPSecretKeyRing
      */
     public PGPSecretKey getSecretKey()
     {
-        return keys.get(0);
+        return (PGPSecretKey)keys.get(0);
     }
 
     /**
@@ -322,7 +322,7 @@ public class PGPSecretKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPSecretKey k = keys.get(i);
+            PGPSecretKey k = (PGPSecretKey)keys.get(i);
 
             if (keyID == k.getKeyID())
             {
@@ -344,7 +344,7 @@ public class PGPSecretKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPSecretKey k = keys.get(i);
+            PGPSecretKey k = (PGPSecretKey)keys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getPublicKey().getFingerprint()))
             {
@@ -383,7 +383,7 @@ public class PGPSecretKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPSecretKey k = keys.get(i);
+            PGPSecretKey k = (PGPSecretKey)keys.get(i);
 
             k.encode(outStream);
         }
@@ -415,7 +415,7 @@ public class PGPSecretKeyRing
 
         for (Iterator<PGPSecretKey> it = secretRing.keys.iterator(); it.hasNext(); )
         {
-            PGPSecretKey sk = it.next();
+            PGPSecretKey sk = (PGPSecretKey)it.next();
             PGPPublicKey pk = publicRing.getPublicKey(sk.getKeyID());
 
             newList.add(PGPSecretKey.replacePublicKey(sk, pk));
@@ -442,7 +442,7 @@ public class PGPSecretKeyRing
             List<PGPSecretKey> newList = new ArrayList<>(secretRing.keys.size());
             for (Iterator<PGPSecretKey> it = secretRing.getSecretKeys(); it.hasNext(); )
             {
-                PGPSecretKey sk = it.next();
+                PGPSecretKey sk = (PGPSecretKey)it.next();
                 if (sk.getKeyID() == publicKey.getKeyID())
                 {
                     sk = PGPSecretKey.replacePublicKey(secretKey, publicKey);
@@ -499,7 +499,7 @@ public class PGPSecretKeyRing
 
         for (Iterator<PGPSecretKey> keys = ring.getSecretKeys(); keys.hasNext(); )
         {
-            PGPSecretKey key = keys.next();
+            PGPSecretKey key = (PGPSecretKey)keys.next();
 
             if (key.isPrivateKeyEmpty())
             {
@@ -532,7 +532,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPSecretKey key = keys.get(i);
+            PGPSecretKey key = (PGPSecretKey)keys.get(i);
 
             if (key.getKeyID() == secKey.getKeyID())
             {
@@ -585,7 +585,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i < count; ++i)
         {
-            PGPSecretKey key = secRing.keys.get(i);
+            PGPSecretKey key = (PGPSecretKey)secRing.keys.get(i);
 
             if (key.getKeyID() == keyID)
             {
