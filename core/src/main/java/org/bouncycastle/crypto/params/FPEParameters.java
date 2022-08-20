@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.fpe.RadixConverter;
+import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.Arrays;
 
 public final class FPEParameters

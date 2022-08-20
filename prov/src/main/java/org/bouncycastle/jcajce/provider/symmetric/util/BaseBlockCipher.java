@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
@@ -25,11 +24,6 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.crypto.fpe.FPEEngine;
-import org.bouncycastle.crypto.fpe.FPEFF1Engine;
-import org.bouncycastle.crypto.fpe.FPEFF3_1Engine;
-import org.bouncycastle.crypto.params.FPEParameters;
-import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -39,6 +33,9 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
+import org.bouncycastle.crypto.fpe.FPEEngine;
+import org.bouncycastle.crypto.fpe.FPEFF1Engine;
+import org.bouncycastle.crypto.fpe.FPEFF3_1Engine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -66,12 +63,14 @@ import org.bouncycastle.crypto.paddings.TBCPadding;
 import org.bouncycastle.crypto.paddings.X923Padding;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
 import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.FPEParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.RC2Parameters;
 import org.bouncycastle.crypto.params.RC5Parameters;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
@@ -876,7 +875,7 @@ public class BaseBlockCipher
         {
             FPEParameterSpec spec = (FPEParameterSpec)params;
 
-            param = new FPEParameters((KeyParameter)param, spec.getRadix(), spec.getTweak(), spec.isUsingInverseFunction());
+            param = new FPEParameters((KeyParameter)param, spec.getRadixConverter(), spec.getTweak(), spec.isUsingInverseFunction());
         }
         else if (gcmSpecClass != null && gcmSpecClass.isInstance(params))
         {
