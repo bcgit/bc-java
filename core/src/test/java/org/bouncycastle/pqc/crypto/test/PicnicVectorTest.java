@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.TestCase;
@@ -19,6 +20,7 @@ import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class PicnicVectorTest
@@ -185,4 +187,32 @@ public class PicnicVectorTest
         }
     }
 
+    public void testPicnicRandom()
+    {
+        byte[] msg = Strings.toByteArray("Hello World!");
+        PicnicKeyPairGenerator keyGen = new PicnicKeyPairGenerator();
+
+        SecureRandom random = new SecureRandom();
+
+        keyGen.init(new PicnicKeyGenerationParameters(random, PicnicParameters.picnic3l1));
+
+        for (int i = 0; i != 100; i++)
+        {
+            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
+
+            // sign
+            PicnicSigner signer = new PicnicSigner();
+            PicnicPrivateKeyParameters skparam = (PicnicPrivateKeyParameters)keyPair.getPrivate();
+            signer.init(true, skparam);
+
+            byte[] sigGenerated = signer.generateSignature(msg);
+
+            // verify
+            PicnicSigner verifier = new PicnicSigner();
+            PicnicPublicKeyParameters pkparam = (PicnicPublicKeyParameters)keyPair.getPublic();
+            verifier.init(false, pkparam);
+
+            assertTrue("count = " + i, verifier.verifySignature(msg, sigGenerated));
+        }
+    }
 }
