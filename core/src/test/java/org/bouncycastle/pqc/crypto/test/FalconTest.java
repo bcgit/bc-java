@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.TestCase;
@@ -15,6 +16,7 @@ import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class FalconTest
@@ -169,6 +171,36 @@ public class FalconTest
 
             }
             System.out.println("testing successful!");
+        }
+    }
+    
+    public void testFalconRandom()
+    {
+        byte[] msg = Strings.toByteArray("Hello World!");
+        FalconKeyPairGenerator keyGen = new FalconKeyPairGenerator();
+
+        SecureRandom random = new SecureRandom();
+
+        keyGen.init(new FalconKeyGenerationParameters(random, FalconParameters.falcon_512));
+
+        for (int i = 0; i != 100; i++)
+        {
+            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
+
+            // sign
+            FalconSigner signer = new FalconSigner();
+            FalconPrivateKeyParameters skparam = (FalconPrivateKeyParameters)keyPair.getPrivate();
+            ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
+            signer.init(true, skwrand);
+
+            byte[] sigGenerated = signer.generateSignature(msg);
+
+            // verify
+            FalconSigner verifier = new FalconSigner();
+            FalconPublicKeyParameters pkparam = (FalconPublicKeyParameters)keyPair.getPublic();
+            verifier.init(false, pkparam);
+
+            assertTrue("count = " + i, verifier.verifySignature(msg, sigGenerated));
         }
     }
 }
