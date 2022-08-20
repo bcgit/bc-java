@@ -31,6 +31,17 @@ public final class CryptoServicesRegistrar
     private static final Object cacheLock = new Object();
     private static SecureRandomProvider defaultSecureRandomProvider;
 
+    private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
+    {
+        public void check(CryptoServiceProperties service)
+        {
+             // anything goes.
+        }
+    };
+
+    private static final boolean preconfiguredConstraints;
+    private static CryptoServicesConstraints servicesConstraints = noConstraintsImpl;
+
     static
     {
         // default domain parameters for DSA and Diffie-Hellman
@@ -93,6 +104,9 @@ public final class CryptoServicesRegistrar
 
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, new Object[] { def512Params, def768Params, def1024Params, def2048Params });
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, new Object[] { toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params) });
+
+        servicesConstraints.set(getDefaultConstraints());
+        preconfiguredConstraints = (servicesConstraints != noConstraintsImpl);
     }
 
     private CryptoServicesRegistrar()
@@ -183,6 +197,54 @@ public final class CryptoServicesRegistrar
         checkPermission(CanSetDefaultRandom);
 
         defaultSecureRandomProvider = secureRandomProvider;
+    }
+
+    /**
+     * Return the current algorithm/services constraints.
+     *
+     * @return the algorithm/services constraints.
+     */
+    public static CryptoServicesConstraints getServicesConstraints()
+    {
+        return servicesConstraints;
+    }
+
+    /**
+     * Check a service to make sure it meets the current constraints.
+     *
+     * @param cryptoService the service to be checked.
+     * @throws CryptoServiceConstraintsException if the service violates the current constraints.
+     */
+    public static void checkConstraints(CryptoServiceProperties cryptoService)
+    {
+        servicesConstraints.check(cryptoService);
+    }
+
+    /**
+     * Set the current algorithm constraints.
+     */
+    public static void setServicesConstraints(CryptoServicesConstraints constraints)
+    {
+        checkPermission(CanSetConstraints);
+
+        CryptoServicesConstraints newConstraints = (constraints == null) ? noConstraintsImpl : constraints;
+
+        if (preconfiguredConstraints)
+        {
+            if (Properties.isOverrideSet("org.bouncycastle.constraints.allow_override"))
+            {
+                servicesConstraints = newConstraints;
+            }
+            else
+            {
+                LOG.warning("attempt to override pre-configured constraints ignored");
+            }
+        }
+        else
+        {
+            // TODO: should this only be allowed once?
+            servicesConstraints = newConstraints;
+        }
     }
 
     /**
