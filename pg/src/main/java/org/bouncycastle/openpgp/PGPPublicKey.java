@@ -25,8 +25,8 @@ import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
-import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.UserDataPacket;
+import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -172,10 +172,10 @@ public class PGPPublicKey
     {
         this.publicPk = pubKey.publicPk;
 
-        this.keySigs = new ArrayList<>(pubKey.keySigs);
-        this.ids = new ArrayList<>(pubKey.ids);
-        this.idTrusts = new ArrayList<>(pubKey.idTrusts);
-        this.idSigs = new ArrayList<>(pubKey.idSigs.size());
+        this.keySigs = new ArrayList<PGPSignature>(pubKey.keySigs);
+        this.ids = new ArrayList<UserDataPacket>(pubKey.ids);
+        this.idTrusts = new ArrayList<TrustPacket>(pubKey.idTrusts);
+        this.idSigs = new ArrayList<List<PGPSignature>>(pubKey.idSigs.size());
         for (int i = 0; i != pubKey.idSigs.size(); i++)
         {
             this.idSigs.add(new ArrayList<>(pubKey.idSigs.get(i)));
