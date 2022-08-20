@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -16,7 +15,6 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -28,6 +26,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -41,10 +40,10 @@ public class PGPPublicKey
 
     PublicKeyPacket publicPk;
     TrustPacket trustPk;
-    List<PGPSignature> keySigs = new ArrayList();
-    List ids = new ArrayList();
-    List<TrustPacket> idTrusts = new ArrayList();
-    List<List<PGPSignature>> idSigs = new ArrayList();
+    List<PGPSignature> keySigs = new ArrayList<PGPSignature>();
+    List<UserDataPacket> ids = new ArrayList<UserDataPacket>();
+    List<TrustPacket> idTrusts = new ArrayList<TrustPacket>();
+    List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>();
 
     List<PGPSignature> subSigs = null;
 
@@ -126,8 +125,8 @@ public class PGPPublicKey
         throws PGPException
     {
         this.publicPk = publicKeyPacket;
-        this.ids = new ArrayList();
-        this.idSigs = new ArrayList();
+        this.ids = new ArrayList<UserDataPacket>();
+        this.idSigs = new ArrayList<List<PGPSignature>>();
 
         init(fingerPrintCalculator);
     }
@@ -138,7 +137,7 @@ public class PGPPublicKey
     PGPPublicKey(
         PublicKeyPacket publicPk,
         TrustPacket trustPk,
-        List sigs,
+        List<PGPSignature> sigs,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws PGPException
     {
@@ -152,7 +151,7 @@ public class PGPPublicKey
     PGPPublicKey(
         PGPPublicKey key,
         TrustPacket trust,
-        List subSigs)
+        List<PGPSignature> subSigs)
     {
         this.publicPk = key.publicPk;
         this.trustPk = trust;
@@ -173,22 +172,19 @@ public class PGPPublicKey
     {
         this.publicPk = pubKey.publicPk;
 
-        this.keySigs = new ArrayList(pubKey.keySigs);
-        this.ids = new ArrayList(pubKey.ids);
-        this.idTrusts = new ArrayList(pubKey.idTrusts);
-        this.idSigs = new ArrayList(pubKey.idSigs.size());
+        this.keySigs = new ArrayList<>(pubKey.keySigs);
+        this.ids = new ArrayList<>(pubKey.ids);
+        this.idTrusts = new ArrayList<>(pubKey.idTrusts);
+        this.idSigs = new ArrayList<>(pubKey.idSigs.size());
         for (int i = 0; i != pubKey.idSigs.size(); i++)
         {
-            this.idSigs.add(new ArrayList((ArrayList)pubKey.idSigs.get(i)));
+            this.idSigs.add(new ArrayList<>(pubKey.idSigs.get(i)));
         }
 
         if (pubKey.subSigs != null)
         {
-            this.subSigs = new ArrayList(pubKey.subSigs.size());
-            for (int i = 0; i != pubKey.subSigs.size(); i++)
-            {
-                this.subSigs.add(pubKey.subSigs.get(i));
-            }
+            this.subSigs = new ArrayList<>(pubKey.subSigs.size());
+            this.subSigs.addAll(pubKey.subSigs);
         }
 
         this.fingerprint = pubKey.fingerprint;
@@ -199,10 +195,10 @@ public class PGPPublicKey
     PGPPublicKey(
         PublicKeyPacket publicPk,
         TrustPacket trustPk,
-        List keySigs,
-        List ids,
-        List idTrusts,
-        List idSigs,
+        List<PGPSignature> keySigs,
+        List<UserDataPacket> ids,
+        List<TrustPacket> idTrusts,
+        List<List<PGPSignature>> idSigs,
         KeyFingerPrintCalculator fingerPrintCalculator)
         throws PGPException
     {
@@ -219,10 +215,10 @@ public class PGPPublicKey
     PGPPublicKey(
         PGPPublicKey original,
         TrustPacket trustPk,
-        List keySigs,
-        List ids,
-        List idTrusts,
-        List idSigs)
+        List<PGPSignature> keySigs,
+        List<UserDataPacket> ids,
+        List<TrustPacket> idTrusts,
+        List<List<PGPSignature>> idSigs)
         throws PGPException
     {
         this.publicPk = original.publicPk;
@@ -343,13 +339,13 @@ public class PGPPublicKey
         boolean selfSigned,
         int signatureType)
     {
-        Iterator signatures = this.getSignaturesOfType(signatureType);
+        Iterator<PGPSignature> signatures = this.getSignaturesOfType(signatureType);
         long expiryTime = -1;
         long lastDate = -1;
 
         while (signatures.hasNext())
         {
-            PGPSignature sig = (PGPSignature)signatures.next();
+            PGPSignature sig = signatures.next();
 
             if (!selfSigned || sig.getKeyID() == this.getKeyID())
             {
@@ -467,7 +463,7 @@ public class PGPPublicKey
      */
     public Iterator<String> getUserIDs()
     {
-        List temp = new ArrayList();
+        List<String> temp = new ArrayList<String>();
 
         for (int i = 0; i != ids.size(); i++)
         {
@@ -488,7 +484,7 @@ public class PGPPublicKey
      */
     public Iterator<byte[]> getRawUserIDs()
     {
-        List temp = new ArrayList();
+        List<byte[]> temp = new ArrayList<byte[]>();
 
         for (int i = 0; i != ids.size(); i++)
         {
@@ -508,13 +504,13 @@ public class PGPPublicKey
      */
     public Iterator<PGPUserAttributeSubpacketVector> getUserAttributes()
     {
-        List temp = new ArrayList();
+        List<PGPUserAttributeSubpacketVector> temp = new ArrayList<PGPUserAttributeSubpacketVector>();
 
         for (int i = 0; i != ids.size(); i++)
         {
             if (ids.get(i) instanceof PGPUserAttributeSubpacketVector)
             {
-                temp.add(ids.get(i));
+                temp.add((PGPUserAttributeSubpacketVector) ids.get(i));
             }
         }
 
@@ -554,11 +550,11 @@ public class PGPPublicKey
     public Iterator<PGPSignature> getSignaturesForKeyID(
         long keyID)
     {
-        List sigs = new ArrayList();
+        List<PGPSignature> sigs = new ArrayList<PGPSignature>();
 
-        for (Iterator it = getSignatures(); it.hasNext(); )
+        for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
         {
-            PGPSignature sig = (PGPSignature)it.next();
+            PGPSignature sig = it.next();
 
             if (sig.getKeyID() == keyID)
             {
@@ -580,7 +576,7 @@ public class PGPPublicKey
             if (id.equals(ids.get(i)))
             {
                 userIdFound = true;
-                signatures.addAll((List<PGPSignature>)idSigs.get(i));
+                signatures.addAll(idSigs.get(i));
             }
         }
 
@@ -604,7 +600,7 @@ public class PGPPublicKey
             if (userAttributes.equals(ids.get(i)))
             {
                 attributeFound = true;
-                signatures.addAll((List<PGPSignature>)idSigs.get(i));
+                signatures.addAll(idSigs.get(i));
             }
         }
 
@@ -625,7 +621,7 @@ public class PGPPublicKey
 
         while (it.hasNext())
         {
-            PGPSignature sig = (PGPSignature)it.next();
+            PGPSignature sig = it.next();
 
             if (sig.getSignatureType() == signatureType)
             {
@@ -645,13 +641,11 @@ public class PGPPublicKey
     {
         if (subSigs == null)
         {
-            List sigs = new ArrayList();
-
-            sigs.addAll(keySigs);
+            List<PGPSignature> sigs = new ArrayList<>(keySigs);
 
             for (int i = 0; i != idSigs.size(); i++)
             {
-                sigs.addAll((Collection)idSigs.get(i));
+                sigs.addAll(idSigs.get(i));
             }
 
             return sigs.iterator();
@@ -671,8 +665,7 @@ public class PGPPublicKey
     {
         if (subSigs == null)
         {
-            List<PGPSignature> sigs = new ArrayList<PGPSignature>();
-            sigs.addAll(keySigs);
+            List<PGPSignature> sigs = new ArrayList<>(keySigs);
 
             return sigs.iterator();
         }
@@ -754,7 +747,7 @@ public class PGPPublicKey
         {
             for (int i = 0; i != keySigs.size(); i++)
             {
-                ((PGPSignature)keySigs.get(i)).encode(out);
+                keySigs.get(i).encode(out);
             }
 
             for (int i = 0; i != ids.size(); i++)
@@ -774,13 +767,13 @@ public class PGPPublicKey
 
                 if (!forTransfer && idTrusts.get(i) != null)
                 {
-                    out.writePacket((ContainedPacket)idTrusts.get(i));
+                    out.writePacket(idTrusts.get(i));
                 }
 
-                List sigs = (List)idSigs.get(i);
+                List<PGPSignature> sigs = idSigs.get(i);
                 for (int j = 0; j != sigs.size(); j++)
                 {
-                    ((PGPSignature)sigs.get(j)).encode(out, forTransfer);
+                    sigs.get(j).encode(out, forTransfer);
                 }
             }
         }
@@ -788,7 +781,7 @@ public class PGPPublicKey
         {
             for (int j = 0; j != subSigs.size(); j++)
             {
-                ((PGPSignature)subSigs.get(j)).encode(out, forTransfer);
+                subSigs.get(j).encode(out, forTransfer);
             }
         }
     }
@@ -818,7 +811,7 @@ public class PGPPublicKey
         {
             while (!revoked && (ns < keySigs.size()))
             {
-                if (((PGPSignature)keySigs.get(ns++)).getSignatureType() == PGPSignature.KEY_REVOCATION)
+                if (keySigs.get(ns++).getSignatureType() == PGPSignature.KEY_REVOCATION)
                 {
                     revoked = true;
                 }
@@ -828,7 +821,7 @@ public class PGPPublicKey
         {
             while (!revoked && (ns < subSigs.size()))
             {
-                if (((PGPSignature)subSigs.get(ns++)).getSignatureType() == PGPSignature.SUBKEY_REVOCATION)
+                if (subSigs.get(ns++).getSignatureType() == PGPSignature.SUBKEY_REVOCATION)
                 {
                     revoked = true;
                 }
@@ -888,17 +881,17 @@ public class PGPPublicKey
 
     private static PGPPublicKey addCert(
         PGPPublicKey key,
-        Object id,
+        UserDataPacket id,
         PGPSignature certification)
     {
         PGPPublicKey returnKey = new PGPPublicKey(key);
-        List sigList = null;
+        List<PGPSignature> sigList = null;
 
         for (int i = 0; i != returnKey.ids.size(); i++)
         {
             if (id.equals(returnKey.ids.get(i)))
             {
-                sigList = (List)returnKey.idSigs.get(i);
+                sigList = returnKey.idSigs.get(i);
             }
         }
 
@@ -908,7 +901,7 @@ public class PGPPublicKey
         }
         else
         {
-            sigList = new ArrayList();
+            sigList = new ArrayList<PGPSignature>();
 
             sigList.add(certification);
             returnKey.ids.add(id);
@@ -1048,7 +1041,7 @@ public class PGPPublicKey
         {
             if (id.equals(returnKey.ids.get(i)))
             {
-                found = ((List)returnKey.idSigs.get(i)).remove(certification);
+                found = returnKey.idSigs.get(i).remove(certification);
             }
         }
 
@@ -1125,10 +1118,10 @@ public class PGPPublicKey
 
         if (!found)
         {
-            for (Iterator it = key.getRawUserIDs(); it.hasNext(); )
+            for (Iterator<byte[]> it = key.getRawUserIDs(); it.hasNext(); )
             {
-                byte[] rawID = (byte[])it.next();
-                for (Iterator sIt = key.getSignaturesForID(rawID); sIt.hasNext(); )
+                byte[] rawID = it.next();
+                for (Iterator<PGPSignature> sIt = key.getSignaturesForID(rawID); sIt.hasNext(); )
                 {
                     if (certification == sIt.next())
                     {
@@ -1140,10 +1133,10 @@ public class PGPPublicKey
 
             if (!found)
             {
-                for (Iterator it = key.getUserAttributes(); it.hasNext(); )
+                for (Iterator<PGPUserAttributeSubpacketVector> it = key.getUserAttributes(); it.hasNext(); )
                 {
-                    PGPUserAttributeSubpacketVector id = (PGPUserAttributeSubpacketVector)it.next();
-                    for (Iterator sIt = key.getSignaturesForUserAttribute(id); sIt.hasNext(); )
+                    PGPUserAttributeSubpacketVector id = it.next();
+                    for (Iterator<PGPSignature> sIt = key.getSignaturesForUserAttribute(id); sIt.hasNext(); )
                     {
                         if (certification == sIt.next())
                         {
@@ -1186,11 +1179,11 @@ public class PGPPublicKey
         }
 
         TrustPacket trustPk = key.trustPk;
-        List<PGPSignature> keySigs = new ArrayList(key.keySigs);
-        List ids = new ArrayList(key.ids);
-        List idTrusts = new ArrayList(key.idTrusts);
-        List<List<PGPSignature>> idSigs = new ArrayList(key.idSigs);
-        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<PGPSignature>(key.subSigs);
+        List<PGPSignature> keySigs = new ArrayList<>(key.keySigs);
+        List<UserDataPacket> ids = new ArrayList<>(key.ids);
+        List<TrustPacket> idTrusts = new ArrayList<>(key.idTrusts);
+        List<List<PGPSignature>> idSigs = new ArrayList<>(key.idSigs);
+        List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<>(key.subSigs);
 
         if (joinTrustPackets)
         {
@@ -1201,13 +1194,13 @@ public class PGPPublicKey
         }
 
         // key signatures
-        for (Iterator it = copy.keySigs.iterator(); it.hasNext();)
+        for (Iterator<PGPSignature> it = copy.keySigs.iterator(); it.hasNext();)
         {
-            PGPSignature keySig = (PGPSignature)it.next();
+            PGPSignature keySig = it.next();
             boolean found = false;
             for (int i = 0; i < keySigs.size(); i++)
             {
-                PGPSignature existingKeySig = (PGPSignature)keySigs.get(i);
+                PGPSignature existingKeySig = keySigs.get(i);
                 if (PGPSignature.isSignatureEncodingEqual(existingKeySig, keySig))
                 {
                     found = true;
@@ -1228,14 +1221,14 @@ public class PGPPublicKey
         // user-ids and id sigs
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
         {
-            Object copyId = copy.ids.get(idIdx);
-            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>((List<PGPSignature>)copy.idSigs.get(idIdx));
-            TrustPacket copyTrust = (TrustPacket)copy.idTrusts.get(idIdx);
+            UserDataPacket copyId = copy.ids.get(idIdx);
+            List<PGPSignature> copyIdSigs = new ArrayList<>(copy.idSigs.get(idIdx));
+            TrustPacket copyTrust = copy.idTrusts.get(idIdx);
 
             int existingIdIndex = -1;
             for (int i = 0; i < ids.size(); i++)
             {
-                Object existingId = ids.get(i);
+                UserDataPacket existingId = ids.get(i);
                 if (existingId.equals(copyId))
                 {
                     existingIdIndex = i;
@@ -1262,7 +1255,7 @@ public class PGPPublicKey
             // existing user-id
             if (joinTrustPackets && copyTrust != null)
             {
-                TrustPacket existingTrust = (TrustPacket)idTrusts.get(existingIdIndex);
+                TrustPacket existingTrust = idTrusts.get(existingIdIndex);
                 if (existingTrust == null || Arrays.areEqual(copyTrust.getLevelAndTrustAmount(), existingTrust.getLevelAndTrustAmount()))
                 {
                     idTrusts.remove(existingIdIndex);
@@ -1270,14 +1263,14 @@ public class PGPPublicKey
                 }
             }
 
-            List<PGPSignature> existingIdSigs = (List<PGPSignature>)idSigs.get(existingIdIndex);
-            for (Iterator it = copyIdSigs.iterator(); it.hasNext();)
+            List<PGPSignature> existingIdSigs = idSigs.get(existingIdIndex);
+            for (Iterator<PGPSignature> it = copyIdSigs.iterator(); it.hasNext();)
             {
-                PGPSignature newSig = (PGPSignature)it.next();
+                PGPSignature newSig = it.next();
                 boolean found = false;
                 for (int i = 0; i < existingIdSigs.size(); i++)
                 {
-                    PGPSignature existingSig = (PGPSignature)existingIdSigs.get(i);
+                    PGPSignature existingSig = existingIdSigs.get(i);
                     if (PGPSignature.isSignatureEncodingEqual(newSig, existingSig))
                     {
                         found = true;
@@ -1300,17 +1293,17 @@ public class PGPPublicKey
         {
             if (subSigs == null && allowSubkeySigsOnNonSubkey)
             {
-                subSigs = new ArrayList<PGPSignature>(copy.subSigs);
+                subSigs = new ArrayList<>(copy.subSigs);
             }
             else
             {
-                for (Iterator it = copy.subSigs.iterator(); it.hasNext();)
+                for (Iterator<PGPSignature> it = copy.subSigs.iterator(); it.hasNext();)
                 {
-                    PGPSignature copySubSig = (PGPSignature)it.next();
+                    PGPSignature copySubSig = it.next();
                     boolean found = false;
-                    for (int i = 0; i < subSigs.size(); i++)
+                    for (int i = 0; subSigs != null && i < subSigs.size(); i++)
                     {
-                        PGPSignature existingSubSig = (PGPSignature)subSigs.get(i);
+                        PGPSignature existingSubSig = subSigs.get(i);
                         if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                         {
                             found = true;
@@ -1321,7 +1314,7 @@ public class PGPPublicKey
                             break;
                         }
                     }
-                    if (!found)
+                    if (!found && subSigs != null)
                     {
                         subSigs.add(copySubSig);
                     }
