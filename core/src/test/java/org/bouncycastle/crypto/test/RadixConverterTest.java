@@ -2,7 +2,8 @@ package org.bouncycastle.crypto.test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import org.bouncycastle.crypto.fpe.RadixConverter;
+
+import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class RadixConverterTest extends SimpleTest
@@ -174,13 +175,13 @@ public class RadixConverterTest extends SimpleTest
     private void runTest(RadixConversionArgument arg, RadixConverter radixConverter)
     {
         short[] digits = new short[arg.getDigits().length];
-        radixConverter.str(arg.getDecimalNumber(), arg.getNumberOfDigits(), digits);
+        radixConverter.toEncoding(arg.getDecimalNumber(), arg.getNumberOfDigits(), digits);
         isTrue(
                 String.format(
                         "digits in base %d and expected digits are different.\nActual digits: [%s]\nExpected digits: [%s]",
                         arg.getRadix(), arrayToString(digits), arrayToString(arg.getDigits())),
                 Arrays.equals(digits, arg.getDigits()));
-        BigInteger number = radixConverter.num(digits);
+        BigInteger number = radixConverter.fromEncoding(digits);
         isEquals(String.format("%s and %s are different", number, arg.getDecimalNumber()), number, arg.getDecimalNumber());
     }
 

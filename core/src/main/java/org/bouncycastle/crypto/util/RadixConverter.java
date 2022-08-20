@@ -1,9 +1,12 @@
-package org.bouncycastle.crypto.fpe;
+package org.bouncycastle.crypto.util;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.BigIntegers;
+
 /**
  * Utility class to convert decimal numbers (BigInteger) into a number in the base provided and the other way round.
+ * <p>For an application of this see the FPE parameter classes.</p>
  */
 public class RadixConverter
 {
@@ -51,7 +54,7 @@ public class RadixConverter
     {
         this.radix = radix;
         // solves radix^n < Long.MAX_VALUE to find n (maxDigitsFitsInLong)
-        this.digitsGroupLength = (int) Math.floor(LOG_LONG_MAX_VALUE / Math.log(radix));
+        this.digitsGroupLength = (int)Math.floor(LOG_LONG_MAX_VALUE / Math.log(radix));
         this.digitsGroupSpaceSize = BigInteger.valueOf(radix).pow(digitsGroupLength);
         this.digitsGroupSpacePowers = precomputeDigitsGroupPowers(numberOfCachedPowers, digitsGroupSpaceSize);
     }
@@ -69,7 +72,7 @@ public class RadixConverter
         return radix;
     }
 
-    public void str(BigInteger number, int messageLength, short[] out)
+    public void toEncoding(BigInteger number, int messageLength, short[] out)
     {
         if (number.signum() < 0)
         {
@@ -87,15 +90,16 @@ public class RadixConverter
             }
             BigInteger[] quotientAndRemainder = number.divideAndRemainder(digitsGroupSpaceSize);
             number = quotientAndRemainder[0];
-            digitIndex = str(quotientAndRemainder[1].longValue(), digitIndex, out);
-        } while (digitIndex >= 0);
+            digitIndex = toEncoding(quotientAndRemainder[1].longValue(), digitIndex, out);
+        }
+        while (digitIndex >= 0);
         if (number.signum() != 0)
         {
             throw new IllegalArgumentException();
         }
     }
 
-    private int str(long number, int digitIndex, short[] out)
+    private int toEncoding(long number, int digitIndex, short[] out)
     {
         for (int i = 0; i < digitsGroupLength && digitIndex >= 0; i++)
         {
@@ -104,7 +108,7 @@ public class RadixConverter
                 out[digitIndex--] = 0;
                 continue;
             }
-            out[digitIndex--] = (short) (number % radix);
+            out[digitIndex--] = (short)(number % radix);
             number = number / radix;
         }
         if (number != 0)
@@ -114,19 +118,19 @@ public class RadixConverter
         return digitIndex;
     }
 
-    public BigInteger num(short[] digits)
+    public BigInteger fromEncoding(short[] digits)
     {
         // from a sequence of digits in base 'radix' to a decimal number
         // iterate through groups of digits right to left
         // digitsGroupLength = 2;  digits: [22, 45, 11, 31, 24]
         // groups are, in order of iteration: [31, 24], [45, 11], [22]
-        BigInteger currentGroupCardinality = BigInteger.ONE;
+        BigInteger currentGroupCardinality = BigIntegers.ONE;
         BigInteger res = null;
         int indexGroup = 0;
         int numberOfDigits = digits.length;
         for (int groupStartDigitIndex = numberOfDigits - digitsGroupLength;
-                groupStartDigitIndex > -digitsGroupLength;
-                groupStartDigitIndex = groupStartDigitIndex - digitsGroupLength)
+             groupStartDigitIndex > -digitsGroupLength;
+             groupStartDigitIndex = groupStartDigitIndex - digitsGroupLength)
         {
             int actualDigitsInGroup = digitsGroupLength;
             if (groupStartDigitIndex < 0)
@@ -136,17 +140,18 @@ public class RadixConverter
                 groupStartDigitIndex = 0;
             }
             int groupEndDigitIndex = Math.min(groupStartDigitIndex + actualDigitsInGroup, numberOfDigits);
-            long groupInBaseRadix = num(groupStartDigitIndex, groupEndDigitIndex, digits);
+            long groupInBaseRadix = fromEncoding(groupStartDigitIndex, groupEndDigitIndex, digits);
             BigInteger bigInteger = BigInteger.valueOf(groupInBaseRadix);
             if (indexGroup == 0)
             {
                 res = bigInteger;
-            } else
+            }
+            else
             {
                 currentGroupCardinality =
-                        indexGroup <= digitsGroupSpacePowers.length
-                                ? digitsGroupSpacePowers[indexGroup - 1]
-                                : currentGroupCardinality.multiply(digitsGroupSpaceSize);
+                    indexGroup <= digitsGroupSpacePowers.length
+                        ? digitsGroupSpacePowers[indexGroup - 1]
+                        : currentGroupCardinality.multiply(digitsGroupSpaceSize);
                 res = res.add(bigInteger.multiply(currentGroupCardinality));
             }
             indexGroup++;
@@ -159,7 +164,7 @@ public class RadixConverter
         return digitsGroupLength;
     }
 
-    private long num(int groupStartDigitIndex, int groupEndDigitIndex, short[] digits)
+    private long fromEncoding(int groupStartDigitIndex, int groupEndDigitIndex, short[] digits)
     {
         long decimalNumber = 0;
         for (int digitIndex = groupStartDigitIndex; digitIndex < groupEndDigitIndex; digitIndex++)

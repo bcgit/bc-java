@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.fpe;
 
 import java.math.BigInteger;
+
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
@@ -62,10 +64,10 @@ class SP80038G
     {
         int radix = radixConverter.getRadix();
         int t = T.length;
-        int b = ((int) Math.ceil(Math.log((double) radix) * (double) v / LOG2) + 7) / 8;
+        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
         int d = (((b + 3) / 4) * 4) + 4;
 
-        byte[] P = calculateP_FF1(radix, (byte) u, n, t);
+        byte[] P = calculateP_FF1(radix, (byte)u, n, t);
 
         BigInteger bigRadix = BigInteger.valueOf(radix);
         BigInteger[] modUV = calculateModUV(bigRadix, u, v);
@@ -82,13 +84,13 @@ class SP80038G
             BigInteger modulus = modUV[i & 1];
 
             // vi.
-            BigInteger c = radixConverter.num(B).subtract(y).mod(modulus);
+            BigInteger c = radixConverter.fromEncoding(B).subtract(y).mod(modulus);
 
             // vii. - ix.
             short[] C = B;
             B = A;
             A = C;
-            radixConverter.str(c, m, C);
+            radixConverter.toEncoding(c, m, C);
         }
 
         return Arrays.concatenate(A, B);
@@ -170,10 +172,10 @@ class SP80038G
         int radix = radixConverter.getRadix();
         int t = T.length;
 
-        int b = ((int) Math.ceil(Math.log((double) radix) * (double) v / LOG2) + 7) / 8;
+        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
         int d = (((b + 3) / 4) * 4) + 4;
 
-        byte[] P = calculateP_FF1(radix, (byte) u, n, t);
+        byte[] P = calculateP_FF1(radix, (byte)u, n, t);
 
         BigInteger bigRadix = BigInteger.valueOf(radix);
         BigInteger[] modUV = calculateModUV(bigRadix, u, v);
@@ -190,14 +192,14 @@ class SP80038G
             BigInteger modulus = modUV[i & 1];
 
             // vi.
-            BigInteger num = radixConverter.num(A);
+            BigInteger num = radixConverter.fromEncoding(A);
             BigInteger c = num.add(y).mod(modulus);
 
             // vii. - ix.
             short[] C = A;
             A = B;
             B = C;
-            radixConverter.str(c, m, C);
+            radixConverter.toEncoding(c, m, C);
         }
 
         return Arrays.concatenate(A, B);
@@ -275,8 +277,8 @@ class SP80038G
 
         // Radix
         P[3] = 0;
-        P[4] = (byte) (radix >> 8);
-        P[5] = (byte) radix;
+        P[4] = (byte)(radix >> 8);
+        P[5] = (byte)radix;
 
         P[6] = 10;
         P[7] = uLow;
@@ -291,28 +293,28 @@ class SP80038G
         tweak64[0] = tweak56[0];
         tweak64[1] = tweak56[1];
         tweak64[2] = tweak56[2];
-        tweak64[3] = (byte) (tweak56[3] & 0xF0);
+        tweak64[3] = (byte)(tweak56[3] & 0xF0);
         tweak64[4] = tweak56[4];
         tweak64[5] = tweak56[5];
         tweak64[6] = tweak56[6];
-        tweak64[7] = (byte) (tweak56[3] << 4);
+        tweak64[7] = (byte)(tweak56[3] << 4);
 
         return tweak64;
     }
 
     protected static BigInteger calculateY_FF1(BlockCipher cipher, byte[] T, int b, int d, int round, byte[] P, short[] AB,
-            RadixConverter radixConverter)
+                                               RadixConverter radixConverter)
     {
         int t = T.length;
 
         // i.
-        BigInteger numAB = radixConverter.num(AB);
+        BigInteger numAB = radixConverter.fromEncoding(AB);
         byte[] bytesAB = BigIntegers.asUnsignedByteArray(numAB);
 
         int zeroes = -(t + b + 1) & 15;
         byte[] Q = new byte[t + zeroes + 1 + b];
         System.arraycopy(T, 0, Q, 0, t);
-        Q[t + zeroes] = (byte) round;
+        Q[t + zeroes] = (byte)round;
         System.arraycopy(bytesAB, 0, Q, Q.length - bytesAB.length, bytesAB.length);
 
         // ii.
@@ -347,7 +349,7 @@ class SP80038G
         byte[] P = new byte[BLOCK_SIZE];
         Pack.intToBigEndian(round, P, 0);
         xor(T, wOff, P, 0, 4);
-        BigInteger numAB = radixConverter.num(AB);
+        BigInteger numAB = radixConverter.fromEncoding(AB);
 
         byte[] bytesAB = BigIntegers.asUnsignedByteArray(numAB);
 
@@ -429,7 +431,7 @@ class SP80038G
         }
         if (!isFF1)
         {
-            int maxLen = 2 * (int) (Math.floor(Math.log(TWO_TO_96) / Math.log(radix)));
+            int maxLen = 2 * (int)(Math.floor(Math.log(TWO_TO_96) / Math.log(radix)));
             if (len > maxLen)
             {
                 throw new IllegalArgumentException("maximum input length is " + maxLen);
@@ -490,13 +492,13 @@ class SP80038G
             BigInteger y = calculateY_FF3(cipher, T, wOff, i, A, radixConverter);
 
             // v.
-            BigInteger c = radixConverter.num(B).subtract(y).mod(modulus);
+            BigInteger c = radixConverter.fromEncoding(B).subtract(y).mod(modulus);
 
             // vi. - viii.
             short[] C = B;
             B = A;
             A = C;
-            radixConverter.str(c, m, C);
+            radixConverter.toEncoding(c, m, C);
         }
 
         rev(A);
@@ -558,13 +560,13 @@ class SP80038G
             BigInteger y = calculateY_FF3(cipher, t, wOff, i, b, radixConverter);
 
             // v.
-            BigInteger c = radixConverter.num(a).add(y).mod(modulus);
+            BigInteger c = radixConverter.fromEncoding(a).add(y).mod(modulus);
 
             // vi. - viii.
             short[] C = a;
             a = b;
             b = C;
-            radixConverter.str(c, m, C);
+            radixConverter.toEncoding(c, m, C);
         }
 
         rev(a);
@@ -641,7 +643,7 @@ class SP80038G
 
         for (int i = 0; i != s.length; i++)
         {
-            s[i] = (byte) buf[i];
+            s[i] = (byte)buf[i];
         }
 
         return s;
@@ -653,7 +655,7 @@ class SP80038G
 
         for (int i = 0; i != s.length; i++)
         {
-            s[i] = (short) (buf[off + i] & 0xFF);
+            s[i] = (short)(buf[off + i] & 0xFF);
         }
 
         return s;

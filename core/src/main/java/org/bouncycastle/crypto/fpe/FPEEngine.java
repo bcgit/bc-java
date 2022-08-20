@@ -25,8 +25,8 @@ public abstract class FPEEngine
     /**
      * Process length bytes from inBuf, writing the output to outBuf.
      *
-     * @param inBuf input data.
-     * @param inOff offset in input data to start at.
+     * @param inBuf  input data.
+     * @param inOff  offset in input data to start at.
      * @param length number of bytes to process.
      * @param outBuf destination buffer.
      * @param outOff offset to start writing at in destination buffer.
@@ -58,7 +58,7 @@ public abstract class FPEEngine
         {
             throw new OutputLengthException("output buffer too short");
         }
-        
+
         if (forEncryption)
         {
             return encryptBlock(inBuf, inOff, length, outBuf, outOff);
@@ -102,7 +102,7 @@ public abstract class FPEEngine
      * Initialize the FPE engine for encryption/decryption.
      *
      * @param forEncryption true if initialising for encryption, false otherwise.
-     * @param parameters the key and other parameters to use to set the engine up.
+     * @param parameters    the key and other parameters to use to set the engine up.
      */
     public abstract void init(boolean forEncryption, CipherParameters parameters);
 
