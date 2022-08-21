@@ -54,7 +54,7 @@ class Ntt
                 zeta = nttZetas[++k];
                 for (j = start; j < start + len; ++j)
                 {
-                    t = Reduce.montgomeryReduce((long)((long)zeta * (long)r[j + len]));
+                    t = Reduce.montgomeryReduce(((long)zeta * (long)r[j + len]));
                     r[j + len] = r[j] - t;
                     r[j] = r[j] + t;
                 }
