@@ -172,8 +172,8 @@ class Packing
         }
         for (j = k; j < engine.getDilithiumOmega(); ++j)
         {
-            if ((sig[end + j] & 0xFF) == 0)
-            {
+            if ((sig[end + j] & 0xFF) != 0)
+            {                    
                 return false;
             }
         }
