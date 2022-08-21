@@ -6,7 +6,7 @@ class Reduce
     {
         int t;
         t = (int)(a * DilithiumEngine.DilithiumQinv);
-        t = (int)((a - (long)((long)t * DilithiumEngine.DilithiumQ)) >>> 32);
+        t = (int)((a - ((long)t) * DilithiumEngine.DilithiumQ) >>> 32);
         // System.out.printf("%d, ", t);
         return t;
 
