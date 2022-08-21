@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 
 import junit.framework.TestCase;
@@ -15,6 +16,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CrystalsDilithiumTest
@@ -219,33 +221,33 @@ public class CrystalsDilithiumTest
         }
     }
 
-//    public void testDilithiumRandom()
-//    {
-//        byte[] msg = Strings.toByteArray("Hello World!");
-//        DilithiumKeyPairGenerator keyGen = new DilithiumKeyPairGenerator();
-//
-//        SecureRandom random = new SecureRandom();
-//
-//        keyGen.init(new DilithiumKeyGenerationParameters(random, DilithiumParameters.dilithium3));
-//
-//        for (int i = 0; i != 1000; i++)
-//        {
-//            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
-//
-//            // sign
-//            DilithiumSigner signer = new DilithiumSigner();
-//            DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)keyPair.getPrivate();
-//            ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
-//            signer.init(true, skwrand);
-//
-//            byte[] sigGenerated = signer.generateSignature(msg);
-//
-//            // verify
-//            DilithiumSigner verifier = new DilithiumSigner();
-//            DilithiumPublicKeyParameters pkparam = (DilithiumPublicKeyParameters)keyPair.getPublic();
-//            verifier.init(false, pkparam);
-//
-//            assertTrue("count = " + i, verifier.verifySignature(msg, sigGenerated));
-//        }
-//    }
+    public void testDilithiumRandom()
+    {
+        byte[] msg = Strings.toByteArray("Hello World!");
+        DilithiumKeyPairGenerator keyGen = new DilithiumKeyPairGenerator();
+
+        SecureRandom random = new SecureRandom();
+
+        keyGen.init(new DilithiumKeyGenerationParameters(random, DilithiumParameters.dilithium3));
+
+        for (int i = 0; i != 1000; i++)
+        {
+            AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
+
+            // sign
+            DilithiumSigner signer = new DilithiumSigner();
+            DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)keyPair.getPrivate();
+            ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
+            signer.init(true, skwrand);
+
+            byte[] sigGenerated = signer.generateSignature(msg);
+
+            // verify
+            DilithiumSigner verifier = new DilithiumSigner();
+            DilithiumPublicKeyParameters pkparam = (DilithiumPublicKeyParameters)keyPair.getPublic();
+            verifier.init(false, pkparam);
+
+            assertTrue("count = " + i, verifier.verifySignature(msg, sigGenerated));
+        }
+    }
 }
