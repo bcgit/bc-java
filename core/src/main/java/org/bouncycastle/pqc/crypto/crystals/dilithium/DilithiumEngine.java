@@ -427,7 +427,6 @@ class DilithiumEngine
             // System.out.println(h.toString("h"));
             // System.out.println("Signature before pack = ");
             // Helper.printByteArray(outSig);
-
             outSig = Packing.packSignature(outSig, z, h, this);
 
             rej = false;
@@ -474,7 +473,7 @@ class DilithiumEngine
         // System.out.println("rho = ");
         // Helper.printByteArray(rho);
 
-        if (Packing.unpackSignature(z, h, sig, this))
+        if (!Packing.unpackSignature(z, h, sig, this))
         {
             return false;
         }
