@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.ntruprime;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.StreamCipher;
@@ -16,10 +15,10 @@ class Utils
     {
         byte[] c = new byte[4];
         random.nextBytes(c);
-        return (Byte.toUnsignedInt(c[0])
-                + (Byte.toUnsignedInt(c[1]) << 8)
-                + (Byte.toUnsignedInt(c[2]) << 16)
-                + (Byte.toUnsignedInt(c[3]) << 24));
+        return (bToUnsignedInt(c[0])
+                + (bToUnsignedInt(c[1]) << 8)
+                + (bToUnsignedInt(c[2]) << 16)
+                + (bToUnsignedInt(c[3]) << 24));
     }
 
     protected static void getRandomSmallPolynomial(SecureRandom random, byte[] g)
@@ -28,10 +27,9 @@ class Utils
             g[i] = (byte)((((getRandomUnsignedInteger(random) & 0x3fffffff) * 3) >>> 30) - 1);
     }
 
-    // TODO - Check for constant time
     protected static int getModFreeze(int x, int n)
     {
-        return Math.floorMod((x + ((n - 1) / 2)), n) - ((n - 1) / 2);
+        return getSignedDivMod((x + ((n - 1) / 2)), n)[1] - ((n - 1) / 2);
     }
 
     protected static boolean isInvertiblePolynomialInR3(byte[] g, byte[] ginv, int p)
@@ -58,7 +56,7 @@ class Utils
             v[0] = 0;
 
             sign = -h[0] * f[0];
-            swap = ((-delta < 0) ? -1 : 0) & (((int)h[0] != 0) ? -1 : 0);
+            swap = checkLessThanZero(-delta) & checkNotEqualToZero(h[0]);
             delta ^= swap & (delta ^ -delta);
             delta += 1;
 
@@ -176,7 +174,7 @@ class Utils
             System.arraycopy(v, 0, v, 1, p);
             v[0] = 0;
 
-            swap = ((-delta < 0) ? -1 : 0) & ((g[0] != 0) ? -1 : 0);
+            swap = checkLessThanZero(-delta) & checkNotEqualToZero(g[0]);
             delta ^= swap & (delta ^ -delta);
             delta += 1;
 
@@ -327,22 +325,15 @@ class Utils
         byte[] nonce = new byte[16];
         generateAES256CTRStream(aesInput, aesOutput, nonce, k);
         for (int i = 0; i < L.length; i++)
-            L[i] = (Byte.toUnsignedInt(aesOutput[i * 4])
-                    + (Byte.toUnsignedInt(aesOutput[(i * 4) + 1]) << 8)
-                    + (Byte.toUnsignedInt(aesOutput[(i * 4) + 2]) << 16)
-                    + (Byte.toUnsignedInt(aesOutput[(i * 4) + 3]) << 24));
+            L[i] = (bToUnsignedInt(aesOutput[i * 4])
+                    + (bToUnsignedInt(aesOutput[(i * 4) + 1]) << 8)
+                    + (bToUnsignedInt(aesOutput[(i * 4) + 2]) << 16)
+                    + (bToUnsignedInt(aesOutput[(i * 4) + 3]) << 24));
     }
 
-    // TODO - Check for constant time
-    private static int getUnsignedDiv(int x, int n)
-    {
-        return BigInteger.valueOf((x < 0) ? x + 4294967296L : x).divide(BigInteger.valueOf(n)).intValueExact();
-    }
-
-    // TODO - Check for constant time
     private static int getUnsignedMod(int x, int n)
     {
-        return BigInteger.valueOf((x < 0) ? x + 4294967296L : x).mod(BigInteger.valueOf(n)).intValueExact();
+        return getUnsignedDivMod(x, n)[1];
     }
 
     protected static void generatePolynomialInRQFromSeed(short[] G, byte[] seed, int p, int q)
@@ -393,9 +384,9 @@ class Utils
             if (M[0] == 1)
                 out[start] = 0;
             else if (M[0] <= 256)
-                out[start] = (short)getUnsignedMod(Byte.toUnsignedInt(S[sIndex]), M[0]);
+                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]), M[0]);
             else
-                out[start] = (short)getUnsignedMod(Byte.toUnsignedInt(S[sIndex]) + (S[sIndex + 1] << 8), M[0]);
+                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]) + (S[sIndex + 1] << 8), M[0]);
         }
 
         if (len > 1)
@@ -412,14 +403,14 @@ class Utils
                 if (m > (256 * 16383))
                 {
                     bottomt[i / 2] = 256 * 256;
-                    bottomr[i / 2] = (short)(Byte.toUnsignedInt(S[sIndex]) + (256 * Byte.toUnsignedInt(S[sIndex + 1])));
+                    bottomr[i / 2] = (short)(bToUnsignedInt(S[sIndex]) + (256 * bToUnsignedInt(S[sIndex + 1])));
                     sIndex += 2;
                     M2[i / 2] = (short)((((m + 255) >>> 8) + 255) >>> 8);
                 }
                 else if (m >= 16384)
                 {
                     bottomt[i / 2] = 256;
-                    bottomr[i / 2] = (short)Byte.toUnsignedInt(S[sIndex]);
+                    bottomr[i / 2] = (short)bToUnsignedInt(S[sIndex]);
                     sIndex += 1;
                     M2[i / 2] = (short)((m + 255) >>> 8);
                 }
@@ -437,14 +428,11 @@ class Utils
 
             for (i = 0; i < len - 1; i += 2)
             {
-                int r = Short.toUnsignedInt(bottomr[i / 2]);
-                int r0, r1;
-                r += bottomt[i / 2] * Short.toUnsignedInt(R2[i / 2]);
-                r0 = getUnsignedMod(r, M[i]);
-                r1 = getUnsignedDiv(r, M[i]);
-                r1 = getUnsignedMod(r1, M[i + 1]);
-                out[start++] = (short)r0;
-                out[start++] = (short)r1;
+                int r = sToUnsignedInt(bottomr[i / 2]);
+                r += bottomt[i / 2] * sToUnsignedInt(R2[i / 2]);
+                int[] r01 = getUnsignedDivMod(r, M[i]);
+                out[start++] = (short)r01[1];
+                out[start++] = (short)getUnsignedMod(r01[0], M[i + 1]);
             }
             if (i < len)
                 out[start] = R2[i / 2];
@@ -515,14 +503,14 @@ class Utils
         for (int i = 0; i < p / 4; i++)
         {
             x = encSP[encSPIndex++];
-            sp[spIndex++] = (byte)((Byte.toUnsignedInt(x) & 3) - 1); x >>>= 2;
-            sp[spIndex++] = (byte)((Byte.toUnsignedInt(x) & 3) - 1); x >>>= 2;
-            sp[spIndex++] = (byte)((Byte.toUnsignedInt(x) & 3) - 1); x >>>= 2;
-            sp[spIndex++] = (byte)((Byte.toUnsignedInt(x) & 3) - 1);
+            sp[spIndex++] = (byte)((bToUnsignedInt(x) & 3) - 1); x >>>= 2;
+            sp[spIndex++] = (byte)((bToUnsignedInt(x) & 3) - 1); x >>>= 2;
+            sp[spIndex++] = (byte)((bToUnsignedInt(x) & 3) - 1); x >>>= 2;
+            sp[spIndex++] = (byte)((bToUnsignedInt(x) & 3) - 1);
         }
 
         x = encSP[encSPIndex];
-        sp[spIndex] = (byte)((Byte.toUnsignedInt(x) & 3) - 1);
+        sp[spIndex] = (byte)((bToUnsignedInt(x) & 3) - 1);
     }
 
     protected static void scalarMultiplicationInRQ(short[] out, short[] in, int scalar, int q)
@@ -572,20 +560,14 @@ class Utils
     protected static void checkForSmallPolynomial(byte[] r, byte[] ev, int p, int w)
     {
         int weight = 0;
-        for (int i = 0; i != ev.length; i++)
-        {
-            weight += ev[i] & 1;
-        }
+        for (byte b : ev)
+            weight += b & 1;
 
-        int mask = (weight == w) ? 0 : -1;
+        int mask = checkNotEqualToZero(weight - w);
         for (int i = 0; i < w; i++)
-        {
             r[i] = (byte)(((ev[i] ^ 1) & ~mask) ^ 1);
-        }
         for (int i = w; i < p; i++)
-        {
             r[i] = (byte)(ev[i] & ~mask);
-        }
     }
 
     protected static void updateDiffMask(byte[] encR, byte[] rho, int mask)
@@ -606,6 +588,70 @@ class Utils
     protected static void right(byte[] out, short[] aB, byte[] T, int q, int w, int tau2, int tau3)
     {
         for (int i = 0; i < out.length; i++)
-            out[i] = (byte)((getModFreeze(getModFreeze((tau3 * T[i]) - tau2, q) - aB[i] + (4 * w) + 1, q) < 0) ? 1 : 0);
+            out[i] = (byte)(-checkLessThanZero(getModFreeze(getModFreeze((tau3 * T[i]) - tau2, q) - aB[i] + (4 * w) + 1, q)));
+    }
+
+    private static int[] getUnsignedDivMod(int dividend, int n)
+    {
+        long x = Integer.toUnsignedLong(dividend);
+        long v = Integer.toUnsignedLong(0x80000000);
+        long q, qpart, mask;
+
+        v /= n;
+        q = 0;
+
+        qpart = (x * v) >>> 31;
+        x -= qpart * n;
+        q += qpart;
+
+        qpart = (x * v) >>> 31;
+        x -= qpart * n;
+        q += qpart;
+
+        x -= n;
+        q += 1;
+        mask = -(x >>> 63);
+        x += mask & n;
+        q += mask;
+
+        return new int[]{Math.toIntExact(q), Math.toIntExact(x)};
+    }
+
+    private static int[] getSignedDivMod(int x, int n)
+    {
+        int q, r, mask;
+
+        int[] div1 = getUnsignedDivMod(Math.toIntExact(0x80000000 + Integer.toUnsignedLong(x)), n);
+        int[] div2 = getUnsignedDivMod(0x80000000, n);
+
+        q = Math.toIntExact(Integer.toUnsignedLong(div1[0]) - Integer.toUnsignedLong(div2[0]));
+        r = Math.toIntExact(Integer.toUnsignedLong(div1[1]) - Integer.toUnsignedLong(div2[1]));
+        mask = -(r >>> 31);
+        r += mask & n;
+        q += mask;
+
+        return new int[]{q, r};
+    }
+
+    private static int checkLessThanZero(int x)
+    {
+        return -(int)(x >>> 31);
+    }
+
+    private static int checkNotEqualToZero(int x)
+    {
+        long l = Integer.toUnsignedLong(x);
+        l = -l;
+        return -(int)(l >>> 63);
+    }
+
+    static int bToUnsignedInt(byte b)
+    {
+        return b & 0xff;
+    }
+
+    static int sToUnsignedInt(short s)
+    {
+        return s & 0xffff;
     }
 }
