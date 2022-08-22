@@ -42,7 +42,7 @@ public class BCNTRULPRimePrivateKey
     }
 
     /**
-     * Compare this SPHINCS-256 private key with another object.
+     * Compare this private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
