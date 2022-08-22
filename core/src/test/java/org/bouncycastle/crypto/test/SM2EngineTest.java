@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
@@ -233,12 +234,64 @@ public class SM2EngineTest
         isTrue("f2m dec wrong", Arrays.areEqual(m, dec));
     }
 
+    public void doDudInputTest()
+        throws Exception
+    {
+        BigInteger SM2_ECC_A = new BigInteger("00", 16);
+        BigInteger SM2_ECC_B = new BigInteger("E78BCD09746C202378A7E72B12BCE00266B9627ECB0B5A25367AD1AD4CC6242B", 16);
+        BigInteger SM2_ECC_N = new BigInteger("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBC972CF7E6B6F900945B3C6A0CF6161D", 16);
+        BigInteger SM2_ECC_H = BigInteger.valueOf(4);
+        BigInteger SM2_ECC_GX = new BigInteger("00CDB9CA7F1E6B0441F658343F4B10297C0EF9B6491082400A62E7A7485735FADD", 16);
+        BigInteger SM2_ECC_GY = new BigInteger("013DE74DA65951C4D76DC89220D5F7777A611B1C38BAE260B175951DC8060C2B3E", 16);
+
+        ECCurve curve = new ECCurve.F2m(257, 12, SM2_ECC_A, SM2_ECC_B, SM2_ECC_N, SM2_ECC_H);
+
+        ECPoint g = curve.createPoint(SM2_ECC_GX, SM2_ECC_GY);
+        ECDomainParameters domainParams = new ECDomainParameters(curve, g, SM2_ECC_N, SM2_ECC_H);
+
+        ECKeyPairGenerator keyPairGenerator = new ECKeyPairGenerator();
+
+        ECKeyGenerationParameters aKeyGenParams = new ECKeyGenerationParameters(domainParams, new TestRandomBigInteger("56A270D17377AA9A367CFA82E46FA5267713A9B91101D0777B07FCE018C757EB", 16));
+
+        keyPairGenerator.init(aKeyGenParams);
+
+        AsymmetricCipherKeyPair aKp = keyPairGenerator.generateKeyPair();
+
+        ECPublicKeyParameters aPub = (ECPublicKeyParameters)aKp.getPublic();
+        ECPrivateKeyParameters aPriv = (ECPrivateKeyParameters)aKp.getPrivate();
+
+        SM2Engine sm2Engine = new SM2Engine();
+
+        // zero length input
+        try
+        {
+            sm2Engine.processBlock(new byte[0], 0, 0);
+            fail("no expection");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("input buffer too short", e.getMessage());
+        }
+        
+        // buffer too small
+        try
+        {
+            sm2Engine.processBlock(new byte[1], 0, 2);
+            fail("no expection");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("input buffer too short", e.getMessage());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         doEngineTestFp();
         doEngineTestF2m();
         doEngineTestFpC1C3C2();
+        doDudInputTest();
     }
 
     public static void main(String[] args)
