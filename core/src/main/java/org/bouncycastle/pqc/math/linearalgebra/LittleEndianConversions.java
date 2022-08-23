@@ -3,10 +3,8 @@ package org.bouncycastle.pqc.math.linearalgebra;
 /**
  * This is a utility class containing data type conversions using little-endian
  * byte order.
- *
- * @see BigEndianConversions
  */
-public final class LittleEndianConversions
+final class LittleEndianConversions
 {
 
     /**

@@ -145,7 +145,7 @@ public final class IntegerFunctions
      * @param a value out of which we extract the square root
      * @param p prime modulus that determines the underlying field
      * @return a number <tt>b</tt> such that b<sup>2</sup> = a (mod p) if
-     *         <tt>a</tt> is a quadratic residue modulo <tt>p</tt>.
+     * <tt>a</tt> is a quadratic residue modulo <tt>p</tt>.
      * @throws IllegalArgumentException if <tt>a</tt> is a quadratic non-residue modulo <tt>p</tt>
      */
     public static BigInteger ressol(BigInteger a, BigInteger p)
@@ -459,7 +459,7 @@ public final class IntegerFunctions
      *
      * @param a an integer
      * @return the largest <tt>h</tt> with <tt>2^h | a</tt> if <tt>a!=0</tt>,
-     *         <tt>0</tt> otherwise
+     * <tt>0</tt> otherwise
      */
     public static int maxPower(int a)
     {
@@ -480,7 +480,7 @@ public final class IntegerFunctions
     /**
      * @param a an integer
      * @return the number of ones in the binary representation of an integer
-     *         <tt>a</tt>
+     * <tt>a</tt>
      */
     public static int bitCount(int a)
     {
@@ -501,7 +501,7 @@ public final class IntegerFunctions
      * @param g an integer with 1 &lt; g &lt; p
      * @param p a prime
      * @return the order k of g (that is k is the smallest integer with
-     *         g<sup>k</sup> = 1 mod p
+     * g<sup>k</sup> = 1 mod p
      */
     public static int order(int g, int p)
     {
@@ -781,7 +781,7 @@ public final class IntegerFunctions
      *
      * @param n the integer to test for primality
      * @return <tt>true</tt> if the given integer is prime with probability
-     *         2<sup>-100</sup>, <tt>false</tt> otherwise
+     * 2<sup>-100</sup>, <tt>false</tt> otherwise
      */
     public static boolean isPrime(int n)
     {
@@ -825,7 +825,7 @@ public final class IntegerFunctions
      *
      * @param candidate the number to test
      * @return <tt>true</tt> if the number has no factor of the tested primes,
-     *         <tt>false</tt> if the number is definitely composite
+     * <tt>false</tt> if the number is definitely composite
      */
     public static boolean passesSmallPrimeTest(BigInteger candidate)
     {
@@ -867,7 +867,7 @@ public final class IntegerFunctions
      *
      * @param n - upper bound
      * @return the largest prime smaller than <tt>n</tt>, or <tt>1</tt> if
-     *         <tt>n &lt;= 2</tt>
+     * <tt>n &lt;= 2</tt>
      */
     public static int nextSmallerPrime(int n)
     {

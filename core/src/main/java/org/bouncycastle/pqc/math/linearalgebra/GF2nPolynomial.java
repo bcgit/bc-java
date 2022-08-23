@@ -536,7 +536,7 @@ public class GF2nPolynomial
      *
      * @param g -
      *          a GF2nPolynomial
-     * @return gcd(<i>this</i>, <i>g</i>)
+     * @return gcd(< i > this < / i >, < i > g < / i >)
      */
     public final GF2nPolynomial gcd(GF2nPolynomial g)
     {

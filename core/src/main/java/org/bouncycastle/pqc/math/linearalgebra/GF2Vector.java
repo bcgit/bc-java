@@ -279,7 +279,7 @@ public class GF2Vector
      * @param other another GF2Vector
      * @return <tt>this + other</tt>
      * @throws ArithmeticException if the other vector is not a GF2Vector or has another
-     * length.
+     *                             length.
      */
     public Vector add(Vector other)
     {
@@ -338,7 +338,7 @@ public class GF2Vector
      *
      * @param setJ the set of indices of elements to extract
      * @return the new {@link GF2Vector}
-     *         <tt>[this_setJ[0], this_setJ[1], ..., this_setJ[#setJ-1]]</tt>
+     * <tt>[this_setJ[0], this_setJ[1], ..., this_setJ[#setJ-1]]</tt>
      */
     public GF2Vector extractVector(int[] setJ)
     {
@@ -368,7 +368,7 @@ public class GF2Vector
      *
      * @param k the number of elements to extract
      * @return a new {@link GF2Vector} consisting of the first <tt>k</tt>
-     *         elements of this vector
+     * elements of this vector
      */
     public GF2Vector extractLeftVector(int k)
     {
@@ -402,7 +402,7 @@ public class GF2Vector
      *
      * @param k the number of elements to extract
      * @return a new {@link GF2Vector} consisting of the last <tt>k</tt>
-     *         elements of this vector
+     * elements of this vector
      */
     public GF2Vector extractRightVector(int k)
     {
