@@ -101,7 +101,7 @@ public class GF2nONBField
      * constructs an instance of the finite field with 2<sup>deg</sup>
      * elements and characteristic 2.
      *
-     * @param deg -the extention degree of this field
+     * @param deg    -the extention degree of this field
      * @param random - a source of randomness for generating polynomials on the field.
      */
     public GF2nONBField(int deg, SecureRandom random)

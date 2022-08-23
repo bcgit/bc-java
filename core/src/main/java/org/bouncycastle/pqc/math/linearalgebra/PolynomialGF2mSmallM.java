@@ -34,8 +34,8 @@ public class PolynomialGF2mSmallM
     private int[] coefficients;
 
     /*
-      * some types of polynomials
-      */
+     * some types of polynomials
+     */
 
     /**
      * Constant used for polynomial construction (see constructor
@@ -216,14 +216,14 @@ public class PolynomialGF2mSmallM
     }
 
     /*
-      * ------------------------
-      */
+     * ------------------------
+     */
 
     /**
      * Return the degree of this polynomial
      *
      * @return int degree of this polynomial if this is zero polynomial return
-     *         -1
+     * -1
      */
     public int getDegree()
     {
@@ -398,7 +398,7 @@ public class PolynomialGF2mSmallM
      * @param element an element of the finite field GF(2^m)
      * @return <tt>this * element</tt> (newly created)
      * @throws ArithmeticException if <tt>element</tt> is not an element of the finite
-     * field this polynomial is defined over.
+     *                             field this polynomial is defined over.
      */
     public PolynomialGF2mSmallM multWithElement(int element)
     {
@@ -416,7 +416,7 @@ public class PolynomialGF2mSmallM
      *
      * @param element an element of the finite field GF(2^m)
      * @throws ArithmeticException if <tt>element</tt> is not an element of the finite
-     * field this polynomial is defined over.
+     *                             field this polynomial is defined over.
      */
     public void multThisWithElement(int element)
     {
@@ -495,7 +495,7 @@ public class PolynomialGF2mSmallM
      *
      * @param f a polynomial
      * @return polynomial pair = {q,r} where this = q*f+r and deg(r) &lt;
-     *         deg(f);
+     * deg(f);
      */
     public PolynomialGF2mSmallM[] div(PolynomialGF2mSmallM f)
     {
@@ -676,9 +676,9 @@ public class PolynomialGF2mSmallM
     }
 
     /*
-      * ---------------- PART II ----------------
-      *
-      */
+     * ---------------- PART II ----------------
+     *
+     */
 
     /**
      * Check a polynomial for irreducibility over the field <tt>GF(2^m)</tt>.
@@ -770,13 +770,12 @@ public class PolynomialGF2mSmallM
     }
 
 
-
     /**
      * Square this polynomial using a squaring matrix.
      *
      * @param matrix the squaring matrix
      * @return <tt>this^2</tt> modulo the reduction polynomial implicitly
-     *         given via the squaring matrix
+     * given via the squaring matrix
      */
     public PolynomialGF2mSmallM modSquareMatrix(PolynomialGF2mSmallM[] matrix)
     {
@@ -851,7 +850,7 @@ public class PolynomialGF2mSmallM
      *               <tt>(GF(2^m))^t</tt> the polynomial ring defining the
      *               square root matrix
      * @return <tt>this^(1/2)</tt> modulo the reduction polynomial implicitly
-     *         given via the square root matrix
+     * given via the square root matrix
      */
     public PolynomialGF2mSmallM modSquareRootMatrix(
         PolynomialGF2mSmallM[] matrix)
@@ -956,7 +955,7 @@ public class PolynomialGF2mSmallM
      *
      * @param g the reduction polynomial
      * @return PolynomialGF2mSmallM[] {a,b} with b*this = a mod g and deg(a)&lt;=
-     *         deg(g)/2
+     * deg(g)/2
      */
     public PolynomialGF2mSmallM[] modPolynomialToFracton(PolynomialGF2mSmallM g)
     {
@@ -1014,7 +1013,7 @@ public class PolynomialGF2mSmallM
      * @param a the first polynomial
      * @param b the second polynomial
      * @return <tt>true</tt> if <tt>a</tt> and <tt>b</tt> represent the
-     *         same polynomials, <tt>false</tt> otherwise
+     * same polynomials, <tt>false</tt> otherwise
      */
     private static boolean isEqual(int[] a, int[] b)
     {
@@ -1083,7 +1082,7 @@ public class PolynomialGF2mSmallM
      *
      * @param a the polynomial
      * @return the degree of the polynomial <tt>a</tt>. If <tt>a</tt> is
-     *         the zero polynomial, return -1.
+     * the zero polynomial, return -1.
      */
     private static int computeDegree(int[] a)
     {
@@ -1137,7 +1136,7 @@ public class PolynomialGF2mSmallM
                                                            PolynomialGF2mSmallM b)
     {
         int[] resultCoeff = modKaratsubaMultiplyBigDeg(coefficients, a.coefficients,
-                b.coefficients);
+            b.coefficients);
         return new PolynomialGF2mSmallM(field, resultCoeff);
     }
 
@@ -1182,72 +1181,90 @@ public class PolynomialGF2mSmallM
      *
      * @param aa the first polynomial
      * @param bb the second polynomial
-     * @param g the reduction polynomial
+     * @param g  the reduction polynomial
      * @return <tt>a * b mod g</tt>
      */
     private int[] modKaratsubaMultiplyBigDeg(int[] aa, int[] bb, int[] g)
     {
-        int[] a,b;
-        if (aa.length >= bb.length){
-            a  = Arrays.clone(aa);
-            b  = Arrays.clone(bb);
+        int[] a, b;
+        if (aa.length >= bb.length)
+        {
+            a = Arrays.clone(aa);
+            b = Arrays.clone(bb);
         }
-        else{
-            a  = Arrays.clone(bb);
-            b  = Arrays.clone(aa);
+        else
+        {
+            a = Arrays.clone(bb);
+            b = Arrays.clone(aa);
         }
 
         int n = a.length;
         int m = b.length;
 
-        int[] D = new int[(n+m)/2];
-        int[] S = new int[n+m-1];
-        int[] T = new int[n+m-1];
-        int[] C = new int[n+m-1];
+        int[] D = new int[(n + m) / 2];
+        int[] S = new int[n + m - 1];
+        int[] T = new int[n + m - 1];
+        int[] C = new int[n + m - 1];
 
-        for(int i = 0; i < m; i ++){
+        for (int i = 0; i < m; i++)
+        {
             D[i] = a[i] * b[i];
         }
 
-        for (int i = 1; i < n+m-2; i++){
-            for (int p = 0; p<Math.min(m,i); p++){
+        for (int i = 1; i < n + m - 2; i++)
+        {
+            for (int p = 0; p < Math.min(m, i); p++)
+            {
                 int q = i - p;
-                if (p >= q){
+                if (p >= q)
+                {
                     break;
                 }
 
                 int ap = a[p];
                 int aq = 0;
 
-                if (q < a.length){
+                if (q < a.length)
+                {
                     aq = a[q];
                 }
 
                 int bp = b[p];
                 int dp = D[p];
 
-                if (q< m && p <m){
+                if (q < m && p < m)
+                {
                     int bq = b[q];
                     int dq = D[q];
 
                     S[i] = S[i] + (ap + aq) * (bp + bq);
                     T[i] = T[i] + dp + dq;
-                } else if (q >= m && q <n){
-                    S[i] = S[i] + ((ap+aq) * bp);
+                }
+                else if (q >= m && q < n)
+                {
+                    S[i] = S[i] + ((ap + aq) * bp);
                     T[i] = T[i] + dp;
                 }
             }
         }
 
-        for (int i = 0; i < n+m-1; i++){
-            if (i == 0){
+        for (int i = 0; i < n + m - 1; i++)
+        {
+            if (i == 0)
+            {
                 C[i] = D[i] % 2;
-            } else if (i == n+m-2){
-                C[i] = (a[a.length-1] * b[b.length-1]) %2;
-            } else if ( i % 2 == 1){
-                C[i] = (S[i] - T[i]) %2;
-            } else{
-                C[i] = (S[i]-T[i] + D[i/2]) %2;
+            }
+            else if (i == n + m - 2)
+            {
+                C[i] = (a[a.length - 1] * b[b.length - 1]) % 2;
+            }
+            else if (i % 2 == 1)
+            {
+                C[i] = (S[i] - T[i]) % 2;
+            }
+            else
+            {
+                C[i] = (S[i] - T[i] + D[i / 2]) % 2;
             }
         }
         int[] res = mod(C, g);

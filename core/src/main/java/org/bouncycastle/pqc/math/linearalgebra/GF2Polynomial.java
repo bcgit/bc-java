@@ -544,7 +544,7 @@ public class GF2Polynomial
      *
      * @param other the other GF2Polynomial
      * @return true if this GF2Polynomial equals <i>b</i> (<i>this</i> ==
-     *         <i>b</i>)
+     * <i>b</i>)
      */
     public boolean equals(Object other)
     {
@@ -1145,7 +1145,7 @@ public class GF2Polynomial
      *
      * @param k
      * @return a new GF2Polynomial containing the upper <i>k</i> bytes of this
-     *         GF2Polynomial
+     * GF2Polynomial
      * @see GF2Polynomial#karaMult
      */
     private GF2Polynomial upper(int k)
@@ -1165,7 +1165,7 @@ public class GF2Polynomial
      *
      * @param k
      * @return a new GF2Polynomial containing the lower <i>k</i> bytes of this
-     *         GF2Polynomial
+     * GF2Polynomial
      * @see GF2Polynomial#karaMult
      */
     private GF2Polynomial lower(int k)
@@ -1744,7 +1744,7 @@ public class GF2Polynomial
      *
      * @param i int
      * @return the bit at position <i>i</i> if <i>i</i> is a valid position, 0
-     *         otherwise.
+     * otherwise.
      */
     public int getBit(int i)
     {
@@ -1800,7 +1800,7 @@ public class GF2Polynomial
      *
      * @param i the position of the bit to be tested
      * @return true if the bit at position <i>i</i> is set (a(<i>i</i>) ==
-     *         1). False if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
+     * 1). False if (<i>i</i> &lt; 0) || (<i>i</i> &gt; (len - 1))
      */
     public boolean testBit(int i)
     {

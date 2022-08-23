@@ -20,9 +20,9 @@ public class GF2mField
 {
 
     /*
-      * degree - degree of the field polynomial - the field polynomial ring -
-      * polynomial ring over the finite field GF(2)
-      */
+     * degree - degree of the field polynomial - the field polynomial ring -
+     * polynomial ring over the finite field GF(2)
+     */
 
     private int degree = 0;
 
@@ -275,8 +275,8 @@ public class GF2mField
     }
 
     /*
-      * help method for visual control
-      */
+     * help method for visual control
+     */
     public String elementToStr(int a)
     {
         String s = "";

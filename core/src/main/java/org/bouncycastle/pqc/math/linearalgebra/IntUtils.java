@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.math.linearalgebra;
 
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
+
 public final class IntUtils
 {
 
@@ -143,7 +146,7 @@ public final class IntUtils
      * @param end   -
      *              the end index
      * @return a subarray of <tt>input</tt>, ranging from <tt>start</tt> to
-     *         <tt>end</tt>
+     * <tt>end</tt>
      */
     public static int[] subArray(final int[] input, final int start,
                                  final int end)
@@ -173,7 +176,17 @@ public final class IntUtils
      */
     public static String toHexString(int[] input)
     {
-        return ByteUtils.toHexString(BigEndianConversions.toByteArray(input));
+        // -DM Hex.toHexString
+        return Hex.toHexString(toByteArray(input));
     }
 
+    public static byte[] toByteArray(final int[] input)
+    {
+        byte[] result = new byte[input.length << 2];
+        for (int i = 0; i < input.length; i++)
+        {
+            Pack.intToBigEndian(input[i], result, i << 2);
+        }
+        return result;
+    }
 }
