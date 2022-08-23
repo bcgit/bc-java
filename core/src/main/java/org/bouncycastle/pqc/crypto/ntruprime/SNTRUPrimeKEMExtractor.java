@@ -143,7 +143,7 @@ public class SNTRUPrimeKEMExtractor
         return Arrays.copyOfRange(ssHash, 0, params.getSessionKeySize() / 8);
     }
     
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return privateKey.getParameters().getRoundedPolynomialBytes() + 32;
     }

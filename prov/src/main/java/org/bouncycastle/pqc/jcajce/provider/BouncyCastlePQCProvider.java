@@ -39,7 +39,7 @@ public class BouncyCastlePQCProvider
         {
             "Rainbow", "McEliece", "SPHINCS", "LMS", "NH", "XMSS", "SPHINCSPlus",
             "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
-            "Dilithium", "NTRUPrime"
+            "Dilithium", "NTRUPrime", "BIKE"
         };
 
     /**

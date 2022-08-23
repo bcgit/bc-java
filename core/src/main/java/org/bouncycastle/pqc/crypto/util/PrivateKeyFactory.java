@@ -22,6 +22,8 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
+import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
@@ -248,6 +250,16 @@ public class PrivateKeyFactory
             FalconParameters spParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new FalconPrivateKeyParameters(spParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            byte[] h0 = Arrays.copyOfRange(keyEnc, 0, bikeParams.getRByte());
+            byte[] h1 = Arrays.copyOfRange(keyEnc, bikeParams.getRByte(), 2*bikeParams.getRByte());
+            byte[] sigma = Arrays.copyOfRange(keyEnc, 2*bikeParams.getRByte(), keyEnc.length);
+            return new BIKEPrivateKeyParameters(h0, h1, sigma, bikeParams);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {
