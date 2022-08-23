@@ -30,7 +30,7 @@ public class KyberKEMExtractor
         return sharedSecret;
     }
 
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return engine.getCryptoCipherTextBytes();
     }

@@ -65,7 +65,7 @@ public final class BigIntUtils
      * @param end   -
      *              the end index
      * @return a subarray of <tt>input</tt>, ranging from <tt>start</tt> to
-     *         <tt>end</tt>
+     * <tt>end</tt>
      */
     public static BigInteger[] subArray(BigInteger[] input, int start, int end)
     {

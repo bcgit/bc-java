@@ -117,7 +117,7 @@ public final class GoppaCode
 
         /**
          * @return the set of indices such that the submatrix of the generator
-         *         matrix consisting of the specified columns is the identity
+         * matrix consisting of the specified columns is the identity
          */
         public int[] getSetJ()
         {

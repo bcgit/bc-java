@@ -143,7 +143,7 @@ public final class IntUtils
      * @param end   -
      *              the end index
      * @return a subarray of <tt>input</tt>, ranging from <tt>start</tt> to
-     *         <tt>end</tt>
+     * <tt>end</tt>
      */
     public static int[] subArray(final int[] input, final int start,
                                  final int end)

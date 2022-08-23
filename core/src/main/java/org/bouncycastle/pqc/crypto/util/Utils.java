@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
+import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
@@ -82,6 +83,9 @@ class Utils
 
     static final Map dilithiumOids = new HashMap();
     static final Map dilithiumParams = new HashMap();
+
+    static final Map bikeOids = new HashMap();
+    static final Map bikeParams = new HashMap();
 
     static
     {
@@ -250,6 +254,14 @@ class Utils
         dilithiumParams.put(BCObjectIdentifiers.dilithium2, DilithiumParameters.dilithium2);
         dilithiumParams.put(BCObjectIdentifiers.dilithium3, DilithiumParameters.dilithium3);
         dilithiumParams.put(BCObjectIdentifiers.dilithium5, DilithiumParameters.dilithium5);
+
+        bikeParams.put(BCObjectIdentifiers.bike128, BIKEParameters.bike128);
+        bikeParams.put(BCObjectIdentifiers.bike192, BIKEParameters.bike192);
+        bikeParams.put(BCObjectIdentifiers.bike256, BIKEParameters.bike256);
+
+        bikeOids.put(BIKEParameters.bike128, BCObjectIdentifiers.bike128);
+        bikeOids.put(BIKEParameters.bike192, BCObjectIdentifiers.bike192);
+        bikeOids.put(BIKEParameters.bike256, BCObjectIdentifiers.bike256);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -527,5 +539,15 @@ class Utils
     static DilithiumParameters dilithiumParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (DilithiumParameters)dilithiumParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier bikeOidLookup(BIKEParameters params)
+    {
+        return (ASN1ObjectIdentifier)bikeOids.get(params);
+    }
+
+    static BIKEParameters bikeParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (BIKEParameters)bikeParams.get(oid);
     }
 }

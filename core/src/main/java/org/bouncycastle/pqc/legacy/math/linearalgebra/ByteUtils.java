@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.legacy.math.linearalgebra;
 
 /**
  * This class is a utility class for manipulating byte arrays.
+ *
  * @deprecated use org.bouncycastle.util.Arrays.
  */
 public final class ByteUtils
@@ -158,7 +159,7 @@ public final class ByteUtils
      *
      * @param array the array to clone
      * @return the clone of the given array, or <tt>null</tt> if the array is
-     *         <tt>null</tt>
+     * <tt>null</tt>
      */
     public static byte[] clone(byte[] array)
     {
@@ -308,8 +309,8 @@ public final class ByteUtils
      *
      * @param x1 the first array
      * @param x2 the second array
-     * @return (x2||x1) (little-endian order, i.e. x1 is at lower memory
-     *         addresses)
+     * @return (x2 | | x1) (little-endian order, i.e. x1 is at lower memory
+     * addresses)
      */
     public static byte[] concatenate(byte[] x1, byte[] x2)
     {
@@ -373,7 +374,7 @@ public final class ByteUtils
      * @param start the start index
      * @param end   the end index
      * @return a subarray of <tt>input</tt>, ranging from <tt>start</tt>
-     *         (inclusively) to <tt>end</tt> (exclusively)
+     * (inclusively) to <tt>end</tt> (exclusively)
      */
     public static byte[] subArray(byte[] input, int start, int end)
     {
@@ -388,7 +389,7 @@ public final class ByteUtils
      * @param input the input byte array
      * @param start the start index
      * @return a subarray of <tt>input</tt>, ranging from <tt>start</tt> to
-     *         the end of the array
+     * the end of the array
      */
     public static byte[] subArray(byte[] input, int start)
     {
