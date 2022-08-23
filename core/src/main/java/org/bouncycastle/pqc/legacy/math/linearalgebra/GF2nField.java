@@ -74,7 +74,7 @@ public abstract class GF2nField
      * field.
      *
      * @param other another object
-     * @return (this == other)
+     * @return (this = = other)
      */
     public final boolean equals(Object other)
     {
@@ -121,7 +121,7 @@ public abstract class GF2nField
      *
      * @param B0FieldPolynomial the fieldpolynomial if the other basis as a Bitstring
      * @return a random root of BOFieldPolynomial in representation according to
-     *         this field
+     * this field
      * @see "P1363 A.5.6, p103f"
      */
     protected abstract GF2nElement getRandomRoot(GF2Polynomial B0FieldPolynomial);
@@ -217,7 +217,7 @@ public abstract class GF2nField
      * @param elem  the GF2nElement to convert
      * @param basis the basis to convert <tt>elem</tt> to
      * @return <tt>elem</tt> converted to a new element representation
-     *         according to <tt>basis</tt>
+     * according to <tt>basis</tt>
      * @see GF2nField#computeCOBMatrix
      * @see GF2nField#getRandomRoot
      * @see GF2nPolynomial

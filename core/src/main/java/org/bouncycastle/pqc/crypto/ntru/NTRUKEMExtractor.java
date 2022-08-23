@@ -83,7 +83,7 @@ public class NTRUKEMExtractor
         }
     }
 
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return params.parameterSet.ntruCiphertextBytes();
     }

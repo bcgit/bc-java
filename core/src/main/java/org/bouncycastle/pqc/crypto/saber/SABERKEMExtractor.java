@@ -25,7 +25,7 @@ public class SABERKEMExtractor
         engine.crypto_kem_dec(session_key, encapsulation, ((SABERPrivateKeyParameters)key).getPrivateKey());
         return session_key;
     }
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return engine.getCipherTextSize();
     }

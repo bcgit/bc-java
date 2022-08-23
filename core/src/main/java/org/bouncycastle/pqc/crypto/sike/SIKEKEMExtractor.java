@@ -42,7 +42,7 @@ public class SIKEKEMExtractor
         return session_key;
     }
 
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return engine.getCipherTextSize();
     }
