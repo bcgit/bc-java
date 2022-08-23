@@ -2,9 +2,11 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StatelessProcessing;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -179,6 +181,8 @@ public class SEEDEngine
     {
         this.forEncryption = forEncryption;
         wKey = createWorkingKey(((KeyParameter)params).getKey());
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                    this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
     }
 
     public String getAlgorithmName()

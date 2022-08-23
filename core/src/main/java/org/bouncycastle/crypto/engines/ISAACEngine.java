@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
 
@@ -51,9 +53,10 @@ public class ISAACEngine
          * irrelevant.
          */
         KeyParameter p = (KeyParameter)params;
-        setKey(p.getKey());
-        
-        return;
+        byte[] key = p.getKey();
+        setKey(key);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), key.length < 32 ? key.length * 8 : 256, params, Utils.getPurpose(forEncryption)));
     }
                     
     public byte returnByte(byte in)
