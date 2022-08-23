@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.Digest;
  * Haraka512-256 with reference to Python Reference Impl from: https://github.com/sphincs/sphincsplus
  * </p>
  */
-public class HarakaS512Digest
+class HarakaS512Digest
     extends HarakaSBase
     implements Digest
 {
