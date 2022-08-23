@@ -1449,7 +1449,6 @@ public class TlsClientProtocol
         }
 
         CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
-        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
 
         assertEmpty(buf);
 
@@ -1459,6 +1458,9 @@ public class TlsClientProtocol
         }
 
         this.certificateRequest = certificateRequest;
+
+        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
 
         TlsUtils.establishServerSigAlgs(tlsClientContext.getSecurityParametersHandshake(), certificateRequest);
     }
@@ -1612,11 +1614,13 @@ public class TlsClientProtocol
         }
 
         CertificateRequest certificateRequest = CertificateRequest.parse(tlsClientContext, buf);
-        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
 
         assertEmpty(buf);
 
         this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
+
+        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
     }
 
     protected void receiveNewSessionTicket(ByteArrayInputStream buf)

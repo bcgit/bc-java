@@ -570,11 +570,13 @@ public class DTLSClientProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         CertificateRequest certificateRequest = CertificateRequest.parse(state.clientContext, buf);
-        certificateRequest.certificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.serverExtensions, CertificateType.X509);
 
         TlsProtocol.assertEmpty(buf);
 
         state.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, state.keyExchange);
+
+        state.clientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.serverExtensions, CertificateType.X509);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)

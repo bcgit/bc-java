@@ -57,6 +57,7 @@ public class SecurityParameters
     Certificate peerCertificate = null;
     ProtocolVersion negotiatedVersion = null;
     int statusRequestVersion = 0;
+    short clientCertificateType = -1;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -193,7 +194,7 @@ public class SecurityParameters
 
     /**
      * @return {@link HashAlgorithm} for the current {@link PRFAlgorithm}
-     * 
+     *
      * @deprecated Use {@link #getPRFCryptoHashAlgorithm()} instead.
      */
     public short getPRFHashAlgorithm()
@@ -359,6 +360,11 @@ public class SecurityParameters
     public int getStatusRequestVersion()
     {
         return statusRequestVersion;
+    }
+
+    public short getClientCertificateType()
+    {
+        return clientCertificateType;
     }
 
     private static TlsSecret clearSecret(TlsSecret secret)

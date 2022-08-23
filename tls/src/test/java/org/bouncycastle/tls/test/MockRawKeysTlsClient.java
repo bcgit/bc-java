@@ -112,7 +112,7 @@ class MockRawKeysTlsClient extends DefaultTlsClient
                     fail("should not have received a certificate request");
                 }
 
-                assertEquals("wrong certificate type in request", clientCertType, certificateRequest.getCertificateType());
+                assertEquals("wrong certificate type in request", clientCertType, context.getSecurityParametersHandshake().getClientCertificateType());
 
                 if (credentials == null)
                 {
