@@ -39,8 +39,8 @@ public class GF2nPolynomialField
      * constructs an instance of the finite field with 2<sup>deg</sup>
      * elements and characteristic 2.
      *
-     * @param deg the extention degree of this field
-     * @param random     source of randomness for generating new polynomials.
+     * @param deg    the extention degree of this field
+     * @param random source of randomness for generating new polynomials.
      */
     public GF2nPolynomialField(int deg, SecureRandom random)
     {
@@ -61,11 +61,11 @@ public class GF2nPolynomialField
      * constructs an instance of the finite field with 2<sup>deg</sup>
      * elements and characteristic 2.
      *
-     * @param deg  the degree of this field
-     * @param random     source of randomness for generating new polynomials.
-     * @param file true if you want to read the field polynomial from the
-     *             file false if you want to use a random fielpolynomial
-     *             (this can take very long for huge degrees)
+     * @param deg    the degree of this field
+     * @param random source of randomness for generating new polynomials.
+     * @param file   true if you want to read the field polynomial from the
+     *               file false if you want to use a random fielpolynomial
+     *               (this can take very long for huge degrees)
      */
     public GF2nPolynomialField(int deg, SecureRandom random, boolean file)
     {

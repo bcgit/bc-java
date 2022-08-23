@@ -206,7 +206,7 @@ public class GF2nPolynomialElement
      *
      * @param other the other object
      * @return <tt>true</tt> if the two objects are equal, <tt>false</tt>
-     *         otherwise
+     * otherwise
      */
     public boolean equals(Object other)
     {
@@ -743,7 +743,7 @@ public class GF2nPolynomialElement
      * compute this solution.
      *
      * @return a GF2nPolynomialElement representing one z satisfying the
-     *         equation <tt>z<sup>2</sup> + z = this</tt>
+     * equation <tt>z<sup>2</sup> + z = this</tt>
      * @see "IEEE 1363, Annex A.4.7"
      */
     public GF2nElement solveQuadraticEquation()
@@ -818,7 +818,7 @@ public class GF2nPolynomialElement
      * Returns the half-trace of this GF2nPolynomialElement.
      *
      * @return a GF2nPolynomialElement representing the half-trace of this
-     *         GF2nPolynomialElement.
+     * GF2nPolynomialElement.
      */
     private GF2nPolynomialElement halfTrace()
         throws RuntimeException
@@ -1004,7 +1004,7 @@ public class GF2nPolynomialElement
      * Converts this GF2nPolynomialElement to an integer according to 1363.
      *
      * @return a BigInteger representing the value of this
-     *         GF2nPolynomialElement
+     * GF2nPolynomialElement
      * @see "P1363 5.5.1 p22 BS2IP"
      */
     public BigInteger toFlexiBigInt()

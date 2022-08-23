@@ -378,7 +378,7 @@ public class GF2nONBElement
      *
      * @param other the other object
      * @return <tt>true</tt> if the two objects are equal, <tt>false</tt>
-     *         otherwise
+     * otherwise
      */
     public boolean equals(Object other)
     {
@@ -431,7 +431,7 @@ public class GF2nONBElement
      *
      * @param index the index of the bit to test
      * @return <tt>true</tt> if the indexed bit of mPol is set, <tt>false</tt>
-     *         otherwise.
+     * otherwise.
      */
     boolean testBit(int index)
     {
