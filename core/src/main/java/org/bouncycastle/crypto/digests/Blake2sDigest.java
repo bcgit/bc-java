@@ -433,19 +433,13 @@ public class Blake2sDigest
         Arrays.fill(buffer, (byte)0);// Holds eventually the key if input is null
         Arrays.fill(internalState, 0);
 
-        byte[] bytes = new byte[4];
-        for (int i = 0; i < chainValue.length && (i * 4 < digestLength); i++)
+        int full = digestLength >>> 2, partial = digestLength & 3;
+        Pack.intToLittleEndian(chainValue, 0, full, out, outOffset);
+        if (partial > 0)
         {
-            Pack.intToLittleEndian(chainValue[i], bytes, 0);
-
-            if (i * 4 < digestLength - 4)
-            {
-                System.arraycopy(bytes, 0, out, outOffset + i * 4, 4);
-            }
-            else
-            {
-                System.arraycopy(bytes, 0, out, outOffset + i * 4, digestLength - (i * 4));
-            }
+            byte[] bytes = new byte[4];
+            Pack.intToLittleEndian(chainValue[full], bytes, 0);
+            System.arraycopy(bytes, 0, out, outOffset + digestLength - partial, partial);
         }
 
         Arrays.fill(chainValue, 0);
