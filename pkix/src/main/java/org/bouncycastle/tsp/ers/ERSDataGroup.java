@@ -53,15 +53,36 @@ public class ERSDataGroup
     }
 
     /**
-     * Generates hashes for all the data objects included in the data group.
+     * Generates hashes for all the data objects included in the data group with a previous chain hash.
      *
      * @param digestCalculator the {@link DigestCalculator} to use for computing the hashes
      * @return the set of hashes, in ascending order
      */
     public List<byte[]> getHashes(
-        final DigestCalculator digestCalculator)
+        final DigestCalculator digestCalculator,
+        final byte[] previousChainHash)
     {
-        return ERSUtil.buildHashList(digestCalculator, dataObjects);
+        return ERSUtil.buildHashList(digestCalculator, dataObjects, previousChainHash);
+    }
+
+    /**
+     * Return the calculated hash for the Data
+     *
+     * @param digestCalculator  digest calculator to use.
+     * @param previousChainHash hash from an earlier chain if it needs to be included.
+     * @return calculated hash.
+     */
+    public byte[] getHash(DigestCalculator digestCalculator, byte[] previousChainHash)
+    {
+        List<byte[]> hashes = getHashes(digestCalculator, previousChainHash);
+        if (hashes.size() > 1)
+        {
+            return ERSUtil.calculateDigest(digestCalculator, hashes.iterator());
+        }
+        else
+        {
+            return hashes.get(0);
+        }
     }
 
     /**
@@ -70,13 +91,18 @@ public class ERSDataGroup
      * @param digestCalculator the {@link DigestCalculator} to use for computing the hash
      * @return a hash that is representative of the whole DataGroup
      */
-    protected byte[] calculateHash(DigestCalculator digestCalculator)
+    protected byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash)
     {
-        List<byte[]> hashes = getHashes(digestCalculator);
+        List<byte[]> hashes = getHashes(digestCalculator, previousChainHash);
 
         if (hashes.size() > 1)
         {
-            return ERSUtil.calculateDigest(digestCalculator, hashes.iterator());
+            List<byte[]> dHashes = new ArrayList<byte[]>(hashes.size());
+            for (int i = 0; i != dHashes.size(); i++)
+            {
+                dHashes.add(hashes.get(i));
+            }
+            return ERSUtil.calculateDigest(digestCalculator, dHashes.iterator());
         }
         else
         {
