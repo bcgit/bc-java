@@ -15,8 +15,15 @@ public class ERSByteData
         this.content = content;
     }
 
-    protected byte[] calculateHash(DigestCalculator digestCalculator)
+    protected byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash)
     {
-        return ERSUtil.calculateDigest(digestCalculator, content);
+        byte[] hash = ERSUtil.calculateDigest(digestCalculator, content);
+
+        if (previousChainHash != null)
+        {
+            return ERSUtil.concatPreviousHashes(digestCalculator, previousChainHash, hash);
+        }
+
+        return hash;
     }
 }

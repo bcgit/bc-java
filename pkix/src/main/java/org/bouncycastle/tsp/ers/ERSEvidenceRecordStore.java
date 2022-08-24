@@ -92,7 +92,7 @@ public class ERSEvidenceRecordStore
     {
         if (selector instanceof ERSEvidenceRecordSelector)
         {
-            HashNode node = new HashNode(((ERSEvidenceRecordSelector)selector).getData().getHash(digCalc));
+            HashNode node = new HashNode(((ERSEvidenceRecordSelector)selector).getData().getHash(digCalc, null));
             List<ERSEvidenceRecord> records = (List<ERSEvidenceRecord>)recordMap.get(node);
 
             if (records != null)
