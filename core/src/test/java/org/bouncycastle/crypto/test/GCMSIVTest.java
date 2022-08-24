@@ -80,6 +80,15 @@ public class GCMSIVTest
             pCipher.doFinal(myOutput, 0);
             isTrue("Encryption mismatch", Arrays.areEqual(myExpected, myOutput));
 
+            if (myData.length >= 2)
+            {
+                /* Repeat processing checking processBytes with non-empty internal buffer */
+                pCipher.processByte(myData[0], null, 0);
+                pCipher.processBytes(myData, 1, myData.length - 1, null, 0);
+                pCipher.doFinal(myOutput, 0);
+                isTrue("Encryption mismatch", Arrays.areEqual(myExpected, myOutput));
+            }
+
             /* Re-initialise the cipher */
             pCipher.init(false, myParams);
             pCipher.processBytes(myOutput, 0, myOutput.length, null, 0);
