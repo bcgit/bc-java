@@ -76,14 +76,15 @@ public class TBCPadding
     public int padCount(byte[] in)
         throws InvalidCipherTextException
     {
-        byte code = in[in.length - 1];
-
-        int index = in.length - 1;
-        while (index > 0 && in[index - 1] == code)
+        int i = in.length;
+        int code = in[--i] & 0xFF, count = 1, countingMask = -1;
+        while (--i >= 0)
         {
-            index--;
+            int next = in[i] & 0xFF;
+            int matchMask = ((next ^ code) - 1) >> 31;
+            countingMask &= matchMask;
+            count -= countingMask;
         }
-
-        return in.length - index;
+        return count;
     }
 }
