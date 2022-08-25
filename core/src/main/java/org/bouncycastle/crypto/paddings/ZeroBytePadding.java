@@ -56,18 +56,15 @@ public class ZeroBytePadding
     public int padCount(byte[] in)
         throws InvalidCipherTextException
     {
-        int count = in.length;
-
-        while (count > 0)
+        int count = 0, still00Mask = -1;
+        int i = in.length;
+        while (--i >= 0)
         {
-            if (in[count - 1] != 0)
-            {
-                break;
-            }
-
-            count--;
+            int next = in[i] & 0xFF;
+            int match00Mask = ((next ^ 0x00) - 1) >> 31;
+            still00Mask &= match00Mask;
+            count -= still00Mask;
         }
-
-        return in.length - count;
+        return count;
     }
 }
