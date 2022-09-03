@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
@@ -13,7 +12,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
  * Camellia - based on RFC 3713.
  */
 public class CamelliaEngine
-    implements BlockCipher, StatelessProcessing
+    implements BlockCipher
 {
     private boolean initialised = false;
     private int _keySize;
@@ -688,11 +687,6 @@ public class CamelliaEngine
     {
         // nothing
 
-    }
-
-    public BlockCipher newInstance()
-    {
-        return new CamelliaEngine();
     }
 
     private int bitsOfSecurity()
