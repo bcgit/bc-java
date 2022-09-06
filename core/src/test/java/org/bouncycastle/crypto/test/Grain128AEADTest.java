@@ -1,5 +1,11 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.modes.Grain128AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -7,17 +13,9 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-
 public class Grain128AEADTest
     extends SimpleTest
 {
-
-
     public String getName()
     {
         return "Grain-128AEAD";
@@ -40,7 +38,7 @@ public class Grain128AEADTest
         String[] data;
         byte[] ptByte, adByte;
         byte[] rv;
-        HashMap<String, String> map = new HashMap<>();
+        HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
         {
             data = line.split(" ");
