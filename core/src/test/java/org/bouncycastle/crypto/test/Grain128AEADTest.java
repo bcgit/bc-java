@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 
 public class Grain128AEADTest
     extends SimpleTest
@@ -39,59 +40,37 @@ public class Grain128AEADTest
         String[] data;
         byte[] ptByte, adByte;
         byte[] rv;
+        HashMap<String, String> map = new HashMap<>();
         while ((line = bin.readLine()) != null)
         {
             data = line.split(" ");
             if (data.length == 1)
             {
-                params = new ParametersWithIV(new KeyParameter(Hex.decode(key)), Hex.decode(nonce));
+                params = new ParametersWithIV(new KeyParameter(Hex.decode(map.get("Key"))), Hex.decode(map.get("Nonce")));
                 grain.init(true, params);
-                adByte = Hex.decode(ad);
+                adByte = Hex.decode(map.get("AD"));
                 grain.processAADBytes(adByte, 0, adByte.length);
-                ptByte = Hex.decode(pt);
+                ptByte = Hex.decode(map.get("PT"));
                 rv = new byte[ptByte.length + 8];
                 grain.processBytes(ptByte, 0, ptByte.length, rv, 0);
-                if (!areEqual(rv, Hex.decode(ct)))
+                if (!areEqual(rv, Hex.decode(map.get("CT"))))
                 {
                     mismatch("Keystream " + count, ct, rv);
                 }
+                map.clear();
             }
             else
             {
-                switch (data[0])
+                if (data.length >= 3)
                 {
-                case "Count":
-                    count = getDataString(data);
-                    break;
-                case "Key":
-                    key = getDataString(data);
-                    break;
-                case "Nonce":
-                    nonce = getDataString(data);
-                    break;
-                case "PT":
-                    pt = getDataString(data);
-                    break;
-                case "AD":
-                    ad = getDataString(data);
-                    break;
-                case "CT":
-                    ct = getDataString(data);
-                    break;
+                    map.put(data[0].trim(), data[2].trim());
+                }
+                else
+                {
+                    map.put(data[0].trim(), "");
                 }
             }
-
         }
-
-    }
-
-    private String getDataString(String[] data)
-    {
-        if (data.length >= 3)
-        {
-            return data[2].trim();
-        }
-        return "";
     }
 
     private void mismatch(String name, String expected, byte[] found)
