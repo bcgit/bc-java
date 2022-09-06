@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.StreamCipher;
-import org.bouncycastle.crypto.engines.Grain128Engine;
 import org.bouncycastle.crypto.modes.Grain128AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -40,9 +38,6 @@ public class Grain128AEADTest extends SimpleTest {
                 params = new ParametersWithIV(new KeyParameter(Hex.decode(key)), Hex.decode(nonce));
                 grain.init(true, params);
                 adByte = Hex.decode(ad);
-                if(count.equals("67")){
-                    System.out.println("break");
-                }
                 grain.processAADBytes(adByte, 0, adByte.length);
                 ptByte = Hex.decode(pt);
                 rv = new byte[ptByte.length + 8];
