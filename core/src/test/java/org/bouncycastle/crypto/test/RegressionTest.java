@@ -183,7 +183,8 @@ public class RegressionTest
             new TupleHashTest(),
             new ParallelHashTest(),
             new CryptoServiceConstraintsTest(),
-            new RadixConverterTest()
+            new RadixConverterTest(),
+            new Grain128AEADTest()
         };
 
     public static void main(String[] args)
