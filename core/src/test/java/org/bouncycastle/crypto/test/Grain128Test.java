@@ -25,9 +25,12 @@ public class Grain128Test
 
     public void performTest()
     {
+//        Grain128Test1(new ParametersWithIV(new KeyParameter(Hex
+//            .decode("00000000000000000000000000000000")), Hex
+//            .decode("000000000000000000000000")));
         Grain128Test1(new ParametersWithIV(new KeyParameter(Hex
-            .decode("00000000000000000000000000000000")), Hex
-            .decode("000000000000000000000000")));
+            .decode("000102030405060708090A0B0C0D0E0F")), Hex
+            .decode("000102030405060708090A0B")));
         Grain128Test2(new ParametersWithIV(new KeyParameter(Hex
             .decode("0123456789abcdef123456789abcdef0")), Hex
             .decode("0123456789abcdef12345678")));
@@ -45,8 +48,10 @@ public class Grain128Test
         grain.init(true, params);
 
         grain.processBytes(in, 0, in.length, out, 0);
-
-        if (!areEqual(out, Hex.decode(keyStream1)))
+        String keyStream3="D51FD5D16177B434";
+        byte[] keyStream3_byte=Hex.decode(keyStream3);
+        String out_encode= String.valueOf(Hex.encode(out));
+        if (!areEqual(out, Hex.decode(keyStream3)))
         {
             mismatch("Keystream 1", keyStream1, out);
         }
