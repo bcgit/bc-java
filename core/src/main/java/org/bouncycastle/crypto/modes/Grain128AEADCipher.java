@@ -20,13 +20,11 @@ public class Grain128AEADCipher implements AEADCipher {
      */
     private byte[] workingKey;
     private byte[] workingIV;
-    private byte[] out;
     private int[] lfsr;
     private int[] nfsr;
     private int[] authAcc;
     private int[] authSr;
     private int output;
-    private int index = 4;
 
     private boolean initialised = false;
 
@@ -76,7 +74,6 @@ public class Grain128AEADCipher implements AEADCipher {
         workingKey = new byte[key.getKey().length];
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
-        out = new byte[4];
         authAcc = new int[2];
         authSr = new int[2];
 
@@ -272,7 +269,6 @@ public class Grain128AEADCipher implements AEADCipher {
     }
 
     public void reset() {
-        index = 4;
         setKey(workingKey, workingIV);
         initGrain();
     }
@@ -367,9 +363,7 @@ public class Grain128AEADCipher implements AEADCipher {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if ((j & 1) == 0) {
-                    // Do not encrypt
-                } else {
+                if ((j & 1) == 1) {
                     adval = (byte) (ader[adCnt >> 3] & (1 << (7 - (adCnt & 7))));
                     if (adval != 0) {
                         accumulate();
