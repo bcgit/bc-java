@@ -28,9 +28,6 @@ public class Grain128Test
         Grain128Test1(new ParametersWithIV(new KeyParameter(Hex
             .decode("00000000000000000000000000000000")), Hex
             .decode("000000000000000000000000")));
-        Grain128Test1(new ParametersWithIV(new KeyParameter(Hex
-            .decode("000102030405060708090A0B0C0D0E0F")), Hex
-            .decode("000102030405060708090A0B")));
         Grain128Test2(new ParametersWithIV(new KeyParameter(Hex
             .decode("0123456789abcdef123456789abcdef0")), Hex
             .decode("0123456789abcdef12345678")));
