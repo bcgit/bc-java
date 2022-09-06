@@ -7,7 +7,9 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-public class Grain128AEADCipher implements AEADCipher {
+public class Grain128AEADCipher
+    implements AEADCipher
+{
 
     /**
      * Constants
@@ -28,7 +30,8 @@ public class Grain128AEADCipher implements AEADCipher {
 
     private boolean initialised = false;
 
-    public String getAlgorithmName() {
+    public String getAlgorithmName()
+    {
         return "Grain-128AEAD";
     }
 
@@ -41,31 +44,35 @@ public class Grain128AEADCipher implements AEADCipher {
      */
     @Override
     public void init(boolean forEncryption, CipherParameters params)
-            throws IllegalArgumentException {
+        throws IllegalArgumentException
+    {
         /**
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
-        if (!(params instanceof ParametersWithIV)) {
+        if (!(params instanceof ParametersWithIV))
+        {
             throw new IllegalArgumentException(
-                    "Grain-128AEAD Init parameters must include an IV");
+                "Grain-128AEAD Init parameters must include an IV");
         }
 
-        ParametersWithIV ivParams = (ParametersWithIV) params;
+        ParametersWithIV ivParams = (ParametersWithIV)params;
 
         byte[] iv = ivParams.getIV();
 
-        if (iv == null || iv.length != 12) {
+        if (iv == null || iv.length != 12)
+        {
             throw new IllegalArgumentException(
-                    "Grain-128AEAD  requires exactly 12 bytes of IV");
+                "Grain-128AEAD  requires exactly 12 bytes of IV");
         }
 
-        if (!(ivParams.getParameters() instanceof KeyParameter)) {
+        if (!(ivParams.getParameters() instanceof KeyParameter))
+        {
             throw new IllegalArgumentException(
-                    "Grain-128AEAD Init parameters must include a key");
+                "Grain-128AEAD Init parameters must include a key");
         }
 
-        KeyParameter key = (KeyParameter) ivParams.getParameters();
+        KeyParameter key = (KeyParameter)ivParams.getParameters();
 
         /**
          * Initialize variables.
@@ -87,29 +94,37 @@ public class Grain128AEADCipher implements AEADCipher {
     /**
      * 320 clocks initialization phase.
      */
-    private void initGrain() {
-        for (int i = 0; i < 320; ++i) {
+    private void initGrain()
+    {
+        for (int i = 0; i < 320; ++i)
+        {
             output = getOutput();
             nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
             lfsr = shift(lfsr, (getOutputLFSR() ^ output) & 1);
         }
-        for (int quotient = 0; quotient < 8; ++quotient) {
-            for (int remainder = 0; remainder < 8; ++remainder) {
+        for (int quotient = 0; quotient < 8; ++quotient)
+        {
+            for (int remainder = 0; remainder < 8; ++remainder)
+            {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
             }
         }
-        for (int quotient = 0; quotient < 2; ++quotient) {
-            for (int remainder = 0; remainder < 32; ++remainder) {
+        for (int quotient = 0; quotient < 2; ++quotient)
+        {
+            for (int remainder = 0; remainder < 32; ++remainder)
+            {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
                 authAcc[quotient] |= output << remainder;
             }
         }
-        for (int quotient = 0; quotient < 2; ++quotient) {
-            for (int remainder = 0; remainder < 32; ++remainder) {
+        for (int quotient = 0; quotient < 2; ++quotient)
+        {
+            for (int remainder = 0; remainder < 32; ++remainder)
+            {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
@@ -124,7 +139,8 @@ public class Grain128AEADCipher implements AEADCipher {
      *
      * @return Output from NFSR.
      */
-    private int getOutputNFSR() {
+    private int getOutputNFSR()
+    {
         int b0 = nfsr[0];
         int b3 = nfsr[0] >>> 3;
         int b11 = nfsr[0] >>> 11;
@@ -156,7 +172,7 @@ public class Grain128AEADCipher implements AEADCipher {
         int b96 = nfsr[3];
 
         return (b0 ^ b26 ^ b56 ^ b91 ^ b96 ^ b3 & b67 ^ b11 & b13 ^ b17 & b18
-                ^ b27 & b59 ^ b40 & b48 ^ b61 & b65 ^ b68 & b84 ^ b22 & b24 & b25 ^ b70 & b78 & b82 ^ b88 & b92 & b93 & b95) & 1;
+            ^ b27 & b59 ^ b40 & b48 ^ b61 & b65 ^ b68 & b84 ^ b22 & b24 & b25 ^ b70 & b78 & b82 ^ b88 & b92 & b93 & b95) & 1;
     }
 
     /**
@@ -164,7 +180,8 @@ public class Grain128AEADCipher implements AEADCipher {
      *
      * @return Output from LFSR.
      */
-    private int getOutputLFSR() {
+    private int getOutputLFSR()
+    {
         int s0 = lfsr[0];
         int s7 = lfsr[0] >>> 7;
         int s38 = lfsr[1] >>> 6;
@@ -180,7 +197,8 @@ public class Grain128AEADCipher implements AEADCipher {
      *
      * @return y_t.
      */
-    private int getOutput() {
+    private int getOutput()
+    {
         int b2 = nfsr[0] >>> 2;
         int b12 = nfsr[0] >>> 12;
         int b15 = nfsr[0] >>> 15;
@@ -199,7 +217,7 @@ public class Grain128AEADCipher implements AEADCipher {
         int s93 = lfsr[2] >>> 29;
         int s94 = lfsr[2] >>> 30;
         return ((b12 & s8) ^ (s13 & s20) ^ (b95 & s42) ^ (s60 & s79) ^ (b12 & b95 & s94) ^ s93
-                ^ b2 ^ b15 ^ b36 ^ b45 ^ b64 ^ b73 ^ b89) & 1;
+            ^ b2 ^ b15 ^ b36 ^ b45 ^ b64 ^ b73 ^ b89) & 1;
     }
 
     /**
@@ -209,7 +227,8 @@ public class Grain128AEADCipher implements AEADCipher {
      * @param val   The value to shift in.
      * @return The shifted array with val added to index.length - 1.
      */
-    private int[] shift(int[] array, int val) {
+    private int[] shift(int[] array, int val)
+    {
 
         array[0] = (array[0] >>> 1) | (array[1] << 31);
         array[1] = (array[1] >>> 1) | (array[2] << 31);
@@ -225,11 +244,12 @@ public class Grain128AEADCipher implements AEADCipher {
      * @param keyBytes The key.
      * @param ivBytes  The IV.
      */
-    private void setKey(byte[] keyBytes, byte[] ivBytes) {
-        ivBytes[12] = (byte) 0xFF;
-        ivBytes[13] = (byte) 0xFF;
-        ivBytes[14] = (byte) 0xFF;
-        ivBytes[15] = (byte) 0x7F;//(byte) 0xFE;
+    private void setKey(byte[] keyBytes, byte[] ivBytes)
+    {
+        ivBytes[12] = (byte)0xFF;
+        ivBytes[13] = (byte)0xFF;
+        ivBytes[14] = (byte)0xFF;
+        ivBytes[15] = (byte)0x7F;//(byte) 0xFE;
         workingKey = keyBytes;
         workingIV = ivBytes;
 
@@ -237,62 +257,76 @@ public class Grain128AEADCipher implements AEADCipher {
          * Load NFSR and LFSR
          */
         int j = 0;
-        for (int i = 0; i < nfsr.length; i++) {
+        for (int i = 0; i < nfsr.length; i++)
+        {
             nfsr[i] = ((workingKey[j + 3]) << 24) | ((workingKey[j + 2]) << 16)
-                    & 0x00FF0000 | ((workingKey[j + 1]) << 8) & 0x0000FF00
-                    | ((workingKey[j]) & 0x000000FF);
+                & 0x00FF0000 | ((workingKey[j + 1]) << 8) & 0x0000FF00
+                | ((workingKey[j]) & 0x000000FF);
 
             lfsr[i] = ((workingIV[j + 3]) << 24) | ((workingIV[j + 2]) << 16)
-                    & 0x00FF0000 | ((workingIV[j + 1]) << 8) & 0x0000FF00
-                    | ((workingIV[j]) & 0x000000FF);
+                & 0x00FF0000 | ((workingIV[j + 1]) << 8) & 0x0000FF00
+                | ((workingIV[j]) & 0x000000FF);
             j += 4;
         }
     }
 
     public int processBytes(byte[] input, int inOff, int len, byte[] output,
                             int outOff)
-            throws DataLengthException {
-        if (!initialised) {
+        throws DataLengthException
+    {
+        if (!initialised)
+        {
             throw new IllegalStateException(getAlgorithmName()
-                    + " not initialised");
+                + " not initialised");
         }
 
-        if ((inOff + len) > input.length) {
+        if ((inOff + len) > input.length)
+        {
             throw new DataLengthException("input buffer too short");
         }
 
-        if ((outOff + len) > output.length) {
+        if ((outOff + len) > output.length)
+        {
             throw new OutputLengthException("output buffer too short");
         }
         getKeyStream(input, inOff, len, output, outOff);
         return len;
     }
 
-    public void reset() {
+    public void reset()
+    {
         setKey(workingKey, workingIV);
         initGrain();
     }
 
-    private byte[] getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff) {
+    private byte[] getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
+    {
         int mCnt = 0, acCnt = 0, cCnt = 0;
         byte cc;
         byte[] plaintext = new byte[len];
-        for (int i = 0; i < len; ++i) {
-            plaintext[i] = (byte) reverseByte(input[inOff + i]);
+        for (int i = 0; i < len; ++i)
+        {
+            plaintext[i] = (byte)reverseByte(input[inOff + i]);
         }
-        for (int i = 0; i < len; ++i) {
+        for (int i = 0; i < len; ++i)
+        {
             cc = 0;
-            for (int j = 0; j < 16; ++j) {
+            for (int j = 0; j < 16; ++j)
+            {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if ((j & 1) == 0) {
+                if ((j & 1) == 0)
+                {
                     cc |= (((plaintext[mCnt >> 3] >>> (7 - (mCnt & 7))) & 1) ^ output) << (cCnt & 7);
                     mCnt++;
                     cCnt++;
-                } else {
+                }
+                else
+                {
 
-                    if ((plaintext[acCnt >> 3] & (1 << (7 - (acCnt & 7)))) != 0) {
+                    if ((plaintext[acCnt >> 3] & (1 << (7 - (acCnt & 7)))) != 0)
+                    {
                         accumulate();
                     }
                     authShift(output);
@@ -306,9 +340,11 @@ public class Grain128AEADCipher implements AEADCipher {
         lfsr = shift(lfsr, (getOutputLFSR()) & 1);
         accumulate();
         cCnt = len + outOff;//acc_idx
-        for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < 4; ++j) {
-                ciphertext[cCnt] = (byte) ((authAcc[i] >>> (j << 3)) & 0xff);
+        for (int i = 0; i < 2; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                ciphertext[cCnt] = (byte)((authAcc[i] >>> (j << 3)) & 0xff);
                 cCnt++;
             }
         }
@@ -317,10 +353,12 @@ public class Grain128AEADCipher implements AEADCipher {
     }
 
 
-    public byte returnByte(byte input) {
-        if (!initialised) {
+    public byte returnByte(byte input)
+    {
+        if (!initialised)
+        {
             throw new IllegalStateException(getAlgorithmName()
-                    + " not initialised");
+                + " not initialised");
         }
         byte[] plaintext = new byte[1];
         plaintext[0] = input;
@@ -330,42 +368,53 @@ public class Grain128AEADCipher implements AEADCipher {
 
 
     @Override
-    public void processAADByte(byte in) {
+    public void processAADByte(byte in)
+    {
 
     }
 
     @Override
-    public void processAADBytes(byte[] input, int inOff, int len) {
+    public void processAADBytes(byte[] input, int inOff, int len)
+    {
         byte[] ader;
         int aderlen;
         //encodeDer
-        if (len < 128) {
+        if (len < 128)
+        {
             ader = new byte[1 + len];
-            ader[0] = (byte) reverseByte(len);
+            ader[0] = (byte)reverseByte(len);
             aderlen = 1;
-        } else {
+        }
+        else
+        {
             aderlen = Integer.numberOfLeadingZeros(len);
             ader = new byte[aderlen + 1 + len];
-            ader[0] = (byte) reverseByte(0x80 | aderlen);
+            ader[0] = (byte)reverseByte(0x80 | aderlen);
             int tmp = aderlen;
-            for (int i = 1; i < ader.length; ++i) {
-                ader[i] = (byte) reverseByte(tmp & 0xff);
+            for (int i = 1; i < ader.length; ++i)
+            {
+                ader[i] = (byte)reverseByte(tmp & 0xff);
                 tmp >>>= 8;
             }
         }
-        for (int i = 0; i < len; ++i) {
-            ader[aderlen + i] = (byte) reverseByte(input[inOff + i]);
+        for (int i = 0; i < len; ++i)
+        {
+            ader[aderlen + i] = (byte)reverseByte(input[inOff + i]);
         }
         byte adval;
         int adCnt = 0;
-        for (int i = 0; i < ader.length; ++i) {
-            for (int j = 0; j < 16; ++j) {
+        for (int i = 0; i < ader.length; ++i)
+        {
+            for (int j = 0; j < 16; ++j)
+            {
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if ((j & 1) == 1) {
-                    adval = (byte) (ader[adCnt >> 3] & (1 << (7 - (adCnt & 7))));
-                    if (adval != 0) {
+                if ((j & 1) == 1)
+                {
+                    adval = (byte)(ader[adCnt >> 3] & (1 << (7 - (adCnt & 7))));
+                    if (adval != 0)
+                    {
                         accumulate();
                     }
                     authShift(output);
@@ -376,42 +425,52 @@ public class Grain128AEADCipher implements AEADCipher {
 
     }
 
-    private void accumulate() {
+    private void accumulate()
+    {
         authAcc[0] ^= authSr[0];
         authAcc[1] ^= authSr[1];
     }
 
-    private void authShift(int val) {
+    private void authShift(int val)
+    {
         authSr[0] = (authSr[0] >>> 1) | (authSr[1] << 31);
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
 
     @Override
-    public int processByte(byte input, byte[] output, int outOff) throws DataLengthException {
+    public int processByte(byte input, byte[] output, int outOff)
+        throws DataLengthException
+    {
         return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     @Override
-    public int doFinal(byte[] out, int outOff) throws IllegalStateException, InvalidCipherTextException {
+    public int doFinal(byte[] out, int outOff)
+        throws IllegalStateException, InvalidCipherTextException
+    {
         return 0;
     }
 
     @Override
-    public byte[] getMac() {
+    public byte[] getMac()
+    {
         return new byte[0];
     }
 
     @Override
-    public int getUpdateOutputSize(int len) {
+    public int getUpdateOutputSize(int len)
+    {
         return 0;
     }
 
     @Override
-    public int getOutputSize(int len) {
+    public int getOutputSize(int len)
+    {
         return 0;
     }
 
-    private int reverseByte(int x) {
+    private int reverseByte(int x)
+    {
         x = (((x & 0x55) << 1) | ((x & (~0x55)) >>> 1)) & 0xFF;
         x = (((x & 0x33) << 2) | ((x & (~0x33)) >>> 2)) & 0xFF;
         x = (((x & 0x0f) << 4) | ((x & (~0x0f)) >>> 4)) & 0xFF;
