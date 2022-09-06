@@ -36,11 +36,11 @@ public class Grain128AEADTest
         CipherParameters params;
         InputStream src = Grain128AEADTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/LWC_AEAD_KAT_128_96.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line, key = null, nonce = null, pt = null, ad = null, ct = null, count = null;
+        String line;
         String[] data;
         byte[] ptByte, adByte;
         byte[] rv;
-        HashMap<String, String> map = new HashMap<>();
+        HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
         {
             data = line.split(" ");
@@ -55,7 +55,7 @@ public class Grain128AEADTest
                 grain.processBytes(ptByte, 0, ptByte.length, rv, 0);
                 if (!areEqual(rv, Hex.decode(map.get("CT"))))
                 {
-                    mismatch("Keystream " + count, ct, rv);
+                    mismatch("Keystream " + map.get("Count"), map.get("CT"), rv);
                 }
                 map.clear();
             }
