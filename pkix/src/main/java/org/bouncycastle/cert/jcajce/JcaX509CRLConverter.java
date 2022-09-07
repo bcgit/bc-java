@@ -83,7 +83,7 @@ public class JcaX509CRLConverter
         }
     }
 
-    private class ExCRLException
+    private static class ExCRLException
         extends CRLException
     {
         private Throwable cause;

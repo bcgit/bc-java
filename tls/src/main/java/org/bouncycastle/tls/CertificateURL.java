@@ -121,7 +121,7 @@ public class CertificateURL
     }
 
     // TODO Could be more generally useful
-    class ListBuffer16 extends ByteArrayOutputStream
+    static class ListBuffer16 extends ByteArrayOutputStream
     {
         ListBuffer16() throws IOException
         {

@@ -328,7 +328,7 @@ public class TimeStampToken
     }
 
     // perhaps this should be done using an interface on the ASN.1 classes...
-    private class CertID
+    private static class CertID
     {
         private ESSCertID certID;
         private ESSCertIDv2 certIDv2;

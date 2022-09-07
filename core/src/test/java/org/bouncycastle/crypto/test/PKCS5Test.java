@@ -92,7 +92,7 @@ public class PKCS5Test
       + "53a504ff51674c5c271800de84d003f4f10ac6ab36e38102202bfa141f10bda874e1017d"
       + "845e82767c1c38e82745daf421f0c8cd09d7652387");
 
-    private class PBETest
+    private static class PBETest
         extends SimpleTest
     {
         int                 id;

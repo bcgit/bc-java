@@ -637,7 +637,7 @@ public class BlockCipherTest
      * aren't random so that we get the same output, while still getting to test the
      * key generation facilities.
      */
-    private class FixedSecureRandom
+    private static class FixedSecureRandom
         extends SecureRandom
     {
         byte[]  seed = {

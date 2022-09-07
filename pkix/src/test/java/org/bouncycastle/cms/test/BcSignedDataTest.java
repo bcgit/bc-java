@@ -1881,7 +1881,7 @@ public class BcSignedDataTest
         }
     }
 
-    private class TestCMSSignatureAlgorithmNameGenerator
+    private static class TestCMSSignatureAlgorithmNameGenerator
         extends DefaultCMSSignatureAlgorithmNameGenerator
     {
         void setDigestAlgorithmMapping(ASN1ObjectIdentifier oid, String algName)
