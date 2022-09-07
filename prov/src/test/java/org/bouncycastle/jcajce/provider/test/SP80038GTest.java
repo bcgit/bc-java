@@ -503,7 +503,7 @@ public class SP80038GTest
         assertTrue(Arrays.areEqual(ciphertext1, ciphertext2));
     }
 
-    public class FPECharEncryptor
+    public static class FPECharEncryptor
     {
         private Cipher cipher;
         private AlphabetMapper alphabetMapper;
@@ -532,7 +532,7 @@ public class SP80038GTest
         }
     }
 
-    public class FPECharDecryptor
+    public static class FPECharDecryptor
     {
         private Cipher cipher;
         private AlphabetMapper alphabetMapper;

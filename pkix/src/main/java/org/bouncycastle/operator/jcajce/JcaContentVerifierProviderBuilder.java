@@ -278,7 +278,7 @@ public class JcaContentVerifierProviderBuilder
         return rawSig;
     }
 
-    private class SigVerifier
+    private static class SigVerifier
         implements ContentVerifier
     {
         private final AlgorithmIdentifier algorithm;
@@ -321,7 +321,7 @@ public class JcaContentVerifierProviderBuilder
         }
     }
 
-    private class RawSigVerifier
+    private static class RawSigVerifier
         extends SigVerifier
         implements RawContentVerifier
     {
@@ -382,7 +382,7 @@ public class JcaContentVerifierProviderBuilder
         }
     }
 
-    private class CompositeVerifier
+    private static class CompositeVerifier
         implements ContentVerifier
     {
         private Signature[] sigs;

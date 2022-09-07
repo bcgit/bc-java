@@ -855,7 +855,7 @@ public class X509RevocationChecker
         return this;
     }
 
-    private class LocalCRLStore
+    private static class LocalCRLStore
         implements PKIXCRLStore<CRL>, Iterable<CRL>
     {
         private Collection<CRL> _local;

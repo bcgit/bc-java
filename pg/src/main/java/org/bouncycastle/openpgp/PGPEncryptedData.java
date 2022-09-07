@@ -23,7 +23,7 @@ import org.bouncycastle.util.Arrays;
 public abstract class PGPEncryptedData
     implements SymmetricKeyAlgorithmTags
 {
-    protected class TruncatedStream
+    protected static class TruncatedStream
         extends InputStream
     {
         int[] lookAhead = new int[22];

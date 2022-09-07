@@ -78,7 +78,7 @@ public class JcaX509CertificateConverter
         }
     }
 
-    private class ExCertificateParsingException
+    private static class ExCertificateParsingException
         extends CertificateParsingException
     {
         private Throwable cause;
@@ -96,7 +96,7 @@ public class JcaX509CertificateConverter
         }
     }
     
-    private class ExCertificateException
+    private static class ExCertificateException
         extends CertificateException
     {
         private Throwable cause;

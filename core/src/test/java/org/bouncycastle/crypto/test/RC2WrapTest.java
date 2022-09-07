@@ -20,7 +20,7 @@ import org.bouncycastle.util.test.TestResult;
 public class RC2WrapTest
     implements Test
 {
-    private class RFCRandom
+    private static class RFCRandom
         extends SecureRandom
     {
         public void nextBytes(
