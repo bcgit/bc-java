@@ -9,6 +9,8 @@
 bin/
 build/
 .settings/
+*.iml
+local.properties
 
 pg/*.asc
 pg/*.bak
