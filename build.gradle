@@ -48,7 +48,6 @@ allprojects {
       check('JdkObsolete', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // ERROR
-      check('ArrayToString', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BadShiftAmount', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BanJNDI', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BoxedPrimitiveEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
