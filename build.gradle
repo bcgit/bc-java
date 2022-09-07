@@ -121,7 +121,6 @@ allprojects {
       check('SynchronizeOnNonFinalField', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ThreadLocalUsage', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ThreadPriorityCheck', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ToStringReturnsNull', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('TypeParameterUnusedInFormals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('UndefinedEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('UnescapedEntity', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
