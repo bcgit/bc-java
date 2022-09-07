@@ -40,7 +40,7 @@ allprojects {
     testImplementation group: 'junit', name: 'junit', version: '4.11'
   }
 
-  tasks.withType(JavaCompile).configureEach {
+  tasks.withType(JavaCompile).configureEach {   
     options.errorprone {
       // Checks that cannot be enabled because implementing their suggestions
       // would break backward compatibility.
@@ -70,7 +70,6 @@ allprojects {
       check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('CatchAndPrintStackTrace', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('CatchFail', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ClassCanBeStatic', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ClassNewInstance', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('CompareToZero', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('DefaultCharset', net.ltgt.gradle.errorprone.CheckSeverity.OFF)

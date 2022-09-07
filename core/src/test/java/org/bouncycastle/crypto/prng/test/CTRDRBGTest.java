@@ -420,7 +420,7 @@ public class CTRDRBGTest
         }
     }
 
-    private class Bit232EntropyProvider
+    private static class Bit232EntropyProvider
         extends TestEntropySourceProvider
     {
         Bit232EntropyProvider()
@@ -432,7 +432,7 @@ public class CTRDRBGTest
         }
     }
 
-    private class Bit256EntropyProvider
+    private static class Bit256EntropyProvider
         extends TestEntropySourceProvider
     {
         Bit256EntropyProvider()
@@ -447,7 +447,7 @@ public class CTRDRBGTest
         }
     }
 
-    private class Bit320EntropyProvider
+    private static class Bit320EntropyProvider
         extends TestEntropySourceProvider
     {
         Bit320EntropyProvider()
@@ -462,7 +462,7 @@ public class CTRDRBGTest
         }
     }
 
-    private class Bit384EntropyProvider
+    private static class Bit384EntropyProvider
         extends TestEntropySourceProvider
     {
         Bit384EntropyProvider()

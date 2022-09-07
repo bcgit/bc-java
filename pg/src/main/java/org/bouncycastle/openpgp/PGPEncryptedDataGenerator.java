@@ -399,7 +399,7 @@ public class PGPEncryptedDataGenerator
         }
     }
 
-    private class ClosableBCPGOutputStream
+    private static class ClosableBCPGOutputStream
         extends BCPGOutputStream
     {
         public ClosableBCPGOutputStream(OutputStream out, int symmetricKeyEnc, byte[] buffer)

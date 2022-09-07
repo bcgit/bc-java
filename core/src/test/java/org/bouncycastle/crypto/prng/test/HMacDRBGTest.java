@@ -429,7 +429,7 @@ public class HMacDRBGTest
         }
     }
 
-    private class SHA1EntropyProvider
+    private static class SHA1EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA1EntropyProvider()
@@ -442,7 +442,7 @@ public class HMacDRBGTest
         }
     }
 
-    private class SHA256EntropyProvider
+    private static class SHA256EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA256EntropyProvider()
@@ -460,7 +460,7 @@ public class HMacDRBGTest
         }
     }
 
-    private class SHA384EntropyProvider
+    private static class SHA384EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA384EntropyProvider()
@@ -482,7 +482,7 @@ public class HMacDRBGTest
         }
     }
 
-    private class SHA512EntropyProvider
+    private static class SHA512EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA512EntropyProvider()

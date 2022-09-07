@@ -541,7 +541,7 @@ public class PKIXRevocationTest
         return rGen.build(OCSPRespBuilder.UNAUTHORIZED, resp).getEncoded();
     }
 
-    private class NonceExtension
+    private static class NonceExtension
         implements java.security.cert.Extension
     {
         private final byte[] nonce;
@@ -573,7 +573,7 @@ public class PKIXRevocationTest
         }
     }
 
-    private class OCSPResponderTask
+    private static class OCSPResponderTask
         implements Runnable
     {
         private final byte[] resp;

@@ -109,7 +109,7 @@ public abstract class BcContentVerifierProviderBuilder
     protected abstract Signer createSigner(AlgorithmIdentifier sigAlgId)
         throws OperatorCreationException;
 
-    private class SigVerifier
+    private static class SigVerifier
         implements ContentVerifier
     {
         private BcSignerOutputStream stream;

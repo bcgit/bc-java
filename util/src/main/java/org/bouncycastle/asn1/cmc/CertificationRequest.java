@@ -140,7 +140,7 @@ public class CertificationRequest
         return new DERSequence(v);
     }
 
-    private class CertificationRequestInfo
+    private static class CertificationRequestInfo
         extends ASN1Object
     {
         private final ASN1Integer version;

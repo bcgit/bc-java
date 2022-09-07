@@ -228,7 +228,7 @@ public class PGPCanonicalizedDataGenerator
         }
     }
 
-    class CRLFGeneratorStream
+    static class CRLFGeneratorStream
         extends OutputStream
     {
         protected final OutputStream crlfOut;
@@ -273,7 +273,7 @@ public class PGPCanonicalizedDataGenerator
         }
     }
 
-    private class FileCRLFGeneratorStream
+    private static class FileCRLFGeneratorStream
         extends CRLFGeneratorStream
     {
         private final OutputStream out;
@@ -307,7 +307,7 @@ public class PGPCanonicalizedDataGenerator
         }
     }
 
-    private class IndefiniteCRLFGeneratorStream
+    private static class IndefiniteCRLFGeneratorStream
         extends CRLFGeneratorStream
     {
         public IndefiniteCRLFGeneratorStream(OutputStream out, PGPLiteralDataGenerator sGen, char format, String name, Date modificationTime, byte[] buffer)
@@ -323,7 +323,7 @@ public class PGPCanonicalizedDataGenerator
         }
     }
 
-    private class ArrayCRLFGeneratorStream
+    private static class ArrayCRLFGeneratorStream
         extends CRLFGeneratorStream
     {
         private final OutputStream out;

@@ -203,7 +203,7 @@ class DefaultESTClient
 
     }
 
-    private class PrintingOutputStream
+    private static class PrintingOutputStream
         extends OutputStream
     {
         private final OutputStream tgt;

@@ -102,7 +102,7 @@ public class X931Test
         }
     }
 
-    private class AES128EntropyProvider
+    private static class AES128EntropyProvider
         extends TestEntropySourceProvider
     {
         AES128EntropyProvider()
@@ -112,7 +112,7 @@ public class X931Test
         }
     }
 
-    private class TDESEntropyProvider
+    private static class TDESEntropyProvider
         extends TestEntropySourceProvider
     {
         TDESEntropyProvider()
