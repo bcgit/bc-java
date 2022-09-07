@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.legacy.math.linearalgebra;
 
+import java.util.Arrays;
 
 /**
  * This class implements polynomials over GF2nElements.
@@ -277,7 +278,7 @@ public class GF2nPolynomial
      */
     public int hashCode()
     {
-        return getDegree() + coeff.hashCode();
+        return getDegree() + Arrays.hashCode(coeff);
     }
 
     /**
