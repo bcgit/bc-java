@@ -56,7 +56,6 @@ allprojects {
       check('EqualsHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('EqualsNull', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('HashtableContains', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MisusedWeekYear', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('RandomModInteger', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ReturnValueIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('SelfEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
