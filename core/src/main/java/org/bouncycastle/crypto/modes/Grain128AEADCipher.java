@@ -387,7 +387,8 @@ public class Grain128AEADCipher
         }
         else
         {
-            aderlen = Integer.numberOfLeadingZeros(len);
+            // aderlen is the highest bit position divided by 8
+            aderlen = (32 - Integer.numberOfLeadingZeros(len)) >>> 3;
             ader = new byte[aderlen + 1 + len];
             ader[0] = (byte)reverseByte(0x80 | aderlen);
             int tmp = aderlen;
@@ -466,7 +467,8 @@ public class Grain128AEADCipher
     @Override
     public int getOutputSize(int len)
     {
-        return 0;
+        //the last 8 bits are from AD
+        return len + 8;
     }
 
     private int reverseByte(int x)
