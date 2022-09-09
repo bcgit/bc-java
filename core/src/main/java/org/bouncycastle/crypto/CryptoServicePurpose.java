@@ -6,8 +6,10 @@ public enum CryptoServicePurpose
     ENCRYPTION,
     DECRYPTION,
     KEYGEN,
-    SIGNING,
+    SIGNING,         // for signatures (and digests)
     VERIFYING,
+    AUTHENTICATION,  // for MACs (and digests)
+    VERIFICATION,
     PRF,
     ANY
 }
