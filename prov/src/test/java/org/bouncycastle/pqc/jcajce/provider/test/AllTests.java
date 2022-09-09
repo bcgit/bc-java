@@ -66,6 +66,8 @@ public class AllTests
         suite.addTestSuite(KyberKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumTest.class);
+        suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
+        suite.addTestSuite(BIKETest.class);
 
         return new BCTestSetup(suite);
     }

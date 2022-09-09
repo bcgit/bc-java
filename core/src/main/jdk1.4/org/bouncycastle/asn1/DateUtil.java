@@ -9,8 +9,6 @@ import java.util.Map;
 
 class DateUtil
 {
-    private static Long ZERO = longValueOf(0);
-
     private static final Map localeCache = new HashMap();
 
     static Locale EN_Locale = forEN();
@@ -52,19 +50,12 @@ class DateUtil
                 SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssz");
                 long v = dateF.parse("19700101000000GMT+00:00").getTime();
 
-                if (v == 0)
-                {
-                    adj = ZERO;
-                }
-                else
-                {
-                    adj = longValueOf(v);
-                }
+                adj = longValueOf(v);
 
                 localeCache.put(locale, adj);
             }
 
-            if (adj != ZERO)
+            if (adj.longValue() != 0L)
             {
                 return new Date(date.getTime() - adj.longValue());
             }

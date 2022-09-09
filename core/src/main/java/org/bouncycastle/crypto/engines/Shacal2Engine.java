@@ -2,8 +2,10 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -65,7 +67,11 @@ public class Shacal2Engine
         }
         this.forEncryption = _forEncryption;
         workingKey = new int[64];
-        setKey( ((KeyParameter)params).getKey() );
+        byte[] key = ((KeyParameter)params).getKey();
+        setKey(key);
+        int keyBits = key.length * 8;
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                    this.getAlgorithmName(), keyBits < 256 ? keyBits : 256, params, Utils.getPurpose(forEncryption)));
     }
 
     public void setKey(byte[] kb) 

@@ -1,6 +1,7 @@
 package org.bouncycastle.tsp.ers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import org.bouncycastle.tsp.TSPException;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * RFC 4998 Evidence Record.
@@ -43,6 +45,12 @@ public class ERSEvidenceRecord
     private final byte[] previousChainsDigest;
     private final DigestCalculator digCalc;
     private final ArchiveTimeStamp primaryArchiveTimeStamp;
+
+    public ERSEvidenceRecord(InputStream ersIn, DigestCalculatorProvider digestCalculatorProvider)
+        throws TSPException, ERSException, IOException
+    {
+        this(EvidenceRecord.getInstance(Streams.readAll(ersIn)), digestCalculatorProvider);
+    }
 
     public ERSEvidenceRecord(byte[] evidenceRecord, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException

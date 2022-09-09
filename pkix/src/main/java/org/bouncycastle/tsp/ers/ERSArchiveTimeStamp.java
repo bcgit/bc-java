@@ -99,7 +99,7 @@ public class ERSArchiveTimeStamp
     public void validatePresent(ERSData data, Date atDate)
         throws ERSException
     {
-        validatePresent(data instanceof ERSDataGroup, data.getHash(digCalc), atDate);
+        validatePresent(data instanceof ERSDataGroup, data.getHash(digCalc, previousChainsDigest), atDate);
     }
 
     public boolean isContaining(ERSData data, Date atDate)
@@ -128,11 +128,6 @@ public class ERSArchiveTimeStamp
         if (timeStampToken.getTimeStampInfo().getGenTime().after(atDate))
         {
             throw new ArchiveTimeStampValidationException("timestamp generation time is in the future");
-        }
-
-        if (previousChainsDigest != null)
-        {
-            hash = ERSUtil.concatPreviousHashes(digCalc, previousChainsDigest, hash);
         }
 
         checkContainsHashValue(isDataGroup, hash, digCalc);

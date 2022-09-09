@@ -275,7 +275,7 @@ public class OpenPGPCFBBlockCipher
             for (int n = 0; n < blockSize; n++) 
             {
                 FR[n] = in[inOff + n];
-                out[n] = encryptByte(in[inOff + n], n);
+                out[outOff + n] = encryptByte(in[inOff + n], n);
             }
             
             count += blockSize;

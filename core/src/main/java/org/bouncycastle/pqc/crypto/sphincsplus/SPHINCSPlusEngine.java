@@ -516,9 +516,9 @@ abstract class SPHINCSPlusEngine
     static class HarakaSEngine
         extends SPHINCSPlusEngine
     {
-        public HarakaSXof harakaSXof;
-        public HarakaS256Digest harakaS256Digest;
-        public HarakaS512Digest harakaS512Digest;
+        private HarakaSXof harakaSXof;
+        private HarakaS256Digest harakaS256Digest;
+        private HarakaS512Digest harakaS512Digest;
 
         public HarakaSEngine(boolean robust, int n, int w, int d, int a, int k, int h)
         {

@@ -61,9 +61,11 @@ public class ISO10126d2Padding
     public int padCount(byte[] in)
         throws InvalidCipherTextException
     {
-        int count = in[in.length - 1] & 0xff;
+        int count = in[in.length - 1] & 0xFF;
+        int position = in.length - count;
 
-        if (count > in.length)
+        int failed = (position | (count - 1)) >> 31;
+        if (failed != 0)
         {
             throw new InvalidCipherTextException("pad block corrupted");
         }
