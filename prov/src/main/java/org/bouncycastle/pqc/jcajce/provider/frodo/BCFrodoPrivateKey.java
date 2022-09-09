@@ -1,5 +1,10 @@
 package org.bouncycastle.pqc.jcajce.provider.frodo;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.security.PrivateKey;
+
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
@@ -8,11 +13,6 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.FrodoKey;
 import org.bouncycastle.pqc.jcajce.spec.FrodoParameterSpec;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 public class BCFrodoPrivateKey
     implements PrivateKey, FrodoKey
@@ -42,7 +42,7 @@ public class BCFrodoPrivateKey
     }
 
     /**
-     * Compare this SPHINCS-256 private key with another object.
+     * Compare this private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison

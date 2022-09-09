@@ -174,7 +174,7 @@ public class TSPTestUtil
                 + (1000L * 60 * 60 * 24 * 100)));
         _v3CertGen.setSubjectDN(new X509Name(_subDN));
         _v3CertGen.setPublicKey(_subPub);
-        _v3CertGen.setSignatureAlgorithm("MD5WithRSAEncryption");
+        _v3CertGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
         _v3CertGen.addExtension(Extension.subjectKeyIdentifier, false,
                 createSubjectKeyId(_subPub));

@@ -57,7 +57,7 @@ class ERSUtil
             return calculateBranchHash(digCalc, values[0], values[1]);
         }
 
-        return calculateDigest(digCalc, buildHashList(values).iterator());
+        return calculateDigest(digCalc, buildIndexedHashList(values).iterator());
     }
 
     static byte[] calculateDigest(DigestCalculator digCalc, byte[] a, byte[] b)
@@ -123,13 +123,13 @@ class ERSUtil
 
         if (values.length > 1)
         {
-            return calculateDigest(digCalc, buildHashList(values).iterator());
+            return calculateDigest(digCalc, buildIndexedHashList(values).iterator());
         }
 
         return values[0];
     }
 
-    static List<byte[]> buildHashList(byte[][] values)
+    static List<byte[]> buildIndexedHashList(byte[][] values)
     {
         SortedHashList hashes = new SortedHashList();
 
@@ -141,39 +141,27 @@ class ERSUtil
         return hashes.toList();
     }
 
-    static List<byte[]> buildHashList(DigestCalculator digCalc, List<ERSData> dataObjects)
+    static List<byte[]> buildHashList(DigestCalculator digCalc, List<ERSData> dataObjects, byte[] previousChainHash)
     {
         SortedHashList hashes = new SortedHashList();
 
         for (int i = 0; i != dataObjects.size(); i++)
         {
-            hashes.add(((ERSData)dataObjects.get(i)).getHash(digCalc));
+            hashes.add(((ERSData)dataObjects.get(i)).getHash(digCalc, previousChainHash));
         }
 
         return hashes.toList();
     }
 
-    static List<byte[]> buildHashList(DigestCalculator digCalc, List<ERSData> dataObjects, byte[] previousChainsHash)
+    static List<IndexedHash> buildIndexedHashList(DigestCalculator digCalc, List<ERSData> dataObjects, byte[] previousChainsHash)
     {
-        SortedHashList hashes = new SortedHashList();
+        SortedIndexedHashList hashes = new SortedIndexedHashList();
 
-        if (previousChainsHash != null)
+        for (int i = 0; i != dataObjects.size(); i++)
         {
-            for (int i = 0; i != dataObjects.size(); i++)
-            {
-                byte[] hash = ((ERSData)dataObjects.get(i)).getHash(digCalc);
+            byte[] hash = ((ERSData)dataObjects.get(i)).getHash(digCalc, previousChainsHash);
 
-                hashes.add(concatPreviousHashes(digCalc, previousChainsHash, hash));
-            }
-        }
-        else
-        {
-            for (int i = 0; i != dataObjects.size(); i++)
-            {
-                byte[] hash = ((ERSData)dataObjects.get(i)).getHash(digCalc);
-
-                hashes.add(hash);
-            }
+            hashes.add(new IndexedHash(i, hash));
         }
 
         return hashes.toList();
@@ -181,10 +169,15 @@ class ERSUtil
 
     static byte[] concatPreviousHashes(DigestCalculator digCalc, byte[] chainHash, byte[] dataHash)
     {
+        if (chainHash == null)
+        {
+            return dataHash;
+        }
+
         try
         {
             OutputStream digOut = digCalc.getOutputStream();
-            
+
             digOut.write(dataHash);
             digOut.write(chainHash);
             digOut.close();

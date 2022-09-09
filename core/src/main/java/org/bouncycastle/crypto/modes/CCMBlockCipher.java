@@ -20,7 +20,7 @@ import org.bouncycastle.util.Arrays;
  * <b>Note</b>: this mode is a packet mode - it needs all the data up front.
  */
 public class CCMBlockCipher
-    implements AEADBlockCipher
+    implements CCMModeCipher
 {
     private BlockCipher           cipher;
     private int                   blockSize;
@@ -32,6 +32,16 @@ public class CCMBlockCipher
     private byte[]                macBlock;
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
+
+    /**
+     * Return a new CCM mode cipher based on the passed in base cipher
+     *
+     * @param cipher the base cipher for the CCM mode.
+     */
+    public static CCMModeCipher newInstance(BlockCipher cipher)
+    {
+        return new CCMBlockCipher(cipher);
+    }
 
     /**
      * Basic constructor.

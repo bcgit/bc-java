@@ -58,4 +58,9 @@ public class RSAKEMExtractor
 
         return RSAKEMGenerator.generateKey(kdf, n, r, keyLen);
     }
+
+    public int getEncapsulationLength()
+    {
+        return (privKey.getModulus().bitLength() + 7) / 8;
+    }
 }

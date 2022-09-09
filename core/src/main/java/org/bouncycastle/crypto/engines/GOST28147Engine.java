@@ -5,8 +5,10 @@ import java.util.Hashtable;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.util.Arrays;
@@ -160,6 +162,8 @@ public class GOST28147Engine
      */
     public GOST28147Engine()
     {
+        // based on 2012 cryptanolysis results.
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 178));
     }
 
     /**
@@ -206,6 +210,8 @@ public class GOST28147Engine
         {
            throw new IllegalArgumentException("invalid parameter passed to GOST28147 init - " + params.getClass().getName());
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 178, params, Utils.getPurpose(forEncryption)));
     }
 
     public String getAlgorithmName()

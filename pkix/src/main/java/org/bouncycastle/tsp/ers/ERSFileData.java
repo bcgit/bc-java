@@ -34,13 +34,18 @@ public class ERSFileData
         this.content = content;
     }
 
-    protected byte[] calculateHash(DigestCalculator digestCalculator)
+    protected byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash)
     {
         try
         {
             InputStream contentStream = new FileInputStream(content);
             byte[] hash = ERSUtil.calculateDigest(digestCalculator, contentStream);
             contentStream.close();
+
+            if (previousChainHash != null)
+            {
+                return ERSUtil.concatPreviousHashes(digestCalculator, previousChainHash, hash);
+            }
 
             return hash;
         }

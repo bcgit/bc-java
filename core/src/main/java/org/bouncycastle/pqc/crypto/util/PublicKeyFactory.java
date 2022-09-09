@@ -23,6 +23,8 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
+import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
@@ -154,6 +156,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
+        converters.put(BCObjectIdentifiers.bike128, new BIKEConverter());
+        converters.put(BCObjectIdentifiers.bike192, new BIKEConverter());
+        converters.put(BCObjectIdentifiers.bike256, new BIKEConverter());
     }
 
     /**
@@ -517,6 +522,20 @@ public class PublicKeyFactory
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new DilithiumPublicKeyParameters(dilithiumParams, keyEnc);
+        }
+    }
+
+    private static class BIKEConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new BIKEPublicKeyParameters(bikeParams, keyEnc);
         }
     }
 }

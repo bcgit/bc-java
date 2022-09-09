@@ -32,8 +32,8 @@ public class PolynomialGF2mSmallM
     private int[] coefficients;
 
     /*
-      * some types of polynomials
-      */
+     * some types of polynomials
+     */
 
     /**
      * Constant used for polynomial construction (see constructor
@@ -214,14 +214,14 @@ public class PolynomialGF2mSmallM
     }
 
     /*
-      * ------------------------
-      */
+     * ------------------------
+     */
 
     /**
      * Return the degree of this polynomial
      *
      * @return int degree of this polynomial if this is zero polynomial return
-     *         -1
+     * -1
      */
     public int getDegree()
     {
@@ -396,7 +396,7 @@ public class PolynomialGF2mSmallM
      * @param element an element of the finite field GF(2^m)
      * @return <tt>this * element</tt> (newly created)
      * @throws ArithmeticException if <tt>element</tt> is not an element of the finite
-     * field this polynomial is defined over.
+     *                             field this polynomial is defined over.
      */
     public PolynomialGF2mSmallM multWithElement(int element)
     {
@@ -414,7 +414,7 @@ public class PolynomialGF2mSmallM
      *
      * @param element an element of the finite field GF(2^m)
      * @throws ArithmeticException if <tt>element</tt> is not an element of the finite
-     * field this polynomial is defined over.
+     *                             field this polynomial is defined over.
      */
     public void multThisWithElement(int element)
     {
@@ -493,7 +493,7 @@ public class PolynomialGF2mSmallM
      *
      * @param f a polynomial
      * @return polynomial pair = {q,r} where this = q*f+r and deg(r) &lt;
-     *         deg(f);
+     * deg(f);
      */
     public PolynomialGF2mSmallM[] div(PolynomialGF2mSmallM f)
     {
@@ -674,9 +674,9 @@ public class PolynomialGF2mSmallM
     }
 
     /*
-      * ---------------- PART II ----------------
-      *
-      */
+     * ---------------- PART II ----------------
+     *
+     */
 
     /**
      * Check a polynomial for irreducibility over the field <tt>GF(2^m)</tt>.
@@ -772,7 +772,7 @@ public class PolynomialGF2mSmallM
      *
      * @param matrix the squaring matrix
      * @return <tt>this^2</tt> modulo the reduction polynomial implicitly
-     *         given via the squaring matrix
+     * given via the squaring matrix
      */
     public PolynomialGF2mSmallM modSquareMatrix(PolynomialGF2mSmallM[] matrix)
     {
@@ -847,7 +847,7 @@ public class PolynomialGF2mSmallM
      *               <tt>(GF(2^m))^t</tt> the polynomial ring defining the
      *               square root matrix
      * @return <tt>this^(1/2)</tt> modulo the reduction polynomial implicitly
-     *         given via the square root matrix
+     * given via the square root matrix
      */
     public PolynomialGF2mSmallM modSquareRootMatrix(
         PolynomialGF2mSmallM[] matrix)
@@ -952,7 +952,7 @@ public class PolynomialGF2mSmallM
      *
      * @param g the reduction polynomial
      * @return PolynomialGF2mSmallM[] {a,b} with b*this = a mod g and deg(a)&lt;=
-     *         deg(g)/2
+     * deg(g)/2
      */
     public PolynomialGF2mSmallM[] modPolynomialToFracton(PolynomialGF2mSmallM g)
     {
@@ -1010,7 +1010,7 @@ public class PolynomialGF2mSmallM
      * @param a the first polynomial
      * @param b the second polynomial
      * @return <tt>true</tt> if <tt>a</tt> and <tt>b</tt> represent the
-     *         same polynomials, <tt>false</tt> otherwise
+     * same polynomials, <tt>false</tt> otherwise
      */
     private static boolean isEqual(int[] a, int[] b)
     {
@@ -1079,7 +1079,7 @@ public class PolynomialGF2mSmallM
      *
      * @param a the polynomial
      * @return the degree of the polynomial <tt>a</tt>. If <tt>a</tt> is
-     *         the zero polynomial, return -1.
+     * the zero polynomial, return -1.
      */
     private static int computeDegree(int[] a)
     {

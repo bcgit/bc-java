@@ -358,4 +358,20 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sntrup953 = pqc_kem_sntruprime.branch("4");
     ASN1ObjectIdentifier sntrup1013 = pqc_kem_sntruprime.branch("5");
     ASN1ObjectIdentifier sntrup1277 = pqc_kem_sntruprime.branch("6");
+    
+    /**
+     * BIKE
+     **/
+    ASN1ObjectIdentifier pqc_kem_bike = bc_kem.branch("8");
+    ASN1ObjectIdentifier bike128 = pqc_kem_bike.branch("1");
+    ASN1ObjectIdentifier bike192 = pqc_kem_bike.branch("2");
+    ASN1ObjectIdentifier bike256 = pqc_kem_bike.branch("3");
+
+    /**
+     * HQC
+     **/
+    ASN1ObjectIdentifier pqc_kem_hqc = bc_kem.branch("9");
+    ASN1ObjectIdentifier hqc128 = pqc_kem_hqc.branch("1");
+    ASN1ObjectIdentifier hqc192 = pqc_kem_hqc.branch("2");
+    ASN1ObjectIdentifier hqc256 = pqc_kem_hqc.branch("3");
 }

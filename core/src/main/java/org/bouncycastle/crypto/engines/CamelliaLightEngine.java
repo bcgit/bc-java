@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
@@ -14,7 +13,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
  */
 
 public class CamelliaLightEngine
-    implements BlockCipher, StatelessProcessing
+    implements BlockCipher
 {
     private static final int BLOCK_SIZE = 16;
     private static final int MASK8 = 0xff;
@@ -596,11 +595,6 @@ public class CamelliaLightEngine
 
     public void reset()
     {
-    }
-
-    public BlockCipher newInstance()
-    {
-        return new CamelliaLightEngine();
     }
 
     private int bitsOfSecurity()

@@ -28,7 +28,7 @@ public abstract class Vector
      * Return whether this is the zero vector (i.e., all elements are zero).
      *
      * @return <tt>true</tt> if this is the zero vector, <tt>false</tt>
-     *         otherwise
+     * otherwise
      */
     public abstract boolean isZero();
 

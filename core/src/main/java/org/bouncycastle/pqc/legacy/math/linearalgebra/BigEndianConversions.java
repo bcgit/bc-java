@@ -42,10 +42,10 @@ public final class BigEndianConversions
      * @param x    the integer to convert
      * @param oLen the desired length of the octet string
      * @return an octet string of length <tt>oLen</tt> representing the
-     *         integer <tt>x</tt>, or <tt>null</tt> if the integer is
-     *         negative
+     * integer <tt>x</tt>, or <tt>null</tt> if the integer is
+     * negative
      * @throws ArithmeticException if <tt>x</tt> can't be encoded into <tt>oLen</tt>
-     * octets.
+     *                             octets.
      */
     public static byte[] I2OSP(int x, int oLen)
         throws ArithmeticException
@@ -150,8 +150,8 @@ public final class BigEndianConversions
      *
      * @param input the byte array holding the octet string
      * @return an integer representing the octet string <tt>input</tt>, or
-     *         <tt>0</tt> if the represented integer is negative or too large
-     *         or the byte array is empty
+     * <tt>0</tt> if the represented integer is negative or too large
+     * or the byte array is empty
      * @throws ArithmeticException if the length of the given octet string is larger than 4.
      */
     public static int OS2IP(byte[] input)
@@ -198,8 +198,8 @@ public final class BigEndianConversions
      *              starts
      * @param inLen the length of the encoded integer
      * @return an integer representing the octet string <tt>bytes</tt>, or
-     *         <tt>0</tt> if the represented integer is negative or too large
-     *         or the byte array is empty
+     * <tt>0</tt> if the represented integer is negative or too large
+     * or the byte array is empty
      */
     public static int OS2IP(byte[] input, int inOff, int inLen)
     {
