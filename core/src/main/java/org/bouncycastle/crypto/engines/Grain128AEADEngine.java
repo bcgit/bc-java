@@ -1,13 +1,22 @@
-package org.bouncycastle.crypto.modes;
+package org.bouncycastle.crypto.engines;
+
+import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
-public class Grain128AEADCipher
+/**
+ * Grain-128 AEAD, based on the current round 3 submission, https://grain-128aead.github.io/
+ */
+public class Grain128AEADEngine
     implements AEADCipher
 {
 
@@ -29,6 +38,11 @@ public class Grain128AEADCipher
     private int output;
 
     private boolean initialised = false;
+    private boolean isEven = true; // zero treated as even
+    private boolean aadFinished = false;
+    private ErasableOutputStream aadData = new ErasableOutputStream();
+
+    private byte[] mac;
 
     public String getAlgorithmName()
     {
@@ -53,7 +67,7 @@ public class Grain128AEADCipher
         if (!(params instanceof ParametersWithIV))
         {
             throw new IllegalArgumentException(
-                "Grain-128AEAD Init parameters must include an IV");
+                "Grain-128AEAD init parameters must include an IV");
         }
 
         ParametersWithIV ivParams = (ParametersWithIV)params;
@@ -63,30 +77,38 @@ public class Grain128AEADCipher
         if (iv == null || iv.length != 12)
         {
             throw new IllegalArgumentException(
-                "Grain-128AEAD  requires exactly 12 bytes of IV");
+                "Grain-128AEAD requires exactly 12 bytes of IV");
         }
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
             throw new IllegalArgumentException(
-                "Grain-128AEAD Init parameters must include a key");
+                "Grain-128AEAD init parameters must include a key");
         }
 
         KeyParameter key = (KeyParameter)ivParams.getParameters();
+        byte[] keyBytes = key.getKey();
+        if (keyBytes.length != 16)
+        {
+            throw new IllegalArgumentException(
+                  "Grain-128AEAD key must be 128 bits long");
+        }
 
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        
         /**
          * Initialize variables.
          */
-        workingIV = new byte[key.getKey().length];
-        workingKey = new byte[key.getKey().length];
+        workingIV = new byte[16];
+        workingKey = new byte[16];
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
         authAcc = new int[2];
         authSr = new int[2];
 
-
         System.arraycopy(iv, 0, workingIV, 0, iv.length);
-        System.arraycopy(key.getKey(), 0, workingKey, 0, key.getKey().length);
+        System.arraycopy(keyBytes, 0, workingKey, 0, keyBytes.length);
 
         reset();
     }
@@ -280,6 +302,12 @@ public class Grain128AEADCipher
                 + " not initialised");
         }
 
+        if (!aadFinished)
+        {
+            doProcessAADBytes(aadData.getBuf(), 0, aadData.size());
+            aadFinished = true;
+        }
+
         if ((inOff + len) > input.length)
         {
             throw new DataLengthException("input buffer too short");
@@ -295,6 +323,10 @@ public class Grain128AEADCipher
 
     public void reset()
     {
+        this.isEven = true;
+        this.mac = null;
+        this.aadData.reset();
+        this.aadFinished = false;
         setKey(workingKey, workingIV);
         initGrain();
     }
@@ -316,65 +348,49 @@ public class Grain128AEADCipher
                 output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if ((j & 1) == 0)
+                if (isEven)
                 {
                     cc |= (((plaintext[mCnt >> 3] >>> (7 - (mCnt & 7))) & 1) ^ output) << (cCnt & 7);
                     mCnt++;
                     cCnt++;
+                    isEven = false;
                 }
                 else
                 {
-
                     if ((plaintext[acCnt >> 3] & (1 << (7 - (acCnt & 7)))) != 0)
                     {
                         accumulate();
                     }
                     authShift(output);
                     acCnt++;
+                    isEven = true;
                 }
             }
             ciphertext[outOff + i] = cc;
-        }
-        output = getOutput();
-        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-        accumulate();
-        cCnt = len + outOff;//acc_idx
-        for (int i = 0; i < 2; ++i)
-        {
-            for (int j = 0; j < 4; ++j)
-            {
-                ciphertext[cCnt] = (byte)((authAcc[i] >>> (j << 3)) & 0xff);
-                cCnt++;
-            }
         }
 
         return ciphertext;
     }
 
-
-    public byte returnByte(byte input)
-    {
-        if (!initialised)
-        {
-            throw new IllegalStateException(getAlgorithmName()
-                + " not initialised");
-        }
-        byte[] plaintext = new byte[1];
-        plaintext[0] = input;
-        byte[] ciphertext = new byte[1];
-        return getKeyStream(plaintext, 0, 1, ciphertext, 0)[0];
-    }
-
-
-    @Override
     public void processAADByte(byte in)
     {
-
+        if (aadFinished)
+        {
+            throw new IllegalStateException("associated data must be added before plaintext/ciphertext");
+        }
+        aadData.write(in);
     }
 
-    @Override
     public void processAADBytes(byte[] input, int inOff, int len)
+    {
+        if (aadFinished)
+        {
+            throw new IllegalStateException("associated data must be added before plaintext/ciphertext");
+        }
+        aadData.write(input, inOff, len);
+    }
+
+    private void doProcessAADBytes(byte[] input, int inOff, int len)
     {
         byte[] ader;
         int aderlen;
@@ -423,7 +439,6 @@ public class Grain128AEADCipher
                 }
             }
         }
-
     }
 
     private void accumulate()
@@ -438,36 +453,62 @@ public class Grain128AEADCipher
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
 
-    @Override
     public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
         return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
-    @Override
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        return 0;
+        if (!aadFinished)
+        {
+            doProcessAADBytes(aadData.getBuf(), 0, aadData.size());
+            aadFinished = true;
+        }
+        
+        this.mac = new byte[8];
+
+        output = getOutput();
+        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+        accumulate();
+        
+        int cCnt = 0;
+        for (int i = 0; i < 2; ++i)
+        {
+            for (int j = 0; j < 4; ++j)
+            {
+                mac[cCnt++] = (byte)((authAcc[i] >>> (j << 3)) & 0xff);
+            }
+        }
+        
+        System.arraycopy(mac, 0, out, outOff, mac.length);
+
+        try
+        {
+            return mac.length;
+        }
+        finally
+        {
+            reset();
+        }
     }
 
-    @Override
     public byte[] getMac()
     {
-        return new byte[0];
+        return mac;
     }
 
-    @Override
     public int getUpdateOutputSize(int len)
     {
-        return 0;
+        return len;
     }
 
-    @Override
     public int getOutputSize(int len)
     {
-        //the last 8 bits are from AD
+        //the last 8 bytes are from AD
         return len + 8;
     }
 
@@ -477,5 +518,24 @@ public class Grain128AEADCipher
         x = (((x & 0x33) << 2) | ((x & (~0x33)) >>> 2)) & 0xFF;
         x = (((x & 0x0f) << 4) | ((x & (~0x0f)) >>> 4)) & 0xFF;
         return x;
+    }
+
+    private static final class ErasableOutputStream
+        extends ByteArrayOutputStream
+    {
+        public ErasableOutputStream()
+        {
+        }
+
+        public byte[] getBuf()
+        {
+            return buf;
+        }
+
+        public void erase()
+        {
+            Arrays.fill(this.buf, (byte)0);
+            reset();
+        }
     }
 }
