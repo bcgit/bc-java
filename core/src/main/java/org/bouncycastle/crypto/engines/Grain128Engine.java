@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -66,28 +68,37 @@ public class Grain128Engine
         if (iv == null || iv.length != 12)
         {
             throw new IllegalArgumentException(
-                "Grain-128  requires exactly 12 bytes of IV");
+                "Grain-128 requires exactly 12 bytes of IV");
         }
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
             throw new IllegalArgumentException(
-                "Grain-128 Init parameters must include a key");
+                "Grain-128 init parameters must include a key");
         }
 
         KeyParameter key = (KeyParameter)ivParams.getParameters();
+        byte[] keyBytes = key.getKey();
+        if (keyBytes.length != 16)
+        {
+            throw new IllegalArgumentException(
+                  "Grain-128 key must be 128 bits long");
+        }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
 
         /**
          * Initialize variables.
          */
-        workingIV = new byte[key.getKey().length];
-        workingKey = new byte[key.getKey().length];
+        workingIV = new byte[keyBytes.length];
+        workingKey = new byte[keyBytes.length];
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
         out = new byte[4];
 
         System.arraycopy(iv, 0, workingIV, 0, iv.length);
-        System.arraycopy(key.getKey(), 0, workingKey, 0, key.getKey().length);
+        System.arraycopy(keyBytes, 0, workingKey, 0, keyBytes.length);
 
         reset();
     }
