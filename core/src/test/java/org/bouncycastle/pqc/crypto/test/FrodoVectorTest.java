@@ -118,6 +118,7 @@ public class FrodoVectorTest
 
                         byte[] dec_key = frodoDecCipher.extractSecret(generated_cipher_text);
 
+                        assertEquals(parameters.getSessionKeySize(), dec_key.length * 8);
                         assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                     }

@@ -21,7 +21,7 @@ import org.bouncycastle.util.Pack;
  * NIST Special Publication 800-38D.
  */
 public class GCMBlockCipher
-    implements AEADBlockCipher
+    implements GCMModeCipher
 {
     private static final int BLOCK_SIZE = 16;
 
@@ -52,6 +52,27 @@ public class GCMBlockCipher
     private int         atBlockPos;
     private long        atLength;
     private long        atLengthPre;
+
+    /**
+     * Return a new GCM mode cipher based on the passed in base cipher
+     *
+     * @param cipher the base cipher for the GCM mode.
+     */
+    public static GCMModeCipher newInstance(BlockCipher cipher)
+    {
+        return new GCMBlockCipher(cipher);
+    }
+
+    /**
+     * Return a new GCM mode cipher based on the passed in base cipher and multiplier.
+     *
+     * @param cipher the base cipher for the GCM mode.
+     * @param m the GCM multiplier to use.
+     */
+    public static GCMModeCipher newInstance(BlockCipher cipher, GCMMultiplier m)
+    {
+        return new GCMBlockCipher(cipher, m);
+    }
 
     public GCMBlockCipher(BlockCipher c)
     {

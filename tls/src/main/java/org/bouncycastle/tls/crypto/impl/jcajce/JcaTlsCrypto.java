@@ -17,6 +17,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -903,12 +904,22 @@ public class JcaTlsCrypto
     {
         try
         {
-            Signature signer = getHelper().createSignature(algorithmName);
+            SecureRandom random = needsRandom ? getSecureRandom() : null;
+
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummySigner = helper.createSignature(algorithmName);
+                dummySigner.initSign(privateKey, random);
+                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+            }
+
+            Signature signer = helper.createSignature(algorithmName);
             if (null != parameter)
             {
                 signer.setParameter(parameter);
             }
-            signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
+            signer.initSign(privateKey, random);
             return new JcaTlsStreamSigner(signer);
         }
         catch (GeneralSecurityException e)
@@ -929,7 +940,15 @@ public class JcaTlsCrypto
     {
         try
         {
-            Signature verifier = getHelper().createSignature(algorithmName);
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummyVerifier = helper.createSignature(algorithmName);
+                dummyVerifier.initVerify(publicKey);
+                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
+            }
+
+            Signature verifier = helper.createSignature(algorithmName);
             if (null != parameter)
             {
                 verifier.setParameter(parameter);
@@ -948,7 +967,15 @@ public class JcaTlsCrypto
     {
         try
         {
-            Signature verifier = getHelper().createSignature(algorithmName);
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummyVerifier = helper.createSignature(algorithmName);
+                dummyVerifier.initVerify(publicKey);
+                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
+            }
+
+            Signature verifier = helper.createSignature(algorithmName);
             if (null != parameter)
             {
                 verifier.setParameter(parameter);

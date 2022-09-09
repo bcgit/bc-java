@@ -42,6 +42,7 @@ public class AllTests
         suite.addTestSuite(CrystalsDilithiumTest.class);
         suite.addTestSuite(NTRULPRimeTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
+        suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);

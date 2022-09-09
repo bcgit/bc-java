@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.TigerDigest;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
@@ -61,6 +62,16 @@ class BcImplProvider
             return new SHA384Digest();
         case HashAlgorithmTags.SHA512:
             return new SHA512Digest();
+        case HashAlgorithmTags.SHA3_224:
+            return new SHA3Digest(224);
+        case HashAlgorithmTags.SHA3_256:
+        case HashAlgorithmTags.SHA3_256_OLD:
+            return new SHA3Digest(256);
+        case HashAlgorithmTags.SHA3_384:
+            return new SHA3Digest(384);
+        case HashAlgorithmTags.SHA3_512:
+        case HashAlgorithmTags.SHA3_512_OLD:
+            return new SHA3Digest(512);
         case HashAlgorithmTags.MD2:
             return new MD2Digest();
         case HashAlgorithmTags.MD5:

@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -62,7 +61,7 @@ public class ERSArchiveTimeStampGenerator
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator)
         throws TSPException, IOException
     {
-        PartialHashtree[] reducedHashTree = getPartialHashtrees();
+        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
 
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
@@ -72,7 +71,7 @@ public class ERSArchiveTimeStampGenerator
     public TimeStampRequest generateTimeStampRequest(TimeStampRequestGenerator tspReqGenerator, BigInteger nonce)
         throws TSPException, IOException
     {
-        PartialHashtree[] reducedHashTree = getPartialHashtrees();
+        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
 
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
@@ -82,7 +81,7 @@ public class ERSArchiveTimeStampGenerator
     public ERSArchiveTimeStamp generateArchiveTimeStamp(TimeStampResponse tspResponse)
         throws TSPException, ERSException
     {
-        PartialHashtree[] reducedHashTree = getPartialHashtrees();
+        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
         if (reducedHashTree.length != 1)
         {
             throw new ERSException("multiple reduced hash trees found");
@@ -123,7 +122,7 @@ public class ERSArchiveTimeStampGenerator
     public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
         throws TSPException, ERSException
     {
-        PartialHashtree[] reducedHashTree = getPartialHashtrees();
+        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
 
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
@@ -154,22 +153,30 @@ public class ERSArchiveTimeStampGenerator
         }
         else
         {
+            ERSArchiveTimeStamp[] archiveTimeStamps = new ERSArchiveTimeStamp[reducedHashTree.length];
+
             // we compute the final hash tree by left first traversal.
             for (int i = 0; i != reducedHashTree.length; i++)
             {
                 PartialHashtree[] path = rootNodeCalculator.computePathToRoot(digCalc, reducedHashTree[i], i);
 
-                atss.add(new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), path, timeStamp), digCalc));
+                archiveTimeStamps[reducedHashTree[i].order] = new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), path, timeStamp), digCalc);
+            }
+
+            // fix the ordering
+            for (int i = 0; i != reducedHashTree.length; i++)
+            {
+                atss.add(archiveTimeStamps[i]);
             }
         }
 
         return atss;
     }
 
-    private PartialHashtree[] getPartialHashtrees()
+    private IndexedPartialHashtree[] getPartialHashtrees()
     {
-        List<byte[]> hashes = ERSUtil.buildHashList(digCalc, dataObjects, previousChainHash);
-        PartialHashtree[] trees = new PartialHashtree[hashes.size()];
+        List<IndexedHash> hashes = ERSUtil.buildIndexedHashList(digCalc, dataObjects, previousChainHash);
+        IndexedPartialHashtree[] trees = new IndexedPartialHashtree[hashes.size()];
 
         Set<ERSDataGroup> dataGroupSet = new HashSet<ERSDataGroup>();
         for (int i = 0; i != dataObjects.size(); i++)
@@ -183,53 +190,40 @@ public class ERSArchiveTimeStampGenerator
         // replace groups
         for (int i = 0; i != hashes.size(); i++)
         {
-            byte[] hash = (byte[])hashes.get(i);
-            ERSDataGroup found = null;
+            byte[] hash = hashes.get(i).digest;
+            ERSData d = dataObjects.get(hashes.get(i).order);
 
-            for (Iterator it = dataGroupSet.iterator(); it.hasNext(); )
+            if (d instanceof ERSDataGroup)
             {
-                ERSDataGroup data = (ERSDataGroup)it.next();
+                ERSDataGroup data = (ERSDataGroup)d;
 
-                byte[] dHash = data.getHash(digCalc);
-                if (Arrays.areEqual(dHash, hash))
-                {
-                    List<byte[]> dHashes = data.getHashes(digCalc);
-                    trees[i] = new PartialHashtree((byte[][])dHashes.toArray(new byte[dHashes.size()][]));
-                    found = data;
-                    break;
-                }
-            }
-            if (found == null)
-            {
-                trees[i] = new PartialHashtree(hash);
+                List<byte[]> dHashes = data.getHashes(digCalc, previousChainHash);
+                trees[i] = new IndexedPartialHashtree(hashes.get(i).order, (byte[][])dHashes.toArray(new byte[dHashes.size()][]));
             }
             else
             {
-                dataGroupSet.remove(found);
+                trees[i] = new IndexedPartialHashtree(hashes.get(i).order, hash);
             }
         }
 
         return trees;
     }
 
-    byte[] concatenate(PartialHashtree partialHashtree)
+    private class IndexedPartialHashtree
+        extends PartialHashtree
     {
-        try
+        final int order;
+
+        private IndexedPartialHashtree(int order, byte[] partial)
         {
-            byte[][] values = partialHashtree.getValues();
-            OutputStream dOut = digCalc.getOutputStream();
-
-            for (int i = 0; i != values.length; i++)
-            {
-                dOut.write(values[i]);
-            }
-            dOut.close();
-
-            return digCalc.getDigest();
+            super(partial);
+            this.order = order;
         }
-        catch (IOException e)
+
+        private IndexedPartialHashtree(int order, byte[][] partial)
         {
-            throw new IllegalStateException(e.getMessage());
+            super(partial);
+            this.order = order;
         }
     }
 }

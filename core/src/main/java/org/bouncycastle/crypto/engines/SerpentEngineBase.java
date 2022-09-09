@@ -6,12 +6,11 @@ import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.StatelessProcessing;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 public abstract class SerpentEngineBase
-    implements BlockCipher, StatelessProcessing
+    implements BlockCipher
 {
     protected static final int BLOCK_SIZE = 16;
 

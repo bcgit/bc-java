@@ -35,12 +35,14 @@ public class SIKEKEMExtractor
 
     public byte[] extractSecret(byte[] encapsulation, int sessionKeySizeInBits)
     {
+        // -DM System.err.println
+        System.err.println("WARNING: the SIKE algorithm is only for research purposes, insecure");
         byte[] session_key = new byte[sessionKeySizeInBits / 8];
         engine.crypto_kem_dec(session_key, encapsulation, ((SIKEPrivateKeyParameters)key).getPrivateKey());
         return session_key;
     }
 
-    public int getInputSize()
+    public int getEncapsulationLength()
     {
         return engine.getCipherTextSize();
     }

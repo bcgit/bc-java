@@ -12,6 +12,7 @@ import org.bouncycastle.util.Arrays;
  */
 public class CFBBlockCipher
     extends StreamBlockCipher
+    implements CFBModeCipher
 {
     private byte[]          IV;
     private byte[]          cfbV;
@@ -22,6 +23,17 @@ public class CFBBlockCipher
     private BlockCipher     cipher = null;
     private boolean         encrypting;
     private int             byteCount;
+
+    /**
+     * Return a new CFB mode cipher based on the passed in base cipher
+     *
+     * @param cipher the base cipher for the CFB mode.
+     * @param blockSize the block size (in bits) used for the CFB mode.
+     */
+    public static CFBModeCipher newInstance(BlockCipher cipher, int blockSize)
+    {
+        return new CFBBlockCipher(cipher, blockSize);
+    }
 
     /**
      * Basic constructor.

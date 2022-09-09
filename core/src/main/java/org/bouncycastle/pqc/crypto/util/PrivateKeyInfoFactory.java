@@ -20,6 +20,7 @@ import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
@@ -297,6 +298,13 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
+        }
+        else if (privateKey instanceof BIKEPrivateKeyParameters)
+        {
+            BIKEPrivateKeyParameters params = (BIKEPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.bikeOidLookup(params.getParameters()));
+            byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else
         {

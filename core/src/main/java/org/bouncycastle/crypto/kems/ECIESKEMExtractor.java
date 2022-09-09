@@ -116,4 +116,9 @@ public class ECIESKEMExtractor
 
         return ECIESKEMGenerator.deriveKey(SingleHashMode, kdf, keyLen, encapsulation, PEH);
     }
+
+    public int getEncapsulationLength()
+    {
+        return (decKey.getParameters().getCurve().getFieldSize() / 8) * 2 + 1;
+    }
 }

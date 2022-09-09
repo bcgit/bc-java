@@ -44,7 +44,7 @@ public class ECIESKeyEncapsulationTest
         SecureRandom            rnd = new SecureRandom();
         byte[]                    out = new byte[57];
         KeyParameter            key1, key2;
-        
+
         // Test basic ECIES-KEM
         kem = new ECIESKeyEncapsulation(kdf, rnd);
         
