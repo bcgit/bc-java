@@ -58,6 +58,7 @@ import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
+import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.engines.HC128Engine;
 import org.bouncycastle.crypto.engines.HC256Engine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
@@ -221,6 +222,7 @@ public class CryptoServiceConstraintsTest
         testSEED();
         testISAAC();
         testShacal2();
+        testGost28147();
     }
 
     private void test112bits()
@@ -2020,6 +2022,25 @@ public class CryptoServiceConstraintsTest
 
         // decryption should be okay
         engine.init(false, kp.getPrivate());
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testGost28147()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        GOST28147Engine engine = new GOST28147Engine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[32]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 178", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[32]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
