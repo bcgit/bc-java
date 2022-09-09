@@ -2,8 +2,10 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -81,12 +83,18 @@ public class DSTU7624Engine
         {
         case 128:
             roundsAmount = ROUNDS_128;
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
             break;
         case 256:
             roundsAmount = ROUNDS_256;
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 256, params, Utils.getPurpose(forEncryption)));
             break;
         case 512:
             roundsAmount = ROUNDS_512;
+            CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 256, params, Utils.getPurpose(forEncryption)));
             break;
         }
 

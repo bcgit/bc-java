@@ -1,8 +1,11 @@
 package org.bouncycastle.crypto.macs;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
@@ -13,6 +16,7 @@ import org.bouncycastle.crypto.params.ParametersWithSBox;
 public class GOST28147Mac
     implements Mac
 {
+    private final CryptoServicePurpose purpose;
     private int                 blockSize = 8;
     private int                 macSize = 4;
     private int                 bufOff;
@@ -38,6 +42,12 @@ public class GOST28147Mac
     
     public GOST28147Mac()
     {
+        this(CryptoServicePurpose.AUTHENTICATION);
+    }
+
+    public GOST28147Mac(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
         mac = new byte[blockSize];
 
         buf = new byte[blockSize];
@@ -70,6 +80,8 @@ public class GOST28147Mac
         macIV = null;
 
         recursiveInit(params);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 178, params, purpose));
     }
 
     private void recursiveInit(

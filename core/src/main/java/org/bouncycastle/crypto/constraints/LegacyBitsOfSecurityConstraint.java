@@ -85,6 +85,7 @@ public class LegacyBitsOfSecurityConstraint
         case ANY:
         case VERIFYING:
         case DECRYPTION:
+        case VERIFICATION:
             if (service.bitsOfSecurity() < legacyRequiredBitsOfSecurity)
             {
                 throw new CryptoServiceConstraintsException("service does not provide " + legacyRequiredBitsOfSecurity + " bits of security only " + service.bitsOfSecurity());

@@ -57,6 +57,7 @@ import org.bouncycastle.crypto.engines.ChaCha7539Engine;
 import org.bouncycastle.crypto.engines.ChaChaEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
+import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.engines.Grain128AEADEngine;
@@ -66,6 +67,8 @@ import org.bouncycastle.crypto.engines.HC128Engine;
 import org.bouncycastle.crypto.engines.HC256Engine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.ISAACEngine;
+import org.bouncycastle.crypto.engines.LEAEngine;
+import org.bouncycastle.crypto.engines.NoekeonEngine;
 import org.bouncycastle.crypto.engines.RC4Engine;
 import org.bouncycastle.crypto.engines.RC532Engine;
 import org.bouncycastle.crypto.engines.RC564Engine;
@@ -103,6 +106,7 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.kems.ECIESKeyEncapsulation;
 import org.bouncycastle.crypto.kems.RSAKeyEncapsulation;
+import org.bouncycastle.crypto.macs.GOST28147Mac;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
@@ -226,9 +230,13 @@ public class CryptoServiceConstraintsTest
         testISAAC();
         testShacal2();
         testGost28147();
+        testGost28147Mac();
         testGrain128();
         testGrain128AEAD();
         testGrainv1();
+        testDSTU7624();
+        testLEA();
+        testNoekeon();
     }
 
     private void test112bits()
@@ -2051,6 +2059,26 @@ public class CryptoServiceConstraintsTest
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
 
+    private void testGost28147Mac()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        GOST28147Mac engine = new GOST28147Mac();
+        try
+        {
+            engine.init(new KeyParameter(new byte[32]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 178", e.getMessage());
+        }
+
+        engine = new GOST28147Mac(CryptoServicePurpose.VERIFICATION);
+        engine.init(new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
     private void testGrain128()
     {
         CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
@@ -2104,6 +2132,77 @@ public class CryptoServiceConstraintsTest
         }
 
         engine.init(false, new ParametersWithIV(new KeyParameter(new byte[10]), new byte[8]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testDSTU7624()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        DSTU7624Engine engine = new DSTU7624Engine(128);
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        engine = new DSTU7624Engine(256);
+
+        engine.init(true, new KeyParameter(new byte[64]));
+        engine.init(false, new KeyParameter(new byte[64]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testLEA()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(192));
+        LEAEngine engine = new LEAEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 192 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[16]));
+
+        engine.init(true, new KeyParameter(new byte[24]));
+        engine.init(false, new KeyParameter(new byte[24]));
+
+        engine.init(true, new KeyParameter(new byte[32]));
+        engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testNoekeon()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        NoekeonEngine engine = new NoekeonEngine();
+        try
+        {
+            engine.init(true, new KeyParameter(new byte[16]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new KeyParameter(new byte[16]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
