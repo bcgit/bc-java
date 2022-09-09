@@ -508,7 +508,7 @@ public class CipherStreamTest
         testMode(new Salsa20Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
         testMode(new XSalsa20Engine(), new ParametersWithIV(new KeyParameter(new byte[32]), new byte[24]));
         testMode(new ChaChaEngine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
-        testMode(new Grainv1Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
+        testMode(new Grainv1Engine(), new ParametersWithIV(new KeyParameter(new byte[10]), new byte[8]));
         testMode(new Grain128Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
         testMode(new HC128Engine(), new KeyParameter(new byte[16]));
         testMode(new HC256Engine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
