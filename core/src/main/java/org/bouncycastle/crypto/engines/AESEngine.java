@@ -1,9 +1,10 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.DefaultMultiBlockCipher;
+import org.bouncycastle.crypto.MultiBlockCipher;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -34,7 +35,7 @@ import org.bouncycastle.util.Pack;
  *
  */
 public class AESEngine
-    implements BlockCipher
+    extends DefaultMultiBlockCipher
 {
     // The S box
     private static final byte[] S = {
@@ -419,6 +420,16 @@ private static final int[] Tinv0 =
     private byte[]      s;
 
     private static final int BLOCK_SIZE = 16;
+
+    /**
+      * Return an AESEngine.
+      *
+      * @return an AES ECB mode cipher.
+      */
+     public static MultiBlockCipher newInstance()
+     {
+         return new AESEngine();
+     }
 
     /**
      * default constructor - 128 bit block size.
