@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.modes;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.DefaultMultiBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
@@ -10,7 +11,8 @@ import org.bouncycastle.util.Arrays;
  * implements Cipher-Block-Chaining (CBC) mode on top of a simple cipher.
  */
 public class CBCBlockCipher
-    implements BlockCipher
+    extends DefaultMultiBlockCipher
+    implements CBCModeCipher
 {
     private byte[]          IV;
     private byte[]          cbcV;
@@ -19,6 +21,16 @@ public class CBCBlockCipher
     private int             blockSize;
     private BlockCipher     cipher = null;
     private boolean         encrypting;
+
+    /**
+     * Return a new CBC mode cipher based on the passed in base cipher
+     *
+     * @param cipher the base cipher for the CBC mode.
+     */
+    public static CBCModeCipher newInstance(BlockCipher cipher)
+    {
+        return new CBCBlockCipher(cipher);
+    }
 
     /**
      * Basic constructor.
