@@ -59,6 +59,9 @@ import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.engines.GOST28147Engine;
+import org.bouncycastle.crypto.engines.Grain128AEADEngine;
+import org.bouncycastle.crypto.engines.Grain128Engine;
+import org.bouncycastle.crypto.engines.Grainv1Engine;
 import org.bouncycastle.crypto.engines.HC128Engine;
 import org.bouncycastle.crypto.engines.HC256Engine;
 import org.bouncycastle.crypto.engines.IDEAEngine;
@@ -223,6 +226,9 @@ public class CryptoServiceConstraintsTest
         testISAAC();
         testShacal2();
         testGost28147();
+        testGrain128();
+        testGrain128AEAD();
+        testGrainv1();
     }
 
     private void test112bits()
@@ -2041,6 +2047,63 @@ public class CryptoServiceConstraintsTest
         }
 
         engine.init(false, new KeyParameter(new byte[32]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testGrain128()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        Grain128Engine engine = new Grain128Engine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testGrain128AEAD()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 128));
+        Grain128AEADEngine engine = new Grain128AEADEngine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[16]), new byte[12]));
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testGrainv1()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new LegacyBitsOfSecurityConstraint(256, 80));
+        Grainv1Engine engine = new Grainv1Engine();
+        try
+        {
+            engine.init(true, new ParametersWithIV(new KeyParameter(new byte[10]), new byte[8]));
+            fail("no exception!");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals("service does not provide 256 bits of security only 80", e.getMessage());
+        }
+
+        engine.init(false, new ParametersWithIV(new KeyParameter(new byte[10]), new byte[8]));
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }

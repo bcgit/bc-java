@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -56,7 +58,7 @@ public class Grainv1Engine
         if (!(params instanceof ParametersWithIV))
         {
             throw new IllegalArgumentException(
-                "Grain v1 Init parameters must include an IV");
+                "Grain v1 init parameters must include an IV");
         }
 
         ParametersWithIV ivParams = (ParametersWithIV)params;
@@ -72,22 +74,31 @@ public class Grainv1Engine
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
             throw new IllegalArgumentException(
-                "Grain v1 Init parameters must include a key");
+                "Grain v1 init parameters must include a key");
         }
 
         KeyParameter key = (KeyParameter)ivParams.getParameters();
+        byte[] keyBytes = key.getKey();
+        if (keyBytes.length != 10)
+        {
+            throw new IllegalArgumentException(
+                  "Grain v1 key must be 80 bits long");
+        }
 
         /**
          * Initialize variables.
          */
-        workingIV = new byte[key.getKey().length];
-        workingKey = new byte[key.getKey().length];
+        workingIV = new byte[keyBytes.length];
+        workingKey = new byte[keyBytes.length];
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
         out = new byte[2];
 
         System.arraycopy(iv, 0, workingIV, 0, iv.length);
-        System.arraycopy(key.getKey(), 0, workingKey, 0, key.getKey().length);
+        System.arraycopy(keyBytes, 0, workingKey, 0, keyBytes.length);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                this.getAlgorithmName(), 80, params, Utils.getPurpose(forEncryption)));
 
         reset();
     }
