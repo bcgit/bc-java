@@ -438,11 +438,6 @@ public class KeccakDigest
 
     protected CryptoServiceProperties cryptoServiceProperties()
     {
-        if (getDigestSize() < 32)
-        {
-            return Utils.getDefaultProperties(this, 192, purpose);
-        }
-
-        return Utils.getDefaultProperties(this, 256, purpose);
+        return Utils.getDefaultProperties(this, getDigestSize() * 8, purpose);
     }
 }

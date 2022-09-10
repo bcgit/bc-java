@@ -244,11 +244,6 @@ public class SHA512tDigest
 
     protected CryptoServiceProperties cryptoServiceProperties()
     {
-        if (digestLength < 32)
-        {
-            return Utils.getDefaultProperties(this, 192, purpose);
-        }
-
-        return Utils.getDefaultProperties(this, 256, purpose);
+        return Utils.getDefaultProperties(this, this.getDigestSize() * 8, purpose);
     }
 }
