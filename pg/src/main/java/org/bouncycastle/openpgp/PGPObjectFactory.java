@@ -81,6 +81,12 @@ public class PGPObjectFactory
     public Object nextObject()
         throws IOException
     {
+        return nextObject(this.in, this.fingerPrintCalculator);
+    }
+
+    public static Object nextObject(BCPGInputStream in, KeyFingerPrintCalculator fingerPrintCalculator)
+            throws IOException
+    {
         List l;
 
         switch (in.nextPacketTag())
