@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.digests;
 import java.util.Iterator;
 import java.util.Stack;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.params.Blake3Parameters;
@@ -254,6 +256,9 @@ public class Blake3Digest
      */
     private int thePos;
 
+    // digest purpose
+    private final CryptoServicePurpose purpose;
+
     /**
      * Constructor.
      */
@@ -272,14 +277,22 @@ public class Blake3Digest
         // In aid of less confusion -this is to deal with the fact the
         // original checkin for this has the digest length in bytes
         // and every other digest we have doesn't....
-        if (pDigestSize > 100)
-        {
-            theDigestLen = pDigestSize / 8;
-        }
-        else
-        {
-            theDigestLen = pDigestSize;
-        }
+        this(pDigestSize > 100 ? pDigestSize : pDigestSize * 8, CryptoServicePurpose.ANY);
+    }
+
+    /**
+     * Base constructor with purpose.
+     *
+     * @param pDigestSize size of digest (in bits)
+     * @param purpose usage purpose.
+     */
+    public Blake3Digest(final int pDigestSize, CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+        theDigestLen = pDigestSize / 8;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize() * 8, purpose));
+
         init(null);
     }
 
@@ -292,6 +305,7 @@ public class Blake3Digest
     {
         /* Copy default digest length */
         theDigestLen = pSource.theDigestLen;
+        purpose = pSource.purpose;
 
         /* Initialise from source */
         reset((Memoable)pSource);
