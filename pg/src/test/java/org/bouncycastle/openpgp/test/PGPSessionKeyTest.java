@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.PGPSessionKeyEncryptedData;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
@@ -110,6 +111,8 @@ public class PGPSessionKeyTest
         verifyJcePBEDecryptorFactoryFromSessionKeyCanDecryptDataSuccessfully();
 
         testSessionKeyFromString();
+
+        decryptMessageWithoutEskUsingSessionKey();
     }
 
     private void verifyPublicKeyDecryptionYieldsCorrectSessionData()
@@ -263,5 +266,47 @@ public class PGPSessionKeyTest
         isEquals(9, sessionKey.getAlgorithm());
         isEquals("FCA4BEAF687F48059CACC14FB019125CD57392BAB7037C707835925CBF9F7BCD", Hex.toHexString(sessionKey.getKey()).toUpperCase());
         //isEquals(sessionKeyString, sessionKey.toString());
+    }
+
+    // Message consisting only of a symmetrically encrypted integrity protected data packet wrapping a literal data packet
+    // see https://dump.sequoia-pgp.org/?data=-----BEGIN%20PGP%20MESSAGE-----%0D%0AVersion%3A%20PGPainless%0D%0A%0D%0A0j8BNtJwO2PLoRdG%2BVynivV7XpHp2Nw/S489vksUKct67CYTFpVTzB4IcJwmUGMm%0D%0Are/N1KMTznEBzy3Txa1QVBc%3D%0D%0A%3Dt%2Bpk%0D%0A-----END%20PGP%20MESSAGE-----&session_key=26BE99BC478520FBC8AB8FB84991DACE4B82CFB9B00F7D05C051D69B8CEA8A7F
+    private static final String encryptedMessageWithoutESK = "" +
+            "-----BEGIN PGP MESSAGE-----\n" +
+            "Version: PGPainless\n" +
+            "\n" +
+            "0j8BNtJwO2PLoRdG+VynivV7XpHp2Nw/S489vksUKct67CYTFpVTzB4IcJwmUGMm\n" +
+            "re/N1KMTznEBzy3Txa1QVBc=\n" +
+            "=t+pk\n" +
+            "-----END PGP MESSAGE-----";
+
+    private static final PGPSessionKey sessionKey = PGPSessionKey.fromAsciiRepresentation(
+            "9:26be99bc478520fbc8ab8fb84991dace4b82cfb9b00f7d05c051d69b8cea8a7f");
+
+    private void decryptMessageWithoutEskUsingSessionKey()
+            throws IOException, PGPException
+    {
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(encryptedMessageWithoutESK));
+        ArmoredInputStream armorIn = new ArmoredInputStream(msgIn);
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
+        PGPEncryptedDataList encryptedData = (PGPEncryptedDataList) objectFactory.nextObject();
+        isEquals(0, encryptedData.size()); // there is no encrypted session key packet
+
+        encryptedData.addSessionKeyDecryptionMethod(sessionKey); // Add decryption method using a session key
+        isEquals(1, encryptedData.size());
+
+        SessionKeyDataDecryptorFactory decryptorFactory = new BcSessionKeyDataDecryptorFactory(sessionKey);
+        PGPSessionKeyEncryptedData sessionKeyEncData = (PGPSessionKeyEncryptedData) encryptedData.get(0);
+        InputStream decrypted = sessionKeyEncData.getDataStream(decryptorFactory);
+
+        objectFactory = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData literalData = (PGPLiteralData) objectFactory.nextObject();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Streams.pipeAll(literalData.getDataStream(), out);
+
+        literalData.getDataStream().close();
+        decrypted.close();
+        armorIn.close();
+        isTrue(Arrays.equals(Strings.toByteArray("Hello, World!\n"), out.toByteArray()));
     }
 }

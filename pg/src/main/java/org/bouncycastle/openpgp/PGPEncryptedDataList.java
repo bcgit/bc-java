@@ -129,6 +129,19 @@ public class PGPEncryptedDataList
     }
 
     /**
+     * Add a decryption method using a {@link PGPSessionKey}.
+     * This method can be used to decrypt messages which do not contain a SKESK or PKESK packet using a
+     * session key.
+     *
+     * @param sessionKey session key for message decryption
+     */
+    public void addSessionKeyDecryptionMethod(PGPSessionKey sessionKey)
+    {
+        PGPSessionKeyEncryptedData sessionKeyEncryptedData = new PGPSessionKeyEncryptedData(sessionKey, data);
+        methods.add(sessionKeyEncryptedData);
+    }
+
+    /**
      * Gets the encryption method object at the specified index.
      *
      * @param index the encryption method to obtain (0 based).
