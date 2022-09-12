@@ -134,11 +134,13 @@ public class PGPEncryptedDataList
      * session key.
      *
      * @param sessionKey session key for message decryption
+     * @return session key encrypted data
      */
-    public void addSessionKeyDecryptionMethod(PGPSessionKey sessionKey)
+    public PGPSessionKeyEncryptedData addSessionKeyDecryptionMethod(PGPSessionKey sessionKey)
     {
         PGPSessionKeyEncryptedData sessionKeyEncryptedData = new PGPSessionKeyEncryptedData(sessionKey, data);
         methods.add(sessionKeyEncryptedData);
+        return sessionKeyEncryptedData;
     }
 
     /**
