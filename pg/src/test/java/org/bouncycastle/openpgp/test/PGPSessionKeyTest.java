@@ -291,11 +291,11 @@ public class PGPSessionKeyTest
         PGPEncryptedDataList encryptedData = (PGPEncryptedDataList) objectFactory.nextObject();
         isEquals(0, encryptedData.size()); // there is no encrypted session key packet
 
-        encryptedData.addSessionKeyDecryptionMethod(sessionKey); // Add decryption method using a session key
+        // Add decryption method using a session key
+        PGPSessionKeyEncryptedData sessionKeyEncData = encryptedData.addSessionKeyDecryptionMethod(sessionKey);
         isEquals(1, encryptedData.size());
 
         SessionKeyDataDecryptorFactory decryptorFactory = new BcSessionKeyDataDecryptorFactory(sessionKey);
-        PGPSessionKeyEncryptedData sessionKeyEncData = (PGPSessionKeyEncryptedData) encryptedData.get(0);
         InputStream decrypted = sessionKeyEncData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);
