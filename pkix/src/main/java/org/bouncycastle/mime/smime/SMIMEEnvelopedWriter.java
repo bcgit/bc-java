@@ -165,7 +165,7 @@ public class SMIMEEnvelopedWriter
         }
     }
 
-    private class ContentOutputStream
+    private static class ContentOutputStream
         extends OutputStream
     {
         private final OutputStream main;

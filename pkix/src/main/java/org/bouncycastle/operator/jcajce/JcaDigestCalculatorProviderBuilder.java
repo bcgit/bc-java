@@ -87,7 +87,7 @@ public class JcaDigestCalculatorProviderBuilder
         };
     }
 
-    private class DigestOutputStream
+    private static class DigestOutputStream
         extends OutputStream
     {
         private MessageDigest dig;

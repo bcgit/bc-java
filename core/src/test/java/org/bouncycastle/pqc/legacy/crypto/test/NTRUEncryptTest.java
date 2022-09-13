@@ -282,7 +282,7 @@ public class NTRUEncryptTest
         assertTrue(Arrays.areEqual(plainText, decrypted));
     }
 
-    private class VisibleNTRUEngine
+    private static class VisibleNTRUEngine
         extends NTRUEngine
     {
         public IntegerPolynomial encrypt(IntegerPolynomial m, TernaryPolynomial r, IntegerPolynomial pubKey)

@@ -26,7 +26,7 @@ public class OCSPReqBuilder
     private GeneralName     requestorName = null;
     private Extensions  requestExtensions = null;
     
-    private class RequestObject
+    private static class RequestObject
     {
         CertificateID   certId;
         Extensions  extensions;

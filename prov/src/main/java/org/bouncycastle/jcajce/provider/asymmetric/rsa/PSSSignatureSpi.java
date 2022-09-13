@@ -665,7 +665,7 @@ public class PSSSignatureSpi
         }
     }
 
-    private class NullPssDigest
+    private static class NullPssDigest
         implements Digest
     {
         private ByteArrayOutputStream bOut = new ByteArrayOutputStream();

@@ -303,7 +303,7 @@ public class ESTResponse
     }
 
 
-    private class PrintingInputStream
+    private static class PrintingInputStream
         extends InputStream
     {
         private final InputStream src;
