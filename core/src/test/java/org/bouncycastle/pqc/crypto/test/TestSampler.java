@@ -15,7 +15,7 @@ class TestSampler
 
         Random random = new Random(System.currentTimeMillis());
 
-        this.offSet = random.nextInt() % 10;
+        this.offSet = random.nextInt(10);
     }
 
     boolean skipTest(String count)

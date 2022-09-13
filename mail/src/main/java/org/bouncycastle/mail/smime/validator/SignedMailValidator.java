@@ -864,7 +864,7 @@ public class SignedMailValidator
         }
     }
 
-    public class ValidationResult
+    public static class ValidationResult
     {
 
         private PKIXCertPathReviewer review;

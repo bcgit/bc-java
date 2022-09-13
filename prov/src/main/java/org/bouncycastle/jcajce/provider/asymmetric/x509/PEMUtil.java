@@ -13,7 +13,7 @@ class PEMUtil
      * current PEM object.
      *
      */
-    private class Boundaries
+    private static class Boundaries
     {
         private final String _header;
         private final String _footer;

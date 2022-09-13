@@ -161,7 +161,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         return infoGeneratorBuilder;
     }
 
-    private class Helper
+    private static class Helper
     {
         ContentSigner createContentSigner(String algorithm, PrivateKey privateKey)
             throws OperatorCreationException
@@ -177,7 +177,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         }
     }
 
-    private class NamedHelper
+    private static class NamedHelper
         extends Helper
     {
         private final String providerName;
@@ -201,7 +201,7 @@ public class JcaSimpleSignerInfoGeneratorBuilder
         }
     }
 
-    private class ProviderHelper
+    private static class ProviderHelper
         extends Helper
     {
         private final Provider provider;
