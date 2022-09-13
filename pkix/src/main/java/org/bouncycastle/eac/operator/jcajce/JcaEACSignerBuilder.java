@@ -176,7 +176,7 @@ public class JcaEACSignerBuilder
         System.arraycopy(src, readoffset, dst, offset, len);
     }
 
-    private class SignatureOutputStream
+    private static class SignatureOutputStream
         extends OutputStream
     {
         private Signature sig;

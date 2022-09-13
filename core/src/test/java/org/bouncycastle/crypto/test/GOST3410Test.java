@@ -96,7 +96,7 @@ public class GOST3410Test
         return new SimpleTestResult(true, "GOST3410: Okay");
     }
 
-    private class GOST3410EncodingDecoding
+    private static class GOST3410EncodingDecoding
         implements Test
     {
 

@@ -318,7 +318,7 @@ public class OERExpander
         }
     }
 
-    public class EnumPopulate
+    public static class EnumPopulate
         implements Populate
     {
         private final Element def;
@@ -430,7 +430,7 @@ public class OERExpander
     }
 
 
-    public class TextStringPopulate
+    public static class TextStringPopulate
         implements Populate
     {
         private final Element def;
@@ -559,7 +559,7 @@ public class OERExpander
     }
 
 
-    public class OctetStringPopulate
+    public static class OctetStringPopulate
         implements Populate
     {
         private final Element def;
@@ -610,7 +610,7 @@ public class OERExpander
         }
     }
 
-    public class BooleanPopulate
+    public static class BooleanPopulate
         implements Populate
     {
 
@@ -646,7 +646,7 @@ public class OERExpander
     }
 
 
-    public class IntPopulate
+    public static class IntPopulate
         implements Populate
     {
         private final Element def;
@@ -712,7 +712,7 @@ public class OERExpander
     }
 
 
-    public class BitStringPopulate
+    public static class BitStringPopulate
         implements Populate
     {
 
@@ -748,7 +748,7 @@ public class OERExpander
     }
 
 
-    public class NullPopulate
+    public static class NullPopulate
         implements Populate
     {
 
@@ -773,7 +773,7 @@ public class OERExpander
     }
 
 
-    public class ExtensionPopulate
+    public static class ExtensionPopulate
         implements Populate
     {
 
@@ -800,7 +800,7 @@ public class OERExpander
     }
 
 
-    public class PopulateOptional
+    public static class PopulateOptional
         implements Populate
     {
 

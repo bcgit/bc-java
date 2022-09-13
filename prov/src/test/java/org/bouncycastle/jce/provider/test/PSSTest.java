@@ -29,7 +29,7 @@ import org.bouncycastle.util.test.TestRandomData;
 public class PSSTest
     extends SimpleTest
 {
-    private class FixedRandom
+    private static class FixedRandom
         extends SecureRandom
     {
         byte[]  vals;

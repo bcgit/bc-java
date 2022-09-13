@@ -137,7 +137,7 @@ public class NTRULPRimeKEMGenerator
         return new SecretWithEncapsulationImpl(ss, ct);
     }
 
-    private class SecretWithEncapsulationImpl
+    private static class SecretWithEncapsulationImpl
             implements SecretWithEncapsulation
     {
 

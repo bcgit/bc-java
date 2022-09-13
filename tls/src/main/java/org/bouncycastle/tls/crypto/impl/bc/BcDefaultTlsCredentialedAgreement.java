@@ -69,7 +69,7 @@ public class BcDefaultTlsCredentialedAgreement
         return agreementCredentials.generateAgreement(peerCertificate);
     }
 
-    private class DHCredentialedAgreement
+    private static class DHCredentialedAgreement
         implements TlsCredentialedAgreement
     {
         final BcTlsCrypto crypto;
@@ -95,7 +95,7 @@ public class BcDefaultTlsCredentialedAgreement
         }
     }
 
-    private class ECCredentialedAgreement
+    private static class ECCredentialedAgreement
         implements TlsCredentialedAgreement
     {
         final BcTlsCrypto crypto;

@@ -150,7 +150,7 @@ public class JournalingSecureRandom
          return Arrays.clone(transcript);
     }
 
-    private class TranscriptStream
+    private static class TranscriptStream
         extends ByteArrayOutputStream
     {
         public void clear()

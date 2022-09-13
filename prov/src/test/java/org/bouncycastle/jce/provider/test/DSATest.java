@@ -1424,7 +1424,7 @@ public class DSATest
         runTest(new DSATest());
     }
 
-    private class DSATestSecureRandom
+    private static class DSATestSecureRandom
         extends TestRandomData
     {
         private boolean first = true;

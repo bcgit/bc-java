@@ -153,7 +153,7 @@ public class VOMSAttribute
      * Inner class providing a container of the group,role,capability
      * information triplet in an FQAN.
      */
-    public class FQAN
+    public static class FQAN
     {
         String fqan;
         String group;

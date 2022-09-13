@@ -284,7 +284,7 @@ public class Headers
         }
     }
 
-    private class KV
+    private static class KV
     {
         public final String key;
         public final String value;

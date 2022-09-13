@@ -28,7 +28,7 @@ public class PSSBlindTest
     private final int NUM_TESTS = 50;
     private final int NUM_TESTS_WITH_KEY_GENERATION = 10;
 
-    private class FixedRandom
+    private static class FixedRandom
         extends SecureRandom
     {
         byte[]  vals;
