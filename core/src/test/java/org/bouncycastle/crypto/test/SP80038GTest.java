@@ -613,7 +613,7 @@ public class SP80038GTest
         runTest(new SP80038GTest());
     }
 
-    public class FPECharEncryptor
+    public static class FPECharEncryptor
     {
         private final FPEEngine fpeEngine;
         private AlphabetMapper alphabetMapper;
@@ -643,7 +643,7 @@ public class SP80038GTest
         }
     }
 
-    public class FPECharDecryptor
+    public static class FPECharDecryptor
     {
         private final FPEEngine fpeEngine;
         private AlphabetMapper alphabetMapper;

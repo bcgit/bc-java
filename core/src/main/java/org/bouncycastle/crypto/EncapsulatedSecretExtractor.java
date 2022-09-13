@@ -3,7 +3,7 @@ package org.bouncycastle.crypto;
 public interface EncapsulatedSecretExtractor
 {
     /**
-     * Generate an exchange pair based on the recipient public key.
+     * Extract the secret based on the recipient private key.
      *
      * @param encapsulation the encapsulated secret.
      */

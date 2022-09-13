@@ -109,7 +109,7 @@ public class CMSCompressedDataStreamGenerator
             compressor.getOutputStream(octetStream), sGen, cGen, eiGen);
     }
 
-    private class CmsCompressedOutputStream
+    private static class CmsCompressedOutputStream
         extends OutputStream
     {
         private OutputStream _out;

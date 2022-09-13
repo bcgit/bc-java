@@ -221,7 +221,7 @@ public class PGPCompressedDataGenerator
         }
     }
 
-    private class SafeDeflaterOutputStream extends DeflaterOutputStream
+    private static class SafeDeflaterOutputStream extends DeflaterOutputStream
     {
         public SafeDeflaterOutputStream(OutputStream output, int compression, boolean nowrap)
         {
