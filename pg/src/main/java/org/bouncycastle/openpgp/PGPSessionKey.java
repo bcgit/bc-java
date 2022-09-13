@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp;
 
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,8 @@ public class PGPSessionKey
 
     public String toString()
     {
-        return algorithm + ":" + Arrays.toString(sessionKey);
+        // mote: we only print the reference to sessionKey to prevent accidental disclosure of the actual key value.
+        return algorithm + ":" + sessionKey;
     }
 
     public static PGPSessionKey fromAsciiRepresentation(String ascii)
