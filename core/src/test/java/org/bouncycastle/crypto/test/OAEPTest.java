@@ -298,7 +298,7 @@ public class OAEPTest
                 (byte)0xc2, (byte)0xf0, (byte)0x6c, (byte)0xb5, (byte)0x8f
     };
 
-    private class VecRand extends SecureRandom
+    private static class VecRand extends SecureRandom
     {
         byte[] seed;
 

@@ -121,7 +121,7 @@ public class SMIMECompressedGenerator
         return make(makeContentBodyPart(message), compressor);
     }
     
-    private class ContentCompressor
+    private static class ContentCompressor
         implements SMIMEStreamingProcessor
     {
         private final MimeBodyPart content;
