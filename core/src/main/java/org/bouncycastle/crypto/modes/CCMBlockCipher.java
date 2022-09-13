@@ -464,7 +464,7 @@ public class CCMBlockCipher
         return getAssociatedTextLength() > 0;
     }
 
-    private class ExposedByteArrayOutputStream
+    private static class ExposedByteArrayOutputStream
         extends ByteArrayOutputStream
     {
         public ExposedByteArrayOutputStream()

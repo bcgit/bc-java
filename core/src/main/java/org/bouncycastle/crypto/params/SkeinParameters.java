@@ -243,7 +243,7 @@ public class SkeinParameters
             {
                 final ByteArrayOutputStream bout = new ByteArrayOutputStream();
                 final OutputStreamWriter out = new OutputStreamWriter(bout, "UTF-8");
-                final DateFormat format = new SimpleDateFormat("YYYYMMDD");
+                final DateFormat format = new SimpleDateFormat("yyyyMMdd");
                 out.write(format.format(date));
                 out.write(" ");
                 out.write(emailAddress);
@@ -278,7 +278,7 @@ public class SkeinParameters
              {
                  final ByteArrayOutputStream bout = new ByteArrayOutputStream();
                  final OutputStreamWriter out = new OutputStreamWriter(bout, "UTF-8");
-                 final DateFormat format = new SimpleDateFormat("YYYYMMDD", dateLocale);
+                 final DateFormat format = new SimpleDateFormat("yyyyMMdd", dateLocale);
                  out.write(format.format(date));
                  out.write(" ");
                  out.write(emailAddress);

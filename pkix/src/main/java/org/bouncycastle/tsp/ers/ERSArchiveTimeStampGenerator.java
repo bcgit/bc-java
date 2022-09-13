@@ -209,7 +209,7 @@ public class ERSArchiveTimeStampGenerator
         return trees;
     }
 
-    private class IndexedPartialHashtree
+    private static class IndexedPartialHashtree
         extends PartialHashtree
     {
         final int order;

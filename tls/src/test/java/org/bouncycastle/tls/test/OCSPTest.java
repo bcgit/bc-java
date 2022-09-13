@@ -39,7 +39,7 @@ public class OCSPTest
             throws IOException;
     }
 
-    private class TestOCSPResponderImpl
+    private static class TestOCSPResponderImpl
         implements OCSPResponder
     {
         private final TestOCSPCertServer server;
