@@ -16,7 +16,7 @@ class Signature
         }
     }
 
-    public class Proof
+    public static class Proof
     {
         byte[] seed1;
         byte[] seed2;

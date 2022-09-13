@@ -45,7 +45,7 @@ import org.bouncycastle.util.test.SimpleTest;
 public class PBETest
     extends SimpleTest
 {
-    private class OpenSSLTest
+    private static class OpenSSLTest
         extends SimpleTest
     {
         char[]    password;
@@ -127,7 +127,7 @@ public class PBETest
         }
     }
     
-    private class PKCS12Test
+    private static class PKCS12Test
         extends SimpleTest
     {
         char[]    password;

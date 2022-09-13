@@ -35,7 +35,7 @@ public class BasicOCSPRespBuilder
     private Extensions  responseExtensions = null;
     private RespID          responderID;
 
-    private class ResponseObject
+    private static class ResponseObject
     {
         CertificateID         certId;
         CertStatus            certStatus;

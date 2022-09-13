@@ -228,7 +228,7 @@ public class SMIMEEnvelopedGenerator
         }
     }
 
-    private class EnvelopedGenerator
+    private static class EnvelopedGenerator
         extends CMSEnvelopedDataStreamGenerator
     {
         private ASN1ObjectIdentifier dataType;

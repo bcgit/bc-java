@@ -287,7 +287,7 @@ public class SP800RandomTest
     }
 
     // for HMAC/Hash
-    private class SHA1EntropyProvider
+    private static class SHA1EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA1EntropyProvider()
@@ -301,7 +301,7 @@ public class SP800RandomTest
     }
 
     // for Dual EC
-    private class SHA256EntropyProvider
+    private static class SHA256EntropyProvider
         extends TestEntropySourceProvider
     {
         SHA256EntropyProvider()
@@ -313,7 +313,7 @@ public class SP800RandomTest
         }
     }
 
-    private class Bit232EntropyProvider
+    private static class Bit232EntropyProvider
         extends TestEntropySourceProvider
     {
         Bit232EntropyProvider()

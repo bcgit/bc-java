@@ -1206,7 +1206,7 @@ public class OpenedPGPKeyData
         }
     }
 
-    private class UnwrapResult
+    private static class UnwrapResult
     {
         final SExpression expression;
         final S2K s2K;

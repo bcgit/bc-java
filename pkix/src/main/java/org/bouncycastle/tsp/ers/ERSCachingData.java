@@ -38,7 +38,7 @@ public abstract class ERSCachingData
 
     protected abstract byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash);
 
-    private class CacheIndex
+    private static class CacheIndex
     {
         final AlgorithmIdentifier algId;
         final byte[] chainHash;

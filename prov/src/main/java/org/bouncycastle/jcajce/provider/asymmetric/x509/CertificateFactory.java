@@ -427,7 +427,7 @@ public class CertificateFactory
         return new PKIXCertPath(certificates);
     }
 
-    private class ExCertificateException
+    private static class ExCertificateException
         extends CertificateException
     {
         private Throwable cause;
