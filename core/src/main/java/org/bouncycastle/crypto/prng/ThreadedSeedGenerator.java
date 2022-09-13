@@ -8,7 +8,7 @@ package org.bouncycastle.crypto.prng;
  */
 public class ThreadedSeedGenerator
 {
-    private class SeedGenerator
+    private static class SeedGenerator
         implements Runnable
     {
         private volatile int counter = 0;

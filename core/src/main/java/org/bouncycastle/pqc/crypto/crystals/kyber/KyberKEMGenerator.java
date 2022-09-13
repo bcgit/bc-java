@@ -30,7 +30,7 @@ public class KyberKEMGenerator
         return new KyberKEMGenerator.SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);
     }
 
-    private class SecretWithEncapsulationImpl
+    private static class SecretWithEncapsulationImpl
         implements SecretWithEncapsulation
     {
 

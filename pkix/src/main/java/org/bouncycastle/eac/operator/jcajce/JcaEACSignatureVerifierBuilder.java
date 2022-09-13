@@ -123,7 +123,7 @@ public class JcaEACSignatureVerifierBuilder
         return seq.getEncoded();
     }
 
-    private class SignatureOutputStream
+    private static class SignatureOutputStream
         extends OutputStream
     {
         private Signature sig;

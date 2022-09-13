@@ -25,7 +25,7 @@ public class PSSTest
     private final int DATA_LENGTH = 1000;
     private final int NUM_TESTS = 500;
 
-    private class FixedRandom
+    private static class FixedRandom
         extends SecureRandom
     {
         byte[] vals;
