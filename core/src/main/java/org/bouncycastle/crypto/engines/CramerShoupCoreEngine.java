@@ -7,6 +7,8 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.CramerShoupKeyParameters;
 import org.bouncycastle.crypto.params.CramerShoupPrivateKeyParameters;
 import org.bouncycastle.crypto.params.CramerShoupPublicKeyParameters;
@@ -65,6 +67,8 @@ public class CramerShoupCoreEngine
 
         this.random = initSecureRandom(forEncryption, providedRandom);
         this.forEncryption = forEncryption;
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSA", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, Utils.getPurpose(forEncryption)));
     }
 
     /**

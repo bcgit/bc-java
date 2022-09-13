@@ -1,9 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
@@ -79,7 +77,10 @@ public class RC6Engine
 
         KeyParameter       p = (KeyParameter)params;
         this.forEncryption = forEncryption;
-        setKey(p.getKey());
+        byte[] key = p.getKey();
+        setKey(key);
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), key.length * 8, params, Utils.getPurpose(forEncryption)));
     }
 
     public int processBlock(
