@@ -3,9 +3,9 @@ package org.bouncycastle.crypto.generators;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.CramerShoupKeyGenerationParameters;
 import org.bouncycastle.crypto.params.CramerShoupParameters;
 import org.bouncycastle.crypto.params.CramerShoupPrivateKeyParameters;
@@ -26,6 +26,8 @@ public class CramerShoupKeyPairGenerator
     public void init(KeyGenerationParameters param)
     {
         this.param = (CramerShoupKeyGenerationParameters)param;
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("CramerShoupKeyGen", ConstraintUtils.bitsOfSecurityFor(this.param.getParameters().getP()), this.param.getParameters(), CryptoServicePurpose.KEYGEN));
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()
