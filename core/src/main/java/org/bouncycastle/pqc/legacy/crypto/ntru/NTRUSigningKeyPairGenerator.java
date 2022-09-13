@@ -322,7 +322,7 @@ public class NTRUSigningKeyPairGenerator
     /**
      * A subclass of Basis that additionally contains the polynomials <code>F</code> and <code>G</code>.
      */
-    public class FGBasis
+    public static class FGBasis
         extends NTRUSigningPrivateKeyParameters.Basis
     {
         public IntegerPolynomial F;

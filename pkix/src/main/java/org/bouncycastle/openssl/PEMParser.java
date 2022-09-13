@@ -137,7 +137,7 @@ public class PEMParser
         return Collections.unmodifiableSet(parsers.keySet());
     }
 
-    private class KeyPairParser
+    private static class KeyPairParser
         implements PemObjectParser
     {
         private final PEMKeyPairParser pemKeyPairParser;
@@ -215,7 +215,7 @@ public class PEMParser
         }
     }
 
-    private class DSAKeyPairParser
+    private static class DSAKeyPairParser
         implements PEMKeyPairParser
     {
         public PEMKeyPair parse(byte[] encoding)
@@ -253,7 +253,7 @@ public class PEMParser
         }
     }
 
-    private class ECDSAKeyPairParser
+    private static class ECDSAKeyPairParser
         implements PEMKeyPairParser
     {
         public PEMKeyPair parse(byte[] encoding)
@@ -291,7 +291,7 @@ public class PEMParser
         }
     }
 
-    private class RSAKeyPairParser
+    private static class RSAKeyPairParser
         implements PEMKeyPairParser
     {
         public PEMKeyPair parse(byte[] encoding)
@@ -327,7 +327,7 @@ public class PEMParser
         }
     }
 
-    private class PublicKeyParser
+    private static class PublicKeyParser
         implements PemObjectParser
     {
         public PublicKeyParser()
@@ -341,7 +341,7 @@ public class PEMParser
         }
     }
 
-    private class RSAPublicKeyParser
+    private static class RSAPublicKeyParser
         implements PemObjectParser
     {
         public RSAPublicKeyParser()
@@ -368,7 +368,7 @@ public class PEMParser
         }
     }
 
-    private class X509CertificateParser
+    private static class X509CertificateParser
         implements PemObjectParser
     {
         /**
@@ -391,7 +391,7 @@ public class PEMParser
         }
     }
 
-    private class X509TrustedCertificateParser
+    private static class X509TrustedCertificateParser
         implements PemObjectParser
     {
         /**
@@ -414,7 +414,7 @@ public class PEMParser
         }
     }
 
-    private class X509CRLParser
+    private static class X509CRLParser
         implements PemObjectParser
     {
         /**
@@ -437,7 +437,7 @@ public class PEMParser
         }
     }
 
-    private class PKCS10CertificationRequestParser
+    private static class PKCS10CertificationRequestParser
         implements PemObjectParser
     {
         /**
@@ -460,7 +460,7 @@ public class PEMParser
         }
     }
 
-    private class PKCS7Parser
+    private static class PKCS7Parser
         implements PemObjectParser
     {
         /**
@@ -486,7 +486,7 @@ public class PEMParser
         }
     }
 
-    private class X509AttributeCertificateParser
+    private static class X509AttributeCertificateParser
         implements PemObjectParser
     {
         public Object parseObject(PemObject obj)
@@ -496,7 +496,7 @@ public class PEMParser
         }
     }
 
-    private class ECCurveParamsParser
+    private static class ECCurveParamsParser
         implements PemObjectParser
     {
         public Object parseObject(PemObject obj)
@@ -530,7 +530,7 @@ public class PEMParser
         }
     }
 
-    private class EncryptedPrivateKeyParser
+    private static class EncryptedPrivateKeyParser
         implements PemObjectParser
     {
         public EncryptedPrivateKeyParser()
@@ -557,7 +557,7 @@ public class PEMParser
         }
     }
 
-    private class PrivateKeyParser
+    private static class PrivateKeyParser
         implements PemObjectParser
     {
         public PrivateKeyParser()

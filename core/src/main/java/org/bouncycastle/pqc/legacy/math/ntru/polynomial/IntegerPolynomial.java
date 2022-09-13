@@ -1339,7 +1339,7 @@ public class IntegerPolynomial
     /**
      * Calls {@link ModularResultant#combineRho(ModularResultant, ModularResultant)
      */
-    private class CombineTask
+    private static class CombineTask
         implements Callable<ModularResultant>
     {
         private ModularResultant modRes1;
@@ -1357,7 +1357,7 @@ public class IntegerPolynomial
         }
     }
 
-    private class PrimeGenerator
+    private static class PrimeGenerator
     {
         private int index = 0;
         private BigInteger prime;

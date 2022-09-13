@@ -357,7 +357,7 @@ public class KGCMBlockCipher
         }
     }
 
-    private class ExposedByteArrayOutputStream
+    private static class ExposedByteArrayOutputStream
         extends ByteArrayOutputStream
     {
         public ExposedByteArrayOutputStream()

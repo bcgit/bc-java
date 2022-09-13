@@ -39,7 +39,7 @@ public class BIKEKEMGenerator
         return new SecretWithEncapsulationImpl(Arrays.copyOfRange(K, 0, key.getParameters().getSessionKeySize() / 8), cipherText);
     }
 
-    private class SecretWithEncapsulationImpl
+    private static class SecretWithEncapsulationImpl
         implements SecretWithEncapsulation
     {
         private final AtomicBoolean hasBeenDestroyed = new AtomicBoolean(false);

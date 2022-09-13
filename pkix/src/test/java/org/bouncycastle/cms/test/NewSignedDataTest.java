@@ -1372,7 +1372,7 @@ public class NewSignedDataTest
         }
     }
 
-    private class MyWrongSignerInformation
+    private static class MyWrongSignerInformation
         extends SignerInformation
     {
         protected MyWrongSignerInformation(SignerInformation baseInfo)
@@ -1387,7 +1387,7 @@ public class NewSignedDataTest
         }
     }
 
-    private class MyRightSignerInformation
+    private static class MyRightSignerInformation
         extends SignerInformation
     {
         private boolean used;
@@ -3200,7 +3200,7 @@ public class NewSignedDataTest
         }
     }
 
-    private class TestCMSSignatureAlgorithmNameGenerator
+    private static class TestCMSSignatureAlgorithmNameGenerator
         extends DefaultCMSSignatureAlgorithmNameGenerator
     {
         void setDigestAlgorithmMapping(ASN1ObjectIdentifier oid, String algName)
