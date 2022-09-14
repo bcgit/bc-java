@@ -23,6 +23,8 @@ package org.bouncycastle.crypto.digests;
         ---------------+--------+-----------+------+------------+
  */
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -128,12 +130,25 @@ public class Blake2sDigest
     // For Tree Hashing Mode, not used here:
     // private long f1 = 0L; // finalization flag, for last node: ~0L
 
+    // digest purpose
+    private final CryptoServicePurpose purpose;
+
     /**
      * BLAKE2s-256 for hashing.
      */
     public Blake2sDigest()
     {
-        this(256);
+        this(256, CryptoServicePurpose.ANY);
+    }
+
+    /**
+     * Basic sized constructor - size in bits.
+     *
+     * @param digestSize size of digest (in bits)
+     */
+    public Blake2sDigest(int digestSize)
+    {
+        this(digestSize, CryptoServicePurpose.ANY);
     }
 
     public Blake2sDigest(Blake2sDigest digest)
@@ -156,14 +171,16 @@ public class Blake2sDigest
         this.nodeOffset = digest.nodeOffset;
         this.nodeDepth = digest.nodeDepth;
         this.innerHashLength = digest.innerHashLength;
+        this.purpose = digest.purpose;
     }
 
     /**
      * BLAKE2s for hashing.
      *
      * @param digestBits the desired digest length in bits. Must be a multiple of 8 and less than 256.
+     * @param purpose usage purpose.
      */
-    public Blake2sDigest(int digestBits)
+    public Blake2sDigest(int digestBits, CryptoServicePurpose purpose)
     {
         if (digestBits < 8 || digestBits > 256 || digestBits % 8 != 0)
         {
@@ -171,7 +188,9 @@ public class Blake2sDigest
                 "BLAKE2s digest bit length must be a multiple of 8 and not greater than 256");
         }
         digestLength = digestBits / 8;
+        this.purpose = purpose;
 
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestBits, purpose));
         init(null, null, null);
     }
 
@@ -186,6 +205,13 @@ public class Blake2sDigest
      */
     public Blake2sDigest(byte[] key)
     {
+        this(key, CryptoServicePurpose.ANY);
+    }
+
+    public Blake2sDigest(byte[] key, CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, key.length*8, purpose));
         init(null, null, key);
     }
 
@@ -205,27 +231,39 @@ public class Blake2sDigest
     public Blake2sDigest(byte[] key, int digestBytes, byte[] salt,
                          byte[] personalization)
     {
+        this(key, digestBytes, salt, personalization, CryptoServicePurpose.ANY);
+    }
+    public Blake2sDigest(byte[] key, int digestBytes, byte[] salt,
+                         byte[] personalization, CryptoServicePurpose purpose)
+    {
         if (digestBytes < 1 || digestBytes > 32)
         {
             throw new IllegalArgumentException(
                 "Invalid digest length (required: 1 - 32)");
         }
         digestLength = digestBytes;
+        this.purpose = purpose;
 
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestBytes*8, purpose));
         init(salt, personalization, key);
     }
 
     // XOF root hash parameters
-    Blake2sDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, long offset)
+    Blake2sDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, long offset, CryptoServicePurpose purpose)
     {
         digestLength = digestBytes;
         nodeOffset = offset;
-
+        this.purpose = purpose;
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestBytes*8, purpose));
         init(salt, personalization, key);
     }
 
     // XOF internal hash parameters
     Blake2sDigest(int digestBytes, int hashLength, long offset)
+    {
+        this(digestBytes, hashLength, offset, CryptoServicePurpose.ANY);
+    }
+    Blake2sDigest(int digestBytes, int hashLength, long offset, CryptoServicePurpose purpose)
     {
         digestLength = digestBytes;
         nodeOffset = offset;
@@ -234,7 +272,9 @@ public class Blake2sDigest
         leafLength = hashLength;
         innerHashLength = hashLength;
         nodeDepth = 0;
+        this.purpose = purpose;
 
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestBytes*8, purpose));
         init(null, null, null);
     }
 

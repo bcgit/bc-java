@@ -8,6 +8,8 @@ package org.bouncycastle.crypto.digests;
   Reference Implementation and Description can be found at: https://blake2.net/blake2x.pdf
  */
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Arrays;
 
@@ -77,12 +79,15 @@ public class Blake2xsDigest
      */
     private long nodeOffset;
 
+    // digest purpose
+    private final CryptoServicePurpose purpose;
+
     /**
      * BLAKE2xs for hashing with unknown digest length
      */
     public Blake2xsDigest()
     {
-        this(Blake2xsDigest.UNKNOWN_DIGEST_LENGTH);
+        this(Blake2xsDigest.UNKNOWN_DIGEST_LENGTH, CryptoServicePurpose.ANY); //TODO: change this?
     }
 
     /**
@@ -90,9 +95,13 @@ public class Blake2xsDigest
      *
      * @param digestBytes The desired digest length in bytes. Must be above 1 and less than 2^16-1
      */
+    public Blake2xsDigest(int digestBytes, CryptoServicePurpose purpose)
+    {
+        this(digestBytes, null, null, null, purpose);
+    }
     public Blake2xsDigest(int digestBytes)
     {
-        this(digestBytes, null, null, null);
+        this(digestBytes, CryptoServicePurpose.ANY); //TODO: change this?
     }
 
     /**
@@ -103,7 +112,7 @@ public class Blake2xsDigest
      */
     public Blake2xsDigest(int digestBytes, byte[] key)
     {
-        this(digestBytes, key, null, null);
+        this(digestBytes, key, null, null, CryptoServicePurpose.ANY); //TODO: change this?
     }
 
     /**
@@ -114,7 +123,7 @@ public class Blake2xsDigest
      * @param salt            8 bytes or null
      * @param personalization 8 bytes or null
      */
-    public Blake2xsDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization)
+    public Blake2xsDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, CryptoServicePurpose purpose)
     {
         if (digestBytes < 1 || digestBytes > Blake2xsDigest.UNKNOWN_DIGEST_LENGTH)
         {
@@ -124,7 +133,8 @@ public class Blake2xsDigest
 
         digestLength = digestBytes;
         nodeOffset = computeNodeOffset();
-        hash = new Blake2sDigest(Blake2xsDigest.DIGEST_LENGTH, key, salt, personalization, nodeOffset);
+        this.purpose = purpose;
+        hash = new Blake2sDigest(Blake2xsDigest.DIGEST_LENGTH, key, salt, personalization, nodeOffset, purpose);
     }
 
     public Blake2xsDigest(Blake2xsDigest digest)
@@ -137,6 +147,7 @@ public class Blake2xsDigest
         digestPos = digest.digestPos;
         blockPos = digest.blockPos;
         nodeOffset = digest.nodeOffset;
+        purpose = digest.purpose;
     }
 
     /**

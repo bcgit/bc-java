@@ -23,6 +23,8 @@ package org.bouncycastle.crypto.digests;
         ---------------+--------+-----------+------+------------+
  */
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
@@ -111,10 +113,25 @@ public class Blake2bDigest
     // For Tree Hashing Mode, not used here:
     // private long f1 = 0L; // finalization flag, for last node: ~0L
 
+    // digest purpose
+    private final CryptoServicePurpose purpose;
+
     public Blake2bDigest()
     {
-        this(512);
+        this(512, CryptoServicePurpose.ANY);
     }
+
+
+    /**
+     * Basic sized constructor - size in bits.
+     *
+     * @param digestSize size of digest (in bits)
+     */
+    public Blake2bDigest(int digestSize)
+    {
+        this(digestSize, CryptoServicePurpose.ANY);
+    }
+
 
     public Blake2bDigest(Blake2bDigest digest)
     {
@@ -129,15 +146,18 @@ public class Blake2bDigest
         this.t0 = digest.t0;
         this.t1 = digest.t1;
         this.f0 = digest.f0;
+        this.purpose = digest.purpose;
+
     }
 
     /**
-     * Basic sized constructor - size in bits.
-     *
+     * Basic sized constructor with purpose.
      * @param digestSize size of the digest in bits
+     * @param purpose usage purpose.
      */
-    public Blake2bDigest(int digestSize)
+    public Blake2bDigest(int digestSize, CryptoServicePurpose purpose)
     {
+        this.purpose = purpose;
         if (digestSize < 8 || digestSize > 512 || digestSize % 8 != 0)
         {
             throw new IllegalArgumentException(
@@ -147,6 +167,7 @@ public class Blake2bDigest
         buffer = new byte[BLOCK_LENGTH_BYTES];
         keyLength = 0;
         this.digestLength = digestSize / 8;
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestSize, purpose));
         init();
     }
 
@@ -159,7 +180,12 @@ public class Blake2bDigest
      *
      * @param key A key up to 64 bytes or null
      */
+
     public Blake2bDigest(byte[] key)
+    {
+        this(key, CryptoServicePurpose.ANY);
+    }
+    public Blake2bDigest(byte[] key, CryptoServicePurpose purpose)
     {
         buffer = new byte[BLOCK_LENGTH_BYTES];
         if (key != null)
@@ -176,7 +202,10 @@ public class Blake2bDigest
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
+        this.purpose = purpose;
         digestLength = 64;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestLength*8, purpose));
         init();
     }
 
@@ -194,7 +223,12 @@ public class Blake2bDigest
      */
     public Blake2bDigest(byte[] key, int digestLength, byte[] salt, byte[] personalization)
     {
+        this(key, digestLength, salt, personalization, CryptoServicePurpose.ANY);
+    }
 
+    public Blake2bDigest(byte[] key, int digestLength, byte[] salt, byte[] personalization, CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
         buffer = new byte[BLOCK_LENGTH_BYTES];
         if (digestLength < 1 || digestLength > 64)
         {
@@ -237,6 +271,8 @@ public class Blake2bDigest
             System.arraycopy(key, 0, buffer, 0, key.length);
             bufferPos = BLOCK_LENGTH_BYTES; // zero padding
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestLength*8, purpose));
         init();
     }
 
