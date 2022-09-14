@@ -38,7 +38,7 @@ public class SignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to SPHINCS-256");
+            throw new InvalidKeyException("unknown public key passed to SPHINCS+");
         }
     }
 
@@ -69,7 +69,7 @@ public class SignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("unknown private key passed to SPHINCS-256");
+            throw new InvalidKeyException("unknown private key passed to SPHINCS+");
         }
     }
 
