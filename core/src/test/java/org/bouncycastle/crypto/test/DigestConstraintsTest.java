@@ -4,19 +4,7 @@ import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
-import org.bouncycastle.crypto.digests.Blake3Digest;
-import org.bouncycastle.crypto.digests.CSHAKEDigest;
-import org.bouncycastle.crypto.digests.DSTU7564Digest;
-import org.bouncycastle.crypto.digests.MD2Digest;
-import org.bouncycastle.crypto.digests.MD4Digest;
-import org.bouncycastle.crypto.digests.MD5Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.digests.*;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -42,6 +30,7 @@ public class DigestConstraintsTest
         testSHA3();
         testDSTU7564();
         testBlake3();
+        testBlake2b_s_xs();
     }
 
     private void testMD2()
@@ -360,6 +349,70 @@ public class DigestConstraintsTest
         }
 
         new Blake3Digest(512);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testBlake2b_s_xs()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new Blake2bDigest(224);
+            new Blake2sDigest(224);
+            new Blake2xsDigest(224);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 112", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2bDigest(256);
+            new Blake2sDigest(256);
+            new Blake2xsDigest(256);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2bDigest(384);
+            new Blake2xsDigest(384);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 192", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new Blake2bDigest(256, CryptoServicePurpose.PRF);
+        new Blake2bDigest(384, CryptoServicePurpose.PRF);
+        new Blake2sDigest(256, CryptoServicePurpose.PRF);
+        new Blake2xsDigest(256, CryptoServicePurpose.PRF);
+        new Blake2xsDigest(384, CryptoServicePurpose.PRF);
+
+        try
+        {
+            new Blake2bDigest(224, CryptoServicePurpose.PRF);
+            new Blake2sDigest(224, CryptoServicePurpose.PRF);
+            new Blake2xsDigest(224, CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 224", e.getMessage());
+        }
+
+        new Blake2bDigest(512);
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
