@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
+import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -62,6 +63,9 @@ public class FalconTest
         FalconKey privKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
+        
+        assertEquals(kp.getPublic(), ((FalconPrivateKey)privKey2).getPublicKey());
+        assertEquals(((FalconPrivateKey)privKey).getPublicKey(), ((FalconPrivateKey)privKey2).getPublicKey());
     }
 
     public void testPublicKeyRecovery()
