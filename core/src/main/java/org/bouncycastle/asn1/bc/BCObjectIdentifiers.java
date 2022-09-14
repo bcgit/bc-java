@@ -191,6 +191,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sphincsPlus_shake_256 = sphincsPlus.branch("1");
     ASN1ObjectIdentifier sphincsPlus_sha_256 = sphincsPlus.branch("2");
     ASN1ObjectIdentifier sphincsPlus_sha_512 = sphincsPlus.branch("3");
+    ASN1ObjectIdentifier sphincsPlus_haraka = sphincsPlus.branch("4");
 
     /**
      * Picnic
