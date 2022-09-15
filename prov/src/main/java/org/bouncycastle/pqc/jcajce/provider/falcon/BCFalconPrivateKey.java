@@ -10,8 +10,8 @@ import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.FalconPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 
@@ -103,7 +103,7 @@ public class BCFalconPrivateKey
         return "PKCS#8";
     }
 
-    public FalconKey getPublicKey()
+    public FalconPublicKey getPublicKey()
     {
         return new BCFalconPublicKey(new FalconPublicKeyParameters(params.getParameters(), params.getPublicKey()));
     }
