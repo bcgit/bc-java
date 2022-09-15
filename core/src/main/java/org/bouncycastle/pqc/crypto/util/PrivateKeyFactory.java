@@ -202,7 +202,15 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new KyberPrivateKeyParameters(spParams, keyEnc);
+            ASN1BitString pubKey = keyInfo.getPublicKeyData();
+            if (pubKey != null)
+            {
+                return new KyberPrivateKeyParameters(spParams, keyEnc, pubKey.getOctets());
+            }
+            else
+            {
+                return new KyberPrivateKeyParameters(spParams, keyEnc, null);
+            }
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {

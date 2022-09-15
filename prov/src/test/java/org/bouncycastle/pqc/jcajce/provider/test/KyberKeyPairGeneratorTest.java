@@ -1,10 +1,12 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.interfaces.KyberPrivateKey;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 
 /**
@@ -42,7 +44,10 @@ public class KyberKeyPairGeneratorTest
         for (int i = 0; i != specs.length; i++)
         {
             kpg.initialize(specs[i], new SecureRandom());
-            performKeyPairEncodingTest(kpg.generateKeyPair());
+            KeyPair kp = kpg.generateKeyPair();
+            performKeyPairEncodingTest(kp);
+
+            assertEquals(kp.getPublic(), ((KyberPrivateKey)kp.getPrivate()).getPublicKey());;
         }
     }
 

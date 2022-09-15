@@ -26,15 +26,15 @@ public class Dilithium
 
             addSignatureAlgorithm(provider, "DILITHIUM", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium);
 
-            addSignatureAlgorithm(provider, "DILITHIUM2", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium2);
-            addSignatureAlgorithm(provider, "DILITHIUM3", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium3);
-            addSignatureAlgorithm(provider, "DILITHIUM5", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium5);
+            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium2);
+            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium3);
+            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium5);
 
             AsymmetricKeyInfoConverter keyFact = new DilithiumKeyFactorySpi();
 
-            registerOid(provider, BCObjectIdentifiers.dilithium2, "Dilithium", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium3, "Dilithium", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium5, "Dilithium", keyFact);
+            registerOid(provider, BCObjectIdentifiers.dilithium2, "DILITHIUM", keyFact);
+            registerOid(provider, BCObjectIdentifiers.dilithium3, "DILITHIUM", keyFact);
+            registerOid(provider, BCObjectIdentifiers.dilithium5, "DILITHIUM", keyFact);
         }
     }
 }
