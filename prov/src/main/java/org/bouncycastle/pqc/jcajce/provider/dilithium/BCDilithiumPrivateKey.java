@@ -10,8 +10,8 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
 
@@ -78,7 +78,7 @@ public class BCDilithiumPrivateKey
         return "Dilithium";
     }
 
-    public DilithiumKey getPublicKey()
+    public DilithiumPublicKey getPublicKey()
     {
         return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getPublicKey()));
     }

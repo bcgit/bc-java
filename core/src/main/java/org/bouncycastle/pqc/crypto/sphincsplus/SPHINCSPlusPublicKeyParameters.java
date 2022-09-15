@@ -8,15 +8,15 @@ public class SPHINCSPlusPublicKeyParameters
 {
     private final PK pk;
 
-    public SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters parameters, byte[] pkEncoded)
+    public SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters parameters, byte[] pkValues)
     {
         super(false, parameters);
         int n = parameters.getN();
-        if (pkEncoded.length != 2 * n)
+        if (pkValues.length != 2 * n)
         {
             throw new IllegalArgumentException("public key encoding does not match parameters");
         }
-        this.pk = new PK(Arrays.copyOfRange(pkEncoded, 0, n), Arrays.copyOfRange(pkEncoded, n, 2 * n));
+        this.pk = new PK(Arrays.copyOfRange(pkValues, 0, n), Arrays.copyOfRange(pkValues, n, 2 * n));
     }
     
     SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters parameters, PK pk)

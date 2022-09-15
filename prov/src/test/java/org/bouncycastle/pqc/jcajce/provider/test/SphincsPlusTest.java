@@ -15,6 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusKey;
+import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -92,6 +93,9 @@ public class SphincsPlusTest
         SPHINCSPlusKey privKey2 = (SPHINCSPlusKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
+
+        assertEquals(kp.getPublic(), ((SPHINCSPlusPrivateKey)privKey2).getPublicKey());
+        assertEquals(((SPHINCSPlusPrivateKey)privKey).getPublicKey(), ((SPHINCSPlusPrivateKey)privKey2).getPublicKey());
     }
 
     public void testPublicKeyRecovery()
