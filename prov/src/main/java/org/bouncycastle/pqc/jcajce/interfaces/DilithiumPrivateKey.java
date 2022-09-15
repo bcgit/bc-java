@@ -10,5 +10,5 @@ public interface DilithiumPrivateKey
      *
      * @return a Dilithium Public Key
      */
-    DilithiumKey getPublicKey();
+    DilithiumPublicKey getPublicKey();
 }
