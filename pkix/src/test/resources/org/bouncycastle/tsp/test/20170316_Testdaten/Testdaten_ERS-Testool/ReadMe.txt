@@ -1,0 +1,1 @@
+Das o.g. Unterverzeichniss enthält drei Ordner, jeweils mit initialen Evidence Records, Evidence Records nach einer Neusignierung (enthalten dann jeweils 2 ATS in einer ATS-Chain) bzw. Evidence Records nach einer Neusignierung und einer Neuverhashung (enthalten jeweils eine Sequence mit 2 Chains zu 2 und 1 ATS).
