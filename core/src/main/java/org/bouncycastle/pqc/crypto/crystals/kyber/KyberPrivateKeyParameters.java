@@ -6,16 +6,18 @@ public class KyberPrivateKeyParameters
     extends KyberKeyParameters
 {
     final byte[] privateKey;
+    final byte[] publicKey;
+
+    public KyberPrivateKeyParameters(KyberParameters params, byte[] privateKey, byte[] publicKey)
+    {
+        super(true, params);
+        this.privateKey = Arrays.clone(privateKey);
+        this.publicKey = publicKey;
+    }
 
     public byte[] getPrivateKey()
     {
         return Arrays.clone(privateKey);
-    }
-
-    public KyberPrivateKeyParameters(KyberParameters params, byte[] privateKey)
-    {
-        super(true, params);
-        this.privateKey = Arrays.clone(privateKey);
     }
 
     public byte[] getEncoded()
@@ -23,4 +25,8 @@ public class KyberPrivateKeyParameters
         return Arrays.clone(privateKey);
     }
 
+    public byte[] getPublicKey()
+    {
+        return Arrays.clone(publicKey);
+    }
 }
