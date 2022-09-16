@@ -35,6 +35,7 @@ public class DigestConstraintsTest
         testHaraka();
         testKangaroo();
         testKeccak();
+        testParallelHash();
     }
 
     private void testMD2()
@@ -578,6 +579,38 @@ public class DigestConstraintsTest
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
+
+    private void testParallelHash()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new ParallelHash(128, new byte[0], 8);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new ParallelHash(128, new byte[0], 16);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new ParallelHash(256, new byte[0], 8);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
 
 
 
