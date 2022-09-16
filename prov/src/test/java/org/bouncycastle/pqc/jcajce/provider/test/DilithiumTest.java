@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
+import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -64,6 +65,9 @@ public class DilithiumTest
         DilithiumKey privKey2 = (DilithiumKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
+
+        assertEquals(kp.getPublic(), ((DilithiumPrivateKey)privKey2).getPublicKey());
+        assertEquals(((DilithiumPrivateKey)privKey).getPublicKey(), ((DilithiumPrivateKey)privKey2).getPublicKey());
     }
 
     public void testPublicKeyRecovery()
@@ -193,5 +197,4 @@ public class DilithiumTest
             }
         }
     }
-
 }

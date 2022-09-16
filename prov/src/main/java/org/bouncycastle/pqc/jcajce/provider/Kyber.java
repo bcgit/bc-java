@@ -29,7 +29,7 @@ public class Kyber
             provider.addAlgorithm("Cipher.KYBER", PREFIX + "KyberCipherSpi$Base");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_kyber, "KYBER");
 
-            registerOid(provider, BCObjectIdentifiers.pqc_kem_kyber, "Kyber", keyFact);
+            registerOid(provider, BCObjectIdentifiers.pqc_kem_kyber, "KYBER", keyFact);
         }
     }
 }

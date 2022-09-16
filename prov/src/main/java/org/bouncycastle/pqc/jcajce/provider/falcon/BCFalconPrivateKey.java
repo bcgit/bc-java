@@ -3,19 +3,20 @@ package org.bouncycastle.pqc.jcajce.provider.falcon;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
+import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.FalconPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class BCFalconPrivateKey
-    implements PrivateKey, FalconKey
+    implements FalconPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -100,6 +101,11 @@ public class BCFalconPrivateKey
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    public FalconPublicKey getPublicKey()
+    {
+        return new BCFalconPublicKey(new FalconPublicKeyParameters(params.getParameters(), params.getPublicKey()));
     }
 
     FalconPrivateKeyParameters getKeyParams()

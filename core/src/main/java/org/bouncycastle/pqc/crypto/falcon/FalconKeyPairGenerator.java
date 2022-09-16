@@ -51,7 +51,7 @@ public class FalconKeyPairGenerator
         sk = new byte[sk_size];
         nist.crypto_sign_keypair(pk, 0, sk, 0);
         FalconParameters p = ((FalconKeyGenerationParameters)this.params).getParameters();
-        FalconPrivateKeyParameters privk = new FalconPrivateKeyParameters(p, sk);
+        FalconPrivateKeyParameters privk = new FalconPrivateKeyParameters(p, sk, pk);
         FalconPublicKeyParameters pubk = new FalconPublicKeyParameters(p, pk);
         return new AsymmetricCipherKeyPair(pubk, privk);
     }

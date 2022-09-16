@@ -28,6 +28,7 @@ public class AllTests
         suite.addTestSuite(GenTimeAccuracyUnitTest.class);
         suite.addTestSuite(TimeStampTokenInfoUnitTest.class);
         suite.addTestSuite(ERSTest.class);
+        suite.addTestSuite(ERSTestdatenTest.class);
 
         return new BCTestSetup(suite);
     }

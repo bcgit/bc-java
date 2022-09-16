@@ -83,7 +83,7 @@ public class FalconTest
 
                         // sign
                         FalconSigner signer = new FalconSigner();
-                        FalconPrivateKeyParameters skparam = new FalconPrivateKeyParameters(parameters[fileindex], sk);
+                        FalconPrivateKeyParameters skparam = new FalconPrivateKeyParameters(parameters[fileindex], sk, pk);
                         ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
                         signer.init(true, skwrand);
                         byte[] sig = signer.generateSignature(msg);
