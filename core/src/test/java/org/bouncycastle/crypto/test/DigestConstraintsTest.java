@@ -36,6 +36,7 @@ public class DigestConstraintsTest
         testKangaroo();
         testKeccak();
         testParallelHash();
+        testRIPEMD();
     }
 
     private void testMD2()
@@ -607,6 +608,91 @@ public class DigestConstraintsTest
         CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
 
         new ParallelHash(256, new byte[0], 8);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testRIPEMD()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new RIPEMD128Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 64", e.getMessage());
+        }
+        try
+        {
+            new RIPEMD160Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 80", e.getMessage());
+        }
+
+        try
+        {
+            new RIPEMD256Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new RIPEMD320Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 160", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+        try
+        {
+            new RIPEMD128Digest(CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new RIPEMD160Digest(CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        try
+        {
+            new RIPEMD256Digest(CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new RIPEMD320Digest(CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
