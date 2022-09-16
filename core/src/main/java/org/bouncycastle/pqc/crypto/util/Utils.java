@@ -418,7 +418,12 @@ class Utils
     {
         int pId = SPHINCSPlusParameters.getID(params);
 
-        if ((pId & 0x020000) == 0x020000)
+        if ((pId & 0x030000) == 0x030000)
+        {
+            return BCObjectIdentifiers.sphincsPlus_haraka;
+        }
+        
+        if ((pId & 0x030000) == 0x020000)
         {
             return BCObjectIdentifiers.sphincsPlus_shake_256;
         }

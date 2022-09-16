@@ -3,18 +3,17 @@ package org.bouncycastle.pqc.jcajce.provider.kyber;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.KyberKey;
+import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class BCKyberPublicKey
-    implements PublicKey, KyberKey
+    implements KyberPublicKey
 {
     private static final long serialVersionUID = 1L;
 

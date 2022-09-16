@@ -20,6 +20,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CRL;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -122,7 +123,13 @@ import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.*;
+import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -3518,6 +3525,57 @@ public class CertTest
     }
 
     /*
+     * we generate a self signed certificate for the sake of testing - SPHINCSPlus
+     */
+    public void checkCreationSPHINCSPlusHaraka()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
+
+        kpg.initialize(SPHINCSPlusParameterSpec.haraka_128f, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BCPQC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
+    /*
      * we generate a self signed certificate across the range of DSA algorithms
      */
     public void checkCreationDSA()
@@ -4931,121 +4989,122 @@ public class CertTest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
 
-//        testDirect();
-//        testIndirect();
-//        testIndirect2();
-//        testMalformedIndirect();
-//
-//        checkCertificate(1, cert1);
-//        checkCertificate(2, cert2);
-//        checkCertificate(3, cert3);
-//        checkCertificate(4, cert4);
-//        checkCertificate(5, cert5);
-//        checkCertificate(6, oldEcdsa);
-//        checkCertificate(7, cert7);
-//
-//        checkComparison(cert1);
-//        checkComparison(cert2);
-//
-//        checkKeyUsage(8, keyUsage);
-//        checkSelfSignedCertificate(9, uncompressedPtEC);
-//        checkNameCertificate(10, nameCert);
-//
-//        checkSelfSignedCertificate(11, probSelfSignedCert);
-//        checkSelfSignedCertificate(12, gostCA1);
-//        checkSelfSignedCertificate(13, gostCA2);
-//        checkSelfSignedCertificate(14, gost341094base);
-//        checkSelfSignedCertificate(15, gost34102001base);
-//        checkSelfSignedCertificate(16, gost341094A);
-//        checkSelfSignedCertificate(17, gost341094B);
-//        checkSelfSignedCertificate(18, gost34102001A);
-//        checkSelfSignedCertificate(19, sha3Cert);
-//        checkSelfSignedCertificateAndKey(20, gost_2012_cert, "ECGOST3410-2012-256", gost_2012_privateKey);
-//        checkCRL(1, crl1);
-//
-//        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "true");
-//
-//        checkCertificate(9, x25519Cert,
-//            KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
-//
-//        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "false");
-//
-//        try
-//        {
-//            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
-//
-//            Certificate cert = fact.generateCertificate(new ByteArrayInputStream(x25519Cert));
-//
-//            cert.verify(KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
-//
-//            fail("no exception");
-//        }
-//        catch (SignatureException e)
-//        {
-//            isEquals("certificate does not verify with supplied key", e.getMessage());
-//        }
-//
-//        checkSelfSignedCertificate(22, CertificateFactory.getInstance("X.509", BC).generateCertificate(this.getClass().getResourceAsStream("xmss3.pem")).getEncoded());
-//
-//        checkCreation1();
-//        checkCreation2();
-//        checkCreation3();
-//        checkCreation4();
-//        checkCreation5();
-//
-//        checkCreation6();
-//        checkCreation7();
-//        checkCreation8();
-//        checkCreation9();
-//        checkCreation10();
-//
-//        checkCreationEd448();
-//
-//        checkCreationSPHINCSPlus();
-//        checkCreationDSA();
-//        checkCreationECDSA();
-//        checkCreationRSA();
-//        checkCreationRSAPSS();
+        testDirect();
+        testIndirect();
+        testIndirect2();
+        testMalformedIndirect();
+
+        checkCertificate(1, cert1);
+        checkCertificate(2, cert2);
+        checkCertificate(3, cert3);
+        checkCertificate(4, cert4);
+        checkCertificate(5, cert5);
+        checkCertificate(6, oldEcdsa);
+        checkCertificate(7, cert7);
+
+        checkComparison(cert1);
+        checkComparison(cert2);
+
+        checkKeyUsage(8, keyUsage);
+        checkSelfSignedCertificate(9, uncompressedPtEC);
+        checkNameCertificate(10, nameCert);
+
+        checkSelfSignedCertificate(11, probSelfSignedCert);
+        checkSelfSignedCertificate(12, gostCA1);
+        checkSelfSignedCertificate(13, gostCA2);
+        checkSelfSignedCertificate(14, gost341094base);
+        checkSelfSignedCertificate(15, gost34102001base);
+        checkSelfSignedCertificate(16, gost341094A);
+        checkSelfSignedCertificate(17, gost341094B);
+        checkSelfSignedCertificate(18, gost34102001A);
+        checkSelfSignedCertificate(19, sha3Cert);
+        checkSelfSignedCertificateAndKey(20, gost_2012_cert, "ECGOST3410-2012-256", gost_2012_privateKey);
+        checkCRL(1, crl1);
+
+        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "true");
+
+        checkCertificate(9, x25519Cert,
+            KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+
+        System.setProperty("org.bouncycastle.x509.allow_non-der_tbscert", "false");
+
+        try
+        {
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+
+            Certificate cert = fact.generateCertificate(new ByteArrayInputStream(x25519Cert));
+
+            cert.verify(KeyFactory.getInstance("EdDSA").generatePublic(new X509EncodedKeySpec(Base64.decode("MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE="))));
+
+            fail("no exception");
+        }
+        catch (SignatureException e)
+        {
+            isEquals("certificate does not verify with supplied key", e.getMessage());
+        }
+
+        checkSelfSignedCertificate(22, CertificateFactory.getInstance("X.509", BC).generateCertificate(this.getClass().getResourceAsStream("xmss3.pem")).getEncoded());
+
+        checkCreation1();
+        checkCreation2();
+        checkCreation3();
+        checkCreation4();
+        checkCreation5();
+
+        checkCreation6();
+        checkCreation7();
+        checkCreation8();
+        checkCreation9();
+        checkCreation10();
+
+        checkCreationEd448();
+
+        checkCreationSPHINCSPlus();
+        checkCreationSPHINCSPlusHaraka();
+        checkCreationDSA();
+        checkCreationECDSA();
+        checkCreationRSA();
+        checkCreationRSAPSS();
 
         checkCreationFalcon();
         checkCreationPicnic();
         
-//        checkSm3WithSm2Creation();
-//
-//        checkCreationComposite();
-//        checkCompositeCertificateVerify();
-//
-//        createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);
-//        createECCert("SHA224withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA224);
-//        createECCert("SHA256withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA256);
-//        createECCert("SHA384withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA384);
-//        createECCert("SHA512withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA512);
-//
-//        createPSSCert("SHA1withRSAandMGF1");
-//        createPSSCert("SHA224withRSAandMGF1");
-//        createPSSCert("SHA256withRSAandMGF1");
-//        createPSSCert("SHA384withRSAandMGF1");
-//
-//        checkCRLCreation1();
-//        checkCRLCreation2();
-//        checkCRLCreation3();
-//        checkCRLCreation4();
-//        checkCRLCreation5();
-//        checkCRLCompositeCreation();
-//
-//        pemTest();
-//        pkcs7Test();
-//        rfc4491Test();
-//
-//        testForgedSignature();
-//
-//        testNullDerNullCert();
-//
-//        checkCertificate(18, emptyDNCert);
-//
-//        zeroDataTest();
-//
-//        checkSerialisation();
+        checkSm3WithSm2Creation();
+
+        checkCreationComposite();
+        checkCompositeCertificateVerify();
+
+        createECCert("SHA1withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA1);
+        createECCert("SHA224withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA224);
+        createECCert("SHA256withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA256);
+        createECCert("SHA384withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA384);
+        createECCert("SHA512withECDSA", X9ObjectIdentifiers.ecdsa_with_SHA512);
+
+        createPSSCert("SHA1withRSAandMGF1");
+        createPSSCert("SHA224withRSAandMGF1");
+        createPSSCert("SHA256withRSAandMGF1");
+        createPSSCert("SHA384withRSAandMGF1");
+
+        checkCRLCreation1();
+        checkCRLCreation2();
+        checkCRLCreation3();
+        checkCRLCreation4();
+        checkCRLCreation5();
+        checkCRLCompositeCreation();
+
+        pemTest();
+        pkcs7Test();
+        rfc4491Test();
+
+        testForgedSignature();
+
+        testNullDerNullCert();
+
+        checkCertificate(18, emptyDNCert);
+
+        zeroDataTest();
+
+        checkSerialisation();
     }
 
     private Extensions generateExtensions(Vector oids, Vector values)

@@ -133,6 +133,7 @@ public class AllTests
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCS+"},
+            new Object[]{BCObjectIdentifiers.sphincsPlus_haraka, "SPHINCS+"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
 
             new Object[]{PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC"},

@@ -19,6 +19,15 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, algorithm);
     }
 
+    protected void addSignatureAlias(
+        ConfigurableProvider provider,
+        String algorithm,
+        ASN1ObjectIdentifier oid)
+    {
+        provider.addAlgorithm("Alg.Alias.Signature." + oid, algorithm);
+        provider.addAlgorithm("Alg.Alias.Signature.OID." + oid, algorithm);
+    }
+
     protected void addSignatureAlgorithm(
         ConfigurableProvider provider,
         String digest,

@@ -302,18 +302,8 @@ class DilithiumEngine
         PolyVecK t0 = new PolyVecK(this), s2 = new PolyVecK(this), w1 = new PolyVecK(this), w0 = new PolyVecK(this), h = new PolyVecK(this);
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
-        boolean rej = true;
 
         Packing.unpackSecretKey(t0, s1, s2, secretKey, this);
-
-        // System.out.print("rho = ");
-        // Helper.printByteArray(rho);
-
-        // System.out.print("tr = ");
-        // Helper.printByteArray(tr);
-
-        // System.out.print("key = ");
-        // Helper.printByteArray(key);
 
         this.shake256Digest.update(tr, 0, SeedBytes);
         this.shake256Digest.update(msg, 0, msglen);
@@ -331,30 +321,19 @@ class DilithiumEngine
             shake256Digest.doFinal(rhoPrime, 0, CrhBytes);
         }
 
-        // System.out.print("mu = ");
-        // Helper.printByteArray(mu);
-
-        // System.out.print("rhoPrime = ");
-        // Helper.printByteArray(rhoPrime);
-
         aMatrix.expandMatrix(rho);
-        // System.out.print(aMatrix.toString("aMatrix"));
 
         s1.polyVecNtt();
-        // System.out.println(s1.toString("s1"));
-
         s2.polyVecNtt();
-        // System.out.println(s2.toString("s2"));
 
         t0.polyVecNtt();
-        // System.out.println(t0.toString("t0"));
+
         int count = 0;
-        while (rej == true && count < 1000)
+        while (count < 1000)
         {
             count++;
             // Sample intermediate vector
             y.uniformGamma1(rhoPrime, nonce++);
-            // System.out.println(y.toString("y"));
 
             y.copyPolyVecL(z);
             z.polyVecNtt();
@@ -367,26 +346,15 @@ class DilithiumEngine
             // Decompose w and call the random oracle
             w1.conditionalAddQ();
             w1.decompose(w0);
-            // System.out.println(w1.toString("w1"));
-            // System.out.println(w0.toString("w0"));
 
             System.arraycopy(w1.packW1(), 0, outSig, 0, DilithiumK * DilithiumPolyW1PackedBytes);
-            // System.out.print("outsig = ");
-            // Helper.printByteArray(outSig);
-
 
             shake256Digest.update(mu, 0, CrhBytes);
             shake256Digest.update(outSig, 0, DilithiumK * DilithiumPolyW1PackedBytes);
             shake256Digest.doFinal(outSig, 0, SeedBytes);
-            // System.out.print("outsig = ");
-            // Helper.printByteArray(outSig);
 
             cp.challenge(Arrays.copyOfRange(outSig, 0, SeedBytes));
-            // System.out.println("cp = ");
-            // System.out.println(cp.toString());
             cp.polyNtt();
-            // System.out.println("cp = ");
-            // System.out.println(cp.toString());
 
             // Compute z, reject if it reveals secret
             z.pointwisePolyMontgomery(cp, s1);
@@ -423,27 +391,15 @@ class DilithiumEngine
                 continue;
             }
 
-            // System.out.println(z.toString("z"));
-            // System.out.println(h.toString("h"));
-            // System.out.println("Signature before pack = ");
-            // Helper.printByteArray(outSig);
-            outSig = Packing.packSignature(outSig, z, h, this);
-
-            rej = false;
+            return Packing.packSignature(outSig, z, h, this);
         }
-        // System.out.println("Signature = ");
-        // Helper.printByteArray(outSig);
 
-        return outSig;
-
+        return null;
     }
 
     public byte[] sign(byte[] msg, int mlen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
     {
-        byte[] signedMessage = new byte[CryptoBytes];
-
-        System.arraycopy(signSignature(msg, mlen, rho, key, tr, secretKey), 0, signedMessage, 0, CryptoBytes);
-        return signedMessage;
+        return signSignature(msg, mlen, rho, key, tr, secretKey);
     }
 
     public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] publicKey)

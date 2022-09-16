@@ -28,6 +28,7 @@ public class PGPSessionKey
         return copy;
     }
 
+    @SuppressWarnings("ArrayToString")
     public String toString()
     {
         // mote: we only print the reference to sessionKey to prevent accidental disclosure of the actual key value.
