@@ -34,6 +34,7 @@ public class DigestConstraintsTest
         testGOST3411();
         testHaraka();
         testKangaroo();
+        testKeccak();
     }
 
     private void testMD2()
@@ -508,6 +509,77 @@ public class DigestConstraintsTest
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
+    private void testKeccak()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new KeccakDigest(128);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 64", e.getMessage());
+        }
+        try
+        {
+            new KeccakDigest(224);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 112", e.getMessage());
+        }
+        try
+        {
+            new KeccakDigest(256);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new KeccakDigest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 144", e.getMessage());
+        }
+        try
+        {
+            new KeccakDigest(384);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 192", e.getMessage());
+        }
+
+        new KeccakDigest(512);
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new KeccakDigest(128, CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        new KeccakDigest(256, CryptoServicePurpose.PRF);
+        new KeccakDigest(CryptoServicePurpose.PRF);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+
 
 
     
