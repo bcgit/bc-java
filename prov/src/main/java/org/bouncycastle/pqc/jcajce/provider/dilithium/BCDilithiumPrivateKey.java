@@ -3,19 +3,20 @@ package org.bouncycastle.pqc.jcajce.provider.dilithium;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
+import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class BCDilithiumPrivateKey
-    implements PrivateKey, DilithiumKey
+    implements DilithiumPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -75,6 +76,11 @@ public class BCDilithiumPrivateKey
     public final String getAlgorithm()
     {
         return "Dilithium";
+    }
+
+    public DilithiumPublicKey getPublicKey()
+    {
+        return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getPublicKey()));
     }
 
     public byte[] getEncoded()

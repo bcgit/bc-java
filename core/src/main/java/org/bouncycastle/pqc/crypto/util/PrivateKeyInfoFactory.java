@@ -239,7 +239,7 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, params.getPublicKey());
         }
         else if (privateKey instanceof KyberPrivateKeyParameters)
         {
@@ -249,7 +249,7 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, params.getPublicKey());
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -297,7 +297,7 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, params.getPublicKey());
         }
         else if (privateKey instanceof BIKEPrivateKeyParameters)
         {

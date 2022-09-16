@@ -49,6 +49,7 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka, "SPHINCS+");
 
         algorithms.put(NISTObjectIdentifiers.id_sha224, "SHA224");
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");

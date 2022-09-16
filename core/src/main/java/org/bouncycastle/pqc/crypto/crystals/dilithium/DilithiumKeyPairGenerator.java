@@ -30,7 +30,7 @@ public class DilithiumKeyPairGenerator
         // Helper.printByteArray(keyPair[0]);
 
         DilithiumPublicKeyParameters pubKey = new DilithiumPublicKeyParameters(dilithiumParams, keyPair[0]);
-        DilithiumPrivateKeyParameters privKey = new DilithiumPrivateKeyParameters(dilithiumParams, keyPair[1], keyPair[2], keyPair[3], keyPair[4], keyPair[5], keyPair[6]);
+        DilithiumPrivateKeyParameters privKey = new DilithiumPrivateKeyParameters(dilithiumParams, keyPair[1], keyPair[2], keyPair[3], keyPair[4], keyPair[5], keyPair[6], keyPair[0]);
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }

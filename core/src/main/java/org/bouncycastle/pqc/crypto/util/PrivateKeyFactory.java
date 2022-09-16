@@ -202,7 +202,15 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new KyberPrivateKeyParameters(spParams, keyEnc);
+            ASN1BitString pubKey = keyInfo.getPublicKeyData();
+            if (pubKey != null)
+            {
+                return new KyberPrivateKeyParameters(spParams, keyEnc, pubKey.getOctets());
+            }
+            else
+            {
+                return new KyberPrivateKeyParameters(spParams, keyEnc, null);
+            }
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
@@ -236,20 +244,40 @@ public class PrivateKeyFactory
 
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new DilithiumPrivateKeyParameters(spParams,
-                ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
-                ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets());
+            if (keyInfo.getPublicKeyData() != null)
+            {
+                return new DilithiumPrivateKeyParameters(spParams,
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                    keyInfo.getPublicKeyData().getOctets());
+            }
+            else
+            {
+                return new DilithiumPrivateKeyParameters(spParams,
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                    null);
+            }
         }
         else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             FalconParameters spParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            return new FalconPrivateKeyParameters(spParams, keyEnc);
+            ASN1BitString publicKeyData = keyInfo.getPublicKeyData();
+            if (publicKeyData != null)
+            {
+                return new FalconPrivateKeyParameters(spParams, keyEnc, publicKeyData.getOctets());
+            }
+            return new FalconPrivateKeyParameters(spParams, keyEnc, null);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
         {
