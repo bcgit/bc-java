@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
@@ -43,10 +45,16 @@ public abstract class GOST3411_2012Digest
 
     private int bOff = 64;
 
-    public GOST3411_2012Digest(byte[] IV)
+    // digest purpose
+    protected final CryptoServicePurpose purpose;
+
+    public GOST3411_2012Digest(byte[] IV, CryptoServicePurpose purpose)
     {
+        this.purpose = purpose;
         System.arraycopy(IV, 0, this.IV, 0, 64);
         System.arraycopy(IV, 0, h, 0, 64);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize()*4, purpose));
     }
 
     public int getByteLength()
