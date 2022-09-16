@@ -31,6 +31,9 @@ public class DigestConstraintsTest
         testDSTU7564();
         testBlake3();
         testBlake2b_s_xs();
+        testGOST3411();
+        testHaraka();
+        testKangaroo();
     }
 
     private void testMD2()
@@ -416,6 +419,97 @@ public class DigestConstraintsTest
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }
+
+    private void testGOST3411()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new GOST3411_2012_256Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new GOST3411Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 178", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new GOST3411_2012_512Digest();
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testHaraka()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new Haraka256Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+        new Haraka512Digest();
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testKangaroo()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new Kangaroo.KangarooTwelve();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 64", e.getMessage());
+        }
+        try
+        {
+            new Kangaroo.MarsupilamiFourteen();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        try
+        {
+            new Kangaroo.KangarooTwelve(CryptoServicePurpose.PRF);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new Kangaroo.MarsupilamiFourteen(CryptoServicePurpose.PRF);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+
     
     public static void main(
         String[] args)

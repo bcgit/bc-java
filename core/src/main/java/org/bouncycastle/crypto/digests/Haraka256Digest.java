@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -97,15 +99,31 @@ public class Haraka256Digest
     private final byte[] buffer;
     private int off;
 
+    private final CryptoServicePurpose purpose;
+
+
     public Haraka256Digest()
     {
+        this(CryptoServicePurpose.ANY);
+    }
+
+    public Haraka256Digest(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+
         this.buffer = new byte[32];
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize()*4, purpose));
     }
 
     public Haraka256Digest(Haraka256Digest digest)
     {
+        this.purpose = digest.purpose;
+
         this.buffer = Arrays.clone(digest.buffer);
         this.off = digest.off;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize()*4, purpose));
     }
 
     public String getAlgorithmName()

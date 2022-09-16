@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.util.Memoable;
 
 /**
@@ -19,14 +20,18 @@ public class GOST3411_2012_512Digest
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
 
+    public GOST3411_2012_512Digest(CryptoServicePurpose purpose)
+    {
+        super(IV, purpose);
+    }
     public GOST3411_2012_512Digest()
     {
-        super(IV);
+        super(IV, CryptoServicePurpose.ANY);
     }
 
     public GOST3411_2012_512Digest(GOST3411_2012_512Digest other)
     {
-        super(IV);
+        super(IV, other.purpose);
         reset(other);
     }
 

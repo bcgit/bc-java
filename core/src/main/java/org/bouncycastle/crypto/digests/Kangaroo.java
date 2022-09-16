@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
@@ -28,7 +26,7 @@ public final class Kangaroo
          */
         public KangarooTwelve()
         {
-            this(DIGESTLEN);
+            this(DIGESTLEN, CryptoServicePurpose.ANY);
         }
 
         /**
@@ -36,9 +34,14 @@ public final class Kangaroo
          *
          * @param pLength the digest length
          */
-        public KangarooTwelve(final int pLength)
+        public KangarooTwelve(final int pLength, CryptoServicePurpose purpose)
         {
-            super(128, 12, pLength);
+            super(128, 12, pLength, purpose);
+        }
+
+        public KangarooTwelve(CryptoServicePurpose purpose)
+        {
+            this(DIGESTLEN, purpose);
         }
 
         public String getAlgorithmName()
@@ -58,7 +61,7 @@ public final class Kangaroo
          */
         public MarsupilamiFourteen()
         {
-            this(DIGESTLEN);
+            this(DIGESTLEN, CryptoServicePurpose.ANY);
         }
 
         /**
@@ -66,9 +69,13 @@ public final class Kangaroo
          *
          * @param pLength the digest length
          */
-        public MarsupilamiFourteen(final int pLength)
+        public MarsupilamiFourteen(final int pLength, CryptoServicePurpose purpose)
         {
-            super(256, 14, pLength);
+            super(256, 14, pLength, purpose);
+        }
+        public MarsupilamiFourteen(CryptoServicePurpose purpose)
+        {
+            this(DIGESTLEN, purpose);
         }
 
         public String getAlgorithmName()
@@ -213,6 +220,8 @@ public final class Kangaroo
          */
         private int theProcessed;
 
+        private final CryptoServicePurpose purpose;
+
         /**
          * Constructor.
          *
@@ -222,7 +231,8 @@ public final class Kangaroo
          */
         KangarooBase(final int pStrength,
                      final int pRounds,
-                     final int pLength)
+                     final int pLength,
+                     CryptoServicePurpose purpose)
         {
             /* Create underlying digests */
             theTree = new KangarooSponge(pStrength, pRounds);
@@ -231,6 +241,10 @@ public final class Kangaroo
 
             /* Build personalisation */
             buildPersonal(null);
+            this.purpose = purpose;
+
+            CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, pStrength, purpose));
+
         }
 
         /**
