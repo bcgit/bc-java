@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.CryptoServiceProperties;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -17,11 +19,20 @@ public class RIPEMD128Digest
     private int[] X = new int[16];
     private int xOff;
 
+
     /**
      * Standard constructor
      */
     public RIPEMD128Digest()
     {
+        this(CryptoServicePurpose.ANY);
+    }
+    public RIPEMD128Digest(CryptoServicePurpose purpose)
+    {
+        super(purpose);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, 128, purpose));
+
         reset();
     }
 
@@ -31,7 +42,9 @@ public class RIPEMD128Digest
      */
     public RIPEMD128Digest(RIPEMD128Digest t)
     {
-        super(t);
+        super(t.purpose);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, 128, purpose));
 
         copyIn(t);
     }
