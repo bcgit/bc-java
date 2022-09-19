@@ -19,7 +19,7 @@ class DilithiumEngine
     public final static int DilithiumRootOfUnity = 1753;
     public final static int SeedBytes = 32;
     public final static int CrhBytes = 64;
-    public final boolean RandomizedSigning = false;
+    public final boolean RandomizedSigning;
 
     public final static int DilithiumPolyT1PackedBytes = 320;
     public final static int DilithiumPolyT0PackedBytes = 416;
@@ -46,7 +46,14 @@ class DilithiumEngine
     private final int CryptoBytes;
 
     private final int PolyUniformGamma1NBlocks;
-    
+
+    private final Symmetric symmetric;
+
+    protected Symmetric GetSymmetric()
+    {
+        return symmetric;
+    }
+
     public int getDilithiumPolyVecHPackedBytes()
     {
         return DilithiumPolyVecHPackedBytes;
@@ -142,7 +149,7 @@ class DilithiumEngine
         return this.shake128Digest;
     }
 
-    public DilithiumEngine(int mode, SecureRandom random)
+    public DilithiumEngine(int mode, SecureRandom random, boolean randomizedSigning, boolean usingAes)
     {
         this.DilithiumMode = mode;
         switch (mode)
@@ -189,6 +196,17 @@ class DilithiumEngine
         default:
             throw new IllegalArgumentException("The mode " + mode + "is not supported by Crystals Dilithium!");
         }
+        this.RandomizedSigning = randomizedSigning;
+
+        if(usingAes)
+        {
+            symmetric = new Symmetric.AesSymmetric();
+        }
+        else
+        {
+            symmetric = new Symmetric.ShakeSymmetric();
+        }
+
 
         this.random = random;
         this.DilithiumPolyVecHPackedBytes = this.DilithiumOmega + this.DilithiumK;
@@ -204,11 +222,11 @@ class DilithiumEngine
 
         if (this.DilithiumGamma1 == (1 << 17))
         {
-            this.PolyUniformGamma1NBlocks = ((576 + Symmetric.Shake256Rate - 1) / Symmetric.Shake256Rate);
+            this.PolyUniformGamma1NBlocks = ((576 + symmetric.stream256BlockBytes - 1) / symmetric.stream256BlockBytes);
         }
         else if (this.DilithiumGamma1 == (1 << 19))
         {
-            this.PolyUniformGamma1NBlocks = ((640 + Symmetric.Shake256Rate - 1) / Symmetric.Shake256Rate);
+            this.PolyUniformGamma1NBlocks = ((640 + symmetric.stream256BlockBytes - 1) / symmetric.stream256BlockBytes);
         }
         else
         {

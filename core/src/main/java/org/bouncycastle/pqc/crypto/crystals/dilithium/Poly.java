@@ -6,10 +6,12 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class Poly
 {
-    private int polyUniformNBlocks = (768 + Symmetric.Shake128Rate - 1) / Symmetric.Shake128Rate;
+    private final int polyUniformNBlocks;
     private int[] coeffs;
-    private DilithiumEngine engine;
-    private int dilithiumN;
+    private final DilithiumEngine engine;
+    private final int dilithiumN;
+
+    private final Symmetric symmetric;
 
 
     public Poly(DilithiumEngine engine)
@@ -17,6 +19,8 @@ class Poly
         this.dilithiumN = DilithiumEngine.DilithiumN;
         this.coeffs = new int[dilithiumN];
         this.engine = engine;
+        this.symmetric = engine.GetSymmetric();
+        this.polyUniformNBlocks = (768 + symmetric.stream128BlockBytes - 1) / symmetric.stream128BlockBytes;
     }
 
     public int getCoeffIndex(int i)
@@ -42,14 +46,12 @@ class Poly
     public void uniformBlocks(byte[] seed, short nonce)
     {
         int i, ctr, off,
-            buflen = polyUniformNBlocks * Symmetric.Shake128Rate;
+            buflen = polyUniformNBlocks * symmetric.stream128BlockBytes;
         byte[] buf = new byte[buflen + 2];
 
-        SHAKEDigest shake128Digest = new SHAKEDigest(128);
+        symmetric.stream128init(seed, nonce);
 
-        Symmetric.shakeStreamInit(shake128Digest, seed, nonce);
-
-        shake128Digest.doOutput(buf, 0, buflen + 2);
+        symmetric.stream128squeezeBlocks(buf, 0, buflen + 2);
 
         // System.out.println("buf = ");
         // Helper.printByteArray(buf);
@@ -67,8 +69,8 @@ class Poly
             {
                 buf[i] = buf[buflen - off + i];
             }
-            shake128Digest.doOutput(buf, buflen + off, 1);
-            buflen = Symmetric.Shake128Rate + off;
+            symmetric.stream128squeezeBlocks(buf, buflen + off, 1);
+            buflen = symmetric.stream128BlockBytes + off;
             ctr += rejectUniform(this, ctr, dilithiumN, buf, buflen);
         }
 
@@ -106,24 +108,23 @@ class Poly
 
         if (engine.getDilithiumEta() == 2)
         {
-            polyUniformEtaNBlocks = ((136 + Symmetric.Shake128Rate - 1) / Symmetric.Shake256Rate);
+            polyUniformEtaNBlocks = ((136 + symmetric.stream128BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
         }
         else if (engine.getDilithiumEta() == 4)
         {
-            polyUniformEtaNBlocks = ((227 + Symmetric.Shake128Rate - 1) / Symmetric.Shake256Rate);
+            polyUniformEtaNBlocks = ((227 + symmetric.stream128BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
         }
         else
         {
             throw new RuntimeException("Wrong Dilithium Eta!");
         }
 
-        int buflen = polyUniformEtaNBlocks * Symmetric.Shake128Rate;
+        int buflen = polyUniformEtaNBlocks * symmetric.stream128BlockBytes;
 
         byte[] buf = new byte[buflen];
-        SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
-        Symmetric.shakeStreamInit(shake256Digest, seed, nonce);
-        shake256Digest.doOutput(buf, 0, buflen);
+        symmetric.stream256init(seed, nonce);
+        symmetric.stream256squeezeBlocks(buf, 0, buflen);
 
         // System.out.println("poly eta buf = ");
         // Helper.printByteArray(buf);
@@ -133,8 +134,8 @@ class Poly
 
         while (ctr < DilithiumEngine.DilithiumN)
         {
-            shake256Digest.doOutput(buf, buflen, Symmetric.Shake128Rate);
-            ctr += rejectEta(this, ctr, dilithiumN - ctr, buf, Symmetric.Shake128Rate, eta);
+            symmetric.stream256squeezeBlocks(buf, buflen, symmetric.stream128BlockBytes);
+            ctr += rejectEta(this, ctr, dilithiumN - ctr, buf, symmetric.stream128BlockBytes, eta);
         }
 
     }
@@ -473,12 +474,10 @@ class Poly
 
     public void uniformGamma1(byte[] seed, short nonce)
     {
-        byte[] buf = new byte[engine.getPolyUniformGamma1NBlocks() * Symmetric.Shake256Rate];
+        byte[] buf = new byte[engine.getPolyUniformGamma1NBlocks() * symmetric.stream256BlockBytes];
 
-        SHAKEDigest shakeDigest = new SHAKEDigest(256);
-
-        Symmetric.shakeStreamInit(shakeDigest, seed, nonce);
-        shakeDigest.doFinal(buf, 0, engine.getPolyUniformGamma1NBlocks() * Symmetric.Shake256Rate);
+        symmetric.stream256init(seed, nonce);
+        symmetric.stream256squeezeBlocks(buf, 0, engine.getPolyUniformGamma1NBlocks() * symmetric.stream256BlockBytes);// todo this is final
         // System.out.println("Uniform gamma 1 buf = ");
         // Helper.printByteArray(buf);
         this.unpackZ(buf);
@@ -592,11 +591,11 @@ class Poly
     {
         int i, b = 0, pos;
         long signs;
-        byte[] buf = new byte[Symmetric.Shake256Rate];
+        byte[] buf = new byte[symmetric.stream256BlockBytes];
 
         SHAKEDigest shake256Digest = new SHAKEDigest(256);
         shake256Digest.update(seed, 0, DilithiumEngine.SeedBytes);
-        shake256Digest.doOutput(buf, 0, Symmetric.Shake256Rate);
+        shake256Digest.doOutput(buf, 0, symmetric.stream256BlockBytes);
 
         signs = (long)0;
         for (i = 0; i < 8; ++i)
@@ -614,9 +613,9 @@ class Poly
         {
             do
             {
-                if (pos >= Symmetric.Shake256Rate)
+                if (pos >= symmetric.stream256BlockBytes)
                 {
-                    shake256Digest.doOutput(buf, 0, Symmetric.Shake256Rate);
+                    shake256Digest.doOutput(buf, 0, symmetric.stream256BlockBytes);
                     pos = 0;
                 }
                 b = (buf[pos++] & 0xFF);
