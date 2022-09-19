@@ -60,6 +60,11 @@ public class DilithiumPrivateKeyParameters
         return Arrays.clone(t0);
     }
 
+    public byte[] getT1()
+    {
+        return new byte[0];
+    }
+
     public byte[] getEncoded()
     {
         return Arrays.concatenate(new byte[][] { rho, k, tr, s1, s2, t0 });

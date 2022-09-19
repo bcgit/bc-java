@@ -48,7 +48,8 @@ public class CrystalsDilithiumTest
         AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
 
         assertTrue(Arrays.areEqual(Hex.decode(sk), ((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getPrivateKey()));
-        assertTrue(Arrays.areEqual(Hex.decode(pk), ((DilithiumPublicKeyParameters)keyPair.getPublic()).getPublicKey()));
+        DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)keyPair.getPublic();
+        assertTrue(Arrays.areEqual(Hex.decode(pk), Arrays.concatenate(dPub.getRho(), dPub.getT1())));
     }
 
     public void testRNG()
@@ -124,11 +125,14 @@ public class CrystalsDilithiumTest
                         DilithiumKeyPairGenerator kpg = new DilithiumKeyPairGenerator();
                         kpg.init(kparam);
                         AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
-                        byte[] respk = ((DilithiumPublicKeyParameters)ackp.getPublic()).getEncoded();
+                        DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)ackp.getPublic();
+                        byte[] respk = Arrays.concatenate(dPub.getRho(), dPub.getT1());
                         // System.out.println("pk = ");
                         // Helper.printByteArray(pk);
                         byte[] ressk = ((DilithiumPrivateKeyParameters)ackp.getPrivate()).getEncoded();
 
+                        System.err.println(Hex.toHexString(respk));
+                        System.err.println(Hex.toHexString(pk));
                         //keygen
                         assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
                         assertTrue(name + " " + count + " secret key", Arrays.areEqual(ressk, sk));
@@ -144,7 +148,7 @@ public class CrystalsDilithiumTest
 
                         // verify
                         DilithiumSigner verifier = new DilithiumSigner();
-                        DilithiumPublicKeyParameters pkparam = new DilithiumPublicKeyParameters(parameters[fileindex], pk);
+                        DilithiumPublicKeyParameters pkparam = dPub;
                         verifier.init(false, pkparam);
 
                         boolean vrfyrespass = verifier.verifySignature(msg, sigGenerated);
