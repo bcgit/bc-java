@@ -35,6 +35,8 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
@@ -160,6 +162,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.bike128, new BIKEConverter());
         converters.put(BCObjectIdentifiers.bike192, new BIKEConverter());
         converters.put(BCObjectIdentifiers.bike256, new BIKEConverter());
+        converters.put(BCObjectIdentifiers.hqc128, new HQCConverter());
+        converters.put(BCObjectIdentifiers.hqc192, new HQCConverter());
+        converters.put(BCObjectIdentifiers.hqc256, new HQCConverter());
     }
 
     /**
@@ -537,6 +542,20 @@ public class PublicKeyFactory
             BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+        }
+    }
+
+    private static class HQCConverter
+            extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+                throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new HQCPublicKeyParameters(hqcParams, keyEnc);
         }
     }
 }
