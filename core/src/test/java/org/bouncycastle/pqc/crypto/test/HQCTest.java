@@ -90,7 +90,6 @@ public class HQCTest
                         byte[] ct = Hex.decode(buf.get("ct"));     // ciphertext
                         byte[] ss = Hex.decode(buf.get("ss"));     // session key
                         System.out.println(Hex.toHexString(seed));
-                        NISTSecureRandom random = new NISTSecureRandom(seed, null);
                         HQCParameters parameters = listParams[fileIndex];
 
                         HQCKeyPairGenerator hqcKeyGen = new HQCKeyPairGenerator();
@@ -117,13 +116,13 @@ public class HQCTest
                         byte[] c = secretWithEnc.getEncapsulation();
 
                         assertTrue(name + " " + count + ": ciphertext", Arrays.areEqual(c, ct));
-                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(secret, ss));
+                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(secret, 0, secret.length, ss, 0, secret.length));
 
                         // KEM Decapsulation
                         HQCKEMExtractor bikekemExtractor = new HQCKEMExtractor(generatedSk);
                         byte[] dec_key = bikekemExtractor.extractSecret(c);
 
-                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(dec_key, ss));
+                        assertEquals(parameters.getSessionKeySize(), secret.length * 8);
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                     }
                     buf.clear();
