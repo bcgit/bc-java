@@ -109,4 +109,9 @@ public class HQCParameters
     {
         return hqcEngine;
     }
+
+    public int getSessionKeySize()
+    {
+        return k * 8;
+    }
 }
