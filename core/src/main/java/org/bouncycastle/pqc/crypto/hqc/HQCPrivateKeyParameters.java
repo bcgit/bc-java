@@ -17,4 +17,9 @@ public class HQCPrivateKeyParameters
     {
         return Arrays.clone(this.sk);
     }
+
+    public byte[] getEncoded()
+    {
+        return Arrays.clone(this.sk);
+    }
 }

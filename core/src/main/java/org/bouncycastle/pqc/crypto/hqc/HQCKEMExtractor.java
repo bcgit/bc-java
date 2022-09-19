@@ -35,6 +35,6 @@ public class HQCKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return key.getParameters().getN_BYTES() + key.getParameters().getN1N2_BYTES();
+        return key.getParameters().getN_BYTES() + key.getParameters().getN1N2_BYTES() + 64;
     }
 }
