@@ -11,7 +11,9 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -20,7 +22,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -39,21 +40,31 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 public class JcaContentSignerBuilder
 {
+    private static final Set isAlgIdFromPrivate = new HashSet();
+
+    static
+    {
+        isAlgIdFromPrivate.add("DILITHIUM");
+        isAlgIdFromPrivate.add("SPHINCS+");
+        isAlgIdFromPrivate.add("SPHINCSPlus");
+    }
+
+    private final String signatureAlgorithm;
+
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private SecureRandom random;
-    private String signatureAlgorithm;
+
     private AlgorithmIdentifier sigAlgId;
     private AlgorithmParameterSpec sigAlgSpec;
 
     public JcaContentSignerBuilder(String signatureAlgorithm)
     {
         this.signatureAlgorithm = signatureAlgorithm;
-        this.sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find(signatureAlgorithm);
-        this.sigAlgSpec = null;
     }
 
     public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmParameterSpec sigParamSpec)
@@ -114,12 +125,21 @@ public class JcaContentSignerBuilder
         
         try
         {
-            final Signature sig = helper.createSignature(sigAlgId);
-            if (sigAlgId.getAlgorithm().on(BCObjectIdentifiers.sphincsPlus))
+            if (sigAlgSpec == null)
             {
-                sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+                if (isAlgIdFromPrivate.contains(Strings.toUpperCase(signatureAlgorithm)))
+                {
+                    sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+                    this.sigAlgSpec = null;
+                }
+                else
+                {
+                    this.sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find(signatureAlgorithm);
+                    this.sigAlgSpec = null;
+                }
             }
             final AlgorithmIdentifier signatureAlgId = sigAlgId;
+            final Signature sig = helper.createSignature(sigAlgId);
 
             if (random != null)
             {

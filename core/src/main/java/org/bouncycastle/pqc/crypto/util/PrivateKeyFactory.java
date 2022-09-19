@@ -248,14 +248,15 @@ public class PrivateKeyFactory
 
             if (keyInfo.getPublicKeyData() != null)
             {
+                ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
                 return new DilithiumPrivateKeyParameters(spParams,
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                    keyInfo.getPublicKeyData().getOctets());
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                    ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // encT1
             }
             else
             {
