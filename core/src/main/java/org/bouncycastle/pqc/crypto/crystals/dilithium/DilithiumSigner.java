@@ -52,6 +52,6 @@ public class DilithiumSigner
     {
         DilithiumEngine engine = pubKey.getParameters().getEngine(random);
 
-        return engine.signOpen(message, signature, signature.length, pubKey.getPublicKey());
+        return engine.signOpen(message, signature, signature.length, pubKey.rho, pubKey.t1);
     }
 }

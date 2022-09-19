@@ -523,11 +523,13 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.parsePublicKey());
 
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new DilithiumPublicKeyParameters(dilithiumParams, keyEnc);
+            return new DilithiumPublicKeyParameters(dilithiumParams,
+                ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
         }
     }
 
