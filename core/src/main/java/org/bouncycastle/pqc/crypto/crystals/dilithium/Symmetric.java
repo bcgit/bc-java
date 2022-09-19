@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Exceptions;
-import sun.jvm.hotspot.debugger.cdbg.Sym;
 
 abstract class Symmetric {
 
