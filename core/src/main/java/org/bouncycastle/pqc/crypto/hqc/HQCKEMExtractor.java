@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.util.Arrays;
 
 public class HQCKEMExtractor
     implements EncapsulatedSecretExtractor
@@ -29,7 +30,7 @@ public class HQCKEMExtractor
 
         engine.decaps(session_key, encapsulation, sk);
 
-        return session_key;
+        return Arrays.copyOfRange(session_key, 0, key.getParameters().getK());
     }
 
     public int getEncapsulationLength()
