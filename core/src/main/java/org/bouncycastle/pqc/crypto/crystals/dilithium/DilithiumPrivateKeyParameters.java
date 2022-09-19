@@ -11,14 +11,14 @@ public class DilithiumPrivateKeyParameters
     private final byte[] s1;
     private final byte[] s2;
     private final byte[] t0;
-    private final byte[] pk;
+    private final byte[] t1;
 
     public byte[] getPrivateKey()
     {
         return getEncoded();
     }
 
-    public DilithiumPrivateKeyParameters(DilithiumParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] pk)
+    public DilithiumPrivateKeyParameters(DilithiumParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1)
     {
         super(true, params);
         this.rho = Arrays.clone(rho);
@@ -27,7 +27,7 @@ public class DilithiumPrivateKeyParameters
         this.s1 = Arrays.clone(s1);
         this.s2 = Arrays.clone(s2);
         this.t0 = Arrays.clone(t0);
-        this.pk = Arrays.clone(pk);
+        this.t1 = Arrays.clone(t1);
     }
 
     public byte[] getRho()
@@ -62,16 +62,11 @@ public class DilithiumPrivateKeyParameters
 
     public byte[] getT1()
     {
-        return new byte[0];
+        return t1;
     }
 
     public byte[] getEncoded()
     {
         return Arrays.concatenate(new byte[][] { rho, k, tr, s1, s2, t0 });
     }
-
-    public byte[] getPublicKey()
-        {
-            return Arrays.clone(pk);
-        }
 }

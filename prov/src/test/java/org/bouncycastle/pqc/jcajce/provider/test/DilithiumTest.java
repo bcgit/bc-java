@@ -150,19 +150,22 @@ public class DilithiumTest
 
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
 
-        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(pubInfo.getPublicKeyData().getOctets()).getOctets(), pubK));
+        ASN1Sequence pubSeq = ASN1Sequence.getInstance(pubInfo.getPublicKeyData().getOctets());
+        assertTrue(Arrays.areEqual(Arrays.concatenate(
+            ASN1OctetString.getInstance(pubSeq.getObjectAt(0)).getOctets(),
+            ASN1OctetString.getInstance(pubSeq.getObjectAt(1)).getOctets()), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1Sequence seq = ASN1Sequence.getInstance(privInfo.parsePrivateKey());
 
         byte[] concKey = Arrays.concatenate(new byte[][]
             {
-                ASN1BitString.getInstance(seq.getObjectAt(0)).getOctets(),
                 ASN1BitString.getInstance(seq.getObjectAt(1)).getOctets(),
                 ASN1BitString.getInstance(seq.getObjectAt(2)).getOctets(),
                 ASN1BitString.getInstance(seq.getObjectAt(3)).getOctets(),
                 ASN1BitString.getInstance(seq.getObjectAt(4)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(5)).getOctets()
+                ASN1BitString.getInstance(seq.getObjectAt(5)).getOctets(),
+                ASN1BitString.getInstance(seq.getObjectAt(6)).getOctets()
             });
 
         assertTrue(Arrays.areEqual(concKey, privK));
