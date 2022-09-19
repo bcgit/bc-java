@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -57,13 +58,24 @@ public class Haraka512Digest
     private final byte[] buffer;
     private int off;
 
+    private final CryptoServicePurpose purpose;
+
+
     public Haraka512Digest()
     {
+        this(CryptoServicePurpose.ANY);
+    }
+    public Haraka512Digest(CryptoServicePurpose purpose)
+    {
+        this.purpose = purpose;
+
         this.buffer = new byte[64];
     }
 
     public Haraka512Digest(Haraka512Digest digest)
     {
+        this.purpose = digest.purpose;
+
         this.buffer = Arrays.clone(digest.buffer);
         this.off = digest.off;
     }
