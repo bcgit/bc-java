@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
+import org.bouncycastle.util.Pack;
 
 /**
  * implementation of GOST 28147-89 MAC
@@ -17,8 +18,8 @@ public class GOST28147Mac
     implements Mac
 {
     private final CryptoServicePurpose purpose;
-    private int                 blockSize = 8;
-    private int                 macSize = 4;
+    private static final int    BLOCK_SIZE = 8;
+    private static final int    MAC_SIZE = 4;
     private int                 bufOff;
     private byte[]              buf;
     private byte[]              mac;
@@ -48,9 +49,9 @@ public class GOST28147Mac
     public GOST28147Mac(CryptoServicePurpose purpose)
     {
         this.purpose = purpose;
-        mac = new byte[blockSize];
+        mac = new byte[BLOCK_SIZE];
 
-        buf = new byte[blockSize];
+        buf = new byte[BLOCK_SIZE];
         bufOff = 0;
     }
 
@@ -65,7 +66,7 @@ public class GOST28147Mac
         int key[] = new int[8];
         for(int i=0; i!=8; i++)
         {
-            key[i] = bytesToint(userKey,i*4);
+            key[i] = Pack.littleEndianToInt(userKey, i*4);
         }
 
         return key;
@@ -76,7 +77,7 @@ public class GOST28147Mac
         throws IllegalArgumentException
     {
         reset();
-        buf = new byte[blockSize];
+        buf = new byte[BLOCK_SIZE];
         macIV = null;
 
         recursiveInit(params);
@@ -131,7 +132,7 @@ public class GOST28147Mac
 
     public int getMacSize()
     {
-        return macSize;
+        return MAC_SIZE;
     }
 
     private int gost28147_mainStep(int n1, int key)
@@ -159,9 +160,9 @@ public class GOST28147Mac
             byte[]  out,
             int     outOff)
     {
-        int N1, N2, tmp;  //tmp -> for saving N1
-        N1 = bytesToint(in, inOff);
-        N2 = bytesToint(in, inOff + 4);
+        int N1 = Pack.littleEndianToInt(in, inOff);
+        int N2 = Pack.littleEndianToInt(in, inOff + 4);
+        int tmp;  //tmp -> for saving N1
         
         for(int k = 0; k < 2; k++)  // 1-16 steps
         {
@@ -173,43 +174,8 @@ public class GOST28147Mac
             }
         }
         
-        intTobytes(N1, out, outOff);
-        intTobytes(N2, out, outOff + 4);
-    }
-    
-    //array of bytes to type int
-    private int bytesToint(
-            byte[]  in,
-            int     inOff)
-    {
-        return  ((in[inOff + 3] << 24) & 0xff000000) + ((in[inOff + 2] << 16) & 0xff0000) +
-        ((in[inOff + 1] << 8) & 0xff00) + (in[inOff] & 0xff);
-    }
-    
-    //int to array of bytes
-    private void intTobytes(
-            int     num,
-            byte[]  out,
-            int     outOff)
-    {
-        out[outOff + 3] = (byte)(num >>> 24);
-        out[outOff + 2] = (byte)(num >>> 16);
-        out[outOff + 1] = (byte)(num >>> 8);
-        out[outOff] =     (byte)num;
-    }
-        
-    private byte[] CM5func(byte[] buf, int bufOff, byte[] mac)
-    {
-        byte[] sum = new byte[buf.length - bufOff];
-
-        System.arraycopy(buf, bufOff, sum, 0, mac.length);
-
-        for (int i = 0; i != mac.length; i++)
-        {
-            sum[i] = (byte)(sum[i] ^ mac[i]);
-        }
-
-        return sum;
+        Pack.intToLittleEndian(N1, out, outOff);
+        Pack.intToLittleEndian(N2, out, outOff + 4);
     }
 
     public void update(byte in)
@@ -217,23 +183,25 @@ public class GOST28147Mac
     {
         if (bufOff == buf.length)
         {
-            byte[] sumbuf = new byte[buf.length];
-            System.arraycopy(buf, 0, sumbuf, 0, mac.length);
-
+            byte[] sum = new byte[buf.length];
             if (firstStep)
             {
                 firstStep = false;
                 if (macIV != null)
                 {
-                    sumbuf = CM5func(buf, 0, macIV);
+                    CM5func(buf, 0, macIV, sum);
+                }
+                else
+                {
+                    System.arraycopy(buf, 0, sum, 0, mac.length);
                 }
             }
             else
             {
-                sumbuf = CM5func(buf, 0, mac);
+                CM5func(buf, 0, mac, sum);
             }
 
-            gost28147MacFunc(workingKey, sumbuf, 0, mac, 0);
+            gost28147MacFunc(workingKey, sum, 0, mac, 0);
             bufOff = 0;
         }
 
@@ -248,41 +216,43 @@ public class GOST28147Mac
                 throw new IllegalArgumentException("Can't have a negative input length!");
             }
 
-            int gapLen = blockSize - bufOff;
+            int gapLen = BLOCK_SIZE - bufOff;
 
             if (len > gapLen)
             {
                 System.arraycopy(in, inOff, buf, bufOff, gapLen);
 
-                byte[] sumbuf = new byte[buf.length];
-                System.arraycopy(buf, 0, sumbuf, 0, mac.length);
-
+                byte[] sum = new byte[buf.length];
                 if (firstStep)
                 {
                     firstStep = false;
                     if (macIV != null)
                     {
-                        sumbuf = CM5func(buf, 0, macIV);
+                        CM5func(buf, 0, macIV, sum);
+                    }
+                    else
+                    {
+                        System.arraycopy(buf, 0, sum, 0, mac.length);
                     }
                 }
                 else
                 {
-                    sumbuf = CM5func(buf, 0, mac);
+                    CM5func(buf, 0, mac, sum);
                 }
 
-                gost28147MacFunc(workingKey, sumbuf, 0, mac, 0);
+                gost28147MacFunc(workingKey, sum, 0, mac, 0);
 
                 bufOff = 0;
                 len -= gapLen;
                 inOff += gapLen;
 
-                while (len > blockSize)
+                while (len > BLOCK_SIZE)
                 {
-                    sumbuf = CM5func(in, inOff, mac);
-                    gost28147MacFunc(workingKey, sumbuf, 0, mac, 0);
+                    CM5func(in, inOff, mac, sum);
+                    gost28147MacFunc(workingKey, sum, 0, mac, 0);
 
-                    len -= blockSize;
-                    inOff += blockSize;
+                    len -= BLOCK_SIZE;
+                    inOff += BLOCK_SIZE;
                 }
             }
 
@@ -295,31 +265,30 @@ public class GOST28147Mac
         throws DataLengthException, IllegalStateException
     {
         //padding with zero
-        while (bufOff < blockSize)
+        while (bufOff < BLOCK_SIZE)
         {
             buf[bufOff] = 0;
             bufOff++;
         }
 
-        byte[] sumbuf = new byte[buf.length];
-        System.arraycopy(buf, 0, sumbuf, 0, mac.length);
-
+        byte[] sum = new byte[buf.length];
         if (firstStep)
         {
             firstStep = false;
+            System.arraycopy(buf, 0, sum, 0, mac.length);
         }
         else
         {
-            sumbuf = CM5func(buf, 0, mac);
+            CM5func(buf, 0, mac, sum);
         }
 
-        gost28147MacFunc(workingKey, sumbuf, 0, mac, 0);
+        gost28147MacFunc(workingKey, sum, 0, mac, 0);
 
-        System.arraycopy(mac, (mac.length/2)-macSize, out, outOff, macSize);
+        System.arraycopy(mac, (mac.length/2)-MAC_SIZE, out, outOff, MAC_SIZE);
 
         reset();
 
-        return macSize;
+        return MAC_SIZE;
     }
 
     public void reset()
@@ -335,5 +304,13 @@ public class GOST28147Mac
         bufOff = 0;
 
         firstStep = true;
+    }
+
+    private static void CM5func(byte[] buf, int bufOff, byte[] mac, byte[] sum)
+    {
+        for (int i = 0; i < BLOCK_SIZE; ++i)
+        {
+            sum[i] = (byte)(buf[bufOff + i] ^ mac[i]);
+        }
     }
 }
