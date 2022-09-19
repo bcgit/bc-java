@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -30,6 +28,8 @@ public class ParallelHash
     private int nCount;
     private int bufOff;
 
+    private final CryptoServicePurpose purpose;
+
     /**
      * Base constructor.
      *
@@ -39,10 +39,14 @@ public class ParallelHash
      */
     public ParallelHash(int bitLength, byte[] S, int B)
     {
-        this(bitLength, S, B, bitLength * 2);
+        this(bitLength, S, B, bitLength * 2, CryptoServicePurpose.ANY);
     }
 
     public ParallelHash(int bitLength, byte[] S, int B, int outputSize)
+    {
+        this(bitLength, S, B, outputSize, CryptoServicePurpose.ANY);
+    }
+    public ParallelHash(int bitLength, byte[] S, int B, int outputSize, CryptoServicePurpose purpose)
     {
         this.cshake = new CSHAKEDigest(bitLength, N_PARALLEL_HASH, S);
         this.compressor = new CSHAKEDigest(bitLength, new byte[0], new byte[0]);
@@ -51,6 +55,9 @@ public class ParallelHash
         this.outputLength = (outputSize + 7) / 8;
         this.buffer = new byte[B];
         this.compressorBuffer = new byte[bitLength * 2 / 8];
+        this.purpose = purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, bitLength, purpose));
 
         reset();
     }
@@ -64,6 +71,10 @@ public class ParallelHash
         this.outputLength = source.outputLength;
         this.buffer = Arrays.clone(source.buffer);
         this.compressorBuffer = Arrays.clone(source.compressorBuffer);
+        this.purpose = source.purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, bitLength, purpose));
+
     }
 
     public String getAlgorithmName()
