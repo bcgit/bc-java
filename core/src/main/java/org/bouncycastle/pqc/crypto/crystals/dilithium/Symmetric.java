@@ -7,7 +7,8 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Exceptions;
 
-abstract class Symmetric {
+abstract class Symmetric
+{
 
     final int stream128BlockBytes;
     final int stream256BlockBytes;
@@ -19,12 +20,16 @@ abstract class Symmetric {
     }
 
     abstract void stream128init(byte[] seed, short nonce);
+
     abstract void stream256init(byte[] seed, short nonce);
+
     abstract void stream128squeezeBlocks(byte[] output, int offset, int size);
+
     abstract void stream256squeezeBlocks(byte[] output, int offset, int size);
 
     static class AesSymmetric
-        extends Symmetric {
+        extends Symmetric
+    {
 
         private final BufferedBlockCipher cipher;
 
@@ -47,11 +52,12 @@ abstract class Symmetric {
                 throw Exceptions.illegalStateException(e.toString(), e);
             }
         }
+
         private void streamInit(byte[] key, short nonce)
         {
             byte[] expnonce = new byte[12];
-            expnonce[0] = (byte) nonce;
-            expnonce[1] = (byte) (nonce >> 8);
+            expnonce[0] = (byte)nonce;
+            expnonce[1] = (byte)(nonce >> 8);
 
             KeyParameter kp = new KeyParameter(key);
             cipher.init(true, kp);
@@ -109,8 +115,8 @@ abstract class Symmetric {
             // temp[seed.length] = (byte) (nonce >> 8);
             byte[] temp = new byte[2];
             // System.arraycopy(seed, 0, temp, 0, seed.length);
-            temp[0] = (byte) nonce;
-            temp[1] = (byte) (nonce >> 8);
+            temp[0] = (byte)nonce;
+            temp[1] = (byte)(nonce >> 8);
 
             digest.update(seed, 0, seed.length);
             digest.update(temp, 0, temp.length);
