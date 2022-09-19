@@ -80,7 +80,7 @@ public class BCDilithiumPrivateKey
 
     public DilithiumPublicKey getPublicKey()
     {
-        return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getPublicKey()));
+        return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getRho(), params.getT1()));
     }
 
     public byte[] getEncoded()

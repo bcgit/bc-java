@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -289,6 +290,7 @@ public class PrivateKeyInfoFactory
 
             ASN1EncodableVector v = new ASN1EncodableVector();
 
+            v.add(new ASN1Integer(0));
             v.add(new DERBitString(params.getRho()));
             v.add(new DERBitString(params.getK()));
             v.add(new DERBitString(params.getTr()));
@@ -298,7 +300,11 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, params.getPublicKey());
+            ASN1EncodableVector vPub = new ASN1EncodableVector();
+            vPub.add(new DEROctetString(params.getRho()));
+            vPub.add(new DEROctetString(params.getT1()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, new DERSequence(vPub).getEncoded());
         }
         else if (privateKey instanceof BIKEPrivateKeyParameters)
         {

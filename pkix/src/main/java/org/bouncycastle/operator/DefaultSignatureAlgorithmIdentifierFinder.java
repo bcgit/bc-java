@@ -200,9 +200,12 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SPHINCS+", BCObjectIdentifiers.sphincsPlus);
         algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
 
+        algorithms.put("DILITHIUM2", BCObjectIdentifiers.dilithium2);
+        algorithms.put("DILITHIUM3", BCObjectIdentifiers.dilithium3);
+        algorithms.put("DILITHIUM5", BCObjectIdentifiers.dilithium5);
+
         algorithms.put("FALCON-512", BCObjectIdentifiers.falcon_512);
         algorithms.put("FALCON-1024", BCObjectIdentifiers.falcon_1024);
-
 
         algorithms.put("PICNIC", BCObjectIdentifiers.picnic_signature);
         algorithms.put("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
@@ -263,6 +266,14 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha_256);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha_512);
+
+        //
+        // Dilithium
+        //
+        noParams.add(BCObjectIdentifiers.dilithium);
+        noParams.add(BCObjectIdentifiers.dilithium2);
+        noParams.add(BCObjectIdentifiers.dilithium3);
+        noParams.add(BCObjectIdentifiers.dilithium5);
 
         //
         // Falcon
