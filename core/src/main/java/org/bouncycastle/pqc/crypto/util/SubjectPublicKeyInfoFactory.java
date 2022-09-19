@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.util;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
@@ -257,10 +258,11 @@ public class SubjectPublicKeyInfoFactory
         {
             DilithiumPublicKeyParameters params = (DilithiumPublicKeyParameters)publicKey;
 
-            byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(new DEROctetString(params.getRho()));
+            v.add(new DEROctetString(params.getT1()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(v));
         }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {

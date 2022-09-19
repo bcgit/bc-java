@@ -296,18 +296,19 @@ class DilithiumEngine
         // System.out.println(t0.toString("t0"));
 
 
-        byte[] pk = Packing.packPublicKey(rho, t1, this);
+        byte[] encT1 = Packing.packPublicKey(t1, this);
         // System.out.println("pk engine = ");
         // Helper.printByteArray(pk);
 
-        shake256Digest.update(pk, 0, CryptoPublicKeyBytes);
+        shake256Digest.update(rho, 0, rho.length);
+        shake256Digest.update(encT1, 0, encT1.length);
         shake256Digest.doFinal(tr, 0, SeedBytes);
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
         // System.out.println("sk engine = ");
         // Helper.printByteArray(sk);
 
-        return new byte[][]{pk, sk[0], sk[1], sk[2], sk[3], sk[4], sk[5]};
+        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
     }
 
     public byte[] signSignature(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
@@ -420,10 +421,9 @@ class DilithiumEngine
         return signSignature(msg, mlen, rho, key, tr, secretKey);
     }
 
-    public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] publicKey)
+    public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
     {
         byte[] buf,
-            rho,
             mu = new byte[CrhBytes],
             c,
             c2 = new byte[SeedBytes];
@@ -440,7 +440,7 @@ class DilithiumEngine
         // System.out.println("publickey = ");
         // Helper.printByteArray(publicKey);
 
-        rho = Packing.unpackPublicKey(t1, publicKey, this);
+        t1 = Packing.unpackPublicKey(t1, encT1, this);
 
         // System.out.println(t1.toString("t1"));
 
@@ -462,7 +462,8 @@ class DilithiumEngine
         }
 
         // Compute crh(crh(rho, t1), msg)
-        shake256Digest.update(publicKey, 0, CryptoPublicKeyBytes);
+        shake256Digest.update(rho, 0, rho.length);
+        shake256Digest.update(encT1, 0, encT1.length);
         shake256Digest.doFinal(mu, 0, SeedBytes);
         // System.out.println("mu before = ");
         // Helper.printByteArray(mu);
@@ -538,8 +539,8 @@ class DilithiumEngine
         return true;
     }
 
-    public boolean signOpen(byte[] msg, byte[] signedMsg, int signedMsglen, byte[] publicKey)
+    public boolean signOpen(byte[] msg, byte[] signedMsg, int signedMsglen, byte[] rho, byte[] t1)
     {
-        return signVerify(signedMsg, signedMsglen, msg, msg.length, publicKey);
+        return signVerify(signedMsg, signedMsglen, msg, msg.length, rho, t1);
     }
 }

@@ -5,21 +5,28 @@ import org.bouncycastle.util.Arrays;
 public class DilithiumPublicKeyParameters
     extends DilithiumKeyParameters
 {
-    private final byte[] publicKey;
+    final byte[] rho;
+    final byte[] t1;
 
-    public byte[] getPublicKey()
+    public byte[] getRho()
     {
-        return Arrays.clone(publicKey);
+        return Arrays.clone(rho);
+    }
+
+    public byte[] getT1()
+    {
+        return Arrays.clone(t1);
     }
 
     public byte[] getEncoded()
     {
-        return getPublicKey();
+        return Arrays.concatenate(rho, t1);
     }
 
-    public DilithiumPublicKeyParameters(DilithiumParameters params, byte[] publicKey)
+    public DilithiumPublicKeyParameters(DilithiumParameters params, byte[] rho, byte[] t1)
     {
         super(false, params);
-        this.publicKey = Arrays.clone(publicKey);
+        this.rho = Arrays.clone(rho);
+        this.t1 = Arrays.clone(t1);
     }
 }
