@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(NTRULPRimeTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(BIKETest.class);
+        suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);

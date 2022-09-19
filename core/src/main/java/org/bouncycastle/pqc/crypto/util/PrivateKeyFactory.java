@@ -34,6 +34,8 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
@@ -287,7 +289,14 @@ public class PrivateKeyFactory
             byte[] h0 = Arrays.copyOfRange(keyEnc, 0, bikeParams.getRByte());
             byte[] h1 = Arrays.copyOfRange(keyEnc, bikeParams.getRByte(), 2*bikeParams.getRByte());
             byte[] sigma = Arrays.copyOfRange(keyEnc, 2*bikeParams.getRByte(), keyEnc.length);
-            return new BIKEPrivateKeyParameters(h0, h1, sigma, bikeParams);
+            return new BIKEPrivateKeyParameters(bikeParams, h0, h1, sigma);
+        }
+        else if (algOID.on(BCObjectIdentifiers.pqc_kem_hqc))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            
+            return new HQCPrivateKeyParameters(hqcParams, keyEnc);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {
