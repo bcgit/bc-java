@@ -26,6 +26,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
@@ -304,6 +305,13 @@ public class PrivateKeyInfoFactory
             BIKEPrivateKeyParameters params = (BIKEPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.bikeOidLookup(params.getParameters()));
             byte[] encoding = params.getEncoded();
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
+        }
+        else if (privateKey instanceof HQCPrivateKeyParameters)
+        {
+            HQCPrivateKeyParameters params = (HQCPrivateKeyParameters)privateKey;
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.hqcOidLookup(params.getParameters()));
+            byte[] encoding = params.getPrivateKey();
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
         else

@@ -21,12 +21,12 @@ public class BIKEPrivateKeyParameters
      * @param h1    h1
      * @param sigma random bytes sigma
      */
-    public BIKEPrivateKeyParameters(byte[] h0, byte[] h1, byte[] sigma, BIKEParameters bikeParameters)
+    public BIKEPrivateKeyParameters(BIKEParameters bikeParameters, byte[] h0, byte[] h1, byte[] sigma)
     {
         super(true, bikeParameters);
         this.h0 = Arrays.clone(h0);
-        this.h1 =  Arrays.clone(h1);
-        this.sigma =  Arrays.clone(sigma);
+        this.h1 = Arrays.clone(h1);
+        this.sigma = Arrays.clone(sigma);
     }
 
     byte[] getH0()

@@ -66,7 +66,7 @@ public class BIKEKeyPairGenerator
 
         // form keys
         BIKEPublicKeyParameters publicKey = new BIKEPublicKeyParameters(bikeKeyGenerationParameters.getParameters(), h);
-        BIKEPrivateKeyParameters privateKey = new BIKEPrivateKeyParameters(h0, h1, sigma, bikeKeyGenerationParameters.getParameters());
+        BIKEPrivateKeyParameters privateKey = new BIKEPrivateKeyParameters(bikeKeyGenerationParameters.getParameters(), h0, h1, sigma);
 
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }
