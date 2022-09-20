@@ -17,23 +17,21 @@ public class CRLStatus
     extends ASN1Object
 {
     private final CRLSource source;
-    private final Time time;
+    private final Time thisUpdate;
 
     private CRLStatus(ASN1Sequence sequence)
     {
-
         if (sequence.size() == 1 || sequence.size() == 2)
         {
             this.source = CRLSource.getInstance(sequence.getObjectAt(0));
             if (sequence.size() == 2)
             {
-                this.time = Time.getInstance(sequence.getObjectAt(1));
+                this.thisUpdate = Time.getInstance(sequence.getObjectAt(1));
             }
             else
             {
-                this.time = null;
+                this.thisUpdate = null;
             }
-
         }
         else
         {
@@ -41,10 +39,10 @@ public class CRLStatus
         }
     }
 
-    public CRLStatus(CRLSource source, Time time)
+    public CRLStatus(CRLSource source, Time thisUpdate)
     {
         this.source = source;
-        this.time = time;
+        this.thisUpdate = thisUpdate;
     }
 
     public static CRLStatus getInstance(Object o)
@@ -65,20 +63,26 @@ public class CRLStatus
         return source;
     }
 
-
-    public Time getTime()
+    public Time getThisUpdate()
     {
-        return time;
+        return thisUpdate;
     }
 
+    /**
+     * @deprecated Use {@link #getThisUpdate()} instead.
+     */
+    public Time getTime()
+    {
+        return thisUpdate;
+    }
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
         v.add(source);
-        if (time != null)
+        if (thisUpdate != null)
         {
-            v.add(time);
+            v.add(thisUpdate);
         }
         return new DERSequence(v);
     }

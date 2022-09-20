@@ -24,7 +24,7 @@ public class CMPCertificate
      * Note: the addition of attribute certificates is a BC extension. If you use this constructor they
      * will be added with a tag value of 1.
      *
-     * @deprecated use (type. otherCert) constructor
+     * @deprecated use (type, otherCert) constructor
      */
     public CMPCertificate(AttributeCertificate x509v2AttrCert)
     {
