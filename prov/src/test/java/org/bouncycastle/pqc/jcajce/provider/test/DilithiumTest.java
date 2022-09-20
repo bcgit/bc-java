@@ -172,13 +172,31 @@ public class DilithiumTest
 
         Signature sig = Signature.getInstance("Dilithium", "BCPQC");
 
-        sig.initSign(kp.getPrivate(), katRandom);
+        sig.initSign(kp.getPrivate());
 
         sig.update(msg, 0, msg.length);
 
         byte[] genS = sig.sign();
 
         assertTrue(Arrays.areEqual(s, genS));
+
+        sig = Signature.getInstance("Dilithium", "BCPQC");
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        // check randomisation
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        genS = sig.sign();
+
+        assertFalse(Arrays.areEqual(s, genS));
 
         sig = Signature.getInstance("Dilithium", "BCPQC");
 

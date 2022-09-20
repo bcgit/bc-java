@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.crystals.dilithium;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
@@ -31,7 +30,7 @@ public class DilithiumSigner
             else
             {
                 privKey = (DilithiumPrivateKeyParameters)param;
-                random = CryptoServicesRegistrar.getSecureRandom();
+                random = null;
             }
         }
         else
