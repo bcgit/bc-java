@@ -140,8 +140,8 @@ public class CrystalsDilithiumTest
                         // sign
                         DilithiumSigner signer = new DilithiumSigner();
                         DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)ackp.getPrivate();
-                        ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
-                        signer.init(true, skwrand);
+
+                        signer.init(true, skparam);
 
                         byte[] sigGenerated = signer.generateSignature(msg);
                         byte[] attachedSig = Arrays.concatenate(sigGenerated, msg);

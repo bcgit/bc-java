@@ -7,8 +7,8 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class DilithiumEngine
 {
-
     private final SecureRandom random;
+
     private final SHAKEDigest shake128Digest = new SHAKEDigest(128);
     private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
@@ -19,7 +19,6 @@ class DilithiumEngine
     public final static int DilithiumRootOfUnity = 1753;
     public final static int SeedBytes = 32;
     public final static int CrhBytes = 64;
-    public final boolean RandomizedSigning;
 
     public final static int DilithiumPolyT1PackedBytes = 320;
     public final static int DilithiumPolyT0PackedBytes = 416;
@@ -149,7 +148,7 @@ class DilithiumEngine
         return this.shake128Digest;
     }
 
-    public DilithiumEngine(int mode, SecureRandom random, boolean randomizedSigning, boolean usingAes)
+    public DilithiumEngine(int mode, SecureRandom random, boolean usingAes)
     {
         this.DilithiumMode = mode;
         switch (mode)
@@ -196,7 +195,6 @@ class DilithiumEngine
         default:
             throw new IllegalArgumentException("The mode " + mode + "is not supported by Crystals Dilithium!");
         }
-        this.RandomizedSigning = randomizedSigning;
 
         if(usingAes)
         {
@@ -328,7 +326,7 @@ class DilithiumEngine
         this.shake256Digest.update(msg, 0, msglen);
         this.shake256Digest.doFinal(mu, 0, CrhBytes);
 
-        if (RandomizedSigning)
+        if (random != null)
         {
             random.nextBytes(rhoPrime);
         }
