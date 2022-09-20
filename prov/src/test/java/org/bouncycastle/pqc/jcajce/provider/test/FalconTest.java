@@ -15,6 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
@@ -147,11 +148,20 @@ public class FalconTest
 
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
 
-        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(pubInfo.getPublicKeyData().getOctets()).getOctets(), pubK));
+        assertTrue(Arrays.areEqual(
+            Arrays.concatenate(new byte[] { 0x09 }, ASN1OctetString.getInstance(ASN1Sequence.getInstance(pubInfo.parsePublicKey()).getObjectAt(0)).getOctets()), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
-        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(privInfo.getPrivateKey().getOctets()).getOctets(), privK));
+        ASN1Sequence privSeq = ASN1Sequence.getInstance(privInfo.parsePrivateKey());
+        
+        byte[] privCat = Arrays.concatenate(
+            new byte[] { 0x59 },
+            ASN1OctetString.getInstance(privSeq.getObjectAt(1)).getOctets(),
+            ASN1OctetString.getInstance(privSeq.getObjectAt(2)).getOctets(),
+            ASN1OctetString.getInstance(privSeq.getObjectAt(3)).getOctets());
+
+        assertTrue(Arrays.areEqual(privCat, privK));
 
         Signature sig = Signature.getInstance("Falcon", "BCPQC");
 
