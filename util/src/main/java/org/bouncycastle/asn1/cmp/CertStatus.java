@@ -37,19 +37,18 @@ public class CertStatus
         certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
         certReqId = ASN1Integer.getInstance(seq.getObjectAt(1));
 
-
         if (seq.size() > 2)
         {
             for (int t = 2; t < seq.size(); t++)
             {
-                ASN1Encodable o = seq.getObjectAt(t);
-                if (o.toASN1Primitive() instanceof ASN1Sequence)
+                ASN1Primitive p = seq.getObjectAt(t).toASN1Primitive();
+                if (p instanceof ASN1Sequence)
                 {
-                    statusInfo = PKIStatusInfo.getInstance(o);
+                    statusInfo = PKIStatusInfo.getInstance(p);
                 }
-                if (o.toASN1Primitive() instanceof ASN1TaggedObject)
+                if (p instanceof ASN1TaggedObject)
                 {
-                    ASN1TaggedObject dto = DERTaggedObject.getInstance(seq.getObjectAt(3));
+                    ASN1TaggedObject dto = (ASN1TaggedObject)p;
                     if (dto.getTagNo() != 0)
                     {
                         throw new IllegalArgumentException("unknown tag " + dto.getTagNo());
@@ -58,7 +57,6 @@ public class CertStatus
                 }
             }
         }
-
     }
 
     public CertStatus(byte[] certHash, BigInteger certReqId)
@@ -133,7 +131,7 @@ public class CertStatus
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(3);
+        ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         v.add(certHash);
         v.add(certReqId);
