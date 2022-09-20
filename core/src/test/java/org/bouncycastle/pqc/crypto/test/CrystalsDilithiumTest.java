@@ -130,9 +130,7 @@ public class CrystalsDilithiumTest
                         // System.out.println("pk = ");
                         // Helper.printByteArray(pk);
                         byte[] ressk = ((DilithiumPrivateKeyParameters)ackp.getPrivate()).getEncoded();
-
-                        System.err.println(Hex.toHexString(respk));
-                        System.err.println(Hex.toHexString(pk));
+                        
                         //keygen
                         assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
                         assertTrue(name + " " + count + " secret key", Arrays.areEqual(ressk, sk));
