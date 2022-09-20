@@ -236,7 +236,7 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         {
             return "LMS";
         }
-        if (BCObjectIdentifiers.sphincsPlus.equals(encryptionAlgOID))
+        if (encryptionAlgOID.on(BCObjectIdentifiers.sphincsPlus))
         {
             return "SPHINCSPlus";
         }
