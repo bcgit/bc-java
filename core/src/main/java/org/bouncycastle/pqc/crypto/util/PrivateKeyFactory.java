@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -246,6 +247,12 @@ public class PrivateKeyFactory
 
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
+            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+            if (version != 0)
+            {
+                throw new IOException("unknown private key version: " + version);
+            }
+            
             if (keyInfo.getPublicKeyData() != null)
             {
                 ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
@@ -261,12 +268,12 @@ public class PrivateKeyFactory
             else
             {
                 return new DilithiumPrivateKeyParameters(spParams,
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
                     ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                    ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
                     null);
             }
         }
