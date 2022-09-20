@@ -35,7 +35,7 @@ public class FalconSigner
         else
         {
             FalconPublicKeyParameters pkparam = (FalconPublicKeyParameters)param;
-            encodedkey = pkparam.getEncoded();
+            encodedkey = pkparam.getH();
             nist = new FalconNIST(pkparam.getParameters().getLogN(),
                 pkparam.getParameters().getNonceLength(),
                 CryptoServicesRegistrar.getSecureRandom());

@@ -6,16 +6,16 @@ public class FalconPublicKeyParameters
     extends FalconKeyParameters
 {
 
-    private byte[] pk;
+    private byte[] H;
 
-    public FalconPublicKeyParameters(FalconParameters parameters, byte[] pk_encoded)
+    public FalconPublicKeyParameters(FalconParameters parameters, byte[] H)
     {
         super(false, parameters);
-        this.pk = Arrays.clone(pk_encoded);
+        this.H = Arrays.clone(H);
     }
 
-    public byte[] getEncoded()
+    public byte[] getH()
     {
-        return Arrays.clone(pk);
+        return Arrays.clone(H);
     }
 }

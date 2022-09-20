@@ -54,7 +54,7 @@ public class BCFalconPublicKey
         {
             BCFalconPublicKey otherKey = (BCFalconPublicKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(params.getH(), otherKey.params.getH());
         }
 
         return false;
@@ -62,7 +62,7 @@ public class BCFalconPublicKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(params.getH());
     }
 
     /**
