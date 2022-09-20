@@ -309,7 +309,7 @@ class DilithiumEngine
         return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
     }
 
-    public byte[] signSignature(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
+    public byte[] signSignature(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc)
     {
         int n;
         byte[] outSig = new byte[CryptoBytes + msglen];
@@ -320,7 +320,7 @@ class DilithiumEngine
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
-        Packing.unpackSecretKey(t0, s1, s2, secretKey, this);
+        Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
 
         this.shake256Digest.update(tr, 0, SeedBytes);
         this.shake256Digest.update(msg, 0, msglen);
@@ -414,9 +414,9 @@ class DilithiumEngine
         return null;
     }
 
-    public byte[] sign(byte[] msg, int mlen, byte[] rho, byte[] key, byte[] tr, byte[] secretKey)
+    public byte[] sign(byte[] msg, int mlen, byte[] rho, byte[] key, byte[] tr, byte[] t0, byte[] s1, byte[] s2)
     {
-        return signSignature(msg, mlen, rho, key, tr, secretKey);
+        return signSignature(msg, mlen, rho, key, tr, t0, s1, s2);
     }
 
     public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)

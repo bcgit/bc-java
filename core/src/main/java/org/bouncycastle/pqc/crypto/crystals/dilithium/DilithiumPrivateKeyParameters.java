@@ -8,9 +8,10 @@ public class DilithiumPrivateKeyParameters
     final byte[] rho;
     final byte[] k;
     final byte[] tr;
-    private final byte[] s1;
-    private final byte[] s2;
-    private final byte[] t0;
+    final byte[] s1;
+    final byte[] s2;
+    final byte[] t0;
+
     private final byte[] t1;
 
     public byte[] getPrivateKey()
