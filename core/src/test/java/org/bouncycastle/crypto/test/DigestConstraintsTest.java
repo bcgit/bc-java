@@ -37,6 +37,11 @@ public class DigestConstraintsTest
         testKeccak();
         testParallelHash();
         testRIPEMD();
+        testSkein();
+        testSM3();
+        testTiger();
+        testTupleHash();
+        testWhirlpool();
     }
 
     private void testMD2()
@@ -693,6 +698,126 @@ public class DigestConstraintsTest
             isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
         }
 
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testSkein()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new SkeinDigest(256, 256);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+        try
+        {
+            new SkeinDigest(512, 160);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 80", e.getMessage());
+        }
+
+        try
+        {
+            new SkeinDigest(1024, 384);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 192", e.getMessage());
+        }
+
+        try
+        {
+            new SkeinDigest(256, 384);
+
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 192", e.getMessage());
+        }
+
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new SkeinDigest(256, 512);
+        new SkeinDigest(256, 1024);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testSM3()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new SM3Digest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+        new SM3Digest(CryptoServicePurpose.PRF);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+
+    private void testTiger()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(192));
+
+        try
+        {
+            new TigerDigest();
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 192 bits of security only 96", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(192));
+        new TigerDigest(CryptoServicePurpose.PRF);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testTupleHash()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        try
+        {
+            new TupleHash(128, new byte[0]);
+            fail("no exception");
+        }
+        catch (CryptoServiceConstraintsException e)
+        {
+            isEquals(e.getMessage(), "service does not provide 256 bits of security only 128", e.getMessage());
+        }
+
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+        new TupleHash(256, new byte[0]);
+
+        CryptoServicesRegistrar.setServicesConstraints(null);
+    }
+    private void testWhirlpool()
+    {
+        CryptoServicesRegistrar.setServicesConstraints(new BitsOfSecurityConstraint(256));
+
+        new WhirlpoolDigest();
 
         CryptoServicesRegistrar.setServicesConstraints(null);
     }

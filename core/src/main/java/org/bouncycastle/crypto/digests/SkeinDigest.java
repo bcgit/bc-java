@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.engines.ThreefishEngine;
 import org.bouncycastle.crypto.params.SkeinParameters;
@@ -33,6 +35,7 @@ public class SkeinDigest
      * 1024 bit block size - Skein-1024
      */
     public static final int SKEIN_1024 = SkeinEngine.SKEIN_1024;
+    private final CryptoServicePurpose purpose;
 
     private SkeinEngine engine;
 
@@ -44,15 +47,28 @@ public class SkeinDigest
      * @param digestSizeBits the output/digest size to produce in bits, which must be an integral number of
      *                       bytes.
      */
+
     public SkeinDigest(int stateSizeBits, int digestSizeBits)
     {
+        this(stateSizeBits, digestSizeBits, CryptoServicePurpose.ANY);
+    }
+    public SkeinDigest(int stateSizeBits, int digestSizeBits, CryptoServicePurpose purpose)
+    {
         this.engine = new SkeinEngine(stateSizeBits, digestSizeBits);
+        this.purpose = purpose;
+
         init(null);
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize() * 4, purpose));
+
     }
 
     public SkeinDigest(SkeinDigest digest)
     {
         this.engine = new SkeinEngine(digest.engine);
+        this.purpose = digest.purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digest.getDigestSize() * 4, purpose));
+
     }
 
     public void reset(Memoable other)
