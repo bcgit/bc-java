@@ -32,9 +32,14 @@ public class RootCaKeyUpdateContent
     private final CMPCertificate newWithOld;
     private final CMPCertificate oldWithNew;
 
-    public RootCaKeyUpdateContent(CMPCertificate newWithMew, CMPCertificate newWithOld, CMPCertificate oldWithNew)
+    public RootCaKeyUpdateContent(CMPCertificate newWithNew, CMPCertificate newWithOld, CMPCertificate oldWithNew)
     {
-        this.newWithNew = newWithMew;
+        if (newWithNew == null)
+        {
+            throw new NullPointerException("'newWithNew' cannot be null");
+        }
+
+        this.newWithNew = newWithNew;
         this.newWithOld = newWithOld;
         this.oldWithNew = oldWithNew;
     }
@@ -102,17 +107,17 @@ public class RootCaKeyUpdateContent
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector avec = new ASN1EncodableVector();
-        avec.add(newWithNew);
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
+        v.add(newWithNew);
 
         if (newWithOld != null)
         {
-            avec.add(new DERTaggedObject(true, 0, newWithOld));
+            v.add(new DERTaggedObject(true, 0, newWithOld));
         }
         if (oldWithNew != null)
         {
-            avec.add(new DERTaggedObject(true, 1, oldWithNew));
+            v.add(new DERTaggedObject(true, 1, oldWithNew));
         }
-        return new DERSequence(avec);
+        return new DERSequence(v);
     }
 }
