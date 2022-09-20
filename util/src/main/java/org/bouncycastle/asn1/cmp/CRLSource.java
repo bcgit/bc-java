@@ -45,7 +45,7 @@ public class CRLSource
 
     public CRLSource(DistributionPointName dpn, GeneralNames issuer)
     {
-        if (dpn != null && issuer != null)
+        if ((dpn == null) == (issuer == null))
         {
             throw new IllegalArgumentException("either dpn or issuer must be set");
         }

@@ -16,6 +16,12 @@ public class CertAnnContent
     extends CMPCertificate
 {
 
+    /**
+     * Note: the addition of attribute certificates is a BC extension. If you use this constructor they
+     * will be added with a tag value of 1.
+     *
+     * @deprecated use (type, otherCert) constructor
+     */
     public CertAnnContent(AttributeCertificate x509v2AttrCert)
     {
         super(x509v2AttrCert);
@@ -74,7 +80,7 @@ public class CertAnnContent
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("Invalid encoding in CMPCertificate");
+                throw new IllegalArgumentException("Invalid encoding in CertAnnContent");
             }
         }
 
