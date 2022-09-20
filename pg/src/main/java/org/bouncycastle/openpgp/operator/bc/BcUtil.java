@@ -490,7 +490,7 @@ class BcUtil
                 out.write(data, 0, len);
             }
             catch (InvalidCipherTextException e)
-            {                      e.printStackTrace();
+            {
                 throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
             }
 
