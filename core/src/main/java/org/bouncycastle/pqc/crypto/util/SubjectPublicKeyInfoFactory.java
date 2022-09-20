@@ -222,10 +222,10 @@ public class SubjectPublicKeyInfoFactory
         {
             FalconPublicKeyParameters params = (FalconPublicKeyParameters)publicKey;
 
-            byte[] encoding = params.getEncoded();
+            byte[] encoding = params.getH();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
         }
         else if (publicKey instanceof KyberPublicKeyParameters)
         {

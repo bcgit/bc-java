@@ -78,13 +78,16 @@ public class FalconTest
                         FalconKeyPairGenerator kpg = new FalconKeyPairGenerator();
                         kpg.init(kparam);
                         AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
-                        byte[] respk = ((FalconPublicKeyParameters)ackp.getPublic()).getEncoded();
+                        byte[] respk = ((FalconPublicKeyParameters)ackp.getPublic()).getH();
                         byte[] ressk = ((FalconPrivateKeyParameters)ackp.getPrivate()).getEncoded();
+
+                        //keygen
+                        assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, 0, respk.length, pk, 1, pk.length));
+                        assertTrue(name + " " + count + " secret key", Arrays.areEqual(ressk, 0, ressk.length, sk, 1, sk.length));
 
                         // sign
                         FalconSigner signer = new FalconSigner();
-                        FalconPrivateKeyParameters skparam = new FalconPrivateKeyParameters(parameters[fileindex], sk, pk);
-                        ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
+                        ParametersWithRandom skwrand = new ParametersWithRandom(ackp.getPrivate(), random);
                         signer.init(true, skwrand);
                         byte[] sig = signer.generateSignature(msg);
                         byte[] ressm = new byte[2 + msg.length + sig.length - 1];
@@ -96,7 +99,7 @@ public class FalconTest
 
                         // verify
                         FalconSigner verifier = new FalconSigner();
-                        FalconPublicKeyParameters pkparam = new FalconPublicKeyParameters(parameters[fileindex], pk);
+                        FalconPublicKeyParameters pkparam = (FalconPublicKeyParameters)ackp.getPublic();
                         verifier.init(false, pkparam);
                         byte[] noncesig = new byte[sm_len - m_len - 2 + 1];
                         noncesig[0] = (byte)(0x30 + parameters[fileindex].getLogN());
@@ -106,50 +109,6 @@ public class FalconTest
                         noncesig[42]++; // changing the signature by 1 byte should cause it to fail
                         boolean vrfyresfail = verifier.verifySignature(msg, noncesig);
 
-                        // print results
-                        /*
-                        System.out.println("--Keygen");
-                        boolean kgenpass = true;
-                        if (!Arrays.areEqual(respk, pk)) {
-                            System.out.println("  == Keygen: pk do not match");
-                            kgenpass = false;
-                        }
-                        if (!Arrays.areEqual(ressk, sk)) {
-                            System.out.println("  == Keygen: sk do not match");
-                            kgenpass = false;
-                        }
-                        if (kgenpass) {
-                            System.out.println("  ++ Keygen pass");
-                        } else {
-                            System.out.println("  == Keygen failed");
-                            return;
-                        }
-
-                        System.out.println("--Sign");
-                        boolean spass = true;
-                        if (!Arrays.areEqual(ressm, sm)) {
-                            System.out.println("  == Sign: signature do not match");
-                            spass = false;
-                        }
-                        if (spass) {
-                            System.out.println("  ++ Sign pass");
-                        } else {
-                            System.out.println("  == Sign failed");
-                            return;
-                        }
-
-                        System.out.println("--Verify");
-                        if (vrfyrespass && !vrfyresfail) {
-                            System.out.println("  ++ Verify pass");
-                        } else {
-                            System.out.println("  == Verify failed");
-                            return;
-                        }
-                         */
-                        // AssertTrue
-                        //keygen
-                        assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
-                        assertTrue(name + " " + count + " public key", Arrays.areEqual(ressk, sk));
                         //sign
                         assertTrue(name + " " + count + " signature", Arrays.areEqual(ressm, sm));
                         //verify

@@ -48,8 +48,9 @@ class FalconNIST
         }
     }
 
-    int crypto_sign_keypair(byte[] srcpk, int pk, byte[] srcsk, int sk)
+    byte[][] crypto_sign_keypair(byte[] srcpk, int pk, byte[] srcsk, int sk)
     {
+        // TODO: clean up required
         byte[] f = new byte[N],
             g = new byte[N],
             F = new byte[N];
@@ -82,7 +83,7 @@ class FalconNIST
         /*
          * Encode private key.
          */
-        srcsk[sk + 0] = (byte)(0x50 + LOGN);
+        srcsk[sk + 0] = (byte)(0x50 + LOGN);     // old python header
         u = 1;
         v = codec.trim_i8_encode(srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u,
             f, 0, LOGN, codec.max_fg_bits[LOGN]);
@@ -90,6 +91,7 @@ class FalconNIST
         {
             throw new IllegalStateException("f encode failed");
         }
+        byte[] fEnc = Arrays.copyOfRange(srcsk, sk + u, u + v);
         u += v;
         v = codec.trim_i8_encode(srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u,
             g, 0, LOGN, codec.max_fg_bits[LOGN]);
@@ -97,13 +99,16 @@ class FalconNIST
         {
             throw new IllegalStateException("g encode failed");
         }
+        byte[] gEnc = Arrays.copyOfRange(srcsk, sk + u, u + v);
         u += v;
+
         v = codec.trim_i8_encode(srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u,
             F, 0, LOGN, codec.max_FG_bits[LOGN]);
         if (v == 0)
         {
             throw new IllegalStateException("F encode failed");
         }
+        byte[] FEnc = Arrays.copyOfRange(srcsk, sk + u, u + v);
         u += v;
         if (u != CRYPTO_SECRETKEYBYTES)
         {
@@ -113,14 +118,14 @@ class FalconNIST
         /*
          * Encode public key.
          */
-        srcpk[pk + 0] = (byte)(0x00 + LOGN);
+        srcpk[pk + 0] = (byte)(0x00 + LOGN);                   // old python header
         v = codec.modq_encode(srcpk, pk + 1, CRYPTO_PUBLICKEYBYTES - 1, h, 0, LOGN);
         if (v != CRYPTO_PUBLICKEYBYTES - 1)
         {
             throw new IllegalStateException("public key encoding failed");
         }
 
-        return 0;
+        return new byte[][] { Arrays.copyOfRange(srcpk, 1, srcpk.length), fEnc, gEnc, FEnc };
     }
 
     byte[] crypto_sign(byte[] srcsm,
@@ -148,11 +153,11 @@ class FalconNIST
         /*
          * Decode the private key.
          */
-        if (srcsk[sk + 0] != (byte)(0x50 + LOGN))
-        {
-            throw new IllegalArgumentException("private key header incorrect");
-        }
-        u = 1;
+//        if (srcsk[sk + 0] != (byte)(0x50 + LOGN))
+//        {
+//            throw new IllegalArgumentException("private key header incorrect");
+//        }
+        u = 0;
         v = codec.trim_i8_decode(f, 0, LOGN, codec.max_fg_bits[LOGN],
             srcsk, sk + u, CRYPTO_SECRETKEYBYTES - u);
         if (v == 0)
@@ -174,7 +179,7 @@ class FalconNIST
             throw new IllegalArgumentException("F decode failed");
         }
         u += v;
-        if (u != CRYPTO_SECRETKEYBYTES)
+        if (u != CRYPTO_SECRETKEYBYTES - 1)
         {
             throw new IllegalStateException("full key not used");
         }
@@ -266,11 +271,11 @@ class FalconNIST
         /*
          * Decode public key.
          */
-        if (srcpk[pk + 0] != (byte)(0x00 + LOGN))
-        {
-            return -1;
-        }
-        if (codec.modq_decode(h, 0, LOGN, srcpk, pk + 1, CRYPTO_PUBLICKEYBYTES - 1)
+//        if (srcpk[pk + 0] != (byte)(0x00 + LOGN))
+//        {
+//            return -1;
+//        }
+        if (codec.modq_decode(h, 0, LOGN, srcpk, pk, CRYPTO_PUBLICKEYBYTES - 1)
             != CRYPTO_PUBLICKEYBYTES - 1)
         {
             return -1;

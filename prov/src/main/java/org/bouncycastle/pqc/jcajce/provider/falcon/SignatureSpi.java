@@ -99,7 +99,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw new SignatureException(e.toString(), e);
         }
     }
 
