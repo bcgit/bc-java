@@ -55,7 +55,7 @@ public class InfoTypeAndValue
     extends ASN1Object
 {
     private final ASN1ObjectIdentifier infoType;
-    private ASN1Encodable infoValue;
+    private final ASN1Encodable infoValue;
 
     private InfoTypeAndValue(ASN1Sequence seq)
     {
@@ -65,21 +65,26 @@ public class InfoTypeAndValue
         {
             infoValue = seq.getObjectAt(1);
         }
+        else
+        {
+            infoValue = null;
+        }
     }
 
-    public InfoTypeAndValue(
-        ASN1ObjectIdentifier infoType)
+    public InfoTypeAndValue(ASN1ObjectIdentifier infoType)
     {
-        this.infoType = infoType;
-        this.infoValue = null;
+        this(infoType, null);
     }
 
-    public InfoTypeAndValue(
-        ASN1ObjectIdentifier infoType,
-        ASN1Encodable optionalValue)
+    public InfoTypeAndValue(ASN1ObjectIdentifier infoType, ASN1Encodable infoValue)
     {
+        if (infoType == null)
+        {
+            throw new NullPointerException("'infoType' cannot be null");
+        }
+
         this.infoType = infoType;
-        this.infoValue = optionalValue;
+        this.infoValue = infoValue;
     }
 
     public static InfoTypeAndValue getInstance(Object o)

@@ -19,7 +19,7 @@ public class CertOrEncCert
     implements ASN1Choice
 {
     private CMPCertificate certificate;
-    private EncryptedKey encryptedKey;
+    private EncryptedKey encryptedCert;
 
     private CertOrEncCert(ASN1TaggedObject tagged)
     {
@@ -29,7 +29,7 @@ public class CertOrEncCert
         }
         else if (tagged.getTagNo() == 1)
         {
-            encryptedKey = EncryptedKey.getInstance(tagged.getObject());
+            encryptedCert = EncryptedKey.getInstance(tagged.getObject());
         }
         else
         {
@@ -54,17 +54,17 @@ public class CertOrEncCert
             throw new IllegalArgumentException("'encryptedCert' cannot be null");
         }
 
-        this.encryptedKey = new EncryptedKey(encryptedCert);
+        this.encryptedCert = new EncryptedKey(encryptedCert);
     }
 
-    public CertOrEncCert(EncryptedKey encryptedKey)
+    public CertOrEncCert(EncryptedKey encryptedCert)
     {
-        if (encryptedKey == null)
+        if (encryptedCert == null)
         {
-            throw new IllegalArgumentException("'encryptedKey' cannot be null");
+            throw new IllegalArgumentException("'encryptedCert' cannot be null");
         }
 
-        this.encryptedKey = encryptedKey;
+        this.encryptedCert = encryptedCert;
     }
 
     public static CertOrEncCert getInstance(Object o)
@@ -89,7 +89,7 @@ public class CertOrEncCert
 
     public EncryptedKey getEncryptedCert()
     {
-        return encryptedKey;
+        return encryptedCert;
     }
 
     /**
@@ -109,6 +109,6 @@ public class CertOrEncCert
             return new DERTaggedObject(true, 0, certificate);
         }
 
-        return new DERTaggedObject(true, 1, encryptedKey);
+        return new DERTaggedObject(true, 1, encryptedCert);
     }
 }

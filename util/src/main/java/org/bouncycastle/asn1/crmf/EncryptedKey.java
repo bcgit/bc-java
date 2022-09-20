@@ -30,10 +30,6 @@ public class EncryptedKey
         {
             return new EncryptedKey(EnvelopedData.getInstance((ASN1TaggedObject)o, false));
         }
-        else if (o instanceof EncryptedValue)
-        {
-            return new EncryptedKey((EncryptedValue)o);
-        }
         else
         {
             return new EncryptedKey(EncryptedValue.getInstance(o));
