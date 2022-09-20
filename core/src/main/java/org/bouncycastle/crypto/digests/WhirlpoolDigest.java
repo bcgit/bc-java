@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
@@ -99,7 +101,13 @@ public final class WhirlpoolDigest
 
     private final long[] _rc = new long[ROUNDS + 1];
 
+    private final CryptoServicePurpose purpose;
+
     public WhirlpoolDigest()
+    {
+        this(CryptoServicePurpose.ANY);
+    }
+    public WhirlpoolDigest(CryptoServicePurpose purpose)
     {
         _rc[0] = 0L;
         for (int r = 1; r <= ROUNDS; r++)
@@ -114,6 +122,9 @@ public final class WhirlpoolDigest
                      (C6[i + 6] & 0x000000000000ff00L) ^ 
                      (C7[i + 7] & 0x00000000000000ffL);
         }
+        this.purpose = purpose;
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize(), purpose));
     }
 
     // --------------------------------------------------------------------------------------//
@@ -135,7 +146,10 @@ public final class WhirlpoolDigest
      */
     public WhirlpoolDigest(WhirlpoolDigest originalDigest)
     {
+        this.purpose = originalDigest.purpose;
         reset(originalDigest);
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, getDigestSize(), purpose));
     }
 
     public String getAlgorithmName()
