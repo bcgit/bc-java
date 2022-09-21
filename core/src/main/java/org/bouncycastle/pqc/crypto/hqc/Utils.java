@@ -51,37 +51,6 @@ class Utils
         }
     }
 
-    static void fromBitArrayToUnsignedIntArray(int[] out, byte[] in)
-    {
-        int count = 0;
-        int pos = 0;
-        long len = in.length;
-        while (count < len)
-        {
-            if (count + 16 >= in.length)
-            {// last set of bits cannot have enough 8 bits
-                int b = in[count];
-                for (int j = in.length - count - 1; j >= 1; j--)
-                { //bin in reversed order
-                    b |= in[count + j] << j;
-                }
-                out[pos] = b;
-            }
-            else
-            {
-                int b = in[count];
-                for (int j = 15; j >= 1; j--)
-                { //bin in reversed order
-                    b |= in[count + j] << j;
-                }
-                out[pos] = b;
-            }
-            
-            count += 16;
-            pos++;
-        }
-    }
-
     static void fromBitArrayToLongArray(long[] out, byte[] in)
     {
         int count = 0;
@@ -150,28 +119,6 @@ class Utils
         if (out.length % 8 != 0)
         {
             int off = max * 8;
-            int count = 0;
-            while (off < out.length)
-            {
-                out[off++] = (byte)((in[max] & (1 << count)) >>> count);
-                count++;
-            }
-        }
-    }
-
-    static void fromUnsignedIntArrayToBitArray(byte[] out, int[] in)
-    {
-        int max = (out.length / 16);
-        for (int i = 0; i < max; i++)
-        {
-            for (int j = 0; j != 16; j++)
-            {
-                out[i * 16 + j] = (byte)((in[i] & (1 << j)) >>> j);
-            }
-        }
-        if (out.length % 16 != 0)
-        {
-            int off = max * 16;
             int count = 0;
             while (off < out.length)
             {
@@ -274,19 +221,7 @@ class Utils
 
     static void copyBytes(int[] src, int offsetSrc, int[] dst, int offsetDst, int lengthBytes)
     {
-        byte[] bits = new byte[src.length * 16];
-        Utils.fromUnsignedIntArrayToBitArray(bits, src);
-
-        byte[] copyBits = new byte[lengthBytes * 8];
-        for (int i = 0; i < copyBits.length; i++)
-        {
-            copyBits[i] = bits[offsetSrc + i];
-        }
-
-        int[] copyInts = new int[lengthBytes / 2];
-        Utils.fromBitArrayToUnsignedIntArray(copyInts, copyBits);
-
-        System.arraycopy(copyInts, 0, dst, offsetDst, lengthBytes / 2);
+        System.arraycopy(src, offsetSrc, dst, offsetDst, lengthBytes / 2);
     }
 
     static int getByteSizeFromBitSize(int size)
