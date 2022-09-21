@@ -1,13 +1,11 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Arrays;
 
 abstract class Symmetric
 {
@@ -33,46 +31,28 @@ abstract class Symmetric
         extends Symmetric
     {
 
-        private final BufferedBlockCipher cipher;
-
-        private byte[] key = new byte[32];
-        private byte[] nonce;
+        private final SICBlockCipher cipher;
 
         AesSymmetric()
         {
             super(64, 64);
-            cipher = new BufferedBlockCipher(new SICBlockCipher(new AESEngine()));
+            cipher = new SICBlockCipher(new AESEngine());
         }
 
         private void aes128(byte[] out, int offset, int size)
         {
-            try
-            {
-                ParametersWithIV kp = new ParametersWithIV(new KeyParameter(key), nonce);
-                cipher.init(true, kp);
-                byte[] temp = new byte[size];
-                int len = cipher.processBytes(nonce, 0, nonce.length, temp, 0);
-//                cipher.processByte(nonce[0], temp, 0 + offset);
-//                cipher.processByte(nonce[1], temp, 1 + offset);
-                cipher.doFinal(temp, 0);
-                System.arraycopy(temp, 0, out, offset, size);
-            }
-            catch (InvalidCipherTextException e)
-            {
-                throw Exceptions.illegalStateException(e.toString(), e);
-            }
+            byte[] buf = new byte[size];
+            cipher.processBytes(buf, 0, size, out, offset);
         }
 
         private void streamInit(byte[] key, short nonce)
         {
-            byte[] expnonce = new byte[8];
+            byte[] expnonce = new byte[12];
             expnonce[0] = (byte)nonce;
             expnonce[1] = (byte)(nonce >> 8);
-
-//            cipher.init();
-
-            System.arraycopy(key, 0, this.key, 0, 32);
-            this.nonce = expnonce;
+            
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(Arrays.copyOfRange(key, 0, 32)), expnonce);
+            cipher.init(true, kp);
         }
 
         @Override
