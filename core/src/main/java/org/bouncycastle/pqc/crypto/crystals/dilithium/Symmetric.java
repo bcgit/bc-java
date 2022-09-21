@@ -4,7 +4,9 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Exceptions;
 
 abstract class Symmetric
@@ -33,17 +35,25 @@ abstract class Symmetric
 
         private final BufferedBlockCipher cipher;
 
+        private byte[] key = new byte[32];
+        private byte[] nonce;
+
         AesSymmetric()
         {
             super(64, 64);
-            cipher = new BufferedBlockCipher(new AESEngine());
+            cipher = new BufferedBlockCipher(new SICBlockCipher(new AESEngine()));
         }
 
         private void aes128(byte[] out, int offset, int size)
         {
             try
             {
+                ParametersWithIV kp = new ParametersWithIV(new KeyParameter(key), nonce);
+                cipher.init(true, kp);
                 byte[] temp = new byte[size];
+                int len = cipher.processBytes(nonce, 0, nonce.length, temp, 0);
+//                cipher.processByte(nonce[0], temp, 0 + offset);
+//                cipher.processByte(nonce[1], temp, 1 + offset);
                 cipher.doFinal(temp, 0);
                 System.arraycopy(temp, 0, out, offset, size);
             }
@@ -55,15 +65,14 @@ abstract class Symmetric
 
         private void streamInit(byte[] key, short nonce)
         {
-            byte[] expnonce = new byte[12];
+            byte[] expnonce = new byte[8];
             expnonce[0] = (byte)nonce;
             expnonce[1] = (byte)(nonce >> 8);
 
-            KeyParameter kp = new KeyParameter(key);
-            cipher.init(true, kp);
+//            cipher.init();
 
-            cipher.processBytes(expnonce, 0, expnonce.length, null, 0);
-
+            System.arraycopy(key, 0, this.key, 0, 32);
+            this.nonce = expnonce;
         }
 
         @Override
