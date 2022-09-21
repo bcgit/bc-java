@@ -29,6 +29,16 @@ class KyberIndCpa
         this.polyVecCompressedBytes = engine.getKyberPolyVecCompressedBytes();
         this.polyCompressedBytes = engine.getKyberPolyCompressedBytes();
         this.symmetric = engine.getSymmetric();
+
+        KyberGenerateMatrixNBlocks =
+            (
+                (
+                    12 * KyberEngine.KyberN
+                        / 8 * (1 << 12)
+                        / KyberEngine.KyberQ + symmetric.xofBlockBytes
+                )
+                    / symmetric.xofBlockBytes
+            );
     }
 
 
@@ -311,21 +321,13 @@ class KyberIndCpa
         secretKeyPolyVec.fromBytes(secretKey);
     }
 
-    public final static int KyberGenerateMatrixNBlocks =
-        (
-            (
-                12 * KyberEngine.KyberN
-                    / 8 * (1 << 12)
-                    / KyberEngine.KyberQ + Symmetric.SHAKE128_rate
-            )
-                / Symmetric.SHAKE128_rate
-        );
+    public final int KyberGenerateMatrixNBlocks;
 
     public void generateMatrix(PolyVec[] aMatrix, byte[] seed, boolean transposed)
     {
         int i, j, k, ctr, off;
         SHAKEDigest kyberXOF;
-        byte[] buf = new byte[KyberGenerateMatrixNBlocks * Symmetric.SHAKE128_rate + 2];
+        byte[] buf = new byte[KyberGenerateMatrixNBlocks * symmetric.xofBlockBytes + 2];
         for (i = 0; i < kyberK; i++)
         {
             for (j = 0; j < kyberK; j++)
@@ -338,9 +340,9 @@ class KyberIndCpa
                 {
                     symmetric.xofAbsorb(seed, (byte) j, (byte) i);
                 }
-                symmetric.xofSqueezeBlocks(buf, 0, Symmetric.SHAKE128_rate * KyberGenerateMatrixNBlocks);
+                symmetric.xofSqueezeBlocks(buf, 0, symmetric.xofBlockBytes * KyberGenerateMatrixNBlocks);
 
-                int buflen = KyberGenerateMatrixNBlocks * Symmetric.SHAKE128_rate;
+                int buflen = KyberGenerateMatrixNBlocks * symmetric.xofBlockBytes;
                 ctr = rejectionSampling(aMatrix[i].getVectorIndex(j), 0, KyberEngine.KyberN, buf, buflen);
 
                 while (ctr < KyberEngine.KyberN)
@@ -350,8 +352,8 @@ class KyberIndCpa
                     {
                         buf[k] = buf[buflen - off + k];
                     }
-                    symmetric.xofSqueezeBlocks(buf, off, Symmetric.SHAKE128_rate * 2);
-                    buflen = off + Symmetric.SHAKE128_rate;
+                    symmetric.xofSqueezeBlocks(buf, off, symmetric.xofBlockBytes * 2);
+                    buflen = off + symmetric.xofBlockBytes;
                     // Error in code Section Unsure
                     ctr += rejectionSampling(aMatrix[i].getVectorIndex(j), ctr, KyberEngine.KyberN - ctr, buf, buflen);
                 }
