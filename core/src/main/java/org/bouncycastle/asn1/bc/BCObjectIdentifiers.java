@@ -236,6 +236,9 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier dilithium2 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.4.4"); // dilithium.branch("1");
     ASN1ObjectIdentifier dilithium3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.6.5"); // dilithium.branch("2");
     ASN1ObjectIdentifier dilithium5 = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.7.8.7"); // dilithium.branch("3");
+    ASN1ObjectIdentifier dilithium2_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.4.4"); // dilithium.branch("4");
+    ASN1ObjectIdentifier dilithium3_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.6.5"); // dilithium.branch("5");
+    ASN1ObjectIdentifier dilithium5_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.8.7"); // dilithium.branch("6");
 
     /**
      * key_exchange(3) algorithms

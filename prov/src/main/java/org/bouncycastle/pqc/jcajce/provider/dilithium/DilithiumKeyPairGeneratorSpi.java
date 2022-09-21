@@ -28,6 +28,9 @@ public class DilithiumKeyPairGeneratorSpi
         parameters.put(DilithiumParameterSpec.dilithium2.getName(), DilithiumParameters.dilithium2);
         parameters.put(DilithiumParameterSpec.dilithium3.getName(), DilithiumParameters.dilithium3);
         parameters.put(DilithiumParameterSpec.dilithium5.getName(), DilithiumParameters.dilithium5);
+        parameters.put(DilithiumParameterSpec.dilithium2_aes.getName(), DilithiumParameters.dilithium2_aes);
+        parameters.put(DilithiumParameterSpec.dilithium3_aes.getName(), DilithiumParameters.dilithium3_aes);
+        parameters.put(DilithiumParameterSpec.dilithium5_aes.getName(), DilithiumParameters.dilithium5_aes);
     }
 
     DilithiumKeyGenerationParameters param;
