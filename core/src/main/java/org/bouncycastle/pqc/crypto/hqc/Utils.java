@@ -1,21 +1,9 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
-import java.math.BigInteger;
-
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 class Utils
 {
-
-    static void fromBitStringToBytes(byte[] out, String in)
-    {
-        for (int i = 0; i < out.length; i++)
-        {
-            out[i] = (byte)(in.charAt(i) - '0');
-        }
-    }
-
     static byte[] removeLast0Bits(byte[] out)
     {
         int lastIndexOf1 = 0;
@@ -36,30 +24,28 @@ class Utils
     {
         int count = 0;
         int pos = 0;
-        byte[] tmpIn = Arrays.clone(in);
-        long len = tmpIn.length;
+        long len = in.length;
         while (count < len)
         {
-            String tmp = "";
-
-            if (count + 8 >= tmpIn.length)
+            if (count + 8 >= in.length)
             {// last set of bits cannot have enough 8 bits
-                for (int j = tmpIn.length - count - 1; j >= 0; j--)
+                int b = in[count];
+                for (int j = in.length - count - 1; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= in[count + j] << j;
                 }
+                out[pos] = (byte)b;
             }
-
             else
             {
-                for (int j = 7; j >= 0; j--)
+                int b = in[count];
+                for (int j = 7; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= in[count + j] << j;
                 }
+                out[pos] = (byte)b;
             }
 
-            int b = Integer.parseInt(tmp, 2);
-            out[pos] = (byte)b;
             count += 8;
             pos++;
         }
@@ -69,30 +55,28 @@ class Utils
     {
         int count = 0;
         int pos = 0;
-        byte[] tmpIn = Arrays.clone(in);
-        long len = tmpIn.length;
+        long len = in.length;
         while (count < len)
         {
-            String tmp = "";
-
-            if (count + 16 >= tmpIn.length)
+            if (count + 16 >= in.length)
             {// last set of bits cannot have enough 8 bits
-                for (int j = tmpIn.length - count - 1; j >= 0; j--)
+                int b = in[count];
+                for (int j = in.length - count - 1; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= in[count + j] << j;
                 }
+                out[pos] = b;
             }
-
             else
             {
-                for (int j = 15; j >= 0; j--)
+                int b = in[count];
+                for (int j = 15; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= in[count + j] << j;
                 }
+                out[pos] = b;
             }
-
-            int b = Integer.parseInt(tmp, 2);
-            out[pos] = b;
+            
             count += 16;
             pos++;
         }
@@ -102,65 +86,29 @@ class Utils
     {
         int count = 0;
         int pos = 0;
-        byte[] tmpIn = Arrays.clone(in);
-        long len = tmpIn.length;
+        long len = in.length;
         while (count < len)
         {
-            String tmp = "";
-
-            if (count + 64 >= tmpIn.length)
+            if (count + 64 >= in.length)
             {// last set of bits cannot have enough 8 bits
-                for (int j = tmpIn.length - count - 1; j >= 0; j--)
+                long b = in[count];
+                for (int j = in.length - count - 1; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= ((long)in[count + j]) << j;
                 }
+                out[pos] = b;
             }
-
             else
             {
-                for (int j = 63; j >= 0; j--)
+                long b = in[count];
+                for (int j = 63; j >= 1; j--)
                 { //bin in reversed order
-                    tmp += tmpIn[count + j];
+                    b |= ((long)in[count + j]) << j;
                 }
+                out[pos] = b;
             }
 
-            BigInteger a = new BigInteger(tmp, 2);
-            long b = a.longValue();
-            out[pos] = b;
             count += 64;
-            pos++;
-        }
-    }
-
-    static void fromBitArrayToByte32Array(int[] out, byte[] in)
-    {
-        int count = 0;
-        int pos = 0;
-        byte[] tmpIn = Arrays.clone(in);
-        long len = tmpIn.length;
-        while (count < len)
-        {
-            String tmp = "";
-
-            if (count + 32 >= tmpIn.length)
-            {// last set of bits cannot have enough 32 bits
-                for (int j = tmpIn.length - count - 1; j >= 0; j--)
-                { //bin in reversed order
-                    tmp += tmpIn[count + j];
-                }
-            }
-
-            else
-            {
-                for (int j = 31; j >= 0; j--)
-                { //bin in reversed order
-                    tmp += tmpIn[count + j];
-                }
-            }
-
-            long b = Long.parseLong(tmp, 2);
-            out[pos] = (int)b & 0xffffffff;
-            count += 32;
             pos++;
         }
     }
@@ -191,154 +139,87 @@ class Utils
 
     static void fromByteArrayToBitArray(byte[] out, byte[] in)
     {
-        byte[] tmpByte = Arrays.clone(in);
-        String res = "";
-        for (int i = 0; i < tmpByte.length; i++)
+        int max = (out.length / 8);
+        for (int i = 0; i < max; i++)
         {
-            String tmp = "";
-            tmp += Integer.toBinaryString(tmpByte[i] & 0xff);
-            tmp = new StringBuilder(tmp).reverse().toString();
-
-            // padding with zeros
-            int gap = 0;
-            if (i == tmpByte.length - 1 && tmpByte.length % 8 != 0)
+            for (int j = 0; j != 8; j++)
             {
-                if (out.length % 8 == 0)
-                {
-                    gap = 8 - tmp.length(); // last byte so it cannot parse to 8 bits
-                }
-                else
-                {
-                    gap = out.length % 8 - tmp.length(); // last byte so it cannot parse to 8 bits
-                }
+                out[i * 8 + j] = (byte)((in[i] & (1 << j)) >>> j);
             }
-            else
-            {
-                gap = 8 - tmp.length();
-            }
-            while (gap > 0)
-            {
-                tmp = tmp + '0';
-                gap--;
-            }
-            res += tmp;
         }
-        fromBitStringToBytes(out, res);
+        if (out.length % 8 != 0)
+        {
+            int off = max * 8;
+            int count = 0;
+            while (off < out.length)
+            {
+                out[off++] = (byte)((in[max] & (1 << count)) >>> count);
+                count++;
+            }
+        }
     }
 
     static void fromUnsignedIntArrayToBitArray(byte[] out, int[] in)
     {
-        int[] tmpByte = Arrays.clone(in);
-        String res = "";
-        for (int i = 0; i < tmpByte.length; i++)
+        int max = (out.length / 16);
+        for (int i = 0; i < max; i++)
         {
-            String tmp = "";
-            tmp += Integer.toBinaryString(tmpByte[i] & 0xffff);
-            tmp = new StringBuilder(tmp).reverse().toString();
-
-            // padding with zeros
-            int gap = 0;
-            if (i == tmpByte.length - 1 && tmpByte.length % 16 != 0)
+            for (int j = 0; j != 16; j++)
             {
-                if (out.length % 16 == 0)
-                {
-                    gap = 16 - tmp.length(); // last byte so it cannot parse to 8 bits
-                }
-                else
-                {
-                    gap = out.length % 16 - tmp.length(); // last byte so it cannot parse to 8 bits
-                }
+                out[i * 16 + j] = (byte)((in[i] & (1 << j)) >>> j);
             }
-            else
-            {
-                gap = 16 - tmp.length();
-            }
-            while (gap > 0)
-            {
-                tmp = tmp + '0';
-                gap--;
-            }
-            res += tmp;
         }
-        fromBitStringToBytes(out, res);
+        if (out.length % 16 != 0)
+        {
+            int off = max * 16;
+            int count = 0;
+            while (off < out.length)
+            {
+                out[off++] = (byte)((in[max] & (1 << count)) >>> count);
+                count++;
+            }
+        }
     }
 
     static void fromLongArrayToBitArray(byte[] out, long[] in)
     {
-        long[] tmpByte = Arrays.clone(in);
-        String res = "";
-        for (int i = 0; i < tmpByte.length; i++)
+        int max = (out.length / 64);
+        for (int i = 0; i < max; i++)
         {
-            String tmp = "";
-            tmp += Long.toUnsignedString(tmpByte[i], 2);
-            tmp = new StringBuilder(tmp).reverse().toString();
-
-            // padding with zeros
-            int gap = 0;
-            if (i == tmpByte.length - 1 && tmpByte.length % 64 != 0)
-            {// last byte so it cannot parse to 64 bits
-                if (out.length % 64 == 0)
-                {
-                    gap = 64 - tmp.length();
-                }
-                else
-                {
-                    gap = out.length % 64 - tmp.length();
-                }
-            }
-            else
+            for (int j = 0; j != 64; j++)
             {
-                gap = 64 - tmp.length();
+                out[i * 64 + j] = (byte)((in[i] & (1L << j)) >>> j);
             }
-            while (gap > 0)
-            {
-                tmp = tmp + '0';
-                gap--;
-            }
-            res += tmp;
         }
-        fromBitStringToBytes(out, res);
+        if (out.length % 64 != 0)
+        {
+            int off = max * 64;
+            int count = 0;
+            while (off < out.length)
+            {
+                out[off++] = (byte)((in[max] & (1L << count)) >>> count);
+                count++;
+            }
+        }
     }
 
     static void fromLongArrayToByteArray(byte[] out, long[] in, int bitSize)
     {
-        byte[] bitOut = new byte[bitSize];
-
-        long[] tmpByte = Arrays.clone(in);
-        String res = "";
-        for (int i = 0; i < tmpByte.length; i++)
+        int max = out.length / 8;
+        for (int i = 0; i != max; i++)
         {
-            String tmp = "";
-            tmp += Long.toUnsignedString(tmpByte[i], 2);
-            tmp = new StringBuilder(tmp).reverse().toString();
-
-            // padding with zeros
-            int gap = 0;
-            if (i == tmpByte.length - 1 && tmpByte.length % 64 != 0)
-            {
-                if (bitOut.length % 64 == 0)
-                {
-                    gap = 64 - tmp.length(); // last byte so it cannot parse to 64 bits
-                }
-                else
-                {
-                    gap = bitOut.length % 64 - tmp.length(); // last byte so it cannot parse to 64 bits
-                }
-            }
-            else
-            {
-                gap = 64 - tmp.length();
-            }
-            while (gap > 0)
-            {
-                tmp = tmp + '0';
-                gap--;
-            }
-            res += tmp;
+            Pack.longToLittleEndian(in[i], out, i * 8);
         }
-        fromBitStringToBytes(bitOut, res);
-        fromBitArrayToByteArray(out, bitOut);
 
+        if (out.length % 8 != 0)
+        {
+            int off = max * 8;
+            int count = 0;
+            while (off < out.length)
+            {
+                out[off++] = (byte)(in[max] >>> (count++ * 8));
+            }
+        }
     }
 
     static long bitMask(long a, long b)
@@ -358,12 +239,11 @@ class Utils
 
     static void fromByteArrayToLongArray(long[] out, byte[] in)
     {
-        byte[] tmp = Arrays.clone(in);
-        int r = tmp.length % 8;
-        while (8 - r > 0)
+        byte[] tmp = in;
+        if (in.length % 8 != 0)
         {
-            tmp = Arrays.append(tmp, (byte)0);
-            r++;
+            tmp = new byte[((in.length + 7) / 8) * 8];
+            System.arraycopy(in, 0, tmp, 0, in.length);
         }
 
         int off = 0;
@@ -376,58 +256,19 @@ class Utils
 
     static void fromByte32ArrayToLongArray(long[] out, int[] in)
     {
-        byte[] bitOut = new byte[in.length * 32];
-
-        int[] tmpByte = Arrays.clone(in);
-
-        String res = "";
-        for (int i = 0; i < tmpByte.length; i++)
+        for (int i = 0; i != in.length; i += 2)
         {
-            String tmp = "";
-            tmp += Integer.toBinaryString(tmpByte[i] & 0xffffffff);
-            tmp = new StringBuilder(tmp).reverse().toString();
-
-            // padding with zeros
-            int gap = 0;
-            if (i == tmpByte.length - 1 && tmpByte.length % 32 != 0)
-            {
-                if (bitOut.length % 32 == 0)
-                {
-                    gap = 32 - tmp.length(); // last byte so it cannot parse to 64 bits
-                }
-                else
-                {
-                    gap = bitOut.length % 32 - tmp.length(); // last byte so it cannot parse to 64 bits
-                }
-            }
-            else
-            {
-                gap = 32 - tmp.length();
-            }
-            while (gap > 0)
-            {
-                tmp = tmp + '0';
-                gap--;
-            }
-            res += tmp;
+            out[i / 2] = in[i] & 0xffffffffL;
+            out[i / 2] |= (long)in[i + 1] << 32;
         }
-        fromBitStringToBytes(bitOut, res);
-        fromBitArrayToLongArray(out, bitOut);
     }
-
 
     static void fromLongArrayToByte32Array(int[] out, long[] in)
     {
-        byte[] bitOut = new byte[in.length * 64];
-        fromLongArrayToBitArray(bitOut, in);
-        fromBitArrayToByte32Array(out, bitOut);
-    }
-
-    static void cloneMatrix(int[][] out, int[][] in)
-    {
-        for (int i = 0; i < out.length; i++)
+        for (int i = 0; i != in.length; i++)
         {
-            out[i] = Arrays.clone(in[i]);
+            out[2 * i] = (int)in[i];
+            out[2 * i + 1] = (int)(in[i] >> 32);
         }
     }
 
