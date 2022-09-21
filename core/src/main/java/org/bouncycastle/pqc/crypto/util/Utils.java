@@ -254,10 +254,16 @@ class Utils
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
         dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
+        dilithiumOids.put(DilithiumParameters.dilithium2_aes, BCObjectIdentifiers.dilithium2_aes);
+        dilithiumOids.put(DilithiumParameters.dilithium3_aes, BCObjectIdentifiers.dilithium3_aes);
+        dilithiumOids.put(DilithiumParameters.dilithium5_aes, BCObjectIdentifiers.dilithium5_aes);
 
         dilithiumParams.put(BCObjectIdentifiers.dilithium2, DilithiumParameters.dilithium2);
         dilithiumParams.put(BCObjectIdentifiers.dilithium3, DilithiumParameters.dilithium3);
         dilithiumParams.put(BCObjectIdentifiers.dilithium5, DilithiumParameters.dilithium5);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium2_aes, DilithiumParameters.dilithium2_aes);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium3_aes, DilithiumParameters.dilithium3_aes);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium5_aes, DilithiumParameters.dilithium5_aes);
 
         bikeParams.put(BCObjectIdentifiers.bike128, BIKEParameters.bike128);
         bikeParams.put(BCObjectIdentifiers.bike192, BIKEParameters.bike192);
