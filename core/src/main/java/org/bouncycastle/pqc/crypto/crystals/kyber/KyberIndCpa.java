@@ -16,6 +16,8 @@ class KyberIndCpa
     private int polyVecCompressedBytes;
     private int polyCompressedBytes;
 
+    private Symmetric symmetric;
+
     public KyberIndCpa(KyberEngine engine)
     {
         this.engine = engine;
@@ -26,6 +28,7 @@ class KyberIndCpa
         this.indCpaBytes = engine.getKyberIndCpaBytes();
         this.polyVecCompressedBytes = engine.getKyberPolyVecCompressedBytes();
         this.polyCompressedBytes = engine.getKyberPolyCompressedBytes();
+        this.symmetric = engine.getSymmetric();
     }
 
 
@@ -48,13 +51,8 @@ class KyberIndCpa
 
         engine.getRandomBytes(d);
 
-        // System.out.println("IndCpa");
-
-        sha3Digest512.update(d, 0, 32);
-
         byte[] buf = new byte[64];
-
-        sha3Digest512.doFinal(buf, 0);
+        symmetric.hash_g(buf, d);
 
         byte[] publicSeed = new byte[32]; // p in docs
         byte[] noiseSeed = new byte[32]; // sigma in docs
@@ -334,16 +332,14 @@ class KyberIndCpa
             {
                 if (transposed)
                 {
-                    kyberXOF = Symmetric.KyberXOF(seed, i, j);
+                    symmetric.xofAbsorb(seed, (byte) i, (byte) j);
                 }
                 else
                 {
-                    kyberXOF = Symmetric.KyberXOF(seed, j, i);
+                    symmetric.xofAbsorb(seed, (byte) j, (byte) i);
                 }
-                kyberXOF.doOutput(buf, 0, Symmetric.SHAKE128_rate * KyberGenerateMatrixNBlocks);
+                symmetric.xofSqueezeBlocks(buf, 0, Symmetric.SHAKE128_rate * KyberGenerateMatrixNBlocks);
 
-                // System.out.print("xof squeeze output = ");
-                // Helper.printByteArray(buf);
                 int buflen = KyberGenerateMatrixNBlocks * Symmetric.SHAKE128_rate;
                 ctr = rejectionSampling(aMatrix[i].getVectorIndex(j), 0, KyberEngine.KyberN, buf, buflen);
 
@@ -354,11 +350,7 @@ class KyberIndCpa
                     {
                         buf[k] = buf[buflen - off + k];
                     }
-                    // System.out.print("ctr buf before = ");
-                    // Helper.printByteArray(buf);
-                    kyberXOF.doOutput(buf, off, Symmetric.SHAKE128_rate * 2);
-                    // System.out.print("ctr buf after = ");
-                    // Helper.printByteArray(buf);
+                    symmetric.xofSqueezeBlocks(buf, off, Symmetric.SHAKE128_rate * 2);
                     buflen = off + Symmetric.SHAKE128_rate;
                     // Error in code Section Unsure
                     ctr += rejectionSampling(aMatrix[i].getVectorIndex(j), ctr, KyberEngine.KyberN - ctr, buf, buflen);
