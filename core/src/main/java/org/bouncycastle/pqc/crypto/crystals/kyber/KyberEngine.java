@@ -144,7 +144,7 @@ class KyberEngine
         return KyberEta1;
     }
 
-    public KyberEngine(int k)
+    public KyberEngine(int k, boolean usingAes)
     {
         this.KyberK = k;
         switch (k)
@@ -185,7 +185,15 @@ class KyberEngine
         this.CryptoPublicKeyBytes = KyberPublicKeyBytes;
         this.CryptoCipherTextBytes = KyberCipherTextBytes;
 
-        symmetric = new Symmetric.ShakeSymmetric();
+        if(usingAes)
+        {
+            symmetric = new Symmetric.AesSymmetric();
+        }
+        else
+        {
+            symmetric = new Symmetric.ShakeSymmetric();
+        }
+
         this.indCpa = new KyberIndCpa(this);
 
 

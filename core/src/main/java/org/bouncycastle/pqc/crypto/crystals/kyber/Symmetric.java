@@ -1,7 +1,15 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
 abstract class Symmetric
 {
@@ -93,71 +101,82 @@ abstract class Symmetric
     static class AesSymmetric
         extends Symmetric
     {
-        AesSymmetric()
-        {
+        private final SHA256Digest sha256Digest;
+        private final SHA512Digest sha512Digest;
+        private final SICBlockCipher cipher;
+
+        AesSymmetric() {
             super(64);
+            this.sha256Digest = new SHA256Digest();
+            this.sha512Digest = new SHA512Digest();
+            this.cipher = new SICBlockCipher(new AESEngine());
+        }
+
+        private void doDigest(ExtendedDigest digest, byte[] out, byte[] in, int outOffset)
+        {
+            digest.update(in, 0, in.length);
+            digest.doFinal(out, outOffset);
+        }
+
+        private void aes128(byte[] out, int offset, int size)
+        {
+            byte[] buf = new byte[size];   // TODO: there might be a more efficient way of doing this...
+            cipher.processBytes(buf, 0, size, out, offset);
         }
 
         @Override
         void hash_h(byte[] out, byte[] in, int outOffset)
         {
-
+            sha256Digest.update(in, 0, in.length);
+            sha256Digest.doFinal(out, outOffset);
+//            doDigest(sha256Digest, out, in, outOffset);
         }
 
         @Override
         void hash_g(byte[] out, byte[] in)
         {
-
+            sha512Digest.update(in, 0, in.length);
+            sha512Digest.doFinal(out, 0);
+//            doDigest(sha512Digest, out, in, 0);
         }
 
         @Override
-        void xofAbsorb(byte[] seed, byte x, byte y)
+        void xofAbsorb(byte[] key, byte x, byte y)
         {
+            byte[] expnonce = new byte[12];
+            expnonce[0] = x;
+            expnonce[1] = y;
 
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(Arrays.copyOfRange(key, 0, 32)), expnonce);
+            cipher.init(true, kp);
         }
 
         @Override
         void xofSqueezeBlocks(byte[] out, int outOffset, int outLen)
         {
-
+            aes128(out, outOffset, outLen);
         }
 
         @Override
         void prf(byte[] out, byte[] key, byte nonce)
         {
+            SICBlockCipher prf = new SICBlockCipher(new AESEngine());
+            byte[] expnonce = new byte[12];
+            expnonce[0] = nonce;
 
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(Arrays.copyOfRange(key, 0, 32)), expnonce);
+            prf.init(true, kp);
+            aes128(out, 0, out.length);
+            byte[] buf = new byte[out.length];   // TODO: there might be a more efficient way of doing this...
+            prf.processBytes(buf, 0, out.length, out, 0);
         }
 
         @Override
         void kdf(byte[] out, byte[] in)
         {
-
+            sha256Digest.update(in, 0, in.length);
+            sha256Digest.doFinal(out, 0);
+//            doDigest(sha256Digest, out, in, 0);
         }
-    }
-    public static SHAKEDigest KyberXOF(byte[] seed, int a, int b)
-    {
-        SHAKEDigest xof = new SHAKEDigest(128);
-        byte[] buf = new byte[seed.length + 2];
-        System.arraycopy(seed, 0, buf, 0, seed.length);
-        buf[seed.length] = (byte)a;
-        buf[seed.length + 1] = (byte)b;
-
-        xof.update(buf, 0, seed.length + 2);
-
-
-        return xof;
-    }
-
-    public final static int SHAKE128_rate = 168;
-
-    public static SHAKEDigest KyberPRF(byte[] seed, byte nonce)
-    {
-        SHAKEDigest prf = new SHAKEDigest(256);
-
-        byte[] extSeed = new byte[seed.length + 1];
-        System.arraycopy(seed, 0, extSeed, 0, seed.length);
-        extSeed[seed.length] = nonce;
-        prf.update(extSeed, 0, extSeed.length);
-        return prf;
     }
 }
