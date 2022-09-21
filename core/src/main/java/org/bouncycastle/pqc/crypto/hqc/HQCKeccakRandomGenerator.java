@@ -21,11 +21,6 @@ class HQCKeccakRandomGenerator
     protected int fixedOutputLength;
     protected boolean squeezing;
 
-    public HQCKeccakRandomGenerator()
-    {
-        this(288);
-    }
-
     public HQCKeccakRandomGenerator(int bitLength)
     {
         init(bitLength);
@@ -230,7 +225,7 @@ class HQCKeccakRandomGenerator
             for (int i = 0; i < rateBytes - state[25]; i++)
             {
                 int tmp = (int)(state[25] + i) >> 3;
-                state[tmp] ^= Integer.toUnsignedLong(input[i + count] & 0xff) << (8 * ((state[25] + i) & 0x07));
+                state[tmp] ^= (input[i + count] & 0xffL) << (8 * ((state[25] + i) & 0x07));
             }
             inputLen -= rateBytes - state[25];
             count += rateBytes - state[25];
@@ -241,7 +236,7 @@ class HQCKeccakRandomGenerator
         for (int i = 0; i < inputLen; i++)
         {
             int tmp = (int)(state[25] + i) >> 3;
-            state[tmp] ^= Integer.toUnsignedLong(input[i + count] & 0xff) << (8 * ((state[25] + i) & 0x07));
+            state[tmp] ^= (input[i + count] & 0xffL) << (8 * ((state[25] + i) & 0x07));
         }
 
         state[25] += inputLen;
@@ -251,9 +246,8 @@ class HQCKeccakRandomGenerator
     {
         int rateBytes = rate >> 3;
 
-        state[(int)state[25] >> 3] ^= Integer.toUnsignedLong(p) << (8 * ((state[25]) & 0x07));
-        state[(rateBytes - 1) >> 3] ^= Integer.toUnsignedLong(128) << (8 * ((rateBytes - 1) & 0x07));
-
+        state[(int)state[25] >> 3] ^= (p & 0xffffffffL) << (8 * ((state[25]) & 0x07));
+        state[(rateBytes - 1) >> 3] ^= 128L << (8 * ((rateBytes - 1) & 0x07));
 
         state[25] = 0;
     }
@@ -277,7 +271,6 @@ class HQCKeccakRandomGenerator
 
             for (i = 0; i < outLen && i < rateBytes; i++)
             {
-                byte t = (byte)(state[i >> 3] >> (8 * (i & 0x07)));
                 output[count + i] = (byte)(state[i >> 3] >> (8 * (i & 0x07)));
             }
             count = count + i;
