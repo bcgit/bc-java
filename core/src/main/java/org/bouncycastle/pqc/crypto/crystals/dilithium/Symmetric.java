@@ -41,7 +41,7 @@ abstract class Symmetric
 
         private void aes128(byte[] out, int offset, int size)
         {
-            byte[] buf = new byte[size];
+            byte[] buf = new byte[size];   // TODO: there might be a more efficient way of doing this...
             cipher.processBytes(buf, 0, size, out, offset);
         }
 
