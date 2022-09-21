@@ -244,7 +244,9 @@ public class PrivateKeyFactory
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
-            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5)
+            || algOID.equals(BCObjectIdentifiers.dilithium2_aes)
+            || algOID.equals(BCObjectIdentifiers.dilithium3_aes) || algOID.equals(BCObjectIdentifiers.dilithium5_aes))
         {
             ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
