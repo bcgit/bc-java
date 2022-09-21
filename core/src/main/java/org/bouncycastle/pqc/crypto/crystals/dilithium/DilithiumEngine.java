@@ -303,9 +303,7 @@ class DilithiumEngine
         shake256Digest.doFinal(tr, 0, SeedBytes);
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
-        // System.out.println("sk engine = ");
-        // Helper.printByteArray(sk);
-
+        
         return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
     }
 

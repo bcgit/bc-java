@@ -51,12 +51,7 @@ class Poly
 
         symmetric.stream128init(seed, nonce);
 
-        symmetric.stream128squeezeBlocks(buf, 0, buflen + 2);
-
-        // System.out.println("buf = ");
-        // Helper.printByteArray(buf);
-
-        // problems with last 2 bytes in buf
+        symmetric.stream128squeezeBlocks(buf, 0, buflen);
 
         ctr = rejectUniform(this, 0, dilithiumN, buf, buflen);
 
@@ -69,9 +64,9 @@ class Poly
             {
                 buf[i] = buf[buflen - off + i];
             }
-            symmetric.stream128squeezeBlocks(buf, buflen + off, 1);
+            symmetric.stream128squeezeBlocks(buf, off, symmetric.stream128BlockBytes);
             buflen = symmetric.stream128BlockBytes + off;
-            ctr += rejectUniform(this, ctr, dilithiumN, buf, buflen);
+            ctr += rejectUniform(this, ctr, dilithiumN - ctr, buf, buflen);
         }
 
     }
@@ -80,7 +75,6 @@ class Poly
     {
         int ctr, pos;
         int t;
-
 
         ctr = pos = 0;
         while (ctr < len && pos + 3 <= buflen)
@@ -105,37 +99,32 @@ class Poly
     {
         int ctr, polyUniformEtaNBlocks, eta = engine.getDilithiumEta();
 
-
         if (engine.getDilithiumEta() == 2)
         {
-            polyUniformEtaNBlocks = ((136 + symmetric.stream128BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
+            polyUniformEtaNBlocks = ((136 + symmetric.stream256BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
         }
         else if (engine.getDilithiumEta() == 4)
         {
-            polyUniformEtaNBlocks = ((227 + symmetric.stream128BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
+            polyUniformEtaNBlocks = ((227 + symmetric.stream256BlockBytes - 1) / symmetric.stream256BlockBytes); // TODO: change with class
         }
         else
         {
             throw new RuntimeException("Wrong Dilithium Eta!");
         }
 
-        int buflen = polyUniformEtaNBlocks * symmetric.stream128BlockBytes;
+        int buflen = polyUniformEtaNBlocks * symmetric.stream256BlockBytes;
 
         byte[] buf = new byte[buflen];
 
         symmetric.stream256init(seed, nonce);
         symmetric.stream256squeezeBlocks(buf, 0, buflen);
 
-        // System.out.println("poly eta buf = ");
-        // Helper.printByteArray(buf);
-
         ctr = rejectEta(this, 0, dilithiumN, buf, buflen, eta);
-        // System.out.printf("ctr %d\n", ctr);
 
         while (ctr < DilithiumEngine.DilithiumN)
         {
-            symmetric.stream256squeezeBlocks(buf, buflen, symmetric.stream128BlockBytes);
-            ctr += rejectEta(this, ctr, dilithiumN - ctr, buf, symmetric.stream128BlockBytes, eta);
+            symmetric.stream256squeezeBlocks(buf, 0, symmetric.stream256BlockBytes);
+            ctr += rejectEta(this, ctr, dilithiumN - ctr, buf, symmetric.stream256BlockBytes, eta);
         }
 
     }
@@ -479,8 +468,7 @@ class Poly
 
         symmetric.stream256init(seed, nonce);
         symmetric.stream256squeezeBlocks(buf, 0, engine.getPolyUniformGamma1NBlocks() * symmetric.stream256BlockBytes);// todo this is final
-        // System.out.println("Uniform gamma 1 buf = ");
-        // Helper.printByteArray(buf);
+
         this.unpackZ(buf);
     }
 
@@ -556,7 +544,6 @@ class Poly
         for (i = 0; i < dilithiumN; ++i)
         {
             int[] decomp = Rounding.decompose(this.getCoeffIndex(i), engine.getDilithiumGamma2());
-            // System.out.println(decomp[0] + ", "+decomp[1]);
             this.setCoeffIndex(i, decomp[1]);
             a.setCoeffIndex(i, decomp[0]);
         }

@@ -72,19 +72,20 @@ public class CrystalsDilithiumTest
         throws Exception
     {
         String[] files = new String[]{
-//            "PQCsignKAT_Dilithium2.rsp",
+            "PQCsignKAT_Dilithium2.rsp",
+            "PQCsignKAT_Dilithium3.rsp",
+            "PQCsignKAT_Dilithium5.rsp",
             "PQCsignKAT_Dilithium2-AES.rsp",
-//            "PQCsignKAT_Dilithium3.rsp",
             "PQCsignKAT_Dilithium3-AES.rsp",
-//            "PQCsignKAT_Dilithium5.rsp"
             "PQCsignKAT_Dilithium5-AES.rsp"
         };
+
         DilithiumParameters[] parameters = new DilithiumParameters[]{
-//            DilithiumParameters.dilithium2,
+            DilithiumParameters.dilithium2,
+            DilithiumParameters.dilithium3,
+            DilithiumParameters.dilithium5,
             DilithiumParameters.dilithium2_aes,
-//            DilithiumParameters.dilithium3,
             DilithiumParameters.dilithium3_aes,
-//            DilithiumParameters.dilithium5
             DilithiumParameters.dilithium5_aes
         };
 
@@ -130,13 +131,14 @@ public class CrystalsDilithiumTest
                         DilithiumKeyGenerationParameters kparam = new DilithiumKeyGenerationParameters(random, parameters[fileindex]);
                         DilithiumKeyPairGenerator kpg = new DilithiumKeyPairGenerator();
                         kpg.init(kparam);
+
                         AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
                         DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)ackp.getPublic();
                         byte[] respk = Arrays.concatenate(dPub.getRho(), dPub.getT1());
                         // System.out.println("pk = ");
                         // Helper.printByteArray(pk);
                         byte[] ressk = ((DilithiumPrivateKeyParameters)ackp.getPrivate()).getEncoded();
-                        
+
                         //keygen
                         assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
                         assertTrue(name + " " + count + " secret key", Arrays.areEqual(ressk, sk));
