@@ -89,7 +89,7 @@ public class HQCTest
                         byte[] sk = Hex.decode(buf.get("sk"));     // private key
                         byte[] ct = Hex.decode(buf.get("ct"));     // ciphertext
                         byte[] ss = Hex.decode(buf.get("ss"));     // session key
-                        System.out.println(Hex.toHexString(seed));
+
                         HQCParameters parameters = listParams[fileIndex];
 
                         HQCKeyPairGenerator hqcKeyGen = new HQCKeyPairGenerator();
