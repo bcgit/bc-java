@@ -251,12 +251,21 @@ public class PrivateKeyInfoFactory
         else if (privateKey instanceof KyberPrivateKeyParameters)
         {
             KyberPrivateKeyParameters params = (KyberPrivateKeyParameters)privateKey;
+            
+            ASN1EncodableVector v = new ASN1EncodableVector();
 
-            byte[] encoding = params.getEncoded();
+            v.add(new ASN1Integer(0));
+            v.add(new DEROctetString(params.getS()));
+            v.add(new DEROctetString(params.getHPK()));
+            v.add(new DEROctetString(params.getNonce()));
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, params.getPublicKey());
+            ASN1EncodableVector vPub = new ASN1EncodableVector();
+            vPub.add(new DEROctetString(params.getT()));
+            vPub.add(new DEROctetString(params.getRho()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, new DERSequence(vPub).getEncoded());
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
