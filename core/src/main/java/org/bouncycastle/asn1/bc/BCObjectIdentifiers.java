@@ -341,7 +341,10 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier kyber512 = pqc_kem_kyber.branch("1");
     ASN1ObjectIdentifier kyber768 = pqc_kem_kyber.branch("2");
     ASN1ObjectIdentifier kyber1024 = pqc_kem_kyber.branch("3");
-    
+    ASN1ObjectIdentifier kyber512_aes = pqc_kem_kyber.branch("4");
+    ASN1ObjectIdentifier kyber768_aes = pqc_kem_kyber.branch("5");
+    ASN1ObjectIdentifier kyber1024_aes = pqc_kem_kyber.branch("6");
+
     /**
      * NTRUPrime
      */

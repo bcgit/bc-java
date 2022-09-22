@@ -218,10 +218,16 @@ class Utils
         kyberOids.put(KyberParameters.kyber512, BCObjectIdentifiers.kyber512);
         kyberOids.put(KyberParameters.kyber768, BCObjectIdentifiers.kyber768);
         kyberOids.put(KyberParameters.kyber1024, BCObjectIdentifiers.kyber1024);
+        kyberOids.put(KyberParameters.kyber512_aes, BCObjectIdentifiers.kyber512_aes);
+        kyberOids.put(KyberParameters.kyber768_aes, BCObjectIdentifiers.kyber768_aes);
+        kyberOids.put(KyberParameters.kyber1024_aes, BCObjectIdentifiers.kyber1024_aes);
 
         kyberParams.put(BCObjectIdentifiers.kyber512, KyberParameters.kyber512);
         kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
         kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
+        kyberParams.put(BCObjectIdentifiers.kyber512_aes, KyberParameters.kyber512_aes);
+        kyberParams.put(BCObjectIdentifiers.kyber768_aes, KyberParameters.kyber768_aes);
+        kyberParams.put(BCObjectIdentifiers.kyber1024_aes, KyberParameters.kyber1024_aes);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
