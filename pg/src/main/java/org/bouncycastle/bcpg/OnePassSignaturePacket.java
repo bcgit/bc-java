@@ -14,7 +14,7 @@ public class OnePassSignaturePacket
     private int  hashAlgorithm;
     private int  keyAlgorithm;
     private long keyID;
-    private int isBracketing;
+    private int isContaining;
     
     OnePassSignaturePacket(
         BCPGInputStream    in)
@@ -34,7 +34,7 @@ public class OnePassSignaturePacket
         keyID |= (long)in.read() << 8;
         keyID |= in.read();
         
-        isBracketing = in.read();
+        isContaining = in.read();
     }
     
     public OnePassSignaturePacket(
@@ -49,7 +49,7 @@ public class OnePassSignaturePacket
         this.hashAlgorithm = hashAlgorithm;
         this.keyAlgorithm = keyAlgorithm;
         this.keyID = keyID;
-        this.isBracketing = (isNested) ? 0 : 1;
+        this.isContaining = (isNested) ? 0 : 1;
     }
     
     /**
@@ -86,15 +86,15 @@ public class OnePassSignaturePacket
     }
 
     /**
-     * Return true, if the signature is bracketing.
+     * Return true, if the signature contains any signatures that follow.
      * An bracketing OPS is followed by additional OPS packets and is calculated over all the data between itself
      * and its corresponding signature (it is an attestation for encapsulated signatures).
      *
      * @return true if encapsulating, false otherwise
      */
-    public boolean isBracketing()
+    public boolean isContaining()
     {
-        return isBracketing == 1;
+        return isContaining == 1;
     }
     
     /**
@@ -121,7 +121,7 @@ public class OnePassSignaturePacket
         pOut.write((byte)(keyID >> 8));
         pOut.write((byte)(keyID));
         
-        pOut.write(isBracketing);
+        pOut.write(isContaining);
 
         pOut.close();
 
