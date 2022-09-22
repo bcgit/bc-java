@@ -23,6 +23,13 @@ public class DilithiumPublicKeyParameters
         return Arrays.concatenate(rho, t1);
     }
 
+    public DilithiumPublicKeyParameters(DilithiumParameters params, byte[] encoding)
+    {
+        super(false, params);
+        this.rho = Arrays.copyOfRange(encoding, 0, DilithiumEngine.SeedBytes);
+        this.t1 = Arrays.copyOfRange(encoding, DilithiumEngine.SeedBytes, encoding.length);
+    }
+
     public DilithiumPublicKeyParameters(DilithiumParameters params, byte[] rho, byte[] t1)
     {
         super(false, params);
