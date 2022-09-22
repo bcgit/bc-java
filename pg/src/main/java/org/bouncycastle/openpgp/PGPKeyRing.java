@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,16 +27,6 @@ public abstract class PGPKeyRing
 
     PGPKeyRing()
     {
-    }
-
-    static BCPGInputStream wrap(InputStream in)
-    {
-        if (in instanceof BCPGInputStream)
-        {
-            return (BCPGInputStream)in;
-        }
-
-        return new BCPGInputStream(in);
     }
 
     static TrustPacket readOptionalTrustPacket(
