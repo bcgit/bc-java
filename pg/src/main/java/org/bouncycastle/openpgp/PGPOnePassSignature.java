@@ -204,15 +204,15 @@ public class PGPOnePassSignature
     }
 
     /**
-     * Return true, if the signature is bracketing.
+     * Return true, if the signature is contains any signatures that follow.
      * An bracketing OPS is followed by additional OPS packets and is calculated over all the data between itself
      * and its corresponding signature (it is an attestation for contained signatures).
      *
-     * @return true if encapsulating, false otherwise
+     * @return true if containing, false otherwise
      */
-    public boolean isBracketing()
+    public boolean isContaining()
     {
-        return sigPack.isBracketing();
+        return sigPack.isContaining();
     }
 
     public byte[] getEncoded()
