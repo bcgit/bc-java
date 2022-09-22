@@ -17,10 +17,15 @@ abstract class Symmetric
     final int xofBlockBytes;
 
     abstract void hash_h(byte[] out, byte[] in, int outOffset);
+
     abstract void hash_g(byte[] out, byte[] in);
+
     abstract void xofAbsorb(byte[] seed, byte x, byte y);
+
     abstract void xofSqueezeBlocks(byte[] out, int outOffset, int outLen);
+
     abstract void prf(byte[] out, byte[] key, byte nonce);
+
     abstract void kdf(byte[] out, byte[] in);
 
     Symmetric(int blockBytes)
@@ -37,7 +42,6 @@ abstract class Symmetric
         private final SHA3Digest sha3Digest512;
         private final SHA3Digest sha3Digest256;
         private final SHAKEDigest shakeDigest;
-
 
 
         ShakeSymmetric()
@@ -98,6 +102,7 @@ abstract class Symmetric
             shakeDigest.doFinal(out, 0, out.length);
         }
     }
+
     static class AesSymmetric
         extends Symmetric
     {
@@ -105,7 +110,8 @@ abstract class Symmetric
         private final SHA512Digest sha512Digest;
         private final SICBlockCipher cipher;
 
-        AesSymmetric() {
+        AesSymmetric()
+        {
             super(64);
             this.sha256Digest = new SHA256Digest();
             this.sha512Digest = new SHA512Digest();
