@@ -55,8 +55,6 @@ class KyberIndCpa
 
         byte[] d = new byte[32];
 
-        SHA3Digest sha3Digest512 = new SHA3Digest(512);
-
         // (p, sigma) <- G(d)
 
         engine.getRandomBytes(d);

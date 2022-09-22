@@ -38,20 +38,17 @@ abstract class Symmetric
         extends Symmetric
     {
         private final SHAKEDigest xof;
-        private final SHAKEDigest prf;
         private final SHA3Digest sha3Digest512;
         private final SHA3Digest sha3Digest256;
         private final SHAKEDigest shakeDigest;
-
 
         ShakeSymmetric()
         {
             super(168);
             this.xof = new SHAKEDigest(128);
-            this.prf = new SHAKEDigest(256);
+            this.shakeDigest = new SHAKEDigest(256);
             this.sha3Digest256 = new SHA3Digest(256);
             this.sha3Digest512 = new SHA3Digest(512);
-            this.shakeDigest = new SHAKEDigest(256);
         }
 
         @Override
@@ -91,8 +88,8 @@ abstract class Symmetric
             byte[] extSeed = new byte[seed.length + 1];
             System.arraycopy(seed, 0, extSeed, 0, seed.length);
             extSeed[seed.length] = nonce;
-            prf.update(extSeed, 0, extSeed.length);
-            prf.doFinal(out, 0, out.length);
+            shakeDigest.update(extSeed, 0, extSeed.length);
+            shakeDigest.doFinal(out, 0, out.length);
         }
 
         @Override
@@ -133,17 +130,13 @@ abstract class Symmetric
         @Override
         void hash_h(byte[] out, byte[] in, int outOffset)
         {
-            sha256Digest.update(in, 0, in.length);
-            sha256Digest.doFinal(out, outOffset);
-//            doDigest(sha256Digest, out, in, outOffset);
+            doDigest(sha256Digest, out, in, outOffset);
         }
 
         @Override
         void hash_g(byte[] out, byte[] in)
         {
-            sha512Digest.update(in, 0, in.length);
-            sha512Digest.doFinal(out, 0);
-//            doDigest(sha512Digest, out, in, 0);
+            doDigest(sha512Digest, out, in, 0);
         }
 
         @Override
@@ -166,23 +159,20 @@ abstract class Symmetric
         @Override
         void prf(byte[] out, byte[] key, byte nonce)
         {
-            SICBlockCipher prf = new SICBlockCipher(new AESEngine());
             byte[] expnonce = new byte[12];
             expnonce[0] = nonce;
 
             ParametersWithIV kp = new ParametersWithIV(new KeyParameter(Arrays.copyOfRange(key, 0, 32)), expnonce);
-            prf.init(true, kp);
+            cipher.init(true, kp);
             aes128(out, 0, out.length);
-            byte[] buf = new byte[out.length];   // TODO: there might be a more efficient way of doing this...
-            prf.processBytes(buf, 0, out.length, out, 0);
         }
 
         @Override
         void kdf(byte[] out, byte[] in)
         {
-            sha256Digest.update(in, 0, in.length);
-            sha256Digest.doFinal(out, 0);
-//            doDigest(sha256Digest, out, in, 0);
+            byte[] buf = new byte[32];
+            doDigest(sha256Digest, buf, in, 0);
+            System.arraycopy(buf, 0, out, 0, out.length);
         }
     }
 }
