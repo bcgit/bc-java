@@ -28,7 +28,7 @@ public class KyberPublicKeyParameters
     public KyberPublicKeyParameters(KyberParameters params, byte[] encoding)
     {
         super(false, params);
-        this.t = Arrays.copyOfRange(encoding,0, encoding.length - KyberEngine.KyberSymBytes);
+        this.t = Arrays.copyOfRange(encoding, 0, encoding.length - KyberEngine.KyberSymBytes);
         this.rho = Arrays.copyOfRange(encoding, encoding.length - KyberEngine.KyberSymBytes, encoding.length);
     }
 

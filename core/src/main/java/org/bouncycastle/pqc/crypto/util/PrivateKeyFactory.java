@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -205,18 +206,35 @@ public class PrivateKeyFactory
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+
             KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            ASN1BitString pubKey = keyInfo.getPublicKeyData();
-            if (pubKey != null)
+            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+            if (version != 0)
             {
-                return new KyberPrivateKeyParameters(spParams, keyEnc, pubKey.getOctets());
+                throw new IOException("unknown private key version: " + version);
             }
-            else
-            {
-                return new KyberPrivateKeyParameters(spParams, keyEnc, null);
-            }
+ 
+             if (keyInfo.getPublicKeyData() != null)
+             {
+                 ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+                 return new KyberPrivateKeyParameters(spParams,
+                     DEROctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                     DEROctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                     DEROctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                     ASN1OctetString.getInstance(pubKey.getObjectAt(0)).getOctets(), // t
+                     ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // rho
+             }
+             else
+             {
+                 return new KyberPrivateKeyParameters(spParams,
+                     ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                     ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                     ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                     null,
+                     null);
+             }
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {

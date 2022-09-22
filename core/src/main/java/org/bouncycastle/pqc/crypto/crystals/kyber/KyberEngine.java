@@ -3,19 +3,10 @@ package org.bouncycastle.pqc.crypto.crystals.kyber;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-
-
 class KyberEngine
 {
-
     private SecureRandom random;
     private KyberIndCpa indCpa;
-    private SHA3Digest sha3Digest256 = new SHA3Digest(256);
-    private SHA3Digest sha3Digest512 = new SHA3Digest(512);
-    private SHAKEDigest shakeDigest = new SHAKEDigest(256);
-
 
     // constant parameters
     public final static int KyberN = 256;
@@ -195,15 +186,6 @@ class KyberEngine
         }
 
         this.indCpa = new KyberIndCpa(this);
-
-
-
-        // Testing Random
-        // byte[] b = new byte[48];
-
-        // random.nextBytes(b);
-
-        // Helper.printByteArray(b);
     }
 
     public void init(SecureRandom random)
@@ -215,24 +197,20 @@ class KyberEngine
     {
         byte[][] indCpaKeyPair = indCpa.generateKeyPair();
 
-        byte[] secretKey = new byte[KyberSecretKeyBytes];
+        byte[] s = new byte[KyberIndCpaSecretKeyBytes];
 
-        System.arraycopy(indCpaKeyPair[1], 0, secretKey, 0, KyberIndCpaSecretKeyBytes);
-        System.arraycopy(indCpaKeyPair[0], 0, secretKey, KyberIndCpaSecretKeyBytes, KyberIndCpaPublicKeyBytes);
+        System.arraycopy(indCpaKeyPair[1], 0, s, 0, KyberIndCpaSecretKeyBytes);
 
         byte[] hashedPublicKey = new byte[32];
 
         symmetric.hash_h(hashedPublicKey, indCpaKeyPair[0], 0);
 
-        System.arraycopy(hashedPublicKey, 0, secretKey, KyberSecretKeyBytes - 2 * KyberSymBytes, KyberSymBytes);
-
         byte[] z = new byte[KyberSymBytes];
         random.nextBytes(z);
-        System.arraycopy(z, 0, secretKey, KyberSecretKeyBytes - KyberSymBytes, KyberSymBytes);
 
         byte[] outputPublicKey = new byte[KyberIndCpaPublicKeyBytes];
         System.arraycopy(indCpaKeyPair[0], 0, outputPublicKey, 0, KyberIndCpaPublicKeyBytes);
-        return new byte[][]{outputPublicKey, secretKey};
+        return new byte[][]{ Arrays.copyOfRange(outputPublicKey, 0, outputPublicKey.length - 32), Arrays.copyOfRange(outputPublicKey, outputPublicKey.length - 32, outputPublicKey.length), s, hashedPublicKey, z };
     }
 
     public byte[][] kemEncrypt(byte[] publicKeyInput)
@@ -278,7 +256,6 @@ class KyberEngine
         byte[] buf = new byte[2 * KyberSymBytes],
             kr = new byte[2 * KyberSymBytes];
 
-        int i;
         byte[] publicKey = Arrays.copyOfRange(secretKey, KyberIndCpaSecretKeyBytes, secretKey.length);
 
         System.arraycopy(indCpa.decrypt(cipherText, secretKey), 0, buf, 0, KyberSymBytes);
@@ -320,5 +297,4 @@ class KyberEngine
     {
         this.random.nextBytes(buf);
     }
-
 }
