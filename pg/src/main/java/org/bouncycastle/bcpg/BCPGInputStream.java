@@ -26,6 +26,22 @@ public class BCPGInputStream
         this.in = in;
     }
 
+    /**
+     * If the argument is a {@link BCPGInputStream}, return it.
+     * Otherwise wrap it in a {@link BCPGInputStream} and then return the result.
+     *
+     * @param in input stream
+     * @return BCPGInputStream
+     */
+    public static BCPGInputStream wrap(InputStream in)
+    {
+        if (in instanceof BCPGInputStream)
+        {
+            return (BCPGInputStream)in;
+        }
+        return new BCPGInputStream(in);
+    }
+
     public int available()
         throws IOException
     {
