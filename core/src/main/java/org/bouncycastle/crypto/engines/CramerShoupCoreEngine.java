@@ -68,7 +68,7 @@ public class CramerShoupCoreEngine
         this.random = initSecureRandom(forEncryption, providedRandom);
         this.forEncryption = forEncryption;
 
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("RSA", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, Utils.getPurpose(forEncryption)));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("CramerShoup", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, Utils.getPurpose(forEncryption)));
     }
 
     /**
