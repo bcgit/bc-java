@@ -13,6 +13,9 @@ public class KyberParameterSpec
     public static final KyberParameterSpec kyber512 = new KyberParameterSpec(KyberParameters.kyber512);
     public static final KyberParameterSpec kyber768 = new KyberParameterSpec(KyberParameters.kyber768);
     public static final KyberParameterSpec kyber1024 = new KyberParameterSpec(KyberParameters.kyber1024);
+    public static final KyberParameterSpec kyber512_aes = new KyberParameterSpec(KyberParameters.kyber512_aes);
+    public static final KyberParameterSpec kyber768_aes = new KyberParameterSpec(KyberParameters.kyber768_aes);
+    public static final KyberParameterSpec kyber1024_aes = new KyberParameterSpec(KyberParameters.kyber1024_aes);
 
     private static Map parameters = new HashMap();
 
@@ -21,6 +24,9 @@ public class KyberParameterSpec
         parameters.put("kyber512", kyber512);
         parameters.put("kyber768", kyber768);
         parameters.put("kyber1024", kyber1024);
+        parameters.put("kyber512-aes", kyber512_aes);
+        parameters.put("kyber768-aes", kyber768_aes);
+        parameters.put("kyber1024-aes", kyber1024_aes);
     }
 
     private final String name;
