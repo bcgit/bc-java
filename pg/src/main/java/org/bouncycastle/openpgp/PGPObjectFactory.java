@@ -54,7 +54,7 @@ public class PGPObjectFactory
         InputStream              in,
         KeyFingerPrintCalculator fingerPrintCalculator)
     {
-        this.in = new BCPGInputStream(in);
+        this.in = BCPGInputStream.wrap(in);
         this.fingerPrintCalculator = fingerPrintCalculator;
     }
 
