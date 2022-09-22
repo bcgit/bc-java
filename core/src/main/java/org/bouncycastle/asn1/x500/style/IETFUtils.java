@@ -424,7 +424,7 @@ public class IETFUtils
 
         int endBuf = vBuf.length() - 1;
 
-        while (endBuf >= 0 && vBuf.charAt(endBuf) == ' ')
+        while (endBuf >= start && vBuf.charAt(endBuf) == ' ')
         {
             vBuf.insert(endBuf, '\\');
             endBuf--;
