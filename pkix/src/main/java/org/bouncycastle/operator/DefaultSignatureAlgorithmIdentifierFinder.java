@@ -203,6 +203,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("DILITHIUM2", BCObjectIdentifiers.dilithium2);
         algorithms.put("DILITHIUM3", BCObjectIdentifiers.dilithium3);
         algorithms.put("DILITHIUM5", BCObjectIdentifiers.dilithium5);
+        algorithms.put("DILITHIUM2-AES", BCObjectIdentifiers.dilithium2_aes);
+        algorithms.put("DILITHIUM3-AES", BCObjectIdentifiers.dilithium3_aes);
+        algorithms.put("DILITHIUM5-AES", BCObjectIdentifiers.dilithium5_aes);
 
         algorithms.put("FALCON-512", BCObjectIdentifiers.falcon_512);
         algorithms.put("FALCON-1024", BCObjectIdentifiers.falcon_1024);
@@ -274,6 +277,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.dilithium2);
         noParams.add(BCObjectIdentifiers.dilithium3);
         noParams.add(BCObjectIdentifiers.dilithium5);
+        noParams.add(BCObjectIdentifiers.dilithium2_aes);
+        noParams.add(BCObjectIdentifiers.dilithium3_aes);
+        noParams.add(BCObjectIdentifiers.dilithium5_aes);
 
         //
         // Falcon
