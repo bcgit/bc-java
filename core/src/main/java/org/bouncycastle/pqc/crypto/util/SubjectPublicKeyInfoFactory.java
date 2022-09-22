@@ -188,8 +188,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.saberOidLookup(params.getParameters()));
-
-            // https://datatracker.ietf.org/doc/draft-uni-qsckeys/
+            
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
         }
         else if (publicKey instanceof PicnicPublicKeyParameters)
@@ -231,10 +230,11 @@ public class SubjectPublicKeyInfoFactory
         {
             KyberPublicKeyParameters params = (KyberPublicKeyParameters)publicKey;
 
-            byte[] encoding = params.getEncoded();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(new DEROctetString(params.getT()));
+            v.add(new DEROctetString(params.getRho()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(v));
         }
         else if (publicKey instanceof NTRULPRimePublicKeyParameters)
         {

@@ -470,11 +470,26 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
-
             FalconParameters falconParams = Utils.falconParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new FalconPublicKeyParameters(falconParams, keyEnc);
+            ASN1Primitive obj = keyInfo.parsePublicKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(ASN1Sequence.getInstance(obj).getObjectAt(0)).getOctets();
+
+                return new FalconPublicKeyParameters(falconParams, keyEnc);
+            }
+            else
+            {
+                // header byte + h
+                byte[] keyEnc = ASN1OctetString.getInstance(obj).getOctets();
+
+                if (keyEnc[0] != (byte)(0x00 + falconParams.getLogN()))
+                {
+                    throw new IllegalArgumentException("byte[] enc of Falcon h value not tagged correctly");
+                }
+                return new FalconPublicKeyParameters(falconParams, Arrays.copyOfRange(keyEnc, 1, keyEnc.length));
+            }
         }
     }
 
@@ -484,11 +499,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            ASN1Primitive obj = keyInfo.parsePublicKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
-            return new KyberPublicKeyParameters(kyberParams, keyEnc);
+                return new KyberPublicKeyParameters(kyberParameters,
+                    ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                    ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+            }
+            else
+            {
+                byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                return new KyberPublicKeyParameters(kyberParameters, encKey);
+            }
         }
     }
 
@@ -526,13 +553,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.parsePublicKey());
-
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new DilithiumPublicKeyParameters(dilithiumParams,
-                ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
-                ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+            ASN1Primitive obj = keyInfo.parsePublicKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                return new DilithiumPublicKeyParameters(dilithiumParams,
+                    ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                    ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+            }
+            else
+            {
+                byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
+            }
         }
     }
 
