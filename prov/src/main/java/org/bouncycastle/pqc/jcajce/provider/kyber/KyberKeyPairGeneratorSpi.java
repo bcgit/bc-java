@@ -28,6 +28,9 @@ public class KyberKeyPairGeneratorSpi
         parameters.put(KyberParameterSpec.kyber512.getName(), KyberParameters.kyber512);
         parameters.put(KyberParameterSpec.kyber768.getName(), KyberParameters.kyber768);
         parameters.put(KyberParameterSpec.kyber1024.getName(), KyberParameters.kyber1024);
+        parameters.put(KyberParameterSpec.kyber512_aes.getName(), KyberParameters.kyber512_aes);
+        parameters.put(KyberParameterSpec.kyber768_aes.getName(), KyberParameters.kyber768_aes);
+        parameters.put(KyberParameterSpec.kyber1024_aes.getName(), KyberParameters.kyber1024_aes);
     }
 
     KyberKeyGenerationParameters param;

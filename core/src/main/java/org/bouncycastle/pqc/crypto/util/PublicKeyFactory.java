@@ -144,6 +144,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
+        converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
+        converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
+        converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
         converters.put(BCObjectIdentifiers.ntrulpr653, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr761, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr857, new NTRULPrimeConverter());

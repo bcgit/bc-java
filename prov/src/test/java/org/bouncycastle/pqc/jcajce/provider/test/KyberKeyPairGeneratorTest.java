@@ -35,7 +35,10 @@ public class KyberKeyPairGeneratorTest
                 {
                         KyberParameterSpec.kyber512,
                         KyberParameterSpec.kyber768,
-                        KyberParameterSpec.kyber1024
+                        KyberParameterSpec.kyber1024,
+                        KyberParameterSpec.kyber512_aes,
+                        KyberParameterSpec.kyber768_aes,
+                        KyberParameterSpec.kyber1024_aes
                 };
         kf = KeyFactory.getInstance("Kyber", "BCPQC");
 
