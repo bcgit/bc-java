@@ -103,18 +103,18 @@ public class CrystalsKyberTest
             KyberParameters.kyber512,
             KyberParameters.kyber768,
             KyberParameters.kyber1024,
-//            KyberParameters.kyber512,
-//            KyberParameters.kyber768,
-//            KyberParameters.kyber1024,
+            KyberParameters.kyber512_aes,
+            KyberParameters.kyber768_aes,
+            KyberParameters.kyber1024_aes,
         };
 
         String[] files = new String[]{
             "kyber512.rsp",
             "kyber768.rsp",
             "kyber1024.rsp",
-//            "kyber512aes.rsp",
-//            "kyber768aes.rsp",
-//            "kyber1024aes.rsp",
+            "kyber512aes.rsp",
+            "kyber768aes.rsp",
+            "kyber1024aes.rsp",
         };
 
         TestSampler sampler = new TestSampler();
