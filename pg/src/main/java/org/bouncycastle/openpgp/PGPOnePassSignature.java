@@ -203,6 +203,17 @@ public class PGPOnePassSignature
         return sigPack.getKeyAlgorithm();
     }
 
+    /**
+     * Return true, if the signature is encapsulating.
+     * An encapsulating OPS is followed by additional OPS packets and is calculated over all the data between itself
+     * and its corresponding signature (it is an attestation for encapsulated signatures).
+     *
+     * @return true if encapsulating, false otherwise
+     */
+    public boolean isEncapsulating() {
+        return sigPack.isEncapsulating();
+    }
+
     public byte[] getEncoded()
         throws IOException
     {
