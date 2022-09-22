@@ -18,11 +18,11 @@ import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 public class PGPOnePassSignature
 {
     private OnePassSignaturePacket sigPack;
-    private int                    signatureType;
+    private int signatureType;
 
     private PGPContentVerifier verifier;
-    private byte               lastb;
-    private OutputStream       sigOut;
+    private byte lastb;
+    private OutputStream sigOut;
 
     private static OnePassSignaturePacket cast(Packet packet)
         throws IOException
@@ -35,14 +35,14 @@ public class PGPOnePassSignature
     }
 
     PGPOnePassSignature(
-        BCPGInputStream    pIn)
+        BCPGInputStream pIn)
         throws IOException, PGPException
     {
         this(cast(pIn.readPacket()));
     }
-    
+
     PGPOnePassSignature(
-        OnePassSignaturePacket    sigPack)
+        OnePassSignaturePacket sigPack)
         throws PGPException
     {
         this.sigPack = sigPack;
@@ -52,8 +52,8 @@ public class PGPOnePassSignature
     /**
      * Initialise the signature object for verification.
      *
-     * @param verifierBuilderProvider   provider for a content verifier builder for the signature type of interest.
-     * @param pubKey  the public key to use for verification
+     * @param verifierBuilderProvider provider for a content verifier builder for the signature type of interest.
+     * @param pubKey                  the public key to use for verification
      * @throws PGPException if there's an issue with creating the verifier.
      */
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
@@ -68,7 +68,7 @@ public class PGPOnePassSignature
     }
 
     public void update(
-        byte    b)
+        byte b)
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -99,7 +99,7 @@ public class PGPOnePassSignature
     }
 
     public void update(
-        byte[]    bytes)
+        byte[] bytes)
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
@@ -113,16 +113,16 @@ public class PGPOnePassSignature
             blockUpdate(bytes, 0, bytes.length);
         }
     }
-    
+
     public void update(
-        byte[]    bytes,
-        int       off,
-        int       length)
+        byte[] bytes,
+        int off,
+        int length)
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
             int finish = off + length;
-            
+
             for (int i = off; i != finish; i++)
             {
                 this.update(bytes[i]);
@@ -160,13 +160,13 @@ public class PGPOnePassSignature
 
     /**
      * Verify the calculated signature against the passed in PGPSignature.
-     * 
+     *
      * @param pgpSig
      * @return boolean
      * @throws PGPException
      */
     public boolean verify(
-        PGPSignature    pgpSig)
+        PGPSignature pgpSig)
         throws PGPException
     {
         try
@@ -182,12 +182,12 @@ public class PGPOnePassSignature
 
         return verifier.verify(pgpSig.getSignature());
     }
-    
+
     public long getKeyID()
     {
         return sigPack.getKeyID();
     }
-    
+
     public int getSignatureType()
     {
         return sigPack.getSignatureType();
@@ -204,32 +204,33 @@ public class PGPOnePassSignature
     }
 
     /**
-     * Return true, if the signature is encapsulating.
-     * An encapsulating OPS is followed by additional OPS packets and is calculated over all the data between itself
-     * and its corresponding signature (it is an attestation for encapsulated signatures).
+     * Return true, if the signature is bracketing.
+     * An bracketing OPS is followed by additional OPS packets and is calculated over all the data between itself
+     * and its corresponding signature (it is an attestation for contained signatures).
      *
      * @return true if encapsulating, false otherwise
      */
-    public boolean isEncapsulating() {
-        return sigPack.isEncapsulating();
+    public boolean isBracketing()
+    {
+        return sigPack.isBracketing();
     }
 
     public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
-        
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
         this.encode(bOut);
-        
+
         return bOut.toByteArray();
     }
-    
+
     public void encode(
-        OutputStream    outStream) 
+        OutputStream outStream)
         throws IOException
     {
-        BCPGOutputStream    out;
-        
+        BCPGOutputStream out;
+
         if (outStream instanceof BCPGOutputStream)
         {
             out = (BCPGOutputStream)outStream;
