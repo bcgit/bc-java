@@ -623,7 +623,7 @@ class Utils
     {
         int q, r, mask;
 
-        int[] div1 = getUnsignedDivMod(toIntExact(0x80000000L + iToUnsignedLong(x)), n);
+        int[] div1 = getUnsignedDivMod(toIntExact(0x80000000 + iToUnsignedLong(x)), n);
         int[] div2 = getUnsignedDivMod(0x80000000, n);
 
         q = toIntExact(iToUnsignedLong(div1[0]) - iToUnsignedLong(div2[0]));
