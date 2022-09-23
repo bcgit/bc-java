@@ -595,7 +595,7 @@ public abstract class Ed25519
     private static void pointAdd(PointExtended p, PointExtended q, PointExtended r, PointTemp t)
     {
         // p may ref the same point as r (or q), but q may not ref the same point as r.
-        assert q != r;
+//        assert q != r;
 
         int[] a = r.x;
         int[] b = r.y;

@@ -101,6 +101,7 @@
                 <exclude name="**/pqc/**/PolynomialTest.java"/>
                 <exclude name="**/pqc/**/HPS*.java"/>
                 <exclude name="**/GetInstanceTest.java"/>
+                <exclude name="**/SIKE*.java"/>
             </fileset>
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>
@@ -141,6 +142,7 @@
 		<exclude name="**/jce/provider/test/nist/PKITSTest.java"/>
 		<exclude name="**/jce/provider/test/nist/NistCertPathTest2.java"/>
                 <exclude name="**/jce/provider/test/JceTestUtil.java"/>
+                <exclude name="**/SIKE*.java"/>
             </fileset>
 
             <fileset dir="tls/src/main/java" includes="**/*.java">

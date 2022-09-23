@@ -118,13 +118,13 @@ public class PicnicVectorTest
                             continue;
                         }
                         System.out.println("test case: " + count);
-                        byte[] seed = Hex.decode(buf.get("seed"));      // seed for picnic secure random
-                        int mlen = Integer.parseInt(buf.get("mlen"));   // message length
-                        byte[] msg = Hex.decode(buf.get("msg"));        // message
-                        byte[] pk = Hex.decode(buf.get("pk"));          // public key
-                        byte[] sk = Hex.decode(buf.get("sk"));          // private key
-                        int smlen = Integer.parseInt(buf.get("smlen")); // signature length
-                        byte[] sigExpected = Hex.decode(buf.get("sm"));          // signature
+                        byte[] seed = Hex.decode((String)buf.get("seed"));      // seed for picnic secure random
+                        int mlen = Integer.parseInt((String)buf.get("mlen"));   // message length
+                        byte[] msg = Hex.decode((String)buf.get("msg"));        // message
+                        byte[] pk = Hex.decode((String)buf.get("pk"));          // public key
+                        byte[] sk = Hex.decode((String)buf.get("sk"));          // private key
+                        int smlen = Integer.parseInt((String)buf.get("smlen")); // signature length
+                        byte[] sigExpected = Hex.decode((String)buf.get("sm"));          // signature
 
 //                        System.out.println("message: " + Hex.toHexString(msg));
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
