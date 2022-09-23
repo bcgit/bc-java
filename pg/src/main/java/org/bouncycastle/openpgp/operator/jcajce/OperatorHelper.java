@@ -32,6 +32,7 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
@@ -231,7 +232,7 @@ class OperatorHelper
                     }
                     catch (IOException e)
                     {
-                        throw new IllegalStateException("unable to open stream: " + e.getMessage(), e);
+                        throw Exceptions.illegalStateException("unable to open stream: " + e.getMessage(), e);
                     }
                 }
 

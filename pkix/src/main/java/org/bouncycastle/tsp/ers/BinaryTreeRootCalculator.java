@@ -53,7 +53,7 @@ public class BinaryTreeRootCalculator
             while (hashValues.size() > 1);
         }
 
-        return hashValues.get(0);
+        return (byte[])hashValues.get(0);
     }
 
     public PartialHashtree[] computePathToRoot(DigestCalculator digCalc, PartialHashtree node, int index)
@@ -66,30 +66,30 @@ public class BinaryTreeRootCalculator
         int row = 0;
         while (row < tree.size() - 1)
         {
-            if (index == tree.get(row).size() - 1)
+            if (index == ((List<byte[]>)tree.get(row)).size() - 1)
             {
                 while (true)
                 {
                     // search back in case we are the odd one at the end
-                    List<byte[]> hashes = tree.get(row + 1);
-                    if (!Arrays.areEqual(nodeHash, hashes.get(hashes.size() - 1)))
+                    List<byte[]> hashes = (List<byte[]>)tree.get(row + 1);
+                    if (!Arrays.areEqual(nodeHash, (byte[])hashes.get(hashes.size() - 1)))
                     {
                         break;
                     }
 
                     row++;
-                    index = tree.get(row).size() - 1;
+                    index = ((List<byte[]>)tree.get(row)).size() - 1;
                 }
             }
 
             byte[] neighborHash;
             if ((index & 1) == 0)
             {
-                neighborHash = tree.get(row).get(index + 1);
+                neighborHash = (byte[])((List<byte[]>)tree.get(row)).get(index + 1);
             }
             else
             {
-                neighborHash = tree.get(row).get(index - 1);
+                neighborHash = (byte[])((List<byte[]>)tree.get(row)).get(index - 1);
             }
 
             path.add(new PartialHashtree(neighborHash));
@@ -99,7 +99,7 @@ public class BinaryTreeRootCalculator
             row++;
         }
 
-        return path.toArray(new PartialHashtree[0]);
+        return (PartialHashtree[])path.toArray(new PartialHashtree[0]);
     }
 
     public byte[] recoverRootHash(DigestCalculator digCalc, PartialHashtree[] nodes)

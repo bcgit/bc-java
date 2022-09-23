@@ -178,7 +178,7 @@ public class PGPPublicKey
         this.idSigs = new ArrayList<List<PGPSignature>>(pubKey.idSigs.size());
         for (int i = 0; i != pubKey.idSigs.size(); i++)
         {
-            this.idSigs.add(new ArrayList<PGPSignature>(pubKey.idSigs.get(i)));
+            this.idSigs.add(new ArrayList<PGPSignature>((List<PGPSignature>)pubKey.idSigs.get(i)));
         }
 
         if (pubKey.subSigs != null)
@@ -345,7 +345,7 @@ public class PGPPublicKey
 
         while (signatures.hasNext())
         {
-            PGPSignature sig = signatures.next();
+            PGPSignature sig = (PGPSignature)signatures.next();
 
             if (!selfSigned || sig.getKeyID() == this.getKeyID())
             {
@@ -554,7 +554,7 @@ public class PGPPublicKey
 
         for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
         {
-            PGPSignature sig = it.next();
+            PGPSignature sig = (PGPSignature)it.next();
 
             if (sig.getKeyID() == keyID)
             {
@@ -576,7 +576,7 @@ public class PGPPublicKey
             if (id.equals(ids.get(i)))
             {
                 userIdFound = true;
-                signatures.addAll(idSigs.get(i));
+                signatures.addAll((List<PGPSignature>)idSigs.get(i));
             }
         }
 
@@ -600,7 +600,7 @@ public class PGPPublicKey
             if (userAttributes.equals(ids.get(i)))
             {
                 attributeFound = true;
-                signatures.addAll(idSigs.get(i));
+                signatures.addAll((List<PGPSignature>)idSigs.get(i));
             }
         }
 
@@ -621,7 +621,7 @@ public class PGPPublicKey
 
         while (it.hasNext())
         {
-            PGPSignature sig = it.next();
+            PGPSignature sig = (PGPSignature)it.next();
 
             if (sig.getSignatureType() == signatureType)
             {
@@ -645,7 +645,7 @@ public class PGPPublicKey
 
             for (int i = 0; i != idSigs.size(); i++)
             {
-                sigs.addAll(idSigs.get(i));
+                sigs.addAll((List<PGPSignature>)idSigs.get(i));
             }
 
             return sigs.iterator();
@@ -747,7 +747,7 @@ public class PGPPublicKey
         {
             for (int i = 0; i != keySigs.size(); i++)
             {
-                keySigs.get(i).encode(out);
+                ((PGPSignature)keySigs.get(i)).encode(out);
             }
 
             for (int i = 0; i != ids.size(); i++)
@@ -767,13 +767,13 @@ public class PGPPublicKey
 
                 if (!forTransfer && idTrusts.get(i) != null)
                 {
-                    out.writePacket(idTrusts.get(i));
+                    out.writePacket((TrustPacket)idTrusts.get(i));
                 }
 
-                List<PGPSignature> sigs = idSigs.get(i);
+                List<PGPSignature> sigs = (List<PGPSignature>)idSigs.get(i);
                 for (int j = 0; j != sigs.size(); j++)
                 {
-                    sigs.get(j).encode(out, forTransfer);
+                    ((PGPSignature)sigs.get(j)).encode(out, forTransfer);
                 }
             }
         }
@@ -781,7 +781,7 @@ public class PGPPublicKey
         {
             for (int j = 0; j != subSigs.size(); j++)
             {
-                subSigs.get(j).encode(out, forTransfer);
+                ((PGPSignature)subSigs.get(j)).encode(out, forTransfer);
             }
         }
     }
@@ -811,7 +811,7 @@ public class PGPPublicKey
         {
             while (!revoked && (ns < keySigs.size()))
             {
-                if (keySigs.get(ns++).getSignatureType() == PGPSignature.KEY_REVOCATION)
+                if (((PGPSignature)keySigs.get(ns++)).getSignatureType() == PGPSignature.KEY_REVOCATION)
                 {
                     revoked = true;
                 }
@@ -821,7 +821,7 @@ public class PGPPublicKey
         {
             while (!revoked && (ns < subSigs.size()))
             {
-                if (subSigs.get(ns++).getSignatureType() == PGPSignature.SUBKEY_REVOCATION)
+                if (((PGPSignature)subSigs.get(ns++)).getSignatureType() == PGPSignature.SUBKEY_REVOCATION)
                 {
                     revoked = true;
                 }
@@ -891,7 +891,7 @@ public class PGPPublicKey
         {
             if (id.equals(returnKey.ids.get(i)))
             {
-                sigList = returnKey.idSigs.get(i);
+                sigList = (List<PGPSignature>)returnKey.idSigs.get(i);
             }
         }
 
@@ -1041,7 +1041,7 @@ public class PGPPublicKey
         {
             if (id.equals(returnKey.ids.get(i)))
             {
-                found = returnKey.idSigs.get(i).remove(certification);
+                found = ((List<PGPSignature>)returnKey.idSigs.get(i)).remove(certification);
             }
         }
 
@@ -1120,7 +1120,7 @@ public class PGPPublicKey
         {
             for (Iterator<byte[]> it = key.getRawUserIDs(); it.hasNext(); )
             {
-                byte[] rawID = it.next();
+                byte[] rawID = (byte[])it.next();
                 for (Iterator<PGPSignature> sIt = key.getSignaturesForID(rawID); sIt.hasNext(); )
                 {
                     if (certification == sIt.next())
@@ -1135,7 +1135,7 @@ public class PGPPublicKey
             {
                 for (Iterator<PGPUserAttributeSubpacketVector> it = key.getUserAttributes(); it.hasNext(); )
                 {
-                    PGPUserAttributeSubpacketVector id = it.next();
+                    PGPUserAttributeSubpacketVector id = (PGPUserAttributeSubpacketVector)it.next();
                     for (Iterator<PGPSignature> sIt = key.getSignaturesForUserAttribute(id); sIt.hasNext(); )
                     {
                         if (certification == sIt.next())
@@ -1196,11 +1196,11 @@ public class PGPPublicKey
         // key signatures
         for (Iterator<PGPSignature> it = copy.keySigs.iterator(); it.hasNext();)
         {
-            PGPSignature keySig = it.next();
+            PGPSignature keySig = (PGPSignature)it.next();
             boolean found = false;
             for (int i = 0; i < keySigs.size(); i++)
             {
-                PGPSignature existingKeySig = keySigs.get(i);
+                PGPSignature existingKeySig = (PGPSignature)keySigs.get(i);
                 if (PGPSignature.isSignatureEncodingEqual(existingKeySig, keySig))
                 {
                     found = true;
@@ -1221,14 +1221,14 @@ public class PGPPublicKey
         // user-ids and id sigs
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
         {
-            UserDataPacket copyId = copy.ids.get(idIdx);
-            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>(copy.idSigs.get(idIdx));
-            TrustPacket copyTrust = copy.idTrusts.get(idIdx);
+            UserDataPacket copyId = (UserDataPacket)copy.ids.get(idIdx);
+            List<PGPSignature> copyIdSigs = new ArrayList<PGPSignature>((List<PGPSignature>)copy.idSigs.get(idIdx));
+            TrustPacket copyTrust = (TrustPacket)copy.idTrusts.get(idIdx);
 
             int existingIdIndex = -1;
             for (int i = 0; i < ids.size(); i++)
             {
-                UserDataPacket existingId = ids.get(i);
+                UserDataPacket existingId = (UserDataPacket)ids.get(i);
                 if (existingId.equals(copyId))
                 {
                     existingIdIndex = i;
@@ -1255,7 +1255,7 @@ public class PGPPublicKey
             // existing user-id
             if (joinTrustPackets && copyTrust != null)
             {
-                TrustPacket existingTrust = idTrusts.get(existingIdIndex);
+                TrustPacket existingTrust = (TrustPacket)idTrusts.get(existingIdIndex);
                 if (existingTrust == null || Arrays.areEqual(copyTrust.getLevelAndTrustAmount(), existingTrust.getLevelAndTrustAmount()))
                 {
                     idTrusts.remove(existingIdIndex);
@@ -1263,14 +1263,14 @@ public class PGPPublicKey
                 }
             }
 
-            List<PGPSignature> existingIdSigs = idSigs.get(existingIdIndex);
+            List<PGPSignature> existingIdSigs = (List<PGPSignature>)idSigs.get(existingIdIndex);
             for (Iterator<PGPSignature> it = copyIdSigs.iterator(); it.hasNext();)
             {
-                PGPSignature newSig = it.next();
+                PGPSignature newSig = (PGPSignature)it.next();
                 boolean found = false;
                 for (int i = 0; i < existingIdSigs.size(); i++)
                 {
-                    PGPSignature existingSig = existingIdSigs.get(i);
+                    PGPSignature existingSig = (PGPSignature)existingIdSigs.get(i);
                     if (PGPSignature.isSignatureEncodingEqual(newSig, existingSig))
                     {
                         found = true;
@@ -1299,11 +1299,11 @@ public class PGPPublicKey
             {
                 for (Iterator<PGPSignature> it = copy.subSigs.iterator(); it.hasNext();)
                 {
-                    PGPSignature copySubSig = it.next();
+                    PGPSignature copySubSig = (PGPSignature)it.next();
                     boolean found = false;
                     for (int i = 0; subSigs != null && i < subSigs.size(); i++)
                     {
-                        PGPSignature existingSubSig = subSigs.get(i);
+                        PGPSignature existingSubSig = (PGPSignature)subSigs.get(i);
                         if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                         {
                             found = true;

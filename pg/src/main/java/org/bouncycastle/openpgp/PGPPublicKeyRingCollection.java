@@ -15,6 +15,7 @@ import java.util.Map;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -71,7 +72,7 @@ public class PGPPublicKeyRingCollection
             }
 
             PGPPublicKeyRing pgpPub = (PGPPublicKeyRing)obj;
-            Long key = pgpPub.getPublicKey().getKeyID();
+            Long key = Longs.valueOf(pgpPub.getPublicKey().getKeyID());
 
             pubRings.put(key, pgpPub);
             order.add(key);
@@ -85,9 +86,9 @@ public class PGPPublicKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pgpPub = it.next();
+            PGPPublicKeyRing pgpPub = (PGPPublicKeyRing)it.next();
 
-            Long key = pgpPub.getPublicKey().getKeyID();
+            Long key = Longs.valueOf(pgpPub.getPublicKey().getKeyID());
 
             pubRings.put(key, pgpPub);
             order.add(key);
@@ -163,12 +164,12 @@ public class PGPPublicKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pubRing = it.next();
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
             Iterator<String> uIt = pubRing.getPublicKey().getUserIDs();
 
             while (uIt.hasNext())
             {
-                String next = uIt.next();
+                String next = (String)uIt.next();
                 if (ignoreCase)
                 {
                     next = Strings.toLowerCase(next);
@@ -176,7 +177,7 @@ public class PGPPublicKeyRingCollection
 
                 if (matchPartial)
                 {
-                    if (next.contains(userID))
+                    if (next.indexOf(userID) >= 0)
                     {
                         rings.add(pubRing);
                     }
@@ -207,7 +208,7 @@ public class PGPPublicKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pubRing = it.next();
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
             PGPPublicKey pub = pubRing.getPublicKey(keyID);
 
             if (pub != null)
@@ -228,18 +229,18 @@ public class PGPPublicKeyRingCollection
     public PGPPublicKeyRing getPublicKeyRing(
         long keyID)
     {
-        Long id = keyID;
+        Long id = Longs.valueOf(keyID);
 
         if (pubRings.containsKey(id))
         {
-            return pubRings.get(id);
+            return (PGPPublicKeyRing)pubRings.get(id);
         }
 
         Iterator<PGPPublicKeyRing> it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pubRing = it.next();
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
             PGPPublicKey pub = pubRing.getPublicKey(keyID);
 
             if (pub != null)
@@ -264,7 +265,7 @@ public class PGPPublicKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pubRing = it.next();
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
             PGPPublicKey pub = pubRing.getPublicKey(fingerprint);
 
             if (pub != null)
@@ -289,7 +290,7 @@ public class PGPPublicKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPPublicKeyRing pubRing = it.next();
+            PGPPublicKeyRing pubRing = (PGPPublicKeyRing)it.next();
             PGPPublicKey pub = pubRing.getPublicKey(fingerprint);
 
             if (pub != null)
@@ -313,7 +314,7 @@ public class PGPPublicKeyRingCollection
 
         for (Iterator<PGPPublicKeyRing> it = this.iterator(); it.hasNext(); )
         {
-            PGPPublicKeyRing k = it.next();
+            PGPPublicKeyRing k = (PGPPublicKeyRing)it.next();
 
             for (Iterator<PGPPublicKey> keyIt = k.getKeysWithSignaturesBy(keyID); keyIt.hasNext(); )
             {
@@ -374,7 +375,7 @@ public class PGPPublicKeyRingCollection
         Iterator<Long> it = order.iterator();
         while (it.hasNext())
         {
-            PGPPublicKeyRing sr = pubRings.get(it.next());
+            PGPPublicKeyRing sr = (PGPPublicKeyRing)pubRings.get(it.next());
 
             sr.encode(out);
         }
@@ -394,7 +395,7 @@ public class PGPPublicKeyRingCollection
         PGPPublicKeyRingCollection ringCollection,
         PGPPublicKeyRing publicKeyRing)
     {
-        Long key = publicKeyRing.getPublicKey().getKeyID();
+        Long key = Longs.valueOf(publicKeyRing.getPublicKey().getKeyID());
 
         if (ringCollection.pubRings.containsKey(key))
         {
@@ -423,7 +424,7 @@ public class PGPPublicKeyRingCollection
         PGPPublicKeyRingCollection ringCollection,
         PGPPublicKeyRing publicKeyRing)
     {
-        Long key = publicKeyRing.getPublicKey().getKeyID();
+        Long key = Longs.valueOf(publicKeyRing.getPublicKey().getKeyID());
 
         if (!ringCollection.pubRings.containsKey(key))
         {
@@ -437,7 +438,7 @@ public class PGPPublicKeyRingCollection
 
         for (int i = 0; i < newOrder.size(); i++)
         {
-            Long r = newOrder.get(i);
+            Long r = (Long)newOrder.get(i);
 
             if (r.longValue() == key.longValue())
             {

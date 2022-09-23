@@ -20,7 +20,7 @@ public class SortedIndexedHashList
 
     public IndexedHash getFirst()
     {
-        return baseList.getFirst();
+        return (IndexedHash)baseList.getFirst();
     }
 
     public void add(IndexedHash hash)
@@ -31,14 +31,14 @@ public class SortedIndexedHashList
         }
         else
         {
-            if (hashComp.compare(hash.digest, baseList.get(0).digest) < 0)
+            if (hashComp.compare(hash.digest, ((IndexedHash)baseList.get(0)).digest) < 0)
             {
                 baseList.addFirst(hash);
             }
             else
             {
                 int index = 1;
-                while(index < baseList.size() && hashComp.compare(baseList.get(index).digest, hash.digest) <= 0)
+                while(index < baseList.size() && hashComp.compare(((IndexedHash)baseList.get(index)).digest, hash.digest) <= 0)
                 {
                     index++;
                 }

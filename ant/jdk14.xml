@@ -102,6 +102,7 @@
                 <exclude name="**/pqc/**/HPS*.java"/>
                 <exclude name="**/GetInstanceTest.java"/>
                 <exclude name="**/SIKE*.java"/>
+                <exclude name="**/EncryptionKeyTest.java"/>
             </fileset>
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>

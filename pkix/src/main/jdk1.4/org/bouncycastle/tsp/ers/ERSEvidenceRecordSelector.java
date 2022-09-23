@@ -26,15 +26,15 @@ public class ERSEvidenceRecordSelector
         return data;
     }
 
-    public boolean match(ERSEvidenceRecord obj)
+    public boolean match(Object obj)
     {
         try
         {
-            if (obj.isContaining(data, date))
+            if (((ERSEvidenceRecord)obj).isContaining(data, date))
             {
                 try
                 {
-                    obj.validatePresent(data, date);
+                    ((ERSEvidenceRecord)obj).validatePresent(data, date);
 
                     return true;
                 }
