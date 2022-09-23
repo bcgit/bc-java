@@ -19,6 +19,7 @@ import javax.crypto.KeyAgreement;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -151,6 +152,17 @@ public class JcaTlsCrypto
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
+        return createCertificate(CertificateType.X509, encoding);
+    }
+
+    public TlsCertificate createCertificate(short type, byte[] encoding)
+        throws IOException
+    {
+        if (type != CertificateType.X509)
+        {
+            throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+        }
+
         return new JcaTlsCertificate(this, encoding);
     }
 

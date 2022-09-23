@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
 import org.bouncycastle.crypto.prng.DigestRandomGenerator;
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.CertificateType;
 import org.bouncycastle.tls.EncryptionAlgorithm;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.MACAlgorithm;
@@ -96,7 +97,21 @@ public class BcTlsCrypto
     public TlsCertificate createCertificate(byte[] encoding)
         throws IOException
     {
-        return new BcTlsCertificate(this, encoding);
+        return createCertificate(CertificateType.X509, encoding);
+    }
+
+    public TlsCertificate createCertificate(short type, byte[] encoding)
+        throws IOException
+    {
+        switch (type)
+        {
+        case CertificateType.X509:
+            return new BcTlsCertificate(this, encoding);
+        case CertificateType.RawPublicKey:
+            return new BcTlsRawKeyCertificate(this, encoding);
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
     }
 
     public TlsCipher createCipher(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int macAlgorithm)

@@ -33,6 +33,7 @@ public class Certificate
     public static class ParseOptions
     {
         private int maxChainLength = Integer.MAX_VALUE;
+        private short certificateType = CertificateType.X509;
 
         public int getMaxChainLength()
         {
@@ -44,6 +45,20 @@ public class Certificate
             this.maxChainLength = maxChainLength;
             return this;
         }
+
+        public short getCertificateType()
+        {
+            return certificateType;
+        }
+
+        /**
+         * Set the {@link CertificateType} according to the IANA TLS Certificate Types registry
+         */
+        public ParseOptions setCertificateType(short certificateType)
+        {
+            this.certificateType = certificateType;
+            return this;
+        }        
     }
 
     private static CertificateEntry[] convert(TlsCertificate[] certificateList)
@@ -64,14 +79,20 @@ public class Certificate
 
     protected final byte[] certificateRequestContext;
     protected final CertificateEntry[] certificateEntryList;
+    protected final short certificateType;
 
     public Certificate(TlsCertificate[] certificateList)
     {
         this(null, convert(certificateList));
     }
 
-    // TODO[tls13] Prefer to manage the certificateRequestContext internally only? 
     public Certificate(byte[] certificateRequestContext, CertificateEntry[] certificateEntryList)
+    {
+        this(CertificateType.X509, certificateRequestContext, certificateEntryList);
+    }
+
+    // TODO[tls13] Prefer to manage the certificateRequestContext internally only?
+    public Certificate(short certificateType, byte[] certificateRequestContext, CertificateEntry[] certificateEntryList)
     {
         if (null != certificateRequestContext && !TlsUtils.isValidUint8(certificateRequestContext.length))
         {
@@ -84,6 +105,7 @@ public class Certificate
 
         this.certificateRequestContext = TlsUtils.clone(certificateRequestContext);
         this.certificateEntryList = certificateEntryList;
+        this.certificateType = certificateType;
     }
 
     public byte[] getCertificateRequestContext()
@@ -117,7 +139,7 @@ public class Certificate
 
     public short getCertificateType()
     {
-        return CertificateType.X509;
+        return certificateType;
     }
 
     public int getLength()
@@ -190,8 +212,13 @@ public class Certificate
             }
         }
 
-        TlsUtils.checkUint24(totalLength);
-        TlsUtils.writeUint24((int)totalLength, messageOutput);
+        // RFC 7250 indicates the raw key is not wrapped in a cert list like X509 is
+        // but RFC 8446 wraps it in a CertificateEntry, which is inside certificate_list
+        if (isTLSv13 || certificateType != CertificateType.RawPublicKey)
+        {
+            TlsUtils.checkUint24(totalLength);
+            TlsUtils.writeUint24((int)totalLength, messageOutput);
+        }
 
         for (int i = 0; i < count; ++i)
         {
@@ -242,6 +269,7 @@ public class Certificate
     {
         final SecurityParameters securityParameters = context.getSecurityParameters();
         final boolean isTLSv13 = TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion());
+        final short certType = options.getCertificateType();
 
         byte[] certificateRequestContext = null;
         if (isTLSv13)
@@ -254,7 +282,7 @@ public class Certificate
         {
             return !isTLSv13 ? EMPTY_CHAIN
                 :  certificateRequestContext.length < 1 ? EMPTY_CHAIN_TLS13
-                :  new Certificate(certificateRequestContext, EMPTY_CERT_ENTRIES);
+                :  new Certificate(certType, certificateRequestContext, EMPTY_CERT_ENTRIES);
         }
 
         byte[] certListData = TlsUtils.readFully(totalLength, messageInput);
@@ -272,8 +300,20 @@ public class Certificate
                     "Certificate chain longer than maximum (" + maxChainLength + ")");
             }
 
-            byte[] derEncoding = TlsUtils.readOpaque24(buf, 1);
-            TlsCertificate cert = crypto.createCertificate(derEncoding);
+            // RFC 7250 indicates the raw key is not wrapped in a cert list like X509 is
+            // but RFC 8446 wraps it in a CertificateEntry, which is inside certificate_list
+            byte[] derEncoding;
+            if (isTLSv13 || certType != CertificateType.RawPublicKey)
+            {
+                derEncoding = TlsUtils.readOpaque24(buf, 1);
+            }
+            else
+            {
+                derEncoding = certListData;
+                buf.skip(totalLength);
+            }
+
+            TlsCertificate cert = crypto.createCertificate(certType, derEncoding);
 
             if (certificate_list.isEmpty() && endPointHashOutput != null)
             {
@@ -297,7 +337,7 @@ public class Certificate
             certificateList[i] = (CertificateEntry)certificate_list.elementAt(i);
         }
 
-        return new Certificate(certificateRequestContext, certificateList);
+        return new Certificate(certType, certificateRequestContext, certificateList);
     }
 
     protected static void calculateEndPointHash(TlsContext context, TlsCertificate cert, byte[] encoding,

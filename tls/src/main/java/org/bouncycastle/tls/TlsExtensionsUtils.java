@@ -304,11 +304,11 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
     }
 
-    public static short getClientCertificateTypeExtensionServer(Hashtable extensions)
+    public static short getClientCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_type);
-        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
+        return extensionData == null ? defaultValue : readCertificateTypeExtensionServer(extensionData);
     }
 
     public static int[] getCompressCertificateExtension(Hashtable extensions)
@@ -415,11 +415,11 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
     }
 
-    public static short getServerCertificateTypeExtensionServer(Hashtable extensions)
+    public static short getServerCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_certificate_type);
-        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
+        return extensionData == null ? defaultValue : readCertificateTypeExtensionServer(extensionData);
     }
 
     public static Vector getServerNameExtensionClient(Hashtable extensions)
