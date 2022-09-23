@@ -155,6 +155,8 @@
                 <exclude name="**/jsse/**"/>
                 <exclude name="**/CertChainUtil.java"/>
                 <exclude name="**/TlsTestUtils.java"/>
+                <exclude name="**/TlsServerRawKeysTest.java"/>
+                <exclude name="**/TlsClientRawKeysTest.java"/>
             </fileset>
 
             <fileset dir="tls/src/test/resources" includes="**/*.*"/>
