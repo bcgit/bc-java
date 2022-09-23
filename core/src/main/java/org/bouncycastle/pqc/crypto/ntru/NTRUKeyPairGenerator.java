@@ -29,7 +29,7 @@ public class NTRUKeyPairGenerator
     @Override
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        assert this.random != null;
+//        assert this.random != null;
         NTRUParameterSet parameterSet = this.params.getParameters().parameterSet;
         byte[] seed = new byte[parameterSet.sampleFgBytes()];
         random.nextBytes(seed);

@@ -30,7 +30,7 @@ public class NTRUKEMExtractor
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
-        assert this.ntruPrivateKey != null;
+//        assert this.ntruPrivateKey != null;
         NTRUParameterSet parameterSet = this.params.parameterSet;
 
         byte[] sk = this.ntruPrivateKey.privateKey;

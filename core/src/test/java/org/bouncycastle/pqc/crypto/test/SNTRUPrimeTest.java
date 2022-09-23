@@ -37,8 +37,9 @@ public class SNTRUPrimeTest
         };
 
         TestSampler sampler = new TestSampler();
-        for (SNTRUPrimeParameters paramSpec : paramList)
+        for (int i = 0; i != paramList.length; i++)
         {
+            SNTRUPrimeParameters paramSpec = paramList[i];
             System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
             InputStream resource = SNTRUPrimeTest.class.getResourceAsStream(resourcePath + paramSpec.getName().toLowerCase() + ".rsp");
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(resource)));
