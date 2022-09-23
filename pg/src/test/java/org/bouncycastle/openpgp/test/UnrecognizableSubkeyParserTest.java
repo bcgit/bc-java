@@ -505,7 +505,7 @@ public class UnrecognizableSubkeyParserTest
         isTrue("BC must be able to deal with ECDH subkeys with unknown curves", cert != null);
     }
 
-    private int count(Iterator<?> iterator)
+    private int count(Iterator iterator)
     {
         int i = 0;
         while (iterator.hasNext())

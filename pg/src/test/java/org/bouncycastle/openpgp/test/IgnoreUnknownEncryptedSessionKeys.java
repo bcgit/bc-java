@@ -244,8 +244,9 @@ public class IgnoreUnknownEncryptedSessionKeys
         isTrue(encryptedDataList != null);
 
         InputStream decryptIn = null;
-        for (PGPEncryptedData encryptedData : encryptedDataList)
+        for (int i = 0; i != encryptedDataList.size(); i++)
         {
+            PGPEncryptedData encryptedData = encryptedDataList.get(i);
             if (encryptedData instanceof PGPPublicKeyEncryptedData)
             {
                 PGPPublicKeyEncryptedData pkesk = (PGPPublicKeyEncryptedData)encryptedData;
