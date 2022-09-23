@@ -23,9 +23,10 @@
         <mkdir dir="${artifacts.dir}/checkstyle"/>
         <copy todir="${src.dir}">
             <fileset dir="core/src/main/java">
-                <exclude name="**/ntru/**/*.java"/>
+                <exclude name="**/legacy/**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
+                <exclude name="**/sike/*.java"/>
             </fileset>
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**/*.java"/>
@@ -66,11 +67,12 @@
                 <exclude name="**/EC5*.java"/>
                 <exclude name="**/PKCS12StoreParameter.java"/>
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
-                <exclude name="**/NTRU*.java"/>
+                <exclude name="**/SIKE*.java"/>
+                <exclude name="**/sike/*.java"/>
                 <exclude name="**/XMS*.java"/>
                 <exclude name="**/LMS*.java"/>
                 <exclude name="**/IndexGenerator.java"/>
-                <exclude name="**/ntru/**/*.java"/>
+                <exclude name="**/legacy/**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/asymmetric/DSTU*.java"/>
@@ -86,15 +88,18 @@
                 <exclude name="**/KDFFeed*.java"/>
                 <exclude name="**/KDFDoublePipeline*.java"/>
                 <exclude name="**/KDFCounterGener*.java"/>
-                <exclude name="**/ntru/**/*.java"/>
+                <exclude name="**/legacy/**/ntru/**/*.java"/>
+                <exclude name="**/legacy/**/NTRU*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
-                <exclude name="**/NTRU*.java"/>
                 <exclude name="**/pqc/**/EncryptionKeyTest.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>
                 <exclude name="**/pqc/**/HSS*.java"/>
+                <exclude name="**/pqc/**/HRSS*.java"/>
+                <exclude name="**/pqc/**/PolynomialTest.java"/>
+                <exclude name="**/pqc/**/HPS*.java"/>
                 <exclude name="**/GetInstanceTest.java"/>
             </fileset>
             <fileset dir="pg/src/test/java">
@@ -125,8 +130,7 @@
                 <exclude name="**/MQVTest.java"/>
                 <exclude name="**/pem/AllTests.java"/>
                 <exclude name="**/AlgorithmParametersTest.java"/>
-                <exclude name="**/ntru/**/*.java"/>
-                <exclude name="**/NTRU*.java"/>
+                <exclude name="**/legacy/**/ntru/**/*.java"/>
                 <exclude name="**/crypto/engines/test/BitStringTest.java"/>
                 <exclude name="**/crypto/engines/test/AllTests.java"/>
                 <exclude name="**/crypto/signers/test/AllTests.java"/>
@@ -184,6 +188,7 @@
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="tls/src/main/jdk1.4" includes="**/*.java"/>
+            <fileset dir="util/src/main/jdk1.4" includes="**/*.java"/>
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="mail/src/test/jdk1.4" includes="**/*.java"/>
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java"/>

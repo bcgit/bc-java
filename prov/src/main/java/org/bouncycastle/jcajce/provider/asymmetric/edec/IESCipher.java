@@ -54,7 +54,6 @@ import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Strings;
 
-
 public class IESCipher
     extends BaseCipherSpi
 {
@@ -439,8 +438,8 @@ public class IESCipher
 
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            // Generate the ephemeral key pair
-            AsymmetricCipherKeyPairGenerator kpGen = isX25519 ? new X25519KeyPairGenerator() : new X448KeyPairGenerator();
+            // Generate the ephemeral key pair - cast due to JVM compatibility
+            AsymmetricCipherKeyPairGenerator kpGen = isX25519 ? (AsymmetricCipherKeyPairGenerator)new X25519KeyPairGenerator() : (AsymmetricCipherKeyPairGenerator)new X448KeyPairGenerator();
             kpGen.init(new KeyGenerationParameters(random, fieldSize));
             EphemeralKeyPairGenerator epKpGen = new EphemeralKeyPairGenerator(kpGen, new KeyEncoder()
             {

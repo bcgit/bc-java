@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 import org.bouncycastle.pqc.math.ntru.Polynomial;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
 import org.bouncycastle.util.Arrays;
@@ -67,6 +68,6 @@ public class NTRUKEMGenerator
 
         Arrays.clear(k);
         
-        return new NTRUEncapsulation(sharedKey, c);
+        return new SecretWithEncapsulationImpl(sharedKey, c);
     }
 }

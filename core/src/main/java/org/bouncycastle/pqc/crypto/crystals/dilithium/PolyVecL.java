@@ -134,7 +134,7 @@ class PolyVecL
         String out = "\n[";
         for (int i = 0; i < dilithiumL; i++)
         {
-            out += String.format("Inner Matrix %d ", i) + this.getVectorIndex(i).toString();
+            out += "Inner Matrix " + i + " " + this.getVectorIndex(i).toString();
             if (i == dilithiumL - 1)
             {
                 continue;

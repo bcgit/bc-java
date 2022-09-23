@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 
 public class SNTRUPrimeKeyGenerationParameters
     extends KeyGenerationParameters
-    implements Cloneable
 {
     private final SNTRUPrimeParameters sntrupParams;
 
@@ -27,18 +26,5 @@ public class SNTRUPrimeKeyGenerationParameters
     public SNTRUPrimeParameters getSntrupParams()
     {
         return sntrupParams;
-    }
-
-    @Override
-    public SNTRUPrimeKeyGenerationParameters clone()
-    {
-        try
-        {
-            return (SNTRUPrimeKeyGenerationParameters) super.clone();
-        }
-        catch (CloneNotSupportedException e)
-        {
-            throw new AssertionError();
-        }
     }
 }

@@ -10,6 +10,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.interfaces.DHPublicKey;
 
@@ -28,11 +29,13 @@ import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
+import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 
 /**
@@ -136,37 +139,55 @@ public class JcaTlsCertificate
     {
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa_pss_rsae_sha256:
-        case SignatureAlgorithm.rsa_pss_rsae_sha384:
-        case SignatureAlgorithm.rsa_pss_rsae_sha512:
         case SignatureAlgorithm.ed25519:
         case SignatureAlgorithm.ed448:
-        case SignatureAlgorithm.rsa_pss_pss_sha256:
-        case SignatureAlgorithm.rsa_pss_pss_sha384:
-        case SignatureAlgorithm.rsa_pss_pss_sha512:
-            return createVerifier(SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm));
+        {
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            Tls13Verifier tls13Verifier = createVerifier(signatureScheme);
+            return new LegacyTls13Verifier(signatureScheme, tls13Verifier);
+        }
         }
 
         validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
 
         switch (signatureAlgorithm)
         {
-        case SignatureAlgorithm.rsa:
-            validateRSA_PKCS1();
-            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
-
         case SignatureAlgorithm.dsa:
             return new JcaTlsDSAVerifier(crypto, getPubKeyDSS());
 
         case SignatureAlgorithm.ecdsa:
             return new JcaTlsECDSAVerifier(crypto, getPubKeyEC());
 
+        case SignatureAlgorithm.rsa:
+        {
+            validateRSA_PKCS1();
+            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+        }
+
+        case SignatureAlgorithm.rsa_pss_pss_sha256:
+        case SignatureAlgorithm.rsa_pss_pss_sha384:
+        case SignatureAlgorithm.rsa_pss_pss_sha512:
+        {
+            validateRSA_PSS_PSS(signatureAlgorithm);
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
+        case SignatureAlgorithm.rsa_pss_rsae_sha256:
+        case SignatureAlgorithm.rsa_pss_rsae_sha384:
+        case SignatureAlgorithm.rsa_pss_rsae_sha512:
+        {
+            validateRSA_PSS_RSAE();
+            int signatureScheme = SignatureScheme.from(HashAlgorithm.Intrinsic, signatureAlgorithm);
+            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+        }
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
 
-    public TlsVerifier createVerifier(int signatureScheme) throws IOException
+    public Tls13Verifier createVerifier(int signatureScheme) throws IOException
     {
         validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
 
@@ -179,13 +200,20 @@ public class JcaTlsCertificate
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.ecdsa_sha1:
-            return new JcaTlsECDSA13Verifier(crypto, getPubKeyEC(), signatureScheme);
+        {
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+            String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
+                + "WITHECDSA";
+
+            return crypto.createTls13Verifier(sigName, null, getPubKeyEC());
+        }
 
         case SignatureScheme.ed25519:
-            return new JcaTlsEd25519Verifier(crypto, getPubKeyEd25519());
+            return crypto.createTls13Verifier("Ed25519", null, getPubKeyEd25519());
 
         case SignatureScheme.ed448:
-            return new JcaTlsEd448Verifier(crypto, getPubKeyEd448());
+            return crypto.createTls13Verifier("Ed448", null, getPubKeyEd448());
 
         case SignatureScheme.rsa_pkcs1_sha1:
         case SignatureScheme.rsa_pkcs1_sha256:
@@ -193,7 +221,13 @@ public class JcaTlsCertificate
         case SignatureScheme.rsa_pkcs1_sha512:
         {
             validateRSA_PKCS1();
-            return new JcaTlsRSAVerifier(crypto, getPubKeyRSA());
+
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+            String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
+                + "WITHRSA";
+
+            return crypto.createTls13Verifier(sigName, null, getPubKeyRSA());
         }
 
         case SignatureScheme.rsa_pss_pss_sha256:
@@ -201,7 +235,17 @@ public class JcaTlsCertificate
         case SignatureScheme.rsa_pss_pss_sha512:
         {
             validateRSA_PSS_PSS(SignatureScheme.getSignatureAlgorithm(signatureScheme));
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+            
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+            String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
+                + "WITHRSAANDMGF1";
+
+            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil
+                .getPSSParameterSpec(cryptoHashAlgorithm, digestName, crypto.getHelper());
+
+            return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
 
         case SignatureScheme.rsa_pss_rsae_sha256:
@@ -209,7 +253,17 @@ public class JcaTlsCertificate
         case SignatureScheme.rsa_pss_rsae_sha512:
         {
             validateRSA_PSS_RSAE();
-            return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
+
+            int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
+            String digestName = crypto.getDigestName(cryptoHashAlgorithm);
+            String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
+                + "WITHRSAANDMGF1";
+
+            // NOTE: We explicitly set them even though they should be the defaults, because providers vary
+            AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil
+                .getPSSParameterSpec(cryptoHashAlgorithm, digestName, crypto.getHelper());
+
+            return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
         }
 
         // TODO[RFC 8998]
@@ -304,7 +358,11 @@ public class JcaTlsCertificate
         PublicKey publicKey = getPublicKey();
         if (!"Ed25519".equals(publicKey.getAlgorithm()))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            // Oracle provider (Java 15+) returns the key as an EdDSA one
+            if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed25519") >= 0))
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
         }
         return publicKey;
     }
@@ -314,7 +372,11 @@ public class JcaTlsCertificate
         PublicKey publicKey = getPublicKey();
         if (!"Ed448".equals(publicKey.getAlgorithm()))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            // Oracle provider (Java 15+) returns the key as an EdDSA one
+            if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed448") >= 0))
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
         }
         return publicKey;
     }

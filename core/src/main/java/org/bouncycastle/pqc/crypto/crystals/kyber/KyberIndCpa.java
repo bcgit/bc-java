@@ -1,9 +1,7 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
-import java.util.Arrays;
-
-import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Arrays;
 
 class KyberIndCpa
 {

@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.params.DHParameters;
@@ -15,15 +16,20 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.Properties;
 
 /**
  * Basic registrar class for providing defaults for cryptography services in this module.
  */
 public final class CryptoServicesRegistrar
 {
+    private static final Logger LOG = Logger.getLogger(CryptoServicesRegistrar.class.getName());
+
     private static final Permission CanSetDefaultProperty = new CryptoServicesPermission(CryptoServicesPermission.GLOBAL_CONFIG);
     private static final Permission CanSetThreadProperty = new CryptoServicesPermission(CryptoServicesPermission.THREAD_LOCAL_CONFIG);
     private static final Permission CanSetDefaultRandom = new CryptoServicesPermission(CryptoServicesPermission.DEFAULT_RANDOM);
+    private static final Permission CanSetConstraints = new CryptoServicesPermission(CryptoServicesPermission.CONSTRAINTS);
+
 
     private static final ThreadLocal threadProperties = new ThreadLocal();
     private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
@@ -38,6 +44,13 @@ public final class CryptoServicesRegistrar
              // anything goes.
         }
     };
+
+    private static CryptoServicesConstraints getDefaultConstraints()
+    {
+        // TODO: return one based on system/security properties if set.
+
+        return noConstraintsImpl;
+    }
 
     private static final boolean preconfiguredConstraints;
     private static CryptoServicesConstraints servicesConstraints = noConstraintsImpl;
@@ -105,7 +118,7 @@ public final class CryptoServicesRegistrar
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, new Object[] { def512Params, def768Params, def1024Params, def2048Params });
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, new Object[] { toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params) });
 
-        servicesConstraints.set(getDefaultConstraints());
+        servicesConstraints = getDefaultConstraints();
         preconfiguredConstraints = (servicesConstraints != noConstraintsImpl);
     }
 

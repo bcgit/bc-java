@@ -39,18 +39,18 @@ class FalconRNG
         {
             int w;
 
-            w = Byte.toUnsignedInt(tmp[(i << 2) + 0])
-                | (Byte.toUnsignedInt(tmp[(i << 2) + 1]) << 8)
-                | (Byte.toUnsignedInt(tmp[(i << 2) + 2]) << 16)
-                | (Byte.toUnsignedInt(tmp[(i << 2) + 3]) << 24);
-//        *(uint32_t *)(p->state.d + (i << 2)) = w;
+            w = (tmp[(i << 2) + 0] & 0xff)
+                | ((tmp[(i << 2) + 1] & 0xff) << 8)
+                | ((tmp[(i << 2) + 2] & 0xff) << 16)
+                | ((tmp[(i << 2) + 3] & 0xff) << 24);
+
             System.arraycopy(convertor.int_to_bytes(w), 0, this.sd, i << 2, 4);
         }
-//        tl = *(uint32_t *)(p->state.d + 48);
-        tl = Integer.toUnsignedLong(convertor.bytes_to_int(this.sd, 48));
-//        th = *(uint32_t *)(p->state.d + 52);
-        th = Integer.toUnsignedLong(convertor.bytes_to_int(this.sd, 52));
-//    *(uint64_t *)(p->state.d + 48) = tl + (th << 32);
+
+        tl = (convertor.bytes_to_int(this.sd, 48) & 0xffffffffL);
+
+        th = (convertor.bytes_to_int(this.sd, 52) & 0xffffffffL);
+
         System.arraycopy(convertor.long_to_bytes(tl + (th << 32)), 0, this.sd, 48, 8);
         this.prng_refill();
     }
@@ -223,14 +223,14 @@ class FalconRNG
          * On systems that use little-endian encoding and allow
          * unaligned accesses, we can simply read the data where it is.
          */
-        return Byte.toUnsignedLong(this.bd[u + 0])
-            | (Byte.toUnsignedLong(this.bd[u + 1]) << 8)
-            | (Byte.toUnsignedLong(this.bd[u + 2]) << 16)
-            | (Byte.toUnsignedLong(this.bd[u + 3]) << 24)
-            | (Byte.toUnsignedLong(this.bd[u + 4]) << 32)
-            | (Byte.toUnsignedLong(this.bd[u + 5]) << 40)
-            | (Byte.toUnsignedLong(this.bd[u + 6]) << 48)
-            | (Byte.toUnsignedLong(this.bd[u + 7]) << 56);
+        return (this.bd[u + 0] & 0xffL)
+            | ((this.bd[u + 1] & 0xffL) << 8)
+            | ((this.bd[u + 2] & 0xffL) << 16)
+            | ((this.bd[u + 3] & 0xffL) << 24)
+            | ((this.bd[u + 4] & 0xffL) << 32)
+            | ((this.bd[u + 5] & 0xffL) << 40)
+            | ((this.bd[u + 6] & 0xffL) << 48)
+            | ((this.bd[u + 7] & 0xffL) << 56);
     }
 
     byte prng_get_u8()

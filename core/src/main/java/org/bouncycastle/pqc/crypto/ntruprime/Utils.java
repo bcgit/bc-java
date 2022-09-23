@@ -560,8 +560,10 @@ class Utils
     protected static void checkForSmallPolynomial(byte[] r, byte[] ev, int p, int w)
     {
         int weight = 0;
-        for (byte b : ev)
-            weight += b & 1;
+        for (int i = 0; i != ev.length; i++)
+        {
+            weight += ev[i] & 1;
+        }
 
         int mask = checkNotEqualToZero(weight - w);
         for (int i = 0; i < w; i++)
@@ -593,8 +595,8 @@ class Utils
 
     private static int[] getUnsignedDivMod(int dividend, int n)
     {
-        long x = Integer.toUnsignedLong(dividend);
-        long v = Integer.toUnsignedLong(0x80000000);
+        long x = iToUnsignedLong(dividend);
+        long v = iToUnsignedLong(0x80000000);
         long q, qpart, mask;
 
         v /= n;
@@ -614,18 +616,18 @@ class Utils
         x += mask & n;
         q += mask;
 
-        return new int[]{Math.toIntExact(q), Math.toIntExact(x)};
+        return new int[]{toIntExact(q), toIntExact(x)};
     }
 
     private static int[] getSignedDivMod(int x, int n)
     {
         int q, r, mask;
 
-        int[] div1 = getUnsignedDivMod(Math.toIntExact(0x80000000 + Integer.toUnsignedLong(x)), n);
+        int[] div1 = getUnsignedDivMod(toIntExact(0x80000000L + iToUnsignedLong(x)), n);
         int[] div2 = getUnsignedDivMod(0x80000000, n);
 
-        q = Math.toIntExact(Integer.toUnsignedLong(div1[0]) - Integer.toUnsignedLong(div2[0]));
-        r = Math.toIntExact(Integer.toUnsignedLong(div1[1]) - Integer.toUnsignedLong(div2[1]));
+        q = toIntExact(iToUnsignedLong(div1[0]) - iToUnsignedLong(div2[0]));
+        r = toIntExact(iToUnsignedLong(div1[1]) - iToUnsignedLong(div2[1]));
         mask = -(r >>> 31);
         r += mask & n;
         q += mask;
@@ -640,7 +642,7 @@ class Utils
 
     private static int checkNotEqualToZero(int x)
     {
-        long l = Integer.toUnsignedLong(x);
+        long l = iToUnsignedLong(x);
         l = -l;
         return -(int)(l >>> 63);
     }
@@ -653,5 +655,21 @@ class Utils
     static int sToUnsignedInt(short s)
     {
         return s & 0xffff;
+    }
+    
+    static long iToUnsignedLong(int i)
+    {
+        return i & 0xffffffffL;
+    }
+
+    static int toIntExact(long l)
+    {
+        int i = (int)l;
+
+        if (i != l)
+        {
+            throw new IllegalStateException("value out of integer range");
+        }
+        return i;
     }
 }

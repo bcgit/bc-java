@@ -29,7 +29,7 @@ class FalconCommon
 
 //            inner_shake256_extract(sc, (void *)buf, sizeof buf);
             sc.inner_shake256_extract(buf, 0, 2);
-            w = (Byte.toUnsignedInt(buf[0]) << 8) | Byte.toUnsignedInt(buf[1]);
+            w = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff);
             if (w < 61445)
             {
                 while (w >= 12289)
@@ -109,7 +109,7 @@ class FalconCommon
             int w, wr;
 
             sc.inner_shake256_extract(buf, 0, buf.length);
-            w = (Byte.toUnsignedInt(buf[0]) << 8) | Byte.toUnsignedInt(buf[1]);
+            w = ((buf[0] & 0xff) << 8) | (buf[1] & 0xff);
             wr = w - (24578 & (((w - 24578) >>> 31) - 1));
             wr = wr - (24578 & (((wr - 24578) >>> 31) - 1));
             wr = wr - (12289 & (((wr - 12289) >>> 31) - 1));
@@ -306,7 +306,7 @@ class FalconCommon
         }
         s |= -(ng >>> 31);
 
-        return Integer.compareUnsigned(s, l2bound[logn]) <= 0 ? 1 : 0;
+        return (s & 0xffffffffL) <= l2bound[logn] ? 1 : 0;
     }
 
     /* see inner.h */
@@ -328,6 +328,6 @@ class FalconCommon
         }
         sqn |= -(ng >>> 31);
 
-        return Integer.compareUnsigned(sqn, l2bound[logn]) <= 0 ? 1 : 0;
+        return ((sqn & 0xffffffffL) <= l2bound[logn]) ? 1 : 0;
     }
 }

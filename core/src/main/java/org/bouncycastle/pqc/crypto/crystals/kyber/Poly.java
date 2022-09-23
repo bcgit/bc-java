@@ -1,9 +1,5 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
-import java.util.Arrays;
-
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-
 class Poly
 {
     private short[] coeffs;
@@ -322,7 +318,18 @@ class Poly
 
     public String toString()
     {
-        return Arrays.toString(coeffs);
+        StringBuffer out = new StringBuffer();
+        out.append("[");
+        for (int i = 0; i < coeffs.length; i++)
+        {
+            out.append(coeffs[i]);
+            if (i != coeffs.length - 1)
+            {
+                out.append(", ");
+            }
+        }
+        out.append("]");
+        return out.toString();
     }
 }
 

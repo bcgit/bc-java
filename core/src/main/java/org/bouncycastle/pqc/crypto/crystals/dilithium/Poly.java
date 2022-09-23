@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
-import java.util.Arrays;
-
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class Poly
@@ -786,9 +784,19 @@ class Poly
         }
     }
 
-    @Override
     public String toString()
     {
-        return Arrays.toString(coeffs);
+        StringBuffer out = new StringBuffer();
+        out.append("[");
+        for (int i = 0; i < coeffs.length; i++)
+        {
+            out.append(coeffs[i]);
+            if (i != coeffs.length - 1)
+            {
+                out.append(", ");
+            }
+        }
+        out.append("]");
+        return out.toString();
     }
 }

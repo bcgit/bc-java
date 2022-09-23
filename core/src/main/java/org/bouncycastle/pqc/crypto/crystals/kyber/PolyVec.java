@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 class PolyVec
 {
@@ -251,11 +251,17 @@ class PolyVec
 
     public String toString()
     {
-        String[] out = new String[engine.getKyberK()];
+        StringBuffer out = new StringBuffer();
+        out.append("[");
         for (int i = 0; i < kyberK; i++)
         {
-            out[i] = vec[i].toString();
+            out.append(vec[i].toString());
+            if (i != kyberK - 1)
+            {
+                out.append(", ");
+            }
         }
-        return Arrays.toString(out);
+        out.append("]");
+        return out.toString();
     }
 }

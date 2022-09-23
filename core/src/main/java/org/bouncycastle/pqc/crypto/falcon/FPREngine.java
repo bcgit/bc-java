@@ -2,12 +2,14 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 class FPREngine
 {
-    FPREngine()
+    private static final FalconFPR[] inv_sigma;
+    private static final FalconFPR[] sigma_min;
+    private static final FalconFPR[] gm_tab;
+    private static final FalconFPR[] p2_tab;
+
+    static
     {
-        this.fpr_q = new FalconFPR(12289.0);
-        this.fpr_inverse_of_q = new FalconFPR(1.0 / 12289.0);
-        this.fpr_inv_2sqrsigma0 = new FalconFPR(0.150865048875372721532312163019);
-        FalconFPR[] fpr_inv_sigma = {
+        inv_sigma = new FalconFPR[]{
             new FalconFPR(0.0), /* unused */
             new FalconFPR(0.0069054793295940891952143765991630516),
             new FalconFPR(0.0068102267767177975961393730687908629),
@@ -20,8 +22,8 @@ class FPREngine
             new FalconFPR(0.0060336696681577241031668062510953022),
             new FalconFPR(0.0059386453095331159950250124336477482)
         };
-        this.fpr_inv_sigma = fpr_inv_sigma.clone();
-        FalconFPR[] fpr_sigma_min = {
+
+        sigma_min = new FalconFPR[]{
             new FalconFPR(0.0), /* unused */
             new FalconFPR(1.1165085072329102588881898380334015),
             new FalconFPR(1.1321247692325272405718031785357108),
@@ -34,23 +36,7 @@ class FPREngine
             new FalconFPR(1.2778336969128335860256340575729042),
             new FalconFPR(1.2982803343442918539708792538826807)
         };
-        this.fpr_sigma_min = fpr_sigma_min.clone();
-        this.fpr_log2 = new FalconFPR(0.69314718055994530941723212146);
-        this.fpr_inv_log2 = new FalconFPR(1.4426950408889634073599246810);
-        this.fpr_bnorm_max = new FalconFPR(16822.4121);
-        this.fpr_zero = new FalconFPR(0.0);
-        this.fpr_one = new FalconFPR(1.0);
-        this.fpr_two = new FalconFPR(2.0);
-        this.fpr_onehalf = new FalconFPR(0.5);
-        this.fpr_invsqrt2 = new FalconFPR(0.707106781186547524400844362105);
-        this.fpr_invsqrt8 = new FalconFPR(0.353553390593273762200422181052);
-        this.fpr_ptwo31 = new FalconFPR(2147483648.0);
-        this.fpr_ptwo31m1 = new FalconFPR(2147483647.0);
-        this.fpr_mtwo31m1 = new FalconFPR(-2147483647.0);
-        this.fpr_ptwo63m1 = new FalconFPR(9223372036854775807.0);
-        this.fpr_mtwo63m1 = new FalconFPR(-9223372036854775807.0);
-        this.fpr_ptwo63 = new FalconFPR(9223372036854775808.0);
-        FalconFPR[] fpr_gm_tab = {
+        gm_tab = new FalconFPR[]{
             new FalconFPR(0), new FalconFPR(0), /* unused */
             new FalconFPR(-0.000000000000000000000000000), new FalconFPR(1.000000000000000000000000000),
             new FalconFPR(0.707106781186547524400844362), new FalconFPR(0.707106781186547524400844362),
@@ -1076,8 +1062,8 @@ class FPREngine
             new FalconFPR(0.003067956762965976270145365), new FalconFPR(0.999995293809576171511580126),
             new FalconFPR(-0.999995293809576171511580126), new FalconFPR(0.003067956762965976270145365)
         };
-        this.fpr_gm_tab = fpr_gm_tab.clone();
-        FalconFPR[] fpr_p2_tab = {
+
+        p2_tab = new FalconFPR[]{
             new FalconFPR(2.00000000000),
             new FalconFPR(1.00000000000),
             new FalconFPR(0.50000000000),
@@ -1090,7 +1076,32 @@ class FPREngine
             new FalconFPR(0.00390625000),
             new FalconFPR(0.00195312500)
         };
-        this.fpr_p2_tab = fpr_p2_tab.clone();
+    }
+
+    FPREngine()
+    {
+        this.fpr_q = new FalconFPR(12289.0);
+        this.fpr_inverse_of_q = new FalconFPR(1.0 / 12289.0);
+        this.fpr_inv_2sqrsigma0 = new FalconFPR(0.150865048875372721532312163019);
+        this.fpr_inv_sigma = inv_sigma;
+        this.fpr_sigma_min = sigma_min;
+        this.fpr_log2 = new FalconFPR(0.69314718055994530941723212146);
+        this.fpr_inv_log2 = new FalconFPR(1.4426950408889634073599246810);
+        this.fpr_bnorm_max = new FalconFPR(16822.4121);
+        this.fpr_zero = new FalconFPR(0.0);
+        this.fpr_one = new FalconFPR(1.0);
+        this.fpr_two = new FalconFPR(2.0);
+        this.fpr_onehalf = new FalconFPR(0.5);
+        this.fpr_invsqrt2 = new FalconFPR(0.707106781186547524400844362105);
+        this.fpr_invsqrt8 = new FalconFPR(0.353553390593273762200422181052);
+        this.fpr_ptwo31 = new FalconFPR(2147483648.0);
+        this.fpr_ptwo31m1 = new FalconFPR(2147483647.0);
+        this.fpr_mtwo31m1 = new FalconFPR(-2147483647.0);
+        this.fpr_ptwo63m1 = new FalconFPR(9223372036854775807.0);
+        this.fpr_mtwo63m1 = new FalconFPR(-9223372036854775807.0);
+        this.fpr_ptwo63 = new FalconFPR(9223372036854775808.0);
+        this.fpr_gm_tab = gm_tab;
+        this.fpr_p2_tab = p2_tab;
     }
 
     FalconFPR FPR(double v)
@@ -1175,7 +1186,7 @@ class FPREngine
          * rp and rn to zero. Otherwise, we clamp tx to zero.
          */
         ub = (int)(tx >>> 52);
-        m = -Integer.toUnsignedLong((((ub + 1) & 0xFFF) - 2) >>> 31);
+        m = -(long)((((ub + 1) & 0xFFF) - 2) >>> 31);
         rp &= m;
         rn &= m;
         tx &= ~m;

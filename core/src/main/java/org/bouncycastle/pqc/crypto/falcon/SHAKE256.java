@@ -498,7 +498,7 @@ class SHAKE256
                 long v;
 
                 v = u + dptr;
-                this.A[(int)(v >> 3)] ^= Byte.toUnsignedLong(srcin[in + (int)u]) << ((v & 7) << 3);
+                this.A[(int)(v >> 3)] ^=(srcin[in + (int)u] & 0xffL) << ((v & 7) << 3);
             }
             dptr += clen;
             in += clen;
@@ -523,8 +523,8 @@ class SHAKE256
         int v;
 
         v = (int)this.dptr;
-        this.A[v >> 3] ^= Integer.toUnsignedLong(0x1F) << ((v & 7) << 3);
-        this.A[16] ^= Integer.toUnsignedLong(0x80) << 56;
+        this.A[v >> 3] ^= (0x1FL) << ((v & 7) << 3);
+        this.A[16] ^= (0x80L) << 56;
         this.dptr = 136;
     }
 

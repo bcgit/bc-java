@@ -39,7 +39,7 @@ class FalconCodec
         acc_len = 0;
         for (u = 0; u < n; u++)
         {
-            acc = (acc << 14) | Short.toUnsignedInt(srcx[x + u]);
+            acc = (acc << 14) | (srcx[x + u] & 0xffff);
             acc_len += 14;
             while (acc_len >= 8)
             {
@@ -76,7 +76,7 @@ class FalconCodec
         u = 0;
         while (u < n)
         {
-            acc = (acc << 8) | Byte.toUnsignedInt(srcin[buf++]);
+            acc = (acc << 8) | (srcin[buf++] & 0xff);
             acc_len += 8;
             if (acc_len >= 14)
             {
@@ -135,7 +135,7 @@ class FalconCodec
         mask = (1 << bits) - 1;
         for (u = 0; u < n; u++)
         {
-            acc = (acc << bits) | (Short.toUnsignedInt(srcx[x + u]) & mask);
+            acc = (acc << bits) | ((srcx[x + u] & 0xfff) & mask);
             acc_len += bits;
             while (acc_len >= 8)
             {
@@ -175,7 +175,7 @@ class FalconCodec
         mask2 = 1 << (bits - 1);
         while (u < n)
         {
-            acc = (acc << 8) | Byte.toUnsignedInt(srcin[buf++]);
+            acc = (acc << 8) | (srcin[buf++] & 0xff);
             acc_len += 8;
             while (acc_len >= bits && u < n)
             {
@@ -242,7 +242,7 @@ class FalconCodec
         mask = (1 << bits) - 1;
         for (u = 0; u < n; u++)
         {
-            acc = (acc << bits) | (Short.toUnsignedInt(srcx[x + u]) & mask);
+            acc = (acc << bits) | ((srcx[x + u] & 0xffff) & mask);
             acc_len += bits;
             while (acc_len >= 8)
             {
@@ -282,7 +282,7 @@ class FalconCodec
         mask2 = 1 << (bits - 1);
         while (u < n)
         {
-            acc = (acc << 8) | Byte.toUnsignedInt(srcin[buf++]);
+            acc = (acc << 8) | (srcin[buf++] & 0xff);
             acc_len += 8;
             while (acc_len >= bits && u < n)
             {
@@ -445,7 +445,7 @@ class FalconCodec
             {
                 return 0;
             }
-            acc = (acc << 8) | Byte.toUnsignedInt(srcin[buf + v]);
+            acc = (acc << 8) | (srcin[buf + v] & 0xff);
             v++;
             b = acc >>> acc_len;
             s = b & 128;
@@ -462,7 +462,7 @@ class FalconCodec
                     {
                         return 0;
                     }
-                    acc = (acc << 8) | Byte.toUnsignedInt(srcin[buf + v]);
+                    acc = (acc << 8) | (srcin[buf + v] & 0xff);
                     v++;
                     acc_len = 8;
                 }
