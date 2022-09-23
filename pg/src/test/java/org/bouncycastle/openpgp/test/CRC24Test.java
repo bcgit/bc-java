@@ -62,16 +62,16 @@ public class CRC24Test
         isEquals("CRC implementation reset to wrong value", 0x0b704ce, crc.getValue());
 
         crc.reset();
-        for (byte b : TEST_VECTOR_1)
+        for (int i = 0; i != TEST_VECTOR_1.length; i++)
         {
-            crc.update(b);
+            crc.update(TEST_VECTOR_1[i]);
         }
         isEquals("Wrong CRC sum calculated", 0x71cee5, crc.getValue());
 
         crc.reset();
-        for (byte b : TEST_VECTOR_2)
+        for (int i = 0; i != TEST_VECTOR_2.length; i++)
         {
-            crc.update(b);
+            crc.update(TEST_VECTOR_2[i]);
         }
         isEquals("Wrong CRC sum calculated", 0x1938a3, crc.getValue());
     }
@@ -86,16 +86,16 @@ public class CRC24Test
         fastImpl.reset();
 
         long start = System.currentTimeMillis();
-        for (byte b : LARGE_RANDOM)
+        for (int i = 0; i != LARGE_RANDOM.length; i++)
         {
-            defaultImpl.update(b);
+            defaultImpl.update(LARGE_RANDOM[i]);
         }
         int defVal = defaultImpl.getValue();
         long afterDefault = System.currentTimeMillis();
 
-        for (byte b : LARGE_RANDOM)
+        for (int i = 0; i != LARGE_RANDOM.length; i++)
         {
-            fastImpl.update(b);
+            fastImpl.update(LARGE_RANDOM[i]);
         }
         int fastVal = fastImpl.getValue();
         long afterFast = System.currentTimeMillis();

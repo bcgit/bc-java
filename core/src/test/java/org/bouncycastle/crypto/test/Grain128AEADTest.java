@@ -48,18 +48,18 @@ public class Grain128AEADTest
             data = line.split(" ");
             if (data.length == 1)
             {
-                params = new ParametersWithIV(new KeyParameter(Hex.decode(map.get("Key"))), Hex.decode(map.get("Nonce")));
+                params = new ParametersWithIV(new KeyParameter(Hex.decode((String)map.get("Key"))), Hex.decode((String)map.get("Nonce")));
                 grain.init(true, params);
-                adByte = Hex.decode(map.get("AD"));
+                adByte = Hex.decode((String)map.get("AD"));
                 grain.processAADBytes(adByte, 0, adByte.length);
-                ptByte = Hex.decode(map.get("PT"));
+                ptByte = Hex.decode((String)map.get("PT"));
                 rv = new byte[ptByte.length];
                 grain.processBytes(ptByte, 0, ptByte.length, rv, 0);
                 byte[] mac = new byte[8];
                 grain.doFinal(mac, 0);
-                if (!areEqual(Arrays.concatenate(rv, mac), Hex.decode(map.get("CT"))))
+                if (!areEqual(Arrays.concatenate(rv, mac), Hex.decode((String)map.get("CT"))))
                 {
-                    mismatch("Keystream " + map.get("Count"), map.get("CT"), rv);
+                    mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
                 map.clear();
             }

@@ -48,7 +48,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(3)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 1, 0))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 1, 0}))
                         .setDigits(new short[]{0, 1, 0})
                         .build();
         runTest(arg, new RadixConverter(arg.getRadix()));
@@ -57,7 +57,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(3)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 1, 1))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 1, 1}))
                         .setDigits(new short[]{0, 1, 1})
                         .build();
         runTest(arg, new RadixConverter(arg.getRadix()));
@@ -66,7 +66,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(3)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 22, 13, 4))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 22, 13, 4 }))
                         .setDigits(new short[]{22, 13, 4})
                         .build();
         runTest(arg, new RadixConverter(arg.getRadix()));
@@ -80,7 +80,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(21)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 234, 33, 0, 45, 125, 98, 12, 34, 100, 77, 211, 9, 3, 123, 96, 55, 23, 44, 98))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 234, 33, 0, 45, 125, 98, 12, 34, 100, 77, 211, 9, 3, 123, 96, 55, 23, 44, 98}))
                         // two leading zero because we are asking a message length 21 when the number can be encoded in 19 bytes
                         .setDigits(new short[]{0, 0, 234, 33, 0, 45, 125, 98, 12, 34, 100, 77, 211, 9, 3, 123, 96, 55, 23, 44, 98})
                         .build();
@@ -97,7 +97,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(19)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 234, 33, 2, 45, 125, 0, 12, 34, 100, 77, 211, 9, 0, 0, 96, 55, 23, 44, 98))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 234, 33, 2, 45, 125, 0, 12, 34, 100, 77, 211, 9, 0, 0, 96, 55, 23, 44, 98 }))
                         .setDigits(new short[]{234, 33, 2, 45, 125, 0, 12, 34, 100, 77, 211, 9, 0, 0, 96, 55, 23, 44, 98})
                         .build();
         RadixConverter radixConverter = new RadixConverter(arg.getRadix());
@@ -109,7 +109,7 @@ public class RadixConverterTest extends SimpleTest
     {
         // 7 digits in base 251 is the max number that fits in a long
         int radix = 251;
-        BigInteger decimalNumber = decimalInPolynomialForm(radix, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        BigInteger decimalNumber = decimalInPolynomialForm(radix, new int[] { 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
         RadixConversionArgument arg =
                 RadixConversionArgument.builder()
                         .setRadix(radix)
@@ -147,7 +147,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(15)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4 }))
                         .setDigits(new short[]{6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4})
                         .build();
         RadixConverter radixConverter = new RadixConverter(arg.getRadix(), 0);
@@ -163,7 +163,7 @@ public class RadixConverterTest extends SimpleTest
                 RadixConversionArgument.builder()
                         .setRadix(radix)
                         .setNumberOfDigits(19)
-                        .setDecimalNumber(decimalInPolynomialForm(radix, 2756, 1111, 965, 0, 6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4))
+                        .setDecimalNumber(decimalInPolynomialForm(radix, new int[] { 2756, 1111, 965, 0, 6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4 }))
                         .setDigits(new short[]{2756, 1111, 965, 0, 6, 200, 78, 9, 53, 90, 178, 213, 154, 65, 127, 99, 22, 13, 4})
                         .build();
         // 2 powers cached - radix^4, (radix^4)^2
@@ -176,18 +176,15 @@ public class RadixConverterTest extends SimpleTest
     {
         short[] digits = new short[arg.getDigits().length];
         radixConverter.toEncoding(arg.getDecimalNumber(), arg.getNumberOfDigits(), digits);
-        isTrue(
-                String.format(
-                        "digits in base %d and expected digits are different.\nActual digits: [%s]\nExpected digits: [%s]",
-                        arg.getRadix(), arrayToString(digits), arrayToString(arg.getDigits())),
+        isTrue("digits in base " + arg.getRadix() + " and expected digits are different.\nActual digits: [" + arrayToString(digits) +"]\nExpected digits: ["+ arrayToString(arg.getDigits()) +"]",
                 Arrays.equals(digits, arg.getDigits()));
         BigInteger number = radixConverter.fromEncoding(digits);
-        isEquals(String.format("%s and %s are different", number, arg.getDecimalNumber()), number, arg.getDecimalNumber());
+        isEquals(number + " and " + arg.getDecimalNumber() + " are different", number, arg.getDecimalNumber());
     }
 
     private String arrayToString(short[] array)
     {
-        StringBuilder sb = new StringBuilder(array.length);
+        StringBuffer sb = new StringBuffer(array.length);
         for (int i = 0; i != array.length; i++)
         {
             short el = array[i];
@@ -197,7 +194,7 @@ public class RadixConverterTest extends SimpleTest
         return str.length() == 0 ? str : str.substring(0, str.length() - 1);
     }
 
-    private BigInteger decimalInPolynomialForm(int radix, int... coefficients)
+    private BigInteger decimalInPolynomialForm(int radix, int[] coefficients)
     {
         BigInteger r = BigInteger.valueOf(radix);
         BigInteger result = BigInteger.ZERO;
@@ -214,10 +211,7 @@ public class RadixConverterTest extends SimpleTest
     {
         int groupLength = radixConverter.getDigitsGroupLength();
         int minDigits = (groupLength * (atLeastDigitGroups - 1)) + 1;
-        isTrue(
-                String.format(
-                        "test case is for large numbers. The number must have at least %d digits so that at least %d digits groups of length %d are found in it. Found %d digits",
-                        minDigits, atLeastDigitGroups, groupLength, arg.getDigits().length),
+        isTrue("test case is for large numbers. The number must have at least " + minDigits + " digits so that at least "+atLeastDigitGroups+" digits groups of length "+groupLength+" are found in it. Found "+arg.getDigits().length+" digits",
                 arg.getDigits().length >= minDigits);
     }
 
