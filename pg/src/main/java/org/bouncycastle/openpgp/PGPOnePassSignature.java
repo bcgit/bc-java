@@ -34,7 +34,7 @@ public class PGPOnePassSignature
         return (OnePassSignaturePacket)packet;
     }
 
-    PGPOnePassSignature(
+    public PGPOnePassSignature(
         BCPGInputStream    pIn)
         throws IOException, PGPException
     {
