@@ -34,13 +34,13 @@ public class PGPOnePassSignature
         return (OnePassSignaturePacket)packet;
     }
 
-    PGPOnePassSignature(
-        BCPGInputStream pIn)
+    public PGPOnePassSignature(
+        BCPGInputStream    pIn)
         throws IOException, PGPException
     {
         this(cast(pIn.readPacket()));
     }
-
+    
     PGPOnePassSignature(
         OnePassSignaturePacket sigPack)
         throws PGPException
