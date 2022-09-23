@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Arrays;
 
 class DilithiumEngine
 {

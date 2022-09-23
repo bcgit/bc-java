@@ -51,7 +51,7 @@ class PolyVecMatrix
         int i;
         for (i = 0; i < dilithiumK; i++)
         {
-            out += String.format("Outer Matrix %d [", i);
+            out += "Outer Matrix " + i + " [";
             out += this.mat[i].toString();
             if (i == dilithiumK - 1)
             {

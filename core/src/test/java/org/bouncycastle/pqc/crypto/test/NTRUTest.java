@@ -47,8 +47,9 @@ public class NTRUTest
             InputStream src = NTRUTest.class.getResourceAsStream(KAT_ROOT + katFile);
             List<NTRUKAT> kats = NTRUKAT.getKAT(src);
 
-            for (NTRUKAT kat : kats)
+            for (int j = 0; j != kats.size(); j++)
             {
+                NTRUKAT kat = (NTRUKAT)kats.get(j);
                 SecureRandom random = new NISTSecureRandom(kat.seed, null);
 
                 // test keygen

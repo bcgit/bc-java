@@ -11,11 +11,13 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.EncryptionAlgorithm;
@@ -32,6 +34,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
 import org.bouncycastle.tls.crypto.SRP6Group;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
@@ -236,7 +239,18 @@ public class JcaTlsCrypto
 
     public TlsHMAC createHMAC(int macAlgorithm)
     {
-        return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+        case MACAlgorithm.hmac_sha1:
+        case MACAlgorithm.hmac_sha256:
+        case MACAlgorithm.hmac_sha384:
+        case MACAlgorithm.hmac_sha512:
+            return createHMACForHash(TlsCryptoUtils.getHashForHMAC(macAlgorithm));
+
+        default:
+            throw new IllegalArgumentException("invalid MACAlgorithm: " + macAlgorithm);
+        }
     }
 
     public TlsHMAC createHMACForHash(int cryptoHashAlgorithm)
@@ -439,12 +453,87 @@ public class JcaTlsCrypto
         return signer.getParameters();
     }
 
-    public boolean hasAllRawSignatureAlgorithms()
+    public boolean hasAnyStreamVerifiers(Vector signatureAndHashAlgorithms)
     {
-        // TODO[RFC 8422] Revisit the need to buffer the handshake for "Intrinsic" hash signatures
-        return !JcaUtils.isSunMSCAPIProviderActive()
-            && !hasSignatureAlgorithm(SignatureAlgorithm.ed25519)
-            && !hasSignatureAlgorithm(SignatureAlgorithm.ed448);
+        boolean isRSAStreamVerifier = JcaUtils.isSunMSCAPIProviderActive();
+
+        for (int i = 0, count = signatureAndHashAlgorithms.size(); i < count; ++i)
+        {
+            SignatureAndHashAlgorithm algorithm = (SignatureAndHashAlgorithm)signatureAndHashAlgorithms.elementAt(i);
+            switch (algorithm.getSignature())
+            {
+            case SignatureAlgorithm.rsa:
+            {
+                if (isRSAStreamVerifier)
+                {
+                    return true;
+                }
+                break;
+            }
+            case SignatureAlgorithm.dsa:
+            {
+                if (HashAlgorithm.getOutputSize(algorithm.getHash()) != 20)
+                {
+                    return true;
+                }
+                break;
+            }
+            }
+
+            switch (SignatureScheme.from(algorithm))
+            {
+            case SignatureScheme.ed25519:
+            case SignatureScheme.ed448:
+            case SignatureScheme.rsa_pss_rsae_sha256:
+            case SignatureScheme.rsa_pss_rsae_sha384:
+            case SignatureScheme.rsa_pss_rsae_sha512:
+            case SignatureScheme.rsa_pss_pss_sha256:
+            case SignatureScheme.rsa_pss_pss_sha384:
+            case SignatureScheme.rsa_pss_pss_sha512:
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasAnyStreamVerifiersLegacy(short[] clientCertificateTypes)
+    {
+        return false;
+    }
+
+    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
+    {
+        // TODO: expand
+        return true;
+    }
+
+    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
+    {
+        switch (cryptoSignatureAlgorithm)
+        {
+        case CryptoSignatureAlgorithm.rsa:
+        case CryptoSignatureAlgorithm.dsa:
+        case CryptoSignatureAlgorithm.ecdsa:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
+        case CryptoSignatureAlgorithm.ed25519:
+        case CryptoSignatureAlgorithm.ed448:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
+        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+            return true;
+
+        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        case CryptoSignatureAlgorithm.gostr34102012_256:
+        case CryptoSignatureAlgorithm.gostr34102012_512:
+
+        // TODO[RFC 8998]
+        case CryptoSignatureAlgorithm.sm2:
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasDHAgreement()
@@ -490,35 +579,15 @@ public class JcaTlsCrypto
         return supported.booleanValue();
     }
 
-    public boolean hasCryptoHashAlgorithm(int cryptoHashAlgorithm)
+    public boolean hasHKDFAlgorithm(int cryptoHashAlgorithm)
     {
-        // TODO: expand
-        return true;
-    }
-
-    public boolean hasCryptoSignatureAlgorithm(int cryptoSignatureAlgorithm)
-    {
-        switch (cryptoSignatureAlgorithm)
+        switch (cryptoHashAlgorithm)
         {
-        case CryptoSignatureAlgorithm.rsa:
-        case CryptoSignatureAlgorithm.dsa:
-        case CryptoSignatureAlgorithm.ecdsa:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha256:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha384:
-        case CryptoSignatureAlgorithm.rsa_pss_rsae_sha512:
-        case CryptoSignatureAlgorithm.ed25519:
-        case CryptoSignatureAlgorithm.ed448:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha256:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha384:
-        case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
+        case CryptoHashAlgorithm.sha256:
+        case CryptoHashAlgorithm.sha384:
+        case CryptoHashAlgorithm.sha512:
+        case CryptoHashAlgorithm.sm3:
             return true;
-
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
-        case CryptoSignatureAlgorithm.gostr34102012_256:
-        case CryptoSignatureAlgorithm.gostr34102012_512:
-
-        // TODO[RFC 8998]
-        case CryptoSignatureAlgorithm.sm2:
 
         default:
             return false;
@@ -527,8 +596,18 @@ public class JcaTlsCrypto
 
     public boolean hasMacAlgorithm(int macAlgorithm)
     {
-        // TODO: expand
-        return true;
+        switch (macAlgorithm)
+        {
+        case MACAlgorithm.hmac_md5:
+        case MACAlgorithm.hmac_sha1:
+        case MACAlgorithm.hmac_sha256:
+        case MACAlgorithm.hmac_sha384:
+        case MACAlgorithm.hmac_sha512:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     public boolean hasNamedGroup(int namedGroup)
@@ -825,12 +904,22 @@ public class JcaTlsCrypto
     {
         try
         {
-            Signature signer = getHelper().createSignature(algorithmName);
+            SecureRandom random = needsRandom ? getSecureRandom() : null;
+
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummySigner = helper.createSignature(algorithmName);
+                dummySigner.initSign(privateKey, random);
+                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+            }
+
+            Signature signer = helper.createSignature(algorithmName);
             if (null != parameter)
             {
                 signer.setParameter(parameter);
             }
-            signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
+            signer.initSign(privateKey, random);
             return new JcaTlsStreamSigner(signer);
         }
         catch (GeneralSecurityException e)
@@ -851,13 +940,48 @@ public class JcaTlsCrypto
     {
         try
         {
-            Signature verifier = getHelper().createSignature(algorithmName);
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummyVerifier = helper.createSignature(algorithmName);
+                dummyVerifier.initVerify(publicKey);
+                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
+            }
+
+            Signature verifier = helper.createSignature(algorithmName);
             if (null != parameter)
             {
                 verifier.setParameter(parameter);
             }
             verifier.initVerify(publicKey);
             return new JcaTlsStreamVerifier(verifier, signature);
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    protected Tls13Verifier createTls13Verifier(String algorithmName, AlgorithmParameterSpec parameter,
+        PublicKey publicKey) throws IOException
+    {
+        try
+        {
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummyVerifier = helper.createSignature(algorithmName);
+                dummyVerifier.initVerify(publicKey);
+                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
+            }
+
+            Signature verifier = helper.createSignature(algorithmName);
+            if (null != parameter)
+            {
+                verifier.setParameter(parameter);
+            }
+            verifier.initVerify(publicKey);
+            return new JcaTls13Verifier(verifier);
         }
         catch (GeneralSecurityException e)
         {
@@ -902,40 +1026,40 @@ public class JcaTlsCrypto
     {
         switch (encryptionAlgorithm)
         {
-        case EncryptionAlgorithm.CHACHA20_POLY1305:
-            return Boolean.valueOf(isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305"));
         case EncryptionAlgorithm._3DES_EDE_CBC:
             return Boolean.valueOf(isUsableCipher("DESede/CBC/NoPadding", 192));
         case EncryptionAlgorithm.AES_128_CBC:
             return Boolean.valueOf(isUsableCipher("AES/CBC/NoPadding", 128));
-        case EncryptionAlgorithm.AES_256_CBC:
-            return Boolean.valueOf(isUsableCipher("AES/CBC/NoPadding", 256));
         case EncryptionAlgorithm.AES_128_CCM:
         case EncryptionAlgorithm.AES_128_CCM_8:
             return Boolean.valueOf(isUsableCipher("AES/CCM/NoPadding", 128));
+        case EncryptionAlgorithm.AES_128_GCM:
+            return Boolean.valueOf(isUsableCipher("AES/GCM/NoPadding", 128));
+        case EncryptionAlgorithm.AES_256_CBC:
+            return Boolean.valueOf(isUsableCipher("AES/CBC/NoPadding", 256));
         case EncryptionAlgorithm.AES_256_CCM:
         case EncryptionAlgorithm.AES_256_CCM_8:
             return Boolean.valueOf(isUsableCipher("AES/CCM/NoPadding", 256));
-        case EncryptionAlgorithm.AES_128_GCM:
-            return Boolean.valueOf(isUsableCipher("AES/GCM/NoPadding", 128));
         case EncryptionAlgorithm.AES_256_GCM:
             return Boolean.valueOf(isUsableCipher("AES/GCM/NoPadding", 256));
         case EncryptionAlgorithm.ARIA_128_CBC:
             return Boolean.valueOf(isUsableCipher("ARIA/CBC/NoPadding", 128));
-        case EncryptionAlgorithm.ARIA_256_CBC:
-            return Boolean.valueOf(isUsableCipher("ARIA/CBC/NoPadding", 256));
         case EncryptionAlgorithm.ARIA_128_GCM:
             return Boolean.valueOf(isUsableCipher("ARIA/GCM/NoPadding", 128));
+        case EncryptionAlgorithm.ARIA_256_CBC:
+            return Boolean.valueOf(isUsableCipher("ARIA/CBC/NoPadding", 256));
         case EncryptionAlgorithm.ARIA_256_GCM:
             return Boolean.valueOf(isUsableCipher("ARIA/GCM/NoPadding", 256));
         case EncryptionAlgorithm.CAMELLIA_128_CBC:
             return Boolean.valueOf(isUsableCipher("Camellia/CBC/NoPadding", 128));
-        case EncryptionAlgorithm.CAMELLIA_256_CBC:
-            return Boolean.valueOf(isUsableCipher("Camellia/CBC/NoPadding", 256));
         case EncryptionAlgorithm.CAMELLIA_128_GCM:
             return Boolean.valueOf(isUsableCipher("Camellia/GCM/NoPadding", 128));
+        case EncryptionAlgorithm.CAMELLIA_256_CBC:
+            return Boolean.valueOf(isUsableCipher("Camellia/CBC/NoPadding", 256));
         case EncryptionAlgorithm.CAMELLIA_256_GCM:
             return Boolean.valueOf(isUsableCipher("Camellia/GCM/NoPadding", 256));
+        case EncryptionAlgorithm.CHACHA20_POLY1305:
+            return Boolean.valueOf(isUsableCipher("ChaCha7539", 256) && isUsableMAC("Poly1305"));
         case EncryptionAlgorithm.NULL:
             return Boolean.TRUE;
         case EncryptionAlgorithm.SEED_CBC:
@@ -947,8 +1071,8 @@ public class JcaTlsCrypto
         case EncryptionAlgorithm.SM4_GCM:
             return Boolean.valueOf(isUsableCipher("SM4/GCM/NoPadding", 128));
 
-        case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.DES_CBC:
+        case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:

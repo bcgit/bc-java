@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 class Ntt
 {

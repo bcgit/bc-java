@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.kems;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicePurpose;
@@ -13,6 +12,7 @@ import org.bouncycastle.crypto.constraints.ConstraintUtils;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.util.Arrays;
 
 /**
  * The RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
