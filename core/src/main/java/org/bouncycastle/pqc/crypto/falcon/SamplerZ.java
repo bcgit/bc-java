@@ -52,7 +52,7 @@ class SamplerZ
          * Get a random 72-bit value, into three 24-bit limbs v0..v2.
          */
         lo = p.prng_get_u64();
-        hi = Byte.toUnsignedInt(p.prng_get_u8());
+        hi = (p.prng_get_u8() & 0xff);
         v0 = (int)lo & 0xFFFFFF;
         v1 = (int)(lo >>> 24) & 0xFFFFFF;
         v2 = (int)(lo >>> 48) | (hi << 16);
@@ -131,7 +131,7 @@ class SamplerZ
         do
         {
             i -= 8;
-            w = Byte.toUnsignedInt(p.prng_get_u8()) - ((int)(z >>> i) & 0xFF);
+            w = (p.prng_get_u8() & 0xff) - ((int)(z >>> i) & 0xFF);
         }
         while (w == 0 && i > 0);
         return (w >>> 31);
@@ -190,7 +190,7 @@ class SamplerZ
              *    centered on 0.
              */
             z0 = gaussian0_sampler(spc.p);
-            b = Byte.toUnsignedInt(spc.p.prng_get_u8()) & 1;
+            b = (spc.p.prng_get_u8() & 0xff) & 1;
             z = b + ((b << 1) - 1) * z0;
 
             /*

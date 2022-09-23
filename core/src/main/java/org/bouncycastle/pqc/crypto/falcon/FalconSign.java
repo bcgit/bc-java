@@ -729,7 +729,7 @@ class FalconSign
         {
             int z;
             // note: hm is unsigned
-            z = Short.toUnsignedInt(srchm[hm + u]) - (int)fpr.fpr_rint(srctmp[t0 + u]);
+            z = (srchm[hm + u] & 0xffff) - (int)fpr.fpr_rint(srctmp[t0 + u]);
             sqn += (z * z);
             ng |= sqn;
             s1tmp[u] = (short)z;
@@ -954,7 +954,7 @@ class FalconSign
         {
             int z;
 
-            z = Short.toUnsignedInt(srchm[hm + u]) - (int)fpr.fpr_rint(srctmp[t0 + u]);
+            z = (srchm[hm + u] & 0xffff) - (int)fpr.fpr_rint(srctmp[t0 + u]);
             sqn += (z * z);
             ng |= sqn;
             s1tmp[u] = (short)z;

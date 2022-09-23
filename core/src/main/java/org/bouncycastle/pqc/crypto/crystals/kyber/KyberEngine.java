@@ -1,7 +1,8 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
+
+import org.bouncycastle.util.Arrays;
 
 class KyberEngine
 {
@@ -266,9 +267,7 @@ class KyberEngine
 
         byte[] cmp = indCpa.encrypt(Arrays.copyOfRange(buf, 0, KyberSymBytes), publicKey, Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
 
-        boolean fail = !(Arrays.equals(cipherText, cmp));
-
-        // System.out.println("fail = " + fail);
+        boolean fail = !(Arrays.constantTimeAreEqual(cipherText, cmp));
 
         symmetric.hash_h(kr, cipherText, KyberSymBytes);
 

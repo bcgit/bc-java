@@ -499,7 +499,7 @@ class FalconVrfy
                 {
                     int u, v;
 
-                    u = Short.toUnsignedInt(srca[a + j]);
+                    u = (srca[a + j] & 0xffff);
                     v = mq_montymul(srca[a + j + ht], s);
                     srca[a + j] = (short)mq_add(u, v);
                     srca[a + j + ht] = (short)mq_sub(u, v);
@@ -537,8 +537,8 @@ class FalconVrfy
                 {
                     int u, v, w;
 
-                    u = Short.toUnsignedInt(srca[a + j]);
-                    v = Short.toUnsignedInt(srca[a + j + t]);
+                    u = (srca[a + j] & 0xffff);
+                    v = (srca[a + j + t] & 0xffff);
                     srca[a + j] = (short)mq_add(u, v);
                     w = mq_sub(u, v);
                     srca[a + j + t] = (short)mq_montymul(w, s);
@@ -637,7 +637,7 @@ class FalconVrfy
         {
             int w;
 
-            w = (int)srcs2[s2 + u]; // s2 is signed, so Short.toUnsignedInt() is not needed
+            w = (int)srcs2[s2 + u]; // s2 is signed, so ( & 0xffff) is not needed
             w += Q & -(w >>> 31);
             srctmp[tt + u] = (short)w;
         }
@@ -657,7 +657,7 @@ class FalconVrfy
         {
             int w;
 
-            w = Short.toUnsignedInt(srctmp[tt + u]); // tt is unsigned so Short.tounsignedint is needed even though w is signed
+            w = (srctmp[tt + u] & 0xffff); // tt is unsigned so Short.tounsignedint is needed even though w is signed
             w -= (Q & -(((Q >> 1) - w) >>> 31)); // the inside w is casted to unsigned, so >>> is needed
             srctmp[tt + u] = (short)w;
         }
@@ -736,7 +736,7 @@ class FalconVrfy
             int w;
             int gi;
 
-            w = Short.toUnsignedInt(srctmp[t1 + u]);
+            w = (srctmp[t1 + u] & 0xffff);
             w -= (Q & ~-((w - (Q >> 1)) >>> 31)); // w is unsigned
             gi = w; // gi is signed
             if (gi < -127 || gi > +127)
@@ -769,7 +769,7 @@ class FalconVrfy
         r = 0;
         for (u = 0; u < n; u++)
         {
-            r |= Short.toUnsignedInt(srctmp[tt + u]) - 1;
+            r |= (srctmp[tt + u] & 0xffff) - 1;
         }
         return (1 - (r >>> 31));
     }
@@ -800,7 +800,7 @@ class FalconVrfy
 
             w = (int)srcs1[s1 + u]; // s2 is signed
             w += Q & -(w >>> 31);
-            w = mq_sub(Short.toUnsignedInt(srcc0[c0 + u]), w); // c0 is unsigned
+            w = mq_sub((srcc0[c0 + u]), w & 0xffff); // c0 is unsigned
             srch[h + u] = (short)w;
         }
 
@@ -816,9 +816,9 @@ class FalconVrfy
         r = 0;
         for (u = 0; u < n; u++)
         {
-            r |= Short.toUnsignedInt(srctmp[tt + u]) - 1;
-            srch[h + u] = (short)mq_div_12289(Short.toUnsignedInt(srch[h + u]),
-                Short.toUnsignedInt(srctmp[tt + u]));
+            r |= (srctmp[tt + u] & 0xffff) - 1;
+            srch[h + u] = (short)mq_div_12289((srch[h + u] & 0xffff),
+                (srctmp[tt + u]) & 0xffff);
         }
         mq_iNTT(srch, h, logn);
 
@@ -855,7 +855,7 @@ class FalconVrfy
         {
             int w;
 
-            w = Short.toUnsignedInt(srctmp[s2 + u]) - 1; // s2 is unsigned
+            w = (srctmp[s2 + u] & 0xffff) - 1; // s2 is unsigned
             r += (w >>> 31);
         }
         return (int)r;

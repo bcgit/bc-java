@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 class FalconKeyGen
 {
-
     FPREngine fpr;
     FalconSmallPrimeList primes;
     FalconFFT fft;
@@ -1654,14 +1653,14 @@ class FalconKeyGen
         byte[] tmp = new byte[8];
 
         rng.inner_shake256_extract(tmp, 0, tmp.length);
-        return Byte.toUnsignedLong(tmp[0])
-            | (Byte.toUnsignedLong(tmp[1]) << 8)
-            | (Byte.toUnsignedLong(tmp[2]) << 16)
-            | (Byte.toUnsignedLong(tmp[3]) << 24)
-            | (Byte.toUnsignedLong(tmp[4]) << 32)
-            | (Byte.toUnsignedLong(tmp[5]) << 40)
-            | (Byte.toUnsignedLong(tmp[6]) << 48)
-            | (Byte.toUnsignedLong(tmp[7]) << 56);
+        return (tmp[0] & 0xffL)
+            | ((tmp[1] & 0xffL) << 8)
+            | ((tmp[2] & 0xffL) << 16)
+            | ((tmp[3] & 0xffL) << 24)
+            | ((tmp[4] & 0xffL) << 32)
+            | ((tmp[5] & 0xffL) << 40)
+            | ((tmp[6] & 0xffL) << 48)
+            | ((tmp[7] & 0xffL) << 56);
     }
 
 
@@ -3710,7 +3709,7 @@ class FalconKeyGen
             normf = poly_small_sqnorm(srcf, f, logn);
             normg = poly_small_sqnorm(srcg, g, logn);
             norm = (normf + normg) | -((normf | normg) >>> 31);
-            if (Integer.compareUnsigned(norm, 16823) >= 0)
+            if ((norm & 0xffffffffL) >= 16823L)
             {
                 continue;
             }

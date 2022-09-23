@@ -441,7 +441,7 @@ class Tree
 
     protected byte[] getLeaf(int leafIndex)
     {
-        assert(leafIndex < this.numLeaves);
+//        assert(leafIndex < this.numLeaves);
         int firstLeaf = this.numNodes - this.numLeaves;
         return this.nodes[firstLeaf + leafIndex];
     }
@@ -449,7 +449,7 @@ class Tree
     /* addMerkleNodes: deserialize and add the data for nodes provided by the committer */
     protected int addMerkleNodes(int[] missingLeaves, int missingLeavesSize, byte[] input, int inputSize)
     {
-        assert(missingLeavesSize < this.numLeaves);
+//        assert(missingLeavesSize < this.numLeaves);
 
 //        if (inputSize > INT_MAX) {
 //            return -1;
@@ -460,7 +460,7 @@ class Tree
         int[] revealedSize = new int[1];
         revealedSize[0] = 0;
         int[] revealed = getRevealedMerkleNodes(missingLeaves, missingLeavesSize, revealedSize);
-        assert(!contains(revealed, revealedSize[0], 0));
+//        assert(!contains(revealed, revealedSize[0], 0));
 
         /* Deserialize input */
         for (int i = 0; i < revealedSize[0]; i++)
@@ -538,7 +538,7 @@ class Tree
 
     private boolean isLeftChild(int node)
     {
-        assert(node != 0);
+//        assert(node != 0);
         return(node % 2 == 1);
     }
 
@@ -554,7 +554,7 @@ class Tree
 
     private int getParent(int node)
     {
-        assert(node != 0);
+//        assert(node != 0);
 
         if (isLeftChild(node))
         {

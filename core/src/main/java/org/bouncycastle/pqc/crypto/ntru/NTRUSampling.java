@@ -1,13 +1,12 @@
 package org.bouncycastle.pqc.crypto.ntru;
 
-import java.util.Arrays;
-
 import org.bouncycastle.pqc.math.ntru.HPSPolynomial;
 import org.bouncycastle.pqc.math.ntru.HRSSPolynomial;
 import org.bouncycastle.pqc.math.ntru.Polynomial;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPSParameterSet;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSSParameterSet;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
+import org.bouncycastle.util.Arrays;
 
 /**
  * NTRU sampling.
@@ -139,7 +138,7 @@ class NTRUSampling
             s[i] |= 2;
         }
 
-        Arrays.sort(s);
+        java.util.Arrays.sort(s);
 
         for (i = 0; i < n - 1; i++)
         {

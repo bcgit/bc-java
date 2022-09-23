@@ -180,7 +180,7 @@ class PolyVecK
         String out = "[";
         for (int i = 0; i < dilithiumK; i++)
         {
-            out += String.format("%d ", i) + this.getVectorIndex(i).toString();
+            out += i + " " + this.getVectorIndex(i).toString();
             if (i == dilithiumK - 1)
             {
                 continue;

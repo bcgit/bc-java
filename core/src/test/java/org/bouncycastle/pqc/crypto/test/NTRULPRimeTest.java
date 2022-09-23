@@ -38,8 +38,9 @@ public class NTRULPRimeTest
 
         TestSampler sampler = new TestSampler();
 
-        for (NTRULPRimeParameters paramSpec : paramList)
+        for (int i = 0; i != paramList.length; i++)
         {
+            NTRULPRimeParameters paramSpec = paramList[i];
             System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
             InputStream resource = NTRULPRimeTest.class.getResourceAsStream(resourcePath + paramSpec.getName().toLowerCase() + ".rsp");
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(resource)));

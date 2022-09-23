@@ -1884,7 +1884,7 @@ class PicnicEngine
     private void HCP(byte[] challengeHash, int[] challengeC, int[] challengeP, byte[][] Ch,
                     byte[] hCv, byte[] salt, int[] pubKey, int[] plaintext, byte[] message)
     {
-        assert(numOpenedRounds < numMPCRounds);
+//        assert(numOpenedRounds < numMPCRounds);
 
         for (int t = 0; t < numMPCRounds; t++)
         {
@@ -1918,7 +1918,7 @@ class PicnicEngine
             for (int j = 0; j < chunkLenBits; j++)
             {
                 chunks[i] += Utils.getBit(input, i * chunkLenBits + j) << j;
-                assert(chunks[i] < (1 << chunkLenBits));
+//                assert(chunks[i] < (1 << chunkLenBits));
             }
         }
 

@@ -27,6 +27,7 @@ public class XIESPublicKeyParser
         
         Streams.readFully(stream, V, 0, V.length);
 
-        return isX25519 ? new X25519PublicKeyParameters(V, 0) : new X448PublicKeyParameters(V, 0);
+        // cast due to JVM compatibility
+        return isX25519 ? (AsymmetricKeyParameter)new X25519PublicKeyParameters(V, 0) : (AsymmetricKeyParameter)new X448PublicKeyParameters(V, 0);
     }
 }
