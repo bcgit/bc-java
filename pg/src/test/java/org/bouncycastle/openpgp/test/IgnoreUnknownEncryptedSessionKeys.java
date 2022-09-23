@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -19,6 +18,7 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -35,7 +35,7 @@ public class IgnoreUnknownEncryptedSessionKeys
 
     public String getName()
     {
-        return getClass().getSimpleName();
+        return "IgnoreUnknownEncryptedSessionKeys";
     }
 
     public void performTest()
@@ -137,7 +137,7 @@ public class IgnoreUnknownEncryptedSessionKeys
             "xqAY9Bwizt4FWgXuLm1a4+So4V9j1TRCXd12Uc2l2RNmgDE=\n" +
             "=miES\n" +
             "-----END PGP PRIVATE KEY BLOCK-----";
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(key.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(key));
         ArmoredInputStream armorIn = new ArmoredInputStream(byteIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
         tsk = (PGPSecretKeyRing)objectFactory.nextObject();
@@ -236,7 +236,7 @@ public class IgnoreUnknownEncryptedSessionKeys
     private void attemptDecryption(String msg)
         throws IOException, PGPException
     {
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(msg.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(msg));
         ArmoredInputStream armorIn = new ArmoredInputStream(byteIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
 

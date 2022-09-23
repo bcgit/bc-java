@@ -144,26 +144,26 @@ public class ERSTest
 
         List<ERSArchiveTimeStamp> atss = ersGen.generateArchiveTimeStamps(tsResp);
 
-        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(2)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h3Docs, new Date());
         checkAbsent(ats, h2Doc);
         checkAbsent(ats, h1Doc);
 
-        ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(0)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h1Doc, new Date());
         checkAbsent(ats, h3Docs);
         checkAbsent(ats, h2Doc);
 
-        ats = new ERSArchiveTimeStamp(atss.get(1).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(1)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h2Doc, new Date());
         checkAbsent(ats, h3Docs);
         checkAbsent(ats, h1Doc);
 
         // check for individual sub-documents
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator, null);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
@@ -174,10 +174,10 @@ public class ERSTest
 
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
-        ats = atss.get(1);
+        ats = (ERSArchiveTimeStamp)atss.get(1);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
         
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
 
@@ -253,14 +253,14 @@ public class ERSTest
 
         assertEquals(4, atss.size());
 
-        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(2)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h3Docs, new Date());
         checkAbsent(ats, h2Doc);
         checkAbsent(ats, h1Doc);
         checkAbsent(ats, h5Docs);
 
-        ats = new ERSArchiveTimeStamp(atss.get(3).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(3)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(new ERSByteData(H5A_DATA), new Date());
         ats.validatePresent(new ERSByteData(H5B_DATA), new Date());
@@ -269,14 +269,14 @@ public class ERSTest
         checkAbsent(ats, h1Doc);
         checkAbsent(ats, h2Doc);
 
-        ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(0)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h1Doc, new Date());
         checkAbsent(ats, h3Docs);
         checkAbsent(ats, h2Doc);
         checkAbsent(ats, h5Docs);
 
-        ats = new ERSArchiveTimeStamp(atss.get(1).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(1)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h2Doc, new Date());
         checkAbsent(ats, h3Docs);
@@ -284,7 +284,7 @@ public class ERSTest
         checkAbsent(ats, h5Docs);
 
         // check for individual sub-documents
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator, null);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
@@ -295,10 +295,10 @@ public class ERSTest
 
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
-        ats = atss.get(1);
+        ats = (ERSArchiveTimeStamp)atss.get(1);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
 
@@ -376,21 +376,21 @@ public class ERSTest
 
         assertEquals(5, atss.size());
 
-        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(atss.get(2).getEncoded(), digestCalculatorProvider);
+        ERSArchiveTimeStamp ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(2)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h3Docs, new Date());
         checkAbsent(ats, h2Doc);
         checkAbsent(ats, h1Doc);
         checkAbsent(ats, h5Docs);
 
-        ats = new ERSArchiveTimeStamp(atss.get(3).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(3)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h4Doc, new Date());
         checkAbsent(ats, h3Docs);
         checkAbsent(ats, h2Doc);
         checkAbsent(ats, h5Docs);
 
-        ats = new ERSArchiveTimeStamp(atss.get(4).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(4)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(new ERSByteData(H5A_DATA), new Date());
         ats.validatePresent(new ERSByteData(H5B_DATA), new Date());
@@ -399,7 +399,7 @@ public class ERSTest
         checkAbsent(ats, h1Doc);
         checkAbsent(ats, h2Doc);
 
-        ats = new ERSArchiveTimeStamp(atss.get(0).getEncoded(), digestCalculatorProvider);
+        ats = new ERSArchiveTimeStamp(((ERSArchiveTimeStamp)atss.get(0)).getEncoded(), digestCalculatorProvider);
 
         ats.validatePresent(h1Doc, new Date());
         checkAbsent(ats, h3Docs);
@@ -407,7 +407,7 @@ public class ERSTest
         checkAbsent(ats, h5Docs);
 
         // check for individual sub-documents
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator, null);
         for (int i = 0; i != h3Hashes.size(); i++)
         {
@@ -418,10 +418,10 @@ public class ERSTest
 
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
-        ats = atss.get(1);
+        ats = (ERSArchiveTimeStamp)atss.get(1);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
 
-        ats = atss.get(2);
+        ats = (ERSArchiveTimeStamp)atss.get(2);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
 
@@ -502,7 +502,7 @@ public class ERSTest
             {
                 try
                 {
-                    atss.get(i).validatePresent(new ERSByteData(new byte[] {(byte)j}), new Date());
+                    ((ERSArchiveTimeStamp)atss.get(i)).validatePresent(new ERSByteData(new byte[] {(byte)j}), new Date());
                     count++;
                     break;
                 }
@@ -669,27 +669,27 @@ public class ERSTest
 
         List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        checkAbsent(evs.get(2), h1Doc);
-        checkAbsent(evs.get(2), h2Doc);
-        evs.get(2).validatePresent(h3Docs, new Date());
+        checkAbsent((ERSEvidenceRecord)evs.get(2), h1Doc);
+        checkAbsent((ERSEvidenceRecord)evs.get(2), h2Doc);
+        ((ERSEvidenceRecord)evs.get(2)).validatePresent(h3Docs, new Date());
 
-        evs.get(0).validatePresent(h1Doc, new Date());
-        checkAbsent(evs.get(0), h2Doc);
-        checkAbsent(evs.get(0), h3Docs);
+        ((ERSEvidenceRecord)evs.get(0)).validatePresent(h1Doc, new Date());
+        checkAbsent((ERSEvidenceRecord)evs.get(0), h2Doc);
+        checkAbsent((ERSEvidenceRecord)evs.get(0), h3Docs);
 
-        checkAbsent(evs.get(1), h1Doc);
-        evs.get(1).validatePresent(h2Doc, new Date());
-        checkAbsent(evs.get(1), h3Docs);
+        checkAbsent((ERSEvidenceRecord)evs.get(1), h1Doc);
+        ((ERSEvidenceRecord)evs.get(1)).validatePresent(h2Doc, new Date());
+        checkAbsent((ERSEvidenceRecord)evs.get(1), h3Docs);
 
-        assertTrue(evs.get(0).isRelatedTo(evs.get(1)));
-        assertTrue(evs.get(0).isRelatedTo(evs.get(2)));
-        assertTrue(evs.get(1).isRelatedTo(evs.get(2)));
+        assertTrue(((ERSEvidenceRecord)evs.get(0)).isRelatedTo((ERSEvidenceRecord)evs.get(1)));
+        assertTrue(((ERSEvidenceRecord)evs.get(0)).isRelatedTo((ERSEvidenceRecord)evs.get(2)));
+        assertTrue(((ERSEvidenceRecord)evs.get(1)).isRelatedTo((ERSEvidenceRecord)evs.get(2)));
 
-        assertTrue(Arrays.areEqual(evs.get(0).getPrimaryRootHash(), evs.get(1).getPrimaryRootHash()));
-        assertTrue(Arrays.areEqual(evs.get(0).getPrimaryRootHash(), evs.get(2).getPrimaryRootHash()));
-        assertTrue(Arrays.areEqual(evs.get(2).getPrimaryRootHash(), evs.get(1).getPrimaryRootHash()));
+        assertTrue(Arrays.areEqual(((ERSEvidenceRecord)evs.get(0)).getPrimaryRootHash(), ((ERSEvidenceRecord)evs.get(1)).getPrimaryRootHash()));
+        assertTrue(Arrays.areEqual(((ERSEvidenceRecord)evs.get(0)).getPrimaryRootHash(), ((ERSEvidenceRecord)evs.get(2)).getPrimaryRootHash()));
+        assertTrue(Arrays.areEqual(((ERSEvidenceRecord)evs.get(2)).getPrimaryRootHash(), ((ERSEvidenceRecord)evs.get(1)).getPrimaryRootHash()));
 
-        ERSEvidenceRecord ev = evs.get(2);
+        ERSEvidenceRecord ev = (ERSEvidenceRecord)evs.get(2);
 
         // check for individual sub-documents
         List<byte[]> h3Hashes = h3Docs.getHashes(digestCalculator, null);
@@ -715,12 +715,12 @@ public class ERSTest
         Collection<ERSEvidenceRecord> recs = store.getMatches(new ERSEvidenceRecordSelector(h3Docs));
 
         Assert.assertEquals(1, recs.size());
-        ERSEvidenceRecord r1 = recs.iterator().next();
+        ERSEvidenceRecord r1 = (ERSEvidenceRecord)recs.iterator().next();
 
         recs = store.getMatches(new ERSEvidenceRecordSelector(new ERSByteData(H3A_DATA)));
 
         Assert.assertEquals(1, recs.size());
-        ERSEvidenceRecord r2 = recs.iterator().next();
+        ERSEvidenceRecord r2 = (ERSEvidenceRecord)recs.iterator().next();
 
         Assert.assertTrue(r2 == r1);
     }
@@ -782,11 +782,11 @@ public class ERSTest
 
         List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        checkPresent(evs.get(0), h1Doc);
-        checkPresent(evs.get(1), h2Doc);
-        checkPresent(evs.get(2), h3Docs);
+        checkPresent((ERSEvidenceRecord)evs.get(0), h1Doc);
+        checkPresent((ERSEvidenceRecord)evs.get(1), h2Doc);
+        checkPresent((ERSEvidenceRecord)evs.get(2), h3Docs);
 
-        ERSEvidenceRecord ev = evs.get(2);
+        ERSEvidenceRecord ev = (ERSEvidenceRecord)evs.get(2);
 
         tspReq = ev.generateTimeStampRenewalRequest(tspReqGen);
 
@@ -815,7 +815,7 @@ public class ERSTest
         ev.validate(new JcaSimpleSignerInfoVerifierBuilder().build(origCert));
 
         // as the time stamp is shared between records we should be able to reuse the response
-        ERSEvidenceRecord ev1 = evs.get(0).renewTimeStamp(tspResp);
+        ERSEvidenceRecord ev1 = ((ERSEvidenceRecord)evs.get(0)).renewTimeStamp(tspResp);
         
         ev1.validatePresent(h1Doc, new Date());
         checkAbsent(ev1, h2Doc);
@@ -909,9 +909,9 @@ public class ERSTest
 
         List<ERSEvidenceRecord> evs = evGen.generate(ats);
 
-        evs.get(0).validatePresent(h1Doc, new Date());
-        evs.get(1).validatePresent(h2Doc, new Date());
-        evs.get(2).validatePresent(h3Docs, new Date());
+        ((ERSEvidenceRecord)evs.get(0)).validatePresent(h1Doc, new Date());
+        ((ERSEvidenceRecord)evs.get(1)).validatePresent(h2Doc, new Date());
+        ((ERSEvidenceRecord)evs.get(2)).validatePresent(h3Docs, new Date());
 
         DigestCalculator newDigCalc = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
 
@@ -919,7 +919,7 @@ public class ERSTest
 
         ersGen.addData(h3Docs);
 
-        ERSEvidenceRecord ev = evs.get(2);
+        ERSEvidenceRecord ev = (ERSEvidenceRecord)evs.get(2);
         tspReq = ev.generateHashRenewalRequest(newDigCalc, h3Docs, tspReqGen);
 
         signKP = TSPTestUtil.makeKeyPair();
@@ -972,7 +972,7 @@ public class ERSTest
 
         assertEquals(2, ev.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[1].getArchiveTimestamps().length);
 
-        assertTrue(Arrays.areEqual(evs.get(0).getPrimaryRootHash(), ev.getPrimaryRootHash()));
+        assertTrue(Arrays.areEqual(((ERSEvidenceRecord)evs.get(0)).getPrimaryRootHash(), ev.getPrimaryRootHash()));
 
         try
         {
@@ -1480,7 +1480,7 @@ public class ERSTest
                     new ERSEvidenceRecordSelector(new ERSByteData(new byte[] { dataObjects[i] }), new Date()));
             assertEquals(1, ersEvidenceRecordMatches.size());
 
-            final ERSEvidenceRecord ersEvidenceRecord = ersEvidenceRecordMatches.iterator().next();
+            final ERSEvidenceRecord ersEvidenceRecord = (ERSEvidenceRecord)ersEvidenceRecordMatches.iterator().next();
             final org.bouncycastle.asn1.tsp.PartialHashtree[] ht = ersEvidenceRecord.toASN1Structure().getArchiveTimeStampSequence().getArchiveTimeStampChains()[0].getArchiveTimestamps()[0].getReducedHashTree();
 
 //            System.out.println(

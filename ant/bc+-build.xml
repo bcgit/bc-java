@@ -1362,7 +1362,7 @@
     <!--
         jar up the source directories
     -->
-    <target name="zip-src" depends="zip-src-check, zip-src-jce, zip-src-jce-ext, zip-src-provider, zip-src-provider-ext">
+    <target name="zip-src" depends="zip-src-check, zip-src-jce, zip-src-jce-ext, zip-src-provider, zip-src-provider-ext, zip-src-jmail">
         <zip basedir="${mail.target.src.dir}" destfile="${mail.target.src.zip}" />
         <delete dir="${mail.target.src.dir}" />
         <zip basedir="${pkix.target.src.dir}" destfile="${pkix.target.src.zip}" />
@@ -1371,7 +1371,12 @@
         <delete dir="${pg.target.src.dir}" />
         <zip basedir="${util.target.src.dir}" destfile="${util.target.src.zip}" />
         <delete dir="${util.target.src.dir}" />
-        <zip basedir="${jmail.target.src.dir}" destfile="${jmail.target.src.zip}" />
+    </target>
+
+
+    <target name="zip-src-jmail" if="jmail.present">
+        <zip basedir="${jmail.target.src.dir}" destfile="${jmail.target.src.zip}">
+        </zip>
         <delete dir="${jmail.target.src.dir}" />
     </target>
 
@@ -1406,6 +1411,7 @@
     <target name="zip-src-check">
         <available property="jce.present" file="${jce.target.src.dir}" />
         <available property="provider.present" file="${provider.target.src.dir}" />
+        <available property="jmail.present" file="${jmail.target.src.dir}" />
     </target>
 </project>
 
