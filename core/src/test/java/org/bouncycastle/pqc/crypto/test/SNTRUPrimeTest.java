@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Objects;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -42,7 +41,7 @@ public class SNTRUPrimeTest
             SNTRUPrimeParameters paramSpec = paramList[i];
             System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
             InputStream resource = SNTRUPrimeTest.class.getResourceAsStream(resourcePath + paramSpec.getName().toLowerCase() + ".rsp");
-            BufferedReader resourceReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(resource)));
+            BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
             String line;
             while ((line = resourceReader.readLine()) != null)
