@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.tls.Certificate;
@@ -21,12 +22,11 @@ import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsRawKeyCertificate;
-
-import junit.framework.TestCase;
 
 class MockRawKeysTlsServer extends DefaultTlsServer
 {
@@ -97,7 +97,7 @@ class MockRawKeysTlsServer extends DefaultTlsServer
                 break;
             case CertificateType.RawPublicKey:
                 TlsCertificate rawKeyCert = new BcTlsRawKeyCertificate(
-                        getCrypto(),
+                    (BcTlsCrypto)getCrypto(),
                         SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(privateKey.generatePublicKey()));
                 Certificate cert = new Certificate(
                         CertificateType.RawPublicKey,
@@ -105,7 +105,7 @@ class MockRawKeysTlsServer extends DefaultTlsServer
                         new CertificateEntry[] {new CertificateEntry(rawKeyCert, null)});
                 credentials = new BcDefaultTlsCredentialedSigner(
                         new TlsCryptoParameters(context),
-                        getCrypto(),
+                    (BcTlsCrypto)getCrypto(),
                         privateKey,
                         cert,
                         SignatureAndHashAlgorithm.ed25519);
@@ -158,8 +158,8 @@ class MockRawKeysTlsServer extends DefaultTlsServer
         TestCase.assertEquals("client certificate is the wrong type", clientCertType, clientCertificate.getCertificateType());
     }
 
-    public BcTlsCrypto getCrypto()
+    public TlsCrypto getCrypto()
     {
-        return (BcTlsCrypto) super.getCrypto();
+        return super.getCrypto();
     }
 }

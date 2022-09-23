@@ -158,6 +158,7 @@
                     srcdir="${artifacts.dir}/@{target}/src"
                     destdir="${build.dir}/@{target}/classes"
                     memoryMaximumSize="512m"
+                    fork="true"
                     debug="${release.debug}">
                     <classpath>
                         <path refid="project.classpath" /> 
