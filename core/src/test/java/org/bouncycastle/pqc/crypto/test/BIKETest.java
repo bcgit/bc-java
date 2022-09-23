@@ -75,7 +75,7 @@ public class BIKETest
                 {
                     if (buf.size() > 0)
                     {
-                        String count = buf.get("count");
+                        String count = (String)buf.get("count");
                         if (sampler.skipTest(count))
                         {
                             continue;
