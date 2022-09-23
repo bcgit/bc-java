@@ -28,6 +28,7 @@ public class Grain128AEADTest
         testVectors();
         testSplitUpdate();
         testExceptions();
+        testLongAEAD();
     }
 
     private void testVectors()
@@ -92,6 +93,58 @@ public class Grain128AEADTest
         grain.processAADBytes(AD, 0, 10);
         grain.processAADByte(AD[10]);
         grain.processAADBytes(AD, 11, AD.length - 11);
+
+        byte[] rv = new byte[CT.length];
+        int len = grain.processBytes(PT, 0, 10, rv, 0);
+        len += grain.processByte(PT[10], rv, len);
+        len += grain.processBytes(PT, 11, PT.length - 11, rv, len);
+
+        grain.doFinal(rv, len);
+
+        isTrue(Arrays.areEqual(rv, CT));
+
+        grain.processBytes(PT, 0, 10, rv, 0);
+        try
+        {
+            grain.processAADByte((byte)0x01);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+        }
+
+        try
+        {
+            grain.processAADBytes(AD, 0, AD.length);
+            fail("no exception");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("associated data must be added before plaintext/ciphertext", e.getMessage());
+        }
+    }
+
+    private void testLongAEAD()
+        throws InvalidCipherTextException
+    {
+        byte[] Key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] Nonce = Hex.decode("000102030405060708090A0B");
+        byte[] PT = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F");
+        byte[] AD = Hex.decode(   // 186 bytes
+            "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E"
+                + "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E"
+                + "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E"
+                + "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E"
+                + "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E"
+                + "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E");
+        byte[] CT = Hex.decode("731daa8b1d15317a1ccb4e3dd320095fb27e5bb2a10f2c669f870538637d4f1641bdc02d3cc432a5");
+
+        Grain128AEADEngine grain = new Grain128AEADEngine();
+        ParametersWithIV params = new ParametersWithIV(new KeyParameter(Key), Nonce);
+        grain.init(true, params);
+        
+        grain.processAADBytes(AD, 0, AD.length);
 
         byte[] rv = new byte[CT.length];
         int len = grain.processBytes(PT, 0, 10, rv, 0);
