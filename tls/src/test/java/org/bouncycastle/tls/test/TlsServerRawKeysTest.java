@@ -31,8 +31,9 @@ public class TlsServerRawKeysTest
         ServerSocket ss = new ServerSocket(port, 16, address);
         try
         {
-            for (ProtocolVersion tlsVersion : tlsVersions)
+            for (int i = 0; i != tlsVersions.length; i++)
             {
+                ProtocolVersion tlsVersion = tlsVersions[i];
                 Socket s = ss.accept();
                 System.out.println("--------------------------------------------------------------------------------");
                 System.out.println("Accepted " + s);
