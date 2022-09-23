@@ -2,13 +2,13 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -28,7 +28,7 @@ public class UnrecognizableSubkeyParserTest
     
     public String getName()
     {
-        return getClass().getSimpleName();
+        return "UnrecognizableSubkeyParserTest";
     }
     
     public void performTest()
@@ -519,7 +519,7 @@ public class UnrecognizableSubkeyParserTest
     private PGPPublicKeyRing certFromString(String string)
         throws IOException
     {
-        ByteArrayInputStream bytesIn = new ByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bytesIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(string));
         ArmoredInputStream armorIn = new ArmoredInputStream(bytesIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
 

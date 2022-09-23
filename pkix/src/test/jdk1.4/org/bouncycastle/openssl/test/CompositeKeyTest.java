@@ -215,8 +215,8 @@ public class CompositeKeyTest
             .add("SHA256withECDSA")
             .add("SHA256withRSA")
             .build();
-        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+        CompositePublicKey compPub = new CompositePublicKey(new PublicKey[] { ecPub, lmsPub });
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(new PrivateKey[] { ecPriv, lmsPriv });
 
         ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
 
@@ -354,8 +354,8 @@ public class CompositeKeyTest
             .add("SHA256withECDSA")
             .add("SHA256withRSA")
             .build();
-        CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
+        CompositePublicKey compPub = new CompositePublicKey(new PublicKey[] { ecPub, lmsPub });
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(new PrivateKey[] { ecPriv, lmsPriv });
 
         ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
 

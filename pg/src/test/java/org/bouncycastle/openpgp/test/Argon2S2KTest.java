@@ -80,7 +80,7 @@ public class Argon2S2KTest
     @Override
     public String getName()
     {
-        return Argon2S2KTest.class.getSimpleName();
+        return "Argon2S2KTest";
     }
 
     @Override
