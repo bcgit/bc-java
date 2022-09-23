@@ -110,20 +110,20 @@ public class CrystalsDilithiumTest
                 {
                     if (buf.size() > 0)
                     {
-                        String count = buf.get("count");
+                        String count = (String)buf.get("count");
                         if (sampler.skipTest(count))
                         {
                             continue;
                         }
                         System.out.println("test case: " + count);
 
-                        byte[] seed = Hex.decode(buf.get("seed")); // seed for Dilithium secure random
-                        byte[] pk = Hex.decode(buf.get("pk"));     // public key
-                        byte[] sk = Hex.decode(buf.get("sk"));     // private key
-                        byte[] sm = Hex.decode(buf.get("sm"));     // signed message
-                        int sm_len = Integer.parseInt(buf.get("smlen"));
-                        byte[] msg = Hex.decode(buf.get("msg")); // message
-                        int m_len = Integer.parseInt(buf.get("mlen"));
+                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Dilithium secure random
+                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
+                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
+                        byte[] sm = Hex.decode((String)buf.get("sm"));     // signed message
+                        int sm_len = Integer.parseInt((String)buf.get("smlen"));
+                        byte[] msg = Hex.decode((String)buf.get("msg")); // message
+                        int m_len = Integer.parseInt((String)buf.get("mlen"));
 
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
 

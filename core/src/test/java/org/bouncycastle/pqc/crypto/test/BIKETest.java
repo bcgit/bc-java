@@ -82,11 +82,11 @@ public class BIKETest
                         }
 
                         System.out.println("test case: " + count);
-                        byte[] seed = Hex.decode(buf.get("seed")); // seed for bike secure random
-                        byte[] pk = Hex.decode(buf.get("pk"));     // public key
-                        byte[] sk = Hex.decode(buf.get("sk"));     // private key
-                        byte[] ct = Hex.decode(buf.get("ct"));     // ciphertext
-                        byte[] ss = Hex.decode(buf.get("ss"));     // session key
+                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
+                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
+                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
+                        byte[] ct = Hex.decode((String)buf.get("ct"));     // ciphertext
+                        byte[] ss = Hex.decode((String)buf.get("ss"));     // session key
 
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
                         BIKEParameters parameters = listParams[fileIndex];

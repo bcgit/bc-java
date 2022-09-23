@@ -51,12 +51,12 @@ public class NTRUKAT
                     if (buf.size() > 0)
                     {
                         NTRUKAT kat = new NTRUKAT();
-                        kat.count = Integer.parseInt(buf.get("count"));
-                        kat.seed = Hex.decode(buf.get("seed")); // seed for secure random
-                        kat.pk = Hex.decode(buf.get("pk"));     // public key
-                        kat.sk = Hex.decode(buf.get("sk"));     // private key
-                        kat.ct = Hex.decode(buf.get("ct"));
-                        kat.ss = Hex.decode(buf.get("ss"));
+                        kat.count = Integer.parseInt((String)buf.get("count"));
+                        kat.seed = Hex.decode((String)buf.get("seed")); // seed for secure random
+                        kat.pk = Hex.decode((String)buf.get("pk"));     // public key
+                        kat.sk = Hex.decode((String)buf.get("sk"));     // private key
+                        kat.ct = Hex.decode((String)buf.get("ct"));
+                        kat.ss = Hex.decode((String)buf.get("ss"));
 
                         if (sampler.skipTest(kat.count))
                         {
