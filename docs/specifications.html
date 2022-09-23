@@ -281,7 +281,7 @@ used with the above modes.
 <p>
 The base interface is <b>AsymmetricBlockCipher</b> and has the following
 implementations which match the modes the cipher can be operated in.
-
+</p>
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Constructor</th><th>Notes</th></tr>
@@ -435,31 +435,36 @@ Classes for generating Diffie-Hellman parameters can be found in the
 
 <h4>Key Encapsulation Mechanisms</h4>
 <p>
-The first set have a base class <b>KeyEncapsulation</b> with the following
-sub-classes
+The first non-post-quantum set use the <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b> interfaces.
 </p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <thead>
 <tr><th>Name</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td><b>RSAKeyEncapsulation</b></td><td>RSA-KEM from ISO 18033-2</td></tr>
-<tr><td><b>PKCS5S2ParametersGenerator</b></td><td>ECIES-KEM from ISO 18033-2</td></tr>
+<tr><td><b>RSA</b></td><td>RSA-KEM from ISO 18033-2, implemented in <b>RSAKEMExtractor</b> and <b>RSAKEMGenerator</b></td></tr>
+<tr><td><b>ECIES</b></td><td>ECIES-KEM from ISO 18033-2, implemented in <b>ECIESKEMExtractor</b> and <b>ECIESKEMGenerator</b></td></tr>
 </tbody>
 </table>
 <p>
-The second, post-quantum set use <b>EncapsulatdSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b>.
+The second, post-quantum set use <b>EncapsulatedSecretGenerator</b> and <b>EncapsulatedSecretGenerator</b>.
 </p>
+
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
-<thead>
-<tr><th>Name</th><th>Notes</th></tr>
-</thead>
 <tbody>
-<tr><td><b>CMCEKEMGenerator, CMCEKEMExtractor</b></td><td>Class McEliece (NIST Alternate Candidate)</td></tr>
-<tr><td><b>FrodoKEMGenerator, FrodoKEMExtractor</b></td><td>FrodoKEM (NIST Alternate Candidate)</td></tr>
-<tr><td><b>SABERKEMGenerator, SABERKEMExtractor</b></td><td>SABER (NIST Finalist)</td></tr>
+<tr><th>Name</th><th>Security Strength (in bits)</th><th>Implementations</th><th>Notes</th></tr>
+<tr><td><b>BIKE</b></td><td>128-256.</td><td><b>BIKEKEMGenerator</b>, <b>BIKEKEMExtractor</b><td>Round&nbsp;4</td></tr>
+<tr><td><b>Classic McEliece</b></td><td>128-256.</td><td><b>BIKEKEMGenerator</b>, <b>BIKEKEMExtractor</b></td><td>Round&nbsp;4</td></tr>
+<tr><td><b>FrodoKEM</b></td><td>128-256.</td><td><b>FrodoKEMGenerator</b>, <b>FrodoKEMExtractor</b></td><td></td></tr>
+<tr><td><b>HQC</b></td><td>128-256.</td><td><b>HQCKEMGenerator</b>, <b>HQCKEMExtractor</b></td><td>Round&nbsp;4</td></tr>
+<tr><td><b>Kyber</b></td><td>128-256.</td><td><b>KyberKEMGenerator</b>, <b>KyberKEMExtractor</b></td><td>Finalist</td></tr>
+<tr><td><b>NTRU</b></td><td>128-256.</td><td><b>NTRUKEMGenerator</b>, <b>NTRUKEMExtractor</b></td><td></td></tr>
+<tr><td><b>NTRU Prime</b></td><td>128-256.</td><td><b>NTRULPRimeKEMGenerator</b>, <b>NTRULPRimeKEMExtractor</b> <br /> <b>SNTRUPrimeKEMGenerator</b>, <b>SNTRUPrimeKEMExtractor</b></td><td></td></tr>
+<tr><td><b>SABER</b></td><td>128-256.</td><td><b>SABERKEMGenerator</b>, <b>SABERKEMExtractor</b></td><td></td></tr>
 </tbody>
 </table>
+
+</p>
 
 <h4>Signers</h4>
 <p>
@@ -695,6 +700,7 @@ Note: default key sizes are in bold.
 <tr><td>VMPC</td><td>128/6144<b>(128)</b></td><td>&nbsp;</td></tr>
 <tr><td>Grainv1</b></td><td>80</td><td>64 bit IV</td></tr>
 <tr><td>Grain128</b></td><td>128</td><td>96 bit IV</td></tr>
+<tr><td>Grain128AEAD</b></td><td>128</td><td>96 bit IV</td></tr>
 <tr><td>Zuc128</b></td><td>128</td><td>128 bit IV</td></tr>
 <tr><td>Zuc256</b></td><td>256</td><td>200 bit IV</td></tr>
 </table>
@@ -991,6 +997,9 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA256withSM2</li>
 <li>SM3withSM2</li>
 <li>LMS</li>
+<li>Dilithium</li>
+<li>Falcon</li>
+<li>Picnic</li>
 <li>SPHINCS+</li>
 <li>XMSS-SHA256</li>
 <li>XMSS-SHA512</li>
@@ -1008,11 +1017,6 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 <li>SHA512withXMSSMT-SHA512</li>
 <li>SHAKE128withXMSSMT-SHAKE128</li>
 <li>SHAKE256withXMSSMT-SHAKE256</li>
-<li>qTESLA-I</li>
-<li>qTESLA-III-SIZE</li>
-<li>qTESLA-III-SPEED</li>
-<li>qTESLA-P-I</li>
-<li>qTESLA-P-III</li>
 </ul>
 
 <h4>Password Hashing and PBE</h4>
