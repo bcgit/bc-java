@@ -66,7 +66,7 @@ public class PGPSignature
         return (SignaturePacket)packet;
     }
 
-    PGPSignature(
+    public PGPSignature(
         BCPGInputStream pIn)
         throws IOException, PGPException
     {
