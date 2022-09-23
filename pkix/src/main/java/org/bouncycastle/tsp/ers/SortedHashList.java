@@ -20,7 +20,7 @@ public class SortedHashList
 
     public byte[] getFirst()
     {
-        return baseList.getFirst();
+        return (byte[])baseList.getFirst();
     }
 
     public void add(byte[] hash)

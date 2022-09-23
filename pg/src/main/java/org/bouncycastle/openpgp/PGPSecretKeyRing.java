@@ -185,7 +185,7 @@ public class PGPSecretKeyRing
      */
     public PGPPublicKey getPublicKey()
     {
-        return keys.get(0).getPublicKey();
+        return ((PGPSecretKey)keys.get(0)).getPublicKey();
     }
 
     /**
@@ -206,7 +206,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != extraPubKeys.size(); i++)
         {
-            PGPPublicKey k = extraPubKeys.get(i);
+            PGPPublicKey k = (PGPPublicKey)extraPubKeys.get(i);
 
             if (keyID == k.getKeyID())
             {
@@ -234,7 +234,7 @@ public class PGPSecretKeyRing
 
         for (int i = 0; i != extraPubKeys.size(); i++)
         {
-            PGPPublicKey k = extraPubKeys.get(i);
+            PGPPublicKey k = (PGPPublicKey)extraPubKeys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getFingerprint()))
             {
@@ -257,7 +257,7 @@ public class PGPSecretKeyRing
 
         for (Iterator<PGPPublicKey> keyIt = getPublicKeys(); keyIt.hasNext(); )
         {
-            PGPPublicKey k = keyIt.next();
+            PGPPublicKey k = (PGPPublicKey)keyIt.next();
 
             Iterator<PGPSignature> sigIt = k.getSignaturesForKeyID(keyID);
 
@@ -389,7 +389,7 @@ public class PGPSecretKeyRing
         }
         for (int i = 0; i != extraPubKeys.size(); i++)
         {
-            PGPPublicKey k = extraPubKeys.get(i);
+            PGPPublicKey k = (PGPPublicKey)extraPubKeys.get(i);
 
             k.encode(outStream);
         }
@@ -459,7 +459,7 @@ public class PGPSecretKeyRing
 
             for (Iterator<PGPPublicKey> it = secretRing.getExtraPublicKeys(); it.hasNext(); )
             {
-                PGPPublicKey pk = it.next();
+                PGPPublicKey pk = (PGPPublicKey)it.next();
                 if (pk.getKeyID() == publicKey.getKeyID())
                 {
                     extras.add(publicKey);

@@ -75,10 +75,10 @@ public class Headers
 
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
 
-        if (contentType.contains("multipart"))
+        if (contentType.indexOf("multipart") >= 0)    // JVM compatibility
         {
             multipart = true;
-            String bound = contentTypeParameters.get("boundary");
+            String bound = (String)contentTypeParameters.get("boundary");
             if (bound.startsWith("\"") && bound.endsWith("\""))
             {
                 boundary = bound.substring(1, bound.length() - 1); // quoted-string

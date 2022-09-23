@@ -81,7 +81,7 @@ public class ERSDataGroup
         }
         else
         {
-            return hashes.get(0);
+            return (byte[])hashes.get(0);
         }
     }
 

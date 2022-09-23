@@ -111,7 +111,7 @@ public class ERSEvidenceRecordStore
                 return Collections.unmodifiableList(rv);
             }
 
-            return Collections.emptyList();
+            return Collections.unmodifiableList(new ArrayList());
         }
 
         if (selector == null)

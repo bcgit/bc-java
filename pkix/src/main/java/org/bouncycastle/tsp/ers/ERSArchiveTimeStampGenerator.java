@@ -190,19 +190,19 @@ public class ERSArchiveTimeStampGenerator
         // replace groups
         for (int i = 0; i != hashes.size(); i++)
         {
-            byte[] hash = hashes.get(i).digest;
-            ERSData d = dataObjects.get(hashes.get(i).order);
+            byte[] hash = ((IndexedHash)hashes.get(i)).digest;
+            ERSData d = (ERSData)dataObjects.get(((IndexedHash)hashes.get(i)).order);
 
             if (d instanceof ERSDataGroup)
             {
                 ERSDataGroup data = (ERSDataGroup)d;
 
                 List<byte[]> dHashes = data.getHashes(digCalc, previousChainHash);
-                trees[i] = new IndexedPartialHashtree(hashes.get(i).order, (byte[][])dHashes.toArray(new byte[dHashes.size()][]));
+                trees[i] = new IndexedPartialHashtree(((IndexedHash)hashes.get(i)).order, (byte[][])dHashes.toArray(new byte[dHashes.size()][]));
             }
             else
             {
-                trees[i] = new IndexedPartialHashtree(hashes.get(i).order, hash);
+                trees[i] = new IndexedPartialHashtree(((IndexedHash)hashes.get(i)).order, hash);
             }
         }
 
