@@ -29,6 +29,7 @@ public class AllTests
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);
+        suite.addTestSuite(TlsRawKeysProtocolTest.class);        
         suite.addTestSuite(TlsSRPProtocolTest.class);
         suite.addTestSuite(TlsUtilsTest.class);
 

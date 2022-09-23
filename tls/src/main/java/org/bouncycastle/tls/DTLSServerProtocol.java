@@ -640,6 +640,7 @@ public class DTLSServerProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.clientExtensions, CertificateType.X509))
             .setMaxChainLength(state.server.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, state.serverContext, buf, null);

@@ -579,6 +579,9 @@ public class DTLSClientProtocol
         TlsProtocol.assertEmpty(buf);
 
         state.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, state.keyExchange);
+
+        state.clientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.serverExtensions, CertificateType.X509);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
@@ -635,7 +638,7 @@ public class DTLSClientProtocol
         throws IOException
     {
         state.authentication = TlsUtils.receiveServerCertificate(state.clientContext, state.client,
-            new ByteArrayInputStream(body));
+            new ByteArrayInputStream(body), state.serverExtensions);
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)

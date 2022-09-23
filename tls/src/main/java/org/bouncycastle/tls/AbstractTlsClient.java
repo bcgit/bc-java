@@ -179,6 +179,16 @@ public abstract class AbstractTlsClient
         return null;
     }
 
+    protected short[] getAllowedClientCertificateTypes()
+    {
+        return null;
+    }
+
+    protected short[] getAllowedServerCertificateTypes()
+    {
+        return null;
+    }
+
     public void init(TlsClientContext context)
     {
         this.context = context;
@@ -335,6 +345,33 @@ public abstract class AbstractTlsClient
             {
                 TlsExtensionsUtils.addSupportedPointFormatsExtension(clientExtensions, new short[]{ ECPointFormat.uncompressed });
             }
+        }
+
+        /*
+         * RFC 7250 4.1:
+         *
+         * If the client has no remaining certificate types to send in
+         * the client hello, other than the default X.509 type, it MUST omit the
+         * client_certificate_type extension in the client hello.
+         */
+        short[] clientCertTypes = getAllowedClientCertificateTypes();
+        if (clientCertTypes != null && (clientCertTypes.length > 1 || clientCertTypes[0] != CertificateType.X509))
+        {
+            TlsExtensionsUtils.addClientCertificateTypeExtensionClient(clientExtensions, clientCertTypes);
+        }
+
+        /*
+         * RFC 7250 4.1:
+         *
+         * If the client has no remaining certificate types to send in
+         * the client hello, other than the default X.509 certificate type, it
+         * MUST omit the entire server_certificate_type extension from the
+         * client hello.
+         */
+        short[] serverCertTypes = getAllowedServerCertificateTypes();
+        if (serverCertTypes != null && (serverCertTypes.length > 1 || serverCertTypes[0] != CertificateType.X509))
+        {
+            TlsExtensionsUtils.addServerCertificateTypeExtensionClient(clientExtensions, serverCertTypes);
         }
 
         return clientExtensions;
