@@ -53,7 +53,7 @@ public class PGPPublicKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             if (i == 0)
             {
@@ -149,7 +149,7 @@ public class PGPPublicKeyRing
      */
     public PGPPublicKey getPublicKey()
     {
-        return keys.get(0);
+        return (PGPPublicKey)keys.get(0);
     }
 
     /**
@@ -164,7 +164,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             if (keyID == k.getKeyID())
             {
@@ -186,7 +186,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             if (Arrays.areEqual(fingerprint, k.getFingerprint()))
             {
@@ -209,7 +209,7 @@ public class PGPPublicKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             Iterator<PGPSignature> sigIt = k.getSignaturesForKeyID(keyID);
 
@@ -288,7 +288,7 @@ public class PGPPublicKeyRing
     {
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey k = keys.get(i);
+            PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
             k.encode(outStream, forTransfer);
         }
@@ -312,7 +312,7 @@ public class PGPPublicKeyRing
 
         for (int i = 0; i != keys.size(); i++)
         {
-            PGPPublicKey key = keys.get(i);
+            PGPPublicKey key = (PGPPublicKey)keys.get(i);
 
             if (key.getKeyID() == pubKey.getKeyID())
             {
@@ -365,7 +365,7 @@ public class PGPPublicKeyRing
 
         for (int i = 0; i < count; ++i)
         {
-            PGPPublicKey key = pubRing.keys.get(i);
+            PGPPublicKey key = (PGPPublicKey)pubRing.keys.get(i);
 
             if (key.getKeyID() == keyID)
             {
@@ -460,14 +460,14 @@ public class PGPPublicKeyRing
         Set<Long> secondKeys = new HashSet<Long>();
         for (Iterator<PGPPublicKey> it = second.iterator(); it.hasNext(); )
         {
-            PGPPublicKey key = it.next();
+            PGPPublicKey key = (PGPPublicKey)it.next();
             secondKeys.add(Longs.valueOf(key.getKeyID()));
         }
 
         List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
         for (Iterator<PGPPublicKey> it = first.iterator(); it.hasNext(); )
         {
-            PGPPublicKey key = it.next();
+            PGPPublicKey key = (PGPPublicKey)it.next();
             PGPPublicKey copy = second.getPublicKey(key.getKeyID());
             if (copy != null)
             {
@@ -482,8 +482,8 @@ public class PGPPublicKeyRing
 
         for (Iterator<Long> it = secondKeys.iterator(); it.hasNext(); )
         {
-            long additionalKeyId = it.next();
-            merged.add(second.getPublicKey(additionalKeyId));
+            Long additionalKeyId = (Long)it.next();
+            merged.add(second.getPublicKey(additionalKeyId.longValue()));
         }
 
         return new PGPPublicKeyRing(merged);

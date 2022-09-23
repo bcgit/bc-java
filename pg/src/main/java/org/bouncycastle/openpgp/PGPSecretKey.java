@@ -26,6 +26,7 @@ import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SecretSubkeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.gpg.SExprParser;
@@ -741,7 +742,7 @@ public class PGPSecretKey
         {
             for (int i = 0; i != pub.keySigs.size(); i++)
             {
-                pub.keySigs.get(i).encode(out);
+                ((PGPSignature)pub.keySigs.get(i)).encode(out);
             }
 
             for (int i = 0; i != pub.ids.size(); i++)
@@ -761,14 +762,14 @@ public class PGPSecretKey
 
                 if (pub.idTrusts.get(i) != null)
                 {
-                    out.writePacket(pub.idTrusts.get(i));
+                    out.writePacket((TrustPacket)pub.idTrusts.get(i));
                 }
 
-                List<PGPSignature> sigs = pub.idSigs.get(i);
+                List<PGPSignature> sigs = (List<PGPSignature>)pub.idSigs.get(i);
 
                 for (int j = 0; j != sigs.size(); j++)
                 {
-                    sigs.get(j).encode(out);
+                    ((PGPSignature)sigs.get(j)).encode(out);
                 }
             }
         }
@@ -776,7 +777,7 @@ public class PGPSecretKey
         {
             for (int j = 0; j != pub.subSigs.size(); j++)
             {
-                pub.subSigs.get(j).encode(out);
+                ((PGPSignature)pub.subSigs.get(j)).encode(out);
             }
         }
     }

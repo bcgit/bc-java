@@ -15,6 +15,7 @@ import java.util.Map;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -71,7 +72,7 @@ public class PGPSecretKeyRingCollection
             }
 
             PGPSecretKeyRing pgpSecret = (PGPSecretKeyRing)obj;
-            Long key = pgpSecret.getPublicKey().getKeyID();
+            Long key = Longs.valueOf(pgpSecret.getPublicKey().getKeyID());
 
             secretRings.put(key, pgpSecret);
             order.add(key);
@@ -85,8 +86,8 @@ public class PGPSecretKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing pgpSecret = it.next();
-            Long key = pgpSecret.getPublicKey().getKeyID();
+            PGPSecretKeyRing pgpSecret = (PGPSecretKeyRing)it.next();
+            Long key = Longs.valueOf(pgpSecret.getPublicKey().getKeyID());
 
             secretRings.put(key, pgpSecret);
             order.add(key);
@@ -162,12 +163,12 @@ public class PGPSecretKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secRing = it.next();
+            PGPSecretKeyRing secRing = (PGPSecretKeyRing)it.next();
             Iterator<String> uIt = secRing.getSecretKey().getUserIDs();
 
             while (uIt.hasNext())
             {
-                String next = uIt.next();
+                String next = (String)uIt.next();
                 if (ignoreCase)
                 {
                     next = Strings.toLowerCase(next);
@@ -175,7 +176,7 @@ public class PGPSecretKeyRingCollection
 
                 if (matchPartial)
                 {
-                    if (next.contains(userID))
+                    if (next.indexOf(userID) >= 0)
                     {
                         rings.add(secRing);
                     }
@@ -206,7 +207,7 @@ public class PGPSecretKeyRingCollection
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secRing = it.next();
+            PGPSecretKeyRing secRing = (PGPSecretKeyRing)it.next();
             PGPSecretKey sec = secRing.getSecretKey(keyID);
 
             if (sec != null)
@@ -227,18 +228,18 @@ public class PGPSecretKeyRingCollection
     public PGPSecretKeyRing getSecretKeyRing(
         long keyID)
     {
-        Long id = keyID;
+        Long id = Longs.valueOf(keyID);
 
         if (secretRings.containsKey(id))
         {
-            return secretRings.get(id);
+            return (PGPSecretKeyRing)secretRings.get(id);
         }
 
         Iterator<PGPSecretKeyRing> it = this.getKeyRings();
 
         while (it.hasNext())
         {
-            PGPSecretKeyRing secretRing = it.next();
+            PGPSecretKeyRing secretRing = (PGPSecretKeyRing)it.next();
             PGPSecretKey secret = secretRing.getSecretKey(keyID);
 
             if (secret != null)
@@ -289,7 +290,7 @@ public class PGPSecretKeyRingCollection
         Iterator<Long> it = order.iterator();
         while (it.hasNext())
         {
-            PGPSecretKeyRing sr = secretRings.get(it.next());
+            PGPSecretKeyRing sr = (PGPSecretKeyRing)secretRings.get(it.next());
 
             sr.encode(out);
         }
@@ -308,7 +309,7 @@ public class PGPSecretKeyRingCollection
         PGPSecretKeyRingCollection ringCollection,
         PGPSecretKeyRing secretKeyRing)
     {
-        Long key = secretKeyRing.getPublicKey().getKeyID();
+        Long key = Longs.valueOf(secretKeyRing.getPublicKey().getKeyID());
 
         if (ringCollection.secretRings.containsKey(key))
         {
@@ -337,7 +338,7 @@ public class PGPSecretKeyRingCollection
         PGPSecretKeyRingCollection ringCollection,
         PGPSecretKeyRing secretKeyRing)
     {
-        Long key = secretKeyRing.getPublicKey().getKeyID();
+        Long key = Longs.valueOf(secretKeyRing.getPublicKey().getKeyID());
 
         if (!ringCollection.secretRings.containsKey(key))
         {
@@ -351,7 +352,7 @@ public class PGPSecretKeyRingCollection
 
         for (int i = 0; i < newOrder.size(); i++)
         {
-            Long r = newOrder.get(i);
+            Long r = (Long)newOrder.get(i);
 
             if (r.longValue() == key.longValue())
             {
