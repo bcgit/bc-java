@@ -93,6 +93,7 @@
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/pqc/legacy/**/*.java"/>
+                <exclude name="**/pqc/math/**/*.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>

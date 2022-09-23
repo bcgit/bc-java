@@ -29,7 +29,7 @@ public class CRC24Test
     @Override
     public String getName()
     {
-        return CRC24Test.class.getSimpleName();
+        return "CRC24Test";
     }
 
     @Override
