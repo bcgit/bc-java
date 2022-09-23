@@ -14,7 +14,10 @@ public class FalconParameters
 
     private FalconParameters(String name, int logn, int nonce_length)
     {
-        assert logn > 0 && logn <= 10 : "Log N degree should be between 1 and 10";
+        if (logn > 0 && logn <= 10)
+        {
+            throw new IllegalArgumentException("Log N degree should be between 1 and 10");
+        }
         this.name = name;
         this.logn = logn;
         this.nonce_length = nonce_length;
