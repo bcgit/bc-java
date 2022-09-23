@@ -399,24 +399,24 @@ public class Grain128AEADEngine
         {
             ader = new byte[1 + len];
             ader[0] = (byte)reverseByte(len);
-            aderlen = 1;
+            aderlen = 0;
         }
         else
         {
             // aderlen is the highest bit position divided by 8
-            aderlen = (32 - Integer.numberOfLeadingZeros(len)) >>> 3;
-            ader = new byte[aderlen + 1 + len];
+            aderlen = len_length(len);
+            ader = new byte[1 + aderlen + len];
             ader[0] = (byte)reverseByte(0x80 | aderlen);
-            int tmp = aderlen;
-            for (int i = 1; i < ader.length; ++i)
+            int tmp = len;
+            for (int i = 0; i < aderlen; ++i)
             {
-                ader[i] = (byte)reverseByte(tmp & 0xff);
+                ader[1 + i] = (byte)reverseByte(tmp & 0xff);
                 tmp >>>= 8;
             }
         }
         for (int i = 0; i < len; ++i)
         {
-            ader[aderlen + i] = (byte)reverseByte(input[inOff + i]);
+            ader[1 + aderlen + i] = (byte)reverseByte(input[inOff + i]);
         }
         byte adval;
         int adCnt = 0;
@@ -518,6 +518,24 @@ public class Grain128AEADEngine
         x = (((x & 0x33) << 2) | ((x & (~0x33)) >>> 2)) & 0xFF;
         x = (((x & 0x0f) << 4) | ((x & (~0x0f)) >>> 4)) & 0xFF;
         return x;
+    }
+
+    public int len_length(int v)
+    {
+        if ((v & 0xff) == v)
+        {
+            return 1;
+        }
+        if ((v & 0xffff) == v)
+        {
+            return 2;
+        }
+        if ((v & 0xffffff) == v)
+        {
+            return 3;
+        }
+
+        return 4;
     }
 
     private static final class ErasableOutputStream
