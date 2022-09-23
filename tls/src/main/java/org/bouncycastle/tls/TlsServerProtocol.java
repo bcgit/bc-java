@@ -1418,6 +1418,7 @@ public class TlsServerProtocol
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
@@ -1457,6 +1458,7 @@ public class TlsServerProtocol
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);

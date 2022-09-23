@@ -4928,6 +4928,18 @@ public class TlsUtils
             certificateRequest.getCertificateAuthorities());
     }
 
+    static boolean contains(short[] buf, int off, int len, int value)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            if (value == buf[off + i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static boolean contains(int[] buf, int off, int len, int value)
     {
         for (int i = 0; i < len; ++i)
@@ -5123,7 +5135,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receiveServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf) throws IOException
+        ByteArrayInputStream buf, Hashtable serverExtensions) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (KeyExchangeAlgorithm.isAnonymous(securityParameters.getKeyExchangeAlgorithm())
@@ -5135,6 +5147,7 @@ public class TlsUtils
         ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
         Certificate serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
@@ -5166,7 +5179,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receive13ServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf) throws IOException
+        ByteArrayInputStream buf, Hashtable serverExtensions) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
@@ -5175,6 +5188,7 @@ public class TlsUtils
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
+            .setCertificateType(TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
         Certificate serverCertificate = Certificate.parse(options, clientContext, buf, null);

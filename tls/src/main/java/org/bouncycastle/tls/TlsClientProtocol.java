@@ -408,7 +408,7 @@ public class TlsClientProtocol
                  * NOTE: Certificate processing (including authentication) is delayed to allow for a
                  * possible CertificateStatus message.
                  */
-                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
+                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
                 break;
             }
             default:
@@ -1469,6 +1469,9 @@ public class TlsClientProtocol
 
         this.certificateRequest = certificateRequest;
 
+        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
+
         TlsUtils.establishServerSigAlgs(tlsClientContext.getSecurityParametersHandshake(), certificateRequest);
     }
 
@@ -1580,7 +1583,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
+        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();
@@ -1624,6 +1627,9 @@ public class TlsClientProtocol
         assertEmpty(buf);
 
         this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
+
+        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
+            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);        
     }
 
     protected void receiveNewSessionTicket(ByteArrayInputStream buf)
