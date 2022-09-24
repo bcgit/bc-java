@@ -48,17 +48,19 @@ public class SNTRUPrimeTest
             {
                 if (! line.startsWith("count"))
                     continue;
-                int count = Integer.parseInt(line.split("=")[1].trim());
-                line = resourceReader.readLine();
-                byte[] seed = Hex.decode(line.split("=")[1].trim());
-                line = resourceReader.readLine();
-                byte[] pk = Hex.decode(line.split("=")[1].trim());
-                line = resourceReader.readLine();
-                byte[] sk = Hex.decode(line.split("=")[1].trim());
-                line = resourceReader.readLine();
-                byte[] ct = Hex.decode(line.split("=")[1].trim());
-                line = resourceReader.readLine();
-                byte[] ss = Hex.decode(line.split("=")[1].trim());
+
+                int a = line.indexOf("=");
+                int count = Integer.parseInt(line.substring(a + 1).trim());
+                line = resourceReader.readLine(); a = line.indexOf("=");
+                byte[] seed = Hex.decode(line.substring(a + 1).trim());
+                line = resourceReader.readLine(); a = line.indexOf("=");
+                byte[] pk = Hex.decode(line.substring(a + 1).trim());
+                line = resourceReader.readLine(); a = line.indexOf("=");
+                byte[] sk = Hex.decode(line.substring(a + 1).trim());
+                line = resourceReader.readLine(); a = line.indexOf("=");
+                byte[] ct = Hex.decode(line.substring(a + 1).trim());
+                line = resourceReader.readLine(); a = line.indexOf("=");
+                byte[] ss = Hex.decode(line.substring(a + 1).trim());
 
                 if (sampler.skipTest(count))
                 {

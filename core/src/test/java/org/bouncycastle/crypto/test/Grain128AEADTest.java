@@ -39,14 +39,13 @@ public class Grain128AEADTest
         InputStream src = Grain128AEADTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/LWC_AEAD_KAT_128_96.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        String[] data;
         byte[] ptByte, adByte;
         byte[] rv;
         HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
         {
-            data = line.split(" ");
-            if (data.length == 1)
+            int a = line.indexOf('=');
+            if (a < 0)
             {
                 params = new ParametersWithIV(new KeyParameter(Hex.decode((String)map.get("Key"))), Hex.decode((String)map.get("Nonce")));
                 grain.init(true, params);
@@ -65,14 +64,7 @@ public class Grain128AEADTest
             }
             else
             {
-                if (data.length >= 3)
-                {
-                    map.put(data[0].trim(), data[2].trim());
-                }
-                else
-                {
-                    map.put(data[0].trim(), "");
-                }
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
     }
