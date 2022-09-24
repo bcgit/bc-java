@@ -43,11 +43,6 @@ class Poly
     public void polyNtt()
     {
         this.setCoeffs(Ntt.ntt(this.getCoeffs()));
-        // System.out.print("PolyNTT = [");
-        // for (int i = 0; i < KyberEngine.KyberN; i++) {
-        //     System.out.printf("%d, ", this.getCoeffIndex(i));
-        // }
-        // System.out.println("]");
         this.reduce();
     }
 

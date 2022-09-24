@@ -53,21 +53,8 @@ class PolyVec
     public byte[] compressPolyVec()
     {
         int i, j, k;
-        // System.out.print("bp before sub q = [");
-        // for (i = 0; i < kyberK; i++) {
-        //     Helper.printShortArray(this.getVectorIndex(i).getCoeffs());
-        //     System.out.print("], \n");
-        // }
-        // System.out.println("]"); 
 
         this.conditionalSubQ();
-
-        // System.out.print("bp sub q = [");
-        // for (i = 0; i < kyberK; i++) {
-        //     Helper.printShortArray(this.getVectorIndex(i).getCoeffs());
-        //     System.out.print("], \n");
-        // }
-        // System.out.println("]"); 
         short[] t;
         byte[] r = new byte[engine.getKyberPolyVecCompressedBytes()];
         int count = 0;

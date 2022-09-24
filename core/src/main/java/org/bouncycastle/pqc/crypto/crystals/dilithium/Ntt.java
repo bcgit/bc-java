@@ -59,7 +59,6 @@ class Ntt
                     r[j] = r[j] + t;
                 }
             }
-            // System.out.println();
         }
         return r;
     }
