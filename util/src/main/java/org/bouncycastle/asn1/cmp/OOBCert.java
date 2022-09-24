@@ -63,7 +63,7 @@ public class OOBCert
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e.getMessage(), e);
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
         }
 

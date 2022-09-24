@@ -553,7 +553,8 @@ public class Grain128AEADEngine
         public void erase()
         {
             Arrays.fill(this.buf, (byte)0);
-            reset();
+            // this for JVM compatibility
+            this.reset();
         }
     }
 }
