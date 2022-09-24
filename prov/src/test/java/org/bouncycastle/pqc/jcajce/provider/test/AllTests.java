@@ -29,13 +29,13 @@ public class AllTests
         }
 
         suite.addTestSuite(Sphincs256Test.class);
-        suite.addTestSuite(RainbowSignatureTest.class);
-        suite.addTestSuite(McElieceFujisakiCipherTest.class);
-        suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
-        suite.addTestSuite(McEliecePointchevalCipherTest.class);
-        suite.addTestSuite(McElieceCipherTest.class);
-        suite.addTestSuite(McElieceKeyPairGeneratorTest.class);
-        suite.addTestSuite(McElieceCCA2KeyPairGeneratorTest.class);
+//        suite.addTestSuite(RainbowSignatureTest.class);
+//        suite.addTestSuite(McElieceFujisakiCipherTest.class);
+//        suite.addTestSuite(McElieceKobaraImaiCipherTest.class);
+//        suite.addTestSuite(McEliecePointchevalCipherTest.class);
+//        suite.addTestSuite(McElieceCipherTest.class);
+//        suite.addTestSuite(McElieceKeyPairGeneratorTest.class);
+//        suite.addTestSuite(McElieceCCA2KeyPairGeneratorTest.class);
         suite.addTestSuite(NewHopeTest.class);
         suite.addTestSuite(NewHopeKeyPairGeneratorTest.class);
         suite.addTestSuite(Sphincs256Test.class);
