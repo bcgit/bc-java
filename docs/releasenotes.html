@@ -32,7 +32,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, September 25th
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>BCJSSE: TLS 1.3 is now enabled by default where no explicit protocols are supplied (e.g. "TLS" or "Default" SSLContext algorithms, or SSLContext.getDefault() method).</li>
+<li>BCJSSE: Rewrite SSLEngine implementation to improve compatibility with SunJSSE.</li>
+<li>BCJSSE: Support export of keying material via extension API.</li>
+<li>(D)TLS: Add support for 'tls-exporter' channel binding per RFC 9266.</li>
 <li>(D)TLS (low-level API): By default, only (D)TLS 1.2 and TLS 1.3 are offered now. Earlier versions are still supported if explicitly enabled. Users may need to check they are offering suitable cipher suites for TLS 1.3.</li>
+<li>(D)TLS (low-level API): Add support for raw public keys per RFC 7250.</li>
 <li>CryptoServicesRegistrar now has a setServicesConstraints() method on it which can be used to selectively turn off algorithms.</li>
 <li>The NIST PQC Alternate Candidate, Picnic, has been added to the low level API and the BCPQC provider.</li>
 <li>SPHINCS+ has been upgraded to the latest submission, SPHINCS+ 3.1 and support for Haraka has been added.</li>
@@ -52,12 +56,12 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, September 25th
 <li>A fast version of CRC24 has been added for use with the PGP API.</li>
 <li>Some additional methods and fields have been exposed in the PGPOnePassSignature class to (hopefully) make it easier to deal with nested signatures.</li>
 <li>CMP support classes have been updated to reflect the latest editions to the the draft RFC "Lightweight Certificate Management Protocol (CMP) Profile".</li>
-<li>Support has been added to the PKCS#12 implemantation for the Oracle trusted certificate attribute.</li>
+<li>Support has been added to the PKCS#12 implementation for the Oracle trusted certificate attribute.</li>
 <li>Performance of our BZIP2 classes has been improved.</li>
 </ul>
 <h3>2.1.4 Notes</h3>
 <p>
-Keep in mind the PQC agorithms are still under development and we are still at least a year and a half away from published standards. This means the algorithms may still change so by all means experiment, but do not use the PQC algoritms for anything long term.
+Keep in mind the PQC algorithms are still under development and we are still at least a year and a half away from published standards. This means the algorithms may still change so by all means experiment, but do not use the PQC algoritms for anything long term.
 </p>
 <p>
 The legacy "Rainbow" and "McEliece" implementations have been removed from the BCPQC provider. The underlying classes are still present if required. Other legacy algorithm implementations can be found under the org.bouncycastle.pqc.legacy package.
