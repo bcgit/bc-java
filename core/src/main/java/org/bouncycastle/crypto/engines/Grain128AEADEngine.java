@@ -91,12 +91,12 @@ public class Grain128AEADEngine
         if (keyBytes.length != 16)
         {
             throw new IllegalArgumentException(
-                  "Grain-128AEAD key must be 128 bits long");
+                "Grain-128AEAD key must be 128 bits long");
         }
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-                this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        
+            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+
         /**
          * Initialize variables.
          */
@@ -418,6 +418,7 @@ public class Grain128AEADEngine
         {
             ader[1 + aderlen + i] = (byte)reverseByte(input[inOff + i]);
         }
+
         byte adval;
         int adCnt = 0;
         for (int i = 0; i < ader.length; ++i)
@@ -467,14 +468,14 @@ public class Grain128AEADEngine
             doProcessAADBytes(aadData.getBuf(), 0, aadData.size());
             aadFinished = true;
         }
-        
+
         this.mac = new byte[8];
 
         output = getOutput();
         nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
         lfsr = shift(lfsr, (getOutputLFSR()) & 1);
         accumulate();
-        
+
         int cCnt = 0;
         for (int i = 0; i < 2; ++i)
         {
@@ -483,7 +484,7 @@ public class Grain128AEADEngine
                 mac[cCnt++] = (byte)((authAcc[i] >>> (j << 3)) & 0xff);
             }
         }
-        
+
         System.arraycopy(mac, 0, out, outOff, mac.length);
 
         try
@@ -514,9 +515,9 @@ public class Grain128AEADEngine
 
     private int reverseByte(int x)
     {
-        x = (((x & 0x55) << 1) | ((x & (~0x55)) >>> 1)) & 0xFF;
-        x = (((x & 0x33) << 2) | ((x & (~0x33)) >>> 2)) & 0xFF;
-        x = (((x & 0x0f) << 4) | ((x & (~0x0f)) >>> 4)) & 0xFF;
+        x = (((x & 0x55) << 1) | ((x & (0xAA)) >>> 1)) & 0xFF;
+        x = (((x & 0x33) << 2) | ((x & (0xCC)) >>> 2)) & 0xFF;
+        x = (((x & 0x0f) << 4) | ((x & (0xf0)) >>> 4)) & 0xFF;
         return x;
     }
 
