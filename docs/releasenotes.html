@@ -20,19 +20,22 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv72"><h3>2.1.1 Version</h3></a>
 Release: 1.72<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, September 25th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>There were parameter errors in XMSS^MT OIDs for XMSSMT_SHA2_40/4_256 and XMSSMT_SHA2_60/3_256. These have been fixed.</li>
 <li>There was an error in Merkle tree construction for the Evidence Records (ERS) implementation which could result in invalid roots been timestamped. ERS now produces an ArchiveTimeStamp for each data object/group with an associated reduced hash tree. The reduced hash tree is now calculated as a simple path to the root of the tree for each record.</li>
 <li>OpenPGP will now ignore signatures marked as non-exportable on encoding.</li>
+<li>A tagging calculation error in GCMSIV which could result in incorrect tags has been fixed.</li>
+<li>Issues around Java 17 which could result in failing tests have been addressed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>BCJSSE: TLS 1.3 is now enabled by default where no explicit protocols are supplied (e.g. "TLS" or "Default" SSLContext algorithms, or SSLContext.getDefault() method).</li>
 <li>(D)TLS (low-level API): By default, only (D)TLS 1.2 and TLS 1.3 are offered now. Earlier versions are still supported if explicitly enabled. Users may need to check they are offering suitable cipher suites for TLS 1.3.</li>
+<li>CryptoServicesRegistrar now has a setServicesConstraints() method on it which can be used to selectively turn off algorithms.</li>
 <li>The NIST PQC Alternate Candidate, Picnic, has been added to the low level API and the BCPQC provider.</li>
-<li>SPHINCS+ has been upgraded to the latest submission, SPHINCS+ 3.1</li>
+<li>SPHINCS+ has been upgraded to the latest submission, SPHINCS+ 3.1 and support for Haraka has been added.</li>
 <li>Evidence records now support timestamp renewal and hash renewal.</li>
 <li>The SIKE Alternative Candidate NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
 <li>The NTRU Round 3 Finalist Candidate NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
@@ -45,11 +48,23 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The CRYSTALS-Dilithium Finalist NIST Post Quantum Algorithm has been added to the low-level API and the BCPQC provider.</li>
 <li>The BIKE NIST Post Quantum Alternative/Round-4 Candidate has been added to the low-level API and the BCPQC provider.</li>
 <li>The HQC NIST Post Quantum Alternative/Round-4 Candidate has been added to the low-level API and the BCPQC provider.</li>
-<li>Grain128AEAD has been added to the lightweight provider.</li>
+<li>Grain128AEAD has been added to the lightweight API.</li>
+<li>A fast version of CRC24 has been added for use with the PGP API.</li>
+<li>Some additional methods and fields have been exposed in the PGPOnePassSignature class to (hopefully) make it easier to deal with nested signatures.</li>
+<li>CMP support classes have been updated to reflect the latest editions to the the draft RFC "Lightweight Certificate Management Protocol (CMP) Profile".</li>
+<li>Support has been added to the PKCS#12 implemantation for the Oracle trusted certificate attribute.</li>
+<li>Performance of our BZIP2 classes has been improved.</li>
 </ul>
-<h3>2.1.3 Additional Features and Functionality</h3>
+<h3>2.1.4 Notes</h3>
 <p>
-Keep in mind the PQC agorithms are still underdevelopment and we are still at least a year and a half away from published standards. This means the algorithms may still change so by all means experiment, but do not use the PQC algoritms for anything long term.
+Keep in mind the PQC agorithms are still under development and we are still at least a year and a half away from published standards. This means the algorithms may still change so by all means experiment, but do not use the PQC algoritms for anything long term.
+</p>
+<p>
+The legacy "Rainbow" and "McEliece" implementations have been removed from the BCPQC provider. The underlying classes are still present if required. Other legacy algorithm implementations can be found under the org.bouncycastle.pqc.legacy package.
+</p>
+<h3>2.1.5 Security Notes</h3>
+<p>
+The PQC SIKE algorithm is provided for research purposes only. It should now be regarded as broken. The SIKE implementation will be withdrawn in BC 1.73.
 </p>
 
 <a id="r1rv71"><h3>2.2.1 Version</h3></a>
