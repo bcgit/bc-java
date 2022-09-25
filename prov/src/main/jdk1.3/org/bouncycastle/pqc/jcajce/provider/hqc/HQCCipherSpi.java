@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.frodo;
+package org.bouncycastle.pqc.jcajce.provider.hqc;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -24,25 +24,25 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
-import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
-class FrodoCipherSpi
+class HQCCipherSpi
         extends CipherSpi
 {
     private final String algorithmName;
-    private FrodoKEMGenerator kemGen;
+    private HQCKEMGenerator kemGen;
     private KEMParameterSpec kemParameterSpec;
-    private BCFrodoPublicKey wrapKey;
-    private BCFrodoPrivateKey unwrapKey;
+    private BCHQCPublicKey wrapKey;
+    private BCHQCPrivateKey unwrapKey;
     private SecureRandom random;
 
     private AlgorithmParameters engineParams;
 
-    FrodoCipherSpi(String algorithmName)
+    HQCCipherSpi(String algorithmName)
             throws NoSuchAlgorithmException
     {
         this.algorithmName = algorithmName;
@@ -147,10 +147,10 @@ class FrodoCipherSpi
 
         if (opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof BCFrodoPublicKey)
+            if (key instanceof BCHQCPublicKey)
             {
-                wrapKey = (BCFrodoPublicKey)key;
-                kemGen = new FrodoKEMGenerator(random);
+                wrapKey = (BCHQCPublicKey)key;
+                kemGen = new HQCKEMGenerator(random);
             }
             else
             {
@@ -159,9 +159,9 @@ class FrodoCipherSpi
         }
         else if (opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof BCFrodoPrivateKey)
+            if (key instanceof BCHQCPrivateKey)
             {
-                unwrapKey = (BCFrodoPrivateKey)key;
+                unwrapKey = (BCHQCPrivateKey)key;
             }
             else
             {
@@ -277,7 +277,7 @@ class FrodoCipherSpi
         }
         try
         {
-            FrodoKEMExtractor kemExt = new FrodoKEMExtractor(unwrapKey.getKeyParams());
+            HQCKEMExtractor kemExt = new HQCKEMExtractor(unwrapKey.getKeyParams());
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
@@ -308,12 +308,12 @@ class FrodoCipherSpi
     }
 
     public static class Base
-            extends FrodoCipherSpi
+            extends HQCCipherSpi
     {
         public Base()
                 throws NoSuchAlgorithmException
         {
-            super("Frodo");
+            super("HQC");
         }
     }
 }
