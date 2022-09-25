@@ -26,6 +26,13 @@ w
 q
 %%
 done
+
+ed test/RegressionTest.java <<%%
+g/new MiscTest()/s//\/\/ &/
+w
+q
+%%
+
 )
 
 ed org/bouncycastle/asn1/ASN1TaggedObject.java <<%
@@ -93,6 +100,54 @@ q
 %
 
 ed org/bouncycastle/asn1/crmf/DhSigStatic.java <<%
+g/private final /s/final//
+w
+q
+%
+
+for f in  org/bouncycastle/crypto/digests/*.java
+do
+ed $f <<%%
+g/private final CryptoServicePurpose purpose/s/final//
+g/protected final CryptoServicePurpose purpose/s/final//
+g/private final byte.. buffer/s/final//
+g/private final byte.. diff/s/final//
+w
+q
+%%
+done
+
+for f in  org/bouncycastle/crypto/macs/*.java
+do
+ed $f <<%%
+g/private final CryptoServicePurpose purpose/s/final//
+g/protected final CryptoServicePurpose purpose/s/final//
+g/private final byte.. buffer/s/final//
+g/private final byte.. diff/s/final//
+w
+q
+%%
+done
+
+for f in org/bouncycastle/pqc/crypto/*/*.java org/bouncycastle/pqc/crypto/*/*/*.java
+do
+ed $f <<%%
+g/ final /s/final//
+w
+q
+%%
+done
+
+for f in  org/bouncycastle/crypto/constraints/*.java
+do
+ed $f <<%%
+g/private final /s/final//
+w
+q
+%%
+done
+
+ed org/bouncycastle/crypto/kems/SecretWithEncapsulationImpl.java <<%
 g/private final /s/final//
 w
 q
@@ -491,7 +546,25 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/CryptoServicePurpose.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/crypto/macs/Zuc128Mac.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/pqc/crypto/test/TestSampler.java <<%
+g/random.nextInt(10)/s//random.nextInt() \& 0xf/
+w
+q
+%
+
+ed org/bouncycastle/crypto/test/ZucTest.java <<%
 g/private.*final.*;/s/final//
 w
 q

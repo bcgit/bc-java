@@ -45,15 +45,16 @@
                 <exclude name="**/PKIXNameConstraints*.java" />
                 <exclude name="**/ExtendedPKIX*.java" />
                 <exclude name="**/RFC3281*.java" />
+                <exclude name="**/sike/*.java" />
                 <exclude name="**/CertPathValidatorUtilities.java" />
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
-                <exclude name="**/NTRU*.java" />
                 <exclude name="**/IndexGenerator.java" />
-                <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/legacy/**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/lms/*.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
+                <exclude name="**/Logging*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
             </fileset>
             <fileset dir="util/src/main/java">
@@ -72,6 +73,8 @@
                 <exclude name="**/JCEEC5*.java" />
                 <exclude name="**/provider/JCEEC*.java" />
                 <exclude name="**/EC5*.java" />
+                <exclude name="**/SIKE*.java" />
+                <exclude name="**/sike/*.java" />
                 <exclude name="**/CertPathReviewer*.java" />
                 <exclude name="**/PKIXCertPathReviewer.java" />
                 <exclude name="**/PKIXAttrCert*.java" />
@@ -81,11 +84,11 @@
                 <exclude name="**/RFC3281*.java" />
                 <exclude name="**/CertPathValidatorUtilities.java" />
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
-                <exclude name="**/NTRU*.java" />
+                <exclude name="**/legacy/**/NTRU*.java" />
                 <exclude name="**/XMSS*.java" />
                 <exclude name="**/spec/LMS*.java" />
                 <exclude name="**/IndexGenerator.java" />
-                <exclude name="**/ntru/**/*.java" />
+                <exclude name="**/legacy/**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
                 <exclude name="**/lms/**/*.java" />
                 <exclude name="**/ecgost12/**/*.java" />
@@ -140,6 +143,7 @@
                 <exclude name="**/GetInstanceTest.java" />
                 <exclude name="**/ntru/**/*.java" />
                 <exclude name="**/NTRU*.java" />
+                <exclude name="**/SIKE*.java" />
                 <exclude name="**/XMSS*.java" />
                 <exclude name="**/HSS*.java" />
                 <exclude name="**/LMS*.java" />
@@ -154,6 +158,7 @@
                 <exclude name="**/pqc/**/EncryptionKeyTest.java" />
                 <exclude name="**/pqc/**/BitStringTest.java" />
                 <exclude name="**/pqc/**/QTESLA*.java" />
+                <exclude name="**/pqc/legacy/**/*.java" />
                 <exclude name="**/jcajce/provider/test/*.java" />
                 <exclude name="**/jce/provider/test/JceTestUtil.java" />
                 <exclude name="**/speedy/**" />
@@ -187,6 +192,7 @@
                 <exclude name="**/NTRU*.java" />
                 <exclude name="**/LMS*.java" />
                 <exclude name="**/HSS*.java" />
+                <exclude name="**/SIKE*.java" />
                 <exclude name="**/crypto/engines/test/BitStringTest.java" />
                 <exclude name="**/crypto/engines/test/AllTests.java" />
                 <exclude name="**/crypto/signers/test/AllTests.java" />
@@ -201,6 +207,7 @@
 		<exclude name="**/ChaCha20Poly1305Test.java"/>
                 <exclude name="**/speedy/**" />
                 <exclude name="**/cavp/**" />
+                <exclude name="**/legacy/**" />
                 <exclude name="**/KDFFeedbackGeneratorTest.java" />
                 <exclude name="**/KDFDoublePipelineIteratorGeneratorTest.java" />
                 <exclude name="**/PSSTest.java" />
@@ -264,6 +271,7 @@
                 <exclude name="**/rsa/PSSParamSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="util/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.3" includes="**/*.java" />
             <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />

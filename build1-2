@@ -54,6 +54,7 @@ mkdir -p $jdk12src
 ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/test/jdk1.2 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd util/src/main/java && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd util/src/main/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd util/src/main/javadoc && tar cf - * ) | (cd $jdk12src && tar xf -))
 
 find $jdk12src -name "*.java" -exec scripts/trim.sh \{\} \;
@@ -63,12 +64,17 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     cd $jdk12src
 
     rm -rf org/bouncycastle/math/ec/rfc8032/test
+    rm org/bouncycastle/pqc/legacy/crypto/qtesla/QTeslaKeyEncodingTests.java
     rm -rf org/bouncycastle/crypto/test/ntru
-    rm -rf org/bouncycastle/pqc/math/ntru
-    rm -rf org/bouncycastle/pqc/crypto/ntru
-    rm -rf org/bouncycastle/pqc/crypto/*/NTRU*
+    rm -rf org/bouncycastle/pqc/legacy/math/ntru
+    rm -rf org/bouncycastle/pqc/math/test
+    rm -rf org/bouncycastle/pqc/math/ntru/test
+    rm -rf org/bouncycastle/pqc/legacy/crypto/ntru
+    rm -rf org/bouncycastle/pqc/legacy/crypto/*/NTRU*
+    rm -rf org/bouncycastle/pqc/crypto/test
     rm -rf org/bouncycastle/pqc/crypto/xmss
     rm -rf org/bouncycastle/pqc/crypto/lms
+    rm -rf org/bouncycastle/pqc/crypto/sike
     rm -rf org/bouncycastle/pqc/jcajce/provider/xmss
     rm -rf org/bouncycastle/pqc/jcajce/provider/XMSS*
     rm -rf org/bouncycastle/pqc/jcajce/provider/LMS*
@@ -81,7 +87,10 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/CMCEVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/*/NTRUKAT*
+    rm -rf org/bouncycastle/pqc/legacy/crypto/test/*
     rm org/bouncycastle/pqc/jcajce/spec/LMS*
+    rm -rf org/bouncycastle/crypto/constraints/Logging*
     rm -rf org/bouncycastle/crypto/*/test
     rm -rf org/bouncycastle/crypto/*/IndexGenerator*
     rm -rf org/bouncycastle/crypto/test/SimpleTestTest.java
@@ -89,17 +98,21 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/mail
     rm -rf org/bouncycastle/mime
     rm org/bouncycastle/pkix/test/CheckerTest.java
+    rm org/bouncycastle/crypto/test/RadixConverterTest.java
     rm org/bouncycastle/pkix/jcajce/Revocation*.java
     rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
     rm org/bouncycastle/pkix/jcajce/RFC3280*.java
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
     rm org/bouncycastle/cms/jcajce/JceAADStream.java
     rm org/bouncycastle/jcajce/provider/keystore/util/ParameterUtil.java
+    rm -r org/bouncycastle/pqc/jcajce/*/SIKE*
+    rm -r org/bouncycastle/pqc/jcajce/provider/sike
     rm -rf org/bouncycastle/jce/provider/test/SimpleTestTest.java
     rm -rf org/bouncycastle/oer
     rm -rf org/bouncycastle/i18n/test
     rm -rf org/bouncycastle/i18n/filter/test
     rm -rf org/bouncycastle/math/ec/test
+    rm -rf org/bouncycastle/pqc/math/test
     rm -rf org/bouncycastle/crypto/tls/test
     rm -rf org/bouncycastle/crypto/test/GCMReorderTest.java
     rm -rf org/bouncycastle/crypto/test/NISTECCTest.java
@@ -207,7 +220,7 @@ then
 
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/lcrypto-jdk12-$base && tar xf -)
     ((cd $jdk12src && tar cf - java org/bouncycastle/LICENSE.java \
-    org/bouncycastle/math org/bouncycastle/internal org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1  ) | (cd $artifacts/lcrypto-jdk12-$base/src && tar xf -)) 
+    org/bouncycastle/math org/bouncycastle/internal org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/legacy org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1  ) | (cd $artifacts/lcrypto-jdk12-$base/src && tar xf -)) 
     (
         cd $artifacts/lcrypto-jdk12-$base;
 
@@ -271,9 +284,9 @@ then
 
         echo "compiling"
 
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java internal/*/*/*.java  )
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src a*/*/*.java )
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [bcdefghijklmnopqrstuv]*/*/*.java )
+        (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java internal/*/*/*.java  )
+        (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src a*/*/*.java )
+        (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [bcdefghijklmnopqrstuv]*/*/*.java )
 
         echo "lightweight regression test"
 
@@ -379,20 +392,20 @@ then
 
     echo "compiling"
 
-    (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
-    (cd src/java/security/spec; javac -d ../../../../classes -classpath ../../../../classes *.java )
+    (cd src/javax/crypto; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src *.java */*.java)
+    (cd src/java/security/spec; javac -J-mx768m -d ../../../../classes -classpath ../../../../classes *.java )
 
-    (cd src/org/bouncycastle/jce/cert; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
-    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src a*/*.java )
-    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [cis]*/*.java )
-    (cd src/org/bouncycastle/jcajce/provider; javac -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java internal/*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [bc]*/*.java [bc]*/*/*.java [bc]*/*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [j]*/*.java [j]*/*/*.java [j]*/*/*/*.java [j]*/*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [mop]*/*.java [mop]*/*/*.java [mop]*/*/*/*.java [mop]*/*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [tu]*/*.java [tu]*/*/*.java [tu]*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [x]*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src [x]*/*.java)
+    (cd src/org/bouncycastle/jce/cert; javac -J-mx768m -d ../../../../../classes -classpath ../../../../../classes:../../../../../src *.java  )
+    (cd src/org/bouncycastle/jcajce/provider; javac -J-mx768m -d ../../../../../classes -classpath ../../../../../classes:../../../../../src a*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -J-mx768m -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [cis]*/*.java )
+    (cd src/org/bouncycastle/jcajce/provider; javac -J-mx768m -d ../../../../../classes -classpath ../../../../../classes:../../../../../src [abcis]*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src *.java a*/*.java a*/*/*.java a*/*/*/*.java internal/*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [bc]*/*.java [bc]*/*/*.java [bc]*/*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [j]*/*.java [j]*/*/*.java [j]*/*/*/*.java [j]*/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [mop]*/*.java [mop]*/*/*.java [mop]*/*/*/*.java [mop]*/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [tu]*/*.java [tu]*/*/*.java [tu]*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [x]*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src [x]*/*.java)
 
 
 
