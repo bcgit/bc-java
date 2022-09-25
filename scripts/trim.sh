@@ -3,11 +3,13 @@
 
 (
 ed $1 <<%%
-g/<[A-Z?][^>@]*[a-zA-Z0-9]>/s///g
+g/<[<]*[A-Z?][^>@]*[a-zA-Z0-9][>]*>/s///g
 g/<[A-Z]>/s///g
 g/<[a-z][a-z]*\\[\\]>/s///g
 g/List>/s//List/g
+g/<List/s///g
 g/<AlgorithmIdentifier, byte\\[\\]>/s///g
+g/<CacheIndex, byte\\[\\]>/s///g
 g/ERSData\\.\\.\\./s//ERSData[]/g
 g/Collections.singletonList(dataObject)/s//new ArrayList(); dataObjects.add(dataObject)/g
 w
