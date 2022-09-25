@@ -1401,7 +1401,16 @@ public class ERSTest
 
             private byte[] trimBytes(byte[] bytes)
             {
-                return new String(bytes).replaceAll("\0", "").getBytes();
+                ByteArrayOutputStream bOut = new ByteArrayOutputStream(bytes.length);
+                for (int i = 0; i != bytes.length; i++)
+                {
+                    if (bytes[i] == '\0')
+                    {
+                        continue;
+                    }
+                    bOut.write(bytes[i]);
+                }
+                return bOut.toByteArray();
             }
         };
 
