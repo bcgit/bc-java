@@ -521,7 +521,7 @@ public class Grain128AEADEngine
         return x;
     }
 
-    public int len_length(int v)
+    private int len_length(int v)
     {
         if ((v & 0xff) == v)
         {
