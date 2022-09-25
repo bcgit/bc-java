@@ -30,7 +30,7 @@ public final class CryptoServicesRegistrar
 
 
     private static final ThreadLocal threadProperties = new ThreadLocal();
-    private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
+    private static final Map globalProperties = Collections.synchronizedMap(new HashMap());
 
     private static final Object cacheLock = new Object();
     private static SecureRandomProvider defaultSecureRandomProvider;
@@ -280,7 +280,7 @@ public final class CryptoServicesRegistrar
 
     private static Object[] lookupProperty(Property property)
     {
-        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
+        Map properties = (Map)threadProperties.get();
         Object[] values;
 
         if (properties == null || !properties.containsKey(property.name))
@@ -399,11 +399,11 @@ public final class CryptoServicesRegistrar
 
     private static void localSetThread(Property property, Object[] propertyValue)
     {
-        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
+        Map properties = (Map)threadProperties.get();
 
         if (properties == null)
         {
-            properties = new HashMap<String, Object[]>();
+            properties = new HashMap();
             threadProperties.set(properties);
         }
 
@@ -456,11 +456,11 @@ public final class CryptoServicesRegistrar
 
     private static Object[] localClearThreadProperty(Property property)
     {
-        Map<String, Object[]> properties = (Map<String, Object[]>)threadProperties.get();
+        Map properties = (Map)threadProperties.get();
 
         if (properties == null)
         {
-            properties = new HashMap<String, Object[]>();
+            properties = new HashMap();
             threadProperties.set(properties);
         }
 
@@ -473,7 +473,7 @@ public final class CryptoServicesRegistrar
 
         if (securityManager != null)
         {
-            AccessController.doPrivileged(new PrivilegedAction<Object>()
+            AccessController.doPrivileged(new PrivilegedAction()
             {
                 public Object run()
                 {
