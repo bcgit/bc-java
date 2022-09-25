@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -12,16 +13,37 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.Properties;
 
 /**
  * Basic registrar class for providing defaults for cryptography services in this module.
  */
 public final class CryptoServicesRegistrar
 {
-    private static final Map threadProperties = new HashMap();
-    private static final Map globalProperties = new HashMap();
 
-    private static volatile SecureRandom defaultSecureRandom;
+    private static final Map threadProperties = new HashMap();
+    private static final Hashtable globalProperties = new Hashtable();
+
+    private static final Object cacheLock = new Object();
+    private static SecureRandomProvider defaultSecureRandomProvider;
+
+    private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
+    {
+        public void check(CryptoServiceProperties service)
+        {
+             // anything goes.
+        }
+    };
+
+    private static CryptoServicesConstraints getDefaultConstraints()
+    {
+        // TODO: return one based on system/security properties if set.
+
+        return noConstraintsImpl;
+    }
+
+    private static boolean preconfiguredConstraints;
+    private static CryptoServicesConstraints servicesConstraints = noConstraintsImpl;
 
     static
     {
@@ -85,6 +107,9 @@ public final class CryptoServicesRegistrar
 
         localSetGlobalProperty(Property.DSA_DEFAULT_PARAMS, new Object[] { def512Params, def768Params, def1024Params, def2048Params });
         localSetGlobalProperty(Property.DH_DEFAULT_PARAMS, new Object[] { toDH(def512Params), toDH(def768Params), toDH(def1024Params), toDH(def2048Params) });
+
+        servicesConstraints = getDefaultConstraints();
+        preconfiguredConstraints = (servicesConstraints != noConstraintsImpl);
     }
 
     private CryptoServicesRegistrar()
@@ -96,16 +121,34 @@ public final class CryptoServicesRegistrar
      * Return the default source of randomness.
      *
      * @return the default SecureRandom
-     * @throws IllegalStateException if no source of randomness has been provided.
      */
     public static SecureRandom getSecureRandom()
     {
-        if (defaultSecureRandom == null)
+        synchronized (cacheLock)
         {
-            return new SecureRandom();
+            if (null != defaultSecureRandomProvider)
+            {
+                return defaultSecureRandomProvider.get();
+            }
         }
-        
-        return defaultSecureRandom;
+
+        final SecureRandom tmp = new SecureRandom();
+
+        synchronized (cacheLock)
+        {
+            if (null == defaultSecureRandomProvider)
+            {
+                defaultSecureRandomProvider = new SecureRandomProvider()
+                {
+                    public SecureRandom get()
+                    {
+                        return tmp;
+                    }
+                };
+            }
+
+            return defaultSecureRandomProvider.get();
+        }
     }
 
     /**
@@ -124,9 +167,81 @@ public final class CryptoServicesRegistrar
      *
      * @param secureRandom the SecureRandom to use as the default.
      */
-    public static void setSecureRandom(SecureRandom secureRandom)
+    public static void setSecureRandom(final SecureRandom secureRandom)
     {
-        defaultSecureRandom = secureRandom;
+        synchronized (cacheLock)
+        {
+            if (secureRandom == null)
+            {
+                defaultSecureRandomProvider = null;
+            }
+            else
+            {
+                defaultSecureRandomProvider = new SecureRandomProvider()
+                {
+                    public SecureRandom get()
+                    {
+                        return secureRandom;
+                    }
+                };
+            }
+        }
+    }
+    
+    /**
+     * Set a default secure random provider to be used where none is otherwise provided.
+     *
+     * @param secureRandomProvider a provider SecureRandom to use when a default SecureRandom is requested.
+     */
+    public static void setSecureRandomProvider(SecureRandomProvider secureRandomProvider)
+    {
+        defaultSecureRandomProvider = secureRandomProvider;
+    }
+
+    /**
+     * Return the current algorithm/services constraints.
+     *
+     * @return the algorithm/services constraints.
+     */
+    public static CryptoServicesConstraints getServicesConstraints()
+    {
+        return servicesConstraints;
+    }
+
+    /**
+     * Check a service to make sure it meets the current constraints.
+     *
+     * @param cryptoService the service to be checked.
+     * @throws CryptoServiceConstraintsException if the service violates the current constraints.
+     */
+    public static void checkConstraints(CryptoServiceProperties cryptoService)
+    {
+        servicesConstraints.check(cryptoService);
+    }
+
+    /**
+     * Set the current algorithm constraints.
+     */
+    public static void setServicesConstraints(CryptoServicesConstraints constraints)
+    {
+        CryptoServicesConstraints newConstraints = (constraints == null) ? noConstraintsImpl : constraints;
+
+        if (preconfiguredConstraints)
+        {
+            if (Properties.isOverrideSet("org.bouncycastle.constraints.allow_override"))
+            {
+                servicesConstraints = newConstraints;
+            }
+            else
+            {
+                //LOG.warning("attempt to override pre-configured constraints ignored");
+            }
+        }
+        else
+        {
+            // TODO: should this only be allowed once?
+            servicesConstraints = newConstraints;
+        }
     }
 
     /**
@@ -134,6 +249,7 @@ public final class CryptoServicesRegistrar
      * configuration first and then on the global configuration in no local configuration exists.
      *
      * @param property the property to look up.
+     * @param <T> the type to be returned
      * @return null if the property is not set, the default value otherwise,
      */
     public static Object getProperty(Property property)
@@ -172,7 +288,7 @@ public final class CryptoServicesRegistrar
      * @param <T> the base type of the array to be returned.
      * @return null if the property is not set, an array of the current values otherwise.
      */
-    public static  Object[] getSizedProperty(Property property)
+    public static Object[] getSizedProperty(Property property)
     {
         Object[] values = lookupProperty(property);
 
@@ -181,11 +297,7 @@ public final class CryptoServicesRegistrar
             return null;
         }
 
-        Object[] rv = new Object[values.length];
-
-        System.arraycopy(values, 0, rv, 0, rv.length);
-
-        return rv;
+        return (Object[])values.clone();
     }
 
     /**
@@ -194,6 +306,7 @@ public final class CryptoServicesRegistrar
      *
      * @param property the name of the property to look up.
      * @param size the size (in bits) of the defining value in the property type.
+     * @param <T> the type of the value to be returned.
      * @return the current value for the size, null if there is no value set,
      */
     public static Object getSizedProperty(Property property, int size)
@@ -249,11 +362,7 @@ public final class CryptoServicesRegistrar
             throw new IllegalArgumentException("Bad property value passed");
         }
 
-        Object[] rv = new Object[propertyValue.length];
-
-        System.arraycopy(propertyValue, 0, rv, 0, rv.length);
-
-        localSetThread(property, rv);
+        localSetThread(property, (Object[])propertyValue.clone());
     }
 
     /**
@@ -263,14 +372,11 @@ public final class CryptoServicesRegistrar
      *
      * @param property the name of the property to set.
      * @param propertyValue the values to assign to the property.
+     * @param <T> the base type of the property value.
      */
     public static void setGlobalProperty(Property property, Object[] propertyValue)
     {
-        Object[] rv = new Object[propertyValue.length];
-
-        System.arraycopy(propertyValue, 0, rv, 0, rv.length);
-
-        localSetGlobalProperty(property, rv);
+        localSetGlobalProperty(property, (Object[])propertyValue.clone());
     }
 
     private static void localSetThread(Property property, Object[] propertyValue)
@@ -323,7 +429,7 @@ public final class CryptoServicesRegistrar
      */
     public static Object[] clearThreadProperty(Property property)
     {
-        return localClearThreadProperty(property);
+        return (Object[])localClearThreadProperty(property);
     }
 
     private static Object[] localClearThreadProperty(Property property)
@@ -351,7 +457,7 @@ public final class CryptoServicesRegistrar
     private static int chooseLowerBound(int pSize)
     {
         int m = 160;
-        if (pSize > 512)
+        if (pSize > 1024)
         {
             if (pSize <= 2048)
             {

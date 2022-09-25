@@ -3,6 +3,7 @@ package org.bouncycastle.util;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
@@ -365,5 +366,39 @@ public final class BigIntegers
         rv[0] &= (byte)(255 >>> xBits);
 
         return rv;
+    }
+
+    public static class Cache
+    {
+        private final Map values = new HashMap();
+        private final BigInteger[] preserve = new BigInteger[8];
+
+        private int preserveCounter = 0;
+
+        public synchronized void add(BigInteger value)
+        {
+            values.put(value, Boolean.TRUE);
+            preserve[preserveCounter] = value;
+            preserveCounter = (preserveCounter + 1) % preserve.length;
+        }
+
+        public synchronized boolean contains(BigInteger value)
+        {
+            return values.containsKey(value);
+        }
+
+        public synchronized int size()
+        {
+            return values.size();
+        }
+
+        public synchronized void clear()
+        {
+            values.clear();
+            for (int i = 0; i != preserve.length; i++)
+            {
+                preserve[i] = null;
+            }
+        }
     }
 }

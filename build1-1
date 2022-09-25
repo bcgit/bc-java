@@ -53,6 +53,7 @@ mkdir -p $jdk11src
 ((cd pkix/src/main/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd util/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd util/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd util/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd util/src/test/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 
@@ -185,6 +186,8 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -r org/bouncycastle/crypto/test/KDFDoublePipelineIteratorGeneratorTest.java
     rm -r org/bouncycastle/crypto/test/KDFCounterGeneratorTest.java
     rm -r org/bouncycastle/crypto/test/ARIATest.java
+    rm -r org/bouncycastle/crypto/test/RadixCon*.java
+    rm -r org/bouncycastle/crypto/test/DigestConstraintsTest.java
     rm -r org/bouncycastle/math/test/PrimesTest.java
     rm -r org/bouncycastle/math/raw/test/InterleaveTest.java
     rm -rf org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
@@ -226,6 +229,15 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/crypto/*/CMCEVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/FrodoVectorTest*
     rm -rf org/bouncycastle/pqc/crypto/*/SABERVectorTest*
+    rm -rf org/bouncycastle/pqc/crypto/test/SNTRU*
+    rm -rf org/bouncycastle/pqc/crypto/test/Picnic*
+    rm -rf org/bouncycastle/pqc/crypto/test/Crystals*
+    rm -rf org/bouncycastle/pqc/crypto/test/HQC*
+    rm -rf org/bouncycastle/pqc/crypto/test/Falcon*
+    rm -rf org/bouncycastle/pqc/crypto/test/BIKE*
+    rm -rf org/bouncycastle/pqc/crypto/*/SIKE*
+    rm -rf org/bouncycastle/pqc/crypto/sike
+    rm -rf org/bouncycastle/asn1/test/MiscTest.java
     rm org/bouncycastle/pkix/SubjectPublicKeyInfoChecker.java
     rm -rf org/bouncycastle/pkix/jcajce/X509*
     rm -rf org/bouncycastle/pkix/jcajce/RFC3280*
@@ -263,7 +275,7 @@ then
     mkdir $artifacts/lcrypto-jdk11-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/lcrypto-jdk11-$base && tar xf -)
     (cd $jdk11src && tar cf - java org/bouncycastle/LICENSE.java \
-    org/bouncycastle/math org/bouncycastle/internal org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1 ) \
+    org/bouncycastle/math org/bouncycastle/internal org/bouncycastle/crypto org/bouncycastle/util org/bouncycastle/asn1 org/bouncycastle/pqc/legacy org/bouncycastle/pqc/math org/bouncycastle/pqc/crypto org/bouncycastle/pqc/asn1 ) \
      | (cd $artifacts/lcrypto-jdk11-$base/src && tar xf -)
     (
         cd $artifacts/lcrypto-jdk11-$base;
@@ -330,43 +342,43 @@ then
         echo "compiling"
 
         (cd src/java/; javac -d ../../classes -classpath ../../classes:../../src:$JDK11PATH/lib/classes.zip */*.java)
-        (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java ; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */*.java; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */p*/*.java
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */a*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */d*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/e*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/e*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip m*/e*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/e*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */g*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */i*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */m*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */s*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/t*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/c*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/x*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/x*/s*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/c*/e*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/[kno]*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/b*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/A*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[BC]*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/D*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[EHMN]*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[OPR]*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/S*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/T*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/U*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/t*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip math/ec/tools/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip math/raw/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/agreement/kdf/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/modes/gcm/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/test/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/io/*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/math/*/*.java 
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/*/*.java  pqc/crypto/*/*/*.java
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/en*/*.java
-javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */u*/*.java )
+        (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java ; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */*.java; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */p*/*.java
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */a*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */d*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/e*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/e*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip m*/e*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/e*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */g*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */i*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */m*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */s*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/t*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/c*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/x*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/x*/s*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/c*/e*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/[kno]*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip a*/b*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/A*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[BC]*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/D*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[EHMN]*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/[OPR]*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/S*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/T*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip c*/t*/U*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/t*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip math/ec/tools/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip math/raw/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/agreement/kdf/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/modes/gcm/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/test/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/io/*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/math/*/*.java 
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/*/*.java  pqc/crypto/*/*/*.java
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip pqc/crypto/en*/*.java
+javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip */u*/*.java )
 
         cp ../../../../core/src/test/resources/org/bouncycastle/crypto/test/*.txt classes/org/bouncycastle/crypto/test/
 
@@ -471,46 +483,46 @@ then
 
     echo "compiling"
 
-    (cd src/java/; javac -d ../../classes -classpath ../../classes:../../src:$JDK11PATH/lib/classes.zip */*.java */*/*.java )
-    (cd src/javax/crypto; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java */*.java)
+    (cd src/java/; javac -J-mx768m -d ../../classes -classpath ../../classes:../../src:$JDK11PATH/lib/classes.zip */*.java */*/*.java )
+    (cd src/javax/crypto; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java */*.java)
 
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/b*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/x*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cr*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cm*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/p*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java pqc/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [jk]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [lmn]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[adefghijk]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[lmnoqrstuvwyz]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[a]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[d]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[e]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[gimpsu]*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[ABCD]*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[EFHKMNOP]*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[RSTU]*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/digest/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/asymmetric/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/symmetric/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [abc]*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip m*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [ptuvx]*/*/*/*.java)
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip x509/*.java x509/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/b*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/x*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cr*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/cm*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/p*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip *.java pqc/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip u*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [jk]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [lmn]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[adefghijk]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/[lmnoqrstuvwyz]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip asn1/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[a]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[d]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[e]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/[gimpsu]*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[ABCD]*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[EFHKMNOP]*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip crypto/t*/[RSTU]*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/digest/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/asymmetric/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/provider/symmetric/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip util/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [abc]*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jcajce/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip jce/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip m*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip [ptuvx]*/*/*/*.java)
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:$JDK11PATH/lib/classes.zip x509/*.java x509/*/*.java)
 
     rm -rf classes/org/bouncycastle/crypto/test
 
@@ -566,13 +578,13 @@ then
 
     echo "compiling"
 
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [imo]*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [deptv]*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip t*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip p*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip */*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [imo]*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip [deptv]*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip t*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip p*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip c*/*/*.java )
+    (cd src/org/bouncycastle; javac -J-mx768m -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip */*/*/*.java )
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.CertTest
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.AttrCertTest
     java -mx512m -classpath ../jce-jdk11-$base/classes:classes:$JDK11PATH/lib/classes.zip org.bouncycastle.cert.test.PKCS10Test
@@ -673,6 +685,12 @@ q
 
     ed src/org/bouncycastle/bcpg/ArmoredOutputStream.java <<%
 /@RELEASE_NAME@/s//$version/
+w
+q
+%
+
+    ed src/org/bouncycastle/bcpg/S2K.java <<%
+g/private.*final.*;/s/final//
 w
 q
 %

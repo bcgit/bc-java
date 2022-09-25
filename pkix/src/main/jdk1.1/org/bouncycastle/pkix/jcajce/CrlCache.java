@@ -3,7 +3,6 @@ package org.bouncycastle.pkix.jcajce;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.cert.CRL;
@@ -18,7 +17,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.HashMap;
 
 //import javax.naming.Context;
 //import javax.naming.NamingException;
@@ -37,19 +36,15 @@ class CrlCache
 {
     private static final int DEFAULT_TIMEOUT = 15000;
 
-    private static Map cache =
-        Collections.synchronizedMap(new WeakHashMap<URL, WeakReference<PKIXCRLStore>>());
+    private static Hashtable cache =
+        new Hashtable();
 
     static synchronized PKIXCRLStore getCrl(CertificateFactory certFact, Date validDate, URL distributionPoint)
         throws IOException, CRLException
     {
         PKIXCRLStore crlStore = null;
 
-        WeakReference<PKIXCRLStore> markerRef = (WeakReference)cache.get(distributionPoint);
-        if (markerRef != null)
-        {
-            crlStore = (PKIXCRLStore)markerRef.get();
-        }
+        crlStore = (PKIXCRLStore)cache.get(distributionPoint);
 
         if (crlStore != null)
         {
@@ -86,7 +81,7 @@ class CrlCache
 
         LocalCRLStore localCRLStore = new LocalCRLStore(new CollectionStore<CRL>(crls));
 
-        cache.put(distributionPoint, new WeakReference<PKIXCRLStore>(localCRLStore));
+        cache.put(distributionPoint, localCRLStore);
 
         return localCRLStore;
     }

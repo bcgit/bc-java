@@ -1,7 +1,7 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/crypto/*/*.java  org/bouncycastle/openpgp/test/*.java
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/test/*.java
 do
 ed $i <<%%
 g/.Override/d
@@ -93,6 +93,12 @@ q
 %
 
 ed org/bouncycastle/jcajce/provider/drbg/DRBG.java <<%
+g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/pqc/crypto/test/TestSampler.java <<%
 g/private final/s/final//
 w
 q

@@ -379,7 +379,7 @@ public abstract class ECCurve
     public ECPoint decodePoint(byte[] encoded)
     {
         ECPoint p = null;
-        int expectedLength = (getFieldSize() + 7) / 8;
+        int expectedLength = (this.getFieldSize() + 7) / 8;
 
         byte type = encoded[0];
         switch (type)
@@ -463,7 +463,7 @@ public abstract class ECCurve
      */
     public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, final int len)
     {
-        final int FE_BYTES = (getFieldSize() + 7) >>> 3;
+        final int FE_BYTES = (this.getFieldSize() + 7) >>> 3;
 
         final byte[] table = new byte[len * FE_BYTES * 2];
         {
@@ -526,7 +526,7 @@ public abstract class ECCurve
 
             private ECPoint createPoint(byte[] x, byte[] y)
             {
-                return createRawPoint(fromBigInteger(new BigInteger(1, x)), fromBigInteger(new BigInteger(1, y)));
+                return createRawPoint(ECCurve.this.fromBigInteger(new BigInteger(1, x)), ECCurve.this.fromBigInteger(new BigInteger(1, y)));
             }
         };
     }
@@ -675,6 +675,7 @@ public abstract class ECCurve
     {
         private static final int FP_DEFAULT_COORDS = ECCurve.COORD_JACOBIAN_MODIFIED;
         private static final Set<BigInteger> knownQs = Collections.synchronizedSet(new HashSet<BigInteger>());
+        private static final BigIntegers.Cache validatedQs = new BigIntegers.Cache();
 
         BigInteger q, r;
         ECPoint.Fp infinity;
@@ -701,7 +702,7 @@ public abstract class ECCurve
                 this.q = q;
                 knownQs.add(q);
             }
-            else if (knownQs.contains(q))
+            else if (knownQs.contains(q) || validatedQs.contains(q))
             {
                 this.q = q;
             }
@@ -721,6 +722,8 @@ public abstract class ECCurve
                 {
                     throw new IllegalArgumentException("Fp q value not prime");
                 }
+
+                validatedQs.add(q);
 
                 this.q = q;
             }
@@ -781,6 +784,11 @@ public abstract class ECCurve
 
         public ECFieldElement fromBigInteger(BigInteger x)
         {
+            if (x == null || x.signum() < 0 || x.compareTo(q) >= 0)
+            {
+                throw new IllegalArgumentException("x value invalid for Fp field element");
+            }
+
             return new ECFieldElement.Fp(this.q, this.r, x);
         }
 
@@ -837,32 +845,11 @@ public abstract class ECCurve
 
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
-            if (k1 == 0)
-            {
-                throw new IllegalArgumentException("k1 must be > 0");
-            }
+            int[] exponents = (k2 | k3) == 0
+                ? new int[]{ 0, k1, m }
+                : new int[]{ 0, k1, k2, k3, m };
 
-            if (k2 == 0)
-            {
-                if (k3 != 0)
-                {
-                    throw new IllegalArgumentException("k3 must be 0 if k2 == 0");
-                }
-
-                return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, m });
-            }
-
-            if (k2 <= k1)
-            {
-                throw new IllegalArgumentException("k2 must be > k1");
-            }
-
-            if (k3 <= k2)
-            {
-                throw new IllegalArgumentException("k3 must be > k2");
-            }
-
-            return FiniteFields.getBinaryExtensionField(new int[]{ 0, k1, k2, k3, m });
+            return FiniteFields.getBinaryExtensionField(exponents);
         }
 
         protected AbstractF2m(int m, int k1, int k2, int k3)
@@ -1258,8 +1245,8 @@ public abstract class ECCurve
             this.cofactor = cofactor;
 
             this.infinity = new ECPoint.F2m(this, null, null);
-            this.a = this.fromBigInteger(a);
-            this.b = this.fromBigInteger(b);
+            this.a = fromBigInteger(a);
+            this.b = fromBigInteger(b);
             this.coord = F2M_DEFAULT_COORDS;
         }
 
@@ -1315,7 +1302,16 @@ public abstract class ECCurve
 
         public ECFieldElement fromBigInteger(BigInteger x)
         {
-            return new ECFieldElement.F2m(this.m, this.k1, this.k2, this.k3, x);
+            if (x == null || x.signum() < 0 || x.bitLength() > m)
+            {
+                throw new IllegalArgumentException("x value invalid in F2m field element");
+            }
+
+            int[] ks = (k2 | k3) == 0
+                ? new int[]{ k1 }
+                : new int[]{ k1, k2, k3 };
+
+            return new ECFieldElement.F2m(m, ks, new LongArray(x));
         }
 
         protected ECPoint createRawPoint(ECFieldElement x, ECFieldElement y)
