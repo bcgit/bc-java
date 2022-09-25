@@ -278,7 +278,7 @@ class CMCECipherSpi
         {
             CMCEKEMExtractor kemExt = new CMCEKEMExtractor(unwrapKey.getKeyParams());
 
-            byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getInputSize()));
+            byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
@@ -288,7 +288,7 @@ class CMCECipherSpi
 
             kWrap.init(false, keyParameter);
 
-            byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getInputSize(), wrappedKey.length);
+            byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
             SecretKey rv = new SecretKeySpec(kWrap.unwrap(keyEncBytes, 0, keyEncBytes.length), wrappedKeyAlgorithm);
 
