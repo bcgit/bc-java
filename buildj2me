@@ -28,11 +28,14 @@ then
     ((cd core/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/jdk1.3; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd core/src/main/jdk1.2; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/main/jdk1.1; tar cf - org ) | (cd $target/src && tar xf -))
     ((cd core/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd core/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd util/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd util/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd util/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pkix/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pkix/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
@@ -40,6 +43,8 @@ then
     ((cd pkix/src/test/java; tar cf - org/bouncycastle/cert/test ) | (cd $target/src && tar xf - ) )
     ((cd pkix/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/main/java; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/main/jdk1.4; tar cf - * ) | (cd $target/src && tar xf -))
+    ((cd pg/src/main/jdk1.3; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/main/javadoc; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/main/j2me; tar cf - * ) | (cd $target/src && tar xf -))
     ((cd pg/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
@@ -50,11 +55,16 @@ then
         rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
 	rm src/org/bouncycastle/crypto/test/NISTECCTest.java
 	rm src/org/bouncycastle/crypto/test/LEATest.java
+	rm src/org/bouncycastle/crypto/test/Grain128AEADTest.java
+	rm src/org/bouncycastle/crypto/test/RadixConverterTest.java
+	rm src/org/bouncycastle/crypto/test/DigestConstraintsTest.java
         rm src/org/bouncycastle/crypto/CryptoServicesPermission.java
+        rm src/org/bouncycastle/crypto/constraints/LoggingConstraint.java
         rm src/org/bouncycastle/util/StreamParser.java
         rm src/org/bouncycastle/util/StreamParsingException.java
         rm src/org/bouncycastle/asn1/util/Dump.java
         rm src/org/bouncycastle/asn1/test/AllTests.java
+        rm src/org/bouncycastle/asn1/test/MiscTest.java
         rm src/org/bouncycastle/asn1/test/ASN1IntegerTest.java
         rm src/org/bouncycastle/asn1/test/ASN1SequenceParserTest.java
         rm src/org/bouncycastle/asn1/test/AttributeTableUnitTest.java
@@ -80,22 +90,25 @@ then
 	rm -rf src/org/bouncycastle/tsp/ers
 	rm src/org/bouncycastle/crypto/util/JournaledAlgorithm.java
 	rm -rf src/org/bouncycastle/crypto/fpe/
+	rm -rf src/org/bouncycastle/crypto/params/FPEParameters.java
+	rm -rf src/org/bouncycastle/crypto/util/RadixConverter.java
         rm -rf src/org/bouncycastle/math/ec/rfc7748/test
         rm -rf src/org/bouncycastle/math/ec/rfc8032/test
         rm -rf src/org/bouncycastle/math/raw/test
         rm -rf src/org/bouncycastle/math/test
-        rm -rf src/org/bouncycastle/pqc/math/ntru
-        rm -rf src/org/bouncycastle/pqc/crypto/test/ntru
-        rm -rf src/org/bouncycastle/pqc/crypto/*/NTRU*
-        rm -rf src/org/bouncycastle/pqc/crypto/*/BitStringTest*
-        rm -rf src/org/bouncycastle/pqc/crypto/*/IndexGenerator*
+        rm -rf src/org/bouncycastle/pqc/legacy/math/ntru
+        rm -rf src/org/bouncycastle/pqc/crypto/ntru
+        rm -rf src/org/bouncycastle/pqc/legacy/crypto/test/ntru
+        rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/NTRU*
+        rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/BitStringTest*
+        rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/IndexGenerator*
         rm -rf src/org/bouncycastle/pqc/crypto/sphincsplus
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
         rm -rf src/org/bouncycastle/pqc/crypto/lms
-        rm -rf src/org/bouncycastle/pqc/crypto/test/XMSS*
-        rm -rf src/org/bouncycastle/pqc/crypto/test/LMS*
-        rm -rf src/org/bouncycastle/pqc/crypto/test/HSS*
-        rm src/org/bouncycastle/pqc/crypto/qtesla/QTeslaKeyEncodingTests.java
+        rm -rf src/org/bouncycastle/pqc/crypto/test
+        rm -rf src/org/bouncycastle/pqc/crypto/sike
+        rm -rf src/org/bouncycastle/pqc/crypto/picnic
+        rm src/org/bouncycastle/pqc/crypto/legacy/qtesla/QTeslaKeyEncodingTests.java
         rm -rf src/org/bouncycastle/gpg/keybox
         rm -rf src/org/bouncycastle/gpg/test
         rm src/org/bouncycastle/asn1/test/MonetaryValueUnitTest.java
@@ -132,7 +145,7 @@ then
         rm src/org/bouncycastle/asn1/test/OctetStringTest.java
         rm src/org/bouncycastle/asn1/test/ParseTest.java
         rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
-        rm -r src/org/bouncycastle/pqc/crypto/test
+        rm -r src/org/bouncycastle/legacy/pqc/crypto/test
         rm src/org/bouncycastle/cert/test/BcCertTest.java
         rm src/org/bouncycastle/cert/test/GOST3410_2012CMSTest.java
         rm src/org/bouncycastle/crypto/test/SCryptTest.java
@@ -173,7 +186,7 @@ then
         rm src/org/bouncycastle/cert/test/ExternalKeyTest.java
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
 
-        for i in src/org/bouncycastle/pqc/crypto/*/*.java
+        for i in src/org/bouncycastle/pqc/crypto/*/*.java src/org/bouncycastle/pqc/crypto/*/*/*.java src/org/bouncycastle/pqc/math/*/*.java src/org/bouncycastle/pqc/math/*/*/*.java src/org/bouncycastle/crypto/engines/*.java
         do
             ed $i <<%%
 g/ .Override/d
@@ -181,6 +194,12 @@ w
 q
 %%
         done
+
+        ed src/org/bouncycastle/asn1/test/RegressionTest.java <<%
+g/new MiscTest(),/s///g
+w
+q
+%
 
         ed src/org/bouncycastle/cms/CMSSignedDataGenerator.java <<%
 g/LinkedHashSet/s//HashSet/g
@@ -332,9 +351,14 @@ q
     org.bouncycastle.crypto.examples \
     org.bouncycastle.pqc.asn1 \
     org.bouncycastle.pqc.crypto \
-    org.bouncycastle.pqc.crypto.rainbow \
-    org.bouncycastle.pqc.crypto.mceliece \
-    org.bouncycastle.pqc.crypto.gmss \
+    org.bouncycastle.pqc.crypto.cmce \
+    org.bouncycastle.pqc.crypto.ntruprime \
+    org.bouncycastle.pqc.crypto.crystals.kyber \
+    org.bouncycastle.pqc.crypto.crystals.dilithium \
+    org.bouncycastle.pqc.crypto.falcon \
+    org.bouncycastle.pqc.legacy.crypto.rainbow \
+    org.bouncycastle.pqc.legacy.crypto.mceliece \
+    org.bouncycastle.pqc.legacy.crypto.gmss \
     org.bouncycastle.pqc.math.linearalgebra \
     org.bouncycastle.util \
     org.bouncycastle.util.encoders \
