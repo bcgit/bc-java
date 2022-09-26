@@ -52,7 +52,7 @@ public class PGPPublicKeyRing
     {
         this.keys = new ArrayList();
 
-        BCPGInputStream pIn = wrap(in);
+        BCPGInputStream pIn = BCPGInputStream.wrap(in);
 
         int initialTag = pIn.nextPacketTag();
         if (initialTag != PacketTags.PUBLIC_KEY && initialTag != PacketTags.PUBLIC_SUBKEY)

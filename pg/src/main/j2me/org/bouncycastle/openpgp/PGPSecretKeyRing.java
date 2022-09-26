@@ -61,7 +61,7 @@ public class PGPSecretKeyRing
         this.keys = new ArrayList();
         this.extraPubKeys = new ArrayList();
 
-        BCPGInputStream pIn = wrap(in);
+        BCPGInputStream pIn = BCPGInputStream.wrap(in);
 
         int initialTag = pIn.nextPacketTag();
         if (initialTag != PacketTags.SECRET_KEY && initialTag != PacketTags.SECRET_SUBKEY)
