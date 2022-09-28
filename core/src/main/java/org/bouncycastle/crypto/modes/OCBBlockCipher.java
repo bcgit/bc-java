@@ -14,16 +14,21 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * An implementation of <a href="https://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
- * Authenticated-Encryption Algorithm</a>, licensed per:
+ * Authenticated-Encryption Algorithm</a>. For those still concerned about the original patents
+ * around this, please see:
  * <p>
- * <blockquote> <a href="https://www.cs.ucdavis.edu/~rogaway/ocb/license1.pdf">License for
- * Open-Source Software Implementations of OCB</a> (Jan 9, 2013) &mdash; &ldquo;License 1&rdquo; <br>
- * Under this license, you are authorized to make, use, and distribute open-source software
- * implementations of OCB. This license terminates for you if you sue someone over their open-source
- * software implementation of OCB claiming that you have a patent covering their implementation.
- * <p>
- * This is a non-binding summary of a legal document (the link above). The parameters of the license
- * are specified in the license document and that document is controlling. </blockquote>
+ * https://mailarchive.ietf.org/arch/msg/cfrg/qLTveWOdTJcLn4HP3ev-vrj05Vg/
+ * </p>
+ * Text reproduced below.
+ * <blockquote>
+ * Phillip Rogaway <rogaway@cs.ucdavis.edu> Sat, 27 February 2021 02:46 UTCShow header
+ *
+ * I can confirm that I have abandoned all OCB patents
+ * and placed into the public domain all OCB-related IP of mine.
+ * While I have been telling people this for quite some time, I don't
+ * think I ever made a proper announcement to the CFRG or on the
+ * OCB webpage. Consider that done.
+ * </blockquote>
  */
 public class OCBBlockCipher
     implements AEADBlockCipher
