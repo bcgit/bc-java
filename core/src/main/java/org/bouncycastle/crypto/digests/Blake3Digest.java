@@ -165,11 +165,6 @@ public class Blake3Digest
     private static final byte[] SIGMA = {2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8};
 
     /**
-     * Rotation constants.
-     */
-    private static final byte[] ROTATE = {16, 12, 8, 7};
-
-    /**
      * Blake3 Initialization Vector.
      */
     private static final int[] IV = {
@@ -308,7 +303,7 @@ public class Blake3Digest
         purpose = pSource.purpose;
 
         /* Initialise from source */
-        reset((Memoable)pSource);
+        reset(pSource);
     }
 
     public int getByteLength()
@@ -422,7 +417,7 @@ public class Blake3Digest
             /* If there is sufficient space in the buffer */
             if (remainingLen >= pLen)
             {
-                /* Copy data into byffer and return */
+                /* Copy data into buffer and return */
                 System.arraycopy(pMessage, pOffset, theBuffer, thePos, pLen);
                 thePos += pLen;
                 return;
@@ -697,17 +692,16 @@ public class Blake3Digest
     private void performRound()
     {
         /* Apply to columns of V */
-        int idx = 0;
-        mixG(idx++, CHAINING0, CHAINING4, IV0, COUNT0);
-        mixG(idx++, CHAINING1, CHAINING5, IV1, COUNT1);
-        mixG(idx++, CHAINING2, CHAINING6, IV2, DATALEN);
-        mixG(idx++, CHAINING3, CHAINING7, IV3, FLAGS);
+        mixG(0, CHAINING0, CHAINING4, IV0, COUNT0);
+        mixG(1, CHAINING1, CHAINING5, IV1, COUNT1);
+        mixG(2, CHAINING2, CHAINING6, IV2, DATALEN);
+        mixG(3, CHAINING3, CHAINING7, IV3, FLAGS);
 
         /* Apply to diagonals of V */
-        mixG(idx++, CHAINING0, CHAINING5, IV2, FLAGS);
-        mixG(idx++, CHAINING1, CHAINING6, IV3, COUNT0);
-        mixG(idx++, CHAINING2, CHAINING7, IV0, COUNT1);
-        mixG(idx, CHAINING3, CHAINING4, IV1, DATALEN);
+        mixG(4, CHAINING0, CHAINING5, IV2, FLAGS);
+        mixG(5, CHAINING1, CHAINING6, IV3, COUNT0);
+        mixG(6, CHAINING2, CHAINING7, IV0, COUNT1);
+        mixG(7, CHAINING3, CHAINING4, IV1, DATALEN);
     }
 
     /**
@@ -771,17 +765,16 @@ public class Blake3Digest
     {
         /* Determine indices */
         int msg = msgIdx << 1;
-        int rot = 0;
 
         /* Perform the Round */
         theV[posA] += theV[posB] + theM[theIndices[msg++]];
-        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], ROTATE[rot++]);
+        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], 16);
         theV[posC] += theV[posD];
-        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], ROTATE[rot++]);
+        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], 12);
         theV[posA] += theV[posB] + theM[theIndices[msg]];
-        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], ROTATE[rot++]);
+        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], 8);
         theV[posC] += theV[posD];
-        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], ROTATE[rot]);
+        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], 7);
     }
 
     /**

@@ -138,7 +138,7 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier id_blake2s224 = blake2.branch("2.7");
     ASN1ObjectIdentifier id_blake2s256 = blake2.branch("2.8");
 
-    ASN1ObjectIdentifier blake3 = new ASN1ObjectIdentifier("1.3.6.1.4.1.1722.12.2.3");
+    ASN1ObjectIdentifier blake3 = blake2.branch("3");
 
     ASN1ObjectIdentifier blake3_256 = blake3.branch("8");
 
