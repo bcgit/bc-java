@@ -323,8 +323,16 @@ public class Grain128AEADEngine
 
     public void reset()
     {
+        reset(true);
+    }
+
+    private void reset(boolean clearMac)
+    {
         this.isEven = true;
-        this.mac = null;
+        if (clearMac)
+        {
+            this.mac = null;
+        }
         this.aadData.reset();
         this.aadFinished = false;
         setKey(workingKey, workingIV);
@@ -487,14 +495,9 @@ public class Grain128AEADEngine
 
         System.arraycopy(mac, 0, out, outOff, mac.length);
 
-        try
-        {
-            return mac.length;
-        }
-        finally
-        {
-            reset();
-        }
+        reset(false);
+
+        return mac.length;
     }
 
     public byte[] getMac()
