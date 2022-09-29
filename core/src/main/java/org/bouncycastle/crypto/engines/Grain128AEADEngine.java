@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * Grain-128 AEAD, based on the current round 3 submission, https://grain-128aead.github.io/
@@ -19,7 +19,6 @@ import org.bouncycastle.util.Arrays;
 public class Grain128AEADEngine
     implements AEADCipher
 {
-
     /**
      * Constants
      */
@@ -35,10 +34,8 @@ public class Grain128AEADEngine
     private int[] nfsr;
     private int[] authAcc;
     private int[] authSr;
-    private int output;
 
     private boolean initialised = false;
-    private boolean isEven = true; // zero treated as even
     private boolean aadFinished = false;
     private ErasableOutputStream aadData = new ErasableOutputStream();
 
@@ -56,7 +53,6 @@ public class Grain128AEADEngine
      * @param params        The parameters required to set up the cipher.
      * @throws IllegalArgumentException If the params argument is inappropriate.
      */
-    @Override
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
@@ -120,7 +116,7 @@ public class Grain128AEADEngine
     {
         for (int i = 0; i < 320; ++i)
         {
-            output = getOutput();
+            int output = getOutput();
             nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
             lfsr = shift(lfsr, (getOutputLFSR() ^ output) & 1);
         }
@@ -128,7 +124,7 @@ public class Grain128AEADEngine
         {
             for (int remainder = 0; remainder < 8; ++remainder)
             {
-                output = getOutput();
+                int output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
             }
@@ -137,7 +133,7 @@ public class Grain128AEADEngine
         {
             for (int remainder = 0; remainder < 32; ++remainder)
             {
-                output = getOutput();
+                int output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
                 authAcc[quotient] |= output << remainder;
@@ -147,7 +143,7 @@ public class Grain128AEADEngine
         {
             for (int remainder = 0; remainder < 32; ++remainder)
             {
-                output = getOutput();
+                int output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
                 authSr[quotient] |= output << remainder;
@@ -238,6 +234,7 @@ public class Grain128AEADEngine
         int s79 = lfsr[2] >>> 15;
         int s93 = lfsr[2] >>> 29;
         int s94 = lfsr[2] >>> 30;
+
         return ((b12 & s8) ^ (s13 & s20) ^ (b95 & s42) ^ (s60 & s79) ^ (b12 & b95 & s94) ^ s93
             ^ b2 ^ b15 ^ b36 ^ b45 ^ b64 ^ b73 ^ b89) & 1;
     }
@@ -251,12 +248,10 @@ public class Grain128AEADEngine
      */
     private int[] shift(int[] array, int val)
     {
-
         array[0] = (array[0] >>> 1) | (array[1] << 31);
         array[1] = (array[1] >>> 1) | (array[2] << 31);
         array[2] = (array[2] >>> 1) | (array[3] << 31);
         array[3] = (array[3] >>> 1) | (val << 31);
-
         return array;
     }
 
@@ -271,35 +266,23 @@ public class Grain128AEADEngine
         ivBytes[12] = (byte)0xFF;
         ivBytes[13] = (byte)0xFF;
         ivBytes[14] = (byte)0xFF;
-        ivBytes[15] = (byte)0x7F;//(byte) 0xFE;
+        ivBytes[15] = (byte)0x7F;
         workingKey = keyBytes;
         workingIV = ivBytes;
 
         /**
          * Load NFSR and LFSR
          */
-        int j = 0;
-        for (int i = 0; i < nfsr.length; i++)
-        {
-            nfsr[i] = ((workingKey[j + 3]) << 24) | ((workingKey[j + 2]) << 16)
-                & 0x00FF0000 | ((workingKey[j + 1]) << 8) & 0x0000FF00
-                | ((workingKey[j]) & 0x000000FF);
-
-            lfsr[i] = ((workingIV[j + 3]) << 24) | ((workingIV[j + 2]) << 16)
-                & 0x00FF0000 | ((workingIV[j + 1]) << 8) & 0x0000FF00
-                | ((workingIV[j]) & 0x000000FF);
-            j += 4;
-        }
+        Pack.littleEndianToInt(workingKey, 0, nfsr);
+        Pack.littleEndianToInt(workingIV, 0, lfsr);
     }
 
-    public int processBytes(byte[] input, int inOff, int len, byte[] output,
-                            int outOff)
+    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
         if (!initialised)
         {
-            throw new IllegalStateException(getAlgorithmName()
-                + " not initialised");
+            throw new IllegalStateException(getAlgorithmName() + " not initialised");
         }
 
         if (!aadFinished)
@@ -328,51 +311,42 @@ public class Grain128AEADEngine
 
     private void reset(boolean clearMac)
     {
-        this.isEven = true;
         if (clearMac)
         {
             this.mac = null;
         }
         this.aadData.reset();
         this.aadFinished = false;
+
         setKey(workingKey, workingIV);
         initGrain();
     }
 
     private byte[] getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
     {
-        int mCnt = 0, acCnt = 0, cCnt = 0;
-        byte cc;
-        byte[] plaintext = new byte[len];
         for (int i = 0; i < len; ++i)
         {
-            plaintext[i] = (byte)reverseByte(input[inOff + i]);
-        }
-        for (int i = 0; i < len; ++i)
-        {
-            cc = 0;
-            for (int j = 0; j < 16; ++j)
+            byte cc = 0, input_i = input[inOff + i];
+            for (int j = 0; j < 8; ++j)
             {
-                output = getOutput();
+                int output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if (isEven)
-                {
-                    cc |= (((plaintext[mCnt >> 3] >>> (7 - (mCnt & 7))) & 1) ^ output) << (cCnt & 7);
-                    mCnt++;
-                    cCnt++;
-                    isEven = false;
-                }
-                else
-                {
-                    if ((plaintext[acCnt >> 3] & (1 << (7 - (acCnt & 7)))) != 0)
-                    {
-                        accumulate();
-                    }
-                    authShift(output);
-                    acCnt++;
-                    isEven = true;
-                }
+
+                int input_i_j = (input_i >> j) & 1;
+                cc |= (input_i_j ^ output) << j;
+
+//                if (input_i_j != 0)
+//                {
+//                    accumulate();
+//                }
+                int mask = -input_i_j;
+                authAcc[0] ^= authSr[0] & mask;
+                authAcc[1] ^= authSr[1] & mask;
+
+                authShift(getOutput());
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
             }
             ciphertext[outOff + i] = cc;
         }
@@ -406,7 +380,7 @@ public class Grain128AEADEngine
         if (len < 128)
         {
             ader = new byte[1 + len];
-            ader[0] = (byte)reverseByte(len);
+            ader[0] = (byte)len;
             aderlen = 0;
         }
         else
@@ -414,38 +388,39 @@ public class Grain128AEADEngine
             // aderlen is the highest bit position divided by 8
             aderlen = len_length(len);
             ader = new byte[1 + aderlen + len];
-            ader[0] = (byte)reverseByte(0x80 | aderlen);
+            ader[0] = (byte)(0x80 | aderlen);
             int tmp = len;
             for (int i = 0; i < aderlen; ++i)
             {
-                ader[1 + i] = (byte)reverseByte(tmp & 0xff);
+                ader[1 + i] = (byte)tmp;
                 tmp >>>= 8;
             }
         }
         for (int i = 0; i < len; ++i)
         {
-            ader[1 + aderlen + i] = (byte)reverseByte(input[inOff + i]);
+            ader[1 + aderlen + i] = input[inOff + i];
         }
 
-        byte adval;
-        int adCnt = 0;
         for (int i = 0; i < ader.length; ++i)
         {
-            for (int j = 0; j < 16; ++j)
+            byte ader_i = ader[i];
+            for (int j = 0; j < 8; ++j)
             {
-                output = getOutput();
                 nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                if ((j & 1) == 1)
-                {
-                    adval = (byte)(ader[adCnt >> 3] & (1 << (7 - (adCnt & 7))));
-                    if (adval != 0)
-                    {
-                        accumulate();
-                    }
-                    authShift(output);
-                    adCnt++;
-                }
+
+                int ader_i_j = (ader_i >> j) & 1;
+//                if (ader_i_j != 0)
+//                {
+//                    accumulate();
+//                }
+                int mask = -ader_i_j;
+                authAcc[0] ^= authSr[0] & mask;
+                authAcc[1] ^= authSr[1] & mask;
+
+                authShift(getOutput());
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
             }
         }
     }
@@ -477,21 +452,9 @@ public class Grain128AEADEngine
             aadFinished = true;
         }
 
-        this.mac = new byte[8];
-
-        output = getOutput();
-        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
         accumulate();
 
-        int cCnt = 0;
-        for (int i = 0; i < 2; ++i)
-        {
-            for (int j = 0; j < 4; ++j)
-            {
-                mac[cCnt++] = (byte)((authAcc[i] >>> (j << 3)) & 0xff);
-            }
-        }
+        this.mac = Pack.intToLittleEndian(authAcc);
 
         System.arraycopy(mac, 0, out, outOff, mac.length);
 
@@ -516,15 +479,7 @@ public class Grain128AEADEngine
         return len + 8;
     }
 
-    private int reverseByte(int x)
-    {
-        x = (((x & 0x55) << 1) | ((x & (0xAA)) >>> 1)) & 0xFF;
-        x = (((x & 0x33) << 2) | ((x & (0xCC)) >>> 2)) & 0xFF;
-        x = (((x & 0x0f) << 4) | ((x & (0xf0)) >>> 4)) & 0xFF;
-        return x;
-    }
-
-    private int len_length(int v)
+    private static int len_length(int v)
     {
         if ((v & 0xff) == v)
         {
@@ -554,11 +509,11 @@ public class Grain128AEADEngine
             return buf;
         }
 
-        public void erase()
-        {
-            Arrays.fill(this.buf, (byte)0);
-            // this for JVM compatibility
-            this.reset();
-        }
+//        public void erase()
+//        {
+//            Arrays.fill(this.buf, (byte)0);
+//            // this for JVM compatibility
+//            this.reset();
+//        }
     }
 }
