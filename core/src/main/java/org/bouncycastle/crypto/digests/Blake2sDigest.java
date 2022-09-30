@@ -158,7 +158,7 @@ public class Blake2sDigest
         this.keyLength = digest.keyLength;
         this.key = Arrays.clone(digest.key);
         this.digestLength = digest.digestLength;
-        this.internalState = Arrays.clone(internalState);
+        this.internalState = Arrays.clone(digest.internalState);
         this.chainValue = Arrays.clone(digest.chainValue);
         this.t0 = digest.t0;
         this.t1 = digest.t1;
