@@ -23,7 +23,7 @@ import junit.framework.TestCase;
 public class TlsRawKeysProtocolTest
     extends TestCase
 {
-    private SecureRandom rng = new SecureRandom();
+    private final SecureRandom RANDOM = new SecureRandom();
 
     public void testClientSendsExtensionButServerDoesNotSupportIt() throws Exception
     {
@@ -42,13 +42,13 @@ public class TlsRawKeysProtocolTest
                 (short) -1,
                 new short[] {CertificateType.RawPublicKey, CertificateType.X509},
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.X509,
                 (short) -1,
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
     }
@@ -70,13 +70,13 @@ public class TlsRawKeysProtocolTest
                 CertificateType.X509,
                 new short[] {CertificateType.X509},
                 new short[] {CertificateType.X509},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.X509,
                 CertificateType.X509,
                 new short[] {CertificateType.X509},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
 
@@ -105,13 +105,13 @@ public class TlsRawKeysProtocolTest
                 CertificateType.RawPublicKey,
                 new short[] {CertificateType.RawPublicKey},
                 new short[] {CertificateType.RawPublicKey},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.RawPublicKey,
                 CertificateType.RawPublicKey,
                 new short[] {CertificateType.RawPublicKey},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
     }
@@ -133,13 +133,13 @@ public class TlsRawKeysProtocolTest
                 (short) -1,
                 new short[] {CertificateType.RawPublicKey},
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.RawPublicKey,
                 (short) -1,
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
     }
@@ -161,13 +161,13 @@ public class TlsRawKeysProtocolTest
                 CertificateType.X509,
                 new short[] {CertificateType.RawPublicKey},
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.RawPublicKey,
                 CertificateType.X509,
                 null,
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
     }
@@ -189,13 +189,13 @@ public class TlsRawKeysProtocolTest
                 CertificateType.RawPublicKey,
                 null,
                 new short[] {CertificateType.RawPublicKey},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                 CertificateType.X509,
                 CertificateType.RawPublicKey,
                 new short[] {CertificateType.RawPublicKey},
-                generateKeypair(),
+                generateKeyPair(),
                 tlsVersion);
         pumpData(client, server);
     }
@@ -219,13 +219,13 @@ public class TlsRawKeysProtocolTest
                     CertificateType.RawPublicKey,
                     null,
                     new short[] {CertificateType.RawPublicKey},
-                    generateKeypair(),
+                    generateKeyPair(),
                     tlsVersion);
             MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                     CertificateType.X509,
                     CertificateType.X509,
                     new short[] {CertificateType.X509},
-                    generateKeypair(),
+                    generateKeyPair(),
                     tlsVersion);
             pumpData(client, server);
             fail("Should have caused unsupported_certificate alert");
@@ -255,13 +255,13 @@ public class TlsRawKeysProtocolTest
                     CertificateType.RawPublicKey,
                     new short[] {CertificateType.RawPublicKey},
                     null,
-                    generateKeypair(),
+                    generateKeyPair(),
                     tlsVersion);
             MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                     CertificateType.X509,
                     CertificateType.RawPublicKey,
                     new short[] {CertificateType.RawPublicKey},
-                    generateKeypair(),
+                    generateKeyPair(),
                     tlsVersion);
             pumpData(client, server);
             fail("Should have caused unsupported_certificate alert");
@@ -272,15 +272,13 @@ public class TlsRawKeysProtocolTest
         }
     }
 
-    private Ed25519PrivateKeyParameters generateKeypair()
+    private Ed25519PrivateKeyParameters generateKeyPair()
     {
-        return new Ed25519PrivateKeyParameters(rng);
+        return new Ed25519PrivateKeyParameters(RANDOM);
     }
 
     private void pumpData(TlsClient client, TlsServer server) throws Exception
     {
-        SecureRandom secureRandom = new SecureRandom();
-
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
@@ -298,7 +296,7 @@ public class TlsRawKeysProtocolTest
         int length = 1000;
 
         byte[] data = new byte[length];
-        secureRandom.nextBytes(data);
+        RANDOM.nextBytes(data);
 
         OutputStream output = clientProtocol.getOutputStream();
         output.write(data);
