@@ -9,7 +9,6 @@ package org.bouncycastle.crypto.digests;
  */
 
 import org.bouncycastle.crypto.CryptoServicePurpose;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Arrays;
 
@@ -87,7 +86,7 @@ public class Blake2xsDigest
      */
     public Blake2xsDigest()
     {
-        this(Blake2xsDigest.UNKNOWN_DIGEST_LENGTH, CryptoServicePurpose.ANY); //TODO: change this?
+        this(UNKNOWN_DIGEST_LENGTH, CryptoServicePurpose.ANY); //TODO: change this?
     }
 
     /**
@@ -125,7 +124,7 @@ public class Blake2xsDigest
      */
     public Blake2xsDigest(int digestBytes, byte[] key, byte[] salt, byte[] personalization, CryptoServicePurpose purpose)
     {
-        if (digestBytes < 1 || digestBytes > Blake2xsDigest.UNKNOWN_DIGEST_LENGTH)
+        if (digestBytes < 1 || digestBytes > UNKNOWN_DIGEST_LENGTH)
         {
             throw new IllegalArgumentException(
                 "BLAKE2xs digest length must be between 1 and 2^16-1");
@@ -134,7 +133,7 @@ public class Blake2xsDigest
         digestLength = digestBytes;
         nodeOffset = computeNodeOffset();
         this.purpose = purpose;
-        hash = new Blake2sDigest(Blake2xsDigest.DIGEST_LENGTH, key, salt, personalization, nodeOffset, purpose);
+        hash = new Blake2sDigest(DIGEST_LENGTH, key, salt, personalization, nodeOffset, purpose);
     }
 
     public Blake2xsDigest(Blake2xsDigest digest)
@@ -189,7 +188,7 @@ public class Blake2xsDigest
      */
     public long getUnknownMaxLength()
     {
-        return Blake2xsDigest.MAX_NUMBER_BLOCKS * Blake2xsDigest.DIGEST_LENGTH;
+        return MAX_NUMBER_BLOCKS * DIGEST_LENGTH;
     }
 
     /**
@@ -223,7 +222,7 @@ public class Blake2xsDigest
         hash.reset();
 
         h0 = null;
-        bufPos = Blake2xsDigest.DIGEST_LENGTH;
+        bufPos = DIGEST_LENGTH;
         digestPos = 0;
         blockPos = 0;
         nodeOffset = computeNodeOffset();
@@ -238,7 +237,7 @@ public class Blake2xsDigest
      */
     public int doFinal(byte[] out, int outOffset)
     {
-        return doFinal(out, outOffset, out.length);
+        return doFinal(out, outOffset, digestLength);
     }
 
     /**
@@ -275,7 +274,7 @@ public class Blake2xsDigest
             hash.doFinal(h0, 0);
         }
 
-        if (digestLength != Blake2xsDigest.UNKNOWN_DIGEST_LENGTH)
+        if (digestLength != UNKNOWN_DIGEST_LENGTH)
         {
             if (digestPos + outLen > digestLength)
             {
@@ -291,9 +290,9 @@ public class Blake2xsDigest
 
         for (int i = 0; i < outLen; i++)
         {
-            if (bufPos >= Blake2xsDigest.DIGEST_LENGTH)
+            if (bufPos >= DIGEST_LENGTH)
             {
-                Blake2sDigest h = new Blake2sDigest(computeStepLength(), Blake2xsDigest.DIGEST_LENGTH, nodeOffset);
+                Blake2sDigest h = new Blake2sDigest(computeStepLength(), DIGEST_LENGTH, nodeOffset);
                 h.update(h0, 0, h0.length);
 
                 Arrays.fill(buf, (byte)0);
@@ -302,7 +301,7 @@ public class Blake2xsDigest
                 nodeOffset++;
                 blockPos++;
             }
-            out[i] = buf[bufPos];
+            out[outOff + i] = buf[bufPos];
             bufPos++;
             digestPos++;
         }
@@ -314,12 +313,12 @@ public class Blake2xsDigest
     // always the maximum.
     private int computeStepLength()
     {
-        if (digestLength == Blake2xsDigest.UNKNOWN_DIGEST_LENGTH)
+        if (digestLength == UNKNOWN_DIGEST_LENGTH)
         {
-            return Blake2xsDigest.DIGEST_LENGTH;
+            return DIGEST_LENGTH;
         }
 
-        return Math.min(Blake2xsDigest.DIGEST_LENGTH, digestLength - digestPos);
+        return Math.min(DIGEST_LENGTH, digestLength - digestPos);
     }
 
     private long computeNodeOffset()
