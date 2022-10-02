@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.tls.Certificate;
@@ -22,15 +21,15 @@ import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsRawKeyCertificate;
 
+import junit.framework.TestCase;
+
 class MockRawKeysTlsServer extends DefaultTlsServer
 {
-
     private short serverCertType;
     private short clientCertType;
     private short[] allowedClientCertTypes;
@@ -40,11 +39,11 @@ class MockRawKeysTlsServer extends DefaultTlsServer
 
     Hashtable receivedClientExtensions;
 
-    MockRawKeysTlsServer(short serverCertType, short clientCertType,
-            short[] allowedClientCertTypes, Ed25519PrivateKeyParameters privateKey,
-            ProtocolVersion tlsVersion) throws Exception
+    MockRawKeysTlsServer(short serverCertType, short clientCertType, short[] allowedClientCertTypes,
+        Ed25519PrivateKeyParameters privateKey, ProtocolVersion tlsVersion) throws Exception
     {
         super(new BcTlsCrypto(new SecureRandom()));
+
         this.serverCertType = serverCertType;
         this.clientCertType = clientCertType;
         this.allowedClientCertTypes = allowedClientCertTypes;
@@ -68,19 +67,20 @@ class MockRawKeysTlsServer extends DefaultTlsServer
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return new ProtocolVersion[] {tlsVersion};
+        return new ProtocolVersion[]{ tlsVersion };
     }
 
     protected int[] getSupportedCipherSuites()
     {
-        return ProtocolVersion.TLSv13.equals(tlsVersion) ?
-                new int[] {CipherSuite.TLS_AES_128_GCM_SHA256} :
-                new int[] {CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256};
+        return TlsUtils.isTLSv13(tlsVersion)
+            ?   new int[]{ CipherSuite.TLS_AES_128_GCM_SHA256 }
+            :   new int[]{ CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 };
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException
     {
-        receivedClientExtensions = clientExtensions;
+        this.receivedClientExtensions = clientExtensions;
+
         super.processClientExtensions(clientExtensions);
     }
 
@@ -88,27 +88,23 @@ class MockRawKeysTlsServer extends DefaultTlsServer
     {
         if (credentials == null)
         {
+            BcTlsCrypto crypto = (BcTlsCrypto)getCrypto();
+
             switch (serverCertType)
             {
             case CertificateType.X509:
-                credentials = TlsTestUtils.loadSignerCredentials(
-                        context, context.getSecurityParametersHandshake().getClientSigAlgs(),
-                        SignatureAlgorithm.ed25519, "x509-client-ed25519.pem", "x509-client-key-ed25519.pem");
+                credentials = TlsTestUtils.loadSignerCredentials(context,
+                    context.getSecurityParametersHandshake().getClientSigAlgs(), SignatureAlgorithm.ed25519,
+                    "x509-client-ed25519.pem", "x509-client-key-ed25519.pem");
                 break;
             case CertificateType.RawPublicKey:
-                TlsCertificate rawKeyCert = new BcTlsRawKeyCertificate(
-                    (BcTlsCrypto)getCrypto(),
-                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(privateKey.generatePublicKey()));
-                Certificate cert = new Certificate(
-                        CertificateType.RawPublicKey,
-                        TlsUtils.isTLSv13(context) ? TlsUtils.EMPTY_BYTES : null,
-                        new CertificateEntry[] {new CertificateEntry(rawKeyCert, null)});
-                credentials = new BcDefaultTlsCredentialedSigner(
-                        new TlsCryptoParameters(context),
-                    (BcTlsCrypto)getCrypto(),
-                        privateKey,
-                        cert,
-                        SignatureAndHashAlgorithm.ed25519);
+                TlsCertificate rawKeyCert = new BcTlsRawKeyCertificate(crypto,
+                    SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(privateKey.generatePublicKey()));
+                Certificate cert = new Certificate(CertificateType.RawPublicKey,
+                    TlsUtils.isTLSv13(context) ? TlsUtils.EMPTY_BYTES : null,
+                    new CertificateEntry[]{ new CertificateEntry(rawKeyCert, null) });
+                credentials = new BcDefaultTlsCredentialedSigner(new TlsCryptoParameters(context),
+                    crypto, privateKey, cert, SignatureAndHashAlgorithm.ed25519);
                 break;
             default:
                 throw new IllegalArgumentException("Only supports X509 and raw keys");
@@ -140,7 +136,7 @@ class MockRawKeysTlsServer extends DefaultTlsServer
             return null;
         }
 
-        short[] certificateTypes = new short[] {ClientCertificateType.ecdsa_sign};
+        short[] certificateTypes = new short[]{ ClientCertificateType.ecdsa_sign };
 
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
@@ -148,18 +144,13 @@ class MockRawKeysTlsServer extends DefaultTlsServer
             serverSigAlgs = TlsUtils.getDefaultSupportedSignatureAlgorithms(context);
         }
 
-        return ProtocolVersion.TLSv13.equals(tlsVersion) ?
-                new CertificateRequest(TlsUtils.EMPTY_BYTES, serverSigAlgs, null, null) :
-                new CertificateRequest(certificateTypes, serverSigAlgs, null);
+        return TlsUtils.isTLSv13(tlsVersion)
+            ?   new CertificateRequest(TlsUtils.EMPTY_BYTES, serverSigAlgs, null, null)
+            :   new CertificateRequest(certificateTypes, serverSigAlgs, null);
     }
 
     public void notifyClientCertificate(Certificate clientCertificate) throws IOException
     {
         TestCase.assertEquals("client certificate is the wrong type", clientCertType, clientCertificate.getCertificateType());
-    }
-
-    public TlsCrypto getCrypto()
-    {
-        return super.getCrypto();
     }
 }
