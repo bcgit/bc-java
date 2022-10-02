@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.test;
 
+import java.util.Arrays;
+import java.util.Random;
+
 import org.bouncycastle.crypto.digests.Blake2xsDigest;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -2579,38 +2582,44 @@ public class Blake2xsDigestTest
 
     private void testBlake2xsTestVectors()
     {
+        Random random = new Random();
+
         for (int i = 0; i != Blake2xsDigestTest.xofTestVectors.length; i++)
         {
             String[] vector = Blake2xsDigestTest.xofTestVectors[i];
             byte[] input = Hex.decode(vector[0]);
             byte[] key = Hex.decode(vector[1]);
+            byte[] expected = Hex.decode(vector[2]);
 
-            Blake2xsDigest h = new Blake2xsDigest(vector[2].length() / 2, key);
+            int digestSize = expected.length;
+            Blake2xsDigest h = new Blake2xsDigest(digestSize, key);
             h.update(input, 0, input.length);
 
-            byte[] out = new byte[vector[2].length() / 2];
-            h.doFinal(out, 0);
-            if (!areEqual(out, Hex.decode(vector[2])))
+            byte[] out = new byte[16 + digestSize];
+            int outOff = 1 + random.nextInt(16);
+            h.doFinal(out, outOff);
+            if (!areEqual(out, outOff, outOff + digestSize, expected, 0, digestSize))
             {
-                fail("BLAKE2xs mismatch on test vector ", vector[2], Hex.toHexString(out));
+                fail("BLAKE2xs mismatch on test vector ", vector[2], Hex.toHexString(out, outOff, digestSize));
             }
 
-            out = new byte[vector[2].length() / 2];
+            Arrays.fill(out, (byte)0);
+            outOff = 1 + random.nextInt(16);
+
             h.update(input, 0, input.length);
             Blake2xsDigest clone = new Blake2xsDigest(h);
 
-            h.doOutput(out, 0, out.length);
-            if (!areEqual(out, Hex.decode(vector[2])))
+            h.doOutput(out, outOff, digestSize);
+            if (!areEqual(out, outOff, outOff + digestSize, expected, 0, digestSize))
             {
-                fail("BLAKE2xs mismatch on test vector after a reset", vector[2], Hex.toHexString(out));
+                fail("BLAKE2xs mismatch on test vector after a reset", vector[2], Hex.toHexString(out, outOff, digestSize));
             }
 
-            byte[] outClone = new byte[out.length];
+            byte[] outClone = new byte[digestSize];
             clone.doFinal(outClone, 0, outClone.length);
-            if (!areEqual(out, outClone))
+            if (!areEqual(outClone, expected))
             {
-                fail("BLAKE2xs mismatch on test vector against a clone",
-                    vector[2], Hex.toHexString(outClone));
+                fail("BLAKE2xs mismatch on test vector against a clone", vector[2], Hex.toHexString(outClone));
             }
         }
     }
