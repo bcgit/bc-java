@@ -5,12 +5,15 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
-import org.bouncycastle.crypto.kems.ECIESKeyEncapsulation;
+import org.bouncycastle.crypto.kems.ECIESKEMExtractor;
+import org.bouncycastle.crypto.kems.ECIESKEMGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -39,20 +42,23 @@ public class ECIESKeyEncapsulationTest
         AsymmetricCipherKeyPair    keys      = ecGen.generateKeyPair();
         
         // Set ECIES-KEM parameters
-        ECIESKeyEncapsulation     kem;
+        ECIESKEMGenerator kemGen;
+        ECIESKEMExtractor kemExt;
         KDF2BytesGenerator        kdf = new KDF2BytesGenerator(new SHA1Digest());
         SecureRandom            rnd = new SecureRandom();
         byte[]                    out = new byte[57];
         KeyParameter            key1, key2;
 
         // Test basic ECIES-KEM
-        kem = new ECIESKeyEncapsulation(kdf, rnd);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd);
         
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
         
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
@@ -60,27 +66,30 @@ public class ECIESKeyEncapsulationTest
         }
 
         // Test ECIES-KEM using new cofactor mode
-        kem = new ECIESKeyEncapsulation(kdf, rnd, true, false, false);
-        
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
-        
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd, true, false, false);
+
+        secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, true, false, false);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
             fail("failed cofactor test");
         }
-
         // Test ECIES-KEM using old cofactor mode
-        kem = new ECIESKeyEncapsulation(kdf, rnd, false, true, false);
-        
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
-    
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd, false, true, false);
+
+        secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, false, true, false);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
@@ -88,13 +97,15 @@ public class ECIESKeyEncapsulationTest
         }
 
         // Test ECIES-KEM using single hash mode
-        kem = new ECIESKeyEncapsulation(kdf, rnd, false, false, true);
-        
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
-        
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd, false, false, true);
+
+        secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, false, false, true);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
@@ -102,13 +113,15 @@ public class ECIESKeyEncapsulationTest
         }
 
         // Test ECIES-KEM using new cofactor mode and single hash mode
-        kem = new ECIESKeyEncapsulation(kdf, rnd, true, false, true);
-        
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
-        
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd, true, false, true);
+
+        secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, true, false, true);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
@@ -116,13 +129,15 @@ public class ECIESKeyEncapsulationTest
         }
 
         // Test ECIES-KEM using old cofactor mode and single hash mode
-        kem = new ECIESKeyEncapsulation(kdf, rnd, false, true, true);
-        
-        kem.init(keys.getPublic());
-        key1 = (KeyParameter)kem.encrypt(out, 128);
-        
-        kem.init(keys.getPrivate());
-        key2 = (KeyParameter)kem.decrypt(out, 128);
+        kemGen = new ECIESKEMGenerator(128 / 8, kdf, rnd, false, true, true);
+
+        secEnc = kemGen.generateEncapsulated(keys.getPublic());
+
+        key1 = new KeyParameter(secEnc.getSecret());
+
+        kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)keys.getPrivate(), 128 / 8, kdf, false, true, true);
+
+        key2 = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
 
         if (!areEqual(key1.getKey(), key2.getKey()))
         {
