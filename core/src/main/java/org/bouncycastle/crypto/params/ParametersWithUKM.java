@@ -18,13 +18,13 @@ public class ParametersWithUKM
     public ParametersWithUKM(
         CipherParameters    parameters,
         byte[] ukm,
-        int                 ivOff,
-        int                 ivLen)
+        int                 ukmOff,
+        int                 ukmLen)
     {
-        this.ukm = new byte[ivLen];
+        this.ukm = new byte[ukmLen];
         this.parameters = parameters;
 
-        System.arraycopy(ukm, ivOff, this.ukm, 0, ivLen);
+        System.arraycopy(ukm, ukmOff, this.ukm, 0, ukmLen);
     }
 
     public byte[] getUKM()
