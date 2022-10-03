@@ -17,7 +17,7 @@ import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
+import org.bouncycastle.crypto.signers.ECGOST3410Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -40,7 +40,7 @@ public class ECGOST2012SignatureSpi512
     public ECGOST2012SignatureSpi512()
     {
         this.digest = new GOST3411_2012_512Digest();
-        this.signer = new ECGOST3410_2012Signer();
+        this.signer = new ECGOST3410Signer();
     }
 
     protected void engineInitVerify(
