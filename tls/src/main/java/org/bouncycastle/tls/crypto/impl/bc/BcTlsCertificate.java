@@ -7,43 +7,14 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.engines.RSAEngine;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.DHPublicKeyParameters;
-import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
-import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.signers.DSADigestSigner;
-import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.Ed25519Signer;
-import org.bouncycastle.crypto.signers.Ed448Signer;
-import org.bouncycastle.crypto.signers.PSSSigner;
-import org.bouncycastle.crypto.signers.RSADigestSigner;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
-import org.bouncycastle.tls.crypto.TlsCertificateRole;
-import org.bouncycastle.tls.crypto.TlsCryptoUtils;
-import org.bouncycastle.tls.crypto.TlsEncryptor;
-import org.bouncycastle.tls.crypto.TlsVerifier;
-import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
-import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -147,14 +118,5 @@ public class BcTlsCertificate
             }
         }
         return true;
-    }
-
-    public void validateKeyUsage(int keyUsageBits)
-        throws IOException
-    {
-        if (!supportsKeyUsage(keyUsageBits))
-        {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
-        }
     }
 }
