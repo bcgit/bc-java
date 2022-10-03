@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Arrays;
 
 /**
  * GOST VKO key agreement class - RFC 7836 Section 4.3
@@ -28,24 +28,30 @@ public class ECVKOAgreement
         this.digest = digest;
     }
 
-    public void init(
-        CipherParameters key)
+    public void init(CipherParameters key)
     {
         ParametersWithUKM p = (ParametersWithUKM)key;
 
         this.key = (ECPrivateKeyParameters)p.getParameters();
-        this.ukm = toInteger(p.getUKM());
+        this.ukm = new BigInteger(1, Arrays.reverse(p.getUKM()));
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECVKO", this.key));
     }
 
+    public int getAgreementSize()
+    {
+        return digest.getDigestSize();
+    }
+
+    /**
+     * @deprecated Will be removed
+     */
     public int getFieldSize()
     {
         return (key.getParameters().getCurve().getFieldSize() + 7) / 8;
     }
 
-    public byte[] calculateAgreement(
-        CipherParameters pubKey)
+    public byte[] calculateAgreement(CipherParameters pubKey)
     {
         ECPublicKeyParameters pub = (ECPublicKeyParameters)pubKey;
         ECDomainParameters params = key.getParameters();
@@ -60,7 +66,7 @@ public class ECVKOAgreement
         ECPoint pubPoint = ECAlgorithms.cleanPoint(params.getCurve(), pub.getQ());
         if (pubPoint.isInfinity())
         {
-            throw new IllegalStateException("Infinity is not a valid public key for ECDHC");
+            throw new IllegalStateException("Infinity is not a valid public key for ECVKO");
         }
 
         ECPoint P = pubPoint.multiply(hd).normalize();
@@ -70,55 +76,16 @@ public class ECVKOAgreement
             throw new IllegalStateException("Infinity is not a valid agreement value for ECVKO");
         }
 
-        return fromPoint(P);
-    }
+        byte[] encoding = P.getEncoded(false);
+        int encodingLength = encoding.length;
+        int feSize = encodingLength / 2;
 
-    private static BigInteger toInteger(byte[] ukm)
-    {
-        byte[] v = new byte[ukm.length];
-
-        for (int i = 0; i != v.length; i++)
-        {
-            v[i] = ukm[ukm.length - i - 1];
-        }
-
-        return new BigInteger(1, v);
-    }
-
-    private byte[] fromPoint(ECPoint v)
-    {
-        BigInteger bX = v.getAffineXCoord().toBigInteger();
-        BigInteger bY = v.getAffineYCoord().toBigInteger();
-
-        int size;
-        if (bX.toByteArray().length > 33)
-        {
-            size = 64;
-        }
-        else
-        {
-            size = 32;
-        }
-
-        byte[] bytes = new byte[2 * size];
-        byte[] x = BigIntegers.asUnsignedByteArray(size, bX);
-        byte[] y = BigIntegers.asUnsignedByteArray(size, bY);
-
-        for (int i = 0; i != size; i++)
-        {
-            bytes[i] = x[size - i - 1];
-        }
-        for (int i = 0; i != size; i++)
-        {
-            bytes[size + i] = y[size - i - 1];
-        }
-
-        digest.update(bytes, 0, bytes.length);
+        Arrays.reverseInPlace(encoding, encodingLength - feSize * 2, feSize);
+        Arrays.reverseInPlace(encoding, encodingLength - feSize    , feSize);
 
         byte[] rv = new byte[digest.getDigestSize()];
-
+        digest.update(encoding, encodingLength - feSize * 2, feSize * 2);
         digest.doFinal(rv, 0);
-
         return rv;
     }
 }
