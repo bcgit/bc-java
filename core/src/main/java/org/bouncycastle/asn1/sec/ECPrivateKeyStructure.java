@@ -72,7 +72,6 @@ public class ECPrivateKeyStructure
         if (publicKey != null)
         {
             v.add(new DERTaggedObject(true, 1, publicKey));
-            v.add(new DERTaggedObject(true, 1, publicKey));
         }
 
         seq = new DERSequence(v);
@@ -108,7 +107,7 @@ public class ECPrivateKeyStructure
                 ASN1TaggedObject tag = (ASN1TaggedObject)obj;
                 if (tag.getTagNo() == tagNo)
                 {
-                    return (ASN1Primitive)((ASN1Encodable)tag.getObject()).toASN1Primitive();
+                    return (ASN1Primitive)((ASN1Encodable)tag.getExplicitBaseObject()).toASN1Primitive();
                 }
             }
         }
