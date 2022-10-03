@@ -38,7 +38,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.signers.ECGOST3410_2012Signer;
+import org.bouncycastle.crypto.signers.ECGOST3410Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -425,7 +425,7 @@ public class GOST3410Test
         PrivateKey sKey = f.generatePrivate(priKey);
         PublicKey vKey = f.generatePublic(pubKey);
 
-        ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
+        ECGOST3410Signer signer = new ECGOST3410Signer();
         CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
 
         signer.init(true, new ParametersWithRandom(param, k));
@@ -583,7 +583,7 @@ public class GOST3410Test
         PublicKey vKey = f.generatePublic(pubKey);
 
 
-        ECGOST3410_2012Signer signer = new ECGOST3410_2012Signer();
+        ECGOST3410Signer signer = new ECGOST3410Signer();
         CipherParameters param = ECUtil.generatePrivateKeyParameter(sKey);
 
         signer.init(true, new ParametersWithRandom(param, k));
