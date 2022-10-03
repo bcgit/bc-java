@@ -39,6 +39,7 @@ public class GOST
             provider.addAlgorithm("Alg.Alias.Signature.GOST3411withGOST3410", "GOST3410");
             provider.addAlgorithm("Alg.Alias.Signature.GOST3411WITHGOST3410", "GOST3410");
             provider.addAlgorithm("Alg.Alias.Signature.GOST3411WithGOST3410", "GOST3410");
+            provider.addAlgorithm("Alg.Alias.Signature.GOST3411/GOST3410", "GOST3410");
             provider.addAlgorithm("Alg.Alias.Signature." + CryptoProObjectIdentifiers.gostR3411_94_with_gostR3410_94, "GOST3410");
 
 
