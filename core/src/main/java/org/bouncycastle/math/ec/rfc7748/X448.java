@@ -53,6 +53,11 @@ public abstract class X448
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
     {
+        if (k.length != SCALAR_SIZE)
+        {
+            throw new IllegalArgumentException("k");
+        }
+
         random.nextBytes(k);
 
         k[0] &= 0xFC;
