@@ -6,7 +6,11 @@ import java.util.Vector;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.NaccacheSternKeyGenerationParameters;
 import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.NaccacheSternPrivateKeyParameters;
@@ -44,6 +48,9 @@ public class NaccacheSternKeyPairGenerator
     public void init(KeyGenerationParameters param)
     {
         this.param = (NaccacheSternKeyGenerationParameters)param;
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+                       "NaccacheStern KeyGen", ConstraintUtils.bitsOfSecurityForFF(param.getStrength()), param, CryptoServicePurpose.KEYGEN));
     }
 
     /*
