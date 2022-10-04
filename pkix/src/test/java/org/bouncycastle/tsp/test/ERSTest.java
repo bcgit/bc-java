@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
@@ -1066,56 +1067,48 @@ public class ERSTest
     public void testDirUtil()
         throws Exception
     {
-        File rootDir = File.createTempFile("ers", ".dir");
-        rootDir.delete();
-        if (rootDir.mkdir())
-        {
-            DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
-            DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+        File rootDir = Files.createTempDirectory("ers" + ".dir").toFile();
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
 
-            File h1 = new File(rootDir, "h1");
-            OutputStream fOut = new FileOutputStream(h1);
-            fOut.write(H1_DATA);
-            fOut.close();
+        File h1 = new File(rootDir, "h1");
+        OutputStream fOut = new FileOutputStream(h1);
+        fOut.write(H1_DATA);
+        fOut.close();
 
-            File h2 = new File(rootDir, "h2");
-            fOut = new FileOutputStream(h2);
-            fOut.write(H2_DATA);
-            fOut.close();
+        File h2 = new File(rootDir, "h2");
+        fOut = new FileOutputStream(h2);
+        fOut.write(H2_DATA);
+        fOut.close();
 
-            File h3 = new File(rootDir, "h3");
-            h3.mkdir();
-            fOut = new FileOutputStream(new File(h3, "a"));
-            fOut.write(H3A_DATA);
-            fOut.close();
-            fOut = new FileOutputStream(new File(h3, "b"));
-            fOut.write(H3B_DATA);
-            fOut.close();
-            fOut = new FileOutputStream(new File(h3, "c"));
-            fOut.write(H3C_DATA);
-            fOut.close();
+        File h3 = new File(rootDir, "h3");
+        h3.mkdir();
+        fOut = new FileOutputStream(new File(h3, "a"));
+        fOut.write(H3A_DATA);
+        fOut.close();
+        fOut = new FileOutputStream(new File(h3, "b"));
+        fOut.write(H3B_DATA);
+        fOut.close();
+        fOut = new FileOutputStream(new File(h3, "c"));
+        fOut.write(H3C_DATA);
+        fOut.close();
 
-            ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
 
-            ersGen.addData(new ERSFileData(h1));
-            ersGen.addData(new ERSFileData(h2));
-            ersGen.addData(new ERSDirectoryDataGroup(h3));
+        ersGen.addData(new ERSFileData(h1));
+        ersGen.addData(new ERSFileData(h2));
+        ersGen.addData(new ERSDirectoryDataGroup(h3));
 
-            TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
 
-            tspReqGen.setCertReq(true);
+        tspReqGen.setCertReq(true);
 
-            TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
-   
-            Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+        TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
+
+        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                 tspReq.getMessageImprintDigest()));
 
-            deleteDirectory(rootDir);
-        }
-        else
-        {
-            throw new Exception("can't create temp dir");
-        }
+        deleteDirectory(rootDir);
     }
 
     public void testBSIData()
