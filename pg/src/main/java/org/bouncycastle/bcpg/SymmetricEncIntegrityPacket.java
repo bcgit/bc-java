@@ -18,4 +18,9 @@ public class SymmetricEncIntegrityPacket
 
         version = in.read();
     }
+
+    public int getVersion()
+    {
+        return version;
+    }
 }

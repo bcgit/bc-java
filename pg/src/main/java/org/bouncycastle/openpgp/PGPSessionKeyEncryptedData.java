@@ -2,7 +2,9 @@ package org.bouncycastle.openpgp;
 
 import java.io.InputStream;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.InputStreamPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 
 /**
@@ -11,30 +13,52 @@ import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 public class PGPSessionKeyEncryptedData
     extends PGPSymmetricKeyEncryptedData
 {
-    private final PGPSessionKey sessionKey;
-
     PGPSessionKeyEncryptedData(InputStreamPacket encData)
     {
         super(encData);
-        this.sessionKey = null;
     }
 
     @Override
     public int getAlgorithm()
     {
-        return sessionKey.getAlgorithm();
+        if (encData instanceof AEADEncDataPacket)
+        {
+            AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
+
+            return aeadData.getAlgorithm();
+        }
+        else
+        {
+            return -1; // unknown
+        }
     }
 
-    public PGPSessionKey getSessionKey()
+    @Override
+    public int getVersion()
     {
-        return sessionKey;
+        if (encData instanceof AEADEncDataPacket)
+        {
+            AEADEncDataPacket aeadData = (AEADEncDataPacket)encData;
+
+            return aeadData.getVersion();
+        }
+        else if (encData instanceof SymmetricEncIntegrityPacket)
+        {
+            SymmetricEncIntegrityPacket symIntData = (SymmetricEncIntegrityPacket)encData;
+
+            return symIntData.getVersion();
+        }
+        else
+        {
+            return -1;    // unmarked
+        }
     }
 
     public InputStream getDataStream(
         SessionKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        encStream = createDecryptionStream(dataDecryptorFactory, sessionKey);
+        encStream = createDecryptionStream(dataDecryptorFactory, dataDecryptorFactory.getSessionKey());
 
         return encStream;
     }
