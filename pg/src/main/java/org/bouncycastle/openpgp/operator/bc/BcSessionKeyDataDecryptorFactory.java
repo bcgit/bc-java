@@ -19,18 +19,6 @@ public class BcSessionKeyDataDecryptorFactory
         this.sessionKey = sessionKey;
     }
 
-    public byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] seckKeyData)
-        throws PGPException
-    {
-        throw new IllegalStateException("trying to recover session data from session key!");
-    }
-
-    public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
-        throws PGPException
-    {
-        throw new IllegalStateException("trying to recover session data from session key!");
-    }
-
     public PGPSessionKey getSessionKey()
     {
         return sessionKey;
