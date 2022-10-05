@@ -17,7 +17,7 @@ import org.bouncycastle.util.Arrays;
  * </p>
  */
 public class PGPPBEEncryptedData
-    extends PGPSymmetricEncryptedData
+    extends PGPSymmetricKeyEncryptedData
 {
     SymmetricKeyEncSessionPacket keyData;
 
