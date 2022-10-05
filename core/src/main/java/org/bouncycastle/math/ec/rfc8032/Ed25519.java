@@ -358,6 +358,11 @@ public abstract class Ed25519
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
     {
+        if (k.length != SECRET_KEY_SIZE)
+        {
+            throw new IllegalArgumentException("k");
+        }
+
         random.nextBytes(k);
     }
 
