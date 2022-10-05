@@ -39,7 +39,7 @@ public class PGPEncryptedDataList
     private static final Logger LOG = Logger.getLogger(PGPEncryptedDataList.class.getName());
 
     List<PGPEncryptedData> methods = new ArrayList<PGPEncryptedData>();
-    InputStreamPacket      data;
+    InputStreamPacket data;
 
     /**
      * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
@@ -48,6 +48,7 @@ public class PGPEncryptedDataList
      * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param encData a byte array containing an encrypted stream.
      * @throws IOException if an error occurs reading from the PGP input.
      */
@@ -65,6 +66,7 @@ public class PGPEncryptedDataList
      * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param inStream the input stream being read.
      * @throws IOException if an error occurs reading from the PGP input.
      */
@@ -82,11 +84,12 @@ public class PGPEncryptedDataList
      * The next packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param pIn the PGP object stream being read.
      * @throws IOException if an error occurs reading from the PGP input.
      */
     public PGPEncryptedDataList(
-        BCPGInputStream    pIn)
+        BCPGInputStream pIn)
         throws IOException
     {
         List list = new ArrayList();
@@ -130,26 +133,13 @@ public class PGPEncryptedDataList
     }
 
     /**
-     * Add a decryption method using a {@link PGPSessionKey}.
-     * This method can be used to decrypt messages which do not contain a SKESK or PKESK packet using a
-     * session key.
-     *
-     * @param sessionKey session key for message decryption
-     * @return session key encrypted data
-     */
-    public PGPSessionKeyEncryptedData addSessionKeyDecryptionMethod(PGPSessionKey sessionKey)
-    {
-        PGPSessionKeyEncryptedData sessionKeyEncryptedData = new PGPSessionKeyEncryptedData(sessionKey, data);
-        methods.add(sessionKeyEncryptedData);
-        return sessionKeyEncryptedData;
-    }
-
-    /** Checks whether the packet is integrity protected.
+     * Checks whether the packet is integrity protected.
      *
      * @return <code>true</code> if there is a modification detection code package associated with
      * this stream
      */
-    public boolean isIntegrityProtected() {
+    public boolean isIntegrityProtected()
+    {
         return data instanceof SymmetricEncIntegrityPacket;
     }
 
@@ -159,7 +149,7 @@ public class PGPEncryptedDataList
      * @param index the encryption method to obtain (0 based).
      */
     public PGPEncryptedData get(
-        int    index)
+        int index)
     {
         return (PGPEncryptedData)methods.get(index);
     }
@@ -195,5 +185,17 @@ public class PGPEncryptedDataList
     public Iterator<PGPEncryptedData> iterator()
     {
         return getEncryptedDataObjects();
+    }
+
+    /**
+     * Create a decryption method using a {@link PGPSessionKey}. This method can be used to decrypt messages which do not
+     * contain a SKESK or PKESK packet using a session key.
+     *
+     * @param sessionKey session key for message decryption
+     * @return session key encrypted data
+     */
+    public PGPSessionKeyEncryptedData makeSessionKeyEncryptedData(PGPSessionKey sessionKey)
+    {
+        return new PGPSessionKeyEncryptedData(sessionKey, data);
     }
 }
