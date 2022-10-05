@@ -214,10 +214,9 @@ public class PGPSessionKeyTest
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
-        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.iterator().next();
+        PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
-        SessionKeyDataDecryptorFactory decryptorFactory = new JceSessionKeyDataDecryptorFactoryBuilder().build(
-            new PGPSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY)));
+        SessionKeyDataDecryptorFactory decryptorFactory = new JceSessionKeyDataDecryptorFactoryBuilder().build(new PGPSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY)));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);
@@ -292,9 +291,10 @@ public class PGPSessionKeyTest
         isEquals(0, encryptedData.size()); // there is no encrypted session key packet
 
         // Add decryption method using a session key
-        PGPSessionKeyEncryptedData sessionKeyEncData = encryptedData.makeSessionKeyEncryptedData(sessionKey);
+        PGPSessionKeyEncryptedData sessionKeyEncData = encryptedData.extractSessionKeyEncryptedData();
 
         SessionKeyDataDecryptorFactory decryptorFactory = new BcSessionKeyDataDecryptorFactory(sessionKey);
+
         InputStream decrypted = sessionKeyEncData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);

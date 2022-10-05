@@ -5,15 +5,18 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 
+/**
+ * The basis of PGP encrypted data - encrypted data encrypted using a symmetric session key.
+ */
 public class PGPSessionKeyEncryptedData
     extends PGPSymmetricEncryptedData
 {
     private final PGPSessionKey sessionKey;
 
-    PGPSessionKeyEncryptedData(PGPSessionKey sessionKey, InputStreamPacket encData)
+    PGPSessionKeyEncryptedData(InputStreamPacket encData)
     {
         super(encData);
-        this.sessionKey = sessionKey;
+        this.sessionKey = null;
     }
 
     @Override
