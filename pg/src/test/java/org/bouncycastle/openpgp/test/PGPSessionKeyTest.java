@@ -150,7 +150,7 @@ public class PGPSessionKeyTest
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
-        PGPPublicKeyEncryptedData encryptedData = (PGPPublicKeyEncryptedData)encryptedDataList.iterator().next();
+        PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
         SessionKeyDataDecryptorFactory decryptorFactory = new BcSessionKeyDataDecryptorFactory(new PGPSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY)));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
@@ -172,7 +172,7 @@ public class PGPSessionKeyTest
         ArmoredInputStream msgArmorIn = new ArmoredInputStream(msgIn);
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
-        PGPPublicKeyEncryptedData encryptedData = (PGPPublicKeyEncryptedData)encryptedDataList.iterator().next();
+        PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
         SessionKeyDataDecryptorFactory decryptorFactory =
             new JceSessionKeyDataDecryptorFactoryBuilder().build(new PGPSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY)));
@@ -240,7 +240,7 @@ public class PGPSessionKeyTest
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(msgArmorIn);
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
-        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.iterator().next();
+        PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
         SessionKeyDataDecryptorFactory decryptorFactory = new BcSessionKeyDataDecryptorFactory(new PGPSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY)));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
