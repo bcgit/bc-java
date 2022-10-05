@@ -14,6 +14,7 @@ import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.util.Iterable;
@@ -126,6 +127,30 @@ public class PGPEncryptedDataList
                 methods.add(new PGPPublicKeyEncryptedData((PublicKeyEncSessionPacket)list.get(i), data));
             }
         }
+    }
+
+    /**
+     * Add a decryption method using a {@link PGPSessionKey}.
+     * This method can be used to decrypt messages which do not contain a SKESK or PKESK packet using a
+     * session key.
+     *
+     * @param sessionKey session key for message decryption
+     * @return session key encrypted data
+     */
+    public PGPSessionKeyEncryptedData addSessionKeyDecryptionMethod(PGPSessionKey sessionKey)
+    {
+        PGPSessionKeyEncryptedData sessionKeyEncryptedData = new PGPSessionKeyEncryptedData(sessionKey, data);
+        methods.add(sessionKeyEncryptedData);
+        return sessionKeyEncryptedData;
+    }
+
+    /** Checks whether the packet is integrity protected.
+     *
+     * @return <code>true</code> if there is a modification detection code package associated with
+     * this stream
+     */
+    public boolean isIntegrityProtected() {
+        return data instanceof SymmetricEncIntegrityPacket;
     }
 
     /**
