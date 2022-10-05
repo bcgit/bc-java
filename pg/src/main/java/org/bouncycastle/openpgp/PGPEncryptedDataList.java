@@ -191,11 +191,10 @@ public class PGPEncryptedDataList
      * Create a decryption method using a {@link PGPSessionKey}. This method can be used to decrypt messages which do not
      * contain a SKESK or PKESK packet using a session key.
      *
-     * @param sessionKey session key for message decryption
      * @return session key encrypted data
      */
-    public PGPSessionKeyEncryptedData makeSessionKeyEncryptedData(PGPSessionKey sessionKey)
+    public PGPSessionKeyEncryptedData extractSessionKeyEncryptedData()
     {
-        return new PGPSessionKeyEncryptedData(sessionKey, data);
+        return new PGPSessionKeyEncryptedData(data);
     }
 }
