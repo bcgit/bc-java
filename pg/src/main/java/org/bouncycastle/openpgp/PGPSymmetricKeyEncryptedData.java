@@ -11,10 +11,10 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.util.io.TeeInputStream;
 
-public class PGPSymmetricEncryptedData
+public class PGPSymmetricKeyEncryptedData
     extends PGPEncryptedData
 {
-    protected PGPSymmetricEncryptedData(InputStreamPacket encData)
+    protected PGPSymmetricKeyEncryptedData(InputStreamPacket encData)
     {
         super(encData);
     }

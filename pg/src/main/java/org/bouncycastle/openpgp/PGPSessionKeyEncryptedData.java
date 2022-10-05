@@ -9,7 +9,7 @@ import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
  * The basis of PGP encrypted data - encrypted data encrypted using a symmetric session key.
  */
 public class PGPSessionKeyEncryptedData
-    extends PGPSymmetricEncryptedData
+    extends PGPSymmetricKeyEncryptedData
 {
     private final PGPSessionKey sessionKey;
 
