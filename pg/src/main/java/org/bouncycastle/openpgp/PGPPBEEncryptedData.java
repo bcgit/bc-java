@@ -112,6 +112,9 @@ public class PGPPBEEncryptedData
         }
     }
 
+    /**
+     * @deprecated will be removed in 1.74, use PGPEncryptedDataList.extractSessionKeyEncryptedData() and then apply the dataDecryptorFactory.
+     */
     public InputStream getDataStream(
         SessionKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
