@@ -2,6 +2,7 @@
 
 <project name="crypto.bcbuild" default="build" basedir=".">
 
+    <property file="bc-build.user.properties" />
     <property file="bc-build.properties" />
     <property environment="env" />
 
@@ -971,7 +972,7 @@
         <property name="test.target.src.dir" value="${test.target.dir}/src" />
 
         <mkdir dir="${basedir}/${build.dir}/${target.prefix}" />
-        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed">
+        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed" printsummary="${junit.printsummary}">
             <classpath>
                 <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">

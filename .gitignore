@@ -26,6 +26,8 @@ tls/out
 test/out
 codesigning.jks
 
+bc-build.user.properties
+
 /out/production/core/META-INF/core.kotlin_module
 /out/production/mail/org/bouncycastle/mail/smime/validator/SignedMailValidatorMessages.properties
 /out/production/mail/org/bouncycastle/mail/smime/validator/SignedMailValidatorMessages_de.properties
