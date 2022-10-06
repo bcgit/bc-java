@@ -51,7 +51,7 @@ class SeedDerive
 
     public byte[] deriveSeed(byte[] target, int offset)
     {
-        if (target.length < digest.getDigestSize())
+        if (target.length - offset < digest.getDigestSize())
         {
             throw new IllegalArgumentException("target length is less than digest size.");
         }
