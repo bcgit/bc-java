@@ -190,6 +190,9 @@ subprojects {
 
     filter {
       includeTestsMatching "AllTest*"
+      if (project.hasProperty('excludeTests')) {
+        excludeTestsMatching "${excludeTests}"
+      }
     }
   }
 
