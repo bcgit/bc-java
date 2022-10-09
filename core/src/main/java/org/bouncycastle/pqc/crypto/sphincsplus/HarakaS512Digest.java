@@ -22,15 +22,14 @@ class HarakaS512Digest
         return "HarakaS-512";
     }
 
-    @Override
     public int getDigestSize()
     {
-        return 64;
+        return 32;
     }
 
     public void update(byte in)
     {
-        if (off + 1 > 64)
+        if (off > 64 - 1)
         {
             throw new IllegalArgumentException("total input cannot be more than 64 bytes");
         }
@@ -39,7 +38,7 @@ class HarakaS512Digest
 
     public void update(byte[] in, int inOff, int len)
     {
-        if (off + len > 64)
+        if (off > 64 - len)
         {
             throw new IllegalArgumentException("total input cannot be more than 64 bytes");
         }
@@ -47,19 +46,15 @@ class HarakaS512Digest
         off += len;
     }
 
-
     public int doFinal(byte[] out, int outOff)
     {
+        // TODO Check received all 64 bytes of input?
+
         byte[] s = new byte[64];
         haraka512Perm(s);
-        for (int i = 0; i < 64; ++i)
-        {
-            s[i] ^= buffer[i];
-        }
-        System.arraycopy(s, 8, out, outOff, 8);
-        System.arraycopy(s, 24, out, outOff + 8, 8);
-        System.arraycopy(s, 32, out, outOff + 16, 8);
-        System.arraycopy(s, 48, out, outOff + 24, 8);
+        xor(s,  8, buffer,  8, out, outOff     ,  8);
+        xor(s, 24, buffer, 24, out, outOff +  8, 16);
+        xor(s, 48, buffer, 48, out, outOff + 24,  8);
 
         reset();
 
