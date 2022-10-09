@@ -534,25 +534,25 @@ abstract class SPHINCSPlusEngine
 
         public byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1)
         {
-            byte[] rv = new byte[64];
+            byte[] hash = new byte[32];
             harakaS512Digest.update(adrs.value, 0, adrs.value.length);
             if (robust)
             {
-                byte[] mask = new byte[m1.length];
                 harakaS256Digest.update(adrs.value, 0, adrs.value.length);
-                harakaS256Digest.doFinal(mask, 0);
+                harakaS256Digest.doFinal(hash, 0);
                 for (int i = 0; i < m1.length; ++i)
                 {
-                    mask[i] ^= m1[i];
+                    hash[i] ^= m1[i];
                 }
-                harakaS512Digest.update(mask, 0, mask.length);
+                harakaS512Digest.update(hash, 0, m1.length);
             }
             else
             {
                 harakaS512Digest.update(m1, 0, m1.length);
             }
-            harakaS512Digest.doFinal(rv, 0);
-            return Arrays.copyOf(rv, N);
+            // NOTE The digest implementation implicitly pads the input with zeros up to 64 length
+            harakaS512Digest.doFinal(hash, 0);
+            return Arrays.copyOf(hash, N);
         }
 
         public byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)

@@ -22,7 +22,6 @@ class HarakaS256Digest
         return "HarakaS-256";
     }
 
-    @Override
     public int getDigestSize()
     {
         return 32;
@@ -30,7 +29,7 @@ class HarakaS256Digest
 
     public void update(byte in)
     {
-        if (off + 1 > 32)
+        if (off > 32 - 1)
         {
             throw new IllegalArgumentException("total input cannot be more than 32 bytes");
         }
@@ -40,7 +39,7 @@ class HarakaS256Digest
 
     public void update(byte[] in, int inOff, int len)
     {
-        if (off + len > 32)
+        if (off > 32 - len)
         {
             throw new IllegalArgumentException("total input cannot be more than 32 bytes");
         }
@@ -51,9 +50,11 @@ class HarakaS256Digest
 
     public int doFinal(byte[] output, int outOff)
     {
-        byte[] s = new byte[64];
+        // TODO Check received all 32 bytes of input?
+
+        byte[] s = new byte[32];
         haraka256Perm(s);
-        System.arraycopy(s, 0, output, outOff, output.length - outOff);
+        xor(s, 0, buffer, 0, output, outOff, 32);
 
         reset();
         
