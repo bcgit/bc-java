@@ -605,7 +605,7 @@ abstract class SPHINCSPlusEngine
 
         byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs)
         {
-            byte[] rv = new byte[64];
+            byte[] rv = new byte[32];
             harakaS512Digest.update(adrs.value, 0, adrs.value.length);
             harakaS512Digest.update(skSeed, 0, skSeed.length);
             harakaS512Digest.doFinal(rv, 0);
