@@ -84,7 +84,7 @@ class WotsPlus
         }
         int len_2_bytes = (engine.WOTS_LEN2 * engine.WOTS_LOGW + 7) / 8;
         byte[] bytes = Pack.intToBigEndian(csum);
-        msg = Arrays.concatenate(msg, base_w(Arrays.copyOfRange(bytes, len_2_bytes, bytes.length), w, engine.WOTS_LEN2));
+        msg = Arrays.concatenate(msg, base_w(Arrays.copyOfRange(bytes, 4 - len_2_bytes, bytes.length), w, engine.WOTS_LEN2));
         byte[][] sig = new byte[engine.WOTS_LEN][];
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
