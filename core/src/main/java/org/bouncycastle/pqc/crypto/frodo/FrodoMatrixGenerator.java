@@ -1,13 +1,11 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 abstract class FrodoMatrixGenerator
@@ -57,12 +55,11 @@ abstract class FrodoMatrixGenerator
     static class Aes128MatrixGenerator
             extends FrodoMatrixGenerator
     {
-        BufferedBlockCipher cipher;
+        private final BlockCipher cipher;
         public Aes128MatrixGenerator(int n, int q)
         {
             super(n, q);
-            cipher = new BufferedBlockCipher(new AESEngine());
-
+            cipher = new AESEngine();
         }
 
         short[] genMatrix(byte[] seedA)
@@ -72,6 +69,9 @@ abstract class FrodoMatrixGenerator
             short[] A = new short[n*n];
             byte[] b = new byte[16];
             byte[] c = new byte[16];
+
+            KeyParameter kp = new KeyParameter(seedA);
+            cipher.init(true, kp);
 
             // 1. for i = 0; i < n; i += 1
             for (int i = 0; i < n; i++)
@@ -87,7 +87,7 @@ abstract class FrodoMatrixGenerator
                     //                struct.pack_into('<H', b, 0, i)
                     //                struct.pack_into('<H', b, 2, j)
                     // 4. c = AES128(seedA, b)
-                    aes128(c, seedA, b);
+                    cipher.processBlock(b, 0, c, 0);
                     // 5. for k = 0; k < 8; k += 1
                     for (int k = 0; k < 8; k++)
                     {
@@ -97,21 +97,6 @@ abstract class FrodoMatrixGenerator
                 }
             }
             return A;
-        }
-
-        void aes128(byte[] out, byte[] keyBytes, byte[] msg)
-        {
-            try
-            {
-                KeyParameter kp = new KeyParameter(keyBytes);
-                cipher.init(true, kp);
-                int len = cipher.processBytes(msg, 0, msg.length, out, 0);
-                cipher.doFinal(out, len);
-            }
-            catch (InvalidCipherTextException e)
-            {
-                throw Exceptions.illegalStateException(e.toString(), e);
-            }
         }
     }
 }
