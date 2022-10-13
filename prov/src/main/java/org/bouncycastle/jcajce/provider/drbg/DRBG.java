@@ -13,7 +13,10 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.prng.EntropySource;
@@ -45,6 +48,8 @@ import org.bouncycastle.util.Strings;
  */
 public class DRBG
 {
+    private static final Logger LOG = Logger.getLogger(DRBG.class.getName());
+
     private static final String PREFIX = DRBG.class.getName();
 
     // {"Provider class name","SecureRandomSpi class name"}
@@ -306,7 +311,7 @@ public class DRBG
         @Override
         public void run()
         {
-            for (; ; )
+            while (!Thread.currentThread().isInterrupted())
             {
                 Runnable task = tasks.pollFirst();
 
@@ -364,14 +369,11 @@ public class DRBG
     }
 
     private static void sleep(long ms)
+            throws InterruptedException
     {
-        try
+        if (ms != 0)
         {
             Thread.sleep(ms);
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
         }
     }
 
@@ -429,10 +431,19 @@ public class DRBG
 
                 public byte[] getEntropy()
                 {
-                    return getEntropy(0);
+                    try
+                    {
+                        return getEntropy(0);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
+                    }
                 }
 
                 public byte[] getEntropy(long pause)
+                    throws InterruptedException
                 {
                     byte[] data = new byte[numBytes];
 
@@ -469,7 +480,8 @@ public class DRBG
          * @param pause time in milliseconds to pause in build up seed.
          * @return the resulting seed
          */
-        byte[] getEntropy(long pause);
+        byte[] getEntropy(long pause)
+            throws InterruptedException;
     }
 
     private static class HybridEntropySource
@@ -563,10 +575,19 @@ public class DRBG
 
             public byte[] getEntropy()
             {
-                 return getEntropy(0);
+                try
+                {
+                    return getEntropy(0);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
+                }
             }
             
             public byte[] getEntropy(long pause)
+                throws InterruptedException
             {
                 byte[] seed = (byte[])entropy.getAndSet(null);
 
@@ -609,8 +630,19 @@ public class DRBG
 
                 public void run()
                 {
-                    entropy.set(baseRandom.getEntropy(pause));
-                    seedAvailable.set(true);
+                    try
+                    {
+                        entropy.set(baseRandom.getEntropy(pause));
+                        seedAvailable.set(true);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        if (LOG.isLoggable(Level.FINE))
+                        {
+                            LOG.fine("entropy thread interrupted - exiting");
+                        }
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
         }
@@ -654,10 +686,19 @@ public class DRBG
 
                 public byte[] getEntropy()
                 {
-                    return getEntropy(0);
+                    try
+                    {
+                        return getEntropy(0);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
+                    }
                 }
 
                 public byte[] getEntropy(long pause)
+                    throws InterruptedException
                 {
                     byte[] seed = new byte[numBytes];
                     for (int i = 0; i < numBytes / 8; i++)
