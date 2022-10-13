@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
 
 public class SignatureSpi
@@ -19,6 +20,7 @@ public class SignatureSpi
     private ByteArrayOutputStream bOut;
     private DilithiumSigner signer;
     private SecureRandom random;
+    private DilithiumParameters parameters;
 
     protected SignatureSpi(DilithiumSigner signer)
     {
@@ -26,7 +28,18 @@ public class SignatureSpi
         
         this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
+        this.parameters = null;
     }
+
+    protected SignatureSpi(DilithiumSigner signer, DilithiumParameters parameters)
+    {
+        super("Dilithium");
+
+        this.bOut = new ByteArrayOutputStream();
+        this.signer = signer;
+        this.parameters = parameters;
+    }
+
 
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
@@ -35,6 +48,14 @@ public class SignatureSpi
         {
             BCDilithiumPublicKey key = (BCDilithiumPublicKey)publicKey;
             CipherParameters param = key.getKeyParams();
+
+            if (parameters != null)
+            {
+                if (!parameters.getName().equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                }
+            }
 
             signer.init(false, param);
         }
@@ -58,6 +79,14 @@ public class SignatureSpi
         {
             BCDilithiumPrivateKey key = (BCDilithiumPrivateKey)privateKey;
             CipherParameters param = key.getKeyParams();
+
+            if (parameters != null)
+            {
+                if (!parameters.getName().equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                }
+            }
 
             if (random != null)
             {
@@ -142,6 +171,66 @@ public class SignatureSpi
             throws NoSuchAlgorithmException
         {
             super(new DilithiumSigner());
+        }
+    }
+
+    public static class Base2
+        extends SignatureSpi
+    {
+        public Base2()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium2);
+        }
+    }
+
+    public static class Base3
+        extends SignatureSpi
+    {
+        public Base3()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium3);
+        }
+    }
+
+    public static class Base5
+        extends SignatureSpi
+    {
+        public Base5()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium5);
+        }
+    }
+
+    public static class Base2_AES
+        extends SignatureSpi
+    {
+        public Base2_AES()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium2_aes);
+        }
+    }
+
+    public static class Base3_AES
+        extends SignatureSpi
+    {
+        public Base3_AES()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium3_aes);
+        }
+    }
+
+    public static class Base5_AES
+        extends SignatureSpi
+    {
+        public Base5_AES()
+            throws NoSuchAlgorithmException
+        {
+            super(new DilithiumSigner(), DilithiumParameters.dilithium5_aes);
         }
     }
 }

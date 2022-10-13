@@ -66,11 +66,11 @@ public class BCFalconPublicKey
     }
 
     /**
-     * @return name of the algorithm - "Falcon"
+     * @return name of the algorithm - "falcon-512 or falcon-1024"
      */
     public final String getAlgorithm()
     {
-        return "Falcon";
+        return params.getParameters().getName();
     }
 
     public byte[] getEncoded()
