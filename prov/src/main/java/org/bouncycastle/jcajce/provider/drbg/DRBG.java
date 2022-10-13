@@ -338,6 +338,11 @@ public class DRBG
                     }
                 }
             }
+
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("entropy thread interrupted - exiting");
+            }
         }
     }
 
@@ -639,7 +644,7 @@ public class DRBG
                     {
                         if (LOG.isLoggable(Level.FINE))
                         {
-                            LOG.fine("entropy thread interrupted - exiting");
+                            LOG.fine("entropy request interrupted - exiting");
                         }
                         Thread.currentThread().interrupt();
                     }
