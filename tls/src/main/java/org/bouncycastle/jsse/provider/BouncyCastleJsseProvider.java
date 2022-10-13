@@ -28,8 +28,8 @@ public class BouncyCastleJsseProvider
     private static final double PROVIDER_VERSION = 1.0014;
     private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.14";
 
-    private Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
-    private Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
+    private final Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
+    private final Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
     private final boolean isInFipsMode;
 
@@ -236,7 +236,7 @@ public class BouncyCastleJsseProvider
             throw new IllegalStateException("duplicate provider attribute key (" + attributeKey + ") found");
         }
 
-        put(attributeKey, attributeValue);
+        doPut(attributeKey, attributeValue);
     }
 
     void addAlgorithmImplementation(String key, String className, EngineCreator creator)
@@ -248,7 +248,7 @@ public class BouncyCastleJsseProvider
 
         addAttribute(key, "ImplementedIn", "Software");
 
-        put(key, className);
+        doPut(key, className);
         creatorMap.put(className, creator);
     }
 
@@ -259,7 +259,7 @@ public class BouncyCastleJsseProvider
             throw new IllegalStateException("duplicate provider key (" + key + ") found");
         }
 
-        put(key, value);
+        doPut(key, value);
     }
 
     public synchronized final Provider.Service getService(String type, String algorithm)
@@ -340,6 +340,17 @@ public class BouncyCastleJsseProvider
         attributeMaps.put(attributeMap, attributeMap);
 
         return attributeMap;
+    }
+
+    private Object doPut(String key, String value)
+    {
+        return AccessController.doPrivileged(new PrivilegedAction<Object>()
+        {
+            public Object run()
+            {
+                return put(key, value);
+            }
+        });
     }
 
     private static List<String> specifyClientProtocols(String... protocols)
