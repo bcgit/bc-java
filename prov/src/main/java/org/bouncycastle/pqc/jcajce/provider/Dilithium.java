@@ -26,12 +26,12 @@ public class Dilithium
 
             addSignatureAlgorithm(provider, "DILITHIUM", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium);
 
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium2);
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium3);
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium5);
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium2_aes);
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium3_aes);
-            addSignatureAlias(provider, "DILITHIUM", BCObjectIdentifiers.dilithium5_aes);
+            addSignatureAlgorithm(provider, "DILITHIUM2", PREFIX + "SignatureSpi$Base2", BCObjectIdentifiers.dilithium2);
+            addSignatureAlgorithm(provider, "DILITHIUM3", PREFIX + "SignatureSpi$Base3", BCObjectIdentifiers.dilithium3);
+            addSignatureAlgorithm(provider, "DILITHIUM5", PREFIX + "SignatureSpi$Base5", BCObjectIdentifiers.dilithium5);
+            addSignatureAlgorithm(provider, "DILITHIUM2-AES", PREFIX + "SignatureSpi$Base2_AES", BCObjectIdentifiers.dilithium2_aes);
+            addSignatureAlgorithm(provider, "DILITHIUM3-AES", PREFIX + "SignatureSpi$Base3_AES", BCObjectIdentifiers.dilithium3_aes);
+            addSignatureAlgorithm(provider, "DILITHIUM5-AES", PREFIX + "SignatureSpi$Base5_AES", BCObjectIdentifiers.dilithium5_aes);
 
             AsymmetricKeyInfoConverter keyFact = new DilithiumKeyFactorySpi();
 

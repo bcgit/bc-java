@@ -66,11 +66,11 @@ public class BCDilithiumPublicKey
     }
 
     /**
-     * @return name of the algorithm - "Dilithium"
+     * @return name of the algorithm - "dilithium2, dilithium3, etc..."
      */
     public final String getAlgorithm()
     {
-        return "Dilithium";
+        return params.getParameters().getName();
     }
 
     public byte[] getEncoded()

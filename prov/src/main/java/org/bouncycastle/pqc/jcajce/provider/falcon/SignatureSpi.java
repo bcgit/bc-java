@@ -11,6 +11,8 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
 
 public class SignatureSpi
@@ -19,11 +21,22 @@ public class SignatureSpi
     private ByteArrayOutputStream bOut;
     private FalconSigner signer;
     private SecureRandom random;
+    private FalconParameters parameters;
 
     protected SignatureSpi(FalconSigner signer)
     {
         super("Falcon");
         
+        this.bOut = new ByteArrayOutputStream();
+        this.signer = signer;
+        this.parameters = null;
+    }
+
+    protected SignatureSpi(FalconSigner signer, FalconParameters parameters)
+    {
+        super(parameters.getName());
+        this.parameters = parameters;
+
         this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
     }
@@ -35,6 +48,14 @@ public class SignatureSpi
         {
             BCFalconPublicKey key = (BCFalconPublicKey)publicKey;
             CipherParameters param = key.getKeyParams();
+
+            if (parameters != null)
+            {
+                if (!parameters.getName().equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                }
+            }
 
             signer.init(false, param);
         }
@@ -58,6 +79,14 @@ public class SignatureSpi
         {
             BCFalconPrivateKey key = (BCFalconPrivateKey)privateKey;
             CipherParameters param = key.getKeyParams();
+
+            if (parameters != null)
+            {
+                if (!parameters.getName().equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                }
+            }
 
             if (random != null)
             {
@@ -142,6 +171,26 @@ public class SignatureSpi
             throws NoSuchAlgorithmException
         {
             super(new FalconSigner());
+        }
+    }
+
+    public static class Falcon512
+        extends SignatureSpi
+    {
+        public Falcon512()
+            throws NoSuchAlgorithmException
+        {
+            super(new FalconSigner(), FalconParameters.falcon_512);
+        }
+    }
+
+    public static class Falcon1024
+        extends SignatureSpi
+    {
+        public Falcon1024()
+            throws NoSuchAlgorithmException
+        {
+            super(new FalconSigner(), FalconParameters.falcon_1024);
         }
     }
 }

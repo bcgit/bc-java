@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -94,6 +95,94 @@ public class FalconTest
         FalconKey pubKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(pubKey, pubKey2);
+    }
+
+    public void testFalcon512()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("Falcon-512", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("Falcon-512", "BCPQC");
+
+        assertEquals("Falcon-512", sig.getAlgorithm());
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("signature configured for falcon-512", e.getMessage());
+        }
+    }
+
+    public void testFalcon1024()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("Falcon-1024", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("Falcon-1024", "BCPQC");
+
+        assertEquals("Falcon-1024", sig.getAlgorithm());
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("signature configured for falcon-1024", e.getMessage());
+        }
     }
 
     public void testFalconRandomSig()

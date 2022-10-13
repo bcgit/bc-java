@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -23,6 +24,7 @@ import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -97,6 +99,61 @@ public class DilithiumTest
         assertEquals(pubKey, pubKey2);
     }
 
+    public void testRestricted()
+        throws Exception
+    {
+        doTestRestricted("DILITHIUM2", DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
+        doTestRestricted("DILITHIUM3", DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
+        doTestRestricted("DILITHIUM5", DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
+        doTestRestricted("DILITHIUM2-AES", DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestricted("DILITHIUM3-AES", DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestricted("DILITHIUM5-AES", DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
+    }
+
+    public void doTestRestricted(String sigName, DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance(sigName, "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance(sigName, "BCPQC");
+
+        assertEquals(sigName, sig.getAlgorithm());
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        kpg.initialize(altSpec, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("signature configured for " + spec.getName(), e.getMessage());
+        }
+    }
+
     public void testDilithiumRandomSig()
             throws Exception
     {
@@ -150,10 +207,8 @@ public class DilithiumTest
 
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
 
-        ASN1Sequence pubSeq = ASN1Sequence.getInstance(pubInfo.getPublicKeyData().getOctets());
-        assertTrue(Arrays.areEqual(Arrays.concatenate(
-            ASN1OctetString.getInstance(pubSeq.getObjectAt(0)).getOctets(),
-            ASN1OctetString.getInstance(pubSeq.getObjectAt(1)).getOctets()), pubK));
+        ASN1OctetString pubSeq = ASN1OctetString.getInstance(pubInfo.getPublicKeyData().getOctets());
+        assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1Sequence seq = ASN1Sequence.getInstance(privInfo.parsePrivateKey());

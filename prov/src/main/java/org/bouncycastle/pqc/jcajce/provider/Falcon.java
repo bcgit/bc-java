@@ -26,8 +26,8 @@ public class Falcon
 
             addSignatureAlgorithm(provider, "FALCON", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.falcon);
 
-            addSignatureAlias(provider, "FALCON", BCObjectIdentifiers.falcon_512);
-            addSignatureAlias(provider, "FALCON", BCObjectIdentifiers.falcon_1024);
+            addSignatureAlgorithm(provider, "FALCON-512", PREFIX + "SignatureSpi$Falcon512", BCObjectIdentifiers.falcon_512);
+            addSignatureAlgorithm(provider, "FALCON-1024", PREFIX + "SignatureSpi$Falcon1024", BCObjectIdentifiers.falcon_1024);
 
             AsymmetricKeyInfoConverter keyFact = new FalconKeyFactorySpi();
 
