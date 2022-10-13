@@ -472,8 +472,8 @@ public abstract class ASN1Set
          * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
          * ordering inversions.
          */
-        int a0 = a[0] & ~BERTags.CONSTRUCTED;
-        int b0 = b[0] & ~BERTags.CONSTRUCTED;
+        int a0 = a[0] & ~BERTags.CONSTRUCTED & 0xFF;
+        int b0 = b[0] & ~BERTags.CONSTRUCTED & 0xFF;
         if (a0 != b0)
         {
             return a0 < b0;
