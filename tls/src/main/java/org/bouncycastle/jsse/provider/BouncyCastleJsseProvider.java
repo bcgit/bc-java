@@ -342,7 +342,7 @@ public class BouncyCastleJsseProvider
         return attributeMap;
     }
 
-    private Object doPut(String key, String value)
+    private Object doPut(final String key, final String value)
     {
         return AccessController.doPrivileged(new PrivilegedAction<Object>()
         {
