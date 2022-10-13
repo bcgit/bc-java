@@ -41,6 +41,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -259,10 +260,8 @@ public class SubjectPublicKeyInfoFactory
             DilithiumPublicKeyParameters params = (DilithiumPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
-            ASN1EncodableVector v = new ASN1EncodableVector();
-            v.add(new DEROctetString(params.getRho()));
-            v.add(new DEROctetString(params.getT1()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(v));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(Arrays.concatenate(params.getRho(), params.getT1())));
         }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {
