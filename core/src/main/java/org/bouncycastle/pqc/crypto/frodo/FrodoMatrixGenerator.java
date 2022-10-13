@@ -65,8 +65,8 @@ abstract class FrodoMatrixGenerator
 
         short[] genMatrix(byte[] seedA)
         {
-            //        """Generate matrix A using AES-128 (FrodoKEM specification, Algorithm 7)"""
-            //        A = [[None for j in range(self.n)] for i in range(self.n)]
+            // """Generate matrix A using AES-128 (FrodoKEM specification, Algorithm 7)"""
+            // A = [[None for j in range(self.n)] for i in range(self.n)]
             short[] A = new short[n*n];
             byte[] b = new byte[16];
             byte[] c = new byte[16];
@@ -77,11 +77,11 @@ abstract class FrodoMatrixGenerator
             // 1. for i = 0; i < n; i += 1
             for (int i = 0; i < n; i++)
             {
+                Pack.shortToLittleEndian((short)i, b, 0);
                 // 2. for j = 0; j < n; j += 8
                 for (int j = 0; j < n; j+=8)
                 {
                     // 3. b = i || j || 0 || ... || 0 in {0,1}^128, where i and j are encoded as 16-bit integers in little-endian byte order
-                    Pack.shortToLittleEndian((short)i, b, 0);
                     Pack.shortToLittleEndian((short)j, b, 2);
                     // 4. c = AES128(seedA, b)
                     cipher.processBlock(b, 0, c, 0);
