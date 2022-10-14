@@ -55,6 +55,12 @@ public class DilithiumTest
 
         DilithiumKey privKey = (DilithiumKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
+        assertEquals(kp.getPrivate(), privKey);
+        assertEquals(kp.getPrivate().getAlgorithm(), privKey.getAlgorithm());
+        assertEquals(kp.getPrivate().hashCode(), privKey.hashCode());
+
+        assertEquals(((DilithiumPrivateKey)kp.getPrivate()).getPublicKey(), ((DilithiumPrivateKey)privKey).getPublicKey());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -69,6 +75,9 @@ public class DilithiumTest
         assertEquals(privKey, privKey2);
 
         assertEquals(kp.getPublic(), ((DilithiumPrivateKey)privKey2).getPublicKey());
+        assertEquals(kp.getPrivate().getAlgorithm(), privKey2.getAlgorithm());
+        assertEquals(kp.getPrivate().hashCode(), privKey2.hashCode());
+
         assertEquals(((DilithiumPrivateKey)privKey).getPublicKey(), ((DilithiumPrivateKey)privKey2).getPublicKey());
     }
 
@@ -85,6 +94,10 @@ public class DilithiumTest
 
         DilithiumKey pubKey = (DilithiumKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
+        assertEquals(kp.getPublic(), pubKey);
+        assertEquals(kp.getPublic().getAlgorithm(), pubKey.getAlgorithm());
+        assertEquals(kp.getPublic().hashCode(), pubKey.hashCode());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -97,6 +110,8 @@ public class DilithiumTest
         DilithiumKey pubKey2 = (DilithiumKey)oIn.readObject();
 
         assertEquals(pubKey, pubKey2);
+        assertEquals(pubKey.getAlgorithm(), pubKey2.getAlgorithm());
+        assertEquals(pubKey.hashCode(), pubKey2.hashCode());
     }
 
     public void testRestrictedSignature()
