@@ -55,6 +55,12 @@ public class FalconTest
 
         FalconKey privKey = (FalconKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
+        assertEquals(kp.getPrivate(), privKey);
+        assertEquals(kp.getPrivate().getAlgorithm(), privKey.getAlgorithm());
+        assertEquals(kp.getPrivate().hashCode(), privKey.hashCode());
+
+        assertEquals(((FalconPrivateKey)kp.getPrivate()).getPublicKey(), ((FalconPrivateKey)privKey).getPublicKey());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -67,7 +73,9 @@ public class FalconTest
         FalconKey privKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
-        
+        assertEquals(privKey.getAlgorithm(), privKey2.getAlgorithm());
+        assertEquals(privKey.hashCode(), privKey2.hashCode());
+
         assertEquals(kp.getPublic(), ((FalconPrivateKey)privKey2).getPublicKey());
         assertEquals(((FalconPrivateKey)privKey).getPublicKey(), ((FalconPrivateKey)privKey2).getPublicKey());
     }
@@ -85,6 +93,10 @@ public class FalconTest
 
         FalconKey pubKey = (FalconKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
+        assertEquals(kp.getPublic(), pubKey);
+        assertEquals(kp.getPublic().getAlgorithm(), pubKey.getAlgorithm());
+        assertEquals(kp.getPublic().hashCode(), pubKey.hashCode());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -97,6 +109,8 @@ public class FalconTest
         FalconKey pubKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(pubKey, pubKey2);
+        assertEquals(pubKey.getAlgorithm(), pubKey2.getAlgorithm());
+        assertEquals(pubKey.hashCode(), pubKey2.hashCode());
     }
 
     public void testFalcon512()
