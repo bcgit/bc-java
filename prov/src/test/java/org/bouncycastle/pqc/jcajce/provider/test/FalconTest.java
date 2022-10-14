@@ -139,7 +139,7 @@ public class FalconTest
         }
         catch (InvalidKeyException e)
         {
-            assertEquals("signature configured for falcon-512", e.getMessage());
+            assertEquals("signature configured for FALCON-512", e.getMessage());
         }
     }
 
@@ -183,7 +183,7 @@ public class FalconTest
         }
         catch (InvalidKeyException e)
         {
-            assertEquals("signature configured for falcon-1024", e.getMessage());
+            assertEquals("signature configured for FALCON-1024", e.getMessage());
         }
     }
 
