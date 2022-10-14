@@ -168,7 +168,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Base()
-            throws NoSuchAlgorithmException
         {
             super(new FalconSigner());
         }
@@ -178,7 +177,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Falcon512()
-            throws NoSuchAlgorithmException
         {
             super(new FalconSigner(), FalconParameters.falcon_512);
         }
@@ -188,7 +186,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Falcon1024()
-            throws NoSuchAlgorithmException
         {
             super(new FalconSigner(), FalconParameters.falcon_1024);
         }

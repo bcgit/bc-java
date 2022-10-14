@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -24,7 +25,6 @@ import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -99,18 +99,18 @@ public class DilithiumTest
         assertEquals(pubKey, pubKey2);
     }
 
-    public void testRestricted()
+    public void testRestrictedSignature()
         throws Exception
     {
-        doTestRestricted("DILITHIUM2", DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
-        doTestRestricted("DILITHIUM3", DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
-        doTestRestricted("DILITHIUM5", DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
-        doTestRestricted("DILITHIUM2-AES", DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestricted("DILITHIUM3-AES", DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestricted("DILITHIUM5-AES", DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedSignature("DILITHIUM2", DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedSignature("DILITHIUM3", DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedSignature("DILITHIUM5", DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
+        doTestRestrictedSignature("DILITHIUM2-AES", DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedSignature("DILITHIUM3-AES", DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedSignature("DILITHIUM5-AES", DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
     }
 
-    public void doTestRestricted(String sigName, DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
+    private void doTestRestrictedSignature(String sigName, DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
         throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
@@ -151,6 +151,43 @@ public class DilithiumTest
         catch (InvalidKeyException e)
         {
             assertEquals("signature configured for " + spec.getName(), e.getMessage());
+        }
+    }
+
+    public void testRestrictedKeyPairGen()
+        throws Exception
+    {
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
+        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
+    }
+
+    private void doTestRestrictedKeyPairGen(DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kpg.getAlgorithm());
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
         }
     }
 

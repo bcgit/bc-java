@@ -168,7 +168,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Base()
-            throws NoSuchAlgorithmException
         {
             super(new DilithiumSigner());
         }
@@ -178,7 +177,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Base2()
-            throws NoSuchAlgorithmException
         {
             super(new DilithiumSigner(), DilithiumParameters.dilithium2);
         }
@@ -188,7 +186,6 @@ public class SignatureSpi
         extends SignatureSpi
     {
         public Base3()
-            throws NoSuchAlgorithmException
         {
             super(new DilithiumSigner(), DilithiumParameters.dilithium3);
         }
