@@ -47,13 +47,13 @@ public class DilithiumKeyPairGeneratorSpi
 
     public DilithiumKeyPairGeneratorSpi()
     {
-        super("Dilithium");
+        super("DILITHIUM");
         this.dilithiumParameters = null;
     }
 
-    public DilithiumKeyPairGeneratorSpi(DilithiumParameters dilithiumParameters)
+    protected DilithiumKeyPairGeneratorSpi(DilithiumParameters dilithiumParameters)
     {
-        super(dilithiumParameters.getName());
+        super(Strings.toUpperCase(dilithiumParameters.getName()));
         this.dilithiumParameters = dilithiumParameters;
     }
 
@@ -79,7 +79,7 @@ public class DilithiumKeyPairGeneratorSpi
 
             if (dilithiumParameters != null && !dilithiumParams.getName().equals(dilithiumParameters.getName()))
             {
-                throw new InvalidAlgorithmParameterException("key pair generator locked to " + dilithiumParameters.getName());
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + Strings.toUpperCase(dilithiumParameters.getName()));
             }
 
             engine.init(param);

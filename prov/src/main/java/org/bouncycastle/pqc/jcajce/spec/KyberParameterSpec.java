@@ -33,7 +33,7 @@ public class KyberParameterSpec
 
     private KyberParameterSpec(KyberParameters parameters)
     {
-        this.name = parameters.getName();
+        this.name = Strings.toUpperCase(parameters.getName());
     }
 
     public String getName()
