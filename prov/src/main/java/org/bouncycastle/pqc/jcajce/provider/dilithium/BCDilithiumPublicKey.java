@@ -37,7 +37,7 @@ public class BCDilithiumPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (DilithiumPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        init((DilithiumPublicKeyParameters) PublicKeyFactory.createKey(keyInfo));
     }
 
     private void init(DilithiumPublicKeyParameters params)
