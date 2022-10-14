@@ -22,7 +22,12 @@ public class Dilithium
             provider.addAlgorithm("KeyFactory.DILITHIUM", PREFIX + "DilithiumKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.DILITHIUM", PREFIX + "DilithiumKeyPairGeneratorSpi");
 
-            provider.addAlgorithm("KeyGenerator.DILITHIUM", PREFIX + "DilithiumKeyGeneratorSpi");
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM2", PREFIX + "DilithiumKeyPairGeneratorSpi$Base2", BCObjectIdentifiers.dilithium2);
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM3", PREFIX + "DilithiumKeyPairGeneratorSpi$Base3", BCObjectIdentifiers.dilithium3);
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM5", PREFIX + "DilithiumKeyPairGeneratorSpi$Base5", BCObjectIdentifiers.dilithium5);
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM2-AES", PREFIX + "DilithiumKeyPairGeneratorSpi$Base2_AES", BCObjectIdentifiers.dilithium2_aes);
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM3-AES", PREFIX + "DilithiumKeyPairGeneratorSpi$Base3_AES", BCObjectIdentifiers.dilithium3_aes);
+            addKeyPairGeneratorAlgorithm(provider, "DILITHIUM5-AES", PREFIX + "DilithiumKeyPairGeneratorSpi$Base5_AES", BCObjectIdentifiers.dilithium5_aes);
 
             addSignatureAlgorithm(provider, "DILITHIUM", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.dilithium);
 
@@ -35,12 +40,12 @@ public class Dilithium
 
             AsymmetricKeyInfoConverter keyFact = new DilithiumKeyFactorySpi();
 
-            registerOid(provider, BCObjectIdentifiers.dilithium2, "DILITHIUM", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium3, "DILITHIUM", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium5, "DILITHIUM", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium2_aes, "DILITHIUM", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium3_aes, "DILITHIUM", keyFact);
-            registerOid(provider, BCObjectIdentifiers.dilithium5_aes, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium2, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium3, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium5, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium2_aes, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium3_aes, "DILITHIUM", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium5_aes, "DILITHIUM", keyFact);
         }
     }
 }

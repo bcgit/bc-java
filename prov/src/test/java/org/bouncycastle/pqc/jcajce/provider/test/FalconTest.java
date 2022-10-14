@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -22,6 +23,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -182,6 +184,38 @@ public class FalconTest
         catch (InvalidKeyException e)
         {
             assertEquals("signature configured for falcon-1024", e.getMessage());
+        }
+    }
+
+    public void testRestrictedKeyPairGen()
+        throws Exception
+    {
+        doTestRestrictedKeyPairGen(FalconParameterSpec.falcon_512, FalconParameterSpec.falcon_1024);
+        doTestRestrictedKeyPairGen(FalconParameterSpec.falcon_1024, FalconParameterSpec.falcon_512);
+    }
+
+    private void doTestRestrictedKeyPairGen(FalconParameterSpec spec, FalconParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
         }
     }
 

@@ -85,6 +85,28 @@ public abstract class AsymmetricAlgorithmProvider
         provider.addAttributes("Signature." + mainName, attributes);
     }
 
+    protected void addKeyPairGeneratorAlgorithm(
+        ConfigurableProvider provider,
+        String algorithm,
+        String className,
+        ASN1ObjectIdentifier oid)
+    {
+        provider.addAlgorithm("KeyPairGenerator." + algorithm, className);
+        if (oid != null)
+        {
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + oid, algorithm);
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + oid, algorithm);
+        }
+    }
+
+    protected void registerKeyFactoryOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)
+    {
+        provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, name);
+        provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + oid, name);
+
+        provider.addKeyInfoConverter(oid, keyFactory);
+    }
+
     protected void registerOid(ConfigurableProvider provider, ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter keyFactory)
     {
         provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, name);
