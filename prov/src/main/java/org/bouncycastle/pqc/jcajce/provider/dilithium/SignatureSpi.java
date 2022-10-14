@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
+import org.bouncycastle.util.Strings;
 
 public class SignatureSpi
     extends java.security.Signature
@@ -33,7 +34,7 @@ public class SignatureSpi
 
     protected SignatureSpi(DilithiumSigner signer, DilithiumParameters parameters)
     {
-        super("Dilithium");
+        super(Strings.toUpperCase(parameters.getName()));
 
         this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
@@ -51,9 +52,10 @@ public class SignatureSpi
 
             if (parameters != null)
             {
-                if (!parameters.getName().equals(key.getAlgorithm()))
+                String canonicalAlg = Strings.toUpperCase(parameters.getName());
+                if (!canonicalAlg.equals(key.getAlgorithm()))
                 {
-                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
 
@@ -82,9 +84,10 @@ public class SignatureSpi
 
             if (parameters != null)
             {
-                if (!parameters.getName().equals(key.getAlgorithm()))
+                String canonicalAlg = Strings.toUpperCase(parameters.getName());
+                if (!canonicalAlg.equals(key.getAlgorithm()))
                 {
-                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
 

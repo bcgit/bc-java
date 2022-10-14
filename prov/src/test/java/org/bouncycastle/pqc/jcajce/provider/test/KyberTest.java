@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -157,5 +159,172 @@ public class KyberTest
         assertEquals("AES", secEnc2.getAlgorithm());
 
         assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+    }
+
+    public void testRestrictedKeyPairGen()
+        throws Exception
+    {
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512);
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024);
+    }
+
+    private void doTestRestrictedKeyPairGen(KyberParameterSpec spec, KyberParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kpg.getAlgorithm());
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
+        }
+    }
+
+    public void testRestrictedKeyGen()
+        throws Exception
+    {
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512);
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024);
+        doTestRestrictedKeyGen(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024);
+    }
+
+    private void doTestRestrictedKeyGen(KyberParameterSpec spec, KyberParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kpg.getAlgorithm());
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        KeyGenerator keyGen = KeyGenerator.getInstance(spec.getName(), "BCPQC");
+
+        assertEquals(spec.getName(), keyGen.getAlgorithm());
+
+        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
+
+        SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
+
+        SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+        assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+
+        kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+
+        kpg.initialize(altSpec, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key generator locked to " + spec.getName(), e.getMessage());
+        }
+
+        try
+        {
+            keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key generator locked to " + spec.getName(), e.getMessage());
+        }
+    }
+
+    public void testRestrictedCipher()
+        throws Exception
+    {
+        doTestRestrictedCipher(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024, new byte[16]);
+        doTestRestrictedCipher(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024, new byte[24]);
+        doTestRestrictedCipher(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512, new byte[32]);
+        doTestRestrictedCipher(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024, new byte[16]);
+        doTestRestrictedCipher(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024, new byte[24]);
+        doTestRestrictedCipher(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024, new byte[32]);
+    }
+
+    private void doTestRestrictedCipher(KyberParameterSpec spec, KyberParameterSpec altSpec, byte[] keyBytes)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kpg.getAlgorithm());
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        Cipher cipher = Cipher.getInstance(spec.getName(), "BCPQC");
+
+        assertEquals(spec.getName(), cipher.getAlgorithm());
+
+        cipher.init(Cipher.WRAP_MODE, kp.getPublic(), new SecureRandom());
+
+        byte[] wrapBytes = cipher.wrap(new SecretKeySpec(keyBytes, "AES"));
+
+        cipher.init(Cipher.UNWRAP_MODE, kp.getPrivate());
+
+        Key unwrapKey = cipher.unwrap(wrapBytes, "AES", Cipher.SECRET_KEY);
+
+        assertTrue(Arrays.areEqual(keyBytes, unwrapKey.getEncoded()));
+
+        kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+
+        kpg.initialize(altSpec, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            cipher.init(Cipher.UNWRAP_MODE, kp.getPrivate());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("cipher locked to " + spec.getName(), e.getMessage());
+        }
+
+        try
+        {
+            cipher.init(Cipher.WRAP_MODE, kp.getPublic(), new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("cipher locked to " + spec.getName(), e.getMessage());
+        }
     }
 }

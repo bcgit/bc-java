@@ -34,7 +34,7 @@ public class DilithiumParameterSpec
 
     private DilithiumParameterSpec(DilithiumParameters parameters)
     {
-        this.name = parameters.getName();
+        this.name = Strings.toUpperCase(parameters.getName());
     }
 
     public String getName()

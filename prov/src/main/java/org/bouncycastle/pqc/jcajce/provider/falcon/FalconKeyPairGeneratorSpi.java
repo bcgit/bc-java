@@ -41,11 +41,11 @@ public class FalconKeyPairGeneratorSpi
 
     public FalconKeyPairGeneratorSpi()
     {
-        super("Falcon");
+        super("FALCON");
         this.falconParameters = null;
     }
 
-    public FalconKeyPairGeneratorSpi(FalconParameters falconParameters)
+    protected FalconKeyPairGeneratorSpi(FalconParameters falconParameters)
     {
         super(falconParameters.getName());
         this.falconParameters = falconParameters;
@@ -73,7 +73,7 @@ public class FalconKeyPairGeneratorSpi
 
             if (falconParameters != null && !falconParams.getName().equals(falconParameters.getName()))
             {
-                 throw new InvalidAlgorithmParameterException("key pair generator locked to " + falconParameters.getName());
+                 throw new InvalidAlgorithmParameterException("key pair generator locked to " + Strings.toUpperCase(falconParameters.getName()));
             }
 
             engine.init(param);

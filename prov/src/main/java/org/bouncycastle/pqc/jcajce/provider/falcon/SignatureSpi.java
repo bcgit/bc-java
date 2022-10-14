@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
+import org.bouncycastle.util.Strings;
 
 public class SignatureSpi
     extends java.security.Signature
@@ -25,7 +26,7 @@ public class SignatureSpi
 
     protected SignatureSpi(FalconSigner signer)
     {
-        super("Falcon");
+        super("FALCON");
         
         this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
@@ -34,7 +35,7 @@ public class SignatureSpi
 
     protected SignatureSpi(FalconSigner signer, FalconParameters parameters)
     {
-        super(parameters.getName());
+        super(Strings.toUpperCase(parameters.getName()));
         this.parameters = parameters;
 
         this.bOut = new ByteArrayOutputStream();
@@ -51,9 +52,10 @@ public class SignatureSpi
 
             if (parameters != null)
             {
-                if (!parameters.getName().equals(key.getAlgorithm()))
+                String canonicalAlg = Strings.toUpperCase(parameters.getName());
+                if (!canonicalAlg.equals(key.getAlgorithm()))
                 {
-                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
 
@@ -82,9 +84,10 @@ public class SignatureSpi
 
             if (parameters != null)
             {
-                if (!parameters.getName().equals(key.getAlgorithm()))
+                String canonicalAlg = Strings.toUpperCase(parameters.getName());
+                if (!canonicalAlg.equals(key.getAlgorithm()))
                 {
-                    throw new InvalidKeyException("signature configured for " + parameters.getName());
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
 

@@ -9,8 +9,10 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCKyberPublicKey
     implements KyberPublicKey
@@ -18,11 +20,13 @@ public class BCKyberPublicKey
     private static final long serialVersionUID = 1L;
 
     private transient KyberPublicKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
 
     public BCKyberPublicKey(
         KyberPublicKeyParameters params)
     {
-        this.params = params;
+        init(params);
     }
 
     public BCKyberPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -34,7 +38,13 @@ public class BCKyberPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (KyberPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        init((KyberPublicKeyParameters)PublicKeyFactory.createKey(keyInfo));
+    }
+
+    private void init(KyberPublicKeyParameters params)
+    {
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
@@ -54,7 +64,7 @@ public class BCKyberPublicKey
         {
             BCKyberPublicKey otherKey = (BCKyberPublicKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(this.getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -62,29 +72,25 @@ public class BCKyberPublicKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Kyber"
+     * @return name of the algorithm - "KYBER512, KYBER768, etc..."
      */
     public final String getAlgorithm()
     {
-        return "Kyber";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-        try
+        if (encoding == null)
         {
-            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+            encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(params);
+        }
 
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
     }
 
     public String getFormat()

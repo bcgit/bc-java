@@ -8,12 +8,15 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCDilithiumPrivateKey
     implements DilithiumPrivateKey
@@ -21,12 +24,14 @@ public class BCDilithiumPrivateKey
     private static final long serialVersionUID = 1L;
 
     private transient DilithiumPrivateKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCDilithiumPrivateKey(
             DilithiumPrivateKeyParameters params)
     {
-        this.params = params;
+        init(params, null);
     }
 
     public BCDilithiumPrivateKey(PrivateKeyInfo keyInfo)
@@ -38,8 +43,14 @@ public class BCDilithiumPrivateKey
     private void init(PrivateKeyInfo keyInfo)
             throws IOException
     {
-        this.attributes = keyInfo.getAttributes();
-        this.params = (DilithiumPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
+        init((DilithiumPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
+    }
+
+    private void init(DilithiumPrivateKeyParameters params, ASN1Set attributes)
+    {
+        this.attributes = attributes;
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
@@ -59,7 +70,7 @@ public class BCDilithiumPrivateKey
         {
             BCDilithiumPrivateKey otherKey = (BCDilithiumPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -67,34 +78,30 @@ public class BCDilithiumPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "dilithium2, dilithium3, etc..."
+     * @return name of the algorithm - "DILITHIUM2, DILITHIUM3, etc..."
      */
     public final String getAlgorithm()
     {
-        return params.getParameters().getName();
+        return algorithm;
+    }
+
+    public byte[] getEncoded()
+    {
+        if (encoding == null)
+        {
+            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
+        }
+
+        return Arrays.clone(encoding);
     }
 
     public DilithiumPublicKey getPublicKey()
     {
         return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getRho(), params.getT1()));
-    }
-
-    public byte[] getEncoded()
-    {
-        try
-        {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
-
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
     }
 
     public DilithiumParameterSpec getParameterSpec()

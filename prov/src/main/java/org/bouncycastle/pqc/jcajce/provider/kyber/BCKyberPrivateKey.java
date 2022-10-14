@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
@@ -12,8 +13,10 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCKyberPrivateKey
     implements KyberPrivateKey
@@ -21,12 +24,14 @@ public class BCKyberPrivateKey
     private static final long serialVersionUID = 1L;
 
     private transient KyberPrivateKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCKyberPrivateKey(
             KyberPrivateKeyParameters params)
     {
-        this.params = params;
+        init(params, null);
     }
 
     public BCKyberPrivateKey(PrivateKeyInfo keyInfo)
@@ -36,14 +41,20 @@ public class BCKyberPrivateKey
     }
 
     private void init(PrivateKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
-        this.attributes = keyInfo.getAttributes();
-        this.params = (KyberPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
+        init((KyberPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
+    }
+
+    private void init(KyberPrivateKeyParameters params, ASN1Set attributes)
+    {
+        this.attributes = attributes;
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
-     * Compare this SPHINCS-256 private key with another object.
+     * Compare this Kyber private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -59,7 +70,7 @@ public class BCKyberPrivateKey
         {
             BCKyberPrivateKey otherKey = (BCKyberPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -67,30 +78,25 @@ public class BCKyberPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Kyber"
+     * @return name of the algorithm - "KYBER512, KYBER768, etc..."
      */
     public final String getAlgorithm()
     {
-        return "Kyber";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-
-        try
+        if (encoding == null)
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
+            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
+        }
 
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
     }
 
     public KyberPublicKey getPublicKey()
