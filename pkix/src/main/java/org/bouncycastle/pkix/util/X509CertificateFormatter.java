@@ -173,18 +173,15 @@ public class X509CertificateFormatter
 
     static void prettyPrintData(byte[] sig, StringBuilder buf, String nl)
     {
-        // -DM Hex.toHexString
-        // -DM Hex.toHexString
-        // -DM Hex.toHexString
-        // -DM Hex.toHexString
-
         if (sig.length > 20)
         {
+        // -DM Hex.toHexString
             buf.append(Hex.toHexString(sig, 0, 20)).append(nl);
             format(buf, sig, nl);
         }
         else
         {
+        // -DM Hex.toHexString
             buf.append(Hex.toHexString(sig)).append(nl);
         }
     }
@@ -195,10 +192,12 @@ public class X509CertificateFormatter
         {
             if (i < data.length - 20)
             {
+        // -DM Hex.toHexString
                 buf.append("                       ").append(Hex.toHexString(data, i, 20)).append(nl);
             }
             else
             {
+        // -DM Hex.toHexString
                 buf.append("                       ").append(Hex.toHexString(data, i, data.length - i)).append(nl);
             }
         }
@@ -345,6 +344,7 @@ public class X509CertificateFormatter
     {
         PEMParser p = new PEMParser(new FileReader(args[0]));
 
+        // -DM System.out.println
         System.out.println(asString((X509CertificateHolder)p.readObject()));
     }
 }
