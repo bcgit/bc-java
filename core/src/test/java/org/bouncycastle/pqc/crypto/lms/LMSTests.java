@@ -39,6 +39,11 @@ public class LMSTests
         LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
         assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
 
+        // Recreate public key.
+        {
+            byte[] recreatedPubKey = Arrays.clone(publicKey.getEncoded());
+            assertTrue(LM_OTS.lm_ots_validate_signature(LMOtsPublicKey.getInstance(recreatedPubKey), sig, ms, false));
+        }
 
         //  Vandalise signature
         {
