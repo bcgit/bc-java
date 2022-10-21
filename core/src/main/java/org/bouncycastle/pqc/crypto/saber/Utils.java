@@ -10,6 +10,8 @@ class Utils
     private final int SABER_EP;
     private final int SABER_KEYBYTES;
 
+    private final boolean usingEffectiveMasking;
+
     public Utils(SABEREngine engine)
     {
         this.SABER_N = engine.getSABER_N();
@@ -18,6 +20,7 @@ class Utils
         this.SABER_POLYBYTES = engine.getSABER_POLYBYTES();
         this.SABER_EP = engine.getSABER_EP();
         this.SABER_KEYBYTES = engine.getSABER_KEYBYTES();
+        this.usingEffectiveMasking = engine.usingEffectiveMasking;
     }
 
     public void POLT2BS(byte[] bytes, int byteIndex, short[] data)
@@ -103,41 +106,68 @@ class Utils
     private void POLq2BS(byte[] bytes, int byteIndex, short[] data)
     {
         short j, offset_byte, offset_data;
-        for (j = 0; j < SABER_N / 8; j++)
+        if(!usingEffectiveMasking)
         {
-            offset_byte = (short) (13 * j);
-            offset_data = (short) (8 * j);
-            bytes[byteIndex + offset_byte + 0] = (byte) (data[offset_data + 0] & (0xff));
-            bytes[byteIndex + offset_byte + 1] = (byte) (((data[offset_data + 0] >> 8) & 0x1f) | ((data[offset_data + 1] & 0x07) << 5));
-            bytes[byteIndex + offset_byte + 2] = (byte) ((data[offset_data + 1] >> 3) & 0xff);
-            bytes[byteIndex + offset_byte + 3] = (byte) (((data[offset_data + 1] >> 11) & 0x03) | ((data[offset_data + 2] & 0x3f) << 2));
-            bytes[byteIndex + offset_byte + 4] = (byte) (((data[offset_data + 2] >> 6) & 0x7f) | ((data[offset_data + 3] & 0x01) << 7));
-            bytes[byteIndex + offset_byte + 5] = (byte) ((data[offset_data + 3] >> 1) & 0xff);
-            bytes[byteIndex + offset_byte + 6] = (byte) (((data[offset_data + 3] >> 9) & 0x0f) | ((data[offset_data + 4] & 0x0f) << 4));
-            bytes[byteIndex + offset_byte + 7] = (byte) ((data[offset_data + 4] >> 4) & 0xff);
-            bytes[byteIndex + offset_byte + 8] = (byte) (((data[offset_data + 4] >> 12) & 0x01) | ((data[offset_data + 5] & 0x7f) << 1));
-            bytes[byteIndex + offset_byte + 9] = (byte) (((data[offset_data + 5] >> 7) & 0x3f) | ((data[offset_data + 6] & 0x03) << 6));
-            bytes[byteIndex + offset_byte + 10] = (byte) ((data[offset_data + 6] >> 2) & 0xff);
-            bytes[byteIndex + offset_byte + 11] = (byte) (((data[offset_data + 6] >> 10) & 0x07) | ((data[offset_data + 7] & 0x1f) << 3));
-            bytes[byteIndex + offset_byte + 12] = (byte) ((data[offset_data + 7] >> 5) & 0xff);
+            for (j = 0; j < SABER_N / 8; j++)
+            {
+                offset_byte = (short) (13 * j);
+                offset_data = (short) (8 * j);
+                bytes[byteIndex + offset_byte + 0] = (byte) (data[offset_data + 0] & (0xff));
+                bytes[byteIndex + offset_byte + 1] = (byte) (((data[offset_data + 0] >> 8) & 0x1f) | ((data[offset_data + 1] & 0x07) << 5));
+                bytes[byteIndex + offset_byte + 2] = (byte) ((data[offset_data + 1] >> 3) & 0xff);
+                bytes[byteIndex + offset_byte + 3] = (byte) (((data[offset_data + 1] >> 11) & 0x03) | ((data[offset_data + 2] & 0x3f) << 2));
+                bytes[byteIndex + offset_byte + 4] = (byte) (((data[offset_data + 2] >> 6) & 0x7f) | ((data[offset_data + 3] & 0x01) << 7));
+                bytes[byteIndex + offset_byte + 5] = (byte) ((data[offset_data + 3] >> 1) & 0xff);
+                bytes[byteIndex + offset_byte + 6] = (byte) (((data[offset_data + 3] >> 9) & 0x0f) | ((data[offset_data + 4] & 0x0f) << 4));
+                bytes[byteIndex + offset_byte + 7] = (byte) ((data[offset_data + 4] >> 4) & 0xff);
+                bytes[byteIndex + offset_byte + 8] = (byte) (((data[offset_data + 4] >> 12) & 0x01) | ((data[offset_data + 5] & 0x7f) << 1));
+                bytes[byteIndex + offset_byte + 9] = (byte) (((data[offset_data + 5] >> 7) & 0x3f) | ((data[offset_data + 6] & 0x03) << 6));
+                bytes[byteIndex + offset_byte + 10] = (byte) ((data[offset_data + 6] >> 2) & 0xff);
+                bytes[byteIndex + offset_byte + 11] = (byte) (((data[offset_data + 6] >> 10) & 0x07) | ((data[offset_data + 7] & 0x1f) << 3));
+                bytes[byteIndex + offset_byte + 12] = (byte) ((data[offset_data + 7] >> 5) & 0xff);
+            }
+        }
+        else
+        {
+            for (j = 0; j < SABER_N / 2; j++)
+            {
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (2 * j);
+                bytes[byteIndex + offset_byte + 0] = (byte) (data[offset_data + 0] & (0xff));
+                bytes[byteIndex + offset_byte + 1] = (byte) (((data[offset_data + 0] >> 8) & 0xf) | ((data[offset_data + 1] & 0xf) << 4));
+                bytes[byteIndex + offset_byte + 2] = (byte) ((data[offset_data + 1] >> 4) & 0xff);
+            }
         }
     }
 
     private void BS2POLq(byte[] bytes, int byteIndex, short[] data)
     {
         short j, offset_byte, offset_data;
-        for (j = 0; j < SABER_N / 8; j++)
+        if(!usingEffectiveMasking)
         {
-            offset_byte = (short) (13 * j);
-            offset_data = (short) (8 * j);
-            data[offset_data + 0] = (short) ((bytes[byteIndex + offset_byte + 0] & (0xff)) | ((bytes[byteIndex + offset_byte + 1] & 0x1f) << 8));
-            data[offset_data + 1] = (short) ((bytes[byteIndex + offset_byte + 1] >> 5 & (0x07)) | ((bytes[byteIndex + offset_byte + 2] & 0xff) << 3) | ((bytes[byteIndex + offset_byte + 3] & 0x03) << 11));
-            data[offset_data + 2] = (short) ((bytes[byteIndex + offset_byte + 3] >> 2 & (0x3f)) | ((bytes[byteIndex + offset_byte + 4] & 0x7f) << 6));
-            data[offset_data + 3] = (short) ((bytes[byteIndex + offset_byte + 4] >> 7 & (0x01)) | ((bytes[byteIndex + offset_byte + 5] & 0xff) << 1) | ((bytes[byteIndex + offset_byte + 6] & 0x0f) << 9));
-            data[offset_data + 4] = (short) ((bytes[byteIndex + offset_byte + 6] >> 4 & (0x0f)) | ((bytes[byteIndex + offset_byte + 7] & 0xff) << 4) | ((bytes[byteIndex + offset_byte + 8] & 0x01) << 12));
-            data[offset_data + 5] = (short) ((bytes[byteIndex + offset_byte + 8] >> 1 & (0x7f)) | ((bytes[byteIndex + offset_byte + 9] & 0x3f) << 7));
-            data[offset_data + 6] = (short) ((bytes[byteIndex + offset_byte + 9] >> 6 & (0x03)) | ((bytes[byteIndex + offset_byte + 10] & 0xff) << 2) | ((bytes[byteIndex + offset_byte + 11] & 0x07) << 10));
-            data[offset_data + 7] = (short) ((bytes[byteIndex + offset_byte + 11] >> 3 & (0x1f)) | ((bytes[byteIndex + offset_byte + 12] & 0xff) << 5));
+            for (j = 0; j < SABER_N / 8; j++)
+            {
+                offset_byte = (short) (13 * j);
+                offset_data = (short) (8 * j);
+                data[offset_data + 0] = (short) ((bytes[byteIndex + offset_byte + 0] & (0xff)) | ((bytes[byteIndex + offset_byte + 1] & 0x1f) << 8));
+                data[offset_data + 1] = (short) ((bytes[byteIndex + offset_byte + 1] >> 5 & (0x07)) | ((bytes[byteIndex + offset_byte + 2] & 0xff) << 3) | ((bytes[byteIndex + offset_byte + 3] & 0x03) << 11));
+                data[offset_data + 2] = (short) ((bytes[byteIndex + offset_byte + 3] >> 2 & (0x3f)) | ((bytes[byteIndex + offset_byte + 4] & 0x7f) << 6));
+                data[offset_data + 3] = (short) ((bytes[byteIndex + offset_byte + 4] >> 7 & (0x01)) | ((bytes[byteIndex + offset_byte + 5] & 0xff) << 1) | ((bytes[byteIndex + offset_byte + 6] & 0x0f) << 9));
+                data[offset_data + 4] = (short) ((bytes[byteIndex + offset_byte + 6] >> 4 & (0x0f)) | ((bytes[byteIndex + offset_byte + 7] & 0xff) << 4) | ((bytes[byteIndex + offset_byte + 8] & 0x01) << 12));
+                data[offset_data + 5] = (short) ((bytes[byteIndex + offset_byte + 8] >> 1 & (0x7f)) | ((bytes[byteIndex + offset_byte + 9] & 0x3f) << 7));
+                data[offset_data + 6] = (short) ((bytes[byteIndex + offset_byte + 9] >> 6 & (0x03)) | ((bytes[byteIndex + offset_byte + 10] & 0xff) << 2) | ((bytes[byteIndex + offset_byte + 11] & 0x07) << 10));
+                data[offset_data + 7] = (short) ((bytes[byteIndex + offset_byte + 11] >> 3 & (0x1f)) | ((bytes[byteIndex + offset_byte + 12] & 0xff) << 5));
+            }
+        }
+        else
+        {
+            for (j = 0; j < SABER_N / 2; j++)
+            {
+                offset_byte = (short) (3 * j);
+                offset_data = (short) (2 * j);
+                data[offset_data + 0] = (short) ((bytes[byteIndex + offset_byte + 0] & (0xff)) | ((bytes[byteIndex + offset_byte + 1] & 0xf) << 8));
+                data[offset_data + 1] = (short) ((bytes[byteIndex + offset_byte + 1] >> 4 & (0xf)) | ((bytes[byteIndex + offset_byte + 2] & 0xff) << 4));
+            }
         }
     }
 

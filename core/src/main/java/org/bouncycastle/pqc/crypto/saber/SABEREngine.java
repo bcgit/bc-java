@@ -10,7 +10,6 @@ import org.bouncycastle.util.Arrays;
 class SABEREngine
 {
     // constant parameters
-    public static final int SABER_EQ = 13;
     public static final int SABER_EP = 10;
     public static final int SABER_N = 256;
 
@@ -26,6 +25,8 @@ class SABEREngine
     private final int SABER_ET;
 
     private final int SABER_POLYCOINBYTES;
+    private final int SABER_EQ;
+
     private final int SABER_POLYBYTES;
     private final int SABER_POLYVECBYTES;
     private final int SABER_POLYCOMPRESSEDBYTES;
@@ -106,7 +107,6 @@ class SABEREngine
 
     public int getSessionKeySize()
     {
-//        return SABER_KEYBYTES;
         return defaultKeySize / 8;
     }
     public int getCipherTextSize()
@@ -122,9 +122,16 @@ class SABEREngine
         return SABER_SECRETKEYBYTES;
     }
 
-    public SABEREngine(int l, int defaultKeySize)
+    private final boolean usingAES;
+    protected final boolean usingEffectiveMasking;
+
+    protected final Symmetric symmetric;
+
+    public SABEREngine(int l, int defaultKeySize, boolean usingAES, boolean usingEffectiveMasking)
     {
         this.defaultKeySize = defaultKeySize;
+        this.usingAES = usingAES;
+        this.usingEffectiveMasking = usingEffectiveMasking;
 
         this.SABER_L = l;
         if (l == 2)
@@ -142,7 +149,27 @@ class SABEREngine
             this.SABER_MU = 6;
             this.SABER_ET = 6;
         }
-        this.SABER_POLYCOINBYTES = (SABER_MU * SABER_N / 8);
+
+        if(usingAES)
+        {
+            symmetric = new Symmetric.AesSymmetric();
+        }
+        else
+        {
+            symmetric = new Symmetric.ShakeSymmetric();
+        }
+
+        if(usingEffectiveMasking)
+        {
+            this.SABER_EQ = 12;
+            this.SABER_POLYCOINBYTES = (2 * SABER_N / 8);
+        }
+        else
+        {
+            this.SABER_EQ = 13;
+            this.SABER_POLYCOINBYTES = (SABER_MU * SABER_N / 8);
+        }
+
         this.SABER_POLYBYTES = (SABER_EQ * SABER_N / 8);
         this.SABER_POLYVECBYTES = (SABER_L * SABER_POLYBYTES);
         this.SABER_POLYCOMPRESSEDBYTES = (SABER_EP * SABER_N / 8);
@@ -172,9 +199,7 @@ class SABEREngine
 
         random.nextBytes(seed_A);
 
-        Xof digest = new SHAKEDigest(128);
-        digest.update(seed_A, 0, SABER_SEEDBYTES);
-        digest.doFinal(seed_A, 0, SABER_SEEDBYTES);
+        symmetric.prf(seed_A, seed_A, SABER_SEEDBYTES, SABER_SEEDBYTES);
 
         random.nextBytes(seed_s);
 
@@ -203,12 +228,12 @@ class SABEREngine
         int i;
         indcpa_kem_keypair(pk, sk, random); // sk[0:SABER_INDCPA_SECRETKEYBYTES-1] <-- sk
         for (i = 0; i < SABER_INDCPA_PUBLICKEYBYTES; i++)
+        {
             sk[i + SABER_INDCPA_SECRETKEYBYTES] = pk[i]; // sk[SABER_INDCPA_SECRETKEYBYTES:SABER_INDCPA_SECRETKEYBYTES+SABER_INDCPA_SECRETKEYBYTES-1] <-- pk
+         }
 
         // Then hash(pk) is appended.
-        SHA3Digest digest = new SHA3Digest(256);
-        digest.update(pk, 0, SABER_INDCPA_PUBLICKEYBYTES);
-        digest.doFinal(sk, SABER_SECRETKEYBYTES - 64);
+        symmetric.hash_h(sk, pk, SABER_SECRETKEYBYTES - 64);
 
         // Remaining part of sk contains a pseudo-random number.
         byte[] nonce = new byte[SABER_KEYBYTES];
@@ -265,39 +290,29 @@ class SABEREngine
         byte[] nonce = new byte[32];
         random.nextBytes(nonce);
 
-        SHA3Digest digest_256 = new SHA3Digest(256);
-        SHA3Digest digest_512 = new SHA3Digest(512);
-
         // BUF[0:31] <-- random message (will be used as the key for client) Note: hash doesnot release system RNG output
-        digest_256.update(nonce, 0, 32);
-        digest_256.doFinal(nonce, 0);
+        symmetric.hash_h(nonce, nonce, 0);
         System.arraycopy(nonce, 0, buf, 0, 32);
 
         // BUF[32:63] <-- Hash(public key);  Multitarget countermeasure for coins + contributory KEM
-        digest_256.update(pk, 0, SABER_INDCPA_PUBLICKEYBYTES);
-        digest_256.doFinal(buf, 32);
+        symmetric.hash_h(buf, pk, 32);
 
         // kr[0:63] <-- Hash(buf[0:63]);
-        digest_512.update(buf, 0, 64);
-        digest_512.doFinal(kr, 0);
+        symmetric.hash_g(kr, buf);
 
         // K^ <-- kr[0:31]
         // noiseseed (r) <-- kr[32:63];
         // buf[0:31] contains message; kr[32:63] contains randomness r;
         indcpa_kem_enc(buf, Arrays.copyOfRange(kr, 32, kr.length), pk, c);
 
-        digest_256.update(c, 0, SABER_BYTES_CCA_DEC);
-        digest_256.doFinal(kr, 32);
+        symmetric.hash_h(kr, c, 32);
 
         // hash concatenation of pre-k and h(c) to k
         //todo support 128 and 192 bit keys
         byte[] temp_k = new byte[32];
-        digest_256.update(kr, 0, 64);
-        digest_256.doFinal(temp_k, 0);
 
+        symmetric.hash_h(temp_k, kr, 0);
         System.arraycopy(temp_k,0, k, 0, defaultKeySize/8);
-
-
 
         return 0;
     }
@@ -335,14 +350,11 @@ class SABEREngine
 
         // Multitarget countermeasure for coins + contributory KEM
         for (i = 0; i < 32; i++) // Save hash by storing h(pk) in sk
+        {
             buf[32 + i] = sk[SABER_SECRETKEYBYTES - 64 + i];
+        }
 
-
-        SHA3Digest digest_256 = new SHA3Digest(256);
-        SHA3Digest digest_512 = new SHA3Digest(512);
-
-        digest_512.update(buf, 0, 64);
-        digest_512.doFinal(kr, 0);
+        symmetric.hash_g(kr, buf);
 
         indcpa_kem_enc(buf, Arrays.copyOfRange(kr, 32, kr.length), pk, cmp);
 
@@ -350,16 +362,15 @@ class SABEREngine
 
         // overwrite coins in kr with h(c)
 
-        digest_256.update(c, 0, SABER_BYTES_CCA_DEC);
-        digest_256.doFinal(kr, 32);
+        symmetric.hash_h(kr, c, 32);
 
         cmov(kr, sk, SABER_SECRETKEYBYTES - SABER_KEYBYTES, SABER_KEYBYTES, (byte) fail);
 
         // hash concatenation of pre-k and h(c) to k
         //todo support 128 and 192 bit keys
         byte[] temp_k = new byte[32];
-        digest_256.update(kr, 0, 64);
-        digest_256.doFinal(temp_k, 0);
+
+        symmetric.hash_h(temp_k, kr, 0);
 
         System.arraycopy(temp_k,0, k, 0, defaultKeySize/8);
         return 0;

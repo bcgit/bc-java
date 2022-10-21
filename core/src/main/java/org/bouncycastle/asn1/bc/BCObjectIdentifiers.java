@@ -308,6 +308,15 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier lightsaberkem256r3 = pqc_kem_saber.branch("7");
     ASN1ObjectIdentifier saberkem256r3 = pqc_kem_saber.branch("8");
     ASN1ObjectIdentifier firesaberkem256r3 = pqc_kem_saber.branch("9");
+    ASN1ObjectIdentifier ulightsaberkemr3 = pqc_kem_saber.branch("10");
+    ASN1ObjectIdentifier usaberkemr3 = pqc_kem_saber.branch("11");
+    ASN1ObjectIdentifier ufiresaberkemr3 = pqc_kem_saber.branch("12");
+    ASN1ObjectIdentifier lightsaberkem90sr3 = pqc_kem_saber.branch("13");
+    ASN1ObjectIdentifier saberkem90sr3 = pqc_kem_saber.branch("14");
+    ASN1ObjectIdentifier firesaberkem90sr3 = pqc_kem_saber.branch("15");
+    ASN1ObjectIdentifier ulightsaberkem90sr3 = pqc_kem_saber.branch("16");
+    ASN1ObjectIdentifier usaberkem90sr3 = pqc_kem_saber.branch("17");
+    ASN1ObjectIdentifier ufiresaberkem90sr3 = pqc_kem_saber.branch("18");
 
     /**
      * SIKE
