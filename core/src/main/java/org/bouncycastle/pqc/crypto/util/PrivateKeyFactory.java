@@ -314,7 +314,7 @@ public class PrivateKeyFactory
 
             if (keyInfo.getPublicKeyData() != null)
             {
-                //ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+//                ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
                 return new FalconPrivateKeyParameters(spParams,
                     ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                     ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
