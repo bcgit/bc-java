@@ -35,9 +35,7 @@ class Poly
         byte[] buf = new byte[SABER_L * engine.getSABER_POLYVECBYTES()];
         int i;
 
-        Xof digest = new SHAKEDigest(128);
-        digest.update(seed, 0, engine.getSABER_SEEDBYTES());
-        digest.doFinal(buf, 0, buf.length);
+        engine.symmetric.prf(buf, seed, engine.getSABER_SEEDBYTES(), buf.length);
 
         for (i = 0; i < SABER_L; i++)
         {
@@ -49,13 +47,25 @@ class Poly
     {
         byte[] buf = new byte[SABER_L * engine.getSABER_POLYCOINBYTES()];
         int i;
-        Xof digest = new SHAKEDigest(128);
-        digest.update(seed, 0, engine.getSABER_NOISE_SEEDBYTES());
-        digest.doFinal(buf, 0, buf.length);
+
+        engine.symmetric.prf(buf, seed, engine.getSABER_NOISE_SEEDBYTES(), buf.length);
 
         for (i = 0; i < SABER_L; i++)
         {
-            cbd(s[i], buf, i * engine.getSABER_POLYCOINBYTES());
+            if(!engine.usingEffectiveMasking)
+            {
+                cbd(s[i], buf, i * engine.getSABER_POLYCOINBYTES());
+            }
+            else
+            {
+                for(int j = 0; j<SABER_N/4; j++)
+                {
+                    s[i][4*j] = (short) ((((buf[j + i * engine.getSABER_POLYCOINBYTES()]) & 0x03) ^ 2) - 2);
+                    s[i][4*j+1] = (short) ((((buf[j + i * engine.getSABER_POLYCOINBYTES()] >>> 2) & 0x03)  ^ 2) - 2);
+                    s[i][4*j+2] = (short) ((((buf[j + i * engine.getSABER_POLYCOINBYTES()] >>> 4) & 0x03)  ^ 2) - 2);
+                    s[i][4*j+3] = (short) ((((buf[j + i * engine.getSABER_POLYCOINBYTES()] >>> 6) & 0x03)  ^ 2) - 2);
+                }
+            }
         }
 
     }
