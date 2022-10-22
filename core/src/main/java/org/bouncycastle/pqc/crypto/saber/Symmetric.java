@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.saber;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
@@ -10,7 +9,6 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import sun.security.provider.SHA;
 
 abstract class Symmetric
 {
@@ -91,7 +89,7 @@ abstract class Symmetric
         @Override
         void prf(byte[] out, byte[] in, int inLen, int outLen)
         {
-            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(in, 0, 32 ), new byte[16]);
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(in, 0, inLen), new byte[16]);
             cipher.init(true, kp);
             byte[] buf = new byte[outLen];   // TODO: there might be a more efficient way of doing this...
             cipher.processBytes(buf, 0, outLen, out, 0);
