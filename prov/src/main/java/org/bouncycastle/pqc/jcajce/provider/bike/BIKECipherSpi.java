@@ -27,6 +27,9 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.bike.BIKEKEMExtractor;
 import org.bouncycastle.pqc.crypto.bike.BIKEKEMGenerator;
+import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPrivateKey;
+import org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -39,7 +42,6 @@ class BIKECipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCBIKEPublicKey wrapKey;
     private BCBIKEPrivateKey unwrapKey;
-    private SecureRandom random;
 
     private AlgorithmParameters engineParams;
 
@@ -126,11 +128,6 @@ class BIKECipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +148,11 @@ class BIKECipherSpi
             if (key instanceof BCBIKEPublicKey)
             {
                 wrapKey = (BCBIKEPublicKey)key;
-                kemGen = new BIKEKEMGenerator(random);
+                kemGen = new BIKEKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,7 +163,7 @@ class BIKECipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +173,7 @@ class BIKECipherSpi
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
