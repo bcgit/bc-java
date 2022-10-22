@@ -39,8 +39,6 @@ class HQCCipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCHQCPublicKey wrapKey;
     private BCHQCPrivateKey unwrapKey;
-    private SecureRandom random;
-
     private AlgorithmParameters engineParams;
 
     HQCCipherSpi(String algorithmName)
@@ -126,11 +124,6 @@ class HQCCipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +144,11 @@ class HQCCipherSpi
             if (key instanceof BCHQCPublicKey)
             {
                 wrapKey = (BCHQCPublicKey)key;
-                kemGen = new HQCKEMGenerator(random);
+                kemGen = new HQCKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,7 +159,7 @@ class HQCCipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +169,7 @@ class HQCCipherSpi
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
