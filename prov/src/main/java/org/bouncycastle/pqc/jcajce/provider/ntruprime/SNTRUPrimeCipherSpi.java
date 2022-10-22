@@ -25,6 +25,7 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
@@ -39,8 +40,6 @@ class SNTRUPrimeCipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCSNTRUPrimePublicKey wrapKey;
     private BCSNTRUPrimePrivateKey unwrapKey;
-    private SecureRandom random;
-
     private AlgorithmParameters engineParams;
 
     SNTRUPrimeCipherSpi(String algorithmName)
@@ -126,11 +125,6 @@ class SNTRUPrimeCipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +145,11 @@ class SNTRUPrimeCipherSpi
             if (key instanceof BCSNTRUPrimePublicKey)
             {
                 wrapKey = (BCSNTRUPrimePublicKey)key;
-                kemGen = new SNTRUPrimeKEMGenerator(random);
+                kemGen = new SNTRUPrimeKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,7 +160,7 @@ class SNTRUPrimeCipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +170,7 @@ class SNTRUPrimeCipherSpi
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
