@@ -12,9 +12,6 @@ import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIHeader;
 import org.bouncycastle.asn1.cmp.PKIMessage;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
@@ -22,7 +19,6 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.util.Arrays;
-import sun.security.x509.AlgorithmId;
 
 /**
  * Wrapper for a PKIMessage with protection attached to it.
