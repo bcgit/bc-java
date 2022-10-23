@@ -5,18 +5,24 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIHeader;
 import org.bouncycastle.asn1.cmp.PKIMessage;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.util.Arrays;
+import sun.security.x509.AlgorithmId;
 
 /**
  * Wrapper for a PKIMessage with protection attached to it.
@@ -81,14 +87,25 @@ public class ProtectedPKIMessage
     }
 
     /**
-     * Determine whether the message is protected by a password based MAC. Use verify(PKMACBuilder, char[])
+     * Determine whether the message is protected by a the CMP password based MAC. Use verify(PBEMacCalculatorProvider, char[])
      * to verify the message if this method returns true.
      *
      * @return true if protection MAC PBE based, false otherwise.
      */
     public boolean hasPasswordBasedMacProtection()
     {
-        return pkiMessage.getHeader().getProtectionAlg().getAlgorithm().equals(CMPObjectIdentifiers.passwordBasedMac);
+        ASN1ObjectIdentifier procAlg = pkiMessage.getHeader().getProtectionAlg().getAlgorithm();
+        return procAlg.equals(CMPObjectIdentifiers.passwordBasedMac);
+    }
+
+    /**
+     * Return the message's protection algorithm.
+     *
+     * @return the algorithm ID for the message's protection algorithm.
+     */
+    public AlgorithmIdentifier getProtectionAlgorithm()
+    {
+        return pkiMessage.getHeader().getProtectionAlg();
     }
 
     /**
