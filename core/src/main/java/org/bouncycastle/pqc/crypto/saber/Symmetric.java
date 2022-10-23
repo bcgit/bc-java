@@ -89,7 +89,7 @@ abstract class Symmetric
         @Override
         void prf(byte[] out, byte[] in, int inLen, int outLen)
         {
-            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(in, 0, 32 ), new byte[16]);
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(in, 0, inLen), new byte[16]);
             cipher.init(true, kp);
             byte[] buf = new byte[outLen];   // TODO: there might be a more efficient way of doing this...
             cipher.processBytes(buf, 0, outLen, out, 0);
