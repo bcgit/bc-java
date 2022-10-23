@@ -82,6 +82,11 @@ public class CertOrEncCert
         return null;
     }
 
+    public boolean hasEncryptedCertificate()
+    {
+        return encryptedCert != null;
+    }
+
     public CMPCertificate getCertificate()
     {
         return certificate;
