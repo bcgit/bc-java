@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.dilithium;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -9,6 +10,7 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
@@ -45,26 +47,30 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        if (publicKey instanceof BCDilithiumPublicKey)
+        if (!(publicKey instanceof BCDilithiumPublicKey))
         {
-            BCDilithiumPublicKey key = (BCDilithiumPublicKey)publicKey;
-            CipherParameters param = key.getKeyParams();
-
-            if (parameters != null)
+            try
             {
-                String canonicalAlg = Strings.toUpperCase(parameters.getName());
-                if (!canonicalAlg.equals(key.getAlgorithm()))
-                {
-                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
-                }
+                publicKey = new BCDilithiumPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
             }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to Dilithium: " + e.getMessage(), e);
+            }
+        }
 
-            signer.init(false, param);
-        }
-        else
+        BCDilithiumPublicKey key = (BCDilithiumPublicKey)publicKey;
+
+        if (parameters != null)
         {
-            throw new InvalidKeyException("unknown public key passed to Dilithium");
+            String canonicalAlg = Strings.toUpperCase(parameters.getName());
+            if (!canonicalAlg.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("signature configured for " + canonicalAlg);
+            }
         }
+
+        signer.init(false, key.getKeyParams());
     }
 
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
