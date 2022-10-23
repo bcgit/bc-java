@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.crmf.CertificateRepMessage;
 import org.bouncycastle.cert.crmf.CertificateReqMessages;
-import org.bouncycastle.cert.crmf.CertificateResponse;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.MacCalculator;
 
