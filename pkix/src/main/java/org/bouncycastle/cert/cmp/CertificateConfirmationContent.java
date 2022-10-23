@@ -3,8 +3,6 @@ package org.bouncycastle.cert.cmp;
 import org.bouncycastle.asn1.cmp.CertConfirmContent;
 import org.bouncycastle.asn1.cmp.CertStatus;
 import org.bouncycastle.asn1.cmp.PKIBody;
-import org.bouncycastle.asn1.crmf.CertReqMessages;
-import org.bouncycastle.cert.crmf.CertificateReqMessages;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 
