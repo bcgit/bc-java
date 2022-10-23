@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.falcon;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -9,11 +10,13 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
+import org.bouncycastle.pqc.jcajce.provider.dilithium.BCDilithiumPublicKey;
 import org.bouncycastle.util.Strings;
 
 public class SignatureSpi
@@ -45,26 +48,30 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        if (publicKey instanceof BCFalconPublicKey)
+        if (!(publicKey instanceof BCFalconPublicKey))
         {
-            BCFalconPublicKey key = (BCFalconPublicKey)publicKey;
-            CipherParameters param = key.getKeyParams();
-
-            if (parameters != null)
+            try
             {
-                String canonicalAlg = Strings.toUpperCase(parameters.getName());
-                if (!canonicalAlg.equals(key.getAlgorithm()))
-                {
-                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
-                }
+                publicKey = new BCFalconPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
             }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to Falcon: " + e.getMessage(), e);
+            }
+        }
 
-            signer.init(false, param);
-        }
-        else
+        BCFalconPublicKey key = (BCFalconPublicKey)publicKey;
+
+        if (parameters != null)
         {
-            throw new InvalidKeyException("unknown public key passed to Falcon");
+            String canonicalAlg = Strings.toUpperCase(parameters.getName());
+            if (!canonicalAlg.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("signature configured for " + canonicalAlg);
+            }
         }
+
+        signer.init(false, key.getKeyParams());
     }
 
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
