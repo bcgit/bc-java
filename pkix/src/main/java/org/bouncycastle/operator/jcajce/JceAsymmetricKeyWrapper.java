@@ -240,7 +240,11 @@ public class JceAsymmetricKeyWrapper
 
             try
             {
-                algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+                // in this case there are algorithm parameters, but they're not for key wrapping.
+                if (!this.getAlgorithmIdentifier().getAlgorithm().equals(OIWObjectIdentifiers.elGamalAlgorithm))
+                {
+                    algParams = helper.createAlgorithmParameters(this.getAlgorithmIdentifier());
+                }
 
                 if (algParams != null)
                 {
@@ -254,9 +258,10 @@ public class JceAsymmetricKeyWrapper
             }
             catch (InvalidKeyException e)
             {
+                e.printStackTrace();
             }
             catch (GeneralSecurityException e)
-            {
+            {   e.printStackTrace();
             }
             catch (IllegalStateException e)
             {
