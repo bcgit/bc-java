@@ -269,4 +269,19 @@ public class ERSArchiveTimeStamp
     {
         return archiveTimeStamp.getEncoded();
     }
+
+    /**
+     * Build an ArchiveTimeStamp from a regular time stamp token.
+     *
+     * @param tspToken the TimeStampToken in the regular time stamp.
+     * @param digCalcProv a digest calculator provider for use with the time stamp.
+     * @return an ERSArchiveTimeStamp containing the time stamp.
+     * @throws TSPException on a failure to parse the time stamp token data.
+     * @throws ERSException on a failure to convert the time stamp token to an archive time stamp.
+     */
+    public static ERSArchiveTimeStamp fromTimeStampToken(TimeStampToken tspToken, DigestCalculatorProvider digCalcProv)
+        throws TSPException, ERSException
+    {
+        return new ERSArchiveTimeStamp(new ArchiveTimeStamp(tspToken.toCMSSignedData().toASN1Structure()), digCalcProv);
+    }
 }

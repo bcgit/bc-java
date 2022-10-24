@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
@@ -38,6 +39,7 @@ import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampRequestGenerator;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.TimeStampResponseGenerator;
+import org.bouncycastle.tsp.TimeStampToken;
 import org.bouncycastle.tsp.TimeStampTokenGenerator;
 import org.bouncycastle.tsp.ers.ArchiveTimeStampValidationException;
 import org.bouncycastle.tsp.ers.ERSArchiveTimeStamp;
@@ -176,7 +178,7 @@ public class ERSTest
 
         ats = (ERSArchiveTimeStamp)atss.get(1);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
-        
+
         ats = (ERSArchiveTimeStamp)atss.get(2);
         ats.validate(new JcaSimpleSignerInfoVerifierBuilder().build(tspCert));
     }
@@ -191,9 +193,9 @@ public class ERSTest
                 new ERSByteData(H3B_DATA),
                 new ERSByteData(H3C_DATA)});
         ERSDataGroup h5Docs = new ERSDataGroup(
-             new ERSData[]{new ERSByteData(H5A_DATA),
-                 new ERSByteData(H5B_DATA),
-                 new ERSByteData(H5C_DATA)});
+            new ERSData[]{new ERSByteData(H5A_DATA),
+                new ERSByteData(H5B_DATA),
+                new ERSByteData(H5C_DATA)});
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -313,9 +315,9 @@ public class ERSTest
                 new ERSByteData(H3C_DATA)});
         ERSData h4Doc = new ERSByteData(H4_DATA);
         ERSDataGroup h5Docs = new ERSDataGroup(
-             new ERSData[]{new ERSByteData(H5A_DATA),
-                 new ERSByteData(H5B_DATA),
-                 new ERSByteData(H5C_DATA)});
+            new ERSData[]{new ERSByteData(H5A_DATA),
+                new ERSByteData(H5B_DATA),
+                new ERSByteData(H5C_DATA)});
 
         DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
         DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
@@ -333,7 +335,7 @@ public class ERSTest
         tspReqGen.setCertReq(true);
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
-     
+
         Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
             tspReq.getMessageImprintDigest()));
 
@@ -449,7 +451,7 @@ public class ERSTest
 
         for (int i = 0; i != 101; i++)
         {
-            ersGen.addData(new ERSByteData(new byte[] { (byte)i }));
+            ersGen.addData(new ERSByteData(new byte[]{(byte)i}));
         }
 
         TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
@@ -502,7 +504,7 @@ public class ERSTest
             {
                 try
                 {
-                    ((ERSArchiveTimeStamp)atss.get(i)).validatePresent(new ERSByteData(new byte[] {(byte)j}), new Date());
+                    ((ERSArchiveTimeStamp)atss.get(i)).validatePresent(new ERSByteData(new byte[]{(byte)j}), new Date());
                     count++;
                     break;
                 }
@@ -816,7 +818,7 @@ public class ERSTest
 
         // as the time stamp is shared between records we should be able to reuse the response
         ERSEvidenceRecord ev1 = ((ERSEvidenceRecord)evs.get(0)).renewTimeStamp(tspResp);
-        
+
         ev1.validatePresent(h1Doc, new Date());
         checkAbsent(ev1, h2Doc);
         checkAbsent(ev1, h3Docs);
@@ -987,6 +989,64 @@ public class ERSTest
         ev = new ERSEvidenceRecord(ev.getEncoded(), digestCalculatorProvider);
     }
 
+    public void testTSPConversion()
+        throws Exception
+    {
+        ERSData h1Doc = new ERSByteData(H1_DATA);
+        ERSData h2Doc = new ERSByteData(H2_DATA);
+
+        MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP,
+            signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP,
+            origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            new JcaSimpleSignerInfoGeneratorBuilder().build("SHA256withRSA", origKP.getPrivate(), origCert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
+
+        tsTokenGen.addCertificates(certs);
+
+        TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA1, sha1.digest(H1_DATA), BigInteger.valueOf(100));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+
+        TimeStampResponse tsResp = tsRespGen.generate(request, new BigInteger("23"), new Date());
+
+        tsResp = new TimeStampResponse(tsResp.getEncoded());
+
+        TimeStampToken tsToken = tsResp.getTimeStampToken();
+
+        tsToken.validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(origCert));
+
+        ERSArchiveTimeStamp ersAts = ERSArchiveTimeStamp.fromTimeStampToken(tsToken, new JcaDigestCalculatorProviderBuilder().build());
+
+        ersAts.validatePresent(h1Doc, new Date());
+
+        try
+        {
+            ersAts.validatePresent(h2Doc, new Date());
+            fail("no exception");
+        }
+        catch (ArchiveTimeStampValidationException e)
+        {
+            assertEquals("object hash not found in wrapped timestamp", e.getMessage());
+        }
+
+    }
+
     private TimeStampResponse doTimeStamp(PrivateKey tspKey, X509Certificate tspCert, Store certs, TimeStampRequest tspReq)
         throws Exception
     {
@@ -1106,7 +1166,7 @@ public class ERSTest
             tspReqGen.setCertReq(true);
 
             TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
-   
+
             Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                 tspReq.getMessageImprintDigest()));
 
@@ -1288,80 +1348,80 @@ public class ERSTest
         );*/
 
         checkReducedHashTree(
-                // data objects
-                new byte[]{0x05, 0x07, 0x03, 0x04, 0x01, 0x06, 0x02, 0x09, 0x08},
-                // reduced hash tree
-                new byte[][][]{
-                        // 0x05
-                        new byte[][]{
-                                Hex.decode("05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("06000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("07080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x07
-                        new byte[][]{
-                                Hex.decode("07000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("08000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x03
-                        new byte[][]{
-                                Hex.decode("03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x04
-                        new byte[][]{
-                                Hex.decode("04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x01
-                        new byte[][]{
-                                Hex.decode("01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("03040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x06
-                        new byte[][]{
-                                Hex.decode("06000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("07080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x02
-                        new byte[][]{
-                                Hex.decode("02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("03040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x09
-                        new byte[][]{
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020304050607080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                        // 0x08
-                        new byte[][]{
-                                Hex.decode("08000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("07000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("05060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                                Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-                        },
-                }
+            // data objects
+            new byte[]{0x05, 0x07, 0x03, 0x04, 0x01, 0x06, 0x02, 0x09, 0x08},
+            // reduced hash tree
+            new byte[][][]{
+                // 0x05
+                new byte[][]{
+                    Hex.decode("05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("06000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("07080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x07
+                new byte[][]{
+                    Hex.decode("07000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("08000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x03
+                new byte[][]{
+                    Hex.decode("03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x04
+                new byte[][]{
+                    Hex.decode("04000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("03000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x01
+                new byte[][]{
+                    Hex.decode("01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("03040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x06
+                new byte[][]{
+                    Hex.decode("06000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("07080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x02
+                new byte[][]{
+                    Hex.decode("02000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("03040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060708000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x09
+                new byte[][]{
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020304050607080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+                // 0x08
+                new byte[][]{
+                    Hex.decode("08000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("07000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("05060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("01020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                    Hex.decode("09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+                },
+            }
         );
 
     }
@@ -1373,9 +1433,10 @@ public class ERSTest
 
         assertEquals(dataObjects.length, reducedHashTree.length);
 
-        final DigestCalculator identityDigestCalculator = new DigestCalculator() {
+        final DigestCalculator identityDigestCalculator = new DigestCalculator()
+        {
             // fake SHA512 OID
-            private final ASN1ObjectIdentifier algorithm =  NISTObjectIdentifiers.id_sha512;
+            private final ASN1ObjectIdentifier algorithm = NISTObjectIdentifiers.id_sha512;
             private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
             @Override
@@ -1416,7 +1477,8 @@ public class ERSTest
 
         final ERSArchiveTimeStampGenerator ersArchiveTimeStampGenerator = new ERSArchiveTimeStampGenerator(identityDigestCalculator);
 
-        for (int i = 0; i < dataObjects.length; i++) {
+        for (int i = 0; i < dataObjects.length; i++)
+        {
             ersArchiveTimeStampGenerator.addData(new ERSByteData(BigInteger.valueOf(dataObjects[i]).toByteArray()));
         }
 
@@ -1427,7 +1489,7 @@ public class ERSTest
 
 
         //Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
-         //       tspReq.getMessageImprintDigest()));
+        //       tspReq.getMessageImprintDigest()));
 
         final String signDN = "O=Bouncy Castle, C=AU";
         final KeyPair signKP = TSPTestUtil.makeKeyPair();
@@ -1475,18 +1537,19 @@ public class ERSTest
                 return identityDigestCalculator;
             }
         };
-        
+
         final ERSEvidenceRecordGenerator ersEvidenceRecordGenerator = new ERSEvidenceRecordGenerator(digestCalculatorProvider);
 
         final List<ERSEvidenceRecord> ersEvidenceRecords = ersEvidenceRecordGenerator.generate(ersArchiveTimeStamps);
         assertEquals(dataObjects.length, ersEvidenceRecords.size());
 
         final ERSEvidenceRecordStore ersEvidenceRecordStore = new ERSEvidenceRecordStore(ersEvidenceRecords);
-        
-        for (int i = 0; i < dataObjects.length; i++) {
+
+        for (int i = 0; i < dataObjects.length; i++)
+        {
 
             final Collection<ERSEvidenceRecord> ersEvidenceRecordMatches = ersEvidenceRecordStore.getMatches(
-                    new ERSEvidenceRecordSelector(new ERSByteData(new byte[] { dataObjects[i] }), new Date()));
+                new ERSEvidenceRecordSelector(new ERSByteData(new byte[]{dataObjects[i]}), new Date()));
             assertEquals(1, ersEvidenceRecordMatches.size());
 
             final ERSEvidenceRecord ersEvidenceRecord = (ERSEvidenceRecord)ersEvidenceRecordMatches.iterator().next();
@@ -1500,7 +1563,8 @@ public class ERSTest
 //            }
 //            System.out.println("},");
 
-            for (int j = 0; j < reducedHashTree[i].length; j++) {
+            for (int j = 0; j < reducedHashTree[i].length; j++)
+            {
                 assertTrue(Arrays.areEqual(reducedHashTree[i][j], ht[j].getValues()[0]));
             }
 
