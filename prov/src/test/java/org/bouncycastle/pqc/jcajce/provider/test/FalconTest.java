@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -21,6 +23,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -52,6 +55,12 @@ public class FalconTest
 
         FalconKey privKey = (FalconKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
+        assertEquals(kp.getPrivate(), privKey);
+        assertEquals(kp.getPrivate().getAlgorithm(), privKey.getAlgorithm());
+        assertEquals(kp.getPrivate().hashCode(), privKey.hashCode());
+
+        assertEquals(((FalconPrivateKey)kp.getPrivate()).getPublicKey(), ((FalconPrivateKey)privKey).getPublicKey());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -64,7 +73,9 @@ public class FalconTest
         FalconKey privKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(privKey, privKey2);
-        
+        assertEquals(privKey.getAlgorithm(), privKey2.getAlgorithm());
+        assertEquals(privKey.hashCode(), privKey2.hashCode());
+
         assertEquals(kp.getPublic(), ((FalconPrivateKey)privKey2).getPublicKey());
         assertEquals(((FalconPrivateKey)privKey).getPublicKey(), ((FalconPrivateKey)privKey2).getPublicKey());
     }
@@ -82,6 +93,10 @@ public class FalconTest
 
         FalconKey pubKey = (FalconKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
+        assertEquals(kp.getPublic(), pubKey);
+        assertEquals(kp.getPublic().getAlgorithm(), pubKey.getAlgorithm());
+        assertEquals(kp.getPublic().hashCode(), pubKey.hashCode());
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ObjectOutputStream oOut = new ObjectOutputStream(bOut);
 
@@ -94,6 +109,128 @@ public class FalconTest
         FalconKey pubKey2 = (FalconKey)oIn.readObject();
 
         assertEquals(pubKey, pubKey2);
+        assertEquals(pubKey.getAlgorithm(), pubKey2.getAlgorithm());
+        assertEquals(pubKey.hashCode(), pubKey2.hashCode());
+    }
+
+    public void testFalcon512()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("Falcon-512", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("Falcon-512", "BCPQC");
+
+        assertEquals("Falcon-512", sig.getAlgorithm());
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("signature configured for FALCON-512", e.getMessage());
+        }
+    }
+
+    public void testFalcon1024()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("Falcon-1024", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("Falcon-1024", "BCPQC");
+
+        assertEquals("Falcon-1024", sig.getAlgorithm());
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+
+        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        kp = kpg.generateKeyPair();
+
+        try
+        {
+            sig.initVerify(kp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("signature configured for FALCON-1024", e.getMessage());
+        }
+    }
+
+    public void testRestrictedKeyPairGen()
+        throws Exception
+    {
+        doTestRestrictedKeyPairGen(FalconParameterSpec.falcon_512, FalconParameterSpec.falcon_1024);
+        doTestRestrictedKeyPairGen(FalconParameterSpec.falcon_1024, FalconParameterSpec.falcon_512);
+    }
+
+    private void doTestRestrictedKeyPairGen(FalconParameterSpec spec, FalconParameterSpec altSpec)
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        kpg.initialize(spec, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
+        assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
+
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
+        }
     }
 
     public void testFalconRandomSig()

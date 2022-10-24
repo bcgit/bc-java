@@ -42,9 +42,8 @@ class WotsPlus
         return engine.T_l(pkSeed, wotspkADRS, Arrays.concatenate(tmp));
     }
 
-    //    #Input: Input string X, start index i, number of steps s, public seed PK.seed,
-//    address ADRS
-//    #Output: value of F iterated s times on X
+    // #Input: Input string X, start index i, number of steps s, public seed PK.seed, address ADRS
+    // #Output: value of F iterated s times on X
     byte[] chain(byte[] X, int i, int s, byte[] pkSeed, ADRS adrs)
     {
         if (s == 0)
@@ -55,36 +54,42 @@ class WotsPlus
         {
             return null;
         }
-        byte[] tmp = chain(X, i, s - 1, pkSeed, adrs);
-        adrs.setHashAddress(i + s - 1);
-        tmp = engine.F(pkSeed, adrs, tmp);
-
-        return tmp;
+        byte[] result = X;
+        for (int j = 0; j < s; ++j)
+        {
+            adrs.setHashAddress(i + j);
+            result = engine.F(pkSeed, adrs, result);
+        }
+        return result;
     }
 
-    //
     // #Input: Message M, secret seed SK.seed, public seed PK.seed, address ADRS
     // #Output: WOTS+ signature sig
     public byte[] sign(byte[] M, byte[] skSeed, byte[] pkSeed, ADRS paramAdrs)
     {
         ADRS adrs = new ADRS(paramAdrs);
 
-        int csum = 0;
+        int[] msg = new int[engine.WOTS_LEN];
+
         // convert message to base w
-        int[] msg = base_w(M, w, engine.WOTS_LEN1);
+        base_w(M, 0, w, msg, 0, engine.WOTS_LEN1);
+
         // compute checksum
+        int csum = 0;
         for (int i = 0; i < engine.WOTS_LEN1; i++)
         {
             csum += w - 1 - msg[i];
         }
+
         // convert csum to base w
         if ((engine.WOTS_LOGW % 8) != 0)
         {
             csum = csum << (8 - ((engine.WOTS_LEN2 * engine.WOTS_LOGW) % 8));
         }
         int len_2_bytes = (engine.WOTS_LEN2 * engine.WOTS_LOGW + 7) / 8;
-        byte[] bytes = Pack.intToBigEndian(csum);
-        msg = Arrays.concatenate(msg, base_w(Arrays.copyOfRange(bytes, len_2_bytes, bytes.length), w, engine.WOTS_LEN2));
+        byte[] csum_bytes = Pack.intToBigEndian(csum);
+        base_w(csum_bytes, 4 - len_2_bytes, w, msg, engine.WOTS_LEN1, engine.WOTS_LEN2);
+
         byte[][] sig = new byte[engine.WOTS_LEN][];
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
@@ -105,45 +110,44 @@ class WotsPlus
     //
     // Input: len_X-byte string X, int w, output length out_len
     // Output: out_len int array basew
-    int[] base_w(byte[] X, int w, int out_len)
+    void base_w(byte[] X, int XOff, int w, int[] output, int outOff, int outLen)
     {
-        int in = 0;
-        int out = 0;
         int total = 0;
         int bits = 0;
-        int[] output = new int[out_len];
 
-        for (int consumed = 0; consumed < out_len; consumed++)
+        for (int consumed = 0; consumed < outLen; consumed++)
         {
             if (bits == 0)
             {
-                total = X[in];
-                in++;
+                total = X[XOff++];
                 bits += 8;
             }
             bits -= engine.WOTS_LOGW;
-            output[out] = ((total >>> bits) & (w - 1));
-            out++;
+            output[outOff++] = ((total >>> bits) & (w - 1));
         }
-        return output;
     }
 
     public byte[] pkFromSig(byte[] sig, byte[] M, byte[] pkSeed, ADRS adrs)
     {
-        int csum = 0;
         ADRS wotspkADRS = new ADRS(adrs);
+
+        int[] msg = new int[engine.WOTS_LEN];
+
         // convert message to base w
-        int[] msg = base_w(M, w, engine.WOTS_LEN1);
+        base_w(M, 0, w, msg, 0, engine.WOTS_LEN1);
+
         // compute checksum
+        int csum = 0;
         for (int i = 0; i < engine.WOTS_LEN1; i++ )
         {
             csum += w - 1 - msg[i];
         }
+
         // convert csum to base w
         csum = csum << (8 - ((engine.WOTS_LEN2 * engine.WOTS_LOGW) % 8));
         int len_2_bytes = (engine.WOTS_LEN2 * engine.WOTS_LOGW + 7) / 8;
-
-        msg = Arrays.concatenate(msg, base_w(Arrays.copyOfRange(Pack.intToBigEndian(csum), 4 - len_2_bytes, 4), w, engine.WOTS_LEN2));
+        byte[] csum_bytes = Pack.intToBigEndian(csum);
+        base_w(csum_bytes, 4 - len_2_bytes, w, msg, engine.WOTS_LEN1, engine.WOTS_LEN2);
 
         byte[] sigI = new byte[engine.N];
         byte[][] tmp = new byte[engine.WOTS_LEN][];
@@ -152,7 +156,7 @@ class WotsPlus
             adrs.setChainAddress(i);
             System.arraycopy(sig, i * engine.N, sigI, 0, engine.N);
             tmp[i] = chain(sigI, msg[i], w - 1 - msg[i], pkSeed, adrs);
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       // f6be78d057cc8056907ad2bf83cc8be7
+        }
 
         wotspkADRS.setType(ADRS.WOTS_PK);
         wotspkADRS.setKeyPairAddress(adrs.getKeyPairAddress());

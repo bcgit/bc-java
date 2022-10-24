@@ -27,6 +27,9 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMExtractor;
 import org.bouncycastle.pqc.crypto.frodo.FrodoKEMGenerator;
+import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.hqc.BCHQCPrivateKey;
+import org.bouncycastle.pqc.jcajce.provider.hqc.BCHQCPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -39,7 +42,6 @@ class FrodoCipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCFrodoPublicKey wrapKey;
     private BCFrodoPrivateKey unwrapKey;
-    private SecureRandom random;
 
     private AlgorithmParameters engineParams;
 
@@ -126,11 +128,6 @@ class FrodoCipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +148,11 @@ class FrodoCipherSpi
             if (key instanceof BCFrodoPublicKey)
             {
                 wrapKey = (BCFrodoPublicKey)key;
-                kemGen = new FrodoKEMGenerator(random);
+                kemGen = new FrodoKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,7 +163,7 @@ class FrodoCipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +173,7 @@ class FrodoCipherSpi
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;

@@ -21,6 +21,8 @@ import org.bouncycastle.asn1.cmp.PKIMessage;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.crmf.CertificateRepMessage;
+import org.bouncycastle.cert.crmf.CertificateReqMessages;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.MacCalculator;
 
@@ -170,6 +172,42 @@ public class ProtectedPKIMessageBuilder
     public ProtectedPKIMessageBuilder setBody(PKIBody body)
     {
         this.body = body;
+
+        return this;
+    }
+
+    public ProtectedPKIMessageBuilder setBody(int bodyType, CertificateReqMessages certificateReqMessages)
+    {
+        if (!CertificateReqMessages.isCertificateRequestMessages(bodyType))
+        {
+            throw new IllegalArgumentException("body type " + bodyType + " does not match CMP type CertReqMessages");
+        }
+
+        this.body = new PKIBody(bodyType, certificateReqMessages.toASN1Structure());
+
+        return this;
+    }
+
+    public ProtectedPKIMessageBuilder setBody(int bodyType, CertificateRepMessage certificateRepMessage)
+    {
+        if (!CertificateRepMessage.isCertificateRepMessage(bodyType))
+        {
+            throw new IllegalArgumentException("body type " + bodyType + " does not match CMP type CertReqMessages");
+        }
+
+        this.body = new PKIBody(bodyType, certificateRepMessage.toASN1Structure());
+
+        return this;
+    }
+
+    public ProtectedPKIMessageBuilder setBody(int bodyType, CertificateConfirmationContent certificateConfirmationContent)
+    {
+        if (!CertificateConfirmationContent.isCertificateConfirmationContent(bodyType))
+        {
+            throw new IllegalArgumentException("body type " + bodyType + " does not match CMP type CertConfirmContent");
+        }
+
+        this.body = new PKIBody(bodyType, certificateConfirmationContent.toASN1Structure());
 
         return this;
     }

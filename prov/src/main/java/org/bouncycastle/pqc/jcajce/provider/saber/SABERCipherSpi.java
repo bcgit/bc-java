@@ -27,6 +27,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.saber.SABERKEMExtractor;
 import org.bouncycastle.pqc.crypto.saber.SABERKEMGenerator;
+import org.bouncycastle.pqc.crypto.sike.SIKEKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.sike.BCSIKEPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -39,8 +41,6 @@ class SABERCipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCSABERPublicKey wrapKey;
     private BCSABERPrivateKey unwrapKey;
-    private SecureRandom random;
-
     private AlgorithmParameters engineParams;
 
     SABERCipherSpi(String algorithmName)
@@ -126,11 +126,6 @@ class SABERCipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +146,11 @@ class SABERCipherSpi
             if (key instanceof BCSABERPublicKey)
             {
                 wrapKey = (BCSABERPublicKey)key;
-                kemGen = new SABERKEMGenerator(random);
+                kemGen = new SABERKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,7 +161,7 @@ class SABERCipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
@@ -176,7 +171,7 @@ class SABERCipherSpi
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;

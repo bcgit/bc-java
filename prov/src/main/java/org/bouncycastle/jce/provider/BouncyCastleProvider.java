@@ -28,13 +28,14 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceCCA2KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mceliece.McElieceKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.qtesla.QTESLAKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.rainbow.RainbowKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
@@ -70,7 +71,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.72";
+    private static String info = "BouncyCastle Security Provider v1.73b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -161,7 +162,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.72, info);
+        super(PROVIDER_NAME, 1.7299, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -312,12 +313,22 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(PQCObjectIdentifiers.mcEliece, new McElieceKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.rainbow, new RainbowKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_I, new QTESLAKeyFactorySpi());
-        addKeyInfoConverter(PQCObjectIdentifiers.qTESLA_p_III, new QTESLAKeyFactorySpi());
         addKeyInfoConverter(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium2, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium3, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium5, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium2_aes, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium3_aes, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.dilithium5_aes, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber512, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber768, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber1024_aes, new KyberKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)

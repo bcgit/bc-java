@@ -22,17 +22,18 @@ public class Falcon
             provider.addAlgorithm("KeyFactory.FALCON", PREFIX + "FalconKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.FALCON", PREFIX + "FalconKeyPairGeneratorSpi");
 
-            provider.addAlgorithm("KeyGenerator.FALCON", PREFIX + "FalconKeyGeneratorSpi");
+            addKeyPairGeneratorAlgorithm(provider, "FALCON-512", PREFIX + "FalconKeyPairGeneratorSpi$Falcon512", BCObjectIdentifiers.falcon_512);
+            addKeyPairGeneratorAlgorithm(provider, "FALCON-1024", PREFIX + "FalconKeyPairGeneratorSpi$Falcon1024", BCObjectIdentifiers.falcon_1024);
 
             addSignatureAlgorithm(provider, "FALCON", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.falcon);
 
-            addSignatureAlias(provider, "FALCON", BCObjectIdentifiers.falcon_512);
-            addSignatureAlias(provider, "FALCON", BCObjectIdentifiers.falcon_1024);
+            addSignatureAlgorithm(provider, "FALCON-512", PREFIX + "SignatureSpi$Falcon512", BCObjectIdentifiers.falcon_512);
+            addSignatureAlgorithm(provider, "FALCON-1024", PREFIX + "SignatureSpi$Falcon1024", BCObjectIdentifiers.falcon_1024);
 
             AsymmetricKeyInfoConverter keyFact = new FalconKeyFactorySpi();
 
-            registerOid(provider, BCObjectIdentifiers.falcon_512, "FALCON", keyFact);
-            registerOid(provider, BCObjectIdentifiers.falcon_1024, "FALCON", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.falcon_512, "FALCON", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.falcon_1024, "FALCON", keyFact);
         }
     }
 }

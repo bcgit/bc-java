@@ -6,7 +6,6 @@ module org.bouncycastle.provider
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider,org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
-    opens org.bouncycastle.pqc.jcajce.provider.qtesla to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
 
     exports org.bouncycastle;
@@ -14,6 +13,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.anssi;
     exports org.bouncycastle.asn1.bc;
     exports org.bouncycastle.asn1.cryptopro;
+    exports org.bouncycastle.asn1.cryptlib;
     exports org.bouncycastle.asn1.edec;
     exports org.bouncycastle.asn1.gm;
     exports org.bouncycastle.asn1.gnu;

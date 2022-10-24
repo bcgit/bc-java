@@ -162,11 +162,6 @@ class HarakaSBase
             brEnc32Le(output, q[i << 1], i << 2);
             brEnc32Le(output, q[(i << 1) + 1], (i << 2) + 16);
         }
-
-        for (i = 0; i < 32; i++)
-        {
-            output[i] ^= buffer[i];
-        }
     }
 
     private void brEnc32Le(byte[] dst, int x, int startPos)
@@ -786,5 +781,13 @@ class HarakaSBase
         w[pos + 1] = (int)(x1 | (x1 >>> 16));
         w[pos + 2] = (int)(x2 | (x2 >>> 16));
         w[pos + 3] = (int)(x3 | (x3 >>> 16));
+    }
+
+    protected static void xor(byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff, int zLen)
+    {
+        for (int i = 0; i < zLen; i++)
+        {
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[yOff + i]);
+        }
     }
 }

@@ -4,10 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.io.Streams;
 
 import static org.bouncycastle.pqc.crypto.lms.LM_OTS.D_MESG;
@@ -90,7 +91,6 @@ class LMOtsPublicKey
         return K;
     }
 
-    @Override
     public boolean equals(Object o)
     {
         if (this == o)
@@ -104,25 +104,15 @@ class LMOtsPublicKey
 
         LMOtsPublicKey that = (LMOtsPublicKey)o;
 
-        if (q != that.q)
-        {
-            return false;
-        }
-        if (parameter != null ? !parameter.equals(that.parameter) : that.parameter != null)
-        {
-            return false;
-        }
-        if (!Arrays.equals(I, that.I))
-        {
-            return false;
-        }
-        return Arrays.equals(K, that.K);
+        return q == that.q
+            && Objects.areEqual(parameter, that.parameter)
+            && Arrays.areEqual(I, that.I)
+            && Arrays.areEqual(K, that.K);
     }
 
-    @Override
     public int hashCode()
     {
-        int result = parameter != null ? parameter.hashCode() : 0;
+        int result = Objects.hashCode(parameter);
         result = 31 * result + Arrays.hashCode(I);
         result = 31 * result + q;
         result = 31 * result + Arrays.hashCode(K);

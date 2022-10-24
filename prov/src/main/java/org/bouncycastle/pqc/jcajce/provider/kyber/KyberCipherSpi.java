@@ -27,9 +27,11 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 class KyberCipherSpi
         extends CipherSpi
@@ -39,14 +41,20 @@ class KyberCipherSpi
     private KEMParameterSpec kemParameterSpec;
     private BCKyberPublicKey wrapKey;
     private BCKyberPrivateKey unwrapKey;
-    private SecureRandom random;
 
     private AlgorithmParameters engineParams;
+    private KyberParameters kyberParameters;
 
     KyberCipherSpi(String algorithmName)
-            throws NoSuchAlgorithmException
     {
         this.algorithmName = algorithmName;
+        this.kyberParameters = null;
+    }
+
+    KyberCipherSpi(KyberParameters kyberParameters)
+    {
+        this.kyberParameters = kyberParameters;
+        this.algorithmName = Strings.toUpperCase(kyberParameters.getName());
     }
 
     @Override
@@ -126,11 +134,6 @@ class KyberCipherSpi
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        if (random == null)
-        {
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
-
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
@@ -151,11 +154,11 @@ class KyberCipherSpi
             if (key instanceof BCKyberPublicKey)
             {
                 wrapKey = (BCKyberPublicKey)key;
-                kemGen = new KyberKEMGenerator(random);
+                kemGen = new KyberKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA public key can be used for wrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
             }
         }
         else if (opmode == Cipher.UNWRAP_MODE)
@@ -166,17 +169,26 @@ class KyberCipherSpi
             }
             else
             {
-                throw new InvalidKeyException("Only an RSA private key can be used for unwrapping");
+                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
             }
         }
         else
         {
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
         }
+
+        if (kyberParameters != null)
+        {
+            String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
+            }
+        }
     }
 
     @Override
-    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom secureRandom)
+    protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
             throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
@@ -314,7 +326,61 @@ class KyberCipherSpi
         public Base()
                 throws NoSuchAlgorithmException
         {
-            super("Kyber");
+            super("KYBER");
+        }
+    }
+
+    public static class Kyber512
+        extends KyberCipherSpi
+    {
+        public Kyber512()
+        {
+            super(KyberParameters.kyber512);
+        }
+    }
+
+    public static class Kyber768
+        extends KyberCipherSpi
+    {
+        public Kyber768()
+        {
+            super(KyberParameters.kyber768);
+        }
+    }
+
+    public static class Kyber1024
+        extends KyberCipherSpi
+    {
+        public Kyber1024()
+        {
+            super(KyberParameters.kyber1024);
+        }
+    }
+
+    public static class Kyber512_AES
+        extends KyberCipherSpi
+    {
+        public Kyber512_AES()
+        {
+            super(KyberParameters.kyber512_aes);
+        }
+    }
+
+    public static class Kyber768_AES
+        extends KyberCipherSpi
+    {
+        public Kyber768_AES()
+        {
+            super(KyberParameters.kyber768_aes);
+        }
+    }
+
+    public static class Kyber1024_AES
+        extends KyberCipherSpi
+    {
+        public Kyber1024_AES()
+        {
+            super(KyberParameters.kyber1024_aes);
         }
     }
 }

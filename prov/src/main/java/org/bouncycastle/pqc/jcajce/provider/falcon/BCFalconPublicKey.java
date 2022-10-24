@@ -7,10 +7,11 @@ import java.io.ObjectOutputStream;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCFalconPublicKey
     implements FalconPublicKey
@@ -18,11 +19,13 @@ public class BCFalconPublicKey
     private static final long serialVersionUID = 1L;
 
     private transient FalconPublicKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
 
     public BCFalconPublicKey(
         FalconPublicKeyParameters params)
     {
-        this.params = params;
+        init(params);
     }
 
     public BCFalconPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -34,7 +37,13 @@ public class BCFalconPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (FalconPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        init((FalconPublicKeyParameters) PublicKeyFactory.createKey(keyInfo));
+    }
+
+    private void init(FalconPublicKeyParameters params)
+    {
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
@@ -54,7 +63,7 @@ public class BCFalconPublicKey
         {
             BCFalconPublicKey otherKey = (BCFalconPublicKey)o;
 
-            return Arrays.areEqual(params.getH(), otherKey.params.getH());
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -62,29 +71,25 @@ public class BCFalconPublicKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getH());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Falcon"
+     * @return name of the algorithm - "FALCON-512 or FALCON-1024"
      */
     public final String getAlgorithm()
     {
-        return "Falcon";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-        try
+        if (encoding == null)
         {
-            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+            encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(params);
+        }
 
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
     }
 
     public String getFormat()

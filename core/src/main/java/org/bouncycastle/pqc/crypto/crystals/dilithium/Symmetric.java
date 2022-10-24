@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Arrays;
 
 abstract class Symmetric
 {
@@ -50,8 +49,8 @@ abstract class Symmetric
             byte[] expnonce = new byte[12];
             expnonce[0] = (byte)nonce;
             expnonce[1] = (byte)(nonce >> 8);
-            
-            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(Arrays.copyOfRange(key, 0, 32)), expnonce);
+
+            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(key, 0, 32), expnonce);
             cipher.init(true, kp);
         }
 

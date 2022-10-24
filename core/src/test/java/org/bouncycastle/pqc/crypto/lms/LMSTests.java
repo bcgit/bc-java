@@ -39,11 +39,21 @@ public class LMSTests
         LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
         assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
 
-
-        //  Vandalise signature
+        // Recreate signature
         {
+            byte[] recreatedSignature = sig.getEncoded();
+            assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, LMOtsSignature.getInstance(recreatedSignature), ms, false));
+        }
 
-            byte[] vandalisedSignature = sig.getEncoded(); // Arrays.clone(sig);
+        // Recreate public key.
+        {
+            byte[] recreatedPubKey = Arrays.clone(publicKey.getEncoded());
+            assertTrue(LM_OTS.lm_ots_validate_signature(LMOtsPublicKey.getInstance(recreatedPubKey), sig, ms, false));
+        }
+
+        // Vandalise signature
+        {
+            byte[] vandalisedSignature = sig.getEncoded();
             vandalisedSignature[256] ^= 1; // Single bit error
             assertFalse(LM_OTS.lm_ots_validate_signature(publicKey, LMOtsSignature.getInstance(vandalisedSignature), ms, false));
         }
