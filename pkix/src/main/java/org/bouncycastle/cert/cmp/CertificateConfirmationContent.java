@@ -6,6 +6,9 @@ import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 
+/**
+ * Carrier class for a {@link CertConfirmContent} message.
+ */
 public class CertificateConfirmationContent
 {
     private DigestAlgorithmIdentifierFinder digestAlgFinder;

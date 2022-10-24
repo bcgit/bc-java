@@ -13,6 +13,7 @@ import java.util.Iterator;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
@@ -21,6 +22,7 @@ import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -28,6 +30,7 @@ import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.cmp.CMSProcessableCMPCertificate;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContent;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContentBuilder;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessage;
@@ -147,7 +150,7 @@ public class PQCTest
                     new JceAsymmetricKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
-                                new CMSProcessableByteArray(cert.getEncoded()),
+                                new CMSProcessableCMPCertificate(cert),
                                 new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider("BC").build());
 
         CertificateResponseBuilder certRespBuilder = new CertificateResponseBuilder(senderReqMessage.getCertReqId(), new PKIStatusInfo(PKIStatus.granted));
@@ -174,6 +177,9 @@ public class PQCTest
 
         CertificateResponse certResp = certRepMessage.getResponses()[0];
 
+        assertEquals(true, certResp.hasEncryptecCertificate());
+
+        // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
         RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
 
@@ -181,9 +187,7 @@ public class PQCTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        RecipientInformation recInfo = (RecipientInformation)it.next();
+        RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
 
         assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.kyber512.getId());
 
@@ -191,9 +195,13 @@ public class PQCTest
 
         byte[] recData = recInfo.getContent(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
 
-        assertEquals(true, Arrays.equals(cert.getEncoded(), recData));
+        assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
 
-        X509CertificateHolder receivedCert = new X509CertificateHolder(recData);
+        // this is the preferred way of recovering an encrypted certificate
+
+        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+
+        X509CertificateHolder receivedCert = new X509CertificateHolder(receivedCMPCert.getX509v3PKCert());
 
         X509CertificateHolder caCertHolder = certRepMessage.getX509Certificates()[0];
 
