@@ -40,7 +40,7 @@ public class CertRepMessage
             throw new IllegalArgumentException("'response' cannot be null");
         }
 
-        if (caPubs != null)
+        if (caPubs != null && caPubs.length != 0)
         {
             this.caPubs = new DERSequence(caPubs);
         }

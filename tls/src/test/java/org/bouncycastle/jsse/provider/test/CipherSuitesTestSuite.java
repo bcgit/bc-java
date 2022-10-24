@@ -7,8 +7,7 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
-import org.junit.Assert;
-
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 

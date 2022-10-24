@@ -39,7 +39,12 @@ public abstract class KeyPairGeneratorTest
             PrivateKey decPrivKey = kf.generatePrivate(privKeySpec);
 
             assertEquals(pubKey, decPubKey);
+            assertEquals(pubKey.getAlgorithm(), decPubKey.getAlgorithm());
+            assertEquals(pubKey.hashCode(), decPubKey.hashCode());
+
             assertEquals(privKey, decPrivKey);
+            assertEquals(privKey.getAlgorithm(), decPrivKey.getAlgorithm());
+            assertEquals(privKey.hashCode(), decPrivKey.hashCode());
 
             checkSerialisation(pubKey);
             checkSerialisation(privKey);
@@ -62,7 +67,11 @@ public abstract class KeyPairGeneratorTest
 
         ObjectInputStream oIn = new ObjectInputStream(new ByteArrayInputStream(bOut.toByteArray()));
 
-        assertEquals(key, oIn.readObject());
+        Key inKey = (Key)oIn.readObject();
+
+        assertEquals(key, inKey);
+        assertEquals(key.getAlgorithm(), inKey.getAlgorithm());
+        assertEquals(key.hashCode(), inKey.hashCode());
     }
 
 }

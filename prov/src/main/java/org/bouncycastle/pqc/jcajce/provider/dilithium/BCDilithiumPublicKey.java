@@ -7,10 +7,11 @@ import java.io.ObjectOutputStream;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCDilithiumPublicKey
     implements DilithiumPublicKey
@@ -18,11 +19,13 @@ public class BCDilithiumPublicKey
     private static final long serialVersionUID = 1L;
 
     private transient DilithiumPublicKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
 
     public BCDilithiumPublicKey(
         DilithiumPublicKeyParameters params)
     {
-        this.params = params;
+        init(params);
     }
 
     public BCDilithiumPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -34,7 +37,13 @@ public class BCDilithiumPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (DilithiumPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        init((DilithiumPublicKeyParameters) PublicKeyFactory.createKey(keyInfo));
+    }
+
+    private void init(DilithiumPublicKeyParameters params)
+    {
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
@@ -54,7 +63,7 @@ public class BCDilithiumPublicKey
         {
             BCDilithiumPublicKey otherKey = (BCDilithiumPublicKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -62,29 +71,25 @@ public class BCDilithiumPublicKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Dilithium"
+     * @return name of the algorithm - "DILITHIUM2, DILITHIUM3, etc..."
      */
     public final String getAlgorithm()
     {
-        return "Dilithium";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-        try
+        if (encoding == null)
         {
-            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+            encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(params);
+        }
 
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
     }
 
     public String getFormat()

@@ -25,7 +25,7 @@ public class FalconParameterSpec
 
     private FalconParameterSpec(FalconParameters parameters)
     {
-        this.name = parameters.getName();
+        this.name = Strings.toUpperCase(parameters.getName());
     }
 
     public String getName()

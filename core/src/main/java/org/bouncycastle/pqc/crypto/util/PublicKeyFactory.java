@@ -115,6 +115,15 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.lightsaberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem256r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem256r3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.ulightsaberkemr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.usaberkemr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.ufiresaberkemr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.lightsaberkem90sr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.saberkem90sr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.firesaberkem90sr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.ulightsaberkem90sr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.usaberkem90sr3, new SABERConverter());
+        converters.put(BCObjectIdentifiers.ufiresaberkem90sr3, new SABERConverter());
         converters.put(BCObjectIdentifiers.picnicl1fs, new PicnicConverter());
         converters.put(BCObjectIdentifiers.picnicl1ur, new PicnicConverter());
         converters.put(BCObjectIdentifiers.picnicl3fs, new PicnicConverter());

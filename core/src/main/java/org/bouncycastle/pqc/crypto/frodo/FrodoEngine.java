@@ -140,23 +140,30 @@ class FrodoEngine
 
     private short[] matrix_mul(short[] X, int Xrow, int Xcol, short[] Y, int Yrow, int Ycol)
     {
+        int qMask = q - 1;
         short[] res = new short[Xrow * Ycol];
         for (int i = 0; i < Xrow; i++)
+        {
             for (int j = 0; j < Ycol; j++)
             {
+                int accum = 0;
                 for (int k = 0; k < Xcol; k++)
-                    res[i*Ycol+j] = (short) ((res[i*Ycol+j] & 0xffff) + ((X[i*Xcol+k] & 0xffff) * (Y[k*Ycol+j] & 0xffff))&0xffff);
-                res[i*Ycol+j] = (short) (((res[i*Ycol+j] & 0xffff) % q)&0xffff);
+                {
+                    accum += X[i * Xcol + k] * Y[k * Ycol + j];
+                }
+                res[i * Ycol + j] = (short)(accum & qMask);
             }
+        }
         return res;
     }
 
     private short[] matrix_add(short[] X, short[] Y, int n1, int m1)
     {
+        int qMask = q - 1;
         short[] res = new short[n1*m1];
         for (int i = 0; i < n1; i++)
             for (int j = 0; j < m1; j++)
-                res[i*m1+j] = (short) (((X[i*m1+j]&0xffff) + (Y[i*m1+j]&0xffff)) % q);
+                res[i*m1+j] = (short)((X[i*m1+j] + Y[i*m1+j]) & qMask);
 
         return res;
     }
@@ -424,10 +431,11 @@ class FrodoEngine
 
     private short[] matrix_sub(short[] X, short[] Y, int n1, int n2)
     {
+        int qMask = q - 1;
         short[] res = new short[n1*n2];
         for (int i = 0; i < n1; i++)
             for (int j = 0; j < n2; j++)
-                res[i*n2+j] = (short) ((((X[i*n2+j]) - (Y[i*n2+j])) & 0xffff) % q);
+                res[i*n2+j] = (short)((X[i*n2+j] - Y[i*n2+j]) & qMask);
 
         return res;
     }
