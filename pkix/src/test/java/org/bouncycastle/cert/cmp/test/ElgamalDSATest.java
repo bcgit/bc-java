@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
@@ -150,7 +151,7 @@ public class ElgamalDSATest
                     new JceAsymmetricKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
-                                new CMSProcessableByteArray(cert.getEncoded()),
+                                new CMSProcessableByteArray(new CMPCertificate(cert.toASN1Structure()).getEncoded()),
                                 new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider("BC").build());
 
         CertificateResponseBuilder certRespBuilder = new CertificateResponseBuilder(senderReqMessage.getCertReqId(), new PKIStatusInfo(PKIStatus.granted));
@@ -177,26 +178,7 @@ public class ElgamalDSATest
 
         CertificateResponse certResp = certRepMessage.getResponses()[0];
 
-        CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
-        RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
-
-        Collection c = recipients.getRecipients();
-
-        assertEquals(1, c.size());
-
-        Iterator it = c.iterator();
-
-        RecipientInformation recInfo = (RecipientInformation)it.next();
-
-        assertEquals(recInfo.getKeyEncryptionAlgOID(), OIWObjectIdentifiers.elGamalAlgorithm.getId());
-
-        // Note: we don't specify the provider here as we're actually using both BC and BCPQC
-
-        byte[] recData = recInfo.getContent(new JceKeyTransEnvelopedRecipient(elgKp.getPrivate()));
-
-        assertEquals(true, Arrays.equals(cert.getEncoded(), recData));
-
-        X509CertificateHolder receivedCert = new X509CertificateHolder(recData);
+        X509CertificateHolder receivedCert = new X509CertificateHolder(certResp.getCertificate(new JceKeyTransEnvelopedRecipient(elgKp.getPrivate())).getX509v3PKCert());
 
         X509CertificateHolder caCertHolder = certRepMessage.getX509Certificates()[0];
 
