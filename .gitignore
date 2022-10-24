@@ -6,10 +6,13 @@
 *.gen
 */*.gen
 *.swp
+*.iml
+*/*.iml
 
 bin/
-build/
-/out/
+*/build/
+out/
+*/out/
 .settings/
 
 pg/*.asc
@@ -19,19 +22,7 @@ pg/*.txt
 
 .idea
 
-core/out
-mail/out
-pg/out
-pkix/out
-prov/out
-tls/out
-test/out
 codesigning.jks
 
-
-/misc/misc.iml
-/mail/mail.iml
-/core/core.iml
 /prov/src/main/core/
-/prov/prov.iml
-/test/test.iml
+
