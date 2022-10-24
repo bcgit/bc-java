@@ -103,13 +103,16 @@ public abstract class PGPEncryptedData
             int bufferTail = bytesRead - bytesFromLookahead;
             for (int i = bufferTail; i < bytesRead; i++)
             {
-                lookAhead[bufPtr] = readBuffer[i];
+                lookAhead[bufPtr] = readBuffer[i] & 0xff; // we're not at end of file.
                 bufPtr = (bufPtr + 1) % lookAhead.length;
             }
 
             // Copy head of readBuffer to output
-            System.arraycopy(readBuffer, 0, b, off + bytesFromLookahead, bufferTail);
-
+            if (bufferTail != 0)
+            {
+                System.arraycopy(readBuffer, 0, b, off + bytesFromLookahead, bufferTail);
+            }
+            
             return bytesRead;
         }
         
