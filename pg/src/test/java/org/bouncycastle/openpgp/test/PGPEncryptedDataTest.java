@@ -11,6 +11,7 @@ import java.security.Security;
 import java.util.Date;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -57,6 +58,7 @@ public class PGPEncryptedDataTest
         encryptDecryptMultiChunkTest();
         encryptDecryptMultiChunkBoundaryTest();
         knownDataTest();
+        testIntegrityCheckedData();
     }
 
     private void encryptDecryptTest()
@@ -287,6 +289,37 @@ public class PGPEncryptedDataTest
         byte[] data = Streams.readAll(ld.getDataStream());
 
         isTrue(Arrays.areEqual(Strings.toByteArray("Test Content"), data));
+    }
+
+    private void testIntegrityCheckedData()
+        throws IOException, PGPException
+    {
+        PGPSecretKeyRing rng = (PGPSecretKeyRing)new PGPObjectFactory(new ArmoredInputStream(this.getClass().getResourceAsStream("encd-test-key.asc")), new JcaKeyFingerprintCalculator()).nextObject();
+        byte[] msg = Streams.readAll(this.getClass().getResourceAsStream("encd-test-data.pgp"));
+
+        PGPObjectFactory oIn = new JcaPGPObjectFactory(new ByteArrayInputStream(msg));
+
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)oIn.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder()
+            .setProvider("BC").build(rng.getSecretKey(encP.getKeyID())
+                .extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build("tkhbackup".toCharArray()))));
+
+        PGPObjectFactory pgpFact = new JcaPGPObjectFactory(clear);
+
+        PGPCompressedData c1 = (PGPCompressedData)pgpFact.nextObject();
+
+        pgpFact = new JcaPGPObjectFactory(c1.getDataStream());
+
+        PGPLiteralData ld = (PGPLiteralData)pgpFact.nextObject();
+
+        isEquals("wrong filename", "", ld.getFileName());
+
+        String data = Strings.fromByteArray(Streams.readAll(ld.getDataStream()));
+
+        isTrue(data.startsWith("<?xml version=\"1.0\" ?>"));
     }
 
     public static void main(
