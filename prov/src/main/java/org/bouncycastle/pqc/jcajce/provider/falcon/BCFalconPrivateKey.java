@@ -6,14 +6,17 @@ import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCFalconPrivateKey
     implements FalconPrivateKey
@@ -21,12 +24,14 @@ public class BCFalconPrivateKey
     private static final long serialVersionUID = 1L;
 
     private transient FalconPrivateKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCFalconPrivateKey(
             FalconPrivateKeyParameters params)
     {
-        this.params = params;
+        init(params, null);
     }
 
     public BCFalconPrivateKey(PrivateKeyInfo keyInfo)
@@ -38,8 +43,14 @@ public class BCFalconPrivateKey
     private void init(PrivateKeyInfo keyInfo)
             throws IOException
     {
-        this.attributes = keyInfo.getAttributes();
-        this.params = (FalconPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
+        init((FalconPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
+    }
+
+    private void init(FalconPrivateKeyParameters params, ASN1Set attributes)
+    {
+        this.attributes = attributes;
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
@@ -59,7 +70,7 @@ public class BCFalconPrivateKey
         {
             BCFalconPrivateKey otherKey = (BCFalconPrivateKey)o;
 
-            return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
 
         return false;
@@ -67,30 +78,25 @@ public class BCFalconPrivateKey
 
     public int hashCode()
     {
-        return Arrays.hashCode(params.getEncoded());
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Falcon"
+     * @return name of the algorithm - "FALCON-512 or FALCON-1024"
      */
     public final String getAlgorithm()
     {
-        return "Falcon";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-
-        try
+        if (encoding == null)
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
+            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
+        }
 
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
     }
 
     public FalconParameterSpec getParameterSpec()
@@ -114,8 +120,8 @@ public class BCFalconPrivateKey
     }
 
     private void readObject(
-            ObjectInputStream in)
-            throws IOException, ClassNotFoundException
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
     {
         in.defaultReadObject();
 

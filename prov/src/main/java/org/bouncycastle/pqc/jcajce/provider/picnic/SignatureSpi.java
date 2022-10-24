@@ -137,7 +137,6 @@ public class SignatureSpi
             extends SignatureSpi
     {
         public Base()
-                throws NoSuchAlgorithmException
         {
             super(new NullDigest(), new PicnicSigner());
         }
@@ -146,7 +145,6 @@ public class SignatureSpi
             extends SignatureSpi
     {
         public withShake256()
-                throws NoSuchAlgorithmException
         {
             super(new SHAKEDigest(256), new PicnicSigner());
         }
@@ -155,7 +153,6 @@ public class SignatureSpi
             extends SignatureSpi
     {
         public withSha512()
-                throws NoSuchAlgorithmException
         {
             super(new SHA512Digest(), new PicnicSigner());
         }
@@ -164,7 +161,6 @@ public class SignatureSpi
             extends SignatureSpi
     {
         public withSha3512()
-                throws NoSuchAlgorithmException
         {
             super(new SHA3Digest(512), new PicnicSigner());
         }

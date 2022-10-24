@@ -61,8 +61,13 @@ public class CertStatus
 
     public CertStatus(byte[] certHash, BigInteger certReqId)
     {
+        this(certHash, new ASN1Integer(certReqId));
+    }
+
+    public CertStatus(byte[] certHash, ASN1Integer certReqId)
+    {
         this.certHash = new DEROctetString(certHash);
-        this.certReqId = new ASN1Integer(certReqId);
+        this.certReqId = certReqId;
     }
 
     public CertStatus(byte[] certHash, BigInteger certReqId, PKIStatusInfo statusInfo)

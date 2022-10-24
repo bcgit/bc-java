@@ -53,32 +53,27 @@ class HarakaSXof
     public int doFinal(byte[] out, int outOff, int len)
     {
         int outLen = len;
+
         //Finalize
         buffer[off] ^= 0x1F;
         buffer[31] ^= 128;
-        off = 0;
+
         //Squeeze
-        while (len > 0)
+        while (len >= 32)
         {
             haraka512Perm(buffer);
-            int i = 0;
-            while (i < 32 && i + outOff < out.length)
-            {
-                out[i + outOff] = buffer[i];
-                i++;
-            }
-            outOff += i;
-            len -= i;
+            System.arraycopy(buffer, 0, out, outOff, 32);
+            outOff += 32;
+            len -= 32;
         }
-        if (len != 0)
+        if (len > 0)
         {
-            byte[] d = new byte[64];
-            haraka512Perm(d);
-            System.arraycopy(d, 0, out, outOff, -len);
+            haraka512Perm(buffer);
+            System.arraycopy(buffer, 0, out, outOff, len);
         }
 
         reset();
-        
+
         return outLen;
     }
 }

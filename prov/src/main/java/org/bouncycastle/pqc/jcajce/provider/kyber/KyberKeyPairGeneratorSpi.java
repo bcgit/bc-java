@@ -14,6 +14,9 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
+import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyPairGeneratorSpi;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Strings;
@@ -38,10 +41,18 @@ public class KyberKeyPairGeneratorSpi
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
+    private KyberParameters kyberParameters;
 
     public KyberKeyPairGeneratorSpi()
     {
-        super("Kyber");
+        super("KYBER");
+        this.kyberParameters = null;
+    }
+
+    protected KyberKeyPairGeneratorSpi(KyberParameters kyberParameters)
+    {
+        super(Strings.toUpperCase(kyberParameters.getName()));
+        this.kyberParameters = kyberParameters;
     }
 
     public void initialize(
@@ -58,9 +69,16 @@ public class KyberKeyPairGeneratorSpi
     {
         String name = getNameFromParams(params);
 
-        if (name != null)
+        if (name != null && parameters.containsKey(name))
         {
-            param = new KyberKeyGenerationParameters(random, (KyberParameters)parameters.get(getNameFromParams(params)));
+            KyberParameters kyberParams = (KyberParameters)parameters.get(name);
+
+            param = new KyberKeyGenerationParameters(random, kyberParams);
+
+            if (kyberParameters != null && !kyberParams.getName().equals(kyberParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + Strings.toUpperCase(kyberParameters.getName()));
+            }
 
             engine.init(param);
             initialised = true;
@@ -88,7 +106,14 @@ public class KyberKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new KyberKeyGenerationParameters(random, KyberParameters.kyber1024);
+            if (kyberParameters != null)
+            {
+                param = new KyberKeyGenerationParameters(random, kyberParameters);
+            }
+            else
+            {
+                param = new KyberKeyGenerationParameters(random, KyberParameters.kyber1024);
+            }
 
             engine.init(param);
             initialised = true;
@@ -99,5 +124,59 @@ public class KyberKeyPairGeneratorSpi
         KyberPrivateKeyParameters priv = (KyberPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCKyberPublicKey(pub), new BCKyberPrivateKey(priv));
+    }
+
+    public static class Kyber512
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber512()
+        {
+            super(KyberParameters.kyber512);
+        }
+    }
+
+    public static class Kyber768
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber768()
+        {
+            super(KyberParameters.kyber768);
+        }
+    }
+
+    public static class Kyber1024
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber1024()
+        {
+            super(KyberParameters.kyber1024);
+        }
+    }
+
+    public static class Kyber512_AES
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber512_AES()
+        {
+            super(KyberParameters.kyber512_aes);
+        }
+    }
+
+    public static class Kyber768_AES
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber768_AES()
+        {
+            super(KyberParameters.kyber768_aes);
+        }
+    }
+
+    public static class Kyber1024_AES
+        extends KyberKeyPairGeneratorSpi
+    {
+        public Kyber1024_AES()
+        {
+            super(KyberParameters.kyber1024_aes);
+        }
     }
 }

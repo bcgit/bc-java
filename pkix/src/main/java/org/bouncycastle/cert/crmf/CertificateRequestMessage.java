@@ -1,10 +1,13 @@
 package org.bouncycastle.cert.crmf;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1UTF8String;
+import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
 import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
@@ -19,6 +22,7 @@ import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 /**
  * Carrier for a CRMF CertReqMsg.
@@ -79,6 +83,15 @@ public class CertificateRequestMessage
         return certReqMsg;
     }
 
+    /**
+     * Return the certificate request ID for this message.
+     *
+     * @return the certificate request ID.
+     */
+    public ASN1Integer getCertReqId()
+    {
+        return certReqMsg.getCertReq().getCertReqId();
+    }
     /**
      * Return the certificate template contained in this message.
      *

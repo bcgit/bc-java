@@ -32,6 +32,9 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.ContentSigner;
 
+/**
+ * Builder for high-level objects built on {@link org.bouncycastle.asn1.crmf.CertReqMsg}.
+ */
 public class CertificateRequestMessageBuilder
 {
     private final BigInteger certReqId;
