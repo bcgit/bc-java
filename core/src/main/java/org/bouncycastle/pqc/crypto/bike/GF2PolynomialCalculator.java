@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.bike;
 
-import org.bouncycastle.pqc.math.linearalgebra.IntUtils;
+import org.bouncycastle.util.Arrays;
 
 class GF2PolynomialCalculator
 {
@@ -218,7 +218,7 @@ class GF2PolynomialCalculator
         if (a.length == d + 1)
         {
             // return a clone of a
-            return IntUtils.clone(a);
+            return Arrays.clone(a);
         }
 
         // else, reduce a
@@ -279,7 +279,7 @@ class GF2PolynomialCalculator
 
         if (element == 1)
         {
-            return IntUtils.clone(a);
+            return Arrays.clone(a);
         }
 
         int[] result = new int[degree + 1];

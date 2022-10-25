@@ -1,7 +1,10 @@
-package org.bouncycastle.pqc.crypto.bike;
+package org.bouncycastle.pqc.crypto.hqc;
 
 import org.bouncycastle.util.Arrays;
 
+/**
+ * implementation of Incremental version for Keccak
+ */
 class KeccakRandomGenerator
 {
     private static long[] KeccakRoundConstants = new long[]{0x0000000000000001L, 0x0000000000008082L,
@@ -63,7 +66,7 @@ class KeccakRandomGenerator
         this.fixedOutputLength = (1600 - rate) / 2;
     }
 
-    private void KeccakPermutation(long[] s)
+    private void keccakPermutation(long[] s)
     {
         long[] A = state;
 
@@ -213,7 +216,7 @@ class KeccakRandomGenerator
         A[24] = a24;
     }
 
-    private void KeccakIncAbsorb(byte[] input, int inputLen)
+    private void keccakIncAbsorb(byte[] input, int inputLen)
     {
         if (input == null)
         {
@@ -232,7 +235,7 @@ class KeccakRandomGenerator
             inputLen -= rateBytes - state[25];
             count += rateBytes - state[25];
             state[25] = 0;
-            KeccakPermutation(state);
+            keccakPermutation(state);
         }
 
         for (int i = 0; i < inputLen; i++)
@@ -244,7 +247,7 @@ class KeccakRandomGenerator
         state[25] += inputLen;
     }
 
-    private void KeccakIncFinalize(int p)
+    private void keccakIncFinalize(int p)
     {
         int rateBytes = rate >> 3;
 
@@ -255,7 +258,7 @@ class KeccakRandomGenerator
         state[25] = 0;
     }
 
-    private void KeccakIncSqueeze(byte[] output, int outLen)
+    private void keccakIncSqueeze(byte[] output, int outLen)
     {
         int rateBytes = rate >> 3;
         int i;
@@ -270,7 +273,7 @@ class KeccakRandomGenerator
 
         while (outLen > 0)
         {
-            KeccakPermutation(state);
+            keccakPermutation(state);
 
             for (i = 0; i < outLen && i < rateBytes; i++)
             {
@@ -285,24 +288,24 @@ class KeccakRandomGenerator
 
     public void squeeze(byte[] output, int outLen)
     {
-        KeccakIncSqueeze(output, outLen);
+        keccakIncSqueeze(output, outLen);
     }
 
     public void randomGeneratorInit(byte[] entropyInput, byte[] personalizationString, int entropyLen, int perLen)
     {
         byte[] domain = new byte[]{1};
-        KeccakIncAbsorb(entropyInput, entropyLen);
-        KeccakIncAbsorb(personalizationString, perLen);
-        KeccakIncAbsorb(domain, domain.length);
-        KeccakIncFinalize(0x1F);
+        keccakIncAbsorb(entropyInput, entropyLen);
+        keccakIncAbsorb(personalizationString, perLen);
+        keccakIncAbsorb(domain, domain.length);
+        keccakIncFinalize(0x1F);
     }
 
     public void seedExpanderInit(byte[] seed, int seedLen)
     {
         byte[] domain = new byte[]{2};
-        KeccakIncAbsorb(seed, seedLen);
-        KeccakIncAbsorb(domain, 1);
-        KeccakIncFinalize(0x1F);
+        keccakIncAbsorb(seed, seedLen);
+        keccakIncAbsorb(domain, 1);
+        keccakIncFinalize(0x1F);
     }
 
     public void expandSeed(byte[] output, int outLen)
@@ -311,11 +314,11 @@ class KeccakRandomGenerator
         int r = outLen % bSize;
         byte[] tmp = new byte[bSize];
         long[] n = state;
-        KeccakIncSqueeze(output, outLen - r);
+        keccakIncSqueeze(output, outLen - r);
 
         if (r != 0)
         {
-            KeccakIncSqueeze(tmp, bSize);
+            keccakIncSqueeze(tmp, bSize);
             int count = outLen - r;
             for (int i = 0; i < r; i++)
             {
@@ -330,10 +333,10 @@ class KeccakRandomGenerator
         {
             state[i] = 0;
         }
-        KeccakIncAbsorb(input, inLen);
-        KeccakIncAbsorb(domain, domain.length);
-        KeccakIncFinalize(0x1F);
-        KeccakIncSqueeze(output, 512 / 8);
+        keccakIncAbsorb(input, inLen);
+        keccakIncAbsorb(domain, domain.length);
+        keccakIncFinalize(0x1F);
+        keccakIncSqueeze(output, 512 / 8);
     }
 
     private static long toUnsignedLong(int x)
