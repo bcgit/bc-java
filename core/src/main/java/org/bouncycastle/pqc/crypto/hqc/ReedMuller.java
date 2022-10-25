@@ -41,7 +41,7 @@ class ReedMuller
     }
 
     private static void hadamardTransform(int[] srcCode, int[] desCode)
-    { //TODO: check return
+    {
         int[] srcCodeCopy = Arrays.clone(srcCode);
         int[] desCodeCopy = Arrays.clone(desCode);
 
@@ -117,10 +117,9 @@ class ReedMuller
         return (-(b & 1)) & 0xffffffff;
     }
 
-    public static void encode(long[] codeword, long[] m, int n1, int mulParam)
+    public static void encode(long[] codeword, byte[] m, int n1, int mulParam)
     {
-        byte[] mBytes = new byte[n1];
-        Utils.fromLongArrayToByteArray(mBytes, m, n1 * 8);
+        byte[] mBytes = Arrays.clone(m);
 
         Codeword[] codewordCopy = new Codeword[n1 * mulParam];
         for (int i = 0; i < codewordCopy.length; i++)
@@ -131,8 +130,6 @@ class ReedMuller
         for (int i = 0; i < n1; i++)
         {
             int pos = i * mulParam;
-
-
             encodeSub(codewordCopy[pos], mBytes[i]);
 
             for (int j = 1; j < mulParam; j++)
@@ -140,7 +137,6 @@ class ReedMuller
                 codewordCopy[pos + j] = codewordCopy[pos];
             }
         }
-
 
         int[] cwd64 = new int[codewordCopy.length * 4];
         int off = 0;
@@ -154,14 +150,14 @@ class ReedMuller
     }
 
 
-    public static void decode(long[] m, long[] codeword, int n1, int mulParam)
+    public static void decode(byte[] m, long[] codeword, int n1, int mulParam)
     {
-        byte[] mBytes = new byte[n1];
-        Utils.fromLongArrayToByteArray(mBytes, m, n1 * 8);
+        byte[] mBytes = Arrays.clone(m);
 
         Codeword[] codewordCopy = new Codeword[codeword.length / 2]; // because each codewordCopy has a 32 bit array size 4
         int[] byteCodeWords = new int[codeword.length * 2];
         Utils.fromLongArrayToByte32Array(byteCodeWords, codeword);
+
         for (int i = 0; i < codewordCopy.length; i++)
         {
             codewordCopy[i] = new Codeword();
@@ -183,7 +179,6 @@ class ReedMuller
             hadamardTransform(expandedCodeword, tmp);
 
             tmp[0] -= 64 * mulParam;
-            int t = findPeaks(tmp);
             mBytes[i] = (byte)findPeaks(tmp);
         }
 
@@ -195,8 +190,7 @@ class ReedMuller
             off += 4;
         }
         Utils.fromByte32ArrayToLongArray(codeword, cwd64);
-        Utils.fromByteArrayToLongArray(m, mBytes);
-
+        System.arraycopy(mBytes, 0, m, 0, m.length);
     }
 
 }
