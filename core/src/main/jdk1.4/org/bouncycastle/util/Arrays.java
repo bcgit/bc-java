@@ -905,6 +905,17 @@ public final class Arrays
         return a;
     }
 
+    public static void reverseInPlace(byte[] a, int aOff, int aLen)
+    {
+        int p1 = aOff, p2 = aOff + aLen - 1;
+        while (p1 < p2)
+        {
+            byte t1 = a[p1], t2 = a[p2];
+            a[p1++] = t2;
+            a[p2--] = t1;
+        }
+    }
+    
     /**
      * Fill input array by zeros
      *
