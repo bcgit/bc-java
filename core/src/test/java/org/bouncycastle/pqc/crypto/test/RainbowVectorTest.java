@@ -73,14 +73,6 @@ public class RainbowVectorTest
                             continue;
                         }
 
-                        if (fileIndex >= 3)
-                        {
-                            // TODO: this is temporary --- performance is killing the build.
-                            if (Integer.parseInt(count) > 20)
-                            {
-                                continue;
-                            }
-                        }
                         System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed"));      // seed for Rainbow secure random
                         int mlen = Integer.parseInt((String)buf.get("mlen"));   // message length
