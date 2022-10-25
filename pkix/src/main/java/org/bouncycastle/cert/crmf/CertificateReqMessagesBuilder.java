@@ -23,7 +23,7 @@ public class CertificateReqMessagesBuilder
     public CertificateReqMessages build()
     {
 
-        CertificateReqMessages certificateReqMessages = new CertificateReqMessages(new CertReqMessages(requests.toArray(new CertReqMsg[0])));
+        CertificateReqMessages certificateReqMessages = new CertificateReqMessages(new CertReqMessages((CertReqMsg[])requests.toArray(new CertReqMsg[0])));
 
         requests.clear();
 
