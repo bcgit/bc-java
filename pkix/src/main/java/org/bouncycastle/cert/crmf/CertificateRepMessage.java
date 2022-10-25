@@ -68,7 +68,7 @@ public class CertificateRepMessage
             }
         }
 
-        return certs.toArray(new X509CertificateHolder[0]);
+        return (X509CertificateHolder[])certs.toArray(new X509CertificateHolder[0]);
     }
 
     /**
