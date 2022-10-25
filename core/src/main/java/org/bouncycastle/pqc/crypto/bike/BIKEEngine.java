@@ -5,8 +5,6 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.pqc.math.linearalgebra.GF2mField;
-import org.bouncycastle.pqc.math.linearalgebra.PolynomialGF2mSmallM;
 import org.bouncycastle.util.Arrays;
 
 class BIKEEngine
@@ -32,10 +30,10 @@ class BIKEEngine
     // tau
     private int tau;
 
-    private GF2mField field;
-    private final PolynomialGF2mSmallM reductionPoly;
     private int L_BYTE;
     private int R_BYTE;
+    private int R_BYTE_64;
+    private KeccakRandomGenerator RandomGenerator = new KeccakRandomGenerator(256);
 
     public BIKEEngine(int r, int w, int t, int l, int nbIter, int tau)
     {
@@ -48,14 +46,7 @@ class BIKEEngine
         this.hw = this.w / 2;
         this.L_BYTE = l / 8;
         this.R_BYTE = (r + 7) / 8;
-
-        // finite field GF(2)
-        GF2mField field = new GF2mField(1);
-        this.field = field;
-
-        // generate reductionPoly (X^r + 1)
-        PolynomialGF2mSmallM poly = new PolynomialGF2mSmallM(field, r);
-        this.reductionPoly = poly.addMonomial(0);
+        this.R_BYTE_64 = (r + 63) / 64;
     }
 
     public int getSessionKeySize()
@@ -132,27 +123,16 @@ class BIKEEngine
         System.arraycopy(h0Tmp, 0, h0, 0, h0.length);
         System.arraycopy(h1Tmp, 0, h1, 0, h1.length);
 
-        byte[] h1Bits = new byte[r];
-        byte[] h0Bits = new byte[r];
-
-        Utils.fromByteArrayToBitArray(h0Bits, h0Tmp);
-        Utils.fromByteArrayToBitArray(h1Bits, h1Tmp);
-
-        // remove last 0 bits (most significant bits with 0 mean non-sense)
-        byte[] h0Cut = Utils.removeLast0Bits(h0Bits);
-        byte[] h1Cut = Utils.removeLast0Bits(h1Bits);
-
         // 2. Compute h
-        PolynomialGF2mSmallM h0Poly = new PolynomialGF2mSmallM(this.field, h0Cut);
-        PolynomialGF2mSmallM h1Poly = new PolynomialGF2mSmallM(this.field, h1Cut);
-
-        PolynomialGF2mSmallM h0Inv = h0Poly.modInverseBigDeg(reductionPoly);
-        PolynomialGF2mSmallM hPoly = h1Poly.modKaratsubaMultiplyBigDeg(h0Inv, reductionPoly);
+        byte[] h0Bits = new byte[r];
+        Utils.fromByteArrayToBitArray(h0Bits, h0Tmp);
+        byte[] h0Inv = GF2PolynomialCalculator.modInv(Utils.convertBitArrayToIntArray(h0Bits), r, R_BYTE_64, RandomGenerator);
+        long[] tmpLong = new long[R_BYTE_64];
+        GF2PolynomialCalculator.modMult(tmpLong, h0Inv, h1, r, R_BYTE_64, RandomGenerator);
 
         // Get coefficients of hPoly
-        byte[] hTmp = hPoly.getEncoded();
         byte[] hByte = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(hByte, hTmp);
+        Utils.fromLongArrayToByteArray(hByte, tmpLong);
         System.arraycopy(hByte, 0, h, 0, h.length);
 
         //3. Parse seed2 as sigma
@@ -188,21 +168,14 @@ class BIKEEngine
         byte[] e0Bits = Arrays.copyOfRange(eBits, 0, r);
         byte[] e1Bits = Arrays.copyOfRange(eBits, r, eBits.length);
 
-        // remove last 0 bits (most significant bits with 0 mean no sense)
-        byte[] e0Cut = Utils.removeLast0Bits(e0Bits);
-        byte[] e1Cut = Utils.removeLast0Bits(e1Bits);
-
-        PolynomialGF2mSmallM e0 = new PolynomialGF2mSmallM(field, e0Cut);
-        PolynomialGF2mSmallM e1 = new PolynomialGF2mSmallM(field, e1Cut);
-
         // 3. Calculate c
         // calculate c0
-        byte[] h0Bits = new byte[r];
-        Utils.fromByteArrayToBitArray(h0Bits, h);
-        PolynomialGF2mSmallM hPoly = new PolynomialGF2mSmallM(field, Utils.removeLast0Bits(h0Bits));
-        PolynomialGF2mSmallM c0Poly = e0.add(e1.modKaratsubaMultiplyBigDeg(hPoly, reductionPoly));
+        long[] tmpLong = new long[R_BYTE_64];
+        GF2PolynomialCalculator.modMult(tmpLong, e1Bits, h, r, R_BYTE_64, RandomGenerator);
 
-        byte[] c0Bits = c0Poly.getEncoded();
+        byte[] c0Bits = new byte[r];
+        Utils.fromLongArrayToBitArray(c0Bits, tmpLong);
+        GF2PolynomialCalculator.addBytes(c0Bits, c0Bits, e0Bits);
         byte[] c0Bytes = new byte[R_BYTE];
         Utils.fromBitArrayToByteArray(c0Bytes, c0Bits);
         System.arraycopy(c0Bytes, 0, c0, 0, c0.length);
@@ -238,15 +211,7 @@ class BIKEEngine
     {
         //convert to bits
         byte[] c0Bits = new byte[this.r];
-        byte[] h0Bits = new byte[this.r];
-        byte[] sigmaBits = new byte[this.l];
-
         Utils.fromByteArrayToBitArray(c0Bits, c0);
-        Utils.fromByteArrayToBitArray(h0Bits, h0);
-        Utils.fromByteArrayToBitArray(sigmaBits, sigma);
-
-        byte[] c0Cut = Utils.removeLast0Bits(c0Bits);
-        byte[] h0Cut = Utils.removeLast0Bits(h0Bits);
 
         // Get compact version of h0, h1
         int[] h0Compact = new int[hw];
@@ -255,7 +220,7 @@ class BIKEEngine
         convertToCompact(h1Compact, h1);
 
         // Compute syndrome
-        byte[] syndrome = computeSyndrome(c0Cut, h0Cut);
+        byte[] syndrome = computeSyndrome(h0, c0Bits);
 
         // 1. Compute e'
         byte[] ePrimeBits = BGFDecoder(syndrome, h0Compact, h1Compact);
@@ -289,11 +254,12 @@ class BIKEEngine
 
     private byte[] computeSyndrome(byte[] h0, byte[] c0)
     {
-        PolynomialGF2mSmallM coPoly = new PolynomialGF2mSmallM(field, c0);
-        PolynomialGF2mSmallM h0Poly = new PolynomialGF2mSmallM(field, h0);
+        long[] sLong = new long[R_BYTE_64];
+        GF2PolynomialCalculator.modMult(sLong, c0, h0, r, R_BYTE_64, RandomGenerator);
 
-        PolynomialGF2mSmallM s = coPoly.modKaratsubaMultiplyBigDeg(h0Poly, reductionPoly);
-        byte[] transposedS = transpose(s.getEncoded());
+        byte[] s = new byte[r];
+        Utils.fromLongArrayToBitArray(s, sLong);
+        byte[] transposedS = transpose(s);
         return transposedS;
     }
 
