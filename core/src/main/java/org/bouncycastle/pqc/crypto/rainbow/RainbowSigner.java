@@ -99,7 +99,7 @@ public class RainbowSigner
 
         RainbowPrivateKeyParameters sk = (RainbowPrivateKeyParameters)this.key;
         
-        byte[] seed = RainbowUtil.hash(hashAlgo, sk.getSk_seed(), msgHash, new byte[hashAlgo.getDigestSize()]);
+        byte[] seed = RainbowUtil.hash(hashAlgo, sk.sk_seed, msgHash, new byte[hashAlgo.getDigestSize()]);
         this.random = new RainbowDRBG(seed, sk.getParams().getHash_algo());
 
         short[] vinegar = new short[v1];
@@ -146,7 +146,7 @@ public class RainbowSigner
                 {
                     for (int j = 0; j < o1; j++)
                     {
-                        temp = GF2Field.multElem(sk.getL1_F2()[k][i][j], vinegar[i]);
+                        temp = GF2Field.multElem(sk.l1_F2[k][i][j], vinegar[i]);
                         L1[k][j] = GF2Field.addElem(L1[k][j], temp);
                     }
                 }
@@ -158,22 +158,22 @@ public class RainbowSigner
         // Given the vinegars, pre-compute variables needed for layer 2
         for (int k = 0; k < o1; k++)
         {
-            r_l1_F1[k] = cf.multiplyMatrix_quad(sk.getL1_F1()[k], vinegar);
+            r_l1_F1[k] = cf.multiplyMatrix_quad(sk.l1_F1[k], vinegar);
         }
 
         for (int i = 0; i < v1; i++)
         {
             for (int k = 0; k < o2; k++)
             {
-                r_l2_F1[k] = cf.multiplyMatrix_quad(sk.getL2_F1()[k], vinegar);
+                r_l2_F1[k] = cf.multiplyMatrix_quad(sk.l2_F1[k], vinegar);
                 for (int j = 0; j < o1; j++)
                 {
-                    temp = GF2Field.multElem(sk.getL2_F2()[k][i][j], vinegar[i]);
+                    temp = GF2Field.multElem(sk.l2_F2[k][i][j], vinegar[i]);
                     L2_F2[k][j] = GF2Field.addElem(L2_F2[k][j], temp);
                 }
                 for (int j = 0; j < o2; j++)
                 {
-                    temp = GF2Field.multElem(sk.getL2_F3()[k][i][j], vinegar[i]);
+                    temp = GF2Field.multElem(sk.l2_F3[k][i][j], vinegar[i]);
                     L2_F3[k][j] = GF2Field.addElem(L2_F3[k][j], temp);
                 }
             }
@@ -191,7 +191,7 @@ public class RainbowSigner
             h = makeMessageRepresentative(hash);
 
             // x = S^-1 * h
-            tmp_vec = cf.multiplyMatrix(sk.getS1(), Arrays.copyOfRange(h, o1, m));
+            tmp_vec = cf.multiplyMatrix(sk.s1, Arrays.copyOfRange(h, o1, m));
             tmp_vec = cf.addVect(Arrays.copyOf(h, o1), tmp_vec);
             System.arraycopy(tmp_vec, 0, x, 0, o1);
             System.arraycopy(h, o1, x, o1, o2);  // identity part of S
@@ -205,7 +205,7 @@ public class RainbowSigner
             tmp_vec = cf.multiplyMatrix(L2_F2, y_o1);
             for (int k = 0; k < o2; k++)
             {
-                r_l2_F5[k] = cf.multiplyMatrix_quad(sk.getL2_F5()[k], y_o1);
+                r_l2_F5[k] = cf.multiplyMatrix_quad(sk.l2_F5[k], y_o1);
             }
             tmp_vec = cf.addVect(tmp_vec, r_l2_F5);
             tmp_vec = cf.addVect(tmp_vec, r_l2_F1);
@@ -217,7 +217,7 @@ public class RainbowSigner
                 {
                     for (int j = 0; j < o2; j++)
                     {
-                        temp = GF2Field.multElem(sk.getL2_F6()[k][i][j], y_o1[i]);
+                        temp = GF2Field.multElem(sk.l2_F6[k][i][j], y_o1[i]);
                         L2[k][j] = GF2Field.addElem(L2[k][j], temp);
                     }
                 }
@@ -234,11 +234,11 @@ public class RainbowSigner
         y_o2 = (y_o2 == null) ? new short[o2] : y_o2;
 
         // z = T^-1 * y
-        tmp_vec = cf.multiplyMatrix(sk.getT1(), y_o1);
+        tmp_vec = cf.multiplyMatrix(sk.t1, y_o1);
         z = cf.addVect(vinegar, tmp_vec);
-        tmp_vec = cf.multiplyMatrix(sk.getT4(), y_o2);
+        tmp_vec = cf.multiplyMatrix(sk.t4, y_o2);
         z = cf.addVect(z, tmp_vec);
-        tmp_vec = cf.multiplyMatrix(sk.getT3(), y_o2);
+        tmp_vec = cf.multiplyMatrix(sk.t3, y_o2);
         tmp_vec = cf.addVect(y_o1, tmp_vec);
         z = Arrays.copyOf(z, n);
         System.arraycopy(tmp_vec, 0, z, v1, o1);
@@ -329,8 +329,7 @@ public class RainbowSigner
             {
                 break;
             }
-            output[i] = (short)message[h];
-            output[i] &= (short)0xff;
+            output[i] = (short)(message[h] & 0xff);
             h++;
             i++;
         }

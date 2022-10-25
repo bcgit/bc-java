@@ -5,18 +5,18 @@ import org.bouncycastle.util.Arrays;
 public class RainbowPrivateKeyParameters
     extends RainbowKeyParameters
 {
-    private final byte[] sk_seed;
-    private final short[][] s1;
-    private final short[][] t1;
-    private final short[][] t3;
-    private final short[][] t4;
-    private final short[][][] l1_F1;
-    private final short[][][] l1_F2;
-    private final short[][][] l2_F1;
-    private final short[][][] l2_F2;
-    private final short[][][] l2_F3;
-    private final short[][][] l2_F5;
-    private final short[][][] l2_F6;
+    final byte[] sk_seed;
+    final short[][] s1;
+    final short[][] t1;
+    final short[][] t3;
+    final short[][] t4;
+    final short[][][] l1_F1;
+    final short[][][] l1_F2;
+    final short[][][] l2_F1;
+    final short[][][] l2_F2;
+    final short[][][] l2_F3;
+    final short[][][] l2_F5;
+    final short[][][] l2_F6;
 
     public RainbowPrivateKeyParameters(RainbowParameters params,
                                        byte[] sk_seed, short[][] s1,
@@ -210,57 +210,56 @@ public class RainbowPrivateKeyParameters
         return Arrays.clone(sk_seed);
     }
 
-    public short[][] getS1()
+    short[][] getS1()
     {
         return RainbowUtil.cloneArray(s1);
     }
 
-    public short[][] getT1()
+    short[][] getT1()
     {
         return RainbowUtil.cloneArray(t1);
     }
 
-    public short[][] getT4()
+    short[][] getT4()
     {
         return RainbowUtil.cloneArray(t4);
     }
 
-    public short[][] getT3()
+    short[][] getT3()
     {
         return RainbowUtil.cloneArray(t3);
     }
 
-    public short[][][] getL1_F1()
+    short[][][] getL1_F1()
     {
         return RainbowUtil.cloneArray(l1_F1);
     }
 
-    public short[][][] getL1_F2()
+    short[][][] getL1_F2()
     {
         return RainbowUtil.cloneArray(l1_F2);
     }
 
-    public short[][][] getL2_F1()
+    short[][][] getL2_F1()
     {
         return RainbowUtil.cloneArray(l2_F1);
     }
 
-    public short[][][] getL2_F2()
+    short[][][] getL2_F2()
     {
         return RainbowUtil.cloneArray(l2_F2);
     }
 
-    public short[][][] getL2_F3()
+    short[][][] getL2_F3()
     {
         return RainbowUtil.cloneArray(l2_F3);
     }
-
-    public short[][][] getL2_F5()
+    short[][][] getL2_F5()
     {
         return RainbowUtil.cloneArray(l2_F5);
     }
 
-    public short[][][] getL2_F6()
+    short[][][] getL2_F6()
     {
         return RainbowUtil.cloneArray(l2_F6);
     }
