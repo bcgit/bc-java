@@ -22,7 +22,7 @@ class BIKEEngine
     private int t;
 
     //the shared secret size
-    private int l;
+//    private int l;
 
     // number of iterations in BGF decoder
     private int nbIter;
@@ -30,23 +30,22 @@ class BIKEEngine
     // tau
     private int tau;
 
+    private final BIKERing bikeRing;
     private int L_BYTE;
     private int R_BYTE;
-    private int R_BYTE_64;
-    private KeccakRandomGenerator RandomGenerator = new KeccakRandomGenerator(256);
 
     public BIKEEngine(int r, int w, int t, int l, int nbIter, int tau)
     {
         this.r = r;
         this.w = w;
         this.t = t;
-        this.l = l;
+//        this.l = l;
         this.nbIter = nbIter;
         this.tau = tau;
         this.hw = this.w / 2;
         this.L_BYTE = l / 8;
         this.R_BYTE = (r + 7) / 8;
-        this.R_BYTE_64 = (r + 63) / 64;
+        this.bikeRing = new BIKERing(r);
     }
 
     public int getSessionKeySize()
@@ -58,28 +57,24 @@ class BIKEEngine
     {
         Xof digest = new SHAKEDigest(256);
         digest.update(seed, 0, seed.length);
-        byte[] wlist = BIKERandomGenerator.generateRandomByteArray(r * 2, 2 * R_BYTE, t, digest);
-        return wlist;
+        return BIKEUtils.generateRandomByteArray(r * 2, 2 * R_BYTE, t, digest);
     }
 
-    private byte[] functionL(byte[] e0, byte[] e1)
+    private void functionL(byte[] e0, byte[] e1, byte[] result)
     {
         byte[] hashRes = new byte[48];
-        byte[] res = new byte[L_BYTE];
 
         SHA3Digest digest = new SHA3Digest(384);
         digest.update(e0, 0, e0.length);
         digest.update(e1, 0, e1.length);
         digest.doFinal(hashRes, 0);
 
-        System.arraycopy(hashRes, 0, res, 0, L_BYTE);
-        return res;
+        System.arraycopy(hashRes, 0, result, 0, L_BYTE);
     }
 
-    private byte[] functionK(byte[] m, byte[] c0, byte[] c1)
+    private void functionK(byte[] m, byte[] c0, byte[] c1, byte[] result)
     {
         byte[] hashRes = new byte[48];
-        byte[] res = new byte[L_BYTE];
 
         SHA3Digest digest = new SHA3Digest(384);
         digest.update(m, 0, m.length);
@@ -87,8 +82,7 @@ class BIKEEngine
         digest.update(c1, 0, c1.length);
         digest.doFinal(hashRes, 0);
 
-        System.arraycopy(hashRes, 0, res, 0, L_BYTE);
-        return res;
+        System.arraycopy(hashRes, 0, result, 0, L_BYTE);
     }
 
     /**
@@ -117,23 +111,17 @@ class BIKEEngine
         digest.update(seed1, 0, seed1.length);
 
 //      1. Randomly generate h0, h1
-        byte[] h0Tmp = BIKERandomGenerator.generateRandomByteArray(r, R_BYTE, hw, digest);
-        byte[] h1Tmp = BIKERandomGenerator.generateRandomByteArray(r, R_BYTE, hw, digest);
+        long[] h0Element = bikeRing.generateRandom(hw, digest);
+        long[] h1Element = bikeRing.generateRandom(hw, digest);
 
-        System.arraycopy(h0Tmp, 0, h0, 0, h0.length);
-        System.arraycopy(h1Tmp, 0, h1, 0, h1.length);
+        bikeRing.encodeBytes(h0Element, h0);
+        bikeRing.encodeBytes(h1Element, h1);
 
         // 2. Compute h
-        byte[] h0Bits = new byte[r];
-        Utils.fromByteArrayToBitArray(h0Bits, h0Tmp);
-        byte[] h0Inv = GF2PolynomialCalculator.modInv(Utils.convertBitArrayToIntArray(h0Bits), r, R_BYTE_64, RandomGenerator);
-        long[] tmpLong = new long[R_BYTE_64];
-        GF2PolynomialCalculator.modMult(tmpLong, h0Inv, h1, r, R_BYTE_64, RandomGenerator);
-
-        // Get coefficients of hPoly
-        byte[] hByte = new byte[R_BYTE];
-        Utils.fromLongArrayToByteArray(hByte, tmpLong);
-        System.arraycopy(hByte, 0, h, 0, h.length);
+        long[] hElement = bikeRing.create();
+        bikeRing.inv(h0Element, hElement);
+        bikeRing.multiply(hElement, h1Element, hElement);
+        bikeRing.encodeBytes(hElement, h);
 
         //3. Parse seed2 as sigma
         System.arraycopy(seed2, 0, sigma, 0, sigma.length);
@@ -163,36 +151,38 @@ class BIKEEngine
         byte[] eBytes = functionH(m);
 
         byte[] eBits = new byte[2 * r];
-        Utils.fromByteArrayToBitArray(eBits, eBytes);
+        BIKEUtils.fromByteArrayToBitArray(eBits, eBytes);
 
         byte[] e0Bits = Arrays.copyOfRange(eBits, 0, r);
+        byte[] e0Bytes = new byte[R_BYTE];
+        BIKEUtils.fromBitArrayToByteArray(e0Bytes, e0Bits);
+        
         byte[] e1Bits = Arrays.copyOfRange(eBits, r, eBits.length);
+        byte[] e1Bytes = new byte[R_BYTE];
+        BIKEUtils.fromBitArrayToByteArray(e1Bytes, e1Bits);
+
+        long[] e0Element = bikeRing.create();
+        long[] e1Element = bikeRing.create();
+
+        bikeRing.decodeBytes(e0Bytes, e0Element);
+        bikeRing.decodeBytes(e1Bytes, e1Element);
+
+        long[] hElement = bikeRing.create();
+        bikeRing.decodeBytes(h, hElement);
 
         // 3. Calculate c
         // calculate c0
-        long[] tmpLong = new long[R_BYTE_64];
-        GF2PolynomialCalculator.modMult(tmpLong, e1Bits, h, r, R_BYTE_64, RandomGenerator);
-
-        byte[] c0Bits = new byte[r];
-        Utils.fromLongArrayToBitArray(c0Bits, tmpLong);
-        GF2PolynomialCalculator.addBytes(c0Bits, c0Bits, e0Bits);
-        byte[] c0Bytes = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(c0Bytes, c0Bits);
-        System.arraycopy(c0Bytes, 0, c0, 0, c0.length);
+        long[] c0Element = bikeRing.create();
+        bikeRing.multiply(e1Element, hElement, c0Element);
+        bikeRing.add(c0Element, e0Element, c0Element);
+        bikeRing.encodeBytes(c0Element, c0);
 
         //calculate c1
-        byte[] e0Bytes = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(e0Bytes, e0Bits);
-        byte[] e1Bytes = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(e1Bytes, e1Bits);
-
-        byte[] tmp = functionL(e0Bytes, e1Bytes);
-        byte[] c1Tmp = Utils.xorBytes(m, tmp, L_BYTE);
-        System.arraycopy(c1Tmp, 0, c1, 0, c1.length);
+        functionL(e0Bytes, e1Bytes, c1);
+        BIKEUtils.xorTo(m, c1, L_BYTE);
 
         // 4. Calculate K
-        byte[] kTmp = functionK(m, c0, c1);
-        System.arraycopy(kTmp, 0, k, 0, kTmp.length);
+        functionK(m, c0, c1, k);
     }
 
     /**
@@ -209,10 +199,6 @@ class BIKEEngine
      **/
     public void decaps(byte[] k, byte[] h0, byte[] h1, byte[] sigma, byte[] c0, byte[] c1)
     {
-        //convert to bits
-        byte[] c0Bits = new byte[this.r];
-        Utils.fromByteArrayToBitArray(c0Bits, c0);
-
         // Get compact version of h0, h1
         int[] h0Compact = new int[hw];
         int[] h1Compact = new int[hw];
@@ -220,47 +206,47 @@ class BIKEEngine
         convertToCompact(h1Compact, h1);
 
         // Compute syndrome
-        byte[] syndrome = computeSyndrome(h0, c0Bits);
+        byte[] syndrome = computeSyndrome(c0, h0);
 
         // 1. Compute e'
         byte[] ePrimeBits = BGFDecoder(syndrome, h0Compact, h1Compact);
         byte[] ePrimeBytes = new byte[2 * R_BYTE];
-        Utils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits);
+        BIKEUtils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits);
 
         byte[] e0Bits = Arrays.copyOfRange(ePrimeBits, 0, r);
         byte[] e1Bits = Arrays.copyOfRange(ePrimeBits, r, ePrimeBits.length);
 
         byte[] e0Bytes = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(e0Bytes, e0Bits);
+        BIKEUtils.fromBitArrayToByteArray(e0Bytes, e0Bits);
         byte[] e1Bytes = new byte[R_BYTE];
-        Utils.fromBitArrayToByteArray(e1Bytes, e1Bits);
+        BIKEUtils.fromBitArrayToByteArray(e1Bytes, e1Bits);
 
         // 2. Compute m'
-        byte[] mPrime = Utils.xorBytes(c1, functionL(e0Bytes, e1Bytes), L_BYTE);
+        byte[] mPrime = new byte[L_BYTE];
+        functionL(e0Bytes, e1Bytes, mPrime);
+        BIKEUtils.xorTo(c1, mPrime, L_BYTE);
 
         // 3. Compute K
-        byte[] tmpK = new byte[l];
         byte[] wlist = functionH(mPrime);
         if (Arrays.areEqual(ePrimeBytes, wlist))
         {
-            tmpK = functionK(mPrime, c0, c1);
+            functionK(mPrime, c0, c1, k);
         }
         else
         {
-            tmpK = functionK(sigma, c0, c1);
+            functionK(sigma, c0, c1, k);
         }
-        System.arraycopy(tmpK, 0, k, 0, tmpK.length);
     }
 
-    private byte[] computeSyndrome(byte[] h0, byte[] c0)
+    private byte[] computeSyndrome(byte[] c0, byte[] h0)
     {
-        long[] sLong = new long[R_BYTE_64];
-        GF2PolynomialCalculator.modMult(sLong, c0, h0, r, R_BYTE_64, RandomGenerator);
-
-        byte[] s = new byte[r];
-        Utils.fromLongArrayToBitArray(s, sLong);
-        byte[] transposedS = transpose(s);
-        return transposedS;
+        long[] c0Element = bikeRing.create();
+        long[] h0Element = bikeRing.create();
+        bikeRing.decodeBytes(c0, c0Element);
+        bikeRing.decodeBytes(h0, h0Element);
+        long[] sElement = bikeRing.create();
+        bikeRing.multiply(c0Element, h0Element, sElement);
+        return transpose(bikeRing.encodeBits(sElement));
     }
 
     private byte[] BGFDecoder(byte[] s, int[] h0Compact, int[] h1Compact)
@@ -276,7 +262,7 @@ class BIKEEngine
             byte[] black = new byte[2 * r];
             byte[] gray = new byte[2 * r];
 
-            int T = threshold(Utils.getHammingWeight(s), i, r);
+            int T = threshold(BIKEUtils.getHammingWeight(s), i, r);
 
             BFIter(s, e, T, h0Compact, h1Compact, h0CompactCol, h1CompactCol, black, gray);
 
@@ -286,7 +272,7 @@ class BIKEEngine
                 BFMaskedIter(s, e, gray, (hw + 1) / 2 + 1, h0Compact, h1Compact, h0CompactCol, h1CompactCol);
             }
         }
-        if (Utils.getHammingWeight(s) == 0)
+        if (BIKEUtils.getHammingWeight(s) == 0)
         {
             return e;
         }
@@ -298,14 +284,13 @@ class BIKEEngine
 
     private byte[] transpose(byte[] in)
     {
-        byte[] tmp = Utils.append0s(in, r); // append zeros to s
-        byte[] out = new byte[r];
-        out[0] = tmp[0];
+        byte[] output = new byte[r];
+        output[0] = in[0];
         for (int i = 1; i < r; i++)
         {
-            out[i] = tmp[r - i];
+            output[i] = in[r - i];
         }
-        return out;
+        return output;
     }
 
     private void BFIter(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol, int[] h1CompactCol, byte[] black, byte[] gray)
