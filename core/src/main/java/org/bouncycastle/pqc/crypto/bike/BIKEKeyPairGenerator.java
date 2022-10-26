@@ -15,22 +15,22 @@ public class BIKEKeyPairGenerator
     private int r;
 
     // the row weight
-    private int w;
+//    private int w;
 
     // Hamming weight of h0, h1
-    private int hw;
+//    private int hw;
 
     // the error weight
-    private int t;
+//    private int t;
 
     //the shared secret size
     private int l;
 
     // number of iterations in BGF decoder
-    private int nbIter;
+//    private int nbIter;
 
     // tau
-    private int tau;
+//    private int tau;
     private int L_BYTE;
     private int R_BYTE;
 
@@ -44,12 +44,12 @@ public class BIKEKeyPairGenerator
 
         // get parameters
         this.r = this.bikeKeyGenerationParameters.getParameters().getR();
-        this.w = this.bikeKeyGenerationParameters.getParameters().getW();
+//        this.w = this.bikeKeyGenerationParameters.getParameters().getW();
         this.l = this.bikeKeyGenerationParameters.getParameters().getL();
-        this.t = this.bikeKeyGenerationParameters.getParameters().getT();
-        this.nbIter = this.bikeKeyGenerationParameters.getParameters().getNbIter();
-        this.tau = this.bikeKeyGenerationParameters.getParameters().getTau();
-        this.hw = w / 2;
+//        this.t = this.bikeKeyGenerationParameters.getParameters().getT();
+//        this.nbIter = this.bikeKeyGenerationParameters.getParameters().getNbIter();
+//        this.tau = this.bikeKeyGenerationParameters.getParameters().getTau();
+//        this.hw = w / 2;
         this.L_BYTE = l / 8;
         this.R_BYTE = (r + 7) / 8;
     }
