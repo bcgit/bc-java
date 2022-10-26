@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
+import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -218,12 +219,21 @@ public class GeneralizedTimeTest
             }
         }
 
-        // check BER encoding is still "as given"
-        ASN1GeneralizedTime    t = new ASN1GeneralizedTime("202208091215Z");
+        {
+            // check BER encoding is still "as given"
+            ASN1GeneralizedTime ber = new ASN1GeneralizedTime("202208091215Z");
 
-        isTrue(Arrays.areEqual(Hex.decode("180d3230323230383039313231355a"), t.getEncoded(ASN1Encoding.DL)));
-        isTrue(Arrays.areEqual(Hex.decode("180d3230323230383039313231355a"), t.getEncoded(ASN1Encoding.BER)));
-        isTrue(Arrays.areEqual(Hex.decode("180f32303232303830393132313530305a"), t.getEncoded(ASN1Encoding.DER)));
+            isTrue(Arrays.areEqual(Hex.decode("180d3230323230383039313231355a"), ber.getEncoded(ASN1Encoding.DL)));
+            isTrue(Arrays.areEqual(Hex.decode("180d3230323230383039313231355a"), ber.getEncoded(ASN1Encoding.BER)));
+            isTrue(Arrays.areEqual(Hex.decode("180f32303232303830393132313530305a"), ber.getEncoded(ASN1Encoding.DER)));
+
+            // check always uses DER encoding
+            DERGeneralizedTime der = new DERGeneralizedTime("202208091215Z");
+
+            isTrue(Arrays.areEqual(Hex.decode("180f32303232303830393132313530305a"), der.getEncoded(ASN1Encoding.DL)));
+            isTrue(Arrays.areEqual(Hex.decode("180f32303232303830393132313530305a"), der.getEncoded(ASN1Encoding.BER)));
+            isTrue(Arrays.areEqual(Hex.decode("180f32303232303830393132313530305a"), der.getEncoded(ASN1Encoding.DER)));
+        }
 
         // check an actual GMT string comes back untampered
         ASN1GeneralizedTime time = new ASN1GeneralizedTime("20190704031318GMT+00:00");
