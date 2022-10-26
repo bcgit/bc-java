@@ -43,6 +43,8 @@ public class AllTests
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCTest.class);
+        suite.addTestSuite(RainbowTest.class);
+        suite.addTestSuite(RainbowVectorTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
