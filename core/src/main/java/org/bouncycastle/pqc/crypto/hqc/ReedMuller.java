@@ -54,9 +54,7 @@ class ReedMuller
             }
 
             //swap srcCode and desCode
-            int[] tmp = Arrays.clone(srcCodeCopy);
-            srcCodeCopy = Arrays.clone(desCodeCopy);
-            desCodeCopy = Arrays.clone(tmp);
+            int[] tmp = srcCodeCopy; srcCodeCopy = desCodeCopy; desCodeCopy = tmp;
         }
 
         // swap
