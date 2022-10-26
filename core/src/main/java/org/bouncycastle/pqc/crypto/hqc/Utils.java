@@ -39,17 +39,6 @@ class Utils
         }
     }
 
-    static void fromLongArrayToByte16Array(int[] output, long[] input)
-    {
-        for (int i = 0; i != input.length; i++)
-        {
-            output[4 * i] = (int)input[i] & 0xffff;
-            output[4 * i + 1] = (int)(input[i] >>> 16) & 0xffff;
-            output[4 * i + 2] = (int)(input[i] >>> 32) & 0xffff;
-            output[4 * i + 3] = (int)(input[i] >>> 48) & 0xffff;
-        }
-    }
-
     static void fromByteArrayToByte16Array(int[] output, byte[] input)
     {
         byte[] tmp = input;
@@ -149,5 +138,13 @@ class Utils
     static int toUnsigned16Bits(int a)
     {
         return a & 0xffff;
+    }
+
+    static void xorLongToByte16Array(int[] output, long input, int startIndex)
+    {
+        output[startIndex + 0] ^= (int)input & 0xffff;
+        output[startIndex + 1] ^= (int)(input >>> 16) & 0xffff;
+        output[startIndex + 2] ^= (int)(input >>> 32) & 0xffff;
+        output[startIndex + 3] ^= (int)(input >>> 48) & 0xffff;
     }
 }
