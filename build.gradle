@@ -206,6 +206,9 @@ subprojects {
     sourceSets = [project.sourceSets.main]
   }
 
+  nohttp {
+    source.exclude '**/*.rsp'
+  }
 
   jacocoTestReport {
     dependsOn test // tests are required to run before generating the report
