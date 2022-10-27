@@ -56,6 +56,19 @@ class RainbowKeyComputation
         this.o2 = rainbowParams.getO2();
     }
 
+    public RainbowKeyComputation(RainbowParameters params, byte[] pk_seed, byte[] sk_seed)
+    {
+        this.rainbowParams = params;
+        this.random = null;
+        this.version = this.rainbowParams.getVersion();
+
+        this.pk_seed = pk_seed;
+        this.sk_seed = sk_seed;
+        this.v1 = rainbowParams.getV1();
+        this.o1 = rainbowParams.getO1();
+        this.o2 = rainbowParams.getO2();
+    }
+
     private void generate_S_and_T(SecureRandom sk_random)
     {
         this.s1 = RainbowUtil.generate_random_2d(sk_random, o1, o2);
@@ -346,12 +359,12 @@ class RainbowKeyComputation
     {
         genKeyMaterial();
 
-        RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
-            this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
-            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6);
         RainbowPublicKeyParameters pubKey = new RainbowPublicKeyParameters(this.rainbowParams,
             this.l1_Q1, this.l1_Q2, this.l1_Q3, this.l1_Q5, this.l1_Q6, this.l1_Q9,
             this.l2_Q1, this.l2_Q2, this.l2_Q3, this.l2_Q5, this.l2_Q6, this.l2_Q9);
+        RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
+            this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
+            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6, pubKey.getEncoded());
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
@@ -360,11 +373,11 @@ class RainbowKeyComputation
     {
         genKeyMaterial_cyclic();
 
-        RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
-            this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
-            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6);
         RainbowCyclicPublicKeyParameters pubKey = new RainbowCyclicPublicKeyParameters(this.rainbowParams,
             this.pk_seed, this.l1_Q3, this.l1_Q5, this.l1_Q6, this.l1_Q9, this.l2_Q9);
+        RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
+            this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
+            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6, pubKey.getEncoded());
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
@@ -373,23 +386,23 @@ class RainbowKeyComputation
     {
         genKeyMaterial_cyclic();
 
-        RainbowCompressedPrivateKeyParameters privKey = new RainbowCompressedPrivateKeyParameters(this.rainbowParams,
-            this.sk_seed, this.pk_seed);
         RainbowCyclicPublicKeyParameters pubKey = new RainbowCyclicPublicKeyParameters(this.rainbowParams,
             this.pk_seed, this.l1_Q3, this.l1_Q5, this.l1_Q6, this.l1_Q9, this.l2_Q9);
+        RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
+            this.pk_seed, this.sk_seed, pubKey.getEncoded());
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
 
-    public RainbowPrivateKeyParameters generatePrivateKey(RainbowCompressedPrivateKeyParameters sk)
+    RainbowPrivateKeyParameters generatePrivateKey()
     {
-        this.sk_seed = Arrays.clone(sk.getSk_seed());
-        this.pk_seed = Arrays.clone(sk.getPk_seed());
+        this.sk_seed = Arrays.clone(sk_seed);
+        this.pk_seed = Arrays.clone(pk_seed);
 
         genPrivateKeyMaterial_cyclic();
 
         return new RainbowPrivateKeyParameters(this.rainbowParams,
             this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
-            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6);
+            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6, null);
     }
 }
