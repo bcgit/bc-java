@@ -72,7 +72,7 @@ class RainbowPublicMap
 
     public short[] publicMap(RainbowPublicKeyParameters pk, short[] signature)
     {
-        short[][] accu = compute_accumulator(signature, signature, pk.getPk(), params.getM());
+        short[][] accu = compute_accumulator(signature, signature, pk.pk, params.getM());
         return add_and_reduce(accu);
     }
 

@@ -11,6 +11,28 @@ package org.bouncycastle.pqc.crypto.rainbow;
  */
 class GF2Field
 {
+    static final byte[][] gfMulTable;
+    static final byte[] gfInvTable;
+
+    static
+    {
+        gfMulTable = new byte[256][];
+        gfMulTable[0] = new byte[256];
+        for (int i = 1; i <= 255; i++)
+        {
+            gfMulTable[i] = new byte[256];
+            for (int j = 1; j <= 255; j++)
+            {
+                gfMulTable[i][j] = (byte)gf256Mul((short)i, (short)j);
+            }
+        }
+
+        gfInvTable = new byte[256];
+        for (int i = 1; i <= 255; i++)
+        {
+            gfInvTable[i] = (byte)gf256Inv((short)i);
+        }
+    }
 
     public static final int MASK = 0xff;
 
@@ -132,11 +154,12 @@ class GF2Field
      */
     public static short invElem(short a)
     {
-        if (a == 0)
-        {
-            return 0;
-        }
-        return gf256Inv(a);
+//        if (a == 0)
+//        {
+//            return 0;
+//        }
+//        return gf256Inv(a);
+        return (short)(gfInvTable[a] & 0xff);
     }
 
     /**
@@ -149,14 +172,14 @@ class GF2Field
      */
     public static short multElem(short a, short b)
     {
-        if (a == 0 || b == 0)
-        {
-            return 0;
-        }
-        else
-        {
-            return gf256Mul(a, b);
-        }
+//        if (a == 0 || b == 0)
+//        {
+//            return 0;
+//        }
+//        else
+//        {
+//            return gf256Mul(a, b);
+//        }
+        return (short)(gfMulTable[a][b] & 0xff);
     }
-
 }

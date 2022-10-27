@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.rainbow;
 public class RainbowPublicKeyParameters
     extends RainbowKeyParameters
 {
-    private short[][][] pk;
+    short[][][] pk;
 
     public RainbowPublicKeyParameters(RainbowParameters params,
                                       short[][][] l1_Q1, short[][][] l1_Q2, short[][][] l1_Q3,
