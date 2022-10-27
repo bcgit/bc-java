@@ -90,7 +90,7 @@ class RainbowPublicMap
         short[] sig_o1 = Arrays.copyOfRange(signature, v1, v1 + o1);
         short[] sig_o2 = Arrays.copyOfRange(signature, v1 + o1, signature.length);
 
-        SecureRandom pk_random = new RainbowDRBG(pk.getPk_seed(), pk.getParams().getHash_algo());
+        SecureRandom pk_random = new RainbowDRBG(pk.getPk_seed(), pk.getParameters().getHash_algo());
 
         // layer 1
         tmp = RainbowUtil.generate_random(pk_random, o1, v1, v1, true);    // l1_Q1

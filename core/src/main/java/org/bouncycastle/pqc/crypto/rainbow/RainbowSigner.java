@@ -42,29 +42,17 @@ public class RainbowSigner
             {
                 tmpParam = (RainbowKeyParameters)param;
                 SecureRandom sr = CryptoServicesRegistrar.getSecureRandom();
-                byte[] seed = new byte[tmpParam.getParams().getLen_skseed()];
+                byte[] seed = new byte[tmpParam.getParameters().getLen_skseed()];
                 sr.nextBytes(seed);
-                this.random = new RainbowDRBG(seed, tmpParam.getParams().getHash_algo());
+                this.random = new RainbowDRBG(seed, tmpParam.getParameters().getHash_algo());
             }
-            this.version = tmpParam.getParams().getVersion();
-            switch (this.version)
-            {
-            case CLASSIC:
-            case CIRCUMZENITHAL:
-                this.key = (RainbowPrivateKeyParameters)tmpParam;
-                break;
-            case COMPRESSED:
-                this.key = (RainbowCompressedPrivateKeyParameters)tmpParam;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                    "No valid version. Please choose one of the following: classic, circumzenithal, compressed");
-            }
+            this.version = tmpParam.getParameters().getVersion();
+            this.key = tmpParam;
         }
         else
         {
             tmpParam = (RainbowKeyParameters)param;
-            this.version = tmpParam.getParams().getVersion();
+            this.version = tmpParam.getParameters().getVersion();
             switch (this.version)
             {
             case CLASSIC:
@@ -81,7 +69,7 @@ public class RainbowSigner
         }
 
         this.signableDocumentLength = this.key.getDocLength();
-        this.hashAlgo = this.key.getParams().getHash_algo();
+        this.hashAlgo = this.key.getParameters().getHash_algo();
     }
 
     private byte[] genSignature(byte[] message)
@@ -91,16 +79,16 @@ public class RainbowSigner
         hashAlgo.update(message, 0, message.length);
         hashAlgo.doFinal(msgHash, 0);
 
-        int v1 = this.key.getParams().getV1();
-        int o1 = this.key.getParams().getO1();
-        int o2 = this.key.getParams().getO2();
-        int m = this.key.getParams().getM(); // o1 + o2
-        int n = this.key.getParams().getN(); // o1 + o2 + v1
+        int v1 = this.key.getParameters().getV1();
+        int o1 = this.key.getParameters().getO1();
+        int o2 = this.key.getParameters().getO2();
+        int m = this.key.getParameters().getM(); // o1 + o2
+        int n = this.key.getParameters().getN(); // o1 + o2 + v1
 
         RainbowPrivateKeyParameters sk = (RainbowPrivateKeyParameters)this.key;
         
         byte[] seed = RainbowUtil.hash(hashAlgo, sk.sk_seed, msgHash, new byte[hashAlgo.getDigestSize()]);
-        this.random = new RainbowDRBG(seed, sk.getParams().getHash_algo());
+        this.random = new RainbowDRBG(seed, sk.getParameters().getHash_algo());
 
         short[] vinegar = new short[v1];
         short[][] L1 = null; // layer 1 linear equations
@@ -112,7 +100,7 @@ public class RainbowSigner
         short[][] L2_F2 = new short[o2][o1];
         short[][] L2_F3 = new short[o2][o2];
 
-        byte[] salt = new byte[sk.getParams().getLen_salt()];
+        byte[] salt = new byte[sk.getParameters().getLen_salt()];
         byte[] hash;
         short[] h;
 
@@ -257,13 +245,6 @@ public class RainbowSigner
 
     public byte[] generateSignature(byte[] message)
     {
-        if (this.version == Version.COMPRESSED)
-        {
-            RainbowCompressedPrivateKeyParameters compressed_sk = (RainbowCompressedPrivateKeyParameters)this.key;
-
-            RainbowKeyComputation rkc = new RainbowKeyComputation(this.key.getParams(), this.random);
-            this.key = rkc.generatePrivateKey(compressed_sk);
-        }
         return genSignature(message);
     }
 
@@ -274,10 +255,10 @@ public class RainbowSigner
         hashAlgo.update(message, 0, message.length);
         hashAlgo.doFinal(msgHash, 0);
 
-        int m = this.key.getParams().getM(); // o1 + o2
-        int n = this.key.getParams().getN(); // o1 + o2 + v1
+        int m = this.key.getParameters().getM(); // o1 + o2
+        int n = this.key.getParameters().getN(); // o1 + o2 + v1
 
-        RainbowPublicMap p_map = new RainbowPublicMap(this.key.getParams());
+        RainbowPublicMap p_map = new RainbowPublicMap(this.key.getParameters());
 
         // h = (short)H(msg_digest||salt)
         byte[] salt = Arrays.copyOfRange(signature, n, signature.length);
