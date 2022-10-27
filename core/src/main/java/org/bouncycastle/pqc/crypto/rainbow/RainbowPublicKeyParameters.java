@@ -65,7 +65,7 @@ public class RainbowPublicKeyParameters
         }
     }
 
-    public RainbowPublicKeyParameters(RainbowParameters params,
+    RainbowPublicKeyParameters(RainbowParameters params,
                                             byte[] pk_seed,
                                             short[][][] l1_Q3, short[][][] l1_Q5,
                                             short[][][] l1_Q6, short[][][] l1_Q9,
@@ -81,31 +81,56 @@ public class RainbowPublicKeyParameters
         this.l2_Q9 = RainbowUtil.cloneArray(l2_Q9);
     }
 
-    public RainbowPublicKeyParameters(RainbowParameters params, byte[] pk)
+    public RainbowPublicKeyParameters(RainbowParameters params, byte[] encoding)
     {
         super(false, params);
 
         int m = params.getM();
         int n = params.getN();
 
-        this.pk = new short[m][n][n];
-        int cnt = 0;
-        for (int i = 0; i < n; i++)
+        if (getParameters().getVersion() == Version.CLASSIC)
         {
-            for (int j = 0; j < n; j++)
+            this.pk = new short[m][n][n];
+            int cnt = 0;
+            for (int i = 0; i < n; i++)
             {
-                for (int k = 0; k < m; k++)
+                for (int j = 0; j < n; j++)
                 {
-                    if (i > j)
+                    for (int k = 0; k < m; k++)
                     {
-                        this.pk[k][i][j] = 0;
-                    }
-                    else
-                    {
-                        this.pk[k][i][j] = (short)(pk[cnt] & GF2Field.MASK);
-                        cnt++;
+                        if (i > j)
+                        {
+                            this.pk[k][i][j] = 0;
+                        }
+                        else
+                        {
+                            this.pk[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                            cnt++;
+                        }
                     }
                 }
+            }
+        }
+        else
+        {
+            this.pk_seed = Arrays.copyOfRange(encoding, 0, params.getLen_pkseed());
+
+            this.l1_Q3 = new short[params.getO1()][params.getV1()][params.getO2()];
+            this.l1_Q5 = new short[params.getO1()][params.getO1()][params.getO1()];
+            this.l1_Q6 = new short[params.getO1()][params.getO1()][params.getO2()];
+            this.l1_Q9 = new short[params.getO1()][params.getO2()][params.getO2()];
+            this.l2_Q9 = new short[params.getO2()][params.getO2()][params.getO2()];
+
+            int offSet = params.getLen_pkseed();
+            offSet += RainbowUtil.loadEncoded(this.l1_Q3, encoding, offSet, false);
+            offSet += RainbowUtil.loadEncoded(this.l1_Q5, encoding, offSet, true);
+            offSet += RainbowUtil.loadEncoded(this.l1_Q6, encoding, offSet, false);
+            offSet += RainbowUtil.loadEncoded(this.l1_Q9, encoding, offSet, true);
+            offSet += RainbowUtil.loadEncoded(this.l2_Q9, encoding, offSet, true);
+
+            if (offSet != encoding.length)
+            {
+                throw new IllegalArgumentException("unparsed data in key encoding");
             }
         }
     }
