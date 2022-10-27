@@ -253,7 +253,7 @@ class RainbowUtil
 
         // compute expansion while needed
         int left_to_hash = hash_length - digest_size;
-        while (left_to_hash >= hash_length)
+        while (left_to_hash >= digest_size)
         {
             hashAlgo.update(hash, 0, digest_size);
             hash = new byte[digest_size];
