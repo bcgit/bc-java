@@ -3,6 +3,8 @@ package org.bouncycastle.pqc.jcajce.provider;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.pqc.jcajce.provider.rainbow.RainbowKeyFactorySpi;
 
 public class Rainbow
 {
@@ -36,14 +38,14 @@ public class Rainbow
             addSignatureAlgorithm(provider, "RAINBOW-V-CIRCUMZENITHAL", PREFIX + "SignatureSpi$RainbowVcircum", BCObjectIdentifiers.rainbow_V_circumzenithal);
             addSignatureAlgorithm(provider, "RAINBOW-v-COMPRESSED", PREFIX + "SignatureSpi$RainbowVcomp", BCObjectIdentifiers.rainbow_V_compressed);
 
-//            AsymmetricKeyInfoConverter keyFact = new RainbowKeyFactorySpi();
-//
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow2, "RAINBOW", keyFact);
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow3, "RAINBOW", keyFact);
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow5, "RAINBOW", keyFact);
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow2_aes, "RAINBOW", keyFact);
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow3_aes, "RAINBOW", keyFact);
-//            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow5_aes, "RAINBOW", keyFact);
+            AsymmetricKeyInfoConverter keyFact = new RainbowKeyFactorySpi();
+
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_classic, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_circumzenithal, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_compressed, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_classic, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_circumzenithal, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_compressed, "RAINBOW", keyFact);
         }
     }
 }
