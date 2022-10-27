@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.rainbow;
 
+import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -7,39 +8,66 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowSigner;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
+import org.bouncycastle.util.Strings;
 
-/**
- * Rainbow Signature class, extending the jce SignatureSpi.
- */
 public class SignatureSpi
-    extends java.security.SignatureSpi
+    extends java.security.Signature
 {
-    private Digest digest;
+    private ByteArrayOutputStream bOut;
     private RainbowSigner signer;
     private SecureRandom random;
+    private RainbowParameters parameters;
 
-    protected SignatureSpi(Digest digest, RainbowSigner signer)
+    protected SignatureSpi(RainbowSigner signer)
     {
-        this.digest = digest;
+        super("RAINBOW");
+        
+        this.bOut = new ByteArrayOutputStream();
+        this.signer = signer;
+        this.parameters = null;
+    }
+
+    protected SignatureSpi(RainbowSigner signer, RainbowParameters parameters)
+    {
+        super(Strings.toUpperCase(parameters.getName()));
+        this.parameters = parameters;
+
+        this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
     }
 
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
-        param = RainbowKeysToParams.generatePublicKeyParameter(publicKey);
+        if (!(publicKey instanceof BCRainbowPublicKey))
+        {
+            try
+            {
+                publicKey = new BCRainbowPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to Rainbow: " + e.getMessage(), e);
+            }
+        }
 
-        digest.reset();
-        signer.init(false, param);
+        BCRainbowPublicKey key = (BCRainbowPublicKey)publicKey;
+
+        if (parameters != null)
+        {
+            String canonicalAlg = Strings.toUpperCase(parameters.getName());
+            if (!canonicalAlg.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("signature configured for " + canonicalAlg);
+            }
+        }
+
+        signer.init(false, key.getKeyParams());
     }
 
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
@@ -52,41 +80,57 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
-        CipherParameters param;
-        param = RainbowKeysToParams.generatePrivateKeyParameter(privateKey);
-
-        if (random != null)
+        if (privateKey instanceof BCRainbowPrivateKey)
         {
-            param = new ParametersWithRandom(param, random);
+            BCRainbowPrivateKey key = (BCRainbowPrivateKey)privateKey;
+            CipherParameters param = key.getKeyParams();
+
+            if (parameters != null)
+            {
+                String canonicalAlg = Strings.toUpperCase(parameters.getName());
+                if (!canonicalAlg.equals(key.getAlgorithm()))
+                {
+                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
+                }
+            }
+
+            if (random != null)
+            {
+                signer.init(true, new ParametersWithRandom(param, random));
+            }
+            else
+            {
+                signer.init(true, param);
+            }
         }
-
-        digest.reset();
-        signer.init(true, param);
-
+        else
+        {
+            throw new InvalidKeyException("unknown private key passed to Rainbow");
+        }
     }
 
     protected void engineUpdate(byte b)
-        throws SignatureException
+            throws SignatureException
     {
-        digest.update(b);
+        bOut.write(b);
     }
 
     protected void engineUpdate(byte[] b, int off, int len)
-        throws SignatureException
+            throws SignatureException
     {
-        digest.update(b, off, len);
+        bOut.write(b, off, len);
     }
 
     protected byte[] engineSign()
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
         try
         {
-            byte[] sig = signer.generateSignature(hash);
+            byte[] message = bOut.toByteArray();
 
-            return sig;
+            bOut.reset();
+
+            return signer.generateSignature(message);
         }
         catch (Exception e)
         {
@@ -97,13 +141,16 @@ public class SignatureSpi
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
-        return signer.verifySignature(hash, sigBytes);
+        byte[] message = bOut.toByteArray();
+
+        bOut.reset();
+
+        return signer.verifySignature(message, sigBytes);
     }
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
     {
+        // TODO
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
@@ -123,40 +170,66 @@ public class SignatureSpi
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
-
-    static public class withSha224
+    public static class Base
         extends SignatureSpi
     {
-        public withSha224()
+        public Base()
         {
-            super(new SHA224Digest(), new RainbowSigner());
+            super(new RainbowSigner());
         }
     }
 
-    static public class withSha256
+    public static class RainbowIIIclassic
         extends SignatureSpi
     {
-        public withSha256()
+        public RainbowIIIclassic()
         {
-            super(new SHA256Digest(), new RainbowSigner());
+            super(new RainbowSigner(), RainbowParameters.rainbowIIIclassic);
         }
     }
 
-    static public class withSha384
+    public static class RainbowIIIcircum
         extends SignatureSpi
     {
-        public withSha384()
+        public RainbowIIIcircum()
         {
-            super(new SHA384Digest(), new RainbowSigner());
+            super(new RainbowSigner(), RainbowParameters.rainbowIIIcircumzenithal);
         }
     }
 
-    static public class withSha512
+    public static class RainbowIIIcomp
         extends SignatureSpi
     {
-        public withSha512()
+        public RainbowIIIcomp()
         {
-            super(new SHA512Digest(), new RainbowSigner());
+            super(new RainbowSigner(), RainbowParameters.rainbowIIIcompressed);
+        }
+    }
+
+    public static class RainbowVclassic
+        extends SignatureSpi
+    {
+        public RainbowVclassic()
+        {
+            super(new RainbowSigner(), RainbowParameters.rainbowVclassic);
+        }
+    }
+
+    public static class RainbowVcircum
+        extends SignatureSpi
+    {
+        public RainbowVcircum()
+        {
+            super(new RainbowSigner(), RainbowParameters.rainbowVcircumzenithal);
+        }
+    }
+
+    public static class RainbowVcomp
+        extends SignatureSpi
+    {
+        public RainbowVcomp()
+        {
+            super(new RainbowSigner(), RainbowParameters.rainbowVcompressed);
         }
     }
 }

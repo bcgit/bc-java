@@ -48,6 +48,8 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
@@ -180,6 +182,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.hqc128, new HQCConverter());
         converters.put(BCObjectIdentifiers.hqc192, new HQCConverter());
         converters.put(BCObjectIdentifiers.hqc256, new HQCConverter());
+        converters.put(BCObjectIdentifiers.rainbow_III_classic, new RainbowConverter());
+        converters.put(BCObjectIdentifiers.rainbow_III_circumzenithal, new RainbowConverter());
+        converters.put(BCObjectIdentifiers.rainbow_III_compressed, new RainbowConverter());
+        converters.put(BCObjectIdentifiers.rainbow_V_classic, new RainbowConverter());
+        converters.put(BCObjectIdentifiers.rainbow_V_circumzenithal, new RainbowConverter());
+        converters.put(BCObjectIdentifiers.rainbow_V_compressed, new RainbowConverter());
     }
 
     /**
@@ -610,6 +618,20 @@ public class PublicKeyFactory
             HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new HQCPublicKeyParameters(hqcParams, keyEnc);
+        }
+    }
+
+    private static class RainbowConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new RainbowPublicKeyParameters(rainbowParams, keyEnc);
         }
     }
 }

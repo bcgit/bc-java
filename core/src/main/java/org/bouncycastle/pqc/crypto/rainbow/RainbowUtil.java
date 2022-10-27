@@ -47,49 +47,6 @@ class RainbowUtil
     }
 
     /**
-     * This function converts a matrix of type short into a matrix of type byte
-     *
-     * @param in the matrix to be converted
-     * @return out
-     * the byte-matrix that corresponds the input
-     */
-    public static byte[][] convertArray(short[][] in)
-    {
-        byte[][] out = new byte[in.length][in[0].length];
-        for (int i = 0; i < in.length; i++)
-        {
-            for (int j = 0; j < in[0].length; j++)
-            {
-                out[i][j] = (byte)in[i][j];
-            }
-        }
-        return out;
-    }
-
-    /**
-     * This function converts a 3-dimensional array of type short into a 3-dimensional array of type byte
-     *
-     * @param in the array to be converted
-     * @return out
-     * the byte-array that corresponds the input
-     */
-    public static byte[][][] convertArray(short[][][] in)
-    {
-        byte[][][] out = new byte[in.length][in[0].length][in[0][0].length];
-        for (int i = 0; i < in.length; i++)
-        {
-            for (int j = 0; j < in[0].length; j++)
-            {
-                for (int k = 0; k < in[0][0].length; k++)
-                {
-                    out[i][j][k] = (byte)in[i][j][k];
-                }
-            }
-        }
-        return out;
-    }
-
-    /**
      * Compare two short arrays. No null checks are performed.
      *
      * @param left  the first short array
@@ -332,13 +289,13 @@ class RainbowUtil
     {
         int row = a.length;
         int col = a[0].length;
-        byte[][] tmp = convertArray(a);
+
         byte[] ret = new byte[row * col];
         for (int j = 0; j < col; j++)
         {
             for (int i = 0; i < row; i++)
             {
-                ret[j * row + i] = tmp[i][j];
+                ret[j * row + i] = (byte)a[i][j];
             }
         }
         return ret;
@@ -349,8 +306,8 @@ class RainbowUtil
         int dim = a.length;
         int row = a[0].length;
         int col = a[0][0].length;
-        byte[][][] tmp = convertArray(a);
         int ret_size;
+
         if (triangular)
         {
             ret_size = dim * (row * (row + 1) / 2);
@@ -372,11 +329,51 @@ class RainbowUtil
                     {
                         continue;
                     }
-                    ret[cnt] = tmp[k][i][j];
+                    ret[cnt] = (byte)a[k][i][j];
                     cnt++;
                 }
             }
         }
         return ret;
+    }
+
+    public static int loadEncoded(short[][] a, byte[] enc, int off)
+    {
+        int row = a.length;
+        int col = a[0].length;
+
+        for (int j = 0; j < col; j++)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                 a[i][j] = (short)(enc[off + j * row + i] & 0xff);
+            }
+        }
+        return row * col;
+    }
+
+    public static int loadEncoded(short[][][] a, byte[] enc, int off, boolean triangular)
+    {
+        int dim = a.length;
+        int row = a[0].length;
+        int col = a[0][0].length;
+
+        int cnt = 0;
+
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                for (int k = 0; k < dim; k++)
+                {
+                    if (triangular && (i > j))
+                    {
+                        continue;
+                    }
+                    a[k][i][j] = (short)(enc[off + cnt++] & 0xff);
+                }
+            }
+        }
+        return cnt;
     }
 }

@@ -1,242 +1,140 @@
 package org.bouncycastle.pqc.jcajce.provider.rainbow;
 
 import java.io.IOException;
-import java.security.PrivateKey;
-import java.util.Arrays;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.RainbowPrivateKey;
-import org.bouncycastle.pqc.jcajce.spec.RainbowPrivateKeySpec;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.Layer;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.util.RainbowUtil;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.RainbowPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.RainbowPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
+import org.bouncycastle.pqc.jcajce.spec.RainbowParameterSpec;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
-/**
- * The Private key in Rainbow consists of the linear affine maps L1, L2 and the
- * map F, consisting of quadratic polynomials. In this implementation, we
- * denote: L1 = A1*x + b1 L2 = A2*x + b2
- * <p>
- * The coefficients of the polynomials in F are stored in 3-dimensional arrays
- * per layer. The indices of these arrays denote the polynomial, and the
- * variables.
- * </p><p>
- * More detailed information about the private key is to be found in the paper
- * of Jintai Ding, Dieter Schmidt: Rainbow, a New Multivariable Polynomial
- * Signature Scheme. ACNS 2005: 164-175 (https://dx.doi.org/10.1007/11496137_12)
- * </p>
- */
 public class BCRainbowPrivateKey
-    implements PrivateKey
+    implements RainbowPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    // the inverse of L1
-    private short[][] A1inv;
-
-    // translation vector element of L1
-    private short[] b1;
-
-    // the inverse of L2
-    private short[][] A2inv;
-
-    // translation vector of L2
-    private short[] b2;
-
-    /*
-      * components of F
-      */
-    private Layer[] layers;
-
-    // set of vinegar vars per layer.
-    private int[] vi;
-
-
-    /**
-     * Constructor.
-     *
-     * @param A1inv
-     * @param b1
-     * @param A2inv
-     * @param b2
-     * @param layers
-     */
-    public BCRainbowPrivateKey(short[][] A1inv, short[] b1, short[][] A2inv,
-                               short[] b2, int[] vi, Layer[] layers)
-    {
-        this.A1inv = A1inv;
-        this.b1 = b1;
-        this.A2inv = A2inv;
-        this.b2 = b2;
-        this.vi = vi;
-        this.layers = layers;
-    }
-
-    /**
-     * Constructor (used by the {@link RainbowKeyFactorySpi}).
-     *
-     * @param keySpec a {@link RainbowPrivateKeySpec}
-     */
-    public BCRainbowPrivateKey(RainbowPrivateKeySpec keySpec)
-    {
-        this(keySpec.getInvA1(), keySpec.getB1(), keySpec.getInvA2(), keySpec
-            .getB2(), keySpec.getVi(), keySpec.getLayers());
-    }
+    private transient RainbowPrivateKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
+    private transient ASN1Set attributes;
 
     public BCRainbowPrivateKey(
         RainbowPrivateKeyParameters params)
     {
-        this(params.getInvA1(), params.getB1(), params.getInvA2(), params.getB2(), params.getVi(), params.getLayers());
+        init(params, null);
     }
 
-    /**
-     * Getter for the inverse matrix of A1.
-     *
-     * @return the A1inv inverse
-     */
-    public short[][] getInvA1()
+    public BCRainbowPrivateKey(PrivateKeyInfo keyInfo)
+            throws IOException
     {
-        return this.A1inv;
+        init(keyInfo);
     }
 
-    /**
-     * Getter for the translation part of the private quadratic map L1.
-     *
-     * @return b1 the translation part of L1
-     */
-    public short[] getB1()
+    private void init(PrivateKeyInfo keyInfo)
+            throws IOException
     {
-        return this.b1;
+        init((RainbowPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
     }
 
-    /**
-     * Getter for the translation part of the private quadratic map L2.
-     *
-     * @return b2 the translation part of L2
-     */
-    public short[] getB2()
+    private void init(RainbowPrivateKeyParameters params, ASN1Set attributes)
     {
-        return this.b2;
-    }
-
-    /**
-     * Getter for the inverse matrix of A2
-     *
-     * @return the A2inv
-     */
-    public short[][] getInvA2()
-    {
-        return this.A2inv;
-    }
-
-    /**
-     * Returns the layers contained in the private key
-     *
-     * @return layers
-     */
-    public Layer[] getLayers()
-    {
-        return this.layers;
-    }
-
-    /**
-     * Returns the array of vi-s
-     *
-     * @return the vi
-     */
-    public int[] getVi()
-    {
-        return vi;
+        this.attributes = attributes;
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
      * Compare this Rainbow private key with another object.
      *
-     * @param other the other object
+     * @param o the other object
      * @return the result of the comparison
      */
-    public boolean equals(Object other)
+    public boolean equals(Object o)
     {
-        if (other == null || !(other instanceof BCRainbowPrivateKey))
+        if (o == this)
         {
-            return false;
+            return true;
         }
-        BCRainbowPrivateKey otherKey = (BCRainbowPrivateKey)other;
 
-        boolean eq = true;
-        // compare using shortcut rule ( && instead of &)
-        eq = eq && RainbowUtil.equals(A1inv, otherKey.getInvA1());
-        eq = eq && RainbowUtil.equals(A2inv, otherKey.getInvA2());
-        eq = eq && RainbowUtil.equals(b1, otherKey.getB1());
-        eq = eq && RainbowUtil.equals(b2, otherKey.getB2());
-        eq = eq && Arrays.equals(vi, otherKey.getVi());
-        if (layers.length != otherKey.getLayers().length)
+        if (o instanceof BCRainbowPrivateKey)
         {
-            return false;
+            BCRainbowPrivateKey otherKey = (BCRainbowPrivateKey)o;
+
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
         }
-        for (int i = layers.length - 1; i >= 0; i--)
-        {
-            eq &= layers[i].equals(otherKey.getLayers()[i]);
-        }
-        return eq;
+
+        return false;
     }
 
     public int hashCode()
     {
-        int hash = layers.length;
-
-        hash = hash * 37 + org.bouncycastle.util.Arrays.hashCode(A1inv);
-        hash = hash * 37 + org.bouncycastle.util.Arrays.hashCode(b1);
-        hash = hash * 37 + org.bouncycastle.util.Arrays.hashCode(A2inv);
-        hash = hash * 37 + org.bouncycastle.util.Arrays.hashCode(b2);
-        hash = hash * 37 + org.bouncycastle.util.Arrays.hashCode(vi);
-
-        for (int i = layers.length - 1; i >= 0; i--)
-        {
-            hash = hash * 37 + layers[i].hashCode();
-        }
-
-
-        return hash;
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Rainbow"
+     * @return name of the algorithm
      */
     public final String getAlgorithm()
     {
-        return "Rainbow";
+        return algorithm;
     }
 
     public byte[] getEncoded()
     {
-        RainbowPrivateKey privateKey = new RainbowPrivateKey(A1inv, b1, A2inv, b2, vi, layers);
+        if (encoding == null)
+        {
+            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
+        }
 
-        PrivateKeyInfo pki;
-        try
-        {
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.rainbow, DERNull.INSTANCE);
-            pki = new PrivateKeyInfo(algorithmIdentifier, privateKey);
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-        try
-        {
-            byte[] encoded = pki.getEncoded();
-            return encoded;
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
+        return Arrays.clone(encoding);
+    }
+
+    public RainbowParameterSpec getParameterSpec()
+    {
+        return RainbowParameterSpec.fromName(params.getParameters().getName());
     }
 
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    public RainbowPublicKey getPublicKey()
+    {
+        return new BCRainbowPublicKey(new RainbowPublicKeyParameters(params.getParameters(), params.getPublicKey()));
+    }
+
+    RainbowPrivateKeyParameters getKeyParams()
+    {
+        return params;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(PrivateKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+            ObjectOutputStream out)
+            throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }

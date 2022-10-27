@@ -1,159 +1,96 @@
 package org.bouncycastle.pqc.jcajce.provider.rainbow;
 
-import java.security.PublicKey;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.RainbowPublicKey;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.RainbowPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
-import org.bouncycastle.pqc.jcajce.spec.RainbowPublicKeySpec;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowParameters;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.RainbowPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.rainbow.util.RainbowUtil;
+import org.bouncycastle.pqc.jcajce.spec.RainbowParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
-/**
- * This class implements CipherParameters and PublicKey.
- * <p>
- * The public key in Rainbow consists of n - v1 polynomial components of the
- * private key's F and the field structure of the finite field k.
- * </p><p>
- * The quadratic (or mixed) coefficients of the polynomials from the public key
- * are stored in the 2-dimensional array in lexicographical order, requiring n *
- * (n + 1) / 2 entries for each polynomial. The singular terms are stored in a
- * 2-dimensional array requiring n entries per polynomial, the scalar term of
- * each polynomial is stored in a 1-dimensional array.
- * </p><p>
- * More detailed information on the public key is to be found in the paper of
- * Jintai Ding, Dieter Schmidt: Rainbow, a New Multivariable Polynomial
- * Signature Scheme. ACNS 2005: 164-175 (https://dx.doi.org/10.1007/11496137_12)
- * </p>
- */
 public class BCRainbowPublicKey
-    implements PublicKey
+    implements RainbowPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private short[][] coeffquadratic;
-    private short[][] coeffsingular;
-    private short[] coeffscalar;
-    private int docLength; // length of possible document to sign
-
-    private RainbowParameters rainbowParams;
-
-    /**
-     * Constructor
-     *
-     * @param docLength
-     * @param coeffQuadratic
-     * @param coeffSingular
-     * @param coeffScalar
-     */
-    public BCRainbowPublicKey(int docLength,
-                              short[][] coeffQuadratic, short[][] coeffSingular,
-                              short[] coeffScalar)
-    {
-        this.docLength = docLength;
-        this.coeffquadratic = coeffQuadratic;
-        this.coeffsingular = coeffSingular;
-        this.coeffscalar = coeffScalar;
-    }
-
-    /**
-     * Constructor (used by the {@link RainbowKeyFactorySpi}).
-     *
-     * @param keySpec a {@link RainbowPublicKeySpec}
-     */
-    public BCRainbowPublicKey(RainbowPublicKeySpec keySpec)
-    {
-        this(keySpec.getDocLength(), keySpec.getCoeffQuadratic(), keySpec
-            .getCoeffSingular(), keySpec.getCoeffScalar());
-    }
+    private transient RainbowPublicKeyParameters params;
+    private transient String algorithm;
+    private transient byte[] encoding;
 
     public BCRainbowPublicKey(
         RainbowPublicKeyParameters params)
     {
-        this(params.getDocLength(), params.getCoeffQuadratic(), params.getCoeffSingular(), params.getCoeffScalar());
+        init(params);
     }
 
-    /**
-     * @return the docLength
-     */
-    public int getDocLength()
+    public BCRainbowPublicKey(SubjectPublicKeyInfo keyInfo)
+        throws IOException
     {
-        return this.docLength;
+        init(keyInfo);
     }
 
-    /**
-     * @return the coeffQuadratic
-     */
-    public short[][] getCoeffQuadratic()
+    private void init(SubjectPublicKeyInfo keyInfo)
+        throws IOException
     {
-        return coeffquadratic;
+        init((RainbowPublicKeyParameters) PublicKeyFactory.createKey(keyInfo));
     }
 
-    /**
-     * @return the coeffSingular
-     */
-    public short[][] getCoeffSingular()
+    private void init(RainbowPublicKeyParameters params)
     {
-        short[][] copy = new short[coeffsingular.length][];
-
-        for (int i = 0; i != coeffsingular.length; i++)
-        {
-            copy[i] = Arrays.clone(coeffsingular[i]);
-        }
-
-        return copy;
-    }
-
-
-    /**
-     * @return the coeffScalar
-     */
-    public short[] getCoeffScalar()
-    {
-        return Arrays.clone(coeffscalar);
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     /**
      * Compare this Rainbow public key with another object.
      *
-     * @param other the other object
+     * @param o the other object
      * @return the result of the comparison
      */
-    public boolean equals(Object other)
+    public boolean equals(Object o)
     {
-        if (other == null || !(other instanceof BCRainbowPublicKey))
+        if (o == this)
         {
-            return false;
+            return true;
         }
-        BCRainbowPublicKey otherKey = (BCRainbowPublicKey)other;
 
-        return docLength == otherKey.getDocLength()
-            && RainbowUtil.equals(coeffquadratic, otherKey.getCoeffQuadratic())
-            && RainbowUtil.equals(coeffsingular, otherKey.getCoeffSingular())
-            && RainbowUtil.equals(coeffscalar, otherKey.getCoeffScalar());
+        if (o instanceof BCRainbowPublicKey)
+        {
+            BCRainbowPublicKey otherKey = (BCRainbowPublicKey)o;
+
+            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+        }
+
+        return false;
     }
 
     public int hashCode()
     {
-        int hash = docLength;
-
-        hash = hash * 37 + Arrays.hashCode(coeffquadratic);
-        hash = hash * 37 + Arrays.hashCode(coeffsingular);
-        hash = hash * 37 + Arrays.hashCode(coeffscalar);
-
-        return hash;
+        return Arrays.hashCode(getEncoded());
     }
 
     /**
-     * @return name of the algorithm - "Rainbow"
+     * @return name of the algorithm
      */
     public final String getAlgorithm()
     {
-        return "Rainbow";
+        return algorithm;
+    }
+
+    public byte[] getEncoded()
+    {
+        if (encoding == null)
+        {
+            encoding = KeyUtil.getEncodedSubjectPublicKeyInfo(params);
+        }
+
+        return Arrays.clone(encoding);
     }
 
     public String getFormat()
@@ -161,11 +98,33 @@ public class BCRainbowPublicKey
         return "X.509";
     }
 
-    public byte[] getEncoded()
+    public RainbowParameterSpec getParameterSpec()
     {
-        RainbowPublicKey key = new RainbowPublicKey(docLength, coeffquadratic, coeffsingular, coeffscalar);
-        AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.rainbow, DERNull.INSTANCE);
+        return RainbowParameterSpec.fromName(params.getParameters().getName());
+    }
 
-        return KeyUtil.getEncodedSubjectPublicKeyInfo(algorithmIdentifier, key);
+    RainbowPublicKeyParameters getKeyParams()
+    {
+        return params;
+    }
+
+    private void readObject(
+        ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+
+        byte[] enc = (byte[])in.readObject();
+
+        init(SubjectPublicKeyInfo.getInstance(enc));
+    }
+
+    private void writeObject(
+        ObjectOutputStream out)
+        throws IOException
+    {
+        out.defaultWriteObject();
+
+        out.writeObject(this.getEncoded());
     }
 }
