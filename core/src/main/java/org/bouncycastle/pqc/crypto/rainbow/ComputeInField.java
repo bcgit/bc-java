@@ -11,10 +11,6 @@ package org.bouncycastle.pqc.crypto.rainbow;
 
 class ComputeInField
 {
-
-    private short[][] A; // used by solveEquation and inverse
-    short[] x;
-
     /**
      * Constructor with no parameters
      */
@@ -45,9 +41,9 @@ class ComputeInField
         try
         {
             // stores B|b from the equation B*x = b
-            A = new short[B.length][B.length + 1];
+            short[][] A = new short[B.length][B.length + 1];
             // stores the solution of the LES
-            x = new short[B.length];
+            short[] x = new short[B.length];
 
             // copy B and b into the global matrix A
             // free coefficients in last column are subtracted from b
@@ -57,7 +53,7 @@ class ComputeInField
                 A[i][b.length] = GF2Field.addElem(b[i], A[i][b.length]);
             }
 
-            gaussElim();
+            gaussElim(A);
 
             // copy solution into x
             for (int i = 0; i < A.length; i++)
@@ -94,7 +90,7 @@ class ComputeInField
         try
         {
             short[][] inverse;
-            A = new short[coef.length][2 * coef.length];
+            short[][] A = new short[coef.length][2 * coef.length];
 
             for (int i = 0; i < coef.length; i++)
             {
@@ -108,7 +104,7 @@ class ComputeInField
                 A[i][i + A.length] = 1;
             }
 
-            gaussElim();
+            gaussElim(A);
 
             // copy the result (the second half of A) in the matrix inverse.
             inverse = new short[A.length][A.length];
@@ -128,7 +124,7 @@ class ComputeInField
         }
     }
 
-    private void gaussElim()
+    private void gaussElim(short[][] A)
     {
         short tmp;
         short factor;
@@ -190,7 +186,7 @@ class ComputeInField
             throw new RuntimeException("Multiplication is not possible!");
         }
         short tmp = 0;
-        A = new short[M1.length][M2[0].length];
+        short[][] A = new short[M1.length][M2[0].length];
         for (int i = 0; i < M1.length; i++)
         {
             for (int j = 0; j < M2.length; j++)
