@@ -240,6 +240,19 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier dilithium3_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.6.5"); // dilithium.branch("5");
     ASN1ObjectIdentifier dilithium5_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.8.7"); // dilithium.branch("6");
 
+    /*
+     * Rainbow
+     */
+    ASN1ObjectIdentifier rainbow = bc_sig.branch("9");
+
+    // OpenSSL OIDs
+    ASN1ObjectIdentifier rainbow_III_classic = rainbow.branch("1");
+    ASN1ObjectIdentifier rainbow_III_circumzenithal = rainbow.branch("2");
+    ASN1ObjectIdentifier rainbow_III_compressed = rainbow.branch("3");
+    ASN1ObjectIdentifier rainbow_V_classic = rainbow.branch("4");
+    ASN1ObjectIdentifier rainbow_V_circumzenithal = rainbow.branch("5");
+    ASN1ObjectIdentifier rainbow_V_compressed = rainbow.branch("6");
+
     /**
      * key_exchange(3) algorithms
      */
