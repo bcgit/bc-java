@@ -9,15 +9,12 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowCompressedPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowCyclicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
-import org.bouncycastle.pqc.crypto.rainbow.Version;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -94,27 +91,10 @@ public class RainbowVectorTest
                         kpGen.init(genParams);
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-                        if (parameters.getVersion() == Version.CLASSIC)
-                        {
-                            RainbowPublicKeyParameters pubParams = (RainbowPublicKeyParameters) kp.getPublic();
-                            RainbowPrivateKeyParameters privParams = (RainbowPrivateKeyParameters) kp.getPrivate();
-                            assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-                            assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                        }
-                        else if (parameters.getVersion() == Version.CIRCUMZENITHAL)
-                        {
-                            RainbowCyclicPublicKeyParameters pubParams = (RainbowCyclicPublicKeyParameters)kp.getPublic();
-                            RainbowPrivateKeyParameters privParams = (RainbowPrivateKeyParameters)kp.getPrivate();
-                            assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                            assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-                        }
-                        else if (parameters.getVersion() == Version.COMPRESSED)
-                        {
-                            RainbowCyclicPublicKeyParameters pubParams = (RainbowCyclicPublicKeyParameters)kp.getPublic();
-                            RainbowCompressedPrivateKeyParameters privParams = (RainbowCompressedPrivateKeyParameters)kp.getPrivate();
-                            assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                            assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-                        }
+                        RainbowPublicKeyParameters pubParams = (RainbowPublicKeyParameters)kp.getPublic();
+                        RainbowPrivateKeyParameters privParams = (RainbowPrivateKeyParameters)kp.getPrivate();
+                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
+                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
 
                         //
                         // Signature test
