@@ -1,11 +1,20 @@
 package org.bouncycastle.pqc.crypto.rainbow;
 
+import org.bouncycastle.util.Arrays;
+
 public class RainbowPublicKeyParameters
     extends RainbowKeyParameters
 {
     short[][][] pk;
 
-    public RainbowPublicKeyParameters(RainbowParameters params,
+    byte[] pk_seed;
+    short[][][] l1_Q3;
+    short[][][] l1_Q5;
+    short[][][] l1_Q6;
+    short[][][] l1_Q9;
+    short[][][] l2_Q9;
+
+    RainbowPublicKeyParameters(RainbowParameters params,
                                       short[][][] l1_Q1, short[][][] l1_Q2, short[][][] l1_Q3,
                                       short[][][] l1_Q5, short[][][] l1_Q6, short[][][] l1_Q9,
                                       short[][][] l2_Q1, short[][][] l2_Q2, short[][][] l2_Q3,
@@ -56,6 +65,22 @@ public class RainbowPublicKeyParameters
         }
     }
 
+    public RainbowPublicKeyParameters(RainbowParameters params,
+                                            byte[] pk_seed,
+                                            short[][][] l1_Q3, short[][][] l1_Q5,
+                                            short[][][] l1_Q6, short[][][] l1_Q9,
+                                            short[][][] l2_Q9)
+    {
+        super(false, params);
+
+        this.pk_seed = pk_seed.clone();
+        this.l1_Q3 = RainbowUtil.cloneArray(l1_Q3);
+        this.l1_Q5 = RainbowUtil.cloneArray(l1_Q5);
+        this.l1_Q6 = RainbowUtil.cloneArray(l1_Q6);
+        this.l1_Q9 = RainbowUtil.cloneArray(l1_Q9);
+        this.l2_Q9 = RainbowUtil.cloneArray(l2_Q9);
+    }
+
     public RainbowPublicKeyParameters(RainbowParameters params, byte[] pk)
     {
         super(false, params);
@@ -92,6 +117,17 @@ public class RainbowPublicKeyParameters
 
     public byte[] getEncoded()
     {
+        if (getParameters().getVersion() != Version.CLASSIC)
+        {
+            byte[] ret = pk_seed;
+            ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l1_Q3, false));
+            ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l1_Q5, true));
+            ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l1_Q6, false));
+            ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l1_Q9, true));
+            ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l2_Q9, true));
+            return ret;
+        }
+
         return RainbowUtil.getEncoded(pk, true);
     }
 }
