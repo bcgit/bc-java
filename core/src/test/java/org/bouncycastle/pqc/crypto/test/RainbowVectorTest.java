@@ -9,7 +9,6 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.rainbow.RainbowCompressedPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowCyclicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowKeyPairGenerator;
@@ -111,7 +110,7 @@ public class RainbowVectorTest
                         else if (parameters.getVersion() == Version.COMPRESSED)
                         {
                             RainbowCyclicPublicKeyParameters pubParams = (RainbowCyclicPublicKeyParameters)kp.getPublic();
-                            RainbowCompressedPrivateKeyParameters privParams = (RainbowCompressedPrivateKeyParameters)kp.getPrivate();
+                            RainbowPrivateKeyParameters privParams = (RainbowPrivateKeyParameters)kp.getPrivate();
                             assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
                             assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
                         }

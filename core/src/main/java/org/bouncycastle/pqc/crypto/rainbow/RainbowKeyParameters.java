@@ -15,7 +15,7 @@ public class RainbowKeyParameters
         this.docLength = params.getM();
     }
 
-    public RainbowParameters getParams()
+    public RainbowParameters getParameters()
     {
         return params;
     }
