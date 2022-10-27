@@ -192,6 +192,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.gpg" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pgp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pub" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.sec" />
                 </copy>
@@ -224,6 +225,7 @@
                             <include name="**/*.rsp" />
                             <include name="**/*.key" />
                             <include name="**/*.gpg" />
+                            <include name="**/*.pgp" />
                             <include name="**/*.pub" />
                             <include name="**/*.sec" />
                             <include name="**/*.ers" />
@@ -935,6 +937,7 @@
              <fileset dir="${src.dir}" includes="**/*.txt" />
              <fileset dir="${src.dir}" includes="**/*.rsp" />
              <fileset dir="${src.dir}" includes="**/*.gpg" />
+             <fileset dir="${src.dir}" includes="**/*.pgp" />
              <fileset dir="${src.dir}" includes="**/*.pub" />
              <fileset dir="${src.dir}" includes="**/*.sec" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
