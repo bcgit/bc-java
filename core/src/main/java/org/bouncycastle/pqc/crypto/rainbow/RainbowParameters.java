@@ -63,7 +63,7 @@ public class RainbowParameters
         return name;
     }
 
-    public Version getVersion()
+    Version getVersion()
     {
         return this.version;
     }

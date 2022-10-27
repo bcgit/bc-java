@@ -17,16 +17,21 @@ public class RainbowPrivateKeyParameters
     final short[][][] l2_F3;
     final short[][][] l2_F5;
     final short[][][] l2_F6;
+    private final byte[] pk_seed;
+    private byte[] pk_encoded;
 
-    public RainbowPrivateKeyParameters(RainbowParameters params,
+    RainbowPrivateKeyParameters(RainbowParameters params,
                                        byte[] sk_seed, short[][] s1,
                                        short[][] t1, short[][] t3, short[][] t4,
                                        short[][][] l1_F1, short[][][] l1_F2,
                                        short[][][] l2_F1, short[][][] l2_F2,
-                                       short[][][] l2_F3, short[][][] l2_F5, short[][][] l2_F6)
+                                       short[][][] l2_F3, short[][][] l2_F5, short[][][] l2_F6,
+                                       byte[] pk_encoded)
     {
         super(true, params);
 
+        this.pk_seed = null;
+        this.pk_encoded = pk_encoded;
         this.sk_seed = sk_seed.clone();
         this.s1 = RainbowUtil.cloneArray(s1);
         this.t1 = RainbowUtil.cloneArray(t1);
@@ -41,171 +46,216 @@ public class RainbowPrivateKeyParameters
         this.l2_F6 = RainbowUtil.cloneArray(l2_F6);
     }
 
-    public RainbowPrivateKeyParameters(RainbowParameters params, byte[] sk)
+    RainbowPrivateKeyParameters(RainbowParameters params,
+                                byte[] pk_seed, byte[] sk_seed, byte[] pk_encoded)
     {
         super(true, params);
 
-        int v1 = params.getV1();
-        int o1 = params.getO1();
-        int o2 = params.getO2();
+        RainbowPrivateKeyParameters expandedPrivKey = new RainbowKeyComputation(params, pk_seed, sk_seed).generatePrivateKey();
 
-        this.s1 = new short[o1][o2];
-        this.t1 = new short[v1][o1];
-        this.t4 = new short[v1][o2];
-        this.t3 = new short[o1][o2];
-        this.l1_F1 = new short[o1][v1][v1];
-        this.l1_F2 = new short[o1][v1][o1];
-        this.l2_F1 = new short[o2][v1][v1];
-        this.l2_F2 = new short[o2][v1][o1];
-        this.l2_F3 = new short[o2][v1][o2];
-        this.l2_F5 = new short[o2][o1][o1];
-        this.l2_F6 = new short[o2][o1][o2];
-
-        int cnt = 0;
-        sk_seed = Arrays.copyOfRange(sk, cnt, params.getLen_skseed());
-        cnt += sk_seed.length;
-        for (int j = 0; j < o2; j++)
-        {
-            for (int i = 0; i < o1; i++)
-            {
-                s1[i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                cnt++;
-            }
-        }
-        for (int j = 0; j < o1; j++)
-        {
-            for (int i = 0; i < v1; i++)
-            {
-                t1[i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                cnt++;
-            }
-        }
-        for (int j = 0; j < o2; j++)
-        {
-            for (int i = 0; i < v1; i++)
-            {
-                t4[i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                cnt++;
-            }
-        }
-        for (int j = 0; j < o2; j++)
-        {
-            for (int i = 0; i < o1; i++)
-            {
-                t3[i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                cnt++;
-            }
-        }
-
-        for (int i = 0; i < v1; i++)
-        {
-            for (int j = 0; j < v1; j++)
-            {
-                for (int k = 0; k < o1; k++)
-                {
-                    if (i > j)
-                    {
-                        this.l1_F1[k][i][j] = 0;
-                    }
-                    else
-                    {
-                        this.l1_F1[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                        cnt++;
-                    }
-                }
-            }
-        }
-
-        for (int i = 0; i < v1; i++)
-        {
-            for (int j = 0; j < o1; j++)
-            {
-                for (int k = 0; k < o1; k++)
-                {
-                    this.l1_F2[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                    cnt++;
-                }
-            }
-        }
-
-        for (int i = 0; i < v1; i++)
-        {
-            for (int j = 0; j < v1; j++)
-            {
-                for (int k = 0; k < o2; k++)
-                {
-                    if (i > j)
-                    {
-                        this.l2_F1[k][i][j] = 0;
-                    }
-                    else
-                    {
-                        this.l2_F1[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                        cnt++;
-                    }
-                }
-            }
-        }
-
-        for (int i = 0; i < v1; i++)
-        {
-            for (int j = 0; j < o1; j++)
-            {
-                for (int k = 0; k < o2; k++)
-                {
-                    this.l2_F2[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                    cnt++;
-                }
-            }
-        }
-
-        for (int i = 0; i < v1; i++)
-        {
-            for (int j = 0; j < o2; j++)
-            {
-                for (int k = 0; k < o2; k++)
-                {
-                    this.l2_F3[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                    cnt++;
-                }
-            }
-        }
-
-        for (int i = 0; i < o1; i++)
-        {
-            for (int j = 0; j < o1; j++)
-            {
-                for (int k = 0; k < o2; k++)
-                {
-                    if (i > j)
-                    {
-                        this.l2_F5[k][i][j] = 0;
-                    }
-                    else
-                    {
-                        this.l2_F5[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                        cnt++;
-                    }
-                }
-            }
-        }
-
-        for (int i = 0; i < o1; i++)
-        {
-            for (int j = 0; j < o2; j++)
-            {
-                for (int k = 0; k < o2; k++)
-                {
-                    this.l2_F6[k][i][j] = (short)(sk[cnt] & GF2Field.MASK);
-                    cnt++;
-                }
-            }
-        }
-
-
+        this.pk_seed = pk_seed;
+        this.pk_encoded = pk_encoded;
+        this.sk_seed = sk_seed;
+        this.s1 = expandedPrivKey.s1;
+        this.t1 = expandedPrivKey.t1;
+        this.t3 = expandedPrivKey.t3;
+        this.t4 = expandedPrivKey.t4;
+        this.l1_F1 = expandedPrivKey.l1_F1;
+        this.l1_F2 = expandedPrivKey.l1_F2;
+        this.l2_F1 = expandedPrivKey.l2_F1;
+        this.l2_F2 = expandedPrivKey.l2_F2;
+        this.l2_F3 = expandedPrivKey.l2_F3;
+        this.l2_F5 = expandedPrivKey.l2_F5;
+        this.l2_F6 = expandedPrivKey.l2_F6;
     }
 
-    public byte[] getSk_seed()
+    public RainbowPrivateKeyParameters(RainbowParameters params, byte[] encoding)
+    {
+        super(true, params);
+
+        if (params.getVersion() == Version.COMPRESSED)
+        {
+            this.pk_seed = Arrays.copyOfRange(encoding, 0, params.getLen_pkseed());
+            this.sk_seed = Arrays.copyOfRange(encoding, params.getLen_pkseed(), params.getLen_skseed());
+
+            RainbowPrivateKeyParameters expandedPrivKey = new RainbowKeyComputation(params, pk_seed, sk_seed).generatePrivateKey();
+
+            this.pk_encoded = null;   // TODO
+            this.s1 = expandedPrivKey.s1;
+            this.t1 = expandedPrivKey.t1;
+            this.t3 = expandedPrivKey.t3;
+            this.t4 = expandedPrivKey.t4;
+            this.l1_F1 = expandedPrivKey.l1_F1;
+            this.l1_F2 = expandedPrivKey.l1_F2;
+            this.l2_F1 = expandedPrivKey.l2_F1;
+            this.l2_F2 = expandedPrivKey.l2_F2;
+            this.l2_F3 = expandedPrivKey.l2_F3;
+            this.l2_F5 = expandedPrivKey.l2_F5;
+            this.l2_F6 = expandedPrivKey.l2_F6;
+        }
+        else
+        {
+            int v1 = params.getV1();
+            int o1 = params.getO1();
+            int o2 = params.getO2();
+
+            this.s1 = new short[o1][o2];
+            this.t1 = new short[v1][o1];
+            this.t4 = new short[v1][o2];
+            this.t3 = new short[o1][o2];
+            this.l1_F1 = new short[o1][v1][v1];
+            this.l1_F2 = new short[o1][v1][o1];
+            this.l2_F1 = new short[o2][v1][v1];
+            this.l2_F2 = new short[o2][v1][o1];
+            this.l2_F3 = new short[o2][v1][o2];
+            this.l2_F5 = new short[o2][o1][o1];
+            this.l2_F6 = new short[o2][o1][o2];
+
+            int cnt = 0;
+            pk_seed = null;
+            sk_seed = Arrays.copyOfRange(encoding, cnt, params.getLen_skseed());
+            cnt += sk_seed.length;
+            for (int j = 0; j < o2; j++)
+            {
+                for (int i = 0; i < o1; i++)
+                {
+                    s1[i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                    cnt++;
+                }
+            }
+            for (int j = 0; j < o1; j++)
+            {
+                for (int i = 0; i < v1; i++)
+                {
+                    t1[i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                    cnt++;
+                }
+            }
+            for (int j = 0; j < o2; j++)
+            {
+                for (int i = 0; i < v1; i++)
+                {
+                    t4[i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                    cnt++;
+                }
+            }
+            for (int j = 0; j < o2; j++)
+            {
+                for (int i = 0; i < o1; i++)
+                {
+                    t3[i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                    cnt++;
+                }
+            }
+
+            for (int i = 0; i < v1; i++)
+            {
+                for (int j = 0; j < v1; j++)
+                {
+                    for (int k = 0; k < o1; k++)
+                    {
+                        if (i > j)
+                        {
+                            this.l1_F1[k][i][j] = 0;
+                        }
+                        else
+                        {
+                            this.l1_F1[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                            cnt++;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < v1; i++)
+            {
+                for (int j = 0; j < o1; j++)
+                {
+                    for (int k = 0; k < o1; k++)
+                    {
+                        this.l1_F2[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                        cnt++;
+                    }
+                }
+            }
+
+            for (int i = 0; i < v1; i++)
+            {
+                for (int j = 0; j < v1; j++)
+                {
+                    for (int k = 0; k < o2; k++)
+                    {
+                        if (i > j)
+                        {
+                            this.l2_F1[k][i][j] = 0;
+                        }
+                        else
+                        {
+                            this.l2_F1[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                            cnt++;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < v1; i++)
+            {
+                for (int j = 0; j < o1; j++)
+                {
+                    for (int k = 0; k < o2; k++)
+                    {
+                        this.l2_F2[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                        cnt++;
+                    }
+                }
+            }
+
+            for (int i = 0; i < v1; i++)
+            {
+                for (int j = 0; j < o2; j++)
+                {
+                    for (int k = 0; k < o2; k++)
+                    {
+                        this.l2_F3[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                        cnt++;
+                    }
+                }
+            }
+
+            for (int i = 0; i < o1; i++)
+            {
+                for (int j = 0; j < o1; j++)
+                {
+                    for (int k = 0; k < o2; k++)
+                    {
+                        if (i > j)
+                        {
+                            this.l2_F5[k][i][j] = 0;
+                        }
+                        else
+                        {
+                            this.l2_F5[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                            cnt++;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < o1; i++)
+            {
+                for (int j = 0; j < o2; j++)
+                {
+                    for (int k = 0; k < o2; k++)
+                    {
+                        this.l2_F6[k][i][j] = (short)(encoding[cnt] & GF2Field.MASK);
+                        cnt++;
+                    }
+                }
+            }
+        }
+    }
+
+    byte[] getSk_seed()
     {
         return Arrays.clone(sk_seed);
     }
@@ -266,7 +316,12 @@ public class RainbowPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        byte[] ret = getSk_seed();
+        if (getParameters().getVersion() == Version.COMPRESSED)
+        {
+            return Arrays.concatenate(this.pk_seed, this.sk_seed);
+        }
+
+        byte[] ret = sk_seed;
         ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.s1));
         ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.t1));
         ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.t4));
@@ -279,5 +334,10 @@ public class RainbowPrivateKeyParameters
         ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l2_F5, true));
         ret = Arrays.concatenate(ret, RainbowUtil.getEncoded(this.l2_F6, false));
         return ret;
+    }
+
+    public byte[] getPublicKey()
+    {
+        return pk_encoded;
     }
 }

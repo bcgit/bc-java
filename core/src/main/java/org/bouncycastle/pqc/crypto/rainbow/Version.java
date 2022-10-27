@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.rainbow;
 
-public enum Version
+enum Version
 {
     CLASSIC,
     CIRCUMZENITHAL,

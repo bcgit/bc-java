@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.rainbow;
 
+import org.bouncycastle.util.Pack;
+
 /**
  * This class provides the basic operations like addition, multiplication and
  * finding the multiplicative inverse of an element in GF2^8.
@@ -11,26 +13,35 @@ package org.bouncycastle.pqc.crypto.rainbow;
  */
 class GF2Field
 {
-    static final byte[][] gfMulTable;
-    static final byte[] gfInvTable;
+    static final byte[][] gfMulTable = new byte[256][256];
+    static final byte[] gfInvTable = new byte[256];
 
     static
     {
-        gfMulTable = new byte[256][];
-        gfMulTable[0] = new byte[256];
-        for (int i = 1; i <= 255; i++)
         {
-            gfMulTable[i] = new byte[256];
-            for (int j = 1; j <= 255; j++)
+            long p = 0x0101010101010101L;
+            for (int i = 1; i <= 255; i++)
             {
-                gfMulTable[i][j] = (byte)gf256Mul((short)i, (short)j);
+                long q = 0x0706050403020100L;
+                for (int j = 0; j < 256; j += 8)
+                {
+                    long r = gf256Mul_64(p, q);
+                    Pack.longToLittleEndian(r, gfMulTable[i], j);
+                    q += 0x0808080808080808L;
+                }
+
+                p += 0x0101010101010101L;
             }
         }
 
-        gfInvTable = new byte[256];
-        for (int i = 1; i <= 255; i++)
         {
-            gfInvTable[i] = (byte)gf256Inv((short)i);
+            long p = 0x0706050403020100L;
+            for (int i = 0; i < 256; i += 8)
+            {
+                long r = gf256Inv_64(p);
+                Pack.longToLittleEndian(r, gfInvTable, i);
+                p += 0x0808080808080808L;
+            }
         }
     }
 
@@ -71,9 +82,9 @@ class GF2Field
         short b1 = (short)((b >>> 2) & MASK);
         short a0b0 = gf4Mul(a0, b0);
         short a1b1 = gf4Mul(a1, b1);
-        short a0b1_a1b0 = (short)(gf4Mul((short)(a0 ^ a1), (short)(b0 ^ b1)) ^ a0b0 ^ a1b1);
+        short a0b1_a1b0 = (short)(gf4Mul((short)(a0 ^ a1), (short)(b0 ^ b1)) ^ a0b0);
         short a1b1_x2 = gf4Mul2(a1b1);
-        return (short)((((a0b1_a1b0 ^ a1b1) << 2) ^ a0b0 ^ a1b1_x2) & MASK);
+        return (short)(((a0b1_a1b0 << 2) ^ a0b0 ^ a1b1_x2) & MASK);
     }
 
     private static short gf16Squ(short a)
@@ -102,9 +113,9 @@ class GF2Field
         short b1 = (short)((b >>> 4) & MASK);
         short a0b0 = gf16Mul(a0, b0);
         short a1b1 = gf16Mul(a1, b1);
-        short a0b1_a1b0 = (short)(gf16Mul((short)(a0 ^ a1), (short)(b0 ^ b1)) ^ a0b0 ^ a1b1);
+        short a0b1_a1b0 = (short)(gf16Mul((short)(a0 ^ a1), (short)(b0 ^ b1)) ^ a0b0);
         short a1b1_x2 = gf16Mul8(a1b1);
-        return (short)((((a0b1_a1b0 ^ a1b1) << 4) ^ a0b0 ^ a1b1_x2) & MASK);
+        return (short)(((a0b1_a1b0 << 4) ^ a0b0 ^ a1b1_x2) & MASK);
     }
 
     private static short gf256Squ(short a)
@@ -144,6 +155,11 @@ class GF2Field
         return (short)(a ^ b);
     }
 
+    public static long addElem_64(long a, long b)
+    {
+        return a ^ b;
+    }
+
     /**
      * This function computes the multiplicative inverse of a given element in
      * GF2^8 The 0 has no multiplicative inverse and in this case 0 is returned.
@@ -154,12 +170,13 @@ class GF2Field
      */
     public static short invElem(short a)
     {
-//        if (a == 0)
-//        {
-//            return 0;
-//        }
 //        return gf256Inv(a);
         return (short)(gfInvTable[a] & 0xff);
+    }
+
+    public static long invElem_64(long a)
+    {
+        return gf256Inv_64(a);
     }
 
     /**
@@ -172,14 +189,113 @@ class GF2Field
      */
     public static short multElem(short a, short b)
     {
-//        if (a == 0 || b == 0)
-//        {
-//            return 0;
-//        }
-//        else
-//        {
-//            return gf256Mul(a, b);
-//        }
+//        return gf256Mul(a, b);
         return (short)(gfMulTable[a][b] & 0xff);
+    }
+
+    public static long multElem_64(long a, long b)
+    {
+        return gf256Mul_64(a, b);
+    }
+
+
+
+    // 64-bit parallel methods
+    
+    private static long gf4Mul2_64(long p)
+    {
+        long p0 = p & 0x5555555555555555L;
+        long p1 = p & 0xAAAAAAAAAAAAAAAAL;
+        return p1 ^ (p0 << 1) ^ (p1 >>> 1);
+    }
+
+//    private static long gf4Mul3_64(long p)
+//    {
+//        long p0 = p & 0x5555555555555555L;
+//        long p1 = p & 0xAAAAAAAAAAAAAAAAL;
+//        return p0 ^ (p0 << 1) ^ (p1 >>> 1);
+//    }
+
+    private static long gf4Mul_64(long p, long q)
+    {
+        long r1 = (((p << 1) & q) ^ ((q << 1) & p)) & 0xAAAAAAAAAAAAAAAAL;
+        long r02 = p & q;
+
+        return r02 ^ r1 ^ ((r02 & 0xAAAAAAAAAAAAAAAAL) >>> 1);
+    }
+
+    private static long gf4Squ_64(long p)
+    {
+        long p1 = p & 0xAAAAAAAAAAAAAAAAL;
+        return p ^ (p1 >>> 1);
+    }
+
+    private static long gf16Mul_64(long p, long q)
+    {
+        long t = gf4Mul_64(p, q);
+        
+        long a0b0 = t & 0x3333333333333333L;
+        long a1b1 = t & 0xCCCCCCCCCCCCCCCCL;
+
+        long pk = (((p << 2) ^ p) & 0xCCCCCCCCCCCCCCCCL) ^ (a1b1 >>> 2); 
+        long qk = (((q << 2) ^ q) & 0xCCCCCCCCCCCCCCCCL) ^ 0x2222222222222222L; 
+
+        long v = gf4Mul_64(pk, qk);
+        return v ^ (a0b0 << 2) ^ a0b0;
+    }
+
+    private static long gf16Squ_64(long p)
+    {
+        long t = gf4Squ_64(p);
+        long u = gf4Mul2_64(t & 0xCCCCCCCCCCCCCCCCL);
+        return t ^ (u >>> 2);
+    }
+
+    private static long gf16Mul8_64(long p)
+    {
+        long p0 = p & 0x3333333333333333L;
+        long p1 = p & 0xCCCCCCCCCCCCCCCCL;
+
+        long pk = (p0 << 2) ^ p1 ^ (p1 >>> 2);
+        long t = gf4Mul2_64(pk);
+        return t ^ (p1 >>> 2);
+    }
+
+    private static long gf256Mul_64(long p, long q)
+    {
+        long t = gf16Mul_64(p, q);
+        
+        long a0b0 = t & 0x0F0F0F0F0F0F0F0FL;
+        long a1b1 = t & 0xF0F0F0F0F0F0F0F0L;
+
+        long pk = (((p << 4) ^ p) & 0xF0F0F0F0F0F0F0F0L) ^ (a1b1 >>> 4); 
+        long qk = (((q << 4) ^ q) & 0xF0F0F0F0F0F0F0F0L) ^ 0x0808080808080808L; 
+
+        long v = gf16Mul_64(pk, qk);
+        return v ^ (a0b0 << 4) ^ a0b0;
+    }
+
+    private static long gf256Squ_64(long p)
+    {
+        long t = gf16Squ_64(p);
+        long a1Sq = t & 0xF0F0F0F0F0F0F0F0L;
+        long a1squ_x8 = gf16Mul8_64(a1Sq);
+
+        return t ^ (a1squ_x8 >>> 4);
+    }
+
+    private static long gf256Inv_64(long p)
+    {
+        long p2 = gf256Squ_64(p);
+        long p4 = gf256Squ_64(p2);
+        long p8 = gf256Squ_64(p4);
+        long p4_2 = gf256Mul_64(p4, p2);
+        long p8_4_2 = gf256Mul_64(p4_2, p8);
+        long p64_ = gf256Squ_64(p8_4_2);
+        p64_ = gf256Squ_64(p64_);
+        p64_ = gf256Squ_64(p64_);
+        long p64_2 = gf256Mul_64(p64_, p8_4_2);
+        long p128_ = gf256Squ_64(p64_2);
+        return gf256Mul_64(p2, p128_);
     }
 }
