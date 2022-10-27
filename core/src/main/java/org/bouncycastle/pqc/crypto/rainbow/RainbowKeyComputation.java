@@ -373,11 +373,11 @@ class RainbowKeyComputation
     {
         genKeyMaterial_cyclic();
 
-        RainbowCyclicPublicKeyParameters pubKey = new RainbowCyclicPublicKeyParameters(this.rainbowParams,
+        RainbowPublicKeyParameters pubKey = new RainbowPublicKeyParameters(this.rainbowParams,
             this.pk_seed, this.l1_Q3, this.l1_Q5, this.l1_Q6, this.l1_Q9, this.l2_Q9);
         RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
             this.sk_seed, this.s1, this.t1, this.t3, this.t4, this.l1_F1, this.l1_F2,
-            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6, pubKey.getEncoded());
+            this.l2_F1, this.l2_F2, this.l2_F3, this.l2_F5, this.l2_F6, pubKey. getEncoded());
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
@@ -386,7 +386,7 @@ class RainbowKeyComputation
     {
         genKeyMaterial_cyclic();
 
-        RainbowCyclicPublicKeyParameters pubKey = new RainbowCyclicPublicKeyParameters(this.rainbowParams,
+        RainbowPublicKeyParameters pubKey = new RainbowPublicKeyParameters(this.rainbowParams,
             this.pk_seed, this.l1_Q3, this.l1_Q5, this.l1_Q6, this.l1_Q9, this.l2_Q9);
         RainbowPrivateKeyParameters privKey = new RainbowPrivateKeyParameters(this.rainbowParams,
             this.pk_seed, this.sk_seed, pubKey.getEncoded());

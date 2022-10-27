@@ -51,21 +51,8 @@ public class RainbowSigner
         }
         else
         {
-            tmpParam = (RainbowKeyParameters)param;
-            this.version = tmpParam.getParameters().getVersion();
-            switch (this.version)
-            {
-            case CLASSIC:
-                this.key = (RainbowPublicKeyParameters)tmpParam;
-                break;
-            case CIRCUMZENITHAL:
-            case COMPRESSED:
-                this.key = (RainbowCyclicPublicKeyParameters)tmpParam;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                    "No valid version. Please choose one of the following: classic, circumzenithal, compressed");
-            }
+            this.key = (RainbowKeyParameters)param;
+            this.version = key.getParameters().getVersion();
         }
 
         this.signableDocumentLength = this.key.getDocLength();
@@ -278,7 +265,7 @@ public class RainbowSigner
             break;
         case CIRCUMZENITHAL:
         case COMPRESSED:
-            RainbowCyclicPublicKeyParameters cpk = (RainbowCyclicPublicKeyParameters)this.key;
+            RainbowPublicKeyParameters cpk = (RainbowPublicKeyParameters)this.key;
             verificationResult = p_map.publicMap_cyclic(cpk, sig);
             break;
         default:
