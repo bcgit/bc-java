@@ -94,7 +94,7 @@ public class RainbowVectorTest
                         RainbowPublicKeyParameters pubParams = (RainbowPublicKeyParameters)kp.getPublic();
                         RainbowPrivateKeyParameters privParams = (RainbowPrivateKeyParameters)kp.getPrivate();
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
+                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
 
                         //
                         // Signature test

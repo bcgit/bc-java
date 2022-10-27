@@ -26,6 +26,7 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
@@ -90,6 +91,9 @@ class Utils
 
     static final Map hqcOids = new HashMap();
     static final Map hqcParams = new HashMap();
+
+    static final Map rainbowOids = new HashMap();
+    static final Map rainbowParams = new HashMap();
 
     static
     {
@@ -302,6 +306,21 @@ class Utils
         hqcOids.put(HQCParameters.hqc128, BCObjectIdentifiers.hqc128);
         hqcOids.put(HQCParameters.hqc192, BCObjectIdentifiers.hqc192);
         hqcOids.put(HQCParameters.hqc256, BCObjectIdentifiers.hqc256);
+
+
+        rainbowParams.put(BCObjectIdentifiers.rainbow_III_classic, RainbowParameters.rainbowIIIclassic);
+        rainbowParams.put(BCObjectIdentifiers.rainbow_III_circumzenithal, RainbowParameters.rainbowIIIcircumzenithal);
+        rainbowParams.put(BCObjectIdentifiers.rainbow_III_compressed, RainbowParameters.rainbowIIIcompressed);
+        rainbowParams.put(BCObjectIdentifiers.rainbow_V_classic, RainbowParameters.rainbowVclassic);
+        rainbowParams.put(BCObjectIdentifiers.rainbow_V_circumzenithal, RainbowParameters.rainbowVcircumzenithal);
+        rainbowParams.put(BCObjectIdentifiers.rainbow_V_compressed, RainbowParameters.rainbowVcompressed);
+
+        rainbowOids.put(RainbowParameters.rainbowIIIclassic, BCObjectIdentifiers.rainbow_III_classic);
+        rainbowOids.put(RainbowParameters.rainbowIIIcircumzenithal, BCObjectIdentifiers.rainbow_III_circumzenithal);
+        rainbowOids.put(RainbowParameters.rainbowIIIcompressed, BCObjectIdentifiers.rainbow_III_compressed);
+        rainbowOids.put(RainbowParameters.rainbowVclassic, BCObjectIdentifiers.rainbow_V_classic);
+        rainbowOids.put(RainbowParameters.rainbowVcircumzenithal, BCObjectIdentifiers.rainbow_V_circumzenithal);
+        rainbowOids.put(RainbowParameters.rainbowVcompressed, BCObjectIdentifiers.rainbow_V_compressed);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -604,5 +623,15 @@ class Utils
     static HQCParameters hqcParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (HQCParameters)hqcParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier rainbowOidLookup(RainbowParameters params)
+    {
+        return (ASN1ObjectIdentifier)rainbowOids.get(params);
+    }
+
+    static RainbowParameters rainbowParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (RainbowParameters)rainbowParams.get(oid);
     }
 }
