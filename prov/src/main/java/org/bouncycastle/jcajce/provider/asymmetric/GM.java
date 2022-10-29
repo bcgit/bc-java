@@ -49,6 +49,8 @@ public class GM
 //            provider.addAlgorithm("Signature.WHIRLPOOLWITHSM2", PREFIX + "GMSignatureSpi$whirlpoolWithSM2");
 //            provider.addAlgorithm("Alg.Alias.Signature." + GMObjectIdentifiers.sm2sign_with_whirlpool, "WHIRLPOOLWITHSM2");
 
+            provider.addAlgorithm("KeyPairGenerator.SM2", PREFIX + "GMKeyPairGeneratorSpi$SM2");
+
             provider.addAlgorithm("Cipher.SM2", PREFIX + "GMCipherSpi$SM2");
             provider.addAlgorithm("Alg.Alias.Cipher.SM2WITHSM3", "SM2");
             provider.addAlgorithm("Alg.Alias.Cipher." + GMObjectIdentifiers.sm2encrypt_with_sm3, "SM2");
