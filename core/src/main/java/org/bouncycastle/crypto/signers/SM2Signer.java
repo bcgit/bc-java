@@ -72,7 +72,7 @@ public class SM2Signer
 
             if (userID.length >= 8192)
             {
-                throw new IllegalArgumentException("SM2 user ID must be less than 2^16 bits long");
+                throw new IllegalArgumentException("SM2 user ID must be less than 2^13 bits long");
             }
         }
         else
@@ -98,7 +98,15 @@ public class SM2Signer
                 ecParams = ecKey.getParameters();
                 kCalculator.init(ecParams.getN(), CryptoServicesRegistrar.getSecureRandom());
             }
-            pubPoint = createBasePointMultiplier().multiply(ecParams.getG(), ((ECPrivateKeyParameters)ecKey).getD()).normalize();
+
+            BigInteger d = ((ECPrivateKeyParameters)ecKey).getD();
+            BigInteger nSub1 = ecParams.getN().subtract(BigIntegers.ONE);
+
+            if (d.compareTo(ONE) < 0  || d.compareTo(nSub1) >= 0)
+            {
+                throw new IllegalArgumentException("SM2 private key out of range");
+            }
+            pubPoint = createBasePointMultiplier().multiply(ecParams.getG(), d).normalize();
         }
         else
         {

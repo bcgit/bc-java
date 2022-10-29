@@ -41,7 +41,7 @@ public class SM2SignatureTest
 
         ECPoint g = curve.createPoint(SM2_ECC_GX, SM2_ECC_GY);
 
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM2", "BC");
 
         kpGen.initialize(new ECParameterSpec(curve, g, SM2_ECC_N), new TestRandomBigInteger("128B2FA8BD433C6C068C8D803DFF79792A519A55171B1B650C23661D15897263", 16));
 
