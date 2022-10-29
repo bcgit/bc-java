@@ -24,8 +24,19 @@ import org.bouncycastle.util.BigIntegers;
 public class ECKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator, ECConstants
 {
+    private final String name;
     ECDomainParameters  params;
     SecureRandom        random;
+
+    public ECKeyPairGenerator()
+    {
+        this("ECKeyGen");
+    }
+
+    protected ECKeyPairGenerator(String name)
+    {
+        this.name = name;
+    }
 
     public void init(
         KeyGenerationParameters param)
@@ -35,7 +46,7 @@ public class ECKeyPairGenerator
         this.random = ecP.getRandom();
         this.params = ecP.getDomainParameters();
 
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("ECKeyGen", ConstraintUtils.bitsOfSecurityFor(this.params.getCurve()), ecP.getDomainParameters(), CryptoServicePurpose.KEYGEN));
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(name, ConstraintUtils.bitsOfSecurityFor(this.params.getCurve()), ecP.getDomainParameters(), CryptoServicePurpose.KEYGEN));
     }
 
     /**
@@ -53,7 +64,7 @@ public class ECKeyPairGenerator
         {
             d = BigIntegers.createRandomBigInteger(nBitLength, random);
 
-            if (d.compareTo(ONE) < 0  || (d.compareTo(n) >= 0))
+            if (isOutOfRangeD(d, n))
             {
                 continue;
             }
@@ -71,6 +82,11 @@ public class ECKeyPairGenerator
         return new AsymmetricCipherKeyPair(
             new ECPublicKeyParameters(Q, params),
             new ECPrivateKeyParameters(d, params));
+    }
+
+    protected boolean isOutOfRangeD(BigInteger d, BigInteger n)
+    {
+        return d.compareTo(ONE) < 0 || (d.compareTo(n) >= 0);
     }
 
     protected ECMultiplier createBasePointMultiplier()
