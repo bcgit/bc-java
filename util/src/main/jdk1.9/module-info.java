@@ -2,6 +2,7 @@ module org.bouncycastle.util
 {
     requires org.bouncycastle.provider;
 
+    reads org.bouncycastle.util;
     exports org.bouncycastle.asn1.bsi;
     exports org.bouncycastle.asn1.cmc;
     exports org.bouncycastle.asn1.cmp;
@@ -25,6 +26,10 @@ module org.bouncycastle.util
     exports org.bouncycastle.oer.its.ieee1609dot2;
     exports org.bouncycastle.oer.its.ieee1609dot2.basetypes;
     exports org.bouncycastle.oer.its.ieee1609dot2dot1;
+    exports org.bouncycastle.oer.its.etsi102941;
+    exports org.bouncycastle.oer.its.etsi102941.basetypes;
+    exports org.bouncycastle.oer.its.template.etsi102941;
+    exports org.bouncycastle.oer.its.template.etsi102941.basetypes;
     exports org.bouncycastle.oer.its.template.etsi103097;
     exports org.bouncycastle.oer.its.template.etsi103097.extension;
     exports org.bouncycastle.oer.its.template.ieee1609dot2;
