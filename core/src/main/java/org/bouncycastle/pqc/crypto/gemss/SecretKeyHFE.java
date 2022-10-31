@@ -1,0 +1,38 @@
+package org.bouncycastle.pqc.crypto.gemss;
+
+class SecretKeyHFE
+{
+    class complete_sparse_monic_gf2nx
+    {
+        public Pointer poly;
+        /* List of the successive differences of the exponents of the monomials of
+           poly multiplied by NB_WORD_GFqn */
+        public Pointer L;
+
+        public complete_sparse_monic_gf2nx()
+        {
+        }
+
+        public complete_sparse_monic_gf2nx(complete_sparse_monic_gf2nx F)
+        {
+            poly = new Pointer(F.poly);
+            L = new Pointer(F.L);
+        }
+    }
+
+    complete_sparse_monic_gf2nx F_struct;
+    public Pointer F_HFEv;
+
+    public Pointer S;
+
+    public Pointer T;
+
+    public Pointer sk_uncomp;
+
+
+    public SecretKeyHFE(GeMSSEngine engine)
+    {
+        F_struct = new complete_sparse_monic_gf2nx();
+        F_struct.L = new Pointer(engine.NB_COEFS_HFEPOLY);
+    }
+}
