@@ -62,7 +62,6 @@ class GeMSSEngine
     final boolean ENABLED_REMOVE_ODD_DEGREE;
     final int MATRIXnv_SIZE;
     /* Number of UINT of matrix m*m in GF(2) */
-
     final int HFEmq;
     final int HFEmr;
     //int NB_BITS_GFqm_SUP;
@@ -71,7 +70,7 @@ class GeMSSEngine
     final int HFEvr;
     final int NB_WORD_GFqv;
     final int HFEmq8;// = (HFEm >>> 3);
-    final int HFEmr8;// = HFEm & 7;
+    final int HFEmr8; //{0, 2, 3, 4, 5, 7}
     final int NB_BYTES_GFqm;// = (HFEmq8 + ((HFEmr8 != 0) ? 1 : 0));
     final int ACCESS_last_equations8;
     final int NB_BYTES_EQUATION;
@@ -106,7 +105,7 @@ class GeMSSEngine
     int NB_UINT_HFEVPOLY;
     final int MATRIXn_SIZE;
     //final int NB_UINT_HFEPOLY;
-    final long MASK_GF2n;// = maskUINT(HFEnr);
+    final long MASK_GF2n;
     final int NB_BYTES_GFqn;
     //final int SIZE_PK_HFE;
     final int SIZE_SIGN_HFE;
@@ -282,19 +281,16 @@ class GeMSSEngine
         {
             /* Choice of pentanomial for modular reduction in GF(2^n) */
             __PENTANOMIAL_GF2N__ = true;
+            K164 = 64 - K1;
+            K264 = 64 - K2;
+//            K1mod64 = K1 & 63;
+//            K2mod64 = K2 & 63;
         }
 //        else if (K3 != 0)
 //        {
 //            /* Choice of trinomial for modular reduction in GF(2^n) */
 //            __TRINOMIAL_GF2N__ = true;
 //        }
-        if (__PENTANOMIAL_GF2N__)
-        {
-            K164 = 64 - K1;
-            K264 = 64 - K2;
-//            K1mod64 = K1 & 63;
-//            K2mod64 = K2 & 63;
-        }
         K3mod64 = K3 & 63;
         K364 = 64 - K3mod64;
         //K364mod64 = K364 & 63;
@@ -462,9 +458,9 @@ class GeMSSEngine
         a_vec.move(-NB_WORD_GFqn);
         //}
 
-        int loop_end = HFEDegI != HFEDegJ ? HFEDegI : HFEDegI + 1;
+        //int loop_end = HFEDegI != HFEDegJ ? HFEDegI : HFEDegI + 1;
         Pointer alpha_vec_tmp = new Pointer(alpha_vec);
-        for (i = 0; i < loop_end; ++i)
+        for (i = 0; i < HFEDegI; ++i)
         {
             for (j = 1; j < HFEn; ++j)
             {
@@ -743,12 +739,11 @@ class GeMSSEngine
     }
 
     /* Function mul in GF(2^x), then modular reduction */
-    void mul_gf2n(Pointer P, Pointer A_orig, Pointer B_orig)
+    void mul_gf2n(Pointer P, Pointer A, Pointer B)
     {
-        long mask_B;
+        long mask_B, b;
         int i, j, k;
-        Pointer A = new Pointer(A_orig);
-        Pointer B = new Pointer(B_orig);
+        int A_orig = A.getIndex(), B_orig = B.getIndex();
         Pointer C = new Pointer(NB_WORD_MUL);
         //mul_gf2x
         /**
@@ -760,7 +755,7 @@ class GeMSSEngine
          */
         for (i = 0; i < HFEnq; ++i)
         {
-            long b = B.get();
+            b = B.get();
             /* j=0 */
             mask_B = -(b & 1L);
             for (k = 0; k < NB_WORD_GFqn; ++k)
@@ -790,7 +785,6 @@ class GeMSSEngine
 //            {
 //                j = 1;
 //            }
-
             for (; j < 64; ++j)
             {
                 int jc = 64 - j;
@@ -813,7 +807,7 @@ class GeMSSEngine
 
 //        if (HFEnr != 0)
 //        {
-        long b = B.get();
+        b = B.get();
         /* j=0 */
         mask_B = -(b & 1L);
         for (k = 0; k < NB_WORD_GFqn; ++k)
@@ -884,162 +878,156 @@ class GeMSSEngine
          * @remark Constant-time implementation.
          */
         long R;
-        if (KI != 0)
+//        if (KI != 0)
+//        {
+        Pointer Q = new Pointer(NB_WORD_GFqn);
+        /* Q: Quotient of Pol/x^n, by word of 64-bit */
+        for (i = NB_WORD_GFqn; i < NB_WORD_MMUL; ++i)
         {
-            Pointer Q = new Pointer(NB_WORD_GFqn);
-            /* Q: Quotient of Pol/x^n, by word of 64-bit */
-            for (i = NB_WORD_GFqn; i < NB_WORD_MMUL; ++i)
+            Q.set(i - NB_WORD_GFqn, ((C.get(i - 1) >>> KI)) ^ (C.get(i) << KI64));
+        }
+        if ((NB_WORD_MMUL & 1) != 0)
+        {
+            Q.set(i - NB_WORD_GFqn, (C.get(i - 1) >>> KI));
+        }
+        if ((HFEn == 354) && (K3 == 99)) //Gemss256
+        {
+            R = (Q.get(3) >>> (K364 + KI)) ^ (Q.get(4) << (K3mod64 - KI));
+            Q.setXor(R);
+            Q.setXor(1, (Q.get(4) >>> (K364 + KI)) ^ (Q.get(5) << (K3mod64 - KI)));
+        }
+        else if ((HFEn == 358) && (K3 == 57)) //redgemss256, bluegemss256
+        {
+            /* R: Quotient of C/x^(2n-K3), by word of 64-bit */
+            R = (Q.get(4) >>> (K364 + KI)) ^ (Q.get(5) << (K3 - KI));
+            Q.setXor(R);
+        }
+        for (i = 0; i < NB_WORD_GFqn; ++i)
+        {
+            P.set(i, C.get(i) ^ Q.get(i));
+        }
+        if (__PENTANOMIAL_GF2N__)//fgemss256 and dualmodems256
+        {
+            P.setXor(Q.get() << K1);
+            for (i = 1; i < NB_WORD_GFqn; ++i)
             {
-                Q.set(i - NB_WORD_GFqn, ((C.get(i - 1) >>> KI)) ^ (C.get(i) << KI64));
+                P.setXor(i, (Q.get(i - 1) >>> K164) ^ (Q.get(i) << K1));
             }
-            if ((NB_WORD_MMUL & 1) != 0)
+            P.setXor(Q.get() << K2);
+            for (i = 1; i < NB_WORD_GFqn; ++i)
             {
-                Q.set(i - NB_WORD_GFqn, (C.get(i - 1) >>> KI));
+                P.setXor(i, (Q.get(i - 1) >>> K264) ^ (Q.get(i) << K2));
             }
-            if ((HFEn == 354) && (K3 == 99)) //Gemss256
-            {
-                R = (Q.get(3) >>> (K364 + KI)) ^ (Q.get(4) << (K3mod64 - KI));
-                Q.setXor(R);
-                Q.setXor(1, (Q.get(4) >>> (K364 + KI)) ^ (Q.get(5) << (K3mod64 - KI)));
-            }
-            else if ((HFEn == 358) && (K3 == 57))
-            {
-                /* R: Quotient of C/x^(2n-K3), by word of 64-bit */
-                R = (Q.get(4) >>> (K364 + KI)) ^ (Q.get(5) << (K3 - KI));
-                Q.setXor(R);
-            }
-            for (i = 0; i < NB_WORD_GFqn; ++i)
-            {
-                P.set(i, C.get(i) ^ Q.get(i));
-            }
-
-            if (__PENTANOMIAL_GF2N__)
-            {
-
-                P.setXor(Q.get() << K1);
-                for (i = 1; i < NB_WORD_GFqn; ++i)
-                {
-                    P.setXor(i, (Q.get(i - 1) >>> K164) ^ (Q.get(i) << K1));
-                }
-
-                P.setXor(Q.get() << K2);
-                for (i = 1; i < NB_WORD_GFqn; ++i)
-                {
-                    P.setXor(i, (Q.get(i - 1) >>> K264) ^ (Q.get(i) << K2));
-                }
-            }
-
-            if ((HFEn == 354) && (K3 == 99))
-            {
-                P.setXor(1, Q.get() << K3mod64);
-                P.setXor(2, (Q.get() >>> K364) ^ (Q.get(1) << K3mod64));
-                P.setXor(3, (Q.get(1) >>> K364) ^ (Q.get(2) << K3mod64));
-                P.setXor(4, (Q.get(2) >>> K364) ^ (Q.get(3) << K3mod64));
-                P.setXor(5, Q.get(3) >>> K364);
-            }
-            else
-            {
-                P.setXor(Q.get() << K3mod64);
-                for (i = 1; i < NB_WORD_GFqn; ++i)
-                {
-                    P.setXor(i, (Q.get(i - 1) >>> K364) ^ (Q.get(i) << K3mod64));
-                }
-            }
-
-            //if ((K3 != 1) && (!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))
-            if ((!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))
-            {
-                /* R: Quotient of Pol/x^(2n-K3), by word of 64-bit */
-                if (KI >= K3)
-                {
-                    R = Q.get(NB_WORD_GFqn - 1) >>> (KI - K3mod64);
-                }
-                else
-                {
-                    R = (Q.get(NB_WORD_GFqn - 2) >>> (K364 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K3mod64 - KI));
-                }
-
-                if (__PENTANOMIAL_GF2N__)
-                {
-                    if (KI >= K2)
-                    {
-                        R ^= Q.get(NB_WORD_GFqn - 1) >>> (KI - K2);
-                    }
-                    else
-                    {
-                        R ^= (Q.get(NB_WORD_GFqn - 2) >>> (K264 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K2 - KI));
-                    }
-                    if (K1 != 1)
-                    {
-                        if (KI >= K1)
-                        {
-                            R ^= Q.get(NB_WORD_GFqn - 1) >>> (KI - K1);
-                        }
-                        else
-                        {
-                            R ^= (Q.get(NB_WORD_GFqn - 2) >>> (K164 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K1 - KI));
-                        }
-                    }
-                }
-                P.setXor(R);
-                if (__PENTANOMIAL_GF2N__)
-                {
-                    P.setXor(R << K1);
-                    P.setXor(R << K2);
-                }
-                P.setXor(R << K3mod64);
-                if (K3 > 32)
-                {
-                    P.setXor(1, R >>> K364);
-                }
-            }
-            P.setAnd(NB_WORD_GFqn - 1, maskUINT(HFEnr));
+        }
+        if ((HFEn == 354) && (K3 == 99))//Gemss256
+        {
+            P.setXor(1, Q.get() << K3mod64);
+            P.setXor(2, (Q.get() >>> K364) ^ (Q.get(1) << K3mod64));
+            P.setXor(3, (Q.get(1) >>> K364) ^ (Q.get(2) << K3mod64));
+            P.setXor(4, (Q.get(2) >>> K364) ^ (Q.get(3) << K3mod64));
+            P.setXor(5, Q.get(3) >>> K364);
         }
         else
         {
-            for (i = 0; i < NB_WORD_GFqn; ++i)
+            P.setXor(Q.get() << K3mod64);
+            for (i = 1; i < NB_WORD_GFqn; ++i)
             {
-                P.set(i, C.get(i) ^ C.get(i + NB_WORD_GFqn));
+                P.setXor(i, (Q.get(i - 1) >>> K364) ^ (Q.get(i) << K3mod64));
             }
-
-            if (__PENTANOMIAL_GF2N__)
-            {
-                P.setXor(C.get(NB_WORD_GFqn) << K1);
-                for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
-                {
-                    P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K164) ^ (C.get(i) << K1));
-                }
-                P.setXor(C.get(NB_WORD_GFqn) << K2);
-                for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
-                {
-                    P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K264) ^ (C.get(i) << K2));
-                }
-            }
-
-            P.setXor(C.get(NB_WORD_GFqn) << K3);
-            for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
-            {
-                P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K364) ^ (C.get(i) << K3));
-            }
-
-            R = C.get((NB_WORD_GFqn << 1) - 1) >>> K364;
-            if (__PENTANOMIAL_GF2N__)
-            {
-                R ^= C.get((NB_WORD_GFqn << 1) - 1) >>> K264;
-                if (K1 != 1)
-                {
-                    R ^= C.get((NB_WORD_GFqn << 1) - 1) >>> K164;
-                }
-
-            }
-            P.setXor(R);
-            if (__PENTANOMIAL_GF2N__)
-            {
-                P.setXor(R << K1);
-                P.setXor(R << K2);
-            }
-            P.setXor(R << K3);
         }
+        //if ((K3 != 1) && (!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))
+        if ((!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))//Not gemss256 redgemss256 bluegemss256
+        {
+            /* R: Quotient of Pol/x^(2n-K3), by word of 64-bit */
+            if (KI >= K3)
+            {
+                R = Q.get(NB_WORD_GFqn - 1) >>> (KI - K3mod64);
+            }
+            else
+            {
+                R = (Q.get(NB_WORD_GFqn - 2) >>> (K364 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K3mod64 - KI));
+            }
+            if (__PENTANOMIAL_GF2N__)
+            {
+//                if (KI >= K2)
+//                {
+                R ^= Q.get(NB_WORD_GFqn - 1) >>> (KI - K2);
+//                }
+//                else
+//                {
+//                    R ^= (Q.get(NB_WORD_GFqn - 2) >>> (K264 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K2 - KI));
+//                }
+//                if (K1 != 1)
+//                {
+//                    if (KI >= K1)
+//                    {
+//                    R ^= Q.get(NB_WORD_GFqn - 1) >>> (KI - K1);
+//                    }
+//                    else
+//                    {
+//                        R ^= (Q.get(NB_WORD_GFqn - 2) >>> (K164 + KI)) ^ (Q.get(NB_WORD_GFqn - 1) << (K1 - KI));
+//                    }
+//                }
+            }
+            P.setXor(R ^ (R << K3mod64));
+            if (__PENTANOMIAL_GF2N__)
+            {
+                P.setXor((R << K1) ^ (R << K2));
+            }
+            if (K3 > 32)
+            {
+                P.setXor(1, R >>> K364);
+            }
+        }
+        P.setAnd(NB_WORD_GFqn - 1, MASK_GF2n);
+//        }
+//        else
+//        {
+//            for (i = 0; i < NB_WORD_GFqn; ++i)
+//            {
+//                P.set(i, C.get(i) ^ C.get(i + NB_WORD_GFqn));
+//            }
+//
+//            if (__PENTANOMIAL_GF2N__)
+//            {
+//                P.setXor(C.get(NB_WORD_GFqn) << K1);
+//                for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
+//                {
+//                    P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K164) ^ (C.get(i) << K1));
+//                }
+//                P.setXor(C.get(NB_WORD_GFqn) << K2);
+//                for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
+//                {
+//                    P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K264) ^ (C.get(i) << K2));
+//                }
+//            }
+//
+//            P.setXor(C.get(NB_WORD_GFqn) << K3);
+//            for (i = NB_WORD_GFqn + 1; i < (NB_WORD_GFqn << 1); ++i)
+//            {
+//                P.setXor(i - NB_WORD_GFqn, (C.get(i - 1) >>> K364) ^ (C.get(i) << K3));
+//            }
+//
+//            R = C.get((NB_WORD_GFqn << 1) - 1) >>> K364;
+//            if (__PENTANOMIAL_GF2N__)
+//            {
+//                R ^= C.get((NB_WORD_GFqn << 1) - 1) >>> K264;
+//                if (K1 != 1)
+//                {
+//                    R ^= C.get((NB_WORD_GFqn << 1) - 1) >>> K164;
+//                }
+//
+//            }
+//            P.setXor(R);
+//            if (__PENTANOMIAL_GF2N__)
+//            {
+//                P.setXor(R << K1);
+//                P.setXor(R << K2);
+//            }
+//            P.setXor(R << K3);
+//        }
+        A.changeIndex(A_orig);
+        B.changeIndex(B_orig);
     }
 
     private void LINEAR_CASE_REF(Pointer lin, Pointer F_cp, Pointer a_vec, Pointer MQS)
@@ -1275,11 +1263,12 @@ class GeMSSEngine
         }
         int loop_end;
         /* Only the even degree terms are not zero */
-        if (K3 == 1)
-        {
-            loop_end = HFEn;
-        }
-        else if (((HFEn - 2 + K3) & 1) != 0)
+//        if (K3 == 1)
+//        {
+//            loop_end = HFEn;
+//        }
+//        else if (((HFEn - 2 + K3) & 1) != 0)
+        if (((HFEn - 2 + K3) & 1) != 0)
         {
             loop_end = HFEn - 1 + K3;
         }
@@ -1309,37 +1298,36 @@ class GeMSSEngine
             ind = i - HFEn + K3;
             res[ind >>> 6] ^= bit_i << (ind & 63);
         }
-
-        if (K3 > 1)
+//        if (K3 > 1)
+//        {
+        for (++i; i >= HFEn; --i)
         {
-            for (++i; i >= HFEn; --i)
+            /* Extraction of bit_i x^i */
+            bit_i = (res[i >>> 6] >>> (i & 63)) & 1L;
+            /* x^n = 1 + ... */
+            ind = i - HFEn;
+            res[ind >>> 6] ^= bit_i << (ind & 63);
+            if (__PENTANOMIAL_GF2N__)
             {
-                /* Extraction of bit_i x^i */
-                bit_i = (res[i >>> 6] >>> (i & 63)) & 1L;
-                /* x^n = 1 + ... */
-                ind = i - HFEn;
+                /* ... + x^;K1 + ... */
+                ind = i - HFEn + K1;
                 res[ind >>> 6] ^= bit_i << (ind & 63);
-                if (__PENTANOMIAL_GF2N__)
-                {
-                    /* ... + x^;K1 + ... */
-                    ind = i - HFEn + K1;
-                    res[ind >>> 6] ^= bit_i << (ind & 63);
-                    /* ... + x^;K2 + ... */
-                    ind = i - HFEn + K2;
-                    res[ind >>> 6] ^= bit_i << (ind & 63);
-                }
-                /* ... + x^K3 */
-                ind = i - HFEn + K3;
+                /* ... + x^;K2 + ... */
+                ind = i - HFEn + K2;
                 res[ind >>> 6] ^= bit_i << (ind & 63);
             }
+            /* ... + x^K3 */
+            ind = i - HFEn + K3;
+            res[ind >>> 6] ^= bit_i << (ind & 63);
         }
+        //}
         for (i = 0; i < NB_WORD_GFqn; ++i)
         {
             C.set(i, res[i]);
         }
 //        if (HFEnr != 0)
 //        {
-        C.setAnd(NB_WORD_GFqn - 1, maskUINT(HFEnr));
+        C.setAnd(NB_WORD_GFqn - 1, MASK_GF2n);
         //}
     }
 
@@ -2059,7 +2047,6 @@ class GeMSSEngine
         Pointer sm = new Pointer(SIZE_SIGN_UNCOMPRESSED - SIZE_SALT_WORD);
         int m_cp = 0, sm8_cp = 0;
         Pointer Si_tab = new Pointer(NB_WORD_GF2nv);
-        //long ALIGNED_GFqm;// ALIGNED_GFqm;
         Pointer Si1_tab = new Pointer(NB_WORD_GF2nv);
         long cst = 0; //if HFEmr8
         /* Copy of pointer */
@@ -2951,14 +2938,15 @@ class GeMSSEngine
         if (HFEDegJ != 0)
         {
             /* X^(2^HFEDegI + 2^j) */
-            if (ENABLED_REMOVE_ODD_DEGREE)
-            {
-                j = (((1 << i) + 1) <= HFE_odd_degree) ? 0 : 1;
-            }
-            else
-            {
-                j = 0;
-            }
+            //fgemss192 and fgemss256
+//            if (ENABLED_REMOVE_ODD_DEGREE)
+//            {
+            j = (((1 << i) + 1) <= HFE_odd_degree) ? 0 : 1;
+//            }
+//            else
+//            {
+//                j = 0;
+//            }
             for (; j < HFEDegJ; ++j)
             {
                 F_cp.copyFrom(0, F_HFEv, 0, NB_WORD_GFqn);
