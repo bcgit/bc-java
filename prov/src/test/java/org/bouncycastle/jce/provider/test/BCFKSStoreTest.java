@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
@@ -41,6 +42,9 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
 import org.bouncycastle.crypto.util.ScryptConfig;
@@ -534,13 +538,15 @@ public class BCFKSStoreTest
         KeyPair kp1 = kpGen.generateKeyPair();
         KeyPair kp2 = kpGen.generateKeyPair();
 
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
         X509Certificate finalCert = TestUtils.createSelfSignedCert("CN=Final", "SHA1withRSA", kp2);
         X509Certificate interCert = TestUtils.createCert(
             TestUtils.getCertSubject(finalCert),
             kp2.getPrivate(),
             "CN=EE",
             "SHA1withRSA",
-            null,
+            extGen.generate(),
             kp1.getPublic());
 
         checkOnePrivateKeyFips(kp1.getPrivate(), new X509Certificate[]{interCert, finalCert}, null);
@@ -681,7 +687,11 @@ public class BCFKSStoreTest
 
         isTrue("", "privkey".equals(en2.nextElement()));
         isTrue("", !en2.hasMoreElements());
-
+                 ByteArrayOutputStream Bout2 = new ByteArrayOutputStream();
+        store1.store(Bout2, "fred".toCharArray());
+        FileOutputStream fOut = new FileOutputStream("/tmp/b.fks");
+        fOut.write(Bout2.toByteArray());
+        fOut.close();
         privateKeyStorageCheck(store2, "privkey", key, certs[0], passwd);
 
         // check invalid load with content
@@ -1580,30 +1590,30 @@ public class BCFKSStoreTest
     public void performTest()
         throws Exception
     {
-        shouldCreateEmptyBCFKSNoPassword();
-        shouldCreateEmptyBCFKSPassword();
-        shouldStoreMultipleKeys();
-        shouldStoreOneCertificate();
-        shouldStoreOneCertificateWithECDSASignature();
-        shouldStoreOneCertificateWithDSASignature();
-        shouldStoreOneCertificateWithRSASignature();
-        shouldStoreOneCertificateWithECDSASignatureAndCertificates();
-        shouldStoreOneECKeyWithChain();
-        shouldStoreOnePrivateKey();
+//        shouldCreateEmptyBCFKSNoPassword();
+//        shouldCreateEmptyBCFKSPassword();
+//        shouldStoreMultipleKeys();
+//        shouldStoreOneCertificate();
+//        shouldStoreOneCertificateWithECDSASignature();
+//        shouldStoreOneCertificateWithDSASignature();
+//        shouldStoreOneCertificateWithRSASignature();
+//        shouldStoreOneCertificateWithECDSASignatureAndCertificates();
+//        shouldStoreOneECKeyWithChain();
+//        shouldStoreOnePrivateKey();
         shouldStoreOnePrivateKeyWithChain();
-        shouldStoreOneSecretKey();
-        shouldStoreSecretKeys();
-        shouldStoreUsingSCRYPT();
-        shouldStoreUsingPBKDF2();
-        shouldFailOnWrongPassword();
-        shouldParseKWPKeyStore();
-        shouldFailOnRemovesOrOverwrite();
-        shouldParseOldStores();
-        shouldStoreUsingKWP();
-        //shouldRejectInconsistentKeys();
-        shouldStoreOnePrivateKeyWithChainEdDSA();
-        shouldWorkWithNullLoadStoreParameter();
-        testJKS();
+//        shouldStoreOneSecretKey();
+//        shouldStoreSecretKeys();
+//        shouldStoreUsingSCRYPT();
+//        shouldStoreUsingPBKDF2();
+//        shouldFailOnWrongPassword();
+//        shouldParseKWPKeyStore();
+//        shouldFailOnRemovesOrOverwrite();
+//        shouldParseOldStores();
+//        shouldStoreUsingKWP();
+//        //shouldRejectInconsistentKeys();
+//        shouldStoreOnePrivateKeyWithChainEdDSA();
+//        shouldWorkWithNullLoadStoreParameter();
+//        testJKS();
     }
 
     public static void main(
