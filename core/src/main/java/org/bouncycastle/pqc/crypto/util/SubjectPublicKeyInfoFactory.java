@@ -33,6 +33,7 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
@@ -275,11 +276,21 @@ public class SubjectPublicKeyInfoFactory
         }
         else if (publicKey instanceof HQCPublicKeyParameters)
         {
-            HQCPublicKeyParameters params = (HQCPublicKeyParameters) publicKey;
+            HQCPublicKeyParameters params = (HQCPublicKeyParameters)publicKey;
 
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.hqcOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof RainbowPublicKeyParameters)
+        {
+            RainbowPublicKeyParameters params = (RainbowPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.rainbowOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
