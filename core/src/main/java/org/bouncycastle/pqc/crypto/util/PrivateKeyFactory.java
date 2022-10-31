@@ -49,6 +49,8 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
+import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
@@ -68,6 +70,7 @@ import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Factory for creating private key objects from PKCS8 PrivateKeyInfo objects.
@@ -346,6 +349,13 @@ public class PrivateKeyFactory
             HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
             return new HQCPrivateKeyParameters(hqcParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.rainbow))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+            return new RainbowPrivateKeyParameters(rainbowParams, keyEnc);
         }
         else if (algOID.equals(BCObjectIdentifiers.xmss))
         {

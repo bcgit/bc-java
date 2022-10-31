@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.jcajce.provider;
 
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.provider.rainbow.RainbowKeyFactorySpi;
 
 public class Rainbow
@@ -19,17 +19,33 @@ public class Rainbow
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("KeyFactory.Rainbow", PREFIX + "RainbowKeyFactorySpi");
-            provider.addAlgorithm("KeyPairGenerator.Rainbow", PREFIX + "RainbowKeyPairGeneratorSpi");
+            provider.addAlgorithm("KeyFactory.RAINBOW", PREFIX + "RainbowKeyFactorySpi");
+            provider.addAlgorithm("KeyPairGenerator.RAINBOW", PREFIX + "RainbowKeyPairGeneratorSpi");
 
-            addSignatureAlgorithm(provider, "SHA224", "Rainbow", PREFIX + "SignatureSpi$withSha224", PQCObjectIdentifiers.rainbowWithSha224);
-            addSignatureAlgorithm(provider, "SHA256", "Rainbow", PREFIX + "SignatureSpi$withSha256", PQCObjectIdentifiers.rainbowWithSha256);
-            addSignatureAlgorithm(provider, "SHA384", "Rainbow", PREFIX + "SignatureSpi$withSha384", PQCObjectIdentifiers.rainbowWithSha384);
-            addSignatureAlgorithm(provider, "SHA512", "Rainbow", PREFIX + "SignatureSpi$withSha512", PQCObjectIdentifiers.rainbowWithSha512);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-III-CLASSIC", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowIIIclassic", BCObjectIdentifiers.rainbow_III_classic);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-III-CIRCUMZENITHAL", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowIIIcircum", BCObjectIdentifiers.rainbow_III_circumzenithal);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-III-COMPRESSED", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowIIIcomp", BCObjectIdentifiers.rainbow_III_compressed);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-V-CLASSIC", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowVclassic", BCObjectIdentifiers.rainbow_V_classic);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-V-CIRCUMZENITHAL", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowVcircum", BCObjectIdentifiers.rainbow_V_circumzenithal);
+            addKeyPairGeneratorAlgorithm(provider, "RAINBOW-V-COMPRESSED", PREFIX + "RainbowKeyPairGeneratorSpi$RainbowVcomp", BCObjectIdentifiers.rainbow_V_compressed);
+
+            addSignatureAlgorithm(provider, "RAINBOW", PREFIX + "SignatureSpi$Base", BCObjectIdentifiers.rainbow);
+
+            addSignatureAlgorithm(provider, "RAINBOW-III-CLASSIC", PREFIX + "SignatureSpi$RainbowIIIclassic", BCObjectIdentifiers.rainbow_III_classic);
+            addSignatureAlgorithm(provider, "RAINBOW-III-CIRCUMZENITHAL", PREFIX + "SignatureSpi$RainbowIIIcircum", BCObjectIdentifiers.rainbow_III_circumzenithal);
+            addSignatureAlgorithm(provider, "RAINBOW-III-COMPRESSED", PREFIX + "SignatureSpi$RainbowIIIcomp", BCObjectIdentifiers.rainbow_III_compressed);
+            addSignatureAlgorithm(provider, "RAINBOW-V-CLASSIC", PREFIX + "SignatureSpi$RainbowVclassic", BCObjectIdentifiers.rainbow_V_classic);
+            addSignatureAlgorithm(provider, "RAINBOW-V-CIRCUMZENITHAL", PREFIX + "SignatureSpi$RainbowVcircum", BCObjectIdentifiers.rainbow_V_circumzenithal);
+            addSignatureAlgorithm(provider, "RAINBOW-v-COMPRESSED", PREFIX + "SignatureSpi$RainbowVcomp", BCObjectIdentifiers.rainbow_V_compressed);
 
             AsymmetricKeyInfoConverter keyFact = new RainbowKeyFactorySpi();
 
-            registerOid(provider, PQCObjectIdentifiers.rainbow, "Rainbow", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_classic, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_circumzenithal, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_III_compressed, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_classic, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_circumzenithal, "RAINBOW", keyFact);
+            registerKeyFactoryOid(provider, BCObjectIdentifiers.rainbow_V_compressed, "RAINBOW", keyFact);
         }
     }
 }

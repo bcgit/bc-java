@@ -93,7 +93,7 @@ class RainbowDRBG
         }
         catch (Throwable ex)
         {
-            ex.printStackTrace();
+            throw new IllegalStateException("drbg failure: " + ex.getMessage(), ex);
         }
     }
 
