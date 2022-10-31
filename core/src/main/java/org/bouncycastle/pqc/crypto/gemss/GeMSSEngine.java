@@ -19,21 +19,22 @@ class GeMSSEngine
     final int HFEDegI;// {4, 7, 9, 10}
     final int HFEDegJ;// {7, 0}
     //final int HFEs;// {0}
-    final int HFEnv;
+    final int HFEnv;//{186, 187, 189, 190, 192, 193, 277, 285, 288, 289, 291, 292, 295, 387, 390, 393, 396, 399, 420, 563, 576}
+    final int HFEm;//{162, 163, 243, 253, 256, 257, 324, 333, 384, 512}
     final int NB_BITS_UINT = 64;
     final int HFEnq;
     final int HFEnr;//{9, 10, 12, 14, 15, 18, 24, 25, 32, 38, 44, 46, 47, 49, 50,}
     int LOG_odd_degree;
     int HFE_odd_degree;
     //int NB_BITS_GFqn_SUP;
-    int NB_WORD_GFqn;
+    int NB_WORD_GFqn;//{3, 5, 6, 7, 9}
     //int NB_BITS_GFqnv_SUP;
     int NB_WORD_GF2nv;
     //int NB_MONOMIAL;
     int NB_MONOMIAL_VINEGAR;
     int NB_MONOMIAL_PK;
     final int HFEnvq;// = HFEnv / NB_BITS_UINT; //NB_VARq
-    final int HFEnvr;// = HFEnv % NB_BITS_UINT; //NB_VARr
+    final int HFEnvr;//{0, 1, 3, 6, 9, 12, 15, 21, 29, 32, 35, 36, 39, 51, 58, 59, 61, 62}
     int LTRIANGULAR_NV_SIZE;
     final int LTRIANGULAR_N_SIZE;
     final int SIZE_VECTOR_t = 0;
@@ -46,7 +47,7 @@ class GeMSSEngine
     int K1;
     boolean __PENTANOMIAL_GF2N__ = false;
     //boolean __TRINOMIAL_GF2N__ = false;
-    int NB_WORD_MMUL;
+    int NB_WORD_MMUL;//{6, 9, 12, 13, 17}
     //int NB_BITS_MMUL_SUP;
     int MQv_GFqn_SIZE;
     final int KI;
@@ -61,7 +62,7 @@ class GeMSSEngine
     final boolean ENABLED_REMOVE_ODD_DEGREE;
     final int MATRIXnv_SIZE;
     /* Number of UINT of matrix m*m in GF(2) */
-    final int HFEm;
+
     final int HFEmq;
     final int HFEmr;
     //int NB_BITS_GFqm_SUP;
@@ -126,21 +127,21 @@ class GeMSSEngine
         this.HFEDegJ = HFEDegJ;
         //this.HFEs = HFEs;
         HFEnv = HFEn + HFEv;
-        HFEnq = (HFEn / NB_BITS_UINT);
-        HFEnr = (HFEn % NB_BITS_UINT);
-        HFEnvq = HFEnv / NB_BITS_UINT;
-        HFEnvr = HFEnv % NB_BITS_UINT;
+        HFEnq = HFEn >>> 6;
+        HFEnr = HFEn & 63;
+        HFEnvq = HFEnv >>> 6;
+        HFEnvr = HFEnv & 63;
         SIZE_SEED_SK = K >>> 3;
-        NB_WORD_MUL = ((((HFEn - 1) << 1) / NB_BITS_UINT) + 1);
+        NB_WORD_MUL = ((((HFEn - 1) << 1) >>> 6) + 1);
         KI = HFEn & 63;
         KI64 = 64 - KI;
         HFEm = HFEn - HFEDELTA;
-        HFEmq = HFEm / NB_BITS_UINT;
-        HFEmr = HFEm % NB_BITS_UINT;
-        HFEvq = HFEv / NB_BITS_UINT;
-        HFEvr = HFEv % NB_BITS_UINT;
+        HFEmq = HFEm >>> 6;
+        HFEmr = HFEm & 63;
+        HFEvq = HFEv >>> 6;
+        HFEvr = HFEv & 63;
         NB_WORD_GFqv = HFEvr != 0 ? HFEvq + 1 : HFEvq;
-        HFEmq8 = (HFEm >>> 3);
+        HFEmq8 = HFEm >>> 3;
         HFEmr8 = HFEm & 7;
         NB_BYTES_GFqm = (HFEmq8 + ((HFEmr8 != 0) ? 1 : 0));
         NB_WORD_UNCOMP_EQ = ((((HFEnvq * (HFEnvq + 1)) >>> 1) * NB_BITS_UINT) + (HFEnvq + 1) * HFEnvr);
@@ -202,7 +203,7 @@ class GeMSSEngine
         HFENr8c = ((8 - HFENr8) & 7);
         //MQ_GFqm8_SIZE = (NB_MONOMIAL_PK * NB_BYTES_GFqm + ((8 - (NB_BYTES_GFqm & 7)) & 7));
         LOST_BITS = (HFEmr8 - 1) * HFENr8c;
-        NB_WORD_MMUL = ((((HFEn - 1) << 1) / NB_BITS_UINT) + 1);
+        NB_WORD_MMUL = ((((HFEn - 1) << 1) >>> 6) + 1);
         //NB_BITS_MMUL_SUP = NB_WORD_MMUL << 5;
         switch (HFEn)
         {
@@ -408,7 +409,7 @@ class GeMSSEngine
      * @remark Requirement: F is monic.
      * @remark Constant-time implementation.
      */
-    public int genSecretMQS_gf2(Pointer MQS, Pointer F)
+    int genSecretMQS_gf2(Pointer MQS, Pointer F)
     {
         Pointer alpha_vec = new Pointer((HFEDegI + 1) * (HFEn - 1) * NB_WORD_GFqn);
         //genCanonicalBasis_gf2n(alpha_vec)
@@ -416,16 +417,28 @@ class GeMSSEngine
         Pointer F_cp;
         Pointer MQS_cp;
         int i, j;
-        if (NB_WORD_GFqn == 1)
+//        if (NB_WORD_GFqn == 1)
+//        {
+//            for (j = 1; j < HFEn; ++j)
+//            {
+//                /* a^j */
+//                a_vec.set(1L << j);
+//            }
+//        }
+//        else
+//        {
+        for (j = 1; j < NB_BITS_UINT; ++j)
         {
-            for (j = 1; j < HFEn; ++j)
-            {
-                /* a^j */
-                a_vec.set(1L << j);
-            }
+            /* It is a^(i*NB_BITS_UINT + j) */
+            a_vec.set(1L << j);
+            a_vec.move(NB_WORD_GFqn);
         }
-        else
+        a_vec.moveIncremental();
+        for (i = 1; i < HFEnq; ++i)
         {
+            a_vec.set(1L);
+            a_vec.move(NB_WORD_GFqn);
+            /* Put the bit 1 at the position j */
             for (j = 1; j < NB_BITS_UINT; ++j)
             {
                 /* It is a^(i*NB_BITS_UINT + j) */
@@ -433,33 +446,21 @@ class GeMSSEngine
                 a_vec.move(NB_WORD_GFqn);
             }
             a_vec.moveIncremental();
-            for (i = 1; i < HFEnq; ++i)
-            {
-                a_vec.set(1L);
-                a_vec.move(NB_WORD_GFqn);
-                /* Put the bit 1 at the position j */
-                for (j = 1; j < NB_BITS_UINT; ++j)
-                {
-                    /* It is a^(i*NB_BITS_UINT + j) */
-                    a_vec.set(1L << j);
-                    a_vec.move(NB_WORD_GFqn);
-                }
-                a_vec.moveIncremental();
-            }
-            /* i = NB_WORD_GFqn-1 */
+        }
+        /* i = NB_WORD_GFqn-1 */
 //            if (HFEnr != 0)
 //            {
-            a_vec.set(1);
+        a_vec.set(1);
+        a_vec.move(NB_WORD_GFqn);
+        for (j = 1; j < HFEnr; ++j)
+        {
+            a_vec.set(1L << j);
             a_vec.move(NB_WORD_GFqn);
-            for (j = 1; j < HFEnr; ++j)
-            {
-                a_vec.set(1L << j);
-                a_vec.move(NB_WORD_GFqn);
-            }
-            a_vec.moveIncremental();
-            //}
-            a_vec.move(-NB_WORD_GFqn);
         }
+        a_vec.moveIncremental();
+        //}
+        a_vec.move(-NB_WORD_GFqn);
+        //}
 
         int loop_end = HFEDegI != HFEDegJ ? HFEDegI : HFEDegI + 1;
         Pointer alpha_vec_tmp = new Pointer(alpha_vec);
@@ -467,10 +468,6 @@ class GeMSSEngine
         {
             for (j = 1; j < HFEn; ++j)
             {
-//                if (alpha_vec.get(2593) == 9007199254740992L)
-//                {
-//                    System.out.println("break");
-//                }
                 /* a^(2^(i+1)) = (a^(2^i))^2 */
                 sqr_gf2n(a_vec, alpha_vec_tmp);
                 a_vec.move(NB_WORD_GFqn);
@@ -583,7 +580,7 @@ class GeMSSEngine
         {
             /* x_0*x_(ja+1) + x_(ja+1)*x_0 */
             tmp1.indexReset();
-            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_vec, ja * NB_WORD_GFqn), FunctionParams.N);
+            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_vec, ja * NB_WORD_GFqn));
             mul_gf2n(MQS_cp, tmp1, F_cp);
             MQS_cp.move(NB_WORD_GFqn);
         }
@@ -699,7 +696,7 @@ class GeMSSEngine
         {
             tmp1.indexReset();
             /* x_0*x_(ja+1) + x_(ja+1)*x_0 */
-            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_veci, ja * NB_WORD_GFqn), FunctionParams.N);
+            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_veci, ja * NB_WORD_GFqn));
             add2_gf2(MQS_cp, tmp1, NB_WORD_GFqn);
             MQS_cp.move(NB_WORD_GFqn);
         }
@@ -764,14 +761,12 @@ class GeMSSEngine
         for (i = 0; i < HFEnq; ++i)
         {
             long b = B.get();
-
             /* j=0 */
             mask_B = -(b & 1L);
             for (k = 0; k < NB_WORD_GFqn; ++k)
             {
                 C.setXor(k, A.get(k) & mask_B);
             }
-
 //            if (HFEnr != 0)
 //            {
             /* The last 64-bit block BL of A contains HFEnr bits.
@@ -841,6 +836,7 @@ class GeMSSEngine
         for (j = 1; j < loop_end; ++j)
         {
             int jc = 64 - j;
+            long jc_mask = (1L << (65 - jc)) - 1L;
             mask_B = -((b >>> j) & 1L);
             /* k=0 */
             long aKsub1 = A.get() & mask_B;
@@ -848,7 +844,8 @@ class GeMSSEngine
             for (k = 1; k < NB_WORD_GFqn; ++k)
             {
                 long aK = A.get(k) & mask_B;
-                C.setXor(k, ((aKsub1 >>> jc) & ((1L << (65 - jc)) - 1L)) | aK << j);
+                //C.setXor(k, ((aKsub1 >>> jc) & ((1L << (65 - jc)) - 1L)) | aK << j);
+                C.setXor(k, ((aKsub1 >>> jc) & jc_mask) | aK << j);
                 aKsub1 = aK;
             }
         }
@@ -899,7 +896,7 @@ class GeMSSEngine
             {
                 Q.set(i - NB_WORD_GFqn, (C.get(i - 1) >>> KI));
             }
-            if ((HFEn == 354) && (K3 == 99))
+            if ((HFEn == 354) && (K3 == 99)) //Gemss256
             {
                 R = (Q.get(3) >>> (K364 + KI)) ^ (Q.get(4) << (K3mod64 - KI));
                 Q.setXor(R);
@@ -949,8 +946,8 @@ class GeMSSEngine
                 }
             }
 
-            if ((K3 != 1) && (!((HFEn == 354) && (K3 == 99)))
-                && (!((HFEn == 358) && (K3 == 57))))
+            //if ((K3 != 1) && (!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))
+            if ((!((HFEn == 354) && (K3 == 99))) && (!((HFEn == 358) && (K3 == 57))))
             {
                 /* R: Quotient of Pol/x^(2n-K3), by word of 64-bit */
                 if (KI >= K3)
@@ -1117,7 +1114,7 @@ class GeMSSEngine
             /* x_0*x_(ja+1) + x_(ja+1)*x_0 */
             tmp1.indexReset();
             tmp_i.reset();
-            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_veci, ja * NB_WORD_GFqn), FunctionParams.N);
+            add_gf2(tmp1, new Pointer(a_vecj, ja * NB_WORD_GFqn), new Pointer(a_veci, ja * NB_WORD_GFqn));
             mul_gf2n(tmp_i, tmp1, F_cp);
             add2_gf2(MQS_cp, tmp_i, NB_WORD_GFqn);
             MQS_cp.move(NB_WORD_GFqn);
@@ -1186,20 +1183,8 @@ class GeMSSEngine
      * @param[out] c   c=a+b in GF(2^n).
      * @remark Constant-time implementation.
      */
-    private void add_gf2(Pointer c, Pointer a, Pointer b, FunctionParams functionParams)
+    private void add_gf2(Pointer c, Pointer a, Pointer b)
     {
-        //int loop_end;
-//        switch (functionParams)
-//        {
-//        case N:
-//            loop_end = NB_WORD_GFqn;
-//            break;
-//        case M:
-//            loop_end = NB_WORD_GF2m;
-//            break;
-//        default:
-//            throw new IllegalArgumentException("Invalid parameter settings for add_gf2");
-//        }
         for (int i = 0; i < NB_WORD_GFqn; ++i)
         {
             c.set(i, a.get(i) ^ b.get(i));
@@ -1278,7 +1263,7 @@ class GeMSSEngine
      * must be a trinomial or a pentanomial.
      * @remark Constant-time implementation.
      */
-    public void remsqr_gf2n_ref(Pointer C, Pointer A)
+    private void remsqr_gf2n_ref(Pointer C, Pointer A)
     {
         //sqr_nocst_gf2x
         //sqr_no_simd_gf2x_ref2
@@ -1375,7 +1360,7 @@ class GeMSSEngine
     /* cleanLowerMatrixn: HFEnq, HFEnr
      * cleanLowerMatrixnv: HFEnvq, HFEnvr
      * */
-    public void cleanLowerMatrix(Pointer L, FunctionParams cleanLowerMatrix)
+    void cleanLowerMatrix(Pointer L, FunctionParams cleanLowerMatrix)
     {
         int nq, nr;
         long mask;
@@ -1445,7 +1430,7 @@ class GeMSSEngine
      * @remark Requirement: S is invertible.
      * @remark Constant-time implementation.
      */
-    public void invMatrixLU_gf2(Pointer S, Pointer L_orig, Pointer U_orig, FunctionParams imluParams)
+    void invMatrixLU_gf2(Pointer S, Pointer L_orig, Pointer U_orig, FunctionParams imluParams)
     {
         Pointer Sinv_cpi, Sinv_cpj;
         Pointer L_cpj = new Pointer(L_orig);
@@ -1569,7 +1554,7 @@ class GeMSSEngine
         }
     }
 
-    public void xorLoadMask(Pointer C, Pointer A, long mask, int loop)
+    private void xorLoadMask(Pointer C, Pointer A, long mask, int loop)
     {
         for (int i = 0; i < loop; ++i)
         {
@@ -1577,10 +1562,10 @@ class GeMSSEngine
         }
     }
 
-    public enum FunctionParams
+    enum FunctionParams
     {NV, NVN, V, N, M, NVN_Start}
 
-    public void vecMatProduct(Pointer res, Pointer vec, Pointer S_orig, int start, FunctionParams vecMatProduct)
+    void vecMatProduct(Pointer res, Pointer vec, Pointer S_orig, int start, FunctionParams vecMatProduct)
     {
         //vecn_gf2 res, cst_vecn_gf2 vec, cst_Mn_gf2 S, unsigned int start
         int gf2_len, S_cp_increase, loopir_param, nq;
@@ -1671,7 +1656,6 @@ class GeMSSEngine
             }
             bit_ir = vec.get(HFEnvq);
             loopir_param = HFEnvr;
-            ir = 0;
             break;
         case V:
             //VECMATPROD(PREFIX_NAME(vecMatProductv_64),set0_gf2n,LOOPIR_N,REM_V,HFEvq)
@@ -1681,7 +1665,6 @@ class GeMSSEngine
             }
             bit_ir = vec.get(HFEvq);
             loopir_param = HFEvr;
-            ir = 0;
             break;
         case N:
         case M:
@@ -1693,7 +1676,6 @@ class GeMSSEngine
 //            }
             bit_ir = vec.get(HFEnq);
             loopir_param = HFEnr;
-            ir = 0;
             break;
         case NVN_Start:
             //VECMATPROD_START(PREFIX_NAME(vecMatProductnvn_start_64),set0_gf2n, LOOPIR_START_N,REM_START_NV,HFEnvq)
@@ -1738,14 +1720,13 @@ class GeMSSEngine
      * is allocated a multiple of 64 bits).
      * @remark Constant-time implementation.
      */
-    public long convMQ_uncompressL_gf2(Pointer pk2_orig, PointerUnion pk)
+    private long convMQ_uncompressL_gf2(Pointer pk2_orig, PointerUnion pk)
     {
         int iq, ir, k, nb_bits;
         PointerUnion pk64 = new PointerUnion(pk);
         Pointer pk2 = new Pointer(pk2_orig);
         nb_bits = 1;
         pk2_orig.indexReset();
-
         /* For each row */
         for (iq = 0; iq < HFEnvq; ++iq)
         {
@@ -1854,7 +1835,7 @@ class GeMSSEngine
      * @remark This function is a modified copy of convMQ_uncompressL_gf2.
      * @remark Constant-time implementation.
      */
-    public long convMQ_last_uncompressL_gf2(Pointer pk2, PointerUnion pk)
+    private long convMQ_last_uncompressL_gf2(Pointer pk2, PointerUnion pk)
     {
         PointerUnion pk64 = new PointerUnion(pk);
         int iq, ir, k, nb_bits;
@@ -2087,7 +2068,6 @@ class GeMSSEngine
         Pointer Si1 = new Pointer(Si1_tab);
         /* Vector of D_1, ..., D_(NB_ITE) */
         PointerBuffer D = new PointerBuffer(NB_ITE * SIZE_DIGEST_UINT, 64);
-
         //PointerUnion D64 = new PointerUnion(NB_ITE * SIZE_DIGEST_UINT);
         int i;
         int index;//if (HFEnv != HFEm)
@@ -2172,29 +2152,29 @@ class GeMSSEngine
 //        #endif
             /* Compute Si = xor(p(S_i+1,X_i+1),D_i+1) */
             Si.setXorRange(0, D, i * SIZE_DIGEST_UINT, NB_WORD_GF2m);
-            if (HFEnv != HFEm)
+//            if (HFEnv != HFEm)
+//            {
+            /* Compute Si||Xi */
+            index = NB_WORD_GF2nv + (NB_ITE - 1 - i) * NB_WORD_GF2nvm;
+            if (HFEmr != 0)
             {
-                /* Compute Si||Xi */
-                index = NB_WORD_GF2nv + (NB_ITE - 1 - i) * NB_WORD_GF2nvm;
-                if (HFEmr != 0)
+                Si.setAnd(NB_WORD_GF2m - 1, MASK_GF2m);
+                /* Concatenation(Si,Xi): the intersection between S1 and X1 is not null */
+                Si.setXor(NB_WORD_GF2m - 1, sm.get(index));
+                if (NB_WORD_GF2nvm != 1)
                 {
-                    Si.setAnd(NB_WORD_GF2m - 1, MASK_GF2m);
-                    /* Concatenation(Si,Xi): the intersection between S1 and X1 is not null */
-                    Si.setXor(NB_WORD_GF2m - 1, sm.get(index));
-                    if (NB_WORD_GF2nvm != 1)
-                    {
-                        ++index;
-                        Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm - 1);
-                        //copy_gf2nvm1(Si + NB_WORD_GF2m, sm + index);
-                    }
-                }
-                else
-                {
-                    /* Concatenation(Si,Xi) */
-                    Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm);
-                    //copy_gf2nvm(Si + NB_WORD_GF2m, sm + index);
+                    ++index;
+                    Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm - 1);
+                    //copy_gf2nvm1(Si + NB_WORD_GF2m, sm + index);
                 }
             }
+            else
+            {
+                /* Concatenation(Si,Xi) */
+                Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm);
+                //copy_gf2nvm(Si + NB_WORD_GF2m, sm + index);
+            }
+            //}
 //        #ifdef KAT_INT
 //            fprintBstr_KAT_INT(fp, "Si||Xi: ", (unsigned char*)Si, NB_BYTES_GFqnv);
 //        #endif
@@ -2709,10 +2689,10 @@ class GeMSSEngine
             {
                 DR.setAnd(NB_WORD_GF2m - 1, MASK_GF2m);
                 /* Save the last byte because we need to erase this value by randombytes */
-                if (HFEn > HFEm)
-                {
-                    rem_char = DR_cp.getByte(NB_BYTES_GFqm - 1);
-                }
+//                if (HFEn > HFEm)
+//                {
+                rem_char = DR_cp.getByte(NB_BYTES_GFqm - 1);
+                //}
             }
 //        #ifdef KAT_INT
 //            fprintBstr_KAT_INT(fp, "xor(Dk,S_(k-1)): ",
@@ -2723,29 +2703,29 @@ class GeMSSEngine
             do
             {
 //        #endif
-                if (HFEn > HFEm)
+//                if (HFEn > HFEm)
+//                {
+                /* Compute Dk||Rk: add random to have n bits, without erased the m bits */
+                if ((HFEm & 7) != 0)
                 {
-                    /* Compute Dk||Rk: add random to have n bits, without erased the m bits */
-                    if ((HFEm & 7) != 0)
-                    {
-                        /* Generation of Rk */
-                        DR_cp.fillRandomBytes(NB_BYTES_GFqm - 1, random, NB_BYTES_GFqn - NB_BYTES_GFqm + 1);
-                        /* Put HFEm&7 first bits to 0 */
-                        DR_cp.setAndByte(NB_BYTES_GFqm - 1, (byte)-(1 << (HFEm & 7)));//(byte)~((1 << (HFEm & 7)) - 1)
-                        /* Store rem_char */
-                        DR_cp.setXorByte(NB_BYTES_GFqm - 1, (byte)rem_char);
-                    }
-                    else
-                    {
-                        DR_cp.fillRandomBytes(NB_BYTES_GFqm, random, NB_BYTES_GFqn - NB_BYTES_GFqm);
-                    }
-
-                    /* To clean the last char (because of randombytes), the last word is cleaned */
-                    if ((HFEn & 7) != 0)
-                    {
-                        DR.setAnd(NB_WORD_GFqn - 1, MASK_GF2n);
-                    }
+                    /* Generation of Rk */
+                    DR_cp.fillRandomBytes(NB_BYTES_GFqm - 1, random, NB_BYTES_GFqn - NB_BYTES_GFqm + 1);
+                    /* Put HFEm&7 first bits to 0 */
+                    DR_cp.setAndByte(NB_BYTES_GFqm - 1, (byte)-(1 << (HFEm & 7)));//(byte)~((1 << (HFEm & 7)) - 1)
+                    /* Store rem_char */
+                    DR_cp.setXorByte(NB_BYTES_GFqm - 1, (byte)rem_char);
                 }
+                else
+                {
+                    DR_cp.fillRandomBytes(NB_BYTES_GFqm, random, NB_BYTES_GFqn - NB_BYTES_GFqm);
+                }
+
+                /* To clean the last char (because of randombytes), the last word is cleaned */
+                if ((HFEn & 7) != 0)
+                {
+                    DR.setAnd(NB_WORD_GFqn - 1, MASK_GF2n);
+                }
+                //}
 //            #ifdef KAT_INT
 //                    ++nb_try_to_sign;
 //                    fprintf(fp, "Try %u, ", nb_try_to_sign);
@@ -2795,12 +2775,12 @@ class GeMSSEngine
                     for (i = 0; i <= loop_end; ++i)
                     {
                         vecMatProduct(tmp_n, V, new Pointer(linear_coefs[i], NB_WORD_GFqn), 0, FunctionParams.V);
-                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i + 1)) >>> 1) + 1)), linear_coefs[i], tmp_n, FunctionParams.N);
+                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i + 1)) >>> 1) + 1)), linear_coefs[i], tmp_n);
                     }
                     for (; i <= HFEDegI; ++i)
                     {
                         vecMatProduct(tmp_n, V, new Pointer(linear_coefs[i], NB_WORD_GFqn), 0, FunctionParams.V);
-                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i - 1)) >>> 1) + 2 + LOG_odd_degree)), linear_coefs[i], tmp_n, FunctionParams.N);
+                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i - 1)) >>> 1) + 2 + LOG_odd_degree)), linear_coefs[i], tmp_n);
                     }
                 }
                 else
@@ -2808,7 +2788,7 @@ class GeMSSEngine
                     for (i = 0; i <= HFEDegI; ++i)
                     {
                         vecMatProduct(tmp_n, V, new Pointer(linear_coefs[i], NB_WORD_GFqn), 0, FunctionParams.V);
-                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i + 1)) >>> 1) + 1)), linear_coefs[i], tmp_n, FunctionParams.N);
+                        add_gf2(new Pointer(F, NB_WORD_GFqn * (((i * (i + 1)) >>> 1) + 1)), linear_coefs[i], tmp_n);
                     }
                 }
                 //}
@@ -2854,30 +2834,25 @@ class GeMSSEngine
 //                }
 //            }
 //            }
-//            for (i = 0; i < sk_HFE.F_HFEv.getLength(); ++i)
-//            {
-//                System.out.println(i + " " + sk_HFE.F_HFEv.get(i));
-//            }
             /* Finally: compute Sk||Xk = v * S^(-1) */
             vecMatProduct(sm, DR, sk_HFE.S, 0, FunctionParams.NV);
             if (k != NB_ITE)
             {
 //            #ifdef KAT_INT
-//            fprintBstr_KAT_INT(fp, "Sk||Xk: ", (unsigned char*)sm,
-//            NB_BYTES_GFqnv);
+//            fprintBstr_KAT_INT(fp, "Sk||Xk: ", (unsigned char*)sm, NB_BYTES_GFqnv);
 //            #endif
-                if (HFEnv != HFEm)
-                    /* Store X1 in the signature */
+                //               if (HFEnv != HFEm)
+                /* Store X1 in the signature */
+//                {
+                index = NB_WORD_GF2nv + (NB_ITE - 1 - k) * NB_WORD_GF2nvm;
+                sm.copyFrom(index, sm, NB_WORD_GF2nv - NB_WORD_GF2nvm, NB_WORD_GF2nvm);
+                //copy_gf2nvm(sm + index, sm + NB_WORD_GF2nv - NB_WORD_GF2nvm);
+                /* To put zeros at the beginning of the first word of X1 */
+                if (HFEmr != 0)
                 {
-                    index = NB_WORD_GF2nv + (NB_ITE - 1 - k) * NB_WORD_GF2nvm;
-                    sm.copyFrom(index, sm, NB_WORD_GF2nv - NB_WORD_GF2nvm, NB_WORD_GF2nvm);
-                    //copy_gf2nvm(sm + index, sm + NB_WORD_GF2nv - NB_WORD_GF2nvm);
-                    /* To put zeros at the beginning of the first word of X1 */
-                    if (HFEmr != 0)
-                    {
-                        sm.setAnd(index, (~MASK_GF2m));
-                    }
+                    sm.setAnd(index, ~MASK_GF2m);
                 }
+                //}
 
                 /* Compute H2 = H(H1) */
 //                HASH(( char*)Hi1, ( char*)Hi, SIZE_DIGEST);
@@ -2922,7 +2897,7 @@ class GeMSSEngine
     }
 
     /* Precomputation for one secret-key */
-    public int precSignHFE(SecretKeyHFE sk_HFE, Pointer[] linear_coefs, byte[] sk)
+    private int precSignHFE(SecretKeyHFE sk_HFE, Pointer[] linear_coefs, byte[] sk)
     {
         //if HFEv
         Pointer F_HFEv;
@@ -3001,7 +2976,7 @@ class GeMSSEngine
         return 0;
     }
 
-    public void precSignHFESeed(SecretKeyHFE sk_HFE, byte[] sk)
+    private void precSignHFESeed(SecretKeyHFE sk_HFE, byte[] sk)
     {
 //    #if GEN_INV_MATRIX_TRIAL_ERROR
 //        expandSeedCxtDeclaration;
@@ -3064,10 +3039,6 @@ class GeMSSEngine
         //#if GEN_INVERSE_IN_FIRST
         /* Generate S^(-1) = L*U */
         mulMatricesLU_gf2(sk_HFE.S, L, U, FunctionParams.NV);
-//        for (int i = 0; i < sk_HFE.F_HFEv.getLength(); ++i)
-//        {
-//            System.out.println(i + " " + sk_HFE.F_HFEv.get(i));
-//        }
 //        #else
 //        /* Generate S the inverse of S^(-1) */
 //        invMatrixLUnv_gf2(sk_HFE -> S, L, U);
@@ -3121,7 +3092,7 @@ class GeMSSEngine
 //    #endif
     }
 
-    public void cleanMonicHFEv_gf2nx(Pointer F)
+    void cleanMonicHFEv_gf2nx(Pointer F)
     {
         long mask = MASK_GF2n(HFEnr);
         /* zero padding for the last word of each element of GF(2^n) */
@@ -3136,7 +3107,7 @@ class GeMSSEngine
         return (k != 0 ? (1L << k) - 1L : -1L);
     }
 
-    public void mulMatricesLU_gf2(Pointer S_orig, Pointer L, Pointer U, FunctionParams functionParams)
+    private void mulMatricesLU_gf2(Pointer S_orig, Pointer L, Pointer U, FunctionParams functionParams)
     {
         final int nq, nr;//REM=nr
         int iq;
@@ -3318,10 +3289,10 @@ class GeMSSEngine
     {
         long xi;
         Pointer x = new Pointer(HFEv);
-        final int NB_EQq = HFEn / NB_BITS_UINT;
-        final int NB_EQr = HFEn % NB_BITS_UINT;
-        final int NB_VARq = HFEv / NB_BITS_UINT;
-        final int NB_VARr = HFEv % NB_BITS_UINT;
+        final int NB_EQq = HFEn >>> 6;
+        final int NB_EQr = HFEn & 63;
+        final int NB_VARq = HFEv >>> 6;
+        final int NB_VARr = HFEv & 63;
         final int NB_WORD_EQ = NB_EQr != 0 ? NB_EQq + 1 : NB_EQq;
         Pointer tmp = new Pointer(NB_WORD_EQ);
         Pointer pk = new Pointer(pk_orig);
@@ -3503,7 +3474,7 @@ class GeMSSEngine
         //}
     }
 
-    public int gcd_gf2nx(Pointer A, int da, Pointer B, int db)
+    private int gcd_gf2nx(Pointer A, int da, Pointer B, int db)
     {
         Pointer inv = new Pointer(NB_WORD_GFqn);
         Pointer tmp;
@@ -3560,7 +3531,7 @@ class GeMSSEngine
         int d, i;
 
         /* Constant term of F-U */
-        add_gf2(cst, F.poly, U, FunctionParams.N);
+        add_gf2(cst, F.poly, U);
 
     /* For i=HFEDegI, we have X^(2^i) mod (F-U) = X^(2^i).
        The first term of degree >= HFEDeg is X^(2^(HFEDegI+1)):
@@ -3826,7 +3797,7 @@ class GeMSSEngine
         //return da;
     }
 
-    public int div_r_monic_gf2nx(Pointer A, int da, Pointer B, int db)
+    private int div_r_monic_gf2nx(Pointer A, int da, Pointer B, int db)
     {
         Pointer mul_coef = new Pointer(NB_WORD_GFqn);
         Pointer leading_coef, res;
@@ -3876,7 +3847,7 @@ class GeMSSEngine
         return da;
     }
 
-    public void inv_gf2n(Pointer res, Pointer A, int AOff)
+    private void inv_gf2n(Pointer res, Pointer A, int AOff)
     {
         int A_orig = A.getIndex();
         A.move(AOff);
@@ -3918,7 +3889,7 @@ class GeMSSEngine
         A.changeIndex(A_orig);
     }
 
-    public void convMonic_gf2nx(Pointer F_orig, int d)
+    private void convMonic_gf2nx(Pointer F_orig, int d)
     {
         Pointer inv = new Pointer(NB_WORD_GFqn);
         Pointer F = new Pointer(F_orig);
@@ -3934,7 +3905,7 @@ class GeMSSEngine
         }
     }
 
-    public void findRootsSplit_gf2nx(Pointer roots, Pointer f, int deg)
+    private void findRootsSplit_gf2nx(Pointer roots, Pointer f, int deg)
     {
         Pointer poly_trace;
         Pointer f_cp;
@@ -4046,7 +4017,7 @@ class GeMSSEngine
         findRootsSplit_x2_x_c_HT_gf2nx(alpha, c);
         f.move(NB_WORD_GFqn);
         mul_gf2n(roots, alpha, f);
-        add_gf2(new Pointer(roots, NB_WORD_GFqn), roots, f, FunctionParams.N);
+        add_gf2(new Pointer(roots, NB_WORD_GFqn), roots, f);
     }
 
     void findRootsSplit_x2_x_c_HT_gf2nx(Pointer root, Pointer c)
@@ -4084,7 +4055,7 @@ class GeMSSEngine
         }
     }
 
-    public void traceMap_gf2nx(Pointer poly_trace, Pointer poly_frob, Pointer f, int deg)
+    private void traceMap_gf2nx(Pointer poly_trace, Pointer poly_frob, Pointer f, int deg)
     {
         /* d is the degree of poly_frob */
         //int d;
@@ -4204,7 +4175,7 @@ class GeMSSEngine
             for (tab_j = new Pointer(tab, NB_WORD_GFqn); tab_j.getIndex() <= tab_lim.getIndex(); tab_j.move(NB_WORD_GFqn))
             {
                 mask = -cmp_lt_gf2n(tab_j, tab, NB_WORD_GFqn);//f_CMP_LT(a,b,NB_WORD_GFqn)
-                add_gf2(sum, tab, tab_j, FunctionParams.N);
+                add_gf2(sum, tab, tab_j);
                 prod.setRangeClear(0, NB_WORD_GFqn);
                 xorLoadMask(prod, sum, mask, NB_WORD_GFqn);
                 add2_gf2(tab_j, prod, NB_WORD_GFqn);
@@ -4572,7 +4543,6 @@ class GeMSSEngine
             if (HFENr8 != 0 && (HFEmr8 > 1))
             {
                 /* Number of lost bits by the zero padding of each equation (without the last) */
-                final int LOST_BITS = ((HFEmr8 - 1) * HFENr8c);
                 if (HFEnvr == 0)
                 {
                     pk_tmp.setXor(1 + (i + 1) * NB_WORD_UNCOMP_EQ - 1, val << (64 - LOST_BITS));
