@@ -55,4 +55,5 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.pkix.jcajce;
     exports org.bouncycastle.tsp.cms;
     exports org.bouncycastle.tsp.ers;
+    exports org.bouncycastle.tsp;
 }
