@@ -6,9 +6,14 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestFailure;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -63,5 +68,35 @@ public class AllTests
         pWrt.close();
 
         assertEquals(bOut.toByteArray().length, pWrt.getOutputSize(pemObj));
+    }
+
+    public static void main(String[] args) {
+
+            TestResult tr = junit.textui.TestRunner.run(suite());
+            if (tr.errorCount()>0) {
+                Enumeration<TestFailure> e = tr.errors();
+                while(e.hasMoreElements()) {
+                    System.out.println(e.nextElement().toString());
+                }
+            }
+
+        if (tr.failureCount()>0) {
+            Enumeration<TestFailure> e = tr.failures();
+            while(e.hasMoreElements()) {
+                System.out.println(e.nextElement().toString());
+            }
+        }
+
+        if (!tr.wasSuccessful()) {
+            System.exit(1);
+        }
+
+    }
+
+    public static Test suite()
+    {
+        TestSuite suite = new TestSuite("Lightweight PQ Crypto Tests");
+        suite.addTestSuite(AllTests.class);
+        return suite;
     }
 }

@@ -1,6 +1,30 @@
-export JAVA_9=/usr/lib/jvm/java-9.0.4-oracle-x64
-export JAVA_11=/usr/lib/jvm/java-11-openjdk-amd64
-export JAVA_15=/opt/jdk-15
+
+if ! [ -x "$(command -v openjdk_9)" ]; then
+    JAVA_9=/usr/lib/jvm/java-9.0.4-oracle-x64
+  else
+    JAVA_9=`openjdk_9`
+fi
+
+if ! [ -x "$(command -v openjdk_11)" ]; then
+    JAVA_11=/usr/lib/jvm/java-11-openjdk-amd64
+  else
+    JAVA_11=`openjdk_11`
+fi
+
+if ! [ -x "$(command -v openjdk_15)" ]; then
+    JAVA_15=/usr/lib/jvm/java-11-openjdk-amd64
+  else
+    JAVA_15=`openjdk_15`
+fi
+
+export JAVA_9
+export JAVA_11
+export JAVA_15
+
+
+echo "Java 9 ---> $JAVA_9"
+echo "Java 11 ---> $JAVA_11"
+echo "java 15 --->  $JAVA_15"
 
 export JAVA_HOME=$JAVA_9
 export PATH=$JAVA_HOME/bin:$PATH
@@ -76,7 +100,14 @@ rm -rf module.tmp
 	rm v9/$p
     done
 )
+
+
+if ! [ -x "$(command -v ./bnd.sh)" ]; then
+echo "WARNING: Skipping running bnd.sh"
+else
 sh ./bnd.sh build/artifacts/jdk1.8/jars/$jarName
+fi
+
 cp build/artifacts/jdk1.8/jars/$jarName module.tmp/$jarName
 # Java 11 Step
 (
@@ -103,5 +134,12 @@ cp build/artifacts/jdk1.8/jars/$jarName module.tmp/$jarName
 )
 cp module.tmp/$jarName build/artifacts/jdk1.8/jars/$jarName
 
+
+if ! [ -x "$(command -v bcsign11)" ]; then
+echo "WARNING: Skipping  bcsign11"
+else
 bcsign11 build/artifacts/jdk1.8/jars/$jarName
+fi
+
+
 done

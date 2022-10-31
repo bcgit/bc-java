@@ -1,10 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
 import java.security.Security;
+import java.util.Enumeration;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestFailure;
+import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTestResult;
@@ -31,7 +34,21 @@ public class AllTests
     
     public static void main (String[] args)
     {
-        junit.textui.TestRunner.run(suite());
+        TestResult tr = junit.textui.TestRunner.run(suite());
+        Enumeration<TestFailure> e = tr.errors();
+        while(e.hasMoreElements()) {
+            System.out.println(e.nextElement());
+        }
+
+        e = tr.failures();
+        while(e.hasMoreElements()) {
+            System.out.println(e.nextElement());
+        }
+
+        if (!tr.wasSuccessful())
+        {
+            System.exit(1);
+        }
     }
     
     public static Test suite()
