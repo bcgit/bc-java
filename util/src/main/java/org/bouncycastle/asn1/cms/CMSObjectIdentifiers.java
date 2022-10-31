@@ -25,6 +25,7 @@ public interface CMSObjectIdentifiers
     static final ASN1ObjectIdentifier    authEnvelopedData = PKCSObjectIdentifiers.id_ct_authEnvelopedData;
     /** PKCS#9: 1.2.840.113549.1.9.16.1.31 -- smime ct timestampedData*/
     static final ASN1ObjectIdentifier    timestampedData = PKCSObjectIdentifiers.id_ct_timestampedData;
+    static final ASN1ObjectIdentifier    zlibCompress = PKCSObjectIdentifiers.id_alg_zlibCompress;
 
     /**
      * The other Revocation Info arc
