@@ -72,6 +72,53 @@ class Pointer
         }
     }
 
+//    public void setXorRangeRotate(int outOff, Pointer p, int inOff, int len, int rotate)
+//    {
+//        outOff += cp;
+//        for (int i = 0; i < len; ++i)
+//        {
+//            array[outOff + i] ^= p.get(i + inOff);
+//        }
+//    }
+
+    public void setXorRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
+    {
+        outOff += cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff + i] ^= p.get(i + inOff) & mask;
+        }
+    }
+
+    public void setXorRangeAndMaskRotate(int outOff, Pointer p, int inOff, int len, long mask, int j)
+    {
+        int jc = 64 - j;
+        long A_mask1 = p.get(inOff) & mask, A_mask2;
+        outOff += cp;
+        array[outOff] ^= A_mask1 << j;
+        for (int i = 1; i < len; ++i)
+        {
+            A_mask2 = p.get(inOff + i) & mask;
+            array[outOff + i] ^= (A_mask1 >>> jc) | (A_mask2 << j);
+            A_mask1 = A_mask2;
+        }
+    }
+
+    public void setXorRangeAndMaskRotateOverflow(int outOff, Pointer p, int inOff, int len, long mask, int j)
+    {
+        int jc = 64 - j, i;
+        long A_mask1 = p.get(inOff) & mask, A_mask2;
+        outOff += cp;
+        array[outOff] ^= A_mask1 << j;
+        for (i = 1; i < len; ++i)
+        {
+            A_mask2 = p.get(inOff + i) & mask;
+            array[outOff + i] ^= (A_mask1 >>> jc) | (A_mask2 << j);
+            A_mask1 = A_mask2;
+        }
+        array[outOff + i] ^= A_mask1 >>> jc;
+    }
+
     public void move(int p)
     {
         cp += p;
@@ -105,11 +152,6 @@ class Pointer
     public void setAnd(long v)
     {
         array[cp] &= v;
-    }
-
-    public void setOr(int p, long v)
-    {
-        array[cp + p] |= v;
     }
 
     public void setClear(int p)
@@ -181,8 +223,7 @@ class Pointer
         cp = 0;
     }
 
-    public void
-    reset()
+    public void reset()
     {
         cp = 0;
         Arrays.fill(array, 0);
@@ -220,6 +261,17 @@ class Pointer
         for (int i = 0; i < len; ++i)
         {
             set(i, a.get(i) ^ b.get(i));
+        }
+    }
+
+    public void setRangeFromXor(int outOff, Pointer a, int aOff, Pointer b, int bOff, int len)
+    {
+        outOff += cp;
+        aOff += a.cp;
+        bOff += b.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff + i] = a.array[aOff + i] ^ b.array[bOff + i];
         }
     }
 
