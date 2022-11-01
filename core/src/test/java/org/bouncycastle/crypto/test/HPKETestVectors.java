@@ -1,21 +1,18 @@
 package org.bouncycastle.crypto.test;
 
-import junit.framework.TestCase;
-import org.apache.commons.math3.analysis.function.Exp;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.hpke.Context;
-import org.bouncycastle.crypto.hpke.HPKE;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.pqc.crypto.test.SABERVectorTest;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.hpke.Context;
+import org.bouncycastle.crypto.hpke.HPKE;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class HPKETestVectors
     extends TestCase
@@ -52,7 +49,8 @@ public class HPKETestVectors
         }
     }
 
-    public void testVectors() throws Exception
+    public void testVectors()
+        throws Exception
     {
         InputStream src = HPKETestVectors.class.getResourceAsStream("/org/bouncycastle/crypto/test/hpke.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
@@ -75,42 +73,42 @@ public class HPKETestVectors
             {
                 if (buf.size() > 0)
                 {
-                    String count = (String) buf.get("count");
+                    String count = (String)buf.get("count");
                     System.out.println("test case: " + count);
 
-                    byte mode = Byte.parseByte((String) buf.get("mode"));
-                    short kem_id = (short) Integer.parseInt((String) buf.get("kem_id"));
-                    short kdf_id = (short) Integer.parseInt((String) buf.get("kdf_id"));
-                    short aead_id = (short) Integer.parseInt((String) buf.get("aead_id"));
-                    byte[] info = Hex.decode((String) buf.get("info"));
-                    byte[] ikmR = Hex.decode((String) buf.get("ikmR"));
-                    byte[] ikmE = Hex.decode((String) buf.get("ikmE"));
+                    byte mode = Byte.parseByte((String)buf.get("mode"));
+                    short kem_id = (short)Integer.parseInt((String)buf.get("kem_id"));
+                    short kdf_id = (short)Integer.parseInt((String)buf.get("kdf_id"));
+                    short aead_id = (short)Integer.parseInt((String)buf.get("aead_id"));
+                    byte[] info = Hex.decode((String)buf.get("info"));
+                    byte[] ikmR = Hex.decode((String)buf.get("ikmR"));
+                    byte[] ikmE = Hex.decode((String)buf.get("ikmE"));
                     byte[] ikmS = null;
-                    byte[] skRm = Hex.decode((String) buf.get("skRm"));
+                    byte[] skRm = Hex.decode((String)buf.get("skRm"));
                     byte[] skSm = null;
-                    byte[] skEm = Hex.decode((String) buf.get("skEm"));
-                    byte[] pkRm = Hex.decode((String) buf.get("pkRm"));
+                    byte[] skEm = Hex.decode((String)buf.get("skEm"));
+                    byte[] pkRm = Hex.decode((String)buf.get("pkRm"));
                     byte[] pkSm = null;
-                    byte[] pkEm = Hex.decode((String) buf.get("pkEm"));
+                    byte[] pkEm = Hex.decode((String)buf.get("pkEm"));
                     byte[] psk = null;
                     byte[] psk_id = null;
-                    byte[] enc = Hex.decode((String) buf.get("enc"));
-                    byte[] shared_secret = Hex.decode((String) buf.get("shared_secret"));
-                    byte[] key_schedule_context = Hex.decode((String) buf.get("key_schedule_context"));
-                    byte[] secret = Hex.decode((String) buf.get("secret"));
-                    byte[] key = Hex.decode((String) buf.get("key"));
-                    byte[] base_nonce = Hex.decode((String) buf.get("base_nonce"));
-                    byte[] exporter_secret = Hex.decode((String) buf.get("exporter_secret"));
-                    if(mode == 2 || mode == 3)
+                    byte[] enc = Hex.decode((String)buf.get("enc"));
+                    byte[] shared_secret = Hex.decode((String)buf.get("shared_secret"));
+                    byte[] key_schedule_context = Hex.decode((String)buf.get("key_schedule_context"));
+                    byte[] secret = Hex.decode((String)buf.get("secret"));
+                    byte[] key = Hex.decode((String)buf.get("key"));
+                    byte[] base_nonce = Hex.decode((String)buf.get("base_nonce"));
+                    byte[] exporter_secret = Hex.decode((String)buf.get("exporter_secret"));
+                    if (mode == 2 || mode == 3)
                     {
-                       pkSm = Hex.decode((String) buf.get("pkSm"));
-                       ikmS = Hex.decode((String) buf.get("ikmS"));
-                       skSm = Hex.decode((String) buf.get("skSm"));
+                        pkSm = Hex.decode((String)buf.get("pkSm"));
+                        ikmS = Hex.decode((String)buf.get("ikmS"));
+                        skSm = Hex.decode((String)buf.get("skSm"));
                     }
-                    if(mode == 1 || mode == 3)
+                    if (mode == 1 || mode == 3)
                     {
-                        psk = Hex.decode((String) buf.get("psk"));
-                        psk_id = Hex.decode((String) buf.get("psk_id"));
+                        psk = Hex.decode((String)buf.get("psk"));
+                        psk_id = Hex.decode((String)buf.get("psk_id"));
                     }
 
 
@@ -132,22 +130,22 @@ public class HPKETestVectors
 
                     switch (mode)
                     {
-                        case 0:
-                            ctx = hpke.SetupBaseR(pkEm, receiver, info);
-                            break;
-                        case 1:
-                            ctx = hpke.SetupPSKR(pkEm, receiver, info, psk, psk_id);
-                            break;
-                        case 2:
-                            sender = hpke.dhkem.DeserializePublicKey(pkSm);
-                            ctx = hpke.SetupAuthR(pkEm, receiver, info, sender);
-                            break;
-                        case 3:
-                            sender = hpke.dhkem.DeserializePublicKey(pkSm);
-                            ctx = hpke.SetupAuthPSKR(pkEm, receiver, info, psk, psk_id, sender);
-                            break;
-                        default:
-                            throw new Exception("invalid mode");
+                    case 0:
+                        ctx = hpke.SetupBaseR(pkEm, receiver, info);
+                        break;
+                    case 1:
+                        ctx = hpke.SetupPSKR(pkEm, receiver, info, psk, psk_id);
+                        break;
+                    case 2:
+                        sender = hpke.dhkem.DeserializePublicKey(pkSm);
+                        ctx = hpke.SetupAuthR(pkEm, receiver, info, sender);
+                        break;
+                    case 3:
+                        sender = hpke.dhkem.DeserializePublicKey(pkSm);
+                        ctx = hpke.SetupAuthPSKR(pkEm, receiver, info, psk, psk_id, sender);
+                        break;
+                    default:
+                        throw new Exception("invalid mode");
                     }
 
                     byte[] got;
@@ -186,7 +184,7 @@ public class HPKETestVectors
             a = line.indexOf("encryptionsSTART");
             if (a > -1)
             {
-                while((line = bin.readLine()) != null)
+                while ((line = bin.readLine()) != null)
                 {
                     line = line.trim();
 
@@ -210,7 +208,7 @@ public class HPKETestVectors
                         bufEnc.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                     }
 
-                    if(line.equals("encryptionsSTOP"))
+                    if (line.equals("encryptionsSTOP"))
                     {
                         break;
                     }
@@ -219,7 +217,7 @@ public class HPKETestVectors
             a = line.indexOf("exportsSTART");
             if (a > -1)
             {
-                while((line = bin.readLine()) != null)
+                while ((line = bin.readLine()) != null)
                 {
                     line = line.trim();
 
@@ -242,7 +240,7 @@ public class HPKETestVectors
                         bufExp.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                     }
 
-                    if(line.equals("exportsSTOP"))
+                    if (line.equals("exportsSTOP"))
                     {
                         break;
                     }
