@@ -70,9 +70,6 @@ public class CMCEVectorTest
             CMCEParameters.mceliece8192128fr3
         };
 
-//        files = "6960-119-cmce.rsp";// 8192-128-cmce.rsp";
-//        files = "8192-128-cmce.rsp";
-//        String files = "4608-96-cmce.rsp";// 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
         TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
