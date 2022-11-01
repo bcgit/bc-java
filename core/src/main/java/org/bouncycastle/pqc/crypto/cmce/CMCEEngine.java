@@ -61,7 +61,7 @@ class CMCEEngine
     //    public int getPublicKeySize(){ return PK_NCOLS*PK_NROWS/8; }
     public int getCipherTextSize()
     {
-        return SYND_BYTES + 32;
+        return SYND_BYTES;
     }
 
     public CMCEEngine(int m, int n, int t, int[] p, boolean usePivots, int defaultKeySize)
@@ -546,22 +546,11 @@ class CMCEEngine
 
         /*
         2.4.5 Encapsulation
-        3. Compute C1 = H(2,e); Put C = (C0,C1)
-         */
-
-        // C1 = 0x2 || error_vector
-        // C = C0 || SHAKE256(C1, 32)
-        Xof digest = new SHAKEDigest(256);
-        digest.update((byte)0x02);
-        digest.update(error_vector, 0, error_vector.length); // input
-        digest.doFinal(cipher_text, SYND_BYTES, 32);     // output
-
-        /*
-        2.4.5 Encapsulation
         4. Compute K = H(1,e,C)
          */
 
         // K = Hash((0x1 || e || C), 32)
+        Xof digest = new SHAKEDigest(256);
         digest.update((byte)0x01);
         digest.update(error_vector, 0, error_vector.length);
         digest.update(cipher_text, 0, cipher_text.length); // input
@@ -574,7 +563,7 @@ class CMCEEngine
             mask = (byte)padding_ok;
             mask ^= 0xFF;
 
-            for (i = 0; i < SYND_BYTES + 32; i++)
+            for (i = 0; i < SYND_BYTES; i++)
             {
                 cipher_text[i] &= mask;
             }
@@ -592,8 +581,8 @@ class CMCEEngine
     // 2.3.3 Decapsulation
     public int kem_dec(byte[] key, byte[] cipher_text, byte[] sk)
     {
-        byte[] conf = new byte[32];
         byte[] error_vector = new byte[SYS_N / 8];
+        byte[] preimage = new byte[1 + SYS_N/8 + SYND_BYTES];
 
         int i, padding_ok = 0;
         byte mask;
@@ -610,35 +599,16 @@ class CMCEEngine
         // Decrypt
         byte ret_decrypt = (byte)decrypt(error_vector, sk, cipher_text);
 
-
-        /*
-        2.3.3 Decapsulation
-        5. Compute C′1 = H(2,e)
-         */
-
-        // 0x2 || error_vector
-        Xof digest = new SHAKEDigest(256);
-        digest.update((byte)0x02);
-        digest.update(error_vector, 0, error_vector.length); // input
-        digest.doFinal(conf, 0, 32);     // output
-
         /*
         2.3.3 Decapsulation
         6. If C′1 6= C1, set e ←s and b ←0.
          */
-        byte ret_confirm = 0;
-        for (i = 0; i < 32; i++)
-        {
-            ret_confirm |= conf[i] ^ cipher_text[SYND_BYTES + i];
-        }
-        short m;
 
-        m = (short)(ret_decrypt | ret_confirm);
+        short m;
+        m = ret_decrypt;
         m -= 1;
         m >>= 8;
         m &= 0xff;
-
-        byte[] preimage = new byte[1 + SYS_N / 8 + (SYND_BYTES + 32)];
 
         /*
         2.3.3 Decapsulation
@@ -649,7 +619,7 @@ class CMCEEngine
         {
             preimage[1 + i] = (byte)((~m & sk[i + 40 + IRR_BYTES + COND_BYTES]) | (m & error_vector[i]));
         }
-        for (i = 0; i < SYND_BYTES + 32; i++)
+        for (i = 0; i < SYND_BYTES; i++)
         {
             preimage[1 + SYS_N / 8 + i] = cipher_text[i];
         }
@@ -660,7 +630,7 @@ class CMCEEngine
          */
 
         //  = SHAKE256(preimage, 32)
-        digest = new SHAKEDigest(256);
+        Xof digest = new SHAKEDigest(256);
         digest.update(preimage, 0, preimage.length); // input
         digest.doFinal(key, 0, key.length);     // output
 
