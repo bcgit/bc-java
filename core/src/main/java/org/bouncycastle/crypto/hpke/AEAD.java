@@ -20,10 +20,6 @@ public class AEAD
     private long seq = 0; // todo throw exception if overflow
 
     private AEADCipher cipher;
-    protected static final short AEAD_AESGCM128 = 0x0001;
-    private static final short AEAD_AESGCM256 = 0x0002;
-    private static final short AEAD_CHACHA20POLY1305 = 0x0003;
-    private static final short AEAD_EXPORT_ONLY = (short) 0xFFFF;
 
     public AEAD(short aeadId, byte[] key, byte[] baseNonce)
     {
@@ -34,15 +30,15 @@ public class AEAD
 
         switch (aeadId)
         {
-            case AEAD_AESGCM128:
-            case AEAD_AESGCM256:
-                cipher = new GCMBlockCipher(new AESEngine());
-                break;
-            case AEAD_CHACHA20POLY1305:
-                cipher = new ChaCha20Poly1305();
-                break;
-            case AEAD_EXPORT_ONLY:
-                break;
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+            cipher = new GCMBlockCipher(new AESEngine());
+            break;
+        case HPKE.aead_CHACHA20_POLY1305:
+            cipher = new ChaCha20Poly1305();
+            break;
+        case HPKE.aead_EXPORT_ONLY:
+            break;
         }
     }
 
@@ -54,12 +50,12 @@ public class AEAD
         CipherParameters params;
         switch (aeadId)
         {
-            case AEAD_AESGCM128:
-            case AEAD_AESGCM256:
-            case AEAD_CHACHA20POLY1305:
+            case HPKE.aead_AES_GCM128:
+            case HPKE.aead_AES_GCM256:
+            case HPKE.aead_CHACHA20_POLY1305:
                 params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
                 break;
-            case AEAD_EXPORT_ONLY:
+            case HPKE.aead_EXPORT_ONLY:
             default:
                 throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
@@ -82,13 +78,13 @@ public class AEAD
         CipherParameters params;
         switch (aeadId)
         {
-            case AEAD_AESGCM128:
-            case AEAD_AESGCM256:
-            case AEAD_CHACHA20POLY1305:
+            case HPKE.aead_AES_GCM128:
+            case HPKE.aead_AES_GCM256:
+            case HPKE.aead_CHACHA20_POLY1305:
                 params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
 //                params = new AEADParameters(new KeyParameter(key), 128, ComputeNonce(), aad);
                 break;
-            case AEAD_EXPORT_ONLY:
+            case HPKE.aead_EXPORT_ONLY:
             default:
                 throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
