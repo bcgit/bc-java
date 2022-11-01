@@ -19,6 +19,7 @@ public class AllTests
         
         suite.addTestSuite(SimpleTestTest.class);
         suite.addTestSuite(GCMReorderTest.class);
+        suite.addTestSuite(HPKETestVectors.class);
         
         return new BCTestSetup(suite);
     }
