@@ -9,13 +9,29 @@ import org.bouncycastle.util.Strings;
 
 public class HPKE
 {
+    // modes
+    public static final byte mode_base = 0x00;
+    public static final byte mode_psk = 0x01;
+    public static final byte mode_auth = 0x02;
+    public static final byte mode_auth_psk = 0x03;
 
-    //modes
-    private static final byte mode_base = 0x00;
-    private static final byte mode_psk = 0x01;
-    private static final byte mode_auth = 0x02;
-    private static final byte mode_auth_psk = 0x03;
+    // kems
+    public static final short kem_P256_SHA256 = 16;
+    public static final short kem_P384_SHA348 = 17;
+    public static final short kem_P521_SHA512 = 18;
+    public static final short kem_X25519_SHA256 = 32;
+    public static final short kem_X448_SHA512 = 33;
 
+    // kdfs
+    public static final short kdf_HKDF_SHA256 = 0x0001;
+    public static final short kdf_HKDF_SHA384 = 0x0002;
+    public static final short kdf_HKDF_SHA512 = 0x0003;
+
+    // aeads
+    public static final short aead_AES_GCM128 = 0x0001;
+    public static final short aead_AES_GCM256 = 0x0002;
+    public static final short aead_CHACHA20_POLY1305 = 0x0003;
+    public static final short aead_EXPORT_ONLY = (short) 0xFFFF;
 
     private final byte[] default_psk = null;
     private final byte[] default_psk_id = null;
@@ -43,7 +59,7 @@ public class HPKE
         this.aeadId = aeadId;
         this.hkdf = new HKDF(kdfId);
         this.dhkem = new DHKEM(kemId);
-        if (aeadId == AEAD.AEAD_AESGCM128)
+        if (aeadId == aead_AES_GCM128)
         {
             Nk = 16;
         }

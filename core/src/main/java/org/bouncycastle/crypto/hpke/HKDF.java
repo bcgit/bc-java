@@ -11,30 +11,27 @@ import org.bouncycastle.util.Pack;
 
 class HKDF
 {
-    private static final short KDF_HKDF_SHA256 = 0x0001;
-    private static final short KDF_HKDF_SHA384 = 0x0002;
-    private static final short KDF_HKDF_SHA512 = 0x0003;
     private final static String versionLabel = "HPKE-v1";
     private final HKDFBytesGenerator kdf;
     private final int hashLength;
 
-    public HKDF(short kdfId)
+    HKDF(short kdfId)
     {
         Digest hash;
 
         switch (kdfId)
         {
-        case KDF_HKDF_SHA256:
+        case HPKE.kdf_HKDF_SHA256:
             hash = new SHA256Digest();
             break;
-        case KDF_HKDF_SHA384:
+        case HPKE.kdf_HKDF_SHA384:
             hash = new SHA384Digest();
             break;
-        case KDF_HKDF_SHA512:
+        case HPKE.kdf_HKDF_SHA512:
             hash = new SHA512Digest();
             break;
         default:
-            throw new IllegalArgumentException("Unknown kdf id");
+            throw new IllegalArgumentException("invalid kdf id");
         }
         kdf = new HKDFBytesGenerator(hash);
         hashLength = hash.getDigestSize();
