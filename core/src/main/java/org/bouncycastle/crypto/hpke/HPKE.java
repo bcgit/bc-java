@@ -1,9 +1,11 @@
 package org.bouncycastle.crypto.hpke;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 
 public class HPKE
 {
@@ -52,37 +54,37 @@ public class HPKE
     }
 
     private void VerifyPSKInputs(byte mode, byte[] psk, byte[] pskid)
-            throws Exception
     {
         boolean got_psk = (!Arrays.areEqual(psk, default_psk));
         boolean got_psk_id = (!Arrays.areEqual(pskid, default_psk_id));
         if (got_psk != got_psk_id)
-            throw new Exception("Inconsistent PSK inputs");
+        {
+            throw new IllegalArgumentException("Inconsistent PSK inputs");
+        }
 
         if (got_psk && (mode % 2 == 0))
         {
-            throw new Exception("PSK input provided when not needed");
+            throw new IllegalArgumentException("PSK input provided when not needed");
         }
         if ((!got_psk) && (mode % 2 == 1))
         {
-            throw new Exception("Missing required PSK input");
+            throw new IllegalArgumentException("Missing required PSK input");
         }
     }
 
     private HPKEContext keySchedule(byte mode, byte[] sharedSecret, byte[] info, byte[] psk, byte[] pskid)
-            throws Exception
     {
         ////System.out.println("\nKeySchedule");
 
         VerifyPSKInputs(mode, psk, pskid);
         byte[] suiteId = Arrays.concatenate(
-                "HPKE".getBytes(),
-                Pack.shortToBigEndian(kemId),
-                Pack.shortToBigEndian(kdfId),
-                Pack.shortToBigEndian(aeadId));
+            Strings.toByteArray("HPKE"),
+            Pack.shortToBigEndian(kemId),
+            Pack.shortToBigEndian(kdfId),
+            Pack.shortToBigEndian(aeadId));
 
         ////System.out.println("suiteId" + ": " + Hex.toHexString(suiteId));
-        byte[] pskidHash = hkdf.LabeledExtract(null, suiteId,"psk_id_hash", pskid);
+        byte[] pskidHash = hkdf.LabeledExtract(null, suiteId, "psk_id_hash", pskid);
         ////System.out.println("pskidHash" + ": " + Hex.toHexString(pskidHash));
 
         byte[] infoHash = hkdf.LabeledExtract(null, suiteId, "info_hash", info);
@@ -121,26 +123,25 @@ public class HPKE
 
     public byte[][] sendExport(AsymmetricKeyParameter pkR, byte[] info, byte[] exporterContext, int L,
                                byte[] psk, byte[] pskId, AsymmetricCipherKeyPair skS)
-        throws Exception
     {
         HPKEContextWithEncapsulation ctx;
         byte[][] output = new byte[2][]; // ct and enc
         switch (mode)
         {
-            case mode_base:
-                ctx = setupBaseS(pkR, info);
-                break;
-            case mode_auth:
-                ctx = setupAuthS(pkR, info, skS);
-                break;
-            case mode_psk:
-                ctx = SetupPSKS(pkR, info, psk, pskId);
-                break;
-            case mode_auth_psk:
-                ctx = setupAuthPSKS(pkR, info, psk, pskId, skS);
-                break;
-            default:
-                throw new Exception("Unknown mode");
+        case mode_base:
+            ctx = setupBaseS(pkR, info);
+            break;
+        case mode_auth:
+            ctx = setupAuthS(pkR, info, skS);
+            break;
+        case mode_psk:
+            ctx = SetupPSKS(pkR, info, psk, pskId);
+            break;
+        case mode_auth_psk:
+            ctx = setupAuthPSKS(pkR, info, psk, pskId, skS);
+            break;
+        default:
+            throw new IllegalStateException("Unknown mode");
         }
         output[0] = ctx.encapsulation;
         output[1] = ctx.export(exporterContext, L);
@@ -149,51 +150,50 @@ public class HPKE
 
     public byte[] receiveExport(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info, byte[] exporterContext, int L,
                                 byte[] psk, byte[] pskId, AsymmetricKeyParameter pkS)
-            throws Exception
     {
         HPKEContext ctx;
         switch (mode)
         {
-            case mode_base:
-                ctx = setupBaseR(enc, skR, info);
-                break;
-            case mode_auth:
-                ctx = setupAuthR(enc, skR, info, pkS);
-                break;
-            case mode_psk:
-                ctx = setupPSKR(enc, skR, info, psk, pskId);
-                break;
-            case mode_auth_psk:
-                ctx = setupAuthPSKR(enc, skR, info, psk, pskId, pkS);
-                break;
-            default:
-                throw new Exception("Unknown mode");
+        case mode_base:
+            ctx = setupBaseR(enc, skR, info);
+            break;
+        case mode_auth:
+            ctx = setupAuthR(enc, skR, info, pkS);
+            break;
+        case mode_psk:
+            ctx = setupPSKR(enc, skR, info, psk, pskId);
+            break;
+        case mode_auth_psk:
+            ctx = setupAuthPSKR(enc, skR, info, psk, pskId, pkS);
+            break;
+        default:
+            throw new IllegalStateException("Unknown mode");
         }
         return ctx.export(exporterContext, L);
     }
 
     public byte[][] seal(AsymmetricKeyParameter pkR, byte[] info, byte[] aad, byte[] pt,
                          byte[] psk, byte[] pskId, AsymmetricCipherKeyPair skS)
-        throws Exception
+        throws InvalidCipherTextException
     {
         HPKEContextWithEncapsulation ctx;
         byte[][] output = new byte[2][]; // ct and enc
         switch (mode)
         {
-            case mode_base:
-                ctx = setupBaseS(pkR, info);
-                break;
-            case mode_auth:
-                ctx = setupAuthS(pkR, info, skS);
-                break;
-            case mode_psk:
-                ctx = SetupPSKS(pkR, info, psk, pskId);
-                break;
-            case mode_auth_psk:
-                ctx = setupAuthPSKS(pkR, info, psk, pskId, skS);
-                break;
-            default:
-                throw new Exception("Unknown mode");
+        case mode_base:
+            ctx = setupBaseS(pkR, info);
+            break;
+        case mode_auth:
+            ctx = setupAuthS(pkR, info, skS);
+            break;
+        case mode_psk:
+            ctx = SetupPSKS(pkR, info, psk, pskId);
+            break;
+        case mode_auth_psk:
+            ctx = setupAuthPSKS(pkR, info, psk, pskId, skS);
+            break;
+        default:
+            throw new IllegalStateException("Unknown mode");
         }
         output[0] = ctx.seal(aad, pt);
         output[1] = ctx.getEncapsulation();
@@ -202,32 +202,31 @@ public class HPKE
 
     public byte[] open(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info, byte[] aad, byte[] ct,
                        byte[] psk, byte[] pskId, AsymmetricKeyParameter pkS)
-        throws Exception
+        throws InvalidCipherTextException
     {
         HPKEContext ctx;
         switch (mode)
         {
-            case mode_base:
-                ctx = setupBaseR(enc, skR, info);
-                break;
-            case mode_auth:
-                ctx = setupAuthR(enc, skR, info, pkS);
-                break;
-            case mode_psk:
-                ctx = setupPSKR(enc, skR, info, psk, pskId);
-                break;
-            case mode_auth_psk:
-                ctx = setupAuthPSKR(enc, skR, info, psk, pskId, pkS);
-                break;
-            default:
-                throw new Exception("Unknown mode");
+        case mode_base:
+            ctx = setupBaseR(enc, skR, info);
+            break;
+        case mode_auth:
+            ctx = setupAuthR(enc, skR, info, pkS);
+            break;
+        case mode_psk:
+            ctx = setupPSKR(enc, skR, info, psk, pskId);
+            break;
+        case mode_auth_psk:
+            ctx = setupAuthPSKR(enc, skR, info, psk, pskId, pkS);
+            break;
+        default:
+            throw new IllegalStateException("Unknown mode");
         }
         return ctx.open(aad, ct);
     }
 
 
     public HPKEContextWithEncapsulation setupBaseS(AsymmetricKeyParameter pkR, byte[] info)
-        throws Exception
     {
         byte[][] output = dhkem.Encap(pkR); // sharedSecret, enc
         HPKEContext ctx = keySchedule(mode_base, output[0], info, default_psk, default_psk_id);
@@ -236,7 +235,6 @@ public class HPKE
     }
 
     public HPKEContext setupBaseR(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info)
-        throws Exception
     {
         byte[] sharedSecret = dhkem.Decap(enc, skR);
 //        System.out.println("sharedSecret: " + Hex.toHexString(sharedSecret));
@@ -244,7 +242,6 @@ public class HPKE
     }
 
     public HPKEContextWithEncapsulation SetupPSKS(AsymmetricKeyParameter pkR, byte[] info, byte[] psk, byte[] psk_id)
-        throws Exception
     {
         byte[][] output = dhkem.Encap(pkR); // sharedSecret, enc
 
@@ -254,14 +251,12 @@ public class HPKE
     }
 
     public HPKEContext setupPSKR(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info, byte[] psk, byte[] psk_id)
-        throws Exception
     {
         byte[] sharedSecret = dhkem.Decap(enc, skR);
         return keySchedule(mode_psk, sharedSecret, info, psk, psk_id);
     }
 
     public HPKEContextWithEncapsulation setupAuthS(AsymmetricKeyParameter pkR, byte[] info, AsymmetricCipherKeyPair skS)
-        throws Exception
     {
         byte[][] output = dhkem.AuthEncap(pkR, skS);
         HPKEContext ctx = keySchedule(mode_auth, output[0], info, default_psk, default_psk_id);
@@ -270,14 +265,12 @@ public class HPKE
     }
 
     public HPKEContext setupAuthR(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info, AsymmetricKeyParameter pkS)
-            throws Exception
     {
         byte[] sharedSecret = dhkem.AuthDecap(enc, skR, pkS);
         return keySchedule(mode_auth, sharedSecret, info, default_psk, default_psk_id);
     }
 
     public HPKEContextWithEncapsulation setupAuthPSKS(AsymmetricKeyParameter pkR, byte[] info, byte[] psk, byte[] psk_id, AsymmetricCipherKeyPair skS)
-            throws Exception
     {
         byte[][] output = dhkem.AuthEncap(pkR, skS);
         HPKEContext ctx = keySchedule(mode_auth_psk, output[0], info, psk, psk_id);
@@ -286,7 +279,6 @@ public class HPKE
     }
 
     public HPKEContext setupAuthPSKR(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info, byte[] psk, byte[] psk_id, AsymmetricKeyParameter pkS)
-        throws Exception
     {
         byte[] sharedSecret = dhkem.AuthDecap(enc, skR, pkS);
         return keySchedule(mode_auth_psk, sharedSecret, info, psk, psk_id);
