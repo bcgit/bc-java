@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 
 public class HPKEContext
 {
-
     protected final AEAD aead;
     protected final HKDF hkdf;
     protected final byte[] exporterSecret;
@@ -19,7 +18,6 @@ public class HPKEContext
     }
 
     public byte[] export(byte[] exportContext, int L)
-            throws Exception
     {
         return hkdf.LabeledExpand(exporterSecret, suiteId, "sec", exportContext, L);
     }

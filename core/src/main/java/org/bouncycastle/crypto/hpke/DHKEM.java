@@ -31,12 +31,12 @@ import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 
 class DHKEM
 {
-
     private AsymmetricCipherKeyPairGenerator kpGen;
 
     private BasicAgreement agreement;
@@ -233,9 +233,8 @@ class DHKEM
     }
 
     public AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
-        throws Exception
     {
-        byte[] suiteID = Arrays.concatenate(Hex.decode("KEM"), Pack.shortToBigEndian(kemId));
+        byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
         switch (kemId)
         {
         case P256_SHA256:
@@ -248,7 +247,7 @@ class DHKEM
             {
                 if (counter > 255)
                 {
-                    throw new Exception("DeriveKeyPairError");
+                    throw new IllegalStateException("DeriveKeyPairError");
                 }
                 counterArray[0] = (byte)counter; // todo check if this is the correct endian
                 byte[] bytes = hkdf.LabeledExpand(dkp_prk, suiteID, "candidate", counterArray, Nsk);
@@ -280,13 +279,12 @@ class DHKEM
 
             return new AsymmetricCipherKeyPair(sk.generatePublicKey(), sk);
         default:
-            throw new Exception("Invalid kem id");
+            throw new IllegalStateException("invalid kem id");
         }
     }
 
 
     protected byte[][] Encap(AsymmetricKeyParameter pkR)
-        throws Exception
     {
         byte[][] output = new byte[2][];
         //init here or in constructor
@@ -320,7 +318,6 @@ class DHKEM
     }
 
     protected byte[] Decap(byte[] enc, AsymmetricCipherKeyPair kpR)
-        throws Exception
     {
         ////System.out.println("\nDecap");
         ////System.out.println("enc: " + Hex.toHexString(enc));
@@ -359,7 +356,6 @@ class DHKEM
     }
 
     protected byte[][] AuthEncap(AsymmetricKeyParameter pkR, AsymmetricCipherKeyPair kpS)
-        throws Exception
     {
         byte[][] output = new byte[2][];
 
@@ -407,7 +403,6 @@ class DHKEM
     }
 
     protected byte[] AuthDecap(byte[] enc, AsymmetricCipherKeyPair kpR, AsymmetricKeyParameter pkS)
-        throws Exception
     {
         AsymmetricKeyParameter pkE = DeserializePublicKey(enc);
 
@@ -448,13 +443,12 @@ class DHKEM
     }
 
     private byte[] ExtractAndExpand(byte[] dh, byte[] kemContext)
-        throws Exception
     {
 //        System.out.println("\nExtract and Expand");
 //        System.out.println("dh: " + Hex.toHexString(dh));
 //        System.out.println("kemContext: " + Hex.toHexString(kemContext));
 
-        byte[] suiteID = Arrays.concatenate("KEM".getBytes(), Pack.shortToBigEndian(kemId));
+        byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
 //        System.out.println("suiteID: " + Hex.toHexString(suiteID));
 
         byte[] eae_prk = hkdf.LabeledExtract(null, suiteID, "eae_prk", dh);

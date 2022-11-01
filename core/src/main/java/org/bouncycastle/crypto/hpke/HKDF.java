@@ -59,11 +59,10 @@ class HKDF
     }
 
     protected byte[] LabeledExpand(byte[] prk, byte[] suiteID, String label, byte[] info, int L)
-        throws Exception
     {
         if (L > (1 << 16))
         {
-            throw new Exception("Expand length cannot be larger than 2^16");
+            throw new IllegalArgumentException("Expand length cannot be larger than 2^16");
         }
         byte[] labeledInfo = Arrays.concatenate(Pack.shortToBigEndian((short)L), versionLabel.getBytes(), suiteID, label.getBytes());
 
