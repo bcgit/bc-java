@@ -54,7 +54,7 @@ public class HKDFBytesGenerator
         }
         else
         {
-            hMacHash.init(extract(params.getSalt(), params.getIKM()));
+            hMacHash.init(new KeyParameter(extractPRK(params.getSalt(), params.getIKM())));
         }
 
         info = params.getInfo();
@@ -70,7 +70,7 @@ public class HKDFBytesGenerator
      * @param ikm  the input keying material
      * @return the PRK as KeyParameter
      */
-    private KeyParameter extract(byte[] salt, byte[] ikm)
+    public byte[] extractPRK(byte[] salt, byte[] ikm)
     {
         if (salt == null)
         {
@@ -85,8 +85,10 @@ public class HKDFBytesGenerator
         hMacHash.update(ikm, 0, ikm.length);
 
         byte[] prk = new byte[hashLen];
+        
         hMacHash.doFinal(prk, 0);
-        return new KeyParameter(prk);
+
+        return prk;
     }
 
     /**

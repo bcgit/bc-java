@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.hpke;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
@@ -24,7 +25,7 @@ public class AEAD
     private static final short AEAD_CHACHA20POLY1305 = 0x0003;
     private static final short AEAD_EXPORT_ONLY = (short) 0xFFFF;
 
-    protected AEAD(byte[] key, byte[] baseNonce, short aeadId)
+    public AEAD(short aeadId, byte[] key, byte[] baseNonce)
     {
         this.key = key;
         this.baseNonce = baseNonce;
@@ -47,8 +48,8 @@ public class AEAD
 
 
     // used by Sender
-    public byte[] Seal(byte[] aad, byte[] pt)
-            throws Exception
+    public byte[] seal(byte[] aad, byte[] pt)
+            throws InvalidCipherTextException
     {
         CipherParameters params;
         switch (aeadId)
@@ -60,7 +61,7 @@ public class AEAD
                 break;
             case AEAD_EXPORT_ONLY:
             default:
-                throw new Exception("Export only mode, cannot be used to seal/open");
+                throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
         cipher.init(true, params);
         //todo process aad here or in init?
@@ -75,8 +76,8 @@ public class AEAD
 
 
     // used by Receiver
-    public byte[] Open(byte[] aad, byte[] ct)
-            throws Exception
+    public byte[] open(byte[] aad, byte[] ct)
+        throws InvalidCipherTextException
     {
         CipherParameters params;
         switch (aeadId)
@@ -89,7 +90,7 @@ public class AEAD
                 break;
             case AEAD_EXPORT_ONLY:
             default:
-                throw new Exception("Export only mode, cannot be used to seal/open");
+                throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
         ////System.out.println("aad: " + Hex.toHexString(aad));
         ////System.out.println("ct: " + Hex.toHexString(ct));
