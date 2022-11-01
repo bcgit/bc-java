@@ -43,11 +43,6 @@ class DHKEM
 
     // kem ids
     private final short kemId;
-    private static final short P256_SHA256 = 16;
-    private static final short P384_SHA348 = 17;
-    private static final short P521_SHA512 = 18;
-    private static final short X25519_SHA256 = 32;
-    private static final short X448_SHA512 = 33;
 
     private HKDF hkdf;
     private byte bitmask;
@@ -63,8 +58,8 @@ class DHKEM
         ECCurve curve;
         switch (kemid)
         {
-        case P256_SHA256:
-            this.hkdf = new HKDF((short)1);
+        case HPKE.kem_P256_SHA256:
+            this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
             curve = new SecP256R1Curve();
             domainParams = new ECDomainParameters(
                 curve,
@@ -85,8 +80,8 @@ class DHKEM
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
 
             break;
-        case P384_SHA348:
-            this.hkdf = new HKDF((short)2);
+        case HPKE.kem_P384_SHA348:
+            this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA384);
             curve = new SecP384R1Curve();
             domainParams = new ECDomainParameters(
                 curve,
@@ -107,8 +102,8 @@ class DHKEM
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
 
             break;
-        case P521_SHA512:
-            this.hkdf = new HKDF((short)3);
+        case HPKE.kem_P521_SHA512:
+            this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
 
             curve = new SecP521R1Curve();
             domainParams = new ECDomainParameters(
@@ -130,8 +125,8 @@ class DHKEM
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
 
             break;
-        case X25519_SHA256:
-            this.hkdf = new HKDF((short)1);
+        case HPKE.kem_X25519_SHA256:
+            this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
             this.agreement = new XDHBasicAgreement();
             Nsecret = 32;
 
@@ -139,8 +134,8 @@ class DHKEM
             this.kpGen.init(new X25519KeyGenerationParameters(new SecureRandom()));
 
             break;
-        case X448_SHA512:
-            this.hkdf = new HKDF((short)3);
+        case HPKE.kem_X448_SHA512:
+            this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
             this.agreement = new XDHBasicAgreement();
             Nsecret = 64;
 
@@ -158,13 +153,13 @@ class DHKEM
 
         switch (kemId)
         {
-        case P256_SHA256:
-        case P384_SHA348:
-        case P521_SHA512:
+        case HPKE.kem_P256_SHA256:
+        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P521_SHA512:
             return ((ECPublicKeyParameters)key).getQ().getEncoded(false);
-        case X448_SHA512:
+        case HPKE.kem_X448_SHA512:
             return ((X448PublicKeyParameters)key).getEncoded();
-        case X25519_SHA256:
+        case HPKE.kem_X25519_SHA256:
             return ((X25519PublicKeyParameters)key).getEncoded();
         default:
             throw new IllegalStateException("invalid kem id");
@@ -175,14 +170,14 @@ class DHKEM
     {
         switch (kemId)
         {
-        case P256_SHA256:
-        case P384_SHA348:
-        case P521_SHA512:
+        case HPKE.kem_P256_SHA256:
+        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P521_SHA512:
             ECPoint G = domainParams.getCurve().decodePoint(encoded);
             return new ECPublicKeyParameters(G, domainParams);
-        case X448_SHA512:
+        case HPKE.kem_X448_SHA512:
             return new X448PublicKeyParameters(encoded);
-        case X25519_SHA256:
+        case HPKE.kem_X25519_SHA256:
             return new X25519PublicKeyParameters(encoded);
         default:
             throw new IllegalStateException("invalid kem id");
@@ -194,14 +189,14 @@ class DHKEM
         AsymmetricKeyParameter pubParam = DeserializePublicKey(pkEncoded);
         switch (kemId)
         {
-        case P256_SHA256:
-        case P384_SHA348:
-        case P521_SHA512:
+        case HPKE.kem_P256_SHA256:
+        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P521_SHA512:
             BigInteger d = new BigInteger(1, skEncoded);
             return new AsymmetricCipherKeyPair(pubParam, new ECPrivateKeyParameters(d, ((ECPublicKeyParameters)pubParam).getParameters()));
-        case X448_SHA512:
+        case HPKE.kem_X448_SHA512:
             return new AsymmetricCipherKeyPair(pubParam, new X448PrivateKeyParameters(skEncoded));
-        case X25519_SHA256:
+        case HPKE.kem_X25519_SHA256:
             return new AsymmetricCipherKeyPair(pubParam, new X25519PrivateKeyParameters(skEncoded));
         default:
             throw new IllegalStateException("invalid kem id");
@@ -237,9 +232,9 @@ class DHKEM
         byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
         switch (kemId)
         {
-        case P256_SHA256:
-        case P384_SHA348:
-        case P521_SHA512:
+        case HPKE.kem_P256_SHA256:
+        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P521_SHA512:
             byte[] dkp_prk = hkdf.LabeledExtract(null, suiteID, "dkp_prk", ikm);
             int counter = 0;
             byte[] counterArray = new byte[1];
@@ -266,13 +261,13 @@ class DHKEM
 
                 counter++;
             }
-        case X448_SHA512:
+        case HPKE.kem_X448_SHA512:
             dkp_prk = hkdf.LabeledExtract(null, suiteID, "dkp_prk", ikm);
             byte[] x448sk = hkdf.LabeledExpand(dkp_prk, suiteID, "sk", null, Nsk);
             X448PrivateKeyParameters x448params = new X448PrivateKeyParameters(x448sk);
             return new AsymmetricCipherKeyPair(x448params.generatePublicKey(), x448params);
 
-        case X25519_SHA256:
+        case HPKE.kem_X25519_SHA256:
             dkp_prk = hkdf.LabeledExtract(null, suiteID, "dkp_prk", ikm);
             byte[] skBytes = hkdf.LabeledExpand(dkp_prk, suiteID, "sk", null, Nsk);
             X25519PrivateKeyParameters sk = new X25519PrivateKeyParameters(skBytes);
