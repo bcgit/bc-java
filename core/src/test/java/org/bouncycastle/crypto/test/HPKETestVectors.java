@@ -1,20 +1,22 @@
 package org.bouncycastle.crypto.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.hpke.Context;
-import org.bouncycastle.crypto.hpke.HPKE;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.hpke.AEAD;
+import org.bouncycastle.crypto.hpke.HPKE;
+import org.bouncycastle.crypto.hpke.HPKEContext;
+import org.bouncycastle.crypto.hpke.HPKEContextWithEncapsulation;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class HPKETestVectors
         extends TestCase
@@ -57,18 +59,18 @@ public class HPKETestVectors
         // test base oneshot pairwise
         HPKE hpke = new HPKE((byte) 0, (short) 16, (short) 1, (short) 1);
 
-        AsymmetricCipherKeyPair kp = hpke.dhkem.GeneratePrivateKey();
-        byte[][] output = hpke.Seal(kp.getPublic(), "info".getBytes(), "aad".getBytes(), "message".getBytes(), null, null, null);
+        AsymmetricCipherKeyPair kp = hpke.generatePrivateKey();
+        byte[][] output = hpke.seal(kp.getPublic(), "info".getBytes(), "aad".getBytes(), "message".getBytes(), null, null, null);
         byte[] ct = output[0];
         byte[] encap = output[1];
 
-        byte[] message = hpke.Open(encap, kp, "info".getBytes(), "aad".getBytes(), ct, null, null, null);
+        byte[] message = hpke.open(encap, kp, "info".getBytes(), "aad".getBytes(), ct, null, null, null);
         assertTrue( "Failed", Arrays.areEqual(message, "message".getBytes()));
 
         try
         {
             byte[] brokenCt = Arrays.concatenate(ct, "eh".getBytes());
-            hpke.Open(encap, kp, "info".getBytes(), "aad".getBytes(), brokenCt, null, null, null);
+            hpke.open(encap, kp, "info".getBytes(), "aad".getBytes(), brokenCt, null, null, null);
             fail("no exception");
         }
         catch (InvalidCipherTextException e)
@@ -82,21 +84,21 @@ public class HPKETestVectors
         // test base oneshot pairwise
         HPKE hpke = new HPKE((byte) 2, (short) 18, (short) 1, (short) 1);
 
-        AsymmetricCipherKeyPair reciever = hpke.dhkem.GeneratePrivateKey();
-        AsymmetricCipherKeyPair sender = hpke.dhkem.GeneratePrivateKey();
+        AsymmetricCipherKeyPair reciever = hpke.generatePrivateKey();
+        AsymmetricCipherKeyPair sender = hpke.generatePrivateKey();
 
-        byte[][] output = hpke.Seal(reciever.getPublic(), "info".getBytes(), "aad".getBytes(), "message".getBytes(), null, null, sender);
+        byte[][] output = hpke.seal(reciever.getPublic(), "info".getBytes(), "aad".getBytes(), "message".getBytes(), null, null, sender);
         byte[] ct = output[0];
         byte[] encap = output[1];
 
-        byte[] message = hpke.Open(encap, reciever, "info".getBytes(), "aad".getBytes(), ct, null, null, sender.getPublic());
+        byte[] message = hpke.open(encap, reciever, "info".getBytes(), "aad".getBytes(), ct, null, null, sender.getPublic());
         assertTrue( "Failed", Arrays.areEqual(message, "message".getBytes()));
 
         // incorrect ct/tag
         try
         {
             byte[] brokenCt = Arrays.concatenate(ct, "eh".getBytes());
-            hpke.Open(encap, reciever, "info".getBytes(), "aad".getBytes(), brokenCt, null, null, sender.getPublic());
+            hpke.open(encap, reciever, "info".getBytes(), "aad".getBytes(), brokenCt, null, null, sender.getPublic());
             fail("no exception");
         }
         catch (InvalidCipherTextException e)
@@ -107,7 +109,7 @@ public class HPKETestVectors
         // incorrect public key
         try
         {
-            message = hpke.Open(encap, reciever, "info".getBytes(), "aad".getBytes(), ct, null, null, reciever.getPublic());
+            message = hpke.open(encap, reciever, "info".getBytes(), "aad".getBytes(), ct, null, null, reciever.getPublic());
             fail("no exception");
         }
         catch (InvalidCipherTextException e)
@@ -122,12 +124,12 @@ public class HPKETestVectors
     {
         HPKE hpke = new HPKE((byte) 0, (short) 16, (short) 1, (short) 1);
 
-        AsymmetricCipherKeyPair receiver = hpke.dhkem.GeneratePrivateKey();
+        AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
 
-        Context ctxS = hpke.SetupBaseS(receiver.getPublic(), "info".getBytes());
-        Context ctxR = hpke.SetupBaseR(ctxS.getEnc(), receiver, "info".getBytes());
+        HPKEContextWithEncapsulation ctxS = hpke.setupBaseS(receiver.getPublic(), "info".getBytes());
+        HPKEContext ctxR = hpke.setupBaseR(ctxS.getEncapsulation(), receiver, "info".getBytes());
 
-        assertTrue(Arrays.areEqual(ctxS.Export("context".getBytes(), 512), ctxR.Export("context".getBytes(), 512)));
+        assertTrue(Arrays.areEqual(ctxS.export("context".getBytes(), 512), ctxR.export("context".getBytes(), 512)));
 
         byte[] aad = new byte[32];
         byte[] message = new byte[128];
@@ -137,8 +139,8 @@ public class HPKETestVectors
         {
             random.nextBytes(aad);
             random.nextBytes(message);
-            ct = ctxS.aead.Seal(aad, message);
-            assertTrue(Arrays.areEqual(message, ctxR.aead.Open(aad, ct)));
+            ct = ctxS.seal(aad, message);
+            assertTrue(Arrays.areEqual(message, ctxR.open(aad, ct)));
         }
     }
 
@@ -147,13 +149,13 @@ public class HPKETestVectors
     {
         HPKE hpke = new HPKE((byte) 2, (short) 16, (short) 1, (short) 1);
 
-        AsymmetricCipherKeyPair receiver = hpke.dhkem.GeneratePrivateKey();
-        AsymmetricCipherKeyPair sender = hpke.dhkem.GeneratePrivateKey();
+        AsymmetricCipherKeyPair receiver = hpke.generatePrivateKey();
+        AsymmetricCipherKeyPair sender = hpke.generatePrivateKey();
 
-        Context ctxS = hpke.SetupAuthS(receiver.getPublic(), "info".getBytes(), sender);
-        Context ctxR = hpke.SetupAuthR(ctxS.getEnc(), receiver, "info".getBytes(), sender.getPublic());
+        HPKEContextWithEncapsulation ctxS = hpke.setupAuthS(receiver.getPublic(), "info".getBytes(), sender);
+        HPKEContext ctxR = hpke.setupAuthR(ctxS.getEncapsulation(), receiver, "info".getBytes(), sender.getPublic());
 
-        assertTrue(Arrays.areEqual(ctxS.Export("context".getBytes(), 512), ctxR.Export("context".getBytes(), 512)));
+        assertTrue(Arrays.areEqual(ctxS.export("context".getBytes(), 512), ctxR.export("context".getBytes(), 512)));
 
         byte[] aad = new byte[32];
         byte[] message = new byte[128];
@@ -163,8 +165,8 @@ public class HPKETestVectors
         {
             random.nextBytes(aad);
             random.nextBytes(message);
-            ct = ctxS.aead.Seal(aad, message);
-            assertTrue(Arrays.areEqual(message, ctxR.aead.Open(aad, ct)));
+            ct = ctxS.seal(aad, message);
+            assertTrue(Arrays.areEqual(message, ctxR.open(aad, ct)));
         }
     }
 
@@ -227,60 +229,47 @@ public class HPKETestVectors
                         psk = Hex.decode((String)buf.get("psk"));
                         psk_id = Hex.decode((String)buf.get("psk_id"));
                     }
-//                    if(
-//                        kem_id != 16
-//                        || mode != 3
-//                        || kdf_id != 1
-//                        || aead_id != 1
-//                    )
-//                    {
-//                        encryptions.clear();
-//                        exports.clear();
-//                        continue;
-//                    }
+
                     System.out.println("test case: " + count);
-//                    System.out.println("kem_id: " + kem_id);
-//                    System.out.println("kdf_id: " + kdf_id);
-//                    System.out.println("aead_id: " + aead_id);
 
                     HPKE hpke = new HPKE(mode, kem_id, kdf_id, aead_id);
 
                     // Testing AEAD ( encryptions )
 
                     // init aead with key and nonce
-                    hpke.AEAD(key, base_nonce);
+                    AEAD aead = new AEAD(aead_id, key, base_nonce);
                     // enumerate encryptions
                     for (Encryption encryption :encryptions)
                     {
                         // seal with aad and pt and check if output is the same as ct
-                        byte[] got_ct = hpke.aead.Seal(encryption.aad, encryption.pt);
+                        byte[] got_ct = aead.seal(encryption.aad, encryption.pt);
                         assertTrue( "AEAD failed Sealing:", Arrays.areEqual(got_ct, encryption.ct));
                     }
 
                     // Testing main ( different modes )
                     // generate a private key from skRm and pkRm
-                    AsymmetricCipherKeyPair kp = hpke.dhkem.DeserializePrivateKey(skRm, pkRm);
+                    AsymmetricCipherKeyPair kp = hpke.deserializePrivateKey(skRm, pkRm);
 
                     // create a context with setupRecv
                     // use pkEm as encap, private key from above, info as info
 
-                    Context c = null;
+                    HPKEContext c = null;
                     AsymmetricKeyParameter senderPub = null;
                     switch (mode)
                     {
                         case 0:
-                            c = hpke.SetupBaseR(pkEm, kp, info);
+                            c = hpke.setupBaseR(pkEm, kp, info);
                             break;
                         case 1:
-                            c = hpke.SetupPSKR(pkEm, kp, info, psk, psk_id);
+                            c = hpke.setupPSKR(pkEm, kp, info, psk, psk_id);
                             break;
                         case 2:
-                            senderPub = hpke.dhkem.DeserializePublicKey(pkSm);
-                            c = hpke.SetupAuthR(pkEm, kp, info, senderPub);
+                            senderPub = hpke.deserializePublicKey(pkSm);
+                            c = hpke.setupAuthR(pkEm, kp, info, senderPub);
                             break;
                         case 3:
-                            senderPub = hpke.dhkem.DeserializePublicKey(pkSm);
-                            c = hpke.SetupAuthPSKR(pkEm, kp, info, psk, psk_id, senderPub);
+                            senderPub = hpke.deserializePublicKey(pkSm);
+                            c = hpke.setupAuthPSKR(pkEm, kp, info, psk, psk_id, senderPub);
                             break;
                         default:
                             fail("invalid mode");
@@ -296,13 +285,13 @@ public class HPKETestVectors
                             // test one shot api (first only!)
                             // open with pkEm, private key, info, aad, ct
                             // compare output with pt
-                            byte[] message = hpke.Open(pkEm, kp, info, encryption.aad, encryption.ct, psk, psk_id, senderPub);
+                            byte[] message = hpke.open(pkEm, kp, info, encryption.aad, encryption.ct, psk, psk_id, senderPub);
 
                             // use context open with aad, ct and compare output with pt
                             assertTrue("Single-shot failed", Arrays.areEqual(message, encryption.pt));
                         }
 
-                        byte[] got_pt = c.aead.Open(encryption.aad, encryption.ct);
+                        byte[] got_pt = c.open(encryption.aad, encryption.ct);
                         assertTrue("context failed Open", Arrays.areEqual(got_pt, encryption.pt));
                     }
 
@@ -310,7 +299,7 @@ public class HPKETestVectors
                     for (Export export : exports)
                     {
                         // use context export with exporter context and L
-                        byte[] got_val = c.Export(export.exporterContext, export.L);
+                        byte[] got_val = c.export(export.exporterContext, export.L);
 
                         // compare output with exported value
                         assertTrue("context failed Open", Arrays.areEqual(got_val, export.exportedValue));
