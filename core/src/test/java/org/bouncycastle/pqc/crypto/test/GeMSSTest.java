@@ -67,10 +67,10 @@ public class GeMSSTest
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));
                         byte[] seed = Hex.decode((String)buf.get("seed"));
 
-//                        if (sampler.skipTest(count))
-//                        {
-//                            continue;
-//                        }
+                        if (sampler.skipTest(count))
+                        {
+                            continue;
+                        }
 
                         GeMSSKeyPairGenerator kpGen = new GeMSSKeyPairGenerator();
                         SecureRandom random = new NISTSecureRandom(seed, null);

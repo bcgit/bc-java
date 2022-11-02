@@ -411,4 +411,110 @@ class Pointer
         }
         return res;
     }
+
+    public void mul_gf2x(Pointer A, Pointer B, int HFEnq, int NB_WORD_GFqn, int HFEnr)
+    {
+        int i, j, k, b_cp = B.cp, a_cp, c_cp, jc;
+        long b, mask, mask1, mask2;
+        for (i = 0; i < HFEnq; ++i)
+        {
+            b = B.array[b_cp];
+            mask = -(b & 1L);
+            a_cp = A.cp;
+            c_cp = cp;
+            /* j=0 */
+            for (j = 0; j < NB_WORD_GFqn; ++j)
+            {
+                array[c_cp++] ^= A.array[a_cp++] & mask;
+            }
+//            if (HFEnr != 0)
+//            {
+            /* The last 64-bit block BL of A contains HFEnr bits.
+               So, there is no overflow for BL<<j while j<=(64-HFEnr). */
+            for (j = 1, jc = 63; j <= 64 - HFEnr; ++j, --jc)
+            {
+                a_cp = A.cp;
+                c_cp = cp;
+                mask = -((b >>> j) & 1L);
+                mask1 = A.array[a_cp++] & mask;
+                array[c_cp++] ^= mask1 << j;
+                for (k = 1; k < NB_WORD_GFqn; ++k)
+                {
+                    mask2 = A.array[a_cp++] & mask;
+                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
+                    mask1 = mask2;
+                }
+            }
+//            }
+//            else
+//            {
+//                j = 1;
+//            }
+            for (; j < 64; ++j, --jc)
+            {
+                a_cp = A.cp;
+                c_cp = cp;
+                mask = -((b >>> j) & 1L);
+                mask1 = A.array[a_cp++] & mask;
+                array[c_cp++] ^= mask1 << j;
+                for (k = 1; k < NB_WORD_GFqn; ++k)
+                {
+                    mask2 = A.array[a_cp++] & mask;
+                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
+                    mask1 = mask2;
+                }
+                array[c_cp] ^= mask1 >>> jc;
+            }
+            b_cp++;
+            cp++;
+        }
+//        if (HFEnr != 0)
+//        {
+        b = B.array[b_cp];
+        /* j=0 */
+        mask = -(b & 1L);
+        a_cp = A.cp;
+        c_cp = cp;
+        /* j=0 */
+        for (j = 0; j < NB_WORD_GFqn; ++j)
+        {
+            array[c_cp++] ^= A.array[a_cp++] & mask;
+        }
+        /* The last 64-bit block BL of A contains HFEnr bits. So, there is no overflow for BL<<j while j<=(64-HFEnr). */
+        int loop_end = HFEnr > 32 ? 65 - HFEnr : HFEnr;
+        for (j = 1, jc = 63; j < loop_end; ++j, --jc)
+        {
+            a_cp = A.cp;
+            c_cp = cp;
+            mask = -((b >>> j) & 1L);
+            mask1 = A.array[a_cp++] & mask;
+            array[c_cp++] ^= mask1 << j;
+            for (k = 1; k < NB_WORD_GFqn; ++k)
+            {
+                mask2 = A.array[a_cp++] & mask;
+                array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
+                mask1 = mask2;
+            }
+        }
+        if (HFEnr > 32)
+        {
+            for (; j < HFEnr; ++j, --jc)
+            {
+                a_cp = A.cp;
+                c_cp = cp;
+                mask = -((b >>> j) & 1L);
+                mask1 = A.array[a_cp++] & mask;
+                array[c_cp++] ^= mask1 << j;
+                for (k = 1; k < NB_WORD_GFqn; ++k)
+                {
+                    mask2 = A.array[a_cp++] & mask;
+                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
+                    mask1 = mask2;
+                }
+                array[c_cp] ^= mask1 >>> jc;
+            }
+        }
+//        }
+        cp = 0;
+    }
 }
