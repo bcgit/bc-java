@@ -90,8 +90,6 @@ public class HPKE
 
     private HPKEContext keySchedule(byte mode, byte[] sharedSecret, byte[] info, byte[] psk, byte[] pskid)
     {
-        ////System.out.println("\nKeySchedule");
-
         VerifyPSKInputs(mode, psk, pskid);
         byte[] suiteId = Arrays.concatenate(
             Strings.toByteArray("HPKE"),
@@ -99,25 +97,19 @@ public class HPKE
             Pack.shortToBigEndian(kdfId),
             Pack.shortToBigEndian(aeadId));
 
-        ////System.out.println("suiteId" + ": " + Hex.toHexString(suiteId));
         byte[] pskidHash = hkdf.LabeledExtract(null, suiteId, "psk_id_hash", pskid);
-        ////System.out.println("pskidHash" + ": " + Hex.toHexString(pskidHash));
 
         byte[] infoHash = hkdf.LabeledExtract(null, suiteId, "info_hash", info);
-        ////System.out.println("infoHash" + ": " + Hex.toHexString(infoHash));
 
         byte[] modeArray = new byte[1];
         modeArray[0] = mode;
         byte[] keyScheduleContext = Arrays.concatenate(modeArray, pskidHash, infoHash);
-        ////System.out.println("keyScheduleContext" + ": " + Hex.toHexString(keyScheduleContext));
 
         byte[] secret = hkdf.LabeledExtract(sharedSecret, suiteId, "secret", psk);
 
         byte[] key = hkdf.LabeledExpand(secret, suiteId, "key", keyScheduleContext, Nk);
         byte[] base_nonce = hkdf.LabeledExpand(secret, suiteId, "base_nonce", keyScheduleContext, 12);//Nn
         byte[] exporter_secret = hkdf.LabeledExpand(secret, suiteId, "exp", keyScheduleContext, hkdf.getHashSize());//todo Nk*2 with replace hash digest size
-        ////System.out.println("exporter_secret" + ": " + Hex.toHexString(exporter_secret));
-        ////System.out.println("L:" + hkdf.getHashSize());
 
         return new HPKEContext(new AEAD(aeadId, key, base_nonce), hkdf, exporter_secret, suiteId);
     }
@@ -127,6 +119,16 @@ public class HPKE
         return dhkem.GeneratePrivateKey();
     }
 
+
+    public byte[] serializePublicKey(AsymmetricKeyParameter pk)
+    {
+        return dhkem.SerializePublicKey(pk);
+    }
+
+    public byte[] serializePrivateKey(AsymmetricKeyParameter sk)
+    {
+        return dhkem.SerializePrivateKey(sk);
+    }
     public AsymmetricKeyParameter deserializePublicKey(byte[] pkEncoded)
     {
         return dhkem.DeserializePublicKey(pkEncoded);
@@ -258,7 +260,6 @@ public class HPKE
     public HPKEContext setupBaseR(byte[] enc, AsymmetricCipherKeyPair skR, byte[] info)
     {
         byte[] sharedSecret = dhkem.Decap(enc, skR);
-//        System.out.println("sharedSecret: " + Hex.toHexString(sharedSecret));
         return keySchedule(mode_base, sharedSecret, info, default_psk, default_psk_id);
     }
 

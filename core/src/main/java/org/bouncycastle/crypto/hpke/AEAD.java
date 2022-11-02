@@ -60,7 +60,6 @@ public class AEAD
                 throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
         cipher.init(true, params);
-        //todo process aad here or in init?
         cipher.processAADBytes(aad, 0, aad.length);
         byte[] ct = new byte[cipher.getOutputSize(pt.length)];
         int len = cipher.processBytes(pt, 0, pt.length, ct, 0);
@@ -82,15 +81,11 @@ public class AEAD
             case HPKE.aead_AES_GCM256:
             case HPKE.aead_CHACHA20_POLY1305:
                 params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
-//                params = new AEADParameters(new KeyParameter(key), 128, ComputeNonce(), aad);
                 break;
             case HPKE.aead_EXPORT_ONLY:
             default:
                 throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
-        ////System.out.println("aad: " + Hex.toHexString(aad));
-        ////System.out.println("ct: " + Hex.toHexString(ct));
-//        CipherParameters params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
 
         cipher.init(false, params);
         cipher.processAADBytes(aad, 0, aad.length);
@@ -106,9 +101,6 @@ public class AEAD
     private byte[] ComputeNonce()
     {
         byte[] seq_bytes = Pack.longToBigEndian(seq);
-        ////System.out.println("base_nonce: " + Hex.toHexString(baseNonce));
-        ////System.out.println("seq: " + seq);
-
         int Nn = baseNonce.length;
         byte[] nonce = Arrays.clone(baseNonce);
         //xor
@@ -116,7 +108,6 @@ public class AEAD
         {
             nonce[Nn-8+i] ^= seq_bytes[i];
         }
-        ////System.out.println("nonce: " + Hex.toHexString(nonce));
         return nonce;
     }
 
