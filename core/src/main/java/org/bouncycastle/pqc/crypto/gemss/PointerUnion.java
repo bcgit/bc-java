@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 class PointerUnion
     extends Pointer
 {
-    private int remainder;
+    protected int remainder;
     private int size;
 
     public PointerUnion(byte[] arr)
@@ -218,12 +218,29 @@ class PointerUnion
         }
     }
 
-    public void setXorByte(byte v)
+    public void setXorRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
+    {
+        if (remainder == 0)
+        {
+            super.setXorRangeAndMask(outOff, p, inOff, len, mask);
+            return;
+        }
+        outOff += cp;
+        long v;
+        for (int i = 0; i < len; ++i, ++outOff)
+        {
+            v = p.get(i + inOff) & mask;
+            array[outOff] ^= v << (remainder << 3);
+            array[outOff + 1] ^= v >>> ((8 - remainder) << 3);
+        }
+    }
+
+    public void setXorByte(int v)
     {
         array[cp] ^= (v & 0xFFL) << (remainder << 3);
     }
 
-    public void setXorByte(int p, byte v)
+    public void setXorByte(int p, long v)
     {
         int r = p + remainder + (cp << 3);
         int q = r >>> 3;
@@ -231,7 +248,7 @@ class PointerUnion
         array[q] ^= (v & 0xFFL) << (r << 3);
     }
 
-    public void setAndByte(int p, byte v)
+    public void setAndByte(int p, long v)
     {
         int r = p + remainder + (cp << 3);
         int q = r >>> 3;
@@ -254,7 +271,7 @@ class PointerUnion
         }
     }
 
-    public void setByte(byte v)
+    public void setByte(int v)
     {
         array[cp] = ((v & 0xFFL) << (remainder << 3)) | (array[cp] & (-1L >>> ((8 - remainder) << 3)));
     }
@@ -312,4 +329,5 @@ class PointerUnion
         cp = p.cp;
         remainder = p.remainder;
     }
+
 }
