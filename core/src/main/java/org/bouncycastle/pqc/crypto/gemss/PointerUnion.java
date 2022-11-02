@@ -329,5 +329,4 @@ class PointerUnion
         cp = p.cp;
         remainder = p.remainder;
     }
-
 }

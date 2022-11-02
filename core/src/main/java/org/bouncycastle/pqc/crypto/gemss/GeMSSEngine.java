@@ -731,6 +731,7 @@ class GeMSSEngine
         B.move(BOff);
         //Pointer C = new Pointer(NB_WORD_MUL);
         Buffer_NB_WORD_MUL.reset();
+        Buffer_NB_WORD_MUL.mul_gf2x(A, B, HFEnq, NB_WORD_GFqn, HFEnr);
         //mul_gf2x
         /**
          * @brief Multiplication in GF(2)[x].
@@ -739,51 +740,51 @@ class GeMSSEngine
          * @param[out] C   C=A*B in GF(2)[x] (the result is not reduced).
          * @remark Constant-time implementation.
          */
-        for (i = 0; i < HFEnq; ++i)
-        {
-            b = B.get();
-            /* j=0 */
-            Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
-//            if (HFEnr != 0)
-//            {
-            /* The last 64-bit block BL of A contains HFEnr bits.
-               So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-            for (j = 1; j <= 64 - HFEnr; ++j)
-            {
-                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-            }
-//            }
-//            else
-//            {
-//                j = 1;
-//            }
-            for (; j < 64; ++j)
-            {
-                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-            }
-            B.moveIncremental();
-            Buffer_NB_WORD_MUL.moveIncremental();
-        }
-//        if (HFEnr != 0)
+//        for (i = 0; i < HFEnq; ++i)
 //        {
-        b = B.get();
-        /* j=0 */
-        Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
-        /* The last 64-bit block BL of A contains HFEnr bits. So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-        int loop_end = HFEnr > 32 ? 65 - HFEnr : HFEnr;
-        for (j = 1; j < loop_end; ++j)
-        {
-            Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-        }
-        if (HFEnr > 32)
-        {
-            for (; j < HFEnr; ++j)
-            {
-                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-            }
-        }
+//            b = B.get();
+//            /* j=0 */
+//            Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
+////            if (HFEnr != 0)
+////            {
+//            /* The last 64-bit block BL of A contains HFEnr bits.
+//               So, there is no overflow for BL<<j while j<=(64-HFEnr). */
+//            for (j = 1; j <= 64 - HFEnr; ++j)
+//            {
+//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
+//            }
+////            }
+////            else
+////            {
+////                j = 1;
+////            }
+//            for (; j < 64; ++j)
+//            {
+//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
+//            }
+//            B.moveIncremental();
+//            Buffer_NB_WORD_MUL.moveIncremental();
 //        }
-        Buffer_NB_WORD_MUL.indexReset();
+////        if (HFEnr != 0)
+////        {
+//        b = B.get();
+//        /* j=0 */
+//        Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
+//        /* The last 64-bit block BL of A contains HFEnr bits. So, there is no overflow for BL<<j while j<=(64-HFEnr). */
+//        int loop_end = HFEnr > 32 ? 65 - HFEnr : HFEnr;
+//        for (j = 1; j < loop_end; ++j)
+//        {
+//            Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
+//        }
+//        if (HFEnr > 32)
+//        {
+//            for (; j < HFEnr; ++j)
+//            {
+//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
+//            }
+//        }
+////        }
+//        Buffer_NB_WORD_MUL.indexReset();
         //rem_gf2n
         /**
          * @brief Reduction in GF(2^n) of a (2n-1)-coefficients polynomial in
