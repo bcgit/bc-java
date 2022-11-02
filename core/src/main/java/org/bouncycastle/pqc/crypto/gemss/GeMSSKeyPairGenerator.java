@@ -40,7 +40,7 @@ public class GeMSSKeyPairGenerator
         final int SIZE_PK_HFE = (engine.NB_MONOMIAL_PK * engine.HFEm + 7) >> 3;
         byte[] pk = new byte[SIZE_PK_HFE];
         System.arraycopy(seed, 0, sk, 0, sk.length);
-        F.fill(0,sk_uncomp,0,sk_uncomp.length);
+        F.fill(0, sk_uncomp, 0, sk_uncomp.length);
 //        engine.BytesToLongs(sk_uncomp, 0, F.getArray(), F.getIndex(), sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
         Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
@@ -194,7 +194,8 @@ public class GeMSSKeyPairGenerator
                 /* Compute a dot product with complete rows */
                 //vecMatProductnvn_gf2(tmp, S_cpj, MQS_cpi);
                 engine.vecMatProduct(tmp, S_cpj, MQS_cpi, 0, GeMSSEngine.FunctionParams.NVN);
-                engine.add2_gf2(MQS2_cp, tmp, engine.NB_WORD_GFqn);
+                MQS2_cp.setXorRange(0, tmp, 0, engine.NB_WORD_GFqn);
+                //engine.add2_gf2(MQS2_cp, tmp, engine.NB_WORD_GFqn);
                 MQS_cpi.move(engine.NB_WORD_GFqn * engine.HFEnv);
                 /* update the next element to compute */
                 MQS2_cp.move(engine.NB_WORD_GFqn);

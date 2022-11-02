@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.gemss;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
