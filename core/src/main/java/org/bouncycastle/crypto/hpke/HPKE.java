@@ -137,6 +137,11 @@ public class HPKE
         return dhkem.DeserializePrivateKey(skEncoded, pkEncoded);
     }
 
+    public AsymmetricCipherKeyPair deriveKeyPair(byte[] ikm)
+    {
+        return dhkem.DeriveKeyPair(ikm);
+    }
+
     public byte[][] sendExport(AsymmetricKeyParameter pkR, byte[] info, byte[] exporterContext, int L,
                                byte[] psk, byte[] pskId, AsymmetricCipherKeyPair skS)
     {
