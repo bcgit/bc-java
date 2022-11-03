@@ -760,7 +760,7 @@ class GeMSSEngine
             else if (HFEnr != 0)
             {
                 //REM544_PENTANOMIAL_GF2X: fgemss256
-                Buffer_NB_WORD_MUL.REM544_PENTANOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array,K1, K2, K3,
+                Buffer_NB_WORD_MUL.REM544_PENTANOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K1, K2, K3,
                     KI, KI64, K164, K264, K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
                 A.changeIndex(A_orig);
                 B.changeIndex(B_orig);
@@ -840,7 +840,6 @@ class GeMSSEngine
                 //REM288_SPECIALIZED_TRINOMIAL_GF2X: whitegemss192, bluegemss192
             }
         }
-
 
 
 //        if (KI != 0)
