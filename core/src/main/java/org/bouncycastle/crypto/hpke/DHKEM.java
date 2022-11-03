@@ -129,7 +129,7 @@ class DHKEM
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
             this.agreement = new XDHBasicAgreement();
             Nsecret = 32;
-
+            Nsk = 32;
             this.kpGen = new X25519KeyPairGenerator();
             this.kpGen.init(new X25519KeyGenerationParameters(new SecureRandom()));
 
@@ -138,6 +138,7 @@ class DHKEM
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
             this.agreement = new XDHBasicAgreement();
             Nsecret = 64;
+            Nsk = 56;
 
             this.kpGen = new X448KeyPairGenerator();
             this.kpGen.init(new X448KeyGenerationParameters(new SecureRandom()));
@@ -148,7 +149,7 @@ class DHKEM
         }
     }
 
-    private byte[] SerializePublicKey(AsymmetricKeyParameter key)
+    public byte[] SerializePublicKey(AsymmetricKeyParameter key)
     {
 
         switch (kemId)
@@ -161,6 +162,22 @@ class DHKEM
             return ((X448PublicKeyParameters)key).getEncoded();
         case HPKE.kem_X25519_SHA256:
             return ((X25519PublicKeyParameters)key).getEncoded();
+        default:
+            throw new IllegalStateException("invalid kem id");
+        }
+    }
+    public byte[] SerializePrivateKey(AsymmetricKeyParameter key)
+    {
+        switch (kemId)
+        {
+        case HPKE.kem_P256_SHA256:
+        case HPKE.kem_P384_SHA348:
+        case HPKE.kem_P521_SHA512:
+            return formatBigIntegerBytes(((ECPrivateKeyParameters)key).getD().toByteArray(), Nsk);
+        case HPKE.kem_X448_SHA512:
+            return ((X448PrivateKeyParameters)key).getEncoded();
+        case HPKE.kem_X25519_SHA256:
+            return ((X25519PrivateKeyParameters)key).getEncoded();
         default:
             throw new IllegalStateException("invalid kem id");
         }
@@ -224,7 +241,7 @@ class DHKEM
 
     public AsymmetricCipherKeyPair GeneratePrivateKey()
     {
-        return kpGen.generateKeyPair();
+        return kpGen.generateKeyPair(); // todo: can be replaced with deriveKeyPair(random)
     }
 
     public AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
@@ -244,13 +261,13 @@ class DHKEM
                 {
                     throw new IllegalStateException("DeriveKeyPairError");
                 }
-                counterArray[0] = (byte)counter; // todo check if this is the correct endian
+                counterArray[0] = (byte)counter;
                 byte[] bytes = hkdf.LabeledExpand(dkp_prk, suiteID, "candidate", counterArray, Nsk);
                 bytes[0] = (byte)(bytes[0] & bitmask);
 
 
                 // generating keypair
-                BigInteger d = new BigInteger(bytes);
+                BigInteger d = new BigInteger(1, bytes);
                 if (ValidateSk(d))
                 {
                     ECPoint Q = new FixedPointCombMultiplier().multiply(domainParams.getG(), d);
@@ -282,24 +299,13 @@ class DHKEM
     protected byte[][] Encap(AsymmetricKeyParameter pkR)
     {
         byte[][] output = new byte[2][];
-        //init here or in constructor
-        AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair();// todo: can be replaced with deriveKeyPair(random)
 
         //DH
         agreement.init(kpE.getPrivate());
 
-        byte[] secret = new byte[agreement.getFieldSize()];
         byte[] temp = agreement.calculateAgreement(pkR).toByteArray();
-        ; // add leading zeros
-//        System.out.println("temp: " + Hex.toHexString(temp));
-        if (temp.length <= secret.length)
-        {
-            System.arraycopy(temp, 0, secret, secret.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret.length, secret, 0, secret.length);
-        }
+        byte [] secret = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         byte[] enc = SerializePublicKey(kpE.getPublic());
         byte[] pkRm = SerializePublicKey(pkR);
@@ -314,37 +320,16 @@ class DHKEM
 
     protected byte[] Decap(byte[] enc, AsymmetricCipherKeyPair kpR)
     {
-        ////System.out.println("\nDecap");
-        ////System.out.println("enc: " + Hex.toHexString(enc));
-
         AsymmetricKeyParameter pkE = DeserializePublicKey(enc);
 
         //DH
         agreement.init(kpR.getPrivate());
 
-        ////System.out.println("size: " + agreement.getFieldSize());
-
-
-        byte[] secret = new byte[agreement.getFieldSize()];
         byte[] temp = agreement.calculateAgreement(pkE).toByteArray(); // add leading zeros
-//        System.out.println("temp: " + Hex.toHexString(temp));
-        if (temp.length <= secret.length)
-        {
-            System.arraycopy(temp, 0, secret, secret.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret.length, secret, 0, secret.length);
-        }
-
-        ////System.out.println("size: " + secret.length);
-//        System.out.println("dh: " + Hex.toHexString(secret));
+        byte[] secret = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         byte[] pkRm = SerializePublicKey(kpR.getPublic());
         byte[] KEMContext = Arrays.concatenate(enc, pkRm);
-//        System.out.println("pkRm: " + Hex.toHexString(pkRm));
-//        System.out.println("KEMContext: " + Hex.toHexString(KEMContext));
-
 
         byte[] sharedSecret = ExtractAndExpand(secret, KEMContext);
         return sharedSecret;
@@ -354,34 +339,18 @@ class DHKEM
     {
         byte[][] output = new byte[2][];
 
-        AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair(); // todo: can be replaced with deriveKeyPair(random)
 
 
         // DH(skE, pkR)
         agreement.init(kpE.getPrivate());
-        byte[] secret1 = new byte[agreement.getFieldSize()];
         byte[] temp = agreement.calculateAgreement(pkR).toByteArray();
-        if (temp.length <= secret1.length)
-        {
-            System.arraycopy(temp, 0, secret1, secret1.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret1.length, secret1, 0, secret1.length);
-        }
+        byte[] secret1 = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         // DH(skS, pkR)
         agreement.init(kpS.getPrivate());
-        byte[] secret2 = new byte[agreement.getFieldSize()];
         temp = agreement.calculateAgreement(pkR).toByteArray();
-        if (temp.length <= secret2.length)
-        {
-            System.arraycopy(temp, 0, secret2, secret2.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret2.length, secret2, 0, secret2.length);
-        }
+        byte[] secret2 = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         byte[] secret = Arrays.concatenate(secret1, secret2);
         byte[] enc = SerializePublicKey(kpE.getPublic());
@@ -404,29 +373,14 @@ class DHKEM
         // DH(skR, pkE)
         agreement.init(kpR.getPrivate());
 
-        byte[] secret1 = new byte[agreement.getFieldSize()];
         byte[] temp = agreement.calculateAgreement(pkE).toByteArray(); // add leading zeros
-        if (temp.length <= secret1.length)
-        {
-            System.arraycopy(temp, 0, secret1, secret1.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret1.length, secret1, 0, secret1.length);
-        }
+        byte[] secret1 = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         // DH(skR, pkS)
         agreement.init(kpR.getPrivate());
-        byte[] secret2 = new byte[agreement.getFieldSize()];
         temp = agreement.calculateAgreement(pkS).toByteArray();
-        if (temp.length <= secret2.length)
-        {
-            System.arraycopy(temp, 0, secret2, secret2.length - temp.length, temp.length);
-        }
-        else
-        {
-            System.arraycopy(temp, temp.length - secret2.length, secret2, 0, secret2.length);
-        }
+        byte[] secret2 = formatBigIntegerBytes(temp, agreement.getFieldSize());
+
         byte[] secret = Arrays.concatenate(secret1, secret2);
 
         byte[] pkRm = SerializePublicKey(kpR.getPublic());
@@ -439,20 +393,25 @@ class DHKEM
 
     private byte[] ExtractAndExpand(byte[] dh, byte[] kemContext)
     {
-//        System.out.println("\nExtract and Expand");
-//        System.out.println("dh: " + Hex.toHexString(dh));
-//        System.out.println("kemContext: " + Hex.toHexString(kemContext));
-
         byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
-//        System.out.println("suiteID: " + Hex.toHexString(suiteID));
 
         byte[] eae_prk = hkdf.LabeledExtract(null, suiteID, "eae_prk", dh);
-//        System.out.println("eae_prk: " + Hex.toHexString(eae_prk));
 
         byte[] sharedSecret = hkdf.LabeledExpand(eae_prk, suiteID, "shared_secret", kemContext, Nsecret);
-//        System.out.println("dhLen: " + dh.length);
-//        System.out.println();
-
         return sharedSecret;
+    }
+
+    private byte[] formatBigIntegerBytes(byte[] bigIntBytes, int outputSize)
+    {
+        byte[] output = new byte[outputSize];
+        if (bigIntBytes.length <= outputSize)
+        {
+            System.arraycopy(bigIntBytes, 0, output, outputSize - bigIntBytes.length, bigIntBytes.length);
+        }
+        else
+        {
+            System.arraycopy(bigIntBytes, bigIntBytes.length - outputSize, output, 0, outputSize);
+        }
+        return output;
     }
 }

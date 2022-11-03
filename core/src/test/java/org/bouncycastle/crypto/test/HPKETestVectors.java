@@ -196,13 +196,13 @@ public class HPKETestVectors
                 {
                     String count = (String)buf.get("count");
 
-//                    System.out.println("test case: " + count);
                     byte mode = Byte.parseByte(buf.get("mode"));
                     short kem_id = Short.parseShort((String)buf.get("kem_id"));
                     short kdf_id = Short.parseShort((String)buf.get("kdf_id"));
                     short aead_id = (short) Integer.parseInt((String)buf.get("aead_id"));
                     byte[] info = Hex.decode((String)buf.get("info"));
                     byte[] ikmR = Hex.decode((String)buf.get("ikmR"));
+                    byte[] ikmS = null;    // -> mode 2, 3
                     byte[] ikmE = Hex.decode((String)buf.get("ikmE"));
                     byte[] skRm = Hex.decode((String)buf.get("skRm"));
                     byte[] skSm = null;    // -> mode 2, 3
@@ -221,6 +221,7 @@ public class HPKETestVectors
                     byte[] exporter_secret = Hex.decode((String)buf.get("exporter_secret"));
                     if (mode == 2 || mode == 3)
                     {
+                        ikmS = Hex.decode((String)buf.get("ikmS"));
                         skSm = Hex.decode((String)buf.get("skSm"));
                         pkSm = Hex.decode((String)buf.get("pkSm"));
                     }
@@ -231,6 +232,7 @@ public class HPKETestVectors
                     }
 
                     System.out.println("test case: " + count);
+//                    System.out.println("mode: " + mode + " kemID: " + kem_id + " kdfID: " + kdf_id + " aeadID: " + aead_id);
 
                     HPKE hpke = new HPKE(mode, kem_id, kdf_id, aead_id);
 
@@ -247,8 +249,32 @@ public class HPKETestVectors
                     }
 
                     // Testing main ( different modes )
+
+                    // generate key pair from ikmR ( should be the same as below )
+                    AsymmetricCipherKeyPair derivedKeyPairR = hpke.deriveKeyPair(ikmR);
                     // generate a private key from skRm and pkRm
                     AsymmetricCipherKeyPair kp = hpke.deserializePrivateKey(skRm, pkRm);
+
+                    // tesing serialize
+                    assertTrue("serialize public key failed", Arrays.areEqual(pkRm, hpke.serializePublicKey(kp.getPublic())));
+                    assertTrue("serialize private key failed", Arrays.areEqual(skRm, hpke.serializePrivateKey(kp.getPrivate())));
+
+                    // testing receiver derive key pair
+                    assertTrue("receiver derived public key pair incorrect", Arrays.areEqual(pkRm, hpke.serializePublicKey(derivedKeyPairR.getPublic())));
+                    assertTrue("receiver derived secret key pair incorrect", Arrays.areEqual(skRm, hpke.serializePrivateKey(derivedKeyPairR.getPrivate())));
+
+                    // testing sender's derived key pair
+                    if (mode == 2 || mode == 3)
+                    {
+                        AsymmetricCipherKeyPair derivedSenderKeyPair = hpke.deriveKeyPair(ikmS);
+                        assertTrue("sender derived public key pair incorrect", Arrays.areEqual(pkSm, hpke.serializePublicKey(derivedSenderKeyPair.getPublic())));
+                        assertTrue("sender derived private key pair incorrect", Arrays.areEqual(skSm, hpke.serializePrivateKey(derivedSenderKeyPair.getPrivate())));
+                    }
+
+                    // testing ephemeral derived key pair
+                    AsymmetricCipherKeyPair derivedEKeyPair = hpke.deriveKeyPair(ikmE);
+                    assertTrue("ephemeral derived public key pair incorrect", Arrays.areEqual(pkEm, hpke.serializePublicKey(derivedEKeyPair.getPublic())));
+                    assertTrue("ephemeral derived private key pair incorrect", Arrays.areEqual(skEm, hpke.serializePrivateKey(derivedEKeyPair.getPrivate())));
 
                     // create a context with setupRecv
                     // use pkEm as encap, private key from above, info as info
@@ -374,8 +400,6 @@ public class HPKETestVectors
                     }
                 }
             }
-
-
         }
         System.out.println("testing successful!");
 
