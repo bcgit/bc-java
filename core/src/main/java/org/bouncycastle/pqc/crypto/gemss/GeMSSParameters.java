@@ -103,6 +103,7 @@ public class GeMSSParameters
                             int HFEDegI, int HFEDegJ)// int HFEs
     {
         this.name = name;
+        //System.out.print(name +" ");
         this.engine = new GeMSSEngine(K, HFEn, HFEv, HFEDELTA, NB_ITE, HFEDeg, HFEDegI, HFEDegJ);//, HFEs
     }
 

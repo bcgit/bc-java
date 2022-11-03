@@ -41,7 +41,7 @@ class GeMSSEngine
     //final int GFq = 2;
     final int SIZE_SEED_SK;
     int MQnv_GFqn_SIZE;
-    final int NB_WORD_MUL;
+    final int NB_WORD_MUL;//{6, 9, 12, 13, 17}
     int K3;
     int K2;
     int K1;
@@ -723,8 +723,7 @@ class GeMSSEngine
     /* Function mul in GF(2^x), then modular reduction */
     void mul_gf2n(Pointer P, int POff, Pointer A, int AOff, Pointer B, int BOff)
     {
-        long b;
-        int i, j;
+        int i;
         int P_orig = P.getIndex(), A_orig = A.getIndex(), B_orig = B.getIndex();
         P.move(POff);
         A.move(AOff);
@@ -732,60 +731,6 @@ class GeMSSEngine
         //Pointer C = new Pointer(NB_WORD_MUL);
         Buffer_NB_WORD_MUL.reset();
         Buffer_NB_WORD_MUL.mul_gf2x(A, B, HFEnq, NB_WORD_GFqn, HFEnr);
-        //mul_gf2x
-        /**
-         * @brief Multiplication in GF(2)[x].
-         * @param[in] A   An element of GF(2^n).
-         * @param[in] B   An element of GF(2^n).
-         * @param[out] C   C=A*B in GF(2)[x] (the result is not reduced).
-         * @remark Constant-time implementation.
-         */
-//        for (i = 0; i < HFEnq; ++i)
-//        {
-//            b = B.get();
-//            /* j=0 */
-//            Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
-////            if (HFEnr != 0)
-////            {
-//            /* The last 64-bit block BL of A contains HFEnr bits.
-//               So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-//            for (j = 1; j <= 64 - HFEnr; ++j)
-//            {
-//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-//            }
-////            }
-////            else
-////            {
-////                j = 1;
-////            }
-//            for (; j < 64; ++j)
-//            {
-//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-//            }
-//            B.moveIncremental();
-//            Buffer_NB_WORD_MUL.moveIncremental();
-//        }
-////        if (HFEnr != 0)
-////        {
-//        b = B.get();
-//        /* j=0 */
-//        Buffer_NB_WORD_MUL.setXorRangeAndMask(0, A, 0, NB_WORD_GFqn, -(b & 1L));
-//        /* The last 64-bit block BL of A contains HFEnr bits. So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-//        int loop_end = HFEnr > 32 ? 65 - HFEnr : HFEnr;
-//        for (j = 1; j < loop_end; ++j)
-//        {
-//            Buffer_NB_WORD_MUL.setXorRangeAndMaskRotate(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-//        }
-//        if (HFEnr > 32)
-//        {
-//            for (; j < HFEnr; ++j)
-//            {
-//                Buffer_NB_WORD_MUL.setXorRangeAndMaskRotateOverflow(0, A, 0, NB_WORD_GFqn, -((b >>> j) & 1L), j);
-//            }
-//        }
-////        }
-//        Buffer_NB_WORD_MUL.indexReset();
-        //rem_gf2n
         /**
          * @brief Reduction in GF(2^n) of a (2n-1)-coefficients polynomial in
          * GF(2)[x].
@@ -799,6 +744,105 @@ class GeMSSEngine
          * @remark Constant-time implementation.
          */
         long R;
+        if (K2 != 0)
+        {
+            if ((HFEn == 544) && (K3 == 128))
+            {
+                //REM544_PENTANOMIAL_K3_IS_128_GF2X: dualmodems256
+                Buffer_NB_WORD_MUL.REM544_PENTANOMIAL_K3_IS_128_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K1,
+                    K2, KI, KI64, K164, K264, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+
+            }
+            else if (HFEnr != 0)
+            {
+                //REM544_PENTANOMIAL_GF2X: fgemss256
+                Buffer_NB_WORD_MUL.REM544_PENTANOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array,K1, K2, K3,
+                    KI, KI64, K164, K264, K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+            }
+        }
+        else
+        {
+            if (HFEn > 256 && HFEn < 289 && K3 > 32 && K3 < 64)
+            {
+                //System.out.println("REM288_TRINOMIAL_GF2X");
+                //REM288_TRINOMIAL_GF2X:   fgemss128 (NOT SURE), REM288_TRINOMIAL_GF2X
+//                Buffer_NB_WORD_MUL.REM288_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3, KI, KI64,
+//                    K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                //REM288_SPECIALIZED_TRINOMIAL_GF2X: whitegemss192, bluegemss192, redgemss192, magentagemss192, cyangemss192
+                Buffer_NB_WORD_MUL.REM288_SPECIALIZED_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3, KI, KI64,
+                    K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+            }
+            else if (HFEn == 354)
+            {
+                //System.out.println("REM384_SPECIALIZED_TRINOMIAL_GF2X");
+                //REM384_SPECIALIZED_TRINOMIAL_GF2X: gemss256, whitegemss256, cyangemss256, magentagemss256
+                Buffer_NB_WORD_MUL.REM384_SPECIALIZED_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3,
+                    KI, KI64, K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+            }
+            else if (HFEn == 358)
+            {
+                //System.out.println("REM384_SPECIALIZED358_TRINOMIAL_GF2X");
+                //REM384_SPECIALIZED358_TRINOMIAL_GF2X: bluegemss256, redgemss256
+                Buffer_NB_WORD_MUL.REM384_SPECIALIZED358_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3,
+                    KI, KI64, K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+            }
+            else if (HFEn == 402)
+            {
+                //System.out.println("REM402_SPECIALIZED_TRINOMIAL_GF2X");
+                //REM402_SPECIALIZED_TRINOMIAL_GF2X: fgemss192, dualmodems192
+                Buffer_NB_WORD_MUL.REM402_SPECIALIZED_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3,
+                    KI, KI64, K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                A.changeIndex(A_orig);
+                B.changeIndex(B_orig);
+                P.changeIndex(P_orig);
+                return;
+            }
+            else
+            {
+                switch (NB_WORD_MUL)
+                {
+                case 6:
+                    Buffer_NB_WORD_MUL.REM192_SPECIALIZED_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3, KI, KI64,
+                        K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                    A.changeIndex(A_orig);
+                    B.changeIndex(B_orig);
+                    P.changeIndex(P_orig);
+                    return;
+                case 9:
+                    Buffer_NB_WORD_MUL.REM288_SPECIALIZED_TRINOMIAL_GF2X(P.array, P.getIndex(), Buffer_NB_WORD_MUL.array, K3, KI, KI64,
+                        K364, Buffer_NB_WORD_GFqn.array, MASK_GF2n);
+                    A.changeIndex(A_orig);
+                    B.changeIndex(B_orig);
+                    P.changeIndex(P_orig);
+                    return;
+                }
+                //REM192_SPECIALIZED_TRINOMIAL_GF2X: gemss128, bluegemss128, redgemss128, whitegemss128, magentagemss128
+                //REM288_SPECIALIZED_TRINOMIAL_GF2X: whitegemss192, bluegemss192
+            }
+        }
+
+
+
 //        if (KI != 0)
 //        {
         //Pointer Buffer_NB_WORD_GFqn = new Pointer(NB_WORD_GFqn);
