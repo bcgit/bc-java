@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.hpke;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.logging.Level;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
@@ -246,6 +247,10 @@ class DHKEM
 
     public AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
     {
+        if (ikm.length < Nsk)
+        {
+            System.err.println("WARNING: the input keying material should have length at least " + Nsk + "bytes.");
+        }
         byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
         switch (kemId)
         {
