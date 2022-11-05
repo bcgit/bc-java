@@ -248,7 +248,7 @@ class DHKEM
     {
         if (ikm.length < Nsk)
         {
-            throw new IllegalArgumentException("WARNING: the input keying material should have length at least " + Nsk + "bytes.");
+            throw new IllegalArgumentException("input keying material should have length at least " + Nsk + " bytes");
         }
         byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
         switch (kemId)
