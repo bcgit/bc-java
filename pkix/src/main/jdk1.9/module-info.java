@@ -5,7 +5,6 @@ module org.bouncycastle.pkix
     requires org.bouncycastle.provider;
     requires transitive org.bouncycastle.util;
 
-    exports org.bouncycastle.cert;
     exports org.bouncycastle.cmc;
     exports org.bouncycastle.cms;
     exports org.bouncycastle.dvcs;
@@ -16,10 +15,8 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.mozilla;
     exports org.bouncycastle.openssl;
     exports org.bouncycastle.operator;
-    exports org.bouncycastle.pkcs;
-    exports org.bouncycastle.pkix;
-    exports org.bouncycastle.tsp;
     exports org.bouncycastle.voms;
+    exports org.bouncycastle.cert;
     exports org.bouncycastle.cert.bc;
     exports org.bouncycastle.cert.cmp;
     exports org.bouncycastle.cert.crmf;
@@ -50,10 +47,12 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.openssl.jcajce;
     exports org.bouncycastle.operator.bc;
     exports org.bouncycastle.operator.jcajce;
+    exports org.bouncycastle.pkcs;
     exports org.bouncycastle.pkcs.bc;
     exports org.bouncycastle.pkcs.jcajce;
+    exports org.bouncycastle.pkix;
     exports org.bouncycastle.pkix.jcajce;
+    exports org.bouncycastle.tsp;
     exports org.bouncycastle.tsp.cms;
     exports org.bouncycastle.tsp.ers;
-    exports org.bouncycastle.tsp;
 }

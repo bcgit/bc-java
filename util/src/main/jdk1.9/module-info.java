@@ -2,7 +2,6 @@ module org.bouncycastle.util
 {
     requires org.bouncycastle.provider;
 
-    reads org.bouncycastle.util;
     exports org.bouncycastle.asn1.bsi;
     exports org.bouncycastle.asn1.cmc;
     exports org.bouncycastle.asn1.cmp;
