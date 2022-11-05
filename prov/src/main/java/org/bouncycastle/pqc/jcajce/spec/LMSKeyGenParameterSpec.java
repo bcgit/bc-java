@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.jcajce.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
@@ -11,6 +13,23 @@ import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 public class LMSKeyGenParameterSpec
     implements AlgorithmParameterSpec
 {
+    private static final Map<String, LMSigParameters> sigParameters = new HashMap<String, LMSigParameters>();
+    private static final Map<String, LMOtsParameters> otsParameters = new HashMap<String, LMOtsParameters>();
+
+    static
+    {
+        sigParameters.put("lms-sha256-n32-h5", LMSigParameters.lms_sha256_n32_h5);
+        sigParameters.put("lms-sha256-n32-h10", LMSigParameters.lms_sha256_n32_h10);
+        sigParameters.put("lms-sha256-n32-h15", LMSigParameters.lms_sha256_n32_h15);
+        sigParameters.put("lms-sha256-n32-h20", LMSigParameters.lms_sha256_n32_h20);
+        sigParameters.put("lms-sha256-n32-h25", LMSigParameters.lms_sha256_n32_h25);
+
+        otsParameters.put("sha256-n32-w1", LMOtsParameters.sha256_n32_w1);
+        otsParameters.put("sha256-n32-w2", LMOtsParameters.sha256_n32_w2);
+        otsParameters.put("sha256-n32-w4", LMOtsParameters.sha256_n32_w4);
+        otsParameters.put("sha256-n32-w8", LMOtsParameters.sha256_n32_w8);
+    }
+
     private final LMSigParameters lmSigParams;
     private final LMOtsParameters lmOtsParameters;
 
@@ -44,5 +63,19 @@ public class LMSKeyGenParameterSpec
     public LMOtsParameters getOtsParams()
     {
         return lmOtsParameters;
+    }
+
+    public static LMSKeyGenParameterSpec fromNames(String sigParams, String otsParams)
+    {
+        if (!sigParameters.containsKey(sigParams))
+        {
+            throw new IllegalArgumentException("LM signature parameter name " + sigParams + " not recognized");
+        }
+        if (!otsParameters.containsKey(otsParams))
+        {
+            throw new IllegalArgumentException("LM OTS parameter name " + otsParams + " not recognized");
+        }
+        
+        return new LMSKeyGenParameterSpec(sigParameters.get(sigParams), otsParameters.get(otsParams));
     }
 }
