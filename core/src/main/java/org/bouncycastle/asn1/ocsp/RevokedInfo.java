@@ -17,6 +17,11 @@ public class RevokedInfo
     private ASN1GeneralizedTime  revocationTime;
     private CRLReason           revocationReason;
 
+    public RevokedInfo(ASN1GeneralizedTime revocationTime)
+    {
+        this(revocationTime, null);
+    }
+
     public RevokedInfo(
         ASN1GeneralizedTime  revocationTime,
         CRLReason           revocationReason)
