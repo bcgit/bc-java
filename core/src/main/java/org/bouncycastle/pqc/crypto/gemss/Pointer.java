@@ -412,7 +412,8 @@ class Pointer
         return res;
     }
 
-    public void mul_gf2x(Pointer A, Pointer B){
+    public void mul_gf2x(Pointer A, Pointer B)
+    {
         switch (array.length)
         {
         case 6:
@@ -434,6 +435,7 @@ class Pointer
             break;
         }
     }
+
     public void mul_gf2x(Pointer A, Pointer B, int HFEnq, int NB_WORD_GFqn, int HFEnr)
     {
         switch (array.length)
