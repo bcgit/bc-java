@@ -237,7 +237,7 @@ class CMSSignedHelper
                 {
                     ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(obj);
 
-                    if (tObj.getTagNo() == 1)
+                    if (tObj.hasContextTag(1))
                     {
                         OtherRevocationInfoFormat other = OtherRevocationInfoFormat.getInstance(tObj, false);
 
