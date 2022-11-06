@@ -47,7 +47,7 @@ public class Rem_GF2n
     }
 
     static void REM544_PENTANOMIAL_K3_IS_128_GF2X(long[] P, int p_cp, long[] Pol, int k1, int k2, int ki, int ki64,
-                                           int k164, int k264, long[] Q, long mask)
+                                                  int k164, int k264, long[] Q, long mask)
     {
         Q[2] = (Pol[10] >>> ki) ^ (Pol[11] << ki64);
         Q[3] = (Pol[11] >>> ki) ^ (Pol[12] << ki64);
@@ -70,7 +70,7 @@ public class Rem_GF2n
     }
 
     static void REM544_PENTANOMIAL_GF2X(long[] P, int p_cp, long[] Pol, int k1, int k2, int k3, int ki, int ki64, int k164,
-                                 int k264, int k364, long[] Q, long mask)
+                                        int k264, int k364, long[] Q, long mask)
     {
         Q[0] = (Pol[8] >>> ki) ^ (Pol[9] << ki64);
         Q[1] = (Pol[9] >>> ki) ^ (Pol[10] << ki64);
