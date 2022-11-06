@@ -2011,18 +2011,15 @@ public class PGPKeyRingTest
     public void test4()
         throws Exception
     {
-        JcaPGPSecretKeyRingCollection    secretRings = new JcaPGPSecretKeyRingCollection(sec4);
-
-        Iterator    rIt = secretRings.getKeyRings();
-        int            count = 0;
-        
-        byte[]    encRing = secretRings.getEncoded();
-        
+        JcaPGPSecretKeyRingCollection secretRings = new JcaPGPSecretKeyRingCollection(sec4);
+        byte[] encRing = secretRings.getEncoded();
         secretRings = new JcaPGPSecretKeyRingCollection(encRing);
-        
+
+        int count = 0;
+        Iterator rIt = secretRings.getKeyRings();
         while (rIt.hasNext())
         {
-            PGPSecretKeyRing                    pgpSec = (PGPSecretKeyRing)rIt.next();
+            PGPSecretKeyRing pgpSec = (PGPSecretKeyRing)rIt.next();
     
             count++;
             
