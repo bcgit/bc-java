@@ -197,7 +197,9 @@ public class CMSSignedGenerator
         ASN1ObjectIdentifier   otherRevocationInfoFormat,
         ASN1Encodable          otherRevocationInfo)
     {
-        crls.add(new DERTaggedObject(false, 1, new OtherRevocationInfoFormat(otherRevocationInfoFormat, otherRevocationInfo)));
+        OtherRevocationInfoFormat infoFormat = new OtherRevocationInfoFormat(otherRevocationInfoFormat, otherRevocationInfo);
+        CMSUtils.validateInfoFormat(infoFormat);
+        crls.add(new DERTaggedObject(false, 1, infoFormat));
     }
 
     /**
