@@ -248,7 +248,7 @@ class CMSUtils
         }
     }
 
-    private static void validateInfoFormat(OtherRevocationInfoFormat infoFormat)
+    static void validateInfoFormat(OtherRevocationInfoFormat infoFormat)
     {
         if (CMSObjectIdentifiers.id_ri_ocsp_response.equals(infoFormat.getInfoFormat()))
         {
