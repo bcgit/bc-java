@@ -19,7 +19,12 @@ public class RevokedStatus
     {
         this.info = info;
     }
-    
+
+    public RevokedStatus(Date revocationDate)
+    {
+        this.info = new RevokedInfo(new ASN1GeneralizedTime(revocationDate));
+    }
+
     public RevokedStatus(
         Date        revocationDate,
         int         reason)
