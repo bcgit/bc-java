@@ -3,6 +3,7 @@ package org.bouncycastle.cms;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.Store;
@@ -28,7 +29,14 @@ public class OriginatorInfoGenerator
     public OriginatorInfoGenerator(Store origCerts, Store origCRLs)
         throws CMSException
     {
-        this.origCerts = CMSUtils.getCertificatesFromStore(origCerts);
+        if (origCerts != null)
+        {
+            this.origCerts = CMSUtils.getCertificatesFromStore(origCerts);
+        }
+        else
+        {
+            this.origCerts = null;
+        }
 
         if (origCRLs != null)
         {
@@ -42,13 +50,8 @@ public class OriginatorInfoGenerator
 
     public OriginatorInformation generate()
     {
-        if (origCRLs != null)
-        {
-            return new OriginatorInformation(new OriginatorInfo(CMSUtils.createDerSetFromList(origCerts), CMSUtils.createDerSetFromList(origCRLs)));
-        }
-        else
-        {
-            return new OriginatorInformation(new OriginatorInfo(CMSUtils.createDerSetFromList(origCerts), null));
-        }
+        ASN1Set certSet = origCerts == null ? null : CMSUtils.createDerSetFromList(origCerts);
+        ASN1Set crlSet = origCRLs == null ? null : CMSUtils.createDerSetFromList(origCRLs);
+        return new OriginatorInformation(new OriginatorInfo(certSet, crlSet));
     }
 }
