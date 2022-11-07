@@ -81,7 +81,7 @@ public class GeMSSKeyPairGenerator
         }
         else
         {
-            changeVariablesMQS_gf2(engine, Q, S);
+            engine.changeVariablesMQS64_gf2(Q, S);
         }
 
         L.move(engine.LTRIANGULAR_NV_SIZE << 1);
