@@ -4,7 +4,6 @@ package org.bouncycastle.pqc.crypto.falcon;
 import java.security.SecureRandom;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 class FalconNIST
 {
@@ -268,7 +267,7 @@ class FalconNIST
         int sig_len, msg_len;
         FalconVrfy vrfy = new FalconVrfy();
         FalconCommon common = new FalconCommon();
-System.err.println(Hex.toHexString(srcpk));
+
         /*
          * Decode public key.
          */
