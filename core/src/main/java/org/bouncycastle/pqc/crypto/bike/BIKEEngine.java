@@ -55,9 +55,11 @@ class BIKEEngine
 
     private byte[] functionH(byte[] seed)
     {
+        byte[] res = new byte[r * 2];
         Xof digest = new SHAKEDigest(256);
         digest.update(seed, 0, seed.length);
-        return BIKEUtils.generateRandomByteArray(r * 2, 2 * R_BYTE, t, digest);
+        BIKEUtils.generateRandomByteArray(res,r * 2, t, digest);
+        return res;
     }
 
     private void functionL(byte[] e0, byte[] e1, byte[] result)
@@ -111,11 +113,13 @@ class BIKEEngine
         digest.update(seed1, 0, seed1.length);
 
 //      1. Randomly generate h0, h1
-        long[] h0Element = bikeRing.generateRandom(hw, digest);
-        long[] h1Element = bikeRing.generateRandom(hw, digest);
+        BIKEUtils.generateRandomByteArray(h0, r, hw, digest);
+        BIKEUtils.generateRandomByteArray(h1, r, hw, digest);
 
-        bikeRing.encodeBytes(h0Element, h0);
-        bikeRing.encodeBytes(h1Element, h1);
+        long[] h0Element = bikeRing.create();
+        long[] h1Element = bikeRing.create();
+        bikeRing.decodeBytes(h0, h0Element);
+        bikeRing.decodeBytes(h1, h1Element);
 
         // 2. Compute h
         long[] hElement = bikeRing.create();
@@ -228,7 +232,7 @@ class BIKEEngine
 
         // 3. Compute K
         byte[] wlist = functionH(mPrime);
-        if (Arrays.areEqual(ePrimeBytes, wlist))
+        if (Arrays.areEqual(ePrimeBytes, 0, ePrimeBytes.length, wlist, 0, ePrimeBytes.length))
         {
             functionK(mPrime, c0, c1, k);
         }
