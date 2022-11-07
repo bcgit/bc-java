@@ -1,13 +1,9 @@
 package org.bouncycastle.pqc.crypto.bike;
 
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
-
-import static org.bouncycastle.pqc.crypto.bike.BIKEUtils.CHECK_BIT;
-import static org.bouncycastle.pqc.crypto.bike.BIKEUtils.SET_BIT;
 
 class BIKERing
 {
