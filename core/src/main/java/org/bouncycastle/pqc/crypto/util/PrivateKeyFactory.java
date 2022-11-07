@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -269,68 +270,105 @@ public class PrivateKeyFactory
             || algOID.equals(BCObjectIdentifiers.dilithium2_aes)
             || algOID.equals(BCObjectIdentifiers.dilithium3_aes) || algOID.equals(BCObjectIdentifiers.dilithium5_aes))
         {
-            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
-
+            ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
-            if (version != 0)
+            if (keyObj instanceof ASN1Sequence)
             {
-                throw new IOException("unknown private key version: " + version);
-            }
+                ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyObj);
 
-            if (keyInfo.getPublicKeyData() != null)
-            {
-                ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
-                return new DilithiumPrivateKeyParameters(spParams,
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                    ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // encT1
+                int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+                if (version != 0)
+                {
+                    throw new IOException("unknown private key version: " + version);
+                }
+
+                if (keyInfo.getPublicKeyData() != null)
+                {
+                    ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+                    return new DilithiumPrivateKeyParameters(spParams,
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                        ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // encT1
+                }
+                else
+                {
+                    return new DilithiumPrivateKeyParameters(spParams,
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                        null);
+                }
             }
             else
             {
-                return new DilithiumPrivateKeyParameters(spParams,
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                    ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                    null);
+                // TODO
+                throw new IOException("not supported");
+//                return new DilithiumPrivateKeyParameters(spParams,
+//                    new byte[1],
+//                    new byte[1],
+//                    new byte[1],
+//                    new byte[1],
+//                    new byte[1],
+//                    new byte[1],
+//                    null);
             }
         }
         else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))
         {
-            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+            ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             FalconParameters spParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
             ASN1BitString publicKeyData = keyInfo.getPublicKeyData();
-            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
-            if (version != 1)
-            {
-                throw new IOException("unknown private key version: " + version);
-            }
 
-            if (keyInfo.getPublicKeyData() != null)
+            if (keyObj instanceof ASN1Sequence)
             {
+                ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyObj);
+
+                int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+                if (version != 1)
+                {
+                    throw new IOException("unknown private key version: " + version);
+                }
+
+                if (keyInfo.getPublicKeyData() != null)
+                {
 //                ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
-                return new FalconPrivateKeyParameters(spParams,
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                    publicKeyData.getOctets()); // encT1
+                    return new FalconPrivateKeyParameters(spParams,
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        publicKeyData.getOctets()); // encT1
+                }
+                else
+                {
+                    return new FalconPrivateKeyParameters(spParams,
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        null);
+                }
             }
             else
             {
-                return new FalconPrivateKeyParameters(spParams,
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                    ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                    null);
+                // TODO
+                byte[] keyOct = ASN1OctetString.getInstance(keyObj).getOctets();
+                throw new IOException("not supported");
+//                if (publicKeyData != null)
+//                {
+//                    return new FalconPrivateKeyParameters(spParams, new byte[0], new byte[0], new byte[0], publicKeyData.getOctets());
+//                }
+//                else
+//                {
+//
+//                    return new FalconPrivateKeyParameters(spParams, new byte[0], new byte[0], new byte[0], null);
+//                }
             }
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
