@@ -45,11 +45,20 @@ public class GeMSSKeyPairGenerator
         engine.cleanMonicHFEv_gf2nx(F);
         Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
         int ret;
-        ret = engine.genSecretMQS_gf2(Q, F);
-        if (ret != 0)
+        if (engine.HFEDeg > 34)
         {
-            throw new IllegalArgumentException("Error");
+            ret = engine.genSecretMQS_gf2_opt(Q, F);
+            if (ret != 0)
+            {
+                throw new IllegalArgumentException("Error");
+            }
         }
+        else
+        {
+            //TODO delete this branch
+            ret = engine.genSecretMQS_gf2(Q, F);
+        }
+
         Pointer S = new Pointer(engine.MATRIXnv_SIZE);
         Pointer T = new Pointer(S);
         //Copy L from sk_uncomp is done in the previous line
@@ -61,7 +70,20 @@ public class GeMSSKeyPairGenerator
         engine.cleanLowerMatrix(U, GeMSSEngine.FunctionParams.NV);
         /* Compute Q'=S*Q*St (with Q an upper triangular matrix) */
         engine.invMatrixLU_gf2(S, L, U, GeMSSEngine.FunctionParams.NV);
-        changeVariablesMQS_gf2(engine, Q, S);
+        if (engine.HFEDeg <= 34)
+        {
+//            ret=interpolateHFE_FS(Q,F,S);
+//            if (ret != 0)
+//            {
+//                throw new IllegalArgumentException("Error");
+//            }
+            changeVariablesMQS_gf2(engine, Q, S);
+        }
+        else
+        {
+            changeVariablesMQS_gf2(engine, Q, S);
+        }
+
         L.move(engine.LTRIANGULAR_NV_SIZE << 1);
         U.changeIndex(L.getIndex() + engine.LTRIANGULAR_N_SIZE);
         engine.cleanLowerMatrix(L, GeMSSEngine.FunctionParams.N);
