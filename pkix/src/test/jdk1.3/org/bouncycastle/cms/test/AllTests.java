@@ -5,13 +5,15 @@ import junit.framework.TestSuite;
 
 import javax.crypto.Cipher;
 import java.security.Security;
+import org.bouncycastle.PrintTestResult;
+
 
 public class AllTests 
 {
     public static void main (String[] args) 
         throws Exception
     {
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
     
     public static Test suite() 

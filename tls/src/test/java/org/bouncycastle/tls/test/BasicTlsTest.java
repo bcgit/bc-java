@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.util.Vector;
 
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.DefaultTlsClient;
@@ -100,7 +101,8 @@ public class BasicTlsTest
         TlsClientProtocol protocol = new TlsClientProtocol(s.getInputStream(), s.getOutputStream());
         protocol.connect(new MyTlsClient(new ServerOnlyTlsAuthentication()
         {
-            public void notifyServerCertificate(TlsServerCertificate serverCertificate) throws IOException
+            public void notifyServerCertificate(TlsServerCertificate serverCertificate)
+                throws IOException
             {
                 // NOTE: In production code this MUST verify the certificate!
             }
@@ -140,7 +142,7 @@ public class BasicTlsTest
     public static void main(String[] args)
         throws Exception
     {
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     static class MyTlsClient
