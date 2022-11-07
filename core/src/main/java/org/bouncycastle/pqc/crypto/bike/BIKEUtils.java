@@ -77,34 +77,37 @@ class BIKEUtils
         }
     }
 
-    static byte[] generateRandomByteArray(int mod, int size, int weight, Xof digest)
+    static void generateRandomByteArray(byte[] res, int size, int weight, Xof digest)
     {
         byte[] buf = new byte[4];
-        int highest = Integers.highestOneBit(mod);
-        int mask = highest | (highest - 1);
+        int rand_pos;
 
-        byte[] res = new byte[size];
-        int count = 0;
-        while (count < weight)
+        for (int i = weight - 1; i >= 0; i--)
         {
             digest.doOutput(buf, 0, 4);
-            int tmp = Pack.littleEndianToInt(buf, 0) & mask;
+            long temp = ((long)Pack.littleEndianToInt(buf, 0)) & 0xFFFFFFFFL;
+            temp = temp * (size - i) >> 32;
+            rand_pos = (int) temp;
 
-            if (tmp < mod && setBit(res, tmp))
+            rand_pos += i;
+
+            if(CHECK_BIT(res, rand_pos) != 0)
             {
-                ++count;
+                rand_pos = i;
             }
+            SET_BIT(res, rand_pos);
         }
-        return res;
     }
-
-    private static boolean setBit(byte[] a, int position)
+    protected static int CHECK_BIT(byte[] tmp, int position)
     {
         int index = position / 8;
         int pos = position % 8;
-        int selector = 1 << pos;
-        boolean result = (a[index] & selector) == 0;
-        a[index] |= (byte)selector;
-        return result;
+        return ((tmp[index] >>> (pos))  & 0x01);
+    }
+    protected static void SET_BIT(byte[] tmp, int position)
+    {
+        int index = position/8;
+        int pos = position%8;
+        tmp[index] |= (long)(1L << (long)(pos));
     }
 }
