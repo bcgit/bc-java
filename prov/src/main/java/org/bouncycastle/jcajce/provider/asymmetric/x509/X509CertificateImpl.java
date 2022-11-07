@@ -79,7 +79,6 @@ abstract class X509CertificateImpl
     protected boolean[] keyUsage;
     protected String sigAlgName;
     protected byte[] sigAlgParams;
-
     X509CertificateImpl(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c,
         BasicConstraints basicConstraints, boolean[] keyUsage, String sigAlgName, byte[] sigAlgParams)
     {
@@ -461,7 +460,7 @@ abstract class X509CertificateImpl
         }
         catch (IOException e)
         {
-            return null;   // should never happen...
+            throw new IllegalStateException("failed to recover public key: " + e.getMessage(), e);
         }
     }
 

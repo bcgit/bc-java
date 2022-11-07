@@ -492,18 +492,31 @@ public class PublicKeyFactory
         {
             FalconParameters falconParams = Utils.falconParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            ASN1Primitive obj = keyInfo.parsePublicKey();
-            if (obj instanceof ASN1Sequence)
+            try
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(ASN1Sequence.getInstance(obj).getObjectAt(0)).getOctets();
+                ASN1Primitive obj = keyInfo.parsePublicKey();
+                if (obj instanceof ASN1Sequence)
+                {
+                    byte[] keyEnc = ASN1OctetString.getInstance(ASN1Sequence.getInstance(obj).getObjectAt(0)).getOctets();
 
-                return new FalconPublicKeyParameters(falconParams, keyEnc);
+                    return new FalconPublicKeyParameters(falconParams, keyEnc);
+                }
+                else
+                {
+                    // header byte + h
+                    byte[] keyEnc = ASN1OctetString.getInstance(obj).getOctets();
+
+                    if (keyEnc[0] != (byte)(0x00 + falconParams.getLogN()))
+                    {
+                        throw new IllegalArgumentException("byte[] enc of Falcon h value not tagged correctly");
+                    }
+                    return new FalconPublicKeyParameters(falconParams, Arrays.copyOfRange(keyEnc, 1, keyEnc.length));
+                }
             }
-            else
+            catch (IOException e)
             {
-                // header byte + h
-                byte[] keyEnc = ASN1OctetString.getInstance(obj).getOctets();
-
+                // we're a raw encoding
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
                 if (keyEnc[0] != (byte)(0x00 + falconParams.getLogN()))
                 {
                     throw new IllegalArgumentException("byte[] enc of Falcon h value not tagged correctly");
@@ -575,20 +588,28 @@ public class PublicKeyFactory
         {
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            ASN1Primitive obj = keyInfo.parsePublicKey();
-            if (obj instanceof ASN1Sequence)
+            try
             {
-                ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+                ASN1Primitive obj = keyInfo.parsePublicKey();
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
-                return new DilithiumPublicKeyParameters(dilithiumParams,
-                    ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
-                    ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                    return new DilithiumPublicKeyParameters(dilithiumParams,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
+                }
             }
-            else
+            catch (IOException e)
             {
-                byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
-
-                return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
+                // we're a raw encoding
+                return new DilithiumPublicKeyParameters(dilithiumParams, keyInfo.getPublicKeyData().getOctets());
             }
         }
     }
