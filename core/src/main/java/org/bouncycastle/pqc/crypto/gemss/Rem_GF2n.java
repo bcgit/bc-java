@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.gemss;
 
-public class Rem_GF2n
+class Rem_GF2n
 {
 
     static void REM192_SPECIALIZED_TRINOMIAL_GF2X(long[] P, int p_cp, long[] Pol, int k3, int ki, int ki64, int k364, long[] Q, long mask)
