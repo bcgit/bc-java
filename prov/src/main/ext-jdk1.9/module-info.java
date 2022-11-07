@@ -47,12 +47,15 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.agreement.kdf;
     exports org.bouncycastle.crypto.agreement.srp;
     exports org.bouncycastle.crypto.commitments;
+    exports org.bouncycastle.crypto.constraints;
     exports org.bouncycastle.crypto.digests;
     exports org.bouncycastle.crypto.ec;
     exports org.bouncycastle.crypto.encodings;
     exports org.bouncycastle.crypto.engines;
     exports org.bouncycastle.crypto.examples;
+    exports org.bouncycastle.crypto.fpe;
     exports org.bouncycastle.crypto.generators;
+    exports org.bouncycastle.crypto.hpke;
     exports org.bouncycastle.crypto.io;
     exports org.bouncycastle.crypto.kems;
     exports org.bouncycastle.crypto.macs;
@@ -78,6 +81,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.ec;
     exports org.bouncycastle.jcajce.provider.asymmetric.ecgost;
     exports org.bouncycastle.jcajce.provider.asymmetric.ecgost12;
+    exports org.bouncycastle.jcajce.provider.asymmetric.edec;
     exports org.bouncycastle.jcajce.provider.asymmetric.elgamal;
     exports org.bouncycastle.jcajce.provider.asymmetric.gost;
     exports org.bouncycastle.jcajce.provider.asymmetric.ies;
@@ -122,12 +126,14 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.crystals.kyber;
     exports org.bouncycastle.pqc.crypto.falcon;
     exports org.bouncycastle.pqc.crypto.frodo;
+    exports org.bouncycastle.pqc.crypto.gemss;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruprime;
     exports org.bouncycastle.pqc.crypto.picnic;
+    exports org.bouncycastle.pqc.crypto.rainbow;
     exports org.bouncycastle.pqc.crypto.saber;
     exports org.bouncycastle.pqc.crypto.sike;
     exports org.bouncycastle.pqc.crypto.sphincs;
@@ -135,6 +141,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.math.ntru;
+    exports org.bouncycastle.pqc.math.ntru.parameters;
     exports org.bouncycastle.pqc.jcajce.interfaces;
     exports org.bouncycastle.pqc.jcajce.provider;
     exports org.bouncycastle.pqc.jcajce.provider.bike;

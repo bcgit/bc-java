@@ -5,6 +5,7 @@ import java.security.Security;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class AllTests
@@ -17,7 +18,7 @@ public class AllTests
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()

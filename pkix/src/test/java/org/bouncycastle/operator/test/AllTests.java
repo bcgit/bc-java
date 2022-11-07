@@ -13,6 +13,8 @@ import javax.crypto.spec.PSource;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -55,6 +57,13 @@ public class AllTests
         {
             Security.addProvider(new BouncyCastleProvider());
         }
+    }
+
+    public static void main(String[] args)
+    {
+        TestSuite suite = new TestSuite();
+        suite.addTestSuite(AllTests.class);
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite));
     }
 
     public void testAgainstKnownList()
