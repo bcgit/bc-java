@@ -259,7 +259,7 @@ public class DilithiumTest
 
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
 
-        ASN1OctetString pubSeq = ASN1OctetString.getInstance(pubInfo.getPublicKeyData().getOctets());
+        ASN1BitString pubSeq = pubInfo.getPublicKeyData();
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
