@@ -392,7 +392,7 @@ class GeMSSEngine
         NB_COEFS_HFEVPOLY = NB_COEFS_HFEPOLY + (NB_MONOMIAL_VINEGAR - 1) + (HFEDegI + 1) * HFEv;
         //}
         NB_UINT_HFEVPOLY = NB_COEFS_HFEVPOLY * NB_WORD_GFqn;
-        SIZE_SIGN_HFE = ((HFEnv + (NB_ITE - 1) * (HFEnv - HFEm) + SIZE_SALT_BITS) + 7) >> 3;
+        SIZE_SIGN_HFE = ((HFEnv + (NB_ITE - 1) * (HFEnv - HFEm) + SIZE_SALT_BITS) + 7) >>> 3;
         Buffer_NB_WORD_MUL = new Pointer(NB_WORD_MUL);
         Buffer_NB_WORD_GFqn = new Pointer(NB_WORD_GFqn);
     }
@@ -916,7 +916,7 @@ class GeMSSEngine
         for (i = 1; i < HFEn; ++i)
         {
             /* j=0: a^i */
-            alpha_vec.set(i >> 6, 1L << (i & 63));
+            alpha_vec.set(i >>> 6, 1L << (i & 63));
             /* Compute (a^i)^(2^j) */
             for (j = 0; j < HFEDegI; ++j)
             {
@@ -1677,7 +1677,7 @@ class GeMSSEngine
         Pointer L_cp = new Pointer(L);
         //randombytes function is used by GENLOWMATRIX_GF2 function which needs the following line:
 //        L_cp.fillRandom(random, LTRIANGULAR_SIZE << 3);
-        //randombytes((unsigned char*)L,LTRIANGULAR_SIZE<<3);\
+        //randombytes((unsigned char*)L,LTRIANGULAR_SIZE<<3);
         /* for each row */
         for (iq = 1; iq <= nq; ++iq)
         {
@@ -2405,14 +2405,14 @@ class GeMSSEngine
             Si.setXor(HFEmq, cst);
         }
 //    #ifdef KAT_INT
-//        fprintf(fp, "i=%u\n", NB_ITE);
+//        fprintf(fp, "i=%un", NB_ITE);
 //        fprintBstr_KAT_INT(fp, "xor(Di,S_(i-1)): ", (unsigned char*)Si,
 //        NB_BYTES_GFqm);
 //    #endif
         for (i = NB_ITE - 1; i > 0; --i)
         {
 //        #ifdef KAT_INT
-//            fprintf(fp, "i=%u\n", i);
+//            fprintf(fp, "i=%un", i);
 //        #endif
             /* Compute Si = xor(p(S_i+1,X_i+1),D_i+1) */
             Si.setXorRange(0, D, i * SIZE_DIGEST_UINT, NB_WORD_GF2m);
@@ -2924,7 +2924,7 @@ class GeMSSEngine
 //        }
 //    #ifdef KAT_INT
 //        OPEN_KAT_INT_FILE;
-//        fputs("Sign:\n",fp);
+//        fputs("Sign:n",fp);
 //        unsigned int nb_try_to_sign;
 //    #endif
         /* Compute H1 = H(m) */
@@ -2943,7 +2943,7 @@ class GeMSSEngine
         {
 //        #ifdef KAT_INT
 //            nb_try_to_sign=0U;
-//            fprintf(fp,"k=%u\n",k);
+//            fprintf(fp,"k=%un",k);
 //        #endif
             /* Compute xor(D_k,S_(k-1)) */
             DR.setRangeFromXor(0, sm, 0, Hi, 0, NB_WORD_GF2m);
@@ -3708,7 +3708,7 @@ class GeMSSEngine
                 /* Choose a root with a determinist hash */
                 SHA3Digest sha3Digest = new SHA3Digest(Sha3BitStrength);
                 byte[] U_bytes = U.toBytes(NB_BYTES_GFqn);
-                byte[] hash_bytes = new byte[Sha3BitStrength >> 3];
+                byte[] hash_bytes = new byte[Sha3BitStrength >>> 3];
                 sha3Digest.update(U_bytes, 0, U_bytes.length);
                 sha3Digest.doFinal(hash_bytes, 0);
                 hash.fill(0, hash_bytes, 0, hash_bytes.length);
@@ -4258,11 +4258,11 @@ class GeMSSEngine
     void findRootsSplit_x2_x_c_HT_gf2nx(Pointer root, Pointer c)
     {
         Pointer alpha = new Pointer(NB_WORD_GFqn);
-        final int e = (HFEn + 1) >> 1;
+        final int e = (HFEn + 1) >>> 1;
         int i, j, e2, pos;
         /* Search the position of the MSB of n-1 */
         pos = 31;
-        while ((e >> pos) == 0)
+        while ((e >>> pos) == 0)
         {
             --pos;
         }
@@ -4280,7 +4280,7 @@ class GeMSSEngine
             }
             root.setXorRange(0, alpha, 0, NB_WORD_GFqn);
 
-            e2 = e >> i;
+            e2 = e >>> i;
             if ((e2 & 1) != 0)
             {
                 sqr_gf2n(alpha, 0, root);
@@ -4622,7 +4622,7 @@ class GeMSSEngine
             /* For each column */
             for (jj = HFEnv - 1; jj >= HFEnv - i; --jj, ++k)
             {
-                pk[pk_p + (k >> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >> 3)] >>> (nb_bits & 7)) & 1) << (k & 7);
+                pk[pk_p + (k >>> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >>> 3)] >>> (nb_bits & 7)) & 1) << (k & 7);
                 nb_bits += jj;
             }
         }
@@ -4677,7 +4677,7 @@ class GeMSSEngine
         int pk_U_cp = j * NB_BYTES_EQUATION;
         if (HFENr8 != 0 && (HFEmr8 > 1))
         {
-            final int SIZE_LAST_EQUATION = ((NB_MONOMIAL_PK - ((HFEmr8 - 1) * HFENr8c) + 7) >> 3);
+            final int SIZE_LAST_EQUATION = ((NB_MONOMIAL_PK - ((HFEmr8 - 1) * HFENr8c) + 7) >>> 3);
             /* Constant + x_0*x_0 */
             pk[pk2_cp] = (byte)(pk_U[pk_U_cp] & 3);
             for (i = 1; i < SIZE_LAST_EQUATION; ++i)
@@ -4691,7 +4691,7 @@ class GeMSSEngine
                 /* For each column */
                 for (j = HFEnv - 1; j >= HFEnv - i; --j, ++k)
                 {
-                    pk[pk2_cp + (k >> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >> 3)] >> (nb_bits & 7)) & 1) << (k & 7);
+                    pk[pk2_cp + (k >>> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >>> 3)] >>> (nb_bits & 7)) & 1) << (k & 7);
                     nb_bits += j;
                 }
             }
@@ -4700,12 +4700,12 @@ class GeMSSEngine
             /* For each column */
             for (j = HFEnv - 1; j >= LOST_BITS; --j, ++k)
             {
-                pk[pk2_cp + (k >> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >> 3)] >> (nb_bits & 7)) & 1) << (k & 7);
+                pk[pk2_cp + (k >>> 3)] ^= ((pk_U[pk_U_cp + (nb_bits >>> 3)] >>> (nb_bits & 7)) & 1) << (k & 7);
                 nb_bits += j;
             }
             for (; j >= 0; --j, ++k)
             {
-                val ^= ((long)((pk_U[pk_U_cp + (nb_bits >> 3)] >> (nb_bits & 7)) & 1)) << (LOST_BITS - 1 - j);
+                val ^= ((long)((pk_U[pk_U_cp + (nb_bits >>> 3)] >>> (nb_bits & 7)) & 1)) << (LOST_BITS - 1 - j);
                 nb_bits += j;
             }
         }
@@ -4716,7 +4716,7 @@ class GeMSSEngine
         {
             /* Last byte of the equation */
             pk2_cp += NB_BYTES_EQUATION;
-            pk[pk2_cp] ^= ((byte)(val >> (j * HFENr8c))) << HFENr8;
+            pk[pk2_cp] ^= ((byte)(val >>> (j * HFENr8c))) << HFENr8;
         }
 //        if (HFEmq8 != 0)
 //        {
@@ -4787,7 +4787,7 @@ class GeMSSEngine
                 else if (HFEnvr < LOST_BITS)
                 {
                     pk_tmp.setXor(1 + (i + 1) * NB_WORD_UNCOMP_EQ - 2, val << (64 - (LOST_BITS - HFEnvr)));
-                    pk_tmp.set(1 + (i + 1) * NB_WORD_UNCOMP_EQ - 1, val >> (LOST_BITS - HFEnvr));
+                    pk_tmp.set(1 + (i + 1) * NB_WORD_UNCOMP_EQ - 1, val >>> (LOST_BITS - HFEnvr));
                 }
             }
             cst <<= HFEmr - HFEmr8;
@@ -4818,172 +4818,556 @@ class GeMSSEngine
      * when SIMD is not used.
      * @remark Constant-time implementation.
      */
-//    void changeVariablesMQS64_gf2(Pointer MQS, Pointer S)
+    void changeVariablesMQS64_gf2(Pointer MQS, Pointer S)
+    {
+        Pointer MQS2, MQS2_cp;
+        long bit_kr;
+        Pointer MQS_cpi, MQS_cpj = new Pointer();
+        Pointer S_cpi, S_cpj;
+        int iq, ir, j, jq, jr, kq;
+        /* Tmp matrix (n+v)*(n+v) of quadratic terms to compute S*Q */
+        MQS2 = new Pointer(HFEnv * HFEnv * NB_WORD_GFqn);
+        /* To avoid the constant of MQS */
+        MQS_cpi = new Pointer(MQS, NB_WORD_GFqn);
+        MQS2_cp = new Pointer(MQS2);
+        S_cpj = new Pointer(S);
+        /* Step 1 : compute MQS2 = S*Q */
+        /* Use multiplication by transpose (so by rows of Q) */
+        /* It is possible because X*Q*tX = X*tQ*tX (with X = (x1 ... xn)) */
+        /* Warning : Q is a upper triangular matrix in GF(q^n) */
+        /* In this code, we have : */
+        /* i = iq*NB_BITS_UINT + ir */
+        /* k = kq*NB_BITS_UINT + kr */
+        /* *MQS_cpi = MQS[NB_WORD_GFqn] */
+        /* *MQS_cpj = MQS_cpi[(((i*(2n-i+1))/2) + k)*NB_WORD_GFqn] */
+        /* The previous formula is a bit complicated, so the idea is :
+         *MQS_cpj would equal MQS_cpi[i][i+k] if MQS used n*n in memory */
+        /* *MQS2_cp = MQS2[i*NB_WORD_GFqn] */
+        /* *S_cpj = S[j*NB_WORD_GFqn+iq] */
+        /* for each row j of S */
+        for (j = 0; j < HFEnv; ++j)
+        {
+            /* initialisation at the first row of Q */
+            MQS_cpj.changeIndex(MQS_cpi);
+            /* for each row of Q excepted the last block */
+            for (iq = 0; iq < HFEnvq; ++iq)
+            {
+                //LOOPIR(0, NB_BITS_UINT, LOOPK);
+                for (ir = 0; ir < NB_BITS_UINT; ++ir)
+                {
+                    /* Compute a dot product */
+                    bit_kr = S_cpj.get() >>> ir;
+                    LOOPKR(MQS_cpj, MQS2_cp, bit_kr, ir, NB_BITS_UINT);
+                    for (kq = 1; kq < (HFEnvq - iq); ++kq)
+                    {
+                        bit_kr = S_cpj.get(kq);
+                        LOOPKR(MQS_cpj, MQS2_cp, bit_kr, 0, NB_BITS_UINT);
+                    }
+                    LOOPKR_REMAINDER(MQS2_cp, S_cpj, MQS_cpj, kq);
+                    /* update the next element to compute */
+                    MQS2_cp.move(NB_WORD_GFqn);
+                }
+                /* 64 bits of zero in Q */
+                S_cpj.moveIncremental();
+            }
+            /* the last block */
+            if (HFEnvr != 0)
+            {
+                //LOOPIR(0, HFEnvr, LOOPK_REM);
+                for (ir = 0; ir < HFEnvr; ++ir)
+                {
+                    /* Compute a dot product */
+                    bit_kr = S_cpj.get() >> ir;
+                    LOOPKR(MQS_cpj, MQS2_cp, bit_kr, ir, HFEnvr);
+                    /* update the next element to compute */
+                    MQS2_cp.move(NB_WORD_GFqn);
+                }
+                /* Next row of S */
+                S_cpj.moveIncremental();
+            }
+        }
+        /* Step 2 : compute MQS = MQS2*tS = (S*Q)*tS */
+        /* Use multiplication by transpose (so by rows of S) */
+        /* Permute MQS and MQS2 */
+        MQS_cpi.changeIndex(MQS2);
+        MQS2_cp.changeIndex(MQS, NB_WORD_GFqn);
+        S_cpi = new Pointer(S);
+        /* First : compute upper triangular result */
+        /* In this code, we have : */
+        /* *MQS_cpi = MQS2[j*n*NB_WORD_GFqn] */
+        /* *MQS_cpj = MQS2[(j*n+k)*NB_WORD_GFqn] */
+        /* *MQS2_cp = MQS[(((j*(2n-j+1))/2) + i-j)*NB_WORD_GFqn] */
+        /* The previous formula is a bit complicated, so the idea is :
+         *MQS2_cp would equal MQS[j][i] if MQS used n*n in memory */
+        /* *S_cpi = S[j*NB_WORD_GFqn] */
+        /* *S_cpj = S[i*NB_WORD_GFqn] */
+        /* for each row j of MQS2 excepted the last block */
+        for (jq = 0; jq < HFEnvq; ++jq)
+        {
+            for (jr = 0; jr < NB_BITS_UINT; ++jr)
+            {
+                S_cpj.changeIndex(S_cpi);
+                /* for each row >=j of S */
+                LOOPIR_INIT(MQS2_cp, MQS_cpj, MQS_cpi, S_cpj, jr, NB_BITS_UINT);
+                for (iq = jq + 1; iq < HFEnvq; ++iq)
+                {
+                    LOOPIR_INIT(MQS2_cp, MQS_cpj, MQS_cpi, S_cpj, 0, NB_BITS_UINT);
+                }
+                /* the last block */
+                if (HFEnvr != 0)
+                {
+                    LOOPIR_INIT(MQS2_cp, MQS_cpj, MQS_cpi, S_cpj, 0, HFEnvr);
+                }
+                /* Next row of MQS2 */
+                MQS_cpi.changeIndex(MQS_cpj);
+                /* Next row of S because of upper triangular */
+                S_cpi.move(NB_WORD_GF2nv);
+            }
+        }
+        /* the last block */
+        if (HFEnvr != 0)
+        {
+            for (jr = 0; jr < HFEnvr; ++jr)
+            {
+                S_cpj.changeIndex(S_cpi);
+                MQS_cpj.changeIndex(MQS_cpi);
+                /* for each row >=j of S, the last block */
+                LOOPIR_INIT(MQS2_cp, MQS_cpj, MQS_cpi, S_cpj, jr, HFEnvr);
+                MQS_cpi.changeIndex(MQS_cpj);
+                S_cpi.move(NB_WORD_GF2nv);
+            }
+        }
+        /* Second : compute lower triangular result */
+        MQS_cpi.changeIndex(MQS2);
+        MQS2_cp.changeIndex(MQS, NB_WORD_GFqn);
+        S_cpj.changeIndex(S);
+        /* In this code, we have : */
+        /* *MQS_cpi = MQS2[(j+1)*n*NB_WORD_GFqn] */
+        /* *MQS_cpj = MQS2[(j+1)*n+k)*NB_WORD_GFqn] */
+        /* *MQS2_cp = MQS[(((j*(2n-j+1))/2) + i-j)*NB_WORD_GFqn] */
+        /* The previous formula is a bit complicated, so the idea is :
+         *MQS2_cp would equal MQS[j][i] if MQS used n*n in memory */
+        /* *S_cpj = S[j*NB_WORD_GFqn] */
+        /* for each row j of S excepted the last block */
+        for (jq = 0; jq < HFEnvq; ++jq)
+        {
+            for (jr = 0; jr < NB_BITS_UINT; ++jr)
+            {
+                /* i=j : the diagonal is already computing */
+                MQS2_cp.move(NB_WORD_GFqn);
+                /* The line j of MQS2 is useless */
+                MQS_cpi.move(HFEnv * NB_WORD_GFqn);
+                MQS_cpj.changeIndex(MQS_cpi);
+                /* for each row >j of MQS2 */
+                LOOPIR_LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj, jr + 1, NB_BITS_UINT);
+                for (iq = jq + 1; iq < HFEnvq; ++iq)
+                {
+                    LOOPIR_LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj, 0, NB_BITS_UINT);
+                }
+                /* the last block */
+                if (HFEnvr != 0)
+                {
+                    LOOPIR_LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj, 0, HFEnvr);
+                }
+                /* Next row of S */
+                S_cpj.move(NB_WORD_GF2nv);
+            }
+        }
+        /* the last block excepted the last row */
+        if (HFEnvr != 0)
+        {
+            for (jr = 0; jr < HFEnvr - 1; ++jr)
+            {
+                /* i=j : the diagonal is already computing */
+                MQS2_cp.move(NB_WORD_GFqn);
+                /* The line j of MQS2 is useless */
+                MQS_cpi.move(HFEnv * NB_WORD_GFqn);
+                MQS_cpj.changeIndex(MQS_cpi);
+                /* for each row >=j of S */
+                /* the last block */
+                LOOPIR_LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj, jr + 1, HFEnvr);
+                /* Next row of S */
+                S_cpj.move(NB_WORD_GF2nv);
+            }
+        }
+        MQS.indexReset();
+        S.indexReset();
+    }
+
+    private void LOOPIR_INIT(Pointer MQS2_cp, Pointer MQS_cpj, Pointer MQS_cpi, Pointer S_cpj, int STARTIR, int NB_ITIR)
+    {
+        for (int ir = STARTIR; ir < NB_ITIR; ++ir)
+        {
+            MQS2_cp.setRangeClear(0, NB_WORD_GFqn);
+            MQS_cpj.changeIndex(MQS_cpi);
+            /* Compute a dot product */
+            LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj);
+            /* update the next element to compute */
+            MQS2_cp.move(NB_WORD_GFqn);
+            /* update the next row of S to use */
+            S_cpj.move(NB_WORD_GF2nv);
+        }
+    }
+
+    private void LOOPIR_LOOPK_COMPLETE(Pointer MQS2_cp, Pointer S_cpj, Pointer MQS_cpj, int STARTIR, int NB_ITIR)
+    {
+        for (int ir = STARTIR; ir < NB_ITIR; ++ir)
+        {
+            /* Compute a dot product */
+            LOOPK_COMPLETE(MQS2_cp, S_cpj, MQS_cpj);
+            /* update the next element to compute */
+            MQS2_cp.move(NB_WORD_GFqn);
+        }
+    }
+
+    private void LOOPK_COMPLETE(Pointer MQS2_cp, Pointer S_cpj, Pointer MQS_cpj)
+    {
+        long bit_kr;
+        int kq;
+        for (kq = 0; kq < HFEnvq; ++kq)
+        {
+            bit_kr = S_cpj.get(kq);
+            LOOPKR(MQS_cpj, MQS2_cp, bit_kr, 0, NB_BITS_UINT);
+        }
+        LOOPKR_REMAINDER(MQS2_cp, S_cpj, MQS_cpj, kq);
+    }
+
+    private void LOOPKR(Pointer MQS_cpj, Pointer MQS2_cp, long bit_kr, int START, int NB_IT)
+    {
+        long mask;
+        for (int kr = START; kr < NB_IT; ++kr)
+        {
+            /* multiply one bit of S by one element of MQS_cpj */
+            mask = -(bit_kr & 1L);
+            MQS2_cp.setXorRangeAndMask(0, MQS_cpj, 0, NB_WORD_GFqn, mask);
+            MQS_cpj.move(NB_WORD_GFqn);
+            bit_kr >>>= 1;
+        }
+    }
+
+    private void LOOPKR_REMAINDER(Pointer MQS2_cp, Pointer S_cpj, Pointer MQS_cpj, int kq)
+    {
+        if (HFEnvr != 0)
+        {
+            long bit_kr = S_cpj.get(kq);
+            LOOPKR(MQS_cpj, MQS2_cp, bit_kr, 0, HFEnvr);
+        }
+    }
+
+    /**
+     * @return 0 if the result is correct, ERROR_ALLOC for error from
+     * malloc/calloc functions.
+     * @brief Computation of the multivariate representation of a HFEv
+     * polynomial, then a change of variables is applied.
+     * @details Computation of the multivariate representation of F(XS),
+     * by evaluation/interpolation. We take the following N points in GF(2)^(n+v) :
+     * n0=(0 ... 0),
+     * e1,e2,...,e_(n+v) with ei the i-th row of the identity matrix,
+     * all ei+ej, with i<j.
+     * Let p be a MQS, we have:
+     * p(n0) = cst,
+     * p(ei) = cst + p_i,
+     * p(ei+ej) = cst + p_i + p_j + p_i,j.
+     * So, these N evaluations give directly p. The interpolation is trivial.
+     * @param[in] F   A monic HFEv polynomial in GF(2^n)[X,x_(n+1),...,x_(n+v)]
+     * stored with a sparse representation.
+     * @param[in] S   A matrix (n+v)*(n+v) in GF(2). S should be invertible
+     * (by definition of a change of variables).
+     * @param[out] MQS A MQS in GF(2^n)[x1,...,x_(n+v)] (n equations,
+     * n+v variables). MQS is stored as one equation in GF(2^n)[x1,...,x_(n+v)]
+     * (monomial representation + quadratic form cst||Q).
+     * @remark Requires to allocate MQnv_GFqn_SIZE words for MQS.
+     * @remark Requirement: F is monic.
+     * @remark Constant-time implementation.
+     */
+    int interpolateHFE_FS_ref(Pointer MQS, Pointer F, Pointer S)
+    {
+        Pointer e_ijS = new Pointer(NB_WORD_GF2nv);
+        Pointer tab_eval, tab_eval_i, tab_eval_i2;
+        Pointer e_iS, e_i2S;
+        int i, i2;
+        /* Let e_i be the i-th row of the identity matrix */
+        /* We compute all F(e_i*S), then all F((e_i+e_j)S) */
+        /* Table of the F(e_i*S) */
+        tab_eval = new Pointer(HFEnv * NB_WORD_GFqn);
+        /* Constant: copy the first coefficient of F in MQS */
+        F.copyFrom(MQS, NB_WORD_GFqn);
+        /* e_i*S corresponds to the i-th row of S */
+        e_iS = new Pointer(S);
+        tab_eval_i = new Pointer(tab_eval);
+        for (i = 0; i < HFEnv; ++i)
+        {
+            /* F(e_i*S) = cst + p_i */
+            //TODO:
+            //evalHFEv_gf2nx(tab_eval_i, F, e_iS);
+            tab_eval_i.move(NB_WORD_GFqn);
+            /* Next e_i */
+            e_iS.move(NB_WORD_GF2nv);
+        }
+        e_iS.changeIndex(S);
+        tab_eval_i = tab_eval;
+        for (i = 0; i < HFEnv; ++i)
+        {
+            /* Update of MQS with F(e_i*S) from tab_eval */
+            MQS.move(NB_WORD_GFqn);
+            /* p_i = F(e_i*S) + cst */
+            tab_eval_i.setXorRange(0, F, 0, NB_WORD_GFqn);
+            MQS.copyFrom(tab_eval_i, NB_WORD_GFqn);
+            /* Computation of p_i,i2 by computing F((e_i+e_i2)*S) */
+            tab_eval_i2 = tab_eval_i;
+            e_i2S = e_iS;
+            for (i2 = i + 1; i2 < HFEnv; ++i2)
+            {
+                MQS.move(NB_WORD_GFqn);
+                tab_eval_i2.move(NB_WORD_GFqn);
+                e_i2S.move(NB_WORD_GF2nv);
+                /* F((e_i+e_i2)*S) = cst + p_i + p_i2 + p_i,i2 */
+                /* F((e_i+e_i2)*S) */
+                e_ijS.setRangeFromXor(0, e_iS, 0, e_i2S, 0, NB_WORD_GF2nv);
+//                add_gf2nv(e_ijS, e_iS, e_i2S);
+                //TODO:
+//                evalHFEv_gf2nx(MQS, F, e_ijS);
+//                /* + p_i */
+                //TODO:
+//                MQS.add
+//                add2_gf2n(MQS, tab_eval_i);
+////                /* + p_i2 + cst */
+//                add2_gf2n(MQS, tab_eval_i2);
+            }
+            tab_eval_i.move(NB_WORD_GFqn);
+            e_iS.move(NB_WORD_GF2nv);
+        }
+        return 0;
+    }
+    /**
+     * @brief Evaluation of F in (X,v), with F a HFEv polynomial.
+     * @details Firstly, we compute X^(q^j) for j=0 to HFEDegI.
+     * Then, we compute, sum_j of X^(q^j)*(Bi + sum_k=0_to_(j-1) A_j,k X^(q^k)).
+     * When D is a power of two, we add X^(D/2) to the last sum_k (to obtain the
+     * monic term X^D). Each sum is computed in GF(2)[x], and the modular reduction
+     * is computed at the end.
+     * @param[out] Fxv The evaluation of F in xv, in GF(2^n).
+     * @param[in] F   A monic HFEv polynomial in GF(2^n)[X] stored with a sparse
+     * representation.
+     * @param[in] xv  A vector of n+v elements in GF(2).
+     * @remark Requirement: F is monic.
+     * @remark Constant-time implementation.
+     * @remark Complexity: (#F-2) multiplications in GF(2)[x],
+     *                      Ceil(Log_2(D))+1 modular reductions,
+     *                      Ceil(Log_2(D))-1 squares in GF(2^n).
+     * We can compare to the complexity of the Horner method:
+     *                      (#F-2) multiplications in GF(2^n),
+     *                      Floor(Log_2(D))-2 squares in GF(2^n).
+     */
+//    void evalHFEv_gf2nx(Pointer Fxv, Pointer F, Pointer xv)
 //    {
-//        Pointer MQS2, MQS2_cp;
-//        long bit_kr, mask;
-//        Pointer MQS_cpi, MQS_cpj;
-//        Pointer S_cpi, S_cpj;
-//        int iq, ir, j, jq, jr, kq, kr;
-//        /* Tmp matrix (n+v)*(n+v) of quadratic terms to compute S*Q */
-//        MQS2 = new Pointer(HFEnv * HFEnv * NB_WORD_GFqn);
-//        /* To avoid the constant of MQS */
-//        MQS_cpi = new Pointer(MQS, NB_WORD_GFqn);
-//        MQS2_cp = MQS2;
-//        S_cpj = S;
-//        /* Step 1 : compute MQS2 = S*Q */
-//        /* Use multiplication by transpose (so by rows of Q) */
-//        /* It is possible because X*Q*tX = X*tQ*tX (with X = (x1 ... xn)) */
-//        /* Warning : Q is a upper triangular matrix in GF(q^n) */
-//        /* In this code, we have : */
-//        /* i = iq*NB_BITS_UINT + ir */
-//        /* k = kq*NB_BITS_UINT + kr */
-//        /* *MQS_cpi = MQS[NB_WORD_GFqn] */
-//        /* *MQS_cpj = MQS_cpi[(((i*(2n-i+1))/2) + k)*NB_WORD_GFqn] */
-//        /* The previous formula is a bit complicated, so the idea is :
-//         *MQS_cpj would equal MQS_cpi[i][i+k] if MQS used n*n in memory */
-//        /* *MQS2_cp = MQS2[i*NB_WORD_GFqn] */
-//        /* *S_cpj = S[j*NB_WORD_GFqn+iq] */
-//        /* for each row j of S */
-//        for (j = 0; j < HFEnv; ++j)
+//        static_gf2n cur_acc[NB_WORD_MUL];
+//    #if (HFEDeg>1)
+//        static_gf2n prod[NB_WORD_MUL],acc[NB_WORD_MUL];
+//    #endif
+//        static_gf2n tab_Xqj[(HFEDegI+1)*NB_WORD_GFqn];
+//
+//    #if (HFEDeg>2)
+//        vec_gf2n tab_Xqj_cp,tab_Xqj_cp2;
+//        unsigned int j,k;
+//    #else
+//        vec_gf2n tab_Xqj_cp;
+//        unsigned int j;
+//    #endif
+//
+//    #if HFEv
+//        static_vecv_gf2 V[NB_WORD_GFqv];
+//    #endif
+//
+//
+//        tab_Xqj_cp=tab_Xqj;
+//
+//        /* j=0: X^(2^0) */
+//        copy_gf2n(tab_Xqj,xv);
+//    #if (HFEv&&HFEnr)
+//        tab_Xqj[NB_WORD_GFqn-1]&=MASK_GF2n;
+//    #endif
+//        tab_Xqj_cp+=NB_WORD_GFqn;
+//        /* Compute X^(2^j) */
+//        for(j=1;j<=HFEDegI;++j)
 //        {
-//            /* initialisation at the first row of Q */
-//            MQS_cpj = MQS_cpi;
-//            /* for each row of Q excepted the last block */
-//            for (iq = 0; iq < HFEnvq; ++iq)
-//            {
-//                LOOPIR(0, NB_BITS_UINT, LOOPK);
-//                /* 64 bits of zero in Q */
-//                S_cpj.moveIncremental();
-//            }
-//            /* the last block */
-//            if (HFEnvr != 0)
-//            {
-//                LOOPIR(0, HFEnvr, LOOPK_REM);
-//                /* Next row of S */
-//                S_cpj.moveIncremental();
-//            }
+//            sqr_gf2n(tab_Xqj_cp,tab_Xqj_cp-NB_WORD_GFqn);
+//            tab_Xqj_cp+=NB_WORD_GFqn;
 //        }
 //
-//        /* Step 2 : compute MQS = MQS2*tS = (S*Q)*tS */
-//        /* Use multiplication by transpose (so by rows of S) */
 //
-//        /* Permute MQS and MQS2 */
-//        MQS_cpi = MQS2;
-//        MQS2_cp = MQS + NB_WORD_GFqn;
-//        S_cpi = S;
+//        /* Evaluation of the constant, quadratic in the vinegars */
 //
-//        /* First : compute upper triangular result */
-//
-//
-//        /* In this code, we have : */
-//        /* *MQS_cpi = MQS2[j*n*NB_WORD_GFqn] */
-//        /* *MQS_cpj = MQS2[(j*n+k)*NB_WORD_GFqn] */
-//        /* *MQS2_cp = MQS[(((j*(2n-j+1))/2) + i-j)*NB_WORD_GFqn] */
-//        /* The previous formula is a bit complicated, so the idea is :
-//         *MQS2_cp would equal MQS[j][i] if MQS used n*n in memory */
-//        /* *S_cpi = S[j*NB_WORD_GFqn] */
-//        /* *S_cpj = S[i*NB_WORD_GFqn] */
-//
-//
-//        /* for each row j of MQS2 excepted the last block */
-//        for (jq = 0; jq < HFEnvq; ++jq)
-//        {
-//            for (jr = 0; jr < NB_BITS_UINT; ++jr)
-//            {
-//                S_cpj = S_cpi;
-//                /* for each row >=j of S */
-//                LOOPIR_INIT(jr, NB_BITS_UINT);
-//                for (iq = jq + 1; iq < HFEnvq; ++iq)
-//                {
-//                    LOOPIR_INIT(0, NB_BITS_UINT);
-//                }
-//                /* the last block */
-//            #if (HFEnvr)
-//            {
-//                LOOPIR_INIT(0, HFEnvr);
-//            }
+//    #if HFEv
+//        #if HFEnr
+//            #if ((NB_WORD_GFqn+NB_WORD_GFqv) == NB_WORD_GF2nv)
+//        for(j=0;j<NB_WORD_GFqv;++j)
+//            #else
+//        for(j=0;j<(NB_WORD_GFqv-1);++j)
 //            #endif
-//                /* Next row of MQS2 */
-//                MQS_cpi = MQS_cpj;
-//                /* Next row of S because of upper triangular */
-//                S_cpi += NB_WORD_GF2nv;
-//            }
-//        }
-//        /* the last block */
-//        if (HFEnvr != 0)
 //        {
-//            for (jr = 0; jr < HFEnvr; ++jr)
-//            {
-//                S_cpj = S_cpi;
-//                MQS_cpj = MQS_cpi;
-//                /* for each row >=j of S, the last block */
-//                LOOPIR_INIT(jr, HFEnvr);
-//                MQS_cpi = MQS_cpj;
-//                S_cpi += NB_WORD_GF2nv;
-//            }
+//            V[j]=(xv[NB_WORD_GFqn-1+j]>>HFEnr)
+//                ^(xv[NB_WORD_GFqn+j]<<(64-HFEnr));
 //        }
-//
-//
-//        /* Second : compute lower triangular result */
-//
-//        MQS_cpi = MQS2;
-//        MQS2_cp = MQS + NB_WORD_GFqn;
-//        S_cpj = S;
-//
-//
-//        /* In this code, we have : */
-//        /* *MQS_cpi = MQS2[(j+1)*n*NB_WORD_GFqn] */
-//        /* *MQS_cpj = MQS2[(j+1)*n+k)*NB_WORD_GFqn] */
-//        /* *MQS2_cp = MQS[(((j*(2n-j+1))/2) + i-j)*NB_WORD_GFqn] */
-//        /* The previous formula is a bit complicated, so the idea is :
-//         *MQS2_cp would equal MQS[j][i] if MQS used n*n in memory */
-//        /* *S_cpj = S[j*NB_WORD_GFqn] */
-//
-//
-//        /* for each row j of S excepted the last block */
-//        for (jq = 0; jq < HFEnvq; ++jq)
-//        {
-//            for (jr = 0; jr < NB_BITS_UINT; ++jr)
-//            {
-//                /* i=j : the diagonal is already computing */
-//                MQS2_cp += NB_WORD_GFqn;
-//                /* The line j of MQS2 is useless */
-//                MQS_cpi += HFEnv * NB_WORD_GFqn;
-//                MQS_cpj = MQS_cpi;
-//                /* for each row >j of MQS2 */
-//                LOOPIR(jr + 1, NB_BITS_UINT, LOOPK_COMPLETE);
-//                for (iq = jq + 1; iq < HFEnvq; ++iq)
-//                {
-//                    LOOPIR(0, NB_BITS_UINT, LOOPK_COMPLETE);
-//                }
-//                /* the last block */
-//            #if (HFEnvr)
-//            {
-//                LOOPIR(0, HFEnvr, LOOPK_COMPLETE);
-//            }
+//            #if ((NB_WORD_GFqn+NB_WORD_GFqv) != NB_WORD_GF2nv)
+//        V[j]=xv[NB_WORD_GFqn-1+j]>>HFEnr;
 //            #endif
-//                /* Next row of S */
-//                S_cpj += NB_WORD_GF2nv;
-//            }
-//        }
-//        /* the last block excepted the last row */
-//        if (HFEnvr != 0)
+//        #else
+//        for(j=0;j<NB_WORD_GFqv;++j)
 //        {
-//            for (jr = 0; jr < HFEnvr - 1; ++jr)
-//            {
-//                /* i=j : the diagonal is already computing */
-//                MQS2_cp += NB_WORD_GFqn;
-//                /* The line j of MQS2 is useless */
-//                MQS_cpi += HFEnv * NB_WORD_GFqn;
-//                MQS_cpj = MQS_cpi;
-//                /* for each row >=j of S */
-//                /* the last block */
-//                LOOPIR(jr + 1, HFEnvr, LOOPK_COMPLETE);
-//                /* Next row of S */
-//                S_cpj += NB_WORD_GF2nv;
-//            }
+//            V[j]=xv[NB_WORD_GFqn+j];
 //        }
+//        #endif
+//
+//        /* Evaluation of the vinegar constant */
+//        evalMQSv_gf2(cur_acc,V,F);
+//
+//        set0_high_product_gf2n(cur_acc);
+//    #else
+//        copy_gf2n(cur_acc,F);
+//    #endif
+//
+//        F+=MQv_GFqn_SIZE;
+//
+//
+//        /* Evaluation of the linear terms in the vinegars */
+//        /* + evaluation of the linear and quadratic terms in X */
+//
+//    #if (HFEDeg==1)
+//        /* Monic case */
+//        add_gf2n(Fxv,cur_acc,tab_Xqj);
+//    #else
+//        /* j=0 */
+//
+//        /* Degree 1 term */
+//
+//        /* Linear term */
+//        #if HFEv
+//        vecMatProductv_gf2(acc,V,F+NB_WORD_GFqn);
+//        add2_gf2n(acc,F);
+//        #else
+//        copy_gf2n(acc,F);
+//        #endif
+//
+//        tab_Xqj_cp=tab_Xqj;
+//        #if (HFEDeg==2)
+//        /* Monic case */
+//        add2_gf2n(acc,tab_Xqj);
+//        #else
+//        /* mul by X */
+//        mul_gf2x(prod,tab_Xqj_cp,acc);
+//        add2_product_gf2n(cur_acc,prod);
+//
+//        F+=MLv_GFqn_SIZE;
+//        /* X^(q^j) * (sum a_j,k X^q^k) */
+//
+//            #if (ENABLED_REMOVE_ODD_DEGREE&&HFEs)
+//        for(j=1;j<=LOG_odd_degree;++j)
+//            #else
+//        for(j=1;j<HFEDegI;++j)
+//            #endif
+//        {
+//            /* Linear term */
+//                #if HFEv
+//            vecMatProductv_gf2(acc,V,F+NB_WORD_GFqn);
+//            add2_gf2n(acc,F);
+//                #else
+//            copy_gf2n(acc,F);
+//                #endif
+//            set0_high_product_gf2n(acc);
+//            F+=MLv_GFqn_SIZE;
+//
+//            /* Quadratic terms */
+//            tab_Xqj_cp2=tab_Xqj_cp;
+//            for(k=0;k<j;++k)
+//            {
+//                mul_gf2x(prod,F,tab_Xqj_cp2);
+//                add2_product_gf2n(acc,prod);
+//                F+=NB_WORD_GFqn;
+//                tab_Xqj_cp2+=NB_WORD_GFqn;
+//            }
+//            rem_gf2n(acc,acc);
+//
+//            mul_gf2x(prod,tab_Xqj_cp2,acc);
+//            add2_product_gf2n(cur_acc,prod);
+//        }
+//
+//
+//            #if (ENABLED_REMOVE_ODD_DEGREE&&HFEs)
+//        for(;j<HFEDegI;++j)
+//        {
+//            /* Linear term */
+//                #if HFEv
+//            vecMatProductv_gf2(acc,V,F+NB_WORD_GFqn);
+//            add2_gf2n(acc,F);
+//                #else
+//            copy_gf2n(acc,F);
+//                #endif
+//            set0_high_product_gf2n(acc);
+//            F+=MLv_GFqn_SIZE;
+//
+//            /* Quadratic terms */
+//            tab_Xqj_cp2=tab_Xqj_cp+NB_WORD_GFqn;
+//            for(k=1;k<j;++k)
+//            {
+//                mul_gf2x(prod,F,tab_Xqj_cp2);
+//                add2_product_gf2n(acc,prod);
+//                F+=NB_WORD_GFqn;
+//                tab_Xqj_cp2+=NB_WORD_GFqn;
+//            }
+//            rem_gf2n(acc,acc);
+//
+//            mul_gf2x(prod,tab_Xqj_cp2,acc);
+//            add2_product_gf2n(cur_acc,prod);
+//        }
+//            #endif
+//
+//        /* j=HFEDegI */
+//
+//        /* Linear term */
+//            #if HFEv
+//        vecMatProductv_gf2(acc,V,F+NB_WORD_GFqn);
+//        add2_gf2n(acc,F);
+//            #else
+//        copy_gf2n(acc,F);
+//            #endif
+//            #if HFEDegJ
+//        set0_high_product_gf2n(acc);
+//            #endif
+//        F+=MLv_GFqn_SIZE;
+//
+//        /* Quadratic terms */
+//        tab_Xqj_cp2=tab_Xqj_cp;
+//            #if HFEDegJ
+//                #if (ENABLED_REMOVE_ODD_DEGREE&&HFEs)
+//        tab_Xqj_cp2+=NB_WORD_GFqn;
+//        for(k=1;k<HFEDegJ;++k)
+//                #else
+//        for(k=0;k<HFEDegJ;++k)
+//                #endif
+//        {
+//            mul_gf2x(prod,F,tab_Xqj_cp2);
+//            add2_product_gf2n(acc,prod);
+//            F+=NB_WORD_GFqn;
+//            tab_Xqj_cp2+=NB_WORD_GFqn;
+//        }
+//
+//        /* k=HFEDegJ : monic case */
+//        add2_gf2n(acc,tab_Xqj_cp2);
+//        rem_gf2n(acc,acc);
+//            #else
+//        /* k=HFEDegJ : monic case */
+//        add_gf2n(acc,acc,tab_Xqj_cp2);
+//            #endif
+//
+//        tab_Xqj_cp+=HFEDegI*NB_WORD_GFqn;
+//        #endif
+//        mul_gf2x(prod,tab_Xqj_cp,acc);
+//        add2_product_gf2n(cur_acc,prod);
+//
+//        /* Final reduction of F(xv) */
+//        rem_gf2n(Fxv,cur_acc);
+//    #endif
 //    }
 }
 

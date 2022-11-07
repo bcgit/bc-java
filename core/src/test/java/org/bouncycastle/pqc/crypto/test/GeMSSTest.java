@@ -40,7 +40,7 @@ public class GeMSSTest
         //String testcipher = "dualmodems128";//key generation fail
         //String testcipher = "dualmodems192";
 //        String testcipher = "dualmodems256";
-        String files = "bluegemss128.rsp redgemss128.rsp redgemss128.rsp gemss128.rsp cyangemss128.rsp whitegemss128.rsp magentagemss128.rsp " +
+        String files = "bluegemss128.rsp redgemss128.rsp gemss128.rsp cyangemss128.rsp whitegemss128.rsp magentagemss128.rsp " +
             "bluegemss192.rsp gemss192.rsp redgemss192.rsp whitegemss192.rsp cyangemss192.rsp magentagemss192.rsp " +
             "cyangemss256.rsp bluegemss256.rsp  whitegemss256.rsp redgemss256.rsp magentagemss256.rsp gemss256.rsp";
 
