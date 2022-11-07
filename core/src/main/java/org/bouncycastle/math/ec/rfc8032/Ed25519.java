@@ -1543,4 +1543,62 @@ public abstract class Ed25519
 
         return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, 0, m.length);
     }
+
+    private static int[] obtainYFromPublicKey(byte[] ed25519PublicKey)
+    {
+        PointAffine pA = new PointAffine();
+
+        boolean result = decodePointVar(ed25519PublicKey, 0, true, pA);
+        if (!result)
+            return null;
+
+        return pA.y;
+    }
+
+    public static byte[] toX25519PublicKey(byte[] ed25519PublicKey)
+    {
+        int[] one = new int[X25519Field.SIZE];
+        X25519Field.one(one);
+
+        int[] y = obtainYFromPublicKey(ed25519PublicKey);
+        if (y == null)
+            return null;
+
+        int[] oneMinusY = new int[X25519Field.SIZE];
+        X25519Field.sub(one, y, oneMinusY);
+
+        int[] onePlusY = new int[X25519Field.SIZE];
+        X25519Field.add(one, y, onePlusY);
+
+        int[] oneMinusYInverted = new int[X25519Field.SIZE];
+        X25519Field.inv(oneMinusY, oneMinusYInverted);
+
+        int[] u = new int[X25519Field.SIZE];
+        X25519Field.mul(onePlusY, oneMinusYInverted, u);
+
+        X25519Field.normalize(u);
+
+        byte[] x25519PublicKey = new byte[X25519.SCALAR_SIZE];
+        X25519Field.encode(u, x25519PublicKey, 0);
+
+        return x25519PublicKey;
+    }
+
+    public static byte[] toX25519PrivateKey(byte[] ed25519PrivateKey)
+    {
+        Digest d = Ed25519.createPrehash();
+        byte[] h = new byte[d.getDigestSize()];
+
+        d.update(ed25519PrivateKey, 0, ed25519PrivateKey.length);
+        d.doFinal(h, 0);
+
+        byte[] s = new byte[X25519.SCALAR_SIZE];
+
+        System.arraycopy(h, 0, s, 0, X25519.SCALAR_SIZE);
+        s[0] &= 0xF8;
+        s[X25519.SCALAR_SIZE - 1] &= 0x7F;
+        s[X25519.SCALAR_SIZE - 1] |= 0x40;
+
+        return s;
+    }
 }
