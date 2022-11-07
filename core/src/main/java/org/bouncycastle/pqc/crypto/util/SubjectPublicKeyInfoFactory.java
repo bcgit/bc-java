@@ -226,7 +226,11 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getH();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
+            byte[] keyEnc = new byte[encoding.length + 1];
+            keyEnc[0] = (byte)(0x00 + params.getParameters().getLogN());
+            System.arraycopy(encoding, 0, keyEnc, 1, encoding.length);
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
         }
         else if (publicKey instanceof KyberPublicKeyParameters)
         {
@@ -262,7 +266,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(Arrays.concatenate(params.getRho(), params.getT1())));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(params.getRho(), params.getT1()));
         }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {
