@@ -16,6 +16,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -286,7 +287,7 @@ public class FalconTest
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded());
 
         assertTrue(Arrays.areEqual(
-            Arrays.concatenate(new byte[] { 0x09 }, ASN1OctetString.getInstance(ASN1Sequence.getInstance(pubInfo.parsePublicKey()).getObjectAt(0)).getOctets()), pubK));
+            pubInfo.getPublicKeyData().getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
 
