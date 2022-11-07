@@ -56,6 +56,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.engines;
     exports org.bouncycastle.crypto.examples;
     exports org.bouncycastle.crypto.generators;
+    exports org.bouncycastle.crypto.hpke;
     exports org.bouncycastle.crypto.io;
     exports org.bouncycastle.crypto.kems;
     exports org.bouncycastle.crypto.macs;
@@ -127,6 +128,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.falcon;
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.crypto.fpe;
+    exports org.bouncycastle.pqc.crypto.gemss;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
     exports org.bouncycastle.pqc.crypto.newhope;
