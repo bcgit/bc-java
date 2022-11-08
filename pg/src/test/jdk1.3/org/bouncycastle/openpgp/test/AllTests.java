@@ -7,6 +7,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTestResult;
+import org.bouncycastle.PrintTestResult;
 
 public class AllTests
     extends TestCase
@@ -30,7 +31,7 @@ public class AllTests
     
     public static void main (String[] args)
     {
-        junit.textui.TestRunner.run(suite());
+       PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
     
     public static Test suite()
