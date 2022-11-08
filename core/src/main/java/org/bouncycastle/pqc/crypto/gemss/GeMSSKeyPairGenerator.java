@@ -41,7 +41,6 @@ public class GeMSSKeyPairGenerator
         byte[] pk = new byte[SIZE_PK_HFE];
         System.arraycopy(seed, 0, sk, 0, sk.length);
         F.fill(0, sk_uncomp, 0, sk_uncomp.length);
-//        engine.BytesToLongs(sk_uncomp, 0, F.getArray(), F.getIndex(), sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
         Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
         int ret;
@@ -53,17 +52,8 @@ public class GeMSSKeyPairGenerator
                 throw new IllegalArgumentException("Error");
             }
         }
-        else
-        {
-            //TODO delete this branch
-            ret = engine.genSecretMQS_gf2(Q, F);
-        }
-
         Pointer S = new Pointer(engine.MATRIXnv_SIZE);
         Pointer T = new Pointer(S);
-        //Copy L from sk_uncomp is done in the previous line
-        //Copy U from L is done in the previous line
-
         Pointer L = new Pointer(F, NB_UINT_HFEVPOLY);
         Pointer U = new Pointer(L, engine.LTRIANGULAR_NV_SIZE);
         engine.cleanLowerMatrix(L, GeMSSEngine.FunctionParams.NV);
@@ -72,12 +62,11 @@ public class GeMSSKeyPairGenerator
         engine.invMatrixLU_gf2(S, L, U, GeMSSEngine.FunctionParams.NV);
         if (engine.HFEDeg <= 34)
         {
-//            ret=interpolateHFE_FS(Q,F,S);
-//            if (ret != 0)
-//            {
-//                throw new IllegalArgumentException("Error");
-//            }
-            changeVariablesMQS_gf2(engine, Q, S);
+            ret = engine.interpolateHFE_FS_ref(Q, F, S);
+            if (ret != 0)
+            {
+                throw new IllegalArgumentException("Error");
+            }
         }
         else
         {
