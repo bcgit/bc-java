@@ -25,6 +25,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <ul>
 <li>BCJSSE: Instantiating a JSSE provider in some contexts could cause an AccessControl exception. This has been fixed.</li>
 <li>The EC key pair generator can generate out of range private keys when used with SM2. A specific SM2KeyPairGenerator has been added to the low-level API and is used by KeyPairGenerator.getInstance("SM2", "BC"). The SM2 signer has been updated to check for out of range keys as well..</li>
+<li>The attached signature type byte was still present in Falcon signatures as well as the detached signature byte. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Featues and Functionality</h3>
 <ul>
