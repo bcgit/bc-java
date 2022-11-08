@@ -8,6 +8,7 @@ import java.security.cert.X509Certificate;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 
 /**
  * Marius Schilder's Bleichenbacher's Forgery Attack Tests
@@ -116,7 +117,7 @@ public class RSA3CertTest
     public static void main (String[] args) 
         throws Exception
     {
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
     
     public static Test suite() 

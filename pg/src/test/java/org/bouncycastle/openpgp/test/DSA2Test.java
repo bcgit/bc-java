@@ -11,6 +11,7 @@ import java.util.Date;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPCompressedData;
@@ -260,7 +261,7 @@ public class DSA2Test
     public static void main (String[] args)
         throws Exception
     {
-        junit.textui.TestRunner.run(suite());
+       PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()

@@ -14,6 +14,7 @@ import junit.framework.TestCase;
 import junit.framework.TestFailure;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -52,7 +53,7 @@ public class AllTests
         throws IOException
     {
         PemReader rd = new PemReader(new StringReader("-----BEGIN \n"));
-        
+
         assertNull(rd.readPemObject());
     }
 
@@ -70,27 +71,9 @@ public class AllTests
         assertEquals(bOut.toByteArray().length, pWrt.getOutputSize(pemObj));
     }
 
-    public static void main(String[] args) {
-
-            TestResult tr = junit.textui.TestRunner.run(suite());
-            if (tr.errorCount()>0) {
-                Enumeration<TestFailure> e = tr.errors();
-                while(e.hasMoreElements()) {
-                    System.out.println(e.nextElement().toString());
-                }
-            }
-
-        if (tr.failureCount()>0) {
-            Enumeration<TestFailure> e = tr.failures();
-            while(e.hasMoreElements()) {
-                System.out.println(e.nextElement().toString());
-            }
-        }
-
-        if (!tr.wasSuccessful()) {
-            System.exit(1);
-        }
-
+    public static void main(String[] args)
+    {
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()
