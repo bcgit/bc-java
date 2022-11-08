@@ -9,6 +9,7 @@ import java.security.cert.X509Certificate;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.asn1.dvcs.CertEtcToken;
 import org.bouncycastle.asn1.dvcs.TargetEtcChain;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
@@ -223,7 +224,7 @@ public class AllTests
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()
