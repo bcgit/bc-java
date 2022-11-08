@@ -139,13 +139,6 @@ public class BitBuilder
         }
     }
 
-    protected void finalize()
-        throws Throwable
-    {
-        zero();
-        super.finalize();
-    }
-
     public void zero()
     {
         Arrays.clear(buf);
