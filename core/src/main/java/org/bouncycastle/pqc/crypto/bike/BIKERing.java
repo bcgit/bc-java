@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.bike;
 
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.math.raw.Interleave;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Integers;
@@ -84,32 +83,6 @@ class BIKERing
         byte[] last = new byte[8];
         Pack.longToLittleEndian(x[size - 1], last, 0);
         System.arraycopy(last, 0, bs, (size - 1) << 3, (partialBits + 7) >>> 3);
-    }
-
-    long[] generateRandom(int weight, Xof digest)
-    {
-        byte[] buf = new byte[4];
-        int highest = Integers.highestOneBit(bits);
-        int mask = highest | (highest - 1);
-
-        long[] z = create();
-        int count = 0;
-        while (count < weight)
-        {
-            digest.doOutput(buf, 0, 4);
-            int candidate = Pack.littleEndianToInt(buf, 0) & mask;
-            if (candidate < bits)
-            {
-                int pos = candidate >>> 6;
-                long bit = 1L << (candidate & 63);
-                if ((z[pos] & bit) == 0L)
-                {
-                    z[pos] |= bit;
-                    ++count;
-                }
-            }
-        }
-        return z;
     }
 
     void inv(long[] a, long[] z)

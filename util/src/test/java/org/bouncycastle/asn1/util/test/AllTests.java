@@ -5,6 +5,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.asn1.cms.test.*;
 import org.bouncycastle.asn1.misc.test.*;
 import org.bouncycastle.util.test.SimpleTestResult;
@@ -29,7 +30,7 @@ public class AllTests
     
     public static void main (String[] args)
     {
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
     
     public static Test suite()

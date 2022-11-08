@@ -11,6 +11,7 @@ import java.security.spec.RSAPublicKeySpec;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
@@ -147,7 +148,7 @@ public class PKCS10Test
     
     public static void main(String args[])
     {
-        junit.textui.TestRunner.run(suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()
