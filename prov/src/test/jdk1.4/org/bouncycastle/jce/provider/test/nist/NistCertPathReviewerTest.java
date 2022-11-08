@@ -33,6 +33,8 @@ import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
+import org.bouncycastle.PrintTestResult;
+
 /**
  * NIST CertPath test data for RFC 3280
  */
@@ -690,7 +692,7 @@ public class NistCertPathReviewerTest
     public static void main (String[] args) 
         throws Exception
     {   
-        junit.textui.TestRunner.run(suite());
+      PrintResult.printResult(  junit.textui.TestRunner.run(suite()));
     }
     
     public void setUp()

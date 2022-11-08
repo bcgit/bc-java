@@ -1,26 +1,51 @@
 package org.bouncycastle.mail.smime.test;
 
 import java.security.Security;
+import java.util.Enumeration;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class AllTests
     extends TestCase
 {
-    public static void main (String[] args)
+    public static void main(String[] args)
         throws Exception
     {
-        junit.textui.TestRunner.run (suite());
+        TestResult tr = junit.textui.TestRunner.run(suite());
+
+        Enumeration e = tr.failures();
+        if (e != null)
+        {
+            while (e.hasMoreElements())
+            {
+                System.out.println(e.nextElement());
+            }
+        }
+
+        e = tr.failures();
+        if (e != null)
+        {
+            while (e.hasMoreElements())
+            {
+                System.out.println(e.nextElement());
+            }
+        }
+
+        if (!tr.wasSuccessful())
+        {
+            System.exit(1);
+        }
     }
-    
+
     public static Test suite()
         throws Exception
     {
-        TestSuite suite= new TestSuite("SMIME tests");
+        TestSuite suite = new TestSuite("SMIME tests");
 
         suite.addTestSuite(NewSMIMESignedTest.class);
         suite.addTestSuite(SignedMailValidatorTest.class);

@@ -6,16 +6,18 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class AllTests
     extends TestCase
 {
-    public static void main (String[] args)
+    public static void main(String[] args)
     {
-        junit.textui.TestRunner.run(suite());
+
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
-    
+
     public static Test suite()
     {
         TestSuite suite = new TestSuite("JCAJCE Provider Tests");
