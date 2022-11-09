@@ -72,7 +72,6 @@ public class GeMSSKeyPairGenerator
         {
             engine.changeVariablesMQS64_gf2(Q, S);
         }
-
         L.move(engine.LTRIANGULAR_NV_SIZE << 1);
         U.changeIndex(L.getIndex() + engine.LTRIANGULAR_N_SIZE);
         engine.cleanLowerMatrix(L, GeMSSEngine.FunctionParams.N);
