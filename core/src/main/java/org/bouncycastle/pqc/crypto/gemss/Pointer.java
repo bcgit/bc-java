@@ -73,6 +73,17 @@ class Pointer
         }
     }
 
+    public void setXorRangeXor(int outOff, Pointer a, int a_cp, Pointer b, int b_cp, int len)
+    {
+        outOff += cp;
+        a_cp += a.cp;
+        b_cp += b.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff++] ^= a.array[a_cp++] ^ b.array[b_cp++];
+        }
+    }
+
     public void setXorRange(int outOff, PointerUnion p, int inOff, int len)
     {
         outOff += cp;
@@ -410,6 +421,23 @@ class Pointer
             res ^= array[off++] & b.array[bOff++];
         }
         return res;
+    }
+
+    public long isNot0_gf2n(int off, int size)
+    {
+        off += cp;
+        long r = array[off];
+        int i;
+        for (i = 1; i < size; ++i)
+        {
+            r |= array[off++];
+        }
+        for (i = size; i > 0; i >>>= 1)
+        {
+            r |= r >>> i;
+        }
+        r &= 1;
+        return r;
     }
 
     public void mul_gf2x(Pointer A, Pointer B)
