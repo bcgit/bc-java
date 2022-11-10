@@ -96,6 +96,10 @@ public class HQCParameters
     {
         return 512 / 8;
     }
+    int getSALT_SIZE_BYTES()
+    {
+        return 16;
+    }
 
     int getN_BYTES()
     {
