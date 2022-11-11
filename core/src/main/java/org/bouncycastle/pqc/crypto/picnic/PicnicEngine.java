@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.Bits;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -2107,8 +2108,8 @@ class PicnicEngine
     {
         for (int i = 0; i < numMPCParties; i++)
         {
-            int w_i = Utils.getBit(Pack.intToLittleEndian(w), i);
-            Utils.setBit(msg.msgs[i], msg.pos, (byte) (w_i & 0xff));
+            int w_i = Utils.getBit(w, i);
+            Utils.setBit(msg.msgs[i], msg.pos, (byte)w_i);            
         }
         msg.pos++;
     }
@@ -2118,13 +2119,10 @@ class PicnicEngine
         int and_helper = tape.tapesToWord();   // The special mask value setup during preprocessing for each AND gate
         int s_shares = (extend(a) & mask_b) ^ (extend(b) & mask_a) ^ and_helper;
 
-        byte[] temp = Pack.intToLittleEndian(s_shares);
-
         if (msg.unopened >= 0)
         {
             int unopenedPartyBit = Utils.getBit(msg.msgs[msg.unopened], msg.pos);
-            Utils.setBit(temp, msg.unopened, (byte) (unopenedPartyBit & 0xff));
-            s_shares = Pack.littleEndianToInt(temp, 0);
+            s_shares = Utils.setBit(s_shares, msg.unopened, unopenedPartyBit);
         }
 
         // Broadcast each share of s
@@ -2434,6 +2432,13 @@ class PicnicEngine
         int[] temp = new int[LOWMC_MAX_WORDS];
         temp[stateSizeWords-1] = 0;
         int wholeWords = stateSizeBits/WORD_SIZE_BITS;
+        int unusedStateBits = stateSizeWords * WORD_SIZE_BITS - stateSizeBits;
+
+        // The final word mask, with bits reversed within each byte
+        int partialWordMask = -1 >>> unusedStateBits;
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x55555555, 1);
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x33333333, 2);
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x0F0F0F0F, 4);
 
         for (int i = 0; i < stateSizeBits; i++)
         {
@@ -2441,16 +2446,17 @@ class PicnicEngine
             for (int j = 0; j < wholeWords; j++)
             {
                 int index = i * stateSizeWords + j;
-                prod ^= (state[j + stateOffset] & matrix[matrixOffset + index]);
+                prod ^= state[stateOffset + j] &
+                        matrix[matrixOffset + index];
             }
-            for(int j = wholeWords*WORD_SIZE_BITS; j < stateSizeBits; j++)
+            if (unusedStateBits > 0)
             {
-                int index = i * stateSizeWords*WORD_SIZE_BITS + j;
-                int bit = (Utils.getBitFromWordArray(state,j + stateOffset*32) & Utils.getBitFromWordArray(matrix, matrixOffset*32 + index));
-                prod ^= bit;
+                int index = i * stateSizeWords + wholeWords;
+                prod ^= state[stateOffset + wholeWords] &
+                        matrix[matrixOffset + index] &
+                        partialWordMask;
             }
             Utils.setBit(temp, i, Utils.parity32(prod));
-
         }
 
         System.arraycopy(temp, 0, output, outputOffset, stateSizeWords);
