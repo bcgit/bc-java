@@ -92,7 +92,8 @@ public class RegressionTest
         new ChaCha20Poly1305Test(),
         new SipHash128Test(),
         new XOFTest(),
-        new XIESTest()
+        new XIESTest(),
+        new CertLocaleTest()
     };
 
     public static void main(String[] args)
