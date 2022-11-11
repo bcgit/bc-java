@@ -14,11 +14,25 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.LocaleUtil;
 
 public class Time
     extends ASN1Object
     implements ASN1Choice
 {
+    private final static Locale defaultLocale = getLocale();
+
+    private static Locale getLocale()
+    {
+        try
+        {
+            return Locale.ENGLISH;
+        }
+        catch (Exception e)
+        {
+            return Locale.getDefault();
+        }
+    }
     ASN1Primitive time;
 
     public static Time getInstance(
@@ -51,7 +65,7 @@ public class Time
         Date    time)
     {
         SimpleTimeZone      tz = new SimpleTimeZone(0, "Z");
-        SimpleDateFormat    dateF = new SimpleDateFormat("yyyyMMddHHmmss");
+        SimpleDateFormat    dateF = new SimpleDateFormat("yyyyMMddHHmmss", LocaleUtil.EN_Locale);
 
         dateF.setTimeZone(tz);
 
