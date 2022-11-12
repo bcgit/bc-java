@@ -104,13 +104,8 @@ class BIKEEngine
         byte[] seeds = new byte[64];
         random.nextBytes(seeds);
 
-        byte[] seed1 = new byte[L_BYTE];
-        byte[] seed2 = new byte[L_BYTE];
-        System.arraycopy(seeds, 0, seed1, 0, seed1.length);
-        System.arraycopy(seeds, seed1.length, seed2, 0, seed2.length);
-
         Xof digest = new SHAKEDigest(256);
-        digest.update(seed1, 0, seed1.length);
+        digest.update(seeds, 0, L_BYTE);
 
 //      1. Randomly generate h0, h1
         BIKEUtils.generateRandomByteArray(h0, r, hw, digest);
@@ -128,7 +123,7 @@ class BIKEEngine
         bikeRing.encodeBytes(hElement, h);
 
         //3. Parse seed2 as sigma
-        System.arraycopy(seed2, 0, sigma, 0, sigma.length);
+        System.arraycopy(seeds, L_BYTE, sigma, 0, sigma.length);
     }
 
     /**
@@ -144,12 +139,9 @@ class BIKEEngine
      **/
     public void encaps(byte[] c0, byte[] c1, byte[] k, byte[] h, SecureRandom random)
     {
-        byte[] seeds = new byte[64];
-        random.nextBytes(seeds);
-
         // 1. Randomly generate m by using seed1
         byte[] m = new byte[L_BYTE];
-        System.arraycopy(seeds, 0, m, 0, m.length);
+        random.nextBytes(m);
 
         // 2. Calculate e0, e1
         byte[] eBytes = functionH(m);
@@ -157,13 +149,11 @@ class BIKEEngine
         byte[] eBits = new byte[2 * r];
         BIKEUtils.fromByteArrayToBitArray(eBits, eBytes);
 
-        byte[] e0Bits = Arrays.copyOfRange(eBits, 0, r);
         byte[] e0Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e0Bytes, e0Bits);
-        
-        byte[] e1Bits = Arrays.copyOfRange(eBits, r, eBits.length);
+        BIKEUtils.fromBitArrayToByteArray(e0Bytes, eBits, 0, r);
+
         byte[] e1Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e1Bytes, e1Bits);
+        BIKEUtils.fromBitArrayToByteArray(e1Bytes, eBits, r, r);
 
         long[] e0Element = bikeRing.create();
         long[] e1Element = bikeRing.create();
@@ -215,15 +205,12 @@ class BIKEEngine
         // 1. Compute e'
         byte[] ePrimeBits = BGFDecoder(syndrome, h0Compact, h1Compact);
         byte[] ePrimeBytes = new byte[2 * R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits);
-
-        byte[] e0Bits = Arrays.copyOfRange(ePrimeBits, 0, r);
-        byte[] e1Bits = Arrays.copyOfRange(ePrimeBits, r, ePrimeBits.length);
+        BIKEUtils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits, 0, 2 * r);
 
         byte[] e0Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e0Bytes, e0Bits);
+        BIKEUtils.fromBitArrayToByteArray(e0Bytes, ePrimeBits, 0, r);
         byte[] e1Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e1Bytes, e1Bits);
+        BIKEUtils.fromBitArrayToByteArray(e1Bytes, ePrimeBits, r, r);
 
         // 2. Compute m'
         byte[] mPrime = new byte[L_BYTE];
@@ -261,20 +248,25 @@ class BIKEEngine
         int[] h0CompactCol = getColumnFromCompactVersion(h0Compact);
         int[] h1CompactCol = getColumnFromCompactVersion(h1Compact);
 
-        for (int i = 1; i <= nbIter; i++)
+        byte[] black = new byte[2 * r];
+        byte[] ctrs = new byte[r];
+
         {
-            byte[] black = new byte[2 * r];
             byte[] gray = new byte[2 * r];
 
-            int T = threshold(BIKEUtils.getHammingWeight(s), i, r);
+            int T = threshold(BIKEUtils.getHammingWeight(s), r);
 
-            BFIter(s, e, T, h0Compact, h1Compact, h0CompactCol, h1CompactCol, black, gray);
+            BFIter(s, e, T, h0Compact, h1Compact, h0CompactCol, h1CompactCol, black, gray, ctrs);
+            BFMaskedIter(s, e, black, (hw + 1) / 2 + 1, h0Compact, h1Compact, h0CompactCol, h1CompactCol);
+            BFMaskedIter(s, e, gray, (hw + 1) / 2 + 1, h0Compact, h1Compact, h0CompactCol, h1CompactCol);
+        }
+        for (int i = 1; i < nbIter; i++)
+        {
+            Arrays.fill(black, (byte)0);
 
-            if (i == 1)
-            {
-                BFMaskedIter(s, e, black, (hw + 1) / 2 + 1, h0Compact, h1Compact, h0CompactCol, h1CompactCol);
-                BFMaskedIter(s, e, gray, (hw + 1) / 2 + 1, h0Compact, h1Compact, h0CompactCol, h1CompactCol);
-            }
+            int T = threshold(BIKEUtils.getHammingWeight(s), r);
+
+            BFIter2(s, e, T, h0Compact, h1Compact, h0CompactCol, h1CompactCol, ctrs);
         }
         if (BIKEUtils.getHammingWeight(s) == 0)
         {
@@ -297,37 +289,104 @@ class BIKEEngine
         return output;
     }
 
-    private void BFIter(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol, int[] h1CompactCol, byte[] black, byte[] gray)
+    private void BFIter(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol,
+        int[] h1CompactCol, byte[] black, byte[] gray, byte[] ctrs)
     {
-        int[] updatedIndices = new int[2 * r];
-
         // calculate for h0compact
-        for (int j = 0; j < r; j++)
         {
-            if (ctr(h0CompactCol, s, j) >= T)
+            ctrAll(h0CompactCol, s, ctrs);
+
             {
-                updateNewErrorIndex(e, j);
-                updatedIndices[j] = 1;
-                black[j] = 1;
+                int count = ctrs[0] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                int ctrBit2 = ((count - (T - tau)) >> 31) + 1;
+                e[0] ^= (byte)ctrBit1;
+                black[0] = (byte)ctrBit1;
+                gray[0] = (byte)ctrBit2;
             }
-            else if (ctr(h0CompactCol, s, j) >= T - tau)
+            for (int j = 1; j < r; j++)
             {
-                gray[j] = 1;
+                int count = ctrs[j] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                int ctrBit2 = ((count - (T - tau)) >> 31) + 1;
+                e[r - j] ^= (byte)ctrBit1;
+                black[j] = (byte)ctrBit1;
+                gray[j] = (byte)ctrBit2;
             }
         }
 
         // calculate for h1Compact
-        for (int j = 0; j < r; j++)
         {
-            if (ctr(h1CompactCol, s, j) >= T)
+            ctrAll(h1CompactCol, s, ctrs);
+
             {
-                updateNewErrorIndex(e, r + j);
-                updatedIndices[r + j] = 1;
-                black[r + j] = 1;
+                int count = ctrs[0] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                int ctrBit2 = ((count - (T - tau)) >> 31) + 1;
+                e[r] ^= (byte)ctrBit1;
+                black[r] = (byte)ctrBit1;
+                gray[r] = (byte)ctrBit2;
             }
-            else if (ctr(h1CompactCol, s, j) >= T - tau)
+            for (int j = 1; j < r; j++)
             {
-                gray[r + j] = 1;
+                int count = ctrs[j] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                int ctrBit2 = ((count - (T - tau)) >> 31) + 1;
+                e[r + r - j] ^= (byte)ctrBit1;
+                black[r + j] = (byte)ctrBit1;
+                gray[r + j] = (byte)ctrBit2;
+            }
+        }
+
+        // recompute syndrome
+        for (int i = 0; i < 2 * r; i++)
+        {
+            if (black[i] != 0)
+            {
+                recomputeSyndrome(s, i, h0Compact, h1Compact);
+            }
+        }
+    }
+
+    private void BFIter2(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol, int[] h1CompactCol, byte[] ctrs)
+    {
+        int[] updatedIndices = new int[2 * r];
+
+        // calculate for h0compact
+        {
+            ctrAll(h0CompactCol, s, ctrs);
+
+            {
+                int count = ctrs[0] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                e[0] ^= (byte)ctrBit1;
+                updatedIndices[0] = ctrBit1;
+            }
+            for (int j = 1; j < r; j++)
+            {
+                int count = ctrs[j] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                e[r - j] ^= (byte)ctrBit1;
+                updatedIndices[j] = ctrBit1;
+            }
+        }
+
+        // calculate for h1Compact
+        {
+            ctrAll(h1CompactCol, s, ctrs);
+
+            {
+                int count = ctrs[0] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                e[r] ^= (byte)ctrBit1;
+                updatedIndices[r] = ctrBit1;
+            }
+            for (int j = 1; j < r; j++)
+            {
+                int count = ctrs[j] & 0xFF;
+                int ctrBit1 = ((count - T) >> 31) + 1;
+                e[r + r - j] ^= (byte)ctrBit1;
+                updatedIndices[r + j] = ctrBit1;
             }
         }
 
@@ -347,19 +406,25 @@ class BIKEEngine
 
         for (int j = 0; j < r; j++)
         {
-            if (ctr(h0CompactCol, s, j) >= T && mask[j] == 1)
+            if (mask[j] == 1)
             {
-                updateNewErrorIndex(e, j);
-                updatedIndices[j] = 1;
+                if (ctr(h0CompactCol, s, j) >= T)
+                {
+                    updateNewErrorIndex(e, j);
+                    updatedIndices[j] = 1;
+                }
             }
         }
 
         for (int j = 0; j < r; j++)
         {
-            if (ctr(h1CompactCol, s, j) >= T && mask[r + j] == 1)
+            if (mask[r + j] == 1)
             {
-                updateNewErrorIndex(e, r + j);
-                updatedIndices[r + j] = 1;
+                if (ctr(h1CompactCol, s, j) >= T)
+                {
+                    updateNewErrorIndex(e, r + j);
+                    updatedIndices[r + j] = 1;
+                }
             }
         }
 
@@ -373,43 +438,112 @@ class BIKEEngine
         }
     }
 
-    private int threshold(int hammingWeight, int i, int r)
+    private int threshold(int hammingWeight, int r)
     {
-        double d = 0;
-        int floorD = 0;
-        int res = 0;
         switch (r)
         {
-        case 12323:
-            d = 0.0069722 * hammingWeight + 13.530;
-            floorD = (int)Math.floor(d);
-            res = floorD > 36 ? floorD : 36;
-            break;
-        case 24659:
-            d = 0.005265 * hammingWeight + 15.2588;
-            floorD = (int)Math.floor(d);
-            res = floorD > 52 ? floorD : 52;
-            break;
-        case 40973:
-            d = 0.00402312 * hammingWeight + 17.8785;
-            floorD = (int)Math.floor(d);
-            res = floorD > 69 ? floorD : 69;
-            break;
+        case 12323: return thresholdFromParameters(hammingWeight, 0.0069722, 13.530, 36);
+        case 24659: return thresholdFromParameters(hammingWeight, 0.005265, 15.2588, 52);
+        case 40973: return thresholdFromParameters(hammingWeight, 0.00402312, 17.8785, 69);
+        default:    throw new IllegalArgumentException();
         }
-        return res;
+//        return res;
+    }
+
+    private static int thresholdFromParameters(int hammingWeight, double dm, double da, int min)
+    {
+        return Math.max(min, (int)Math.floor(dm * hammingWeight + da));
     }
 
     private int ctr(int[] hCompactCol, byte[] s, int j)
     {
+//        assert 0 <= j && j < r;
+
         int count = 0;
-        for (int i = 0; i < hw; i++)
+
+        int i = 0, limit = hw - 4;
+        while (i <= limit)
         {
-            if (s[(hCompactCol[i] + j) % r] == 1)
-            {
-                count += 1;
-            }
+            int sPos0 = hCompactCol[i + 0] + j - r;
+            int sPos1 = hCompactCol[i + 1] + j - r;
+            int sPos2 = hCompactCol[i + 2] + j - r;
+            int sPos3 = hCompactCol[i + 3] + j - r;
+
+            sPos0 += (sPos0 >> 31) & r;
+            sPos1 += (sPos1 >> 31) & r;
+            sPos2 += (sPos2 >> 31) & r;
+            sPos3 += (sPos3 >> 31) & r;
+
+            count += s[sPos0] & 0xFF;
+            count += s[sPos1] & 0xFF;
+            count += s[sPos2] & 0xFF;
+            count += s[sPos3] & 0xFF;
+
+            i += 4;
+        }
+        while (i < hw)
+        {
+            int sPos = hCompactCol[i] + j - r;
+            sPos += (sPos >> 31) & r;
+            count += s[sPos] & 0xFF;
+            ++i;
         }
         return count;
+    }
+
+    private void ctrAll(int[] hCompactCol, byte[] s, byte[] ctrs)
+    {
+        {
+            int col = hCompactCol[0], neg = r - col;
+            System.arraycopy(s, col, ctrs, 0, neg);
+            System.arraycopy(s, 0, ctrs, neg, col);
+        }
+        for (int i = 1; i < hw; ++i)
+        {
+            int col = hCompactCol[i], neg = r - col;
+
+            int j = 0;
+            // TODO Vectorization when available
+            {
+                int jLimit = neg - 4;
+                while (j <= jLimit)
+                {
+                    ctrs[j + 0] += s[col + j + 0] & 0xFF;
+                    ctrs[j + 1] += s[col + j + 1] & 0xFF;
+                    ctrs[j + 2] += s[col + j + 2] & 0xFF;
+                    ctrs[j + 3] += s[col + j + 3] & 0xFF;
+                    j += 4;
+                }
+            }
+            {
+                while (j < neg)
+                {
+                    ctrs[j] += s[col + j] & 0xFF;
+                    ++j;
+                }
+            }
+
+            int k = neg;
+            // TODO Vectorization when available
+            {
+                int kLimit = r - 4;
+                while (k <= kLimit)
+                {
+                    ctrs[k + 0] += s[k + 0 - neg] & 0xFF;
+                    ctrs[k + 1] += s[k + 1 - neg] & 0xFF;
+                    ctrs[k + 2] += s[k + 2 - neg] & 0xFF;
+                    ctrs[k + 3] += s[k + 3 - neg] & 0xFF;
+                    k += 4;
+                }
+            }
+            {
+                while (k < r)
+                {
+                    ctrs[k] += s[k - neg] & 0xFF;
+                    ++k;
+                }
+            }
+        }
     }
 
     // Convert a polynomial in GF2 to an array of positions of which the coefficients of the polynomial are equals to 1
