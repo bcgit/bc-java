@@ -20,19 +20,6 @@ public class Time
     extends ASN1Object
     implements ASN1Choice
 {
-    private final static Locale defaultLocale = getLocale();
-
-    private static Locale getLocale()
-    {
-        try
-        {
-            return Locale.ENGLISH;
-        }
-        catch (Exception e)
-        {
-            return Locale.getDefault();
-        }
-    }
     ASN1Primitive time;
 
     public static Time getInstance(
