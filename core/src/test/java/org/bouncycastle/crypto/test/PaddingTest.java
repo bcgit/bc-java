@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.paddings.TBCPadding;
 import org.bouncycastle.crypto.paddings.X923Padding;
 import org.bouncycastle.crypto.paddings.ZeroBytePadding;
+import org.bouncycastle.crypto.paddings.TLSPadding;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.util.encoders.Hex;
@@ -138,6 +139,24 @@ public class PaddingTest
         }
     }
 
+    public void testPadBlockCorrupted(
+        BlockCipherPadding   padder,
+        byte[]               data)
+    {
+        try
+        {
+            padder.padCount(data);
+
+            fail("invalid padding not detected");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            if (!"pad block corrupted".equals(e.getMessage()))
+            {
+                fail("wrong exception for corrupt padding: " + e);
+            }
+        }
+    }
     public void performTest()
     {
         SecureRandom    rand = new SecureRandom(new byte[20]);
@@ -148,20 +167,14 @@ public class PaddingTest
                                     Hex.decode("ffffff0505050505"),
                                     Hex.decode("0000000004040404"));
 
-        PKCS7Padding padder = new PKCS7Padding();
-        try
-        {
-            padder.padCount(new byte[8]);
+        testPadding(new TLSPadding(), rand,
+                Hex.decode("ffffff0404040404"),
+                Hex.decode("0000000003030303"));
 
-            fail("invalid padding not detected");
-        }
-        catch (InvalidCipherTextException e)
-        {
-            if (!"pad block corrupted".equals(e.getMessage()))
-            {
-                fail("wrong exception for corrupt padding: " + e);
-            }
-        } 
+        testPadBlockCorrupted(new PKCS7Padding(), new byte[8]);
+
+        testPadBlockCorrupted(new TLSPadding(), Hex.decode("0000000004040404"));
+
 
         testPadding(new ISO10126d2Padding(), rand,
                                     null,
