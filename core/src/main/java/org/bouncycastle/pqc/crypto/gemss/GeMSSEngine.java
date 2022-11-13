@@ -930,7 +930,7 @@ class GeMSSEngine
         int P_orig = P.getIndex(), A_orig = A.getIndex(), B_orig = B.getIndex();
         A.move(AOff);
         B.move(BOff);
-        Buffer_NB_WORD_MUL.reset();
+        //Buffer_NB_WORD_MUL.reset();
         Buffer_NB_WORD_MUL.mul_gf2x(A, B);
         A.changeIndex(A_orig);
         rem_gf2n(P, POff, Buffer_NB_WORD_MUL);
@@ -2845,7 +2845,6 @@ class GeMSSEngine
             //redgemss128, redgemss192, redgemss256, magentagemss128, magentagemss192, magentagemss256
             //3rd condition: HFEn>196
             // //bluegemss192, bluegemss256, cyangemss192, cyangemss256, fgemss128, dualmodems128, dualmodems192, dualmodems256
-            //System.out.println(" frobeniusMap_multisqr_HFE_gf2nx Branch 2 " + HFEDeg + " " + HFEn);
             l = frobeniusMap_multisqr_HFE_gf2nx(poly, F, U);
         }
         else
