@@ -20,7 +20,7 @@ import org.bouncycastle.util.test.SimpleTest;
 public class PKITSBasicConstraintsTest
     extends SimpleTest
 {
-    public static final String PKITS_DATA_RESOURCE_PREFIX = "PKITS/certs/";
+    public static final String PKITS_DATA_RESOURCE_PREFIX = "/PKITS/certs/";
 
     public String getName()
     {
