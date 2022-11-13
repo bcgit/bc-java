@@ -30,8 +30,7 @@ public class PKITSBasicConstraintsTest
     private static X509CertificateHolder readPKITSCert(String fileName)
         throws IOException
     {
-
-        ClassLoader l = PKITSBasicConstraintsTest.class.getClassLoader();
+        Class l = PKITSBasicConstraintsTest.class;
         ASN1InputStream asn1In = new ASN1InputStream(l.getResourceAsStream(PKITS_DATA_RESOURCE_PREFIX + fileName));
         return new X509CertificateHolder(Certificate.getInstance(asn1In.readObject()));
     }
