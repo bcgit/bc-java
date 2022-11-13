@@ -42,9 +42,11 @@ public class HybridValueParameterSpec
      */
     public byte[] getT()
     {
+        byte[] tVal = t;
+
         checkDestroyed();
         
-        return t;
+        return tVal;
     }
 
     /**
@@ -54,9 +56,11 @@ public class HybridValueParameterSpec
      */
     public AlgorithmParameterSpec getBaseParameterSpec()
     {
+        AlgorithmParameterSpec rv = this.baseSpec;
+
         checkDestroyed();
 
-        return baseSpec;
+        return rv;
     }
 
     /**
