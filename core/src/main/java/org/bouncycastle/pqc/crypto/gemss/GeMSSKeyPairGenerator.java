@@ -26,7 +26,7 @@ public class GeMSSKeyPairGenerator
     {
         GeMSSEngine engine = parameters.getEngine();
         int i;
-        byte[] seed = sec_rand(engine.SIZE_SEED_SK);//engine.SIZE_SEED_SK
+        byte[] seed = sec_rand(engine.SIZE_SEED_SK);
         int NB_COEFS_HFEPOLY = (2 + engine.HFEDegJ + ((engine.HFEDegI * (engine.HFEDegI + 1)) >>> 1));
         int NB_COEFS_HFEVPOLY = (NB_COEFS_HFEPOLY + (engine.NB_MONOMIAL_VINEGAR - 1) + (engine.HFEDegI + 1) * engine.HFEv);
         int NB_UINT_HFEVPOLY = NB_COEFS_HFEVPOLY * engine.NB_WORD_GFqn;
@@ -71,6 +71,7 @@ public class GeMSSKeyPairGenerator
         else
         {
             engine.changeVariablesMQS64_gf2(Q, S);
+            //changeVariablesMQS_gf2(engine, Q, S);
         }
         L.move(engine.LTRIANGULAR_NV_SIZE << 1);
         U.changeIndex(L.getIndex() + engine.LTRIANGULAR_N_SIZE);
