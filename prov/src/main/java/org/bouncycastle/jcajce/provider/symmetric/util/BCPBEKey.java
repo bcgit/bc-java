@@ -69,19 +69,23 @@ public class BCPBEKey
 
     public String getAlgorithm()
     {
+        String rv = this.algorithm;
+
         checkDestroyed(this);
 
-        return algorithm;
+        return rv;
     }
 
     public String getFormat()
     {
+        checkDestroyed(this);
+
         return "RAW";
     }
 
     public byte[] getEncoded()
     {
-        checkDestroyed(this);
+        byte[] enc;
 
         if (param != null)
         {
@@ -96,58 +100,72 @@ public class BCPBEKey
                 kParam = (KeyParameter)param;
             }
             
-            return kParam.getKey();
+            enc = kParam.getKey();
         }
         else
         {
             if (type == PBE.PKCS12)
             {
-                return PBEParametersGenerator.PKCS12PasswordToBytes(password);
+                enc = PBEParametersGenerator.PKCS12PasswordToBytes(password);
             }
             else if (type == PBE.PKCS5S2_UTF8)
             {
-                return PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password);
+                enc = PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password);
             }
             else
             {   
-                return PBEParametersGenerator.PKCS5PasswordToBytes(password);
+                enc = PBEParametersGenerator.PKCS5PasswordToBytes(password);
             }
         }
+
+        checkDestroyed(this);
+
+        return enc;
     }
     
     int getType()
     {
+        int rv = type;
+
         checkDestroyed(this);
 
-        return type;
+        return rv;
     }
     
     int getDigest()
     {
+        int rv = digest;
+
         checkDestroyed(this);
 
-        return digest;
+        return rv;
     }
     
     int getKeySize()
     {
+        int rv = keySize;
+
         checkDestroyed(this);
 
-        return keySize;
+        return rv;
     }
     
     public int getIvSize()
     {
+        int rv = ivSize;
+
         checkDestroyed(this);
 
-        return ivSize;
+        return rv;
     }
     
     public CipherParameters getParam()
     {
+        CipherParameters rv = param;
+
         checkDestroyed(this);
 
-        return param;
+        return rv;
     }
 
     /* (non-Javadoc)
@@ -155,14 +173,16 @@ public class BCPBEKey
      */
     public char[] getPassword()
     {
+        char[] clone = Arrays.clone(password);
+
         checkDestroyed(this);
 
-        if (password == null)
+        if (clone == null)
         {
             throw new IllegalStateException("no password available");
         }
 
-        return Arrays.clone(password);
+        return clone;
     }
 
     /* (non-Javadoc)
@@ -170,9 +190,11 @@ public class BCPBEKey
      */
     public byte[] getSalt()
     {
+        byte[] clone = Arrays.clone(salt);
+
         checkDestroyed(this);
 
-        return Arrays.clone(salt);
+        return clone;
     }
 
     /* (non-Javadoc)
@@ -180,16 +202,20 @@ public class BCPBEKey
      */
     public int getIterationCount()
     {
+        int rv = iterationCount;
+
         checkDestroyed(this);
 
-        return iterationCount;
+        return rv;
     }
     
     public ASN1ObjectIdentifier getOID()
     {
+        ASN1ObjectIdentifier rv = oid;
+
         checkDestroyed(this);
 
-        return oid;
+        return rv;
     }
     
     public void setTryWrongPKCS12Zero(boolean tryWrong)

@@ -36,14 +36,14 @@ public class HQCTest
     public void testVectors()
         throws Exception
     {
-//        boolean full = System.getProperty("test.full", "false").equals("true");
+        boolean full = System.getProperty("test.full", "false").equals("true");
 
         String[] files;
         // test cases
         files = new String[]{
-            "PQCkemKAT_2289.rsp",
-            "PQCkemKAT_4562.rsp",
-            "PQCkemKAT_7285.rsp"
+                "hqc-128_kat.rsp",
+                "hqc-192_kat.rsp",
+                "hqc-256_kat.rsp",
         };
 
         HQCParameters[] listParams = new HQCParameters[]{

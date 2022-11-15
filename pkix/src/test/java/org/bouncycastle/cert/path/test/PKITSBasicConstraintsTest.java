@@ -20,7 +20,7 @@ import org.bouncycastle.util.test.SimpleTest;
 public class PKITSBasicConstraintsTest
     extends SimpleTest
 {
-    public static final String PKITS_DATA_RESOURCE_PREFIX = "org/bouncycastle/cert/PKITS/certs/";
+    public static final String PKITS_DATA_RESOURCE_PREFIX = "/PKITS/certs/";
 
     public String getName()
     {
@@ -30,8 +30,7 @@ public class PKITSBasicConstraintsTest
     private static X509CertificateHolder readPKITSCert(String fileName)
         throws IOException
     {
-
-        ClassLoader l = PKITSBasicConstraintsTest.class.getClassLoader();
+        Class l = PKITSBasicConstraintsTest.class;
         ASN1InputStream asn1In = new ASN1InputStream(l.getResourceAsStream(PKITS_DATA_RESOURCE_PREFIX + fileName));
         return new X509CertificateHolder(Certificate.getInstance(asn1In.readObject()));
     }
