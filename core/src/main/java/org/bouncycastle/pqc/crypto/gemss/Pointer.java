@@ -73,6 +73,17 @@ class Pointer
         }
     }
 
+    public void setXorRangeXor(int outOff, Pointer a, int a_cp, Pointer b, int b_cp, int len)
+    {
+        outOff += cp;
+        a_cp += a.cp;
+        b_cp += b.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff++] ^= a.array[a_cp++] ^ b.array[b_cp++];
+        }
+    }
+
     public void setXorRange(int outOff, PointerUnion p, int inOff, int len)
     {
         outOff += cp;
@@ -410,6 +421,23 @@ class Pointer
             res ^= array[off++] & b.array[bOff++];
         }
         return res;
+    }
+
+    public long isNot0_gf2n(int off, int size)
+    {
+        off += cp;
+        long r = array[off];
+        int i;
+        for (i = 1; i < size; ++i)
+        {
+            r |= array[off++];
+        }
+        for (i = size; i > 0; i >>>= 1)
+        {
+            r |= r >>> i;
+        }
+        r &= 1;
+        return r;
     }
 
     public void mul_gf2x(Pointer A, Pointer B)
@@ -860,29 +888,29 @@ class Pointer
         //Buffer size: 2
         long AA, BB;
         /* A0*B0 */
-        MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);
+        MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);//x0, x1
         /* A2*B2 */
-        MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]);
+        MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]);//x4,x5
         /* A1*B1 */
-        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1], B[b_cp + 1]);
-        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
-        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];
-        C[c_cp + 2] = C[c_cp + 4];
-        C[c_cp + 4] ^= C[c_cp + 5];
-        C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];
-        C[c_cp + 1] ^= C[c_cp];
+        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1], B[b_cp + 1]);//x2, x3
+        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];//C1=x1^x2
+        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];//c4=x4^x3
+        C[c_cp + 2] = C[c_cp + 4];//c2=c4=x3^X4
+        C[c_cp + 4] ^= C[c_cp + 5];//c4=x3^x4^x5
+        C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];//c3=c1^c4=x1^x2^x3^x4^x5
+        C[c_cp + 1] ^= C[c_cp];//c1=x0^x1^x2
         AA = A[a_cp] ^ A[a_cp + 1];
         BB = B[b_cp] ^ B[b_cp + 1];
-        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);
-        C[c_cp + 2] ^= C[c_cp + 1] ^ RESERVED_BUF2[buf_cp + 1];
-        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
+        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);//x7, x8
+        C[c_cp + 2] ^= C[c_cp + 1] ^ RESERVED_BUF2[buf_cp + 1];//c2=x0^x1^x2^x3^x4^x8
+        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];//c1=x0^x1^x2^x7
         //TODO: move forward
         AA = A[a_cp + 1] ^ A[a_cp + 2];
         BB = B[b_cp + 1] ^ B[b_cp + 2];
         /* (A1+A2)*(B1+B2)  */
-        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);
-        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp];
-        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];
+        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);//x9,x10
+        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp];//c3=x1^x2^x3^x4^x5^x9
+        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];//c4=x3^x4^x5^x10
         AA = A[a_cp] ^ A[a_cp + 2];
         BB = B[b_cp] ^ B[b_cp + 2];
         /* (A0+A2)*(B0+B2) */

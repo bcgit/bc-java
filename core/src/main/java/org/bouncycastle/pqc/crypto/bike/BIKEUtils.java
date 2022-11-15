@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.bike;
 
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 class BIKEUtils
@@ -46,28 +45,28 @@ class BIKEUtils
         }
     }
 
-    static void fromBitArrayToByteArray(byte[] out, byte[] in)
+    static void fromBitArrayToByteArray(byte[] out, byte[] in, int inOff, int inLen)
     {
         int count = 0;
         int pos = 0;
-        long len = in.length;
+        long len = inLen;
         while (count < len)
         {
-            if (count + 8 >= in.length)
+            if (count + 8 >= inLen)
             {// last set of bits cannot have enough 8 bits
-                int b = in[count];
-                for (int j = in.length - count - 1; j >= 1; j--)
+                int b = in[inOff + count];
+                for (int j = inLen - count - 1; j >= 1; j--)
                 { //bin in reversed order
-                    b |= in[count + j] << j;
+                    b |= in[inOff + count + j] << j;
                 }
                 out[pos] = (byte)b;
             }
             else
             {
-                int b = in[count];
+                int b = in[inOff + count];
                 for (int j = 7; j >= 1; j--)
                 { //bin in reversed order
-                    b |= in[count + j] << j;
+                    b |= in[inOff + count + j] << j;
                 }
                 out[pos] = (byte)b;
             }
