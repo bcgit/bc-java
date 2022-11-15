@@ -112,13 +112,20 @@ class Utils
     protected static byte getBit(byte[] array, int bitNumber)
     {
         int arrayPos = bitNumber >>> 3, bitPos = (bitNumber & 7) ^ 7;
-        return (byte)((array[arrayPos] >>> bitPos) & 1);    }
+        return (byte)((array[arrayPos] >>> bitPos) & 1);
+    }
+
+    protected static int getBit(int word, int bitNumber)
+    {
+        int bitPos = bitNumber ^ 7;
+        return (word >>> bitPos) & 1;
+    }
 
     /* Get one bit from a byte array */
     protected static int getBit(int[] array, int bitNumber)
     {
         int arrayPos = bitNumber >>> 5, bitPos = (bitNumber & 31) ^ 7;
-        return (array[arrayPos] >> bitPos) & 1;
+        return (array[arrayPos] >>> bitPos) & 1;
     }
 
     protected static void setBit(byte[] array, int bitNumber, byte val)
@@ -128,6 +135,14 @@ class Utils
         t &= ~(1 << bitPos);
         t |= (int)val << bitPos;
         array[arrayPos] = (byte)t;
+    }
+
+    protected static int setBit(int word, int bitNumber, int bit)
+    {
+        int bitPos = bitNumber ^ 7;
+        word &= ~(1 << bitPos);
+        word |= bit << bitPos;
+        return word;
     }
 
     /* Set a specific bit in a int array to a given value */

@@ -26,7 +26,7 @@ public class GeMSSKeyPairGenerator
     {
         GeMSSEngine engine = parameters.getEngine();
         int i;
-        byte[] seed = sec_rand(engine.SIZE_SEED_SK);//engine.SIZE_SEED_SK
+        byte[] seed = sec_rand(engine.SIZE_SEED_SK);
         int NB_COEFS_HFEPOLY = (2 + engine.HFEDegJ + ((engine.HFEDegI * (engine.HFEDegI + 1)) >>> 1));
         int NB_COEFS_HFEVPOLY = (NB_COEFS_HFEPOLY + (engine.NB_MONOMIAL_VINEGAR - 1) + (engine.HFEDegI + 1) * engine.HFEv);
         int NB_UINT_HFEVPOLY = NB_COEFS_HFEVPOLY * engine.NB_WORD_GFqn;
@@ -41,7 +41,6 @@ public class GeMSSKeyPairGenerator
         byte[] pk = new byte[SIZE_PK_HFE];
         System.arraycopy(seed, 0, sk, 0, sk.length);
         F.fill(0, sk_uncomp, 0, sk_uncomp.length);
-//        engine.BytesToLongs(sk_uncomp, 0, F.getArray(), F.getIndex(), sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
         Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
         int ret;
@@ -53,17 +52,8 @@ public class GeMSSKeyPairGenerator
                 throw new IllegalArgumentException("Error");
             }
         }
-        else
-        {
-            //TODO delete this branch
-            ret = engine.genSecretMQS_gf2(Q, F);
-        }
-
         Pointer S = new Pointer(engine.MATRIXnv_SIZE);
         Pointer T = new Pointer(S);
-        //Copy L from sk_uncomp is done in the previous line
-        //Copy U from L is done in the previous line
-
         Pointer L = new Pointer(F, NB_UINT_HFEVPOLY);
         Pointer U = new Pointer(L, engine.LTRIANGULAR_NV_SIZE);
         engine.cleanLowerMatrix(L, GeMSSEngine.FunctionParams.NV);
@@ -72,18 +62,17 @@ public class GeMSSKeyPairGenerator
         engine.invMatrixLU_gf2(S, L, U, GeMSSEngine.FunctionParams.NV);
         if (engine.HFEDeg <= 34)
         {
-//            ret=interpolateHFE_FS(Q,F,S);
-//            if (ret != 0)
-//            {
-//                throw new IllegalArgumentException("Error");
-//            }
-            changeVariablesMQS_gf2(engine, Q, S);
+            ret = engine.interpolateHFE_FS_ref(Q, F, S);
+            if (ret != 0)
+            {
+                throw new IllegalArgumentException("Error");
+            }
         }
         else
         {
             engine.changeVariablesMQS64_gf2(Q, S);
+            //changeVariablesMQS_gf2(engine, Q, S);
         }
-
         L.move(engine.LTRIANGULAR_NV_SIZE << 1);
         U.changeIndex(L.getIndex() + engine.LTRIANGULAR_N_SIZE);
         engine.cleanLowerMatrix(L, GeMSSEngine.FunctionParams.N);

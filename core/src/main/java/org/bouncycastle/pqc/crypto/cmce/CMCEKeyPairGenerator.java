@@ -12,11 +12,11 @@ public class CMCEKeyPairGenerator
 
     private CMCEKeyGenerationParameters cmceParams;
 
-    private int m;
-
-    private int n;
-
-    private int t;
+//    private int m;
+//
+//    private int n;
+//
+//    private int t;
 
     private SecureRandom random;
 
@@ -26,9 +26,9 @@ public class CMCEKeyPairGenerator
         this.cmceParams = (CMCEKeyGenerationParameters) param;
         this.random = param.getRandom();
 
-        this.m = this.cmceParams.getParameters().getM();
-        this.n = this.cmceParams.getParameters().getN();
-        this.t = this.cmceParams.getParameters().getT();
+//        this.m = this.cmceParams.getParameters().getM();
+//        this.n = this.cmceParams.getParameters().getN();
+//        this.t = this.cmceParams.getParameters().getT();
     }
 
     private AsymmetricCipherKeyPair genKeyPair()

@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.LocaleUtil;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
@@ -485,7 +486,7 @@ public class TimeStampTokenGenerator
         throws TSPException
     {
         String format = "yyyyMMddHHmmss.SSS";
-        SimpleDateFormat dateF = (locale == null) ? new SimpleDateFormat(format) : new SimpleDateFormat(format, locale);
+        SimpleDateFormat dateF = (locale == null) ? new SimpleDateFormat(format, LocaleUtil.EN_Locale) : new SimpleDateFormat(format, locale);
         dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
         StringBuilder sBuild = new StringBuilder(dateF.format(time));
         int dotIndex = sBuild.indexOf(".");

@@ -23,16 +23,20 @@ class SecretWithEncapsulationImpl
 
     public byte[] getSecret()
     {
+        byte[] clone = Arrays.clone(sessionKey);
+
         checkDestroyed();
 
-        return Arrays.clone(sessionKey);
+        return clone;
     }
 
     public byte[] getEncapsulation()
     {
+        byte[] clone = Arrays.clone(cipher_text);
+
         checkDestroyed();
 
-        return Arrays.clone(cipher_text);
+        return clone;
     }
 
     public void destroy()
