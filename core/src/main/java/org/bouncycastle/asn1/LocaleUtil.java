@@ -58,7 +58,7 @@ public class LocaleUtil
 
                 localeCache.put(locale, adj);
             }
-System.err.println(adj.longValue());
+
             if (adj.longValue() != 0L)
             {
                 return new Date(date.getTime() - adj.longValue());
