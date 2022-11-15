@@ -64,7 +64,7 @@ public class CertificateList
         {
             tbsCertList = TBSCertList.getInstance(seq.getObjectAt(0));
             sigAlgId = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
-            sig = DERBitString.getInstance(seq.getObjectAt(2));
+            sig = ASN1BitString.getInstance(seq.getObjectAt(2));
         }
         else
         {
