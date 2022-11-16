@@ -108,17 +108,17 @@ class Pointer
     }
 
     //Assume the input is a Pointer not a PointerUnion
-    public void setXorRangeShift(int outOff, Pointer p, int inOff, int len, int right)
-    {
-
-        outOff += cp;
-        inOff += p.cp;
-        int left = 64 - right;
-        for (int i = 0; i < len; ++i, ++inOff)
-        {
-            array[outOff++] ^= (p.array[inOff] >>> right) ^ (p.array[inOff + 1] << left);
-        }
-    }
+//    public void setXorRangeShift(int outOff, Pointer p, int inOff, int len, int right)
+//    {
+//
+//        outOff += cp;
+//        inOff += p.cp;
+//        int left = 64 - right;
+//        for (int i = 0; i < len; ++i, ++inOff)
+//        {
+//            array[outOff++] ^= (p.array[inOff] >>> right) ^ (p.array[inOff + 1] << left);
+//        }
+//    }
 
     public void setRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
     {
@@ -151,36 +151,36 @@ class Pointer
         }
     }
 
-    public void setXorRangeAndMaskRotate(int outOff, Pointer p, int inOff, int len, long mask, int j)
-    {
-        int jc = 64 - j;
-        outOff += cp;
-        inOff += p.cp;
-        long A_mask1 = p.array[inOff++] & mask, A_mask2;
-        array[outOff++] ^= A_mask1 << j;
-        for (int i = 1; i < len; ++i)
-        {
-            A_mask2 = p.array[inOff++] & mask;
-            array[outOff++] ^= (A_mask1 >>> jc) | (A_mask2 << j);
-            A_mask1 = A_mask2;
-        }
-    }
-
-    public void setXorRangeAndMaskRotateOverflow(int outOff, Pointer p, int inOff, int len, long mask, int j)
-    {
-        int jc = 64 - j;
-        inOff += p.cp;
-        long A_mask1 = p.array[inOff++] & mask, A_mask2;
-        outOff += cp;
-        array[outOff++] ^= A_mask1 << j;
-        for (int i = 1; i < len; ++i)
-        {
-            A_mask2 = p.array[inOff++] & mask;
-            array[outOff++] ^= (A_mask1 >>> jc) | (A_mask2 << j);
-            A_mask1 = A_mask2;
-        }
-        array[outOff] ^= A_mask1 >>> jc;
-    }
+//    public void setXorRangeAndMaskRotate(int outOff, Pointer p, int inOff, int len, long mask, int j)
+//    {
+//        int jc = 64 - j;
+//        outOff += cp;
+//        inOff += p.cp;
+//        long A_mask1 = p.array[inOff++] & mask, A_mask2;
+//        array[outOff++] ^= A_mask1 << j;
+//        for (int i = 1; i < len; ++i)
+//        {
+//            A_mask2 = p.array[inOff++] & mask;
+//            array[outOff++] ^= (A_mask1 >>> jc) | (A_mask2 << j);
+//            A_mask1 = A_mask2;
+//        }
+//    }
+//
+//    public void setXorRangeAndMaskRotateOverflow(int outOff, Pointer p, int inOff, int len, long mask, int j)
+//    {
+//        int jc = 64 - j;
+//        inOff += p.cp;
+//        long A_mask1 = p.array[inOff++] & mask, A_mask2;
+//        outOff += cp;
+//        array[outOff++] ^= A_mask1 << j;
+//        for (int i = 1; i < len; ++i)
+//        {
+//            A_mask2 = p.array[inOff++] & mask;
+//            array[outOff++] ^= (A_mask1 >>> jc) | (A_mask2 << j);
+//            A_mask1 = A_mask2;
+//        }
+//        array[outOff] ^= A_mask1 >>> jc;
+//    }
 
     public void move(int p)
     {
@@ -191,11 +191,6 @@ class Pointer
     {
         cp++;
     }
-
-//    public void moveDecremental()
-//    {
-//        cp--;
-//    }
 
     public long[] getArray()
     {
@@ -372,45 +367,44 @@ class Pointer
      * @param[out] C   C=A*A in GF(2)[x] (the result is not reduced).
      * @remark Constant-time implementation.
      */
-    public void sqr_nocst_gf2x(Pointer A, int NB_WORD_GFqn, int NB_WORD_MUL)
-    {
-        long Ci;
-        int i = NB_WORD_GFqn - 1;
-        int pos = cp + NB_WORD_MUL - 1;
-        //int Aoff = A.cp + i;
-        if ((NB_WORD_MUL & 1) != 0)
-        {
-            /* Lower 32 bits of A[i] */
-            Ci = A.get(i);//A.array[Aoff];//
-            Ci = (Ci ^ (Ci << 16)) & 0x0000FFFF0000FFFFL;
-            Ci = square_gf2(Ci);
-            array[pos--] = Ci;
-            i = NB_WORD_GFqn - 2;
-        }
-        for (; i != -1; --i)
-        {
-            /* Higher 32 bits of A[i] */
-            Ci = A.get(i) >>> 32;//A.array[Aoff] >>> 32;
-            Ci = (Ci ^ (Ci << 16)) & (0x0000FFFF0000FFFFL);
-            Ci = square_gf2(Ci);
-            array[pos--] = Ci;
-            /* Lower 32 bits of A[i] */
-            Ci = A.get(i);//A.array[Aoff--];
-            Ci = ((Ci & 0xFFFFFFFFL) ^ (Ci << 16)) & (0x0000FFFF0000FFFFL);
-            Ci = square_gf2(Ci);
-            array[pos--] = Ci;
-        }
-    }
-
-    private long square_gf2(long Ci)
-    {
-        Ci = (Ci ^ (Ci << 8)) & (0x00FF00FF00FF00FFL);
-        Ci = (Ci ^ (Ci << 4)) & (0x0F0F0F0F0F0F0F0FL);
-        Ci = (Ci ^ (Ci << 2)) & (0x3333333333333333L);
-        Ci = (Ci ^ (Ci << 1)) & (0x5555555555555555L);
-        return Ci;
-    }
-
+//    public void sqr_nocst_gf2x(Pointer A, int NB_WORD_GFqn, int NB_WORD_MUL)
+//    {
+//        long Ci;
+//        int i = NB_WORD_GFqn - 1;
+//        int pos = cp + NB_WORD_MUL - 1;
+//        //int Aoff = A.cp + i;
+//        if ((NB_WORD_MUL & 1) != 0)
+//        {
+//            /* Lower 32 bits of A[i] */
+//            Ci = A.get(i);//A.array[Aoff];//
+//            Ci = (Ci ^ (Ci << 16)) & 0x0000FFFF0000FFFFL;
+//            Ci = square_gf2(Ci);
+//            array[pos--] = Ci;
+//            i = NB_WORD_GFqn - 2;
+//        }
+//        for (; i != -1; --i)
+//        {
+//            /* Higher 32 bits of A[i] */
+//            Ci = A.get(i) >>> 32;//A.array[Aoff] >>> 32;
+//            Ci = (Ci ^ (Ci << 16)) & (0x0000FFFF0000FFFFL);
+//            Ci = square_gf2(Ci);
+//            array[pos--] = Ci;
+//            /* Lower 32 bits of A[i] */
+//            Ci = A.get(i);//A.array[Aoff--];
+//            Ci = ((Ci & 0xFFFFFFFFL) ^ (Ci << 16)) & (0x0000FFFF0000FFFFL);
+//            Ci = square_gf2(Ci);
+//            array[pos--] = Ci;
+//        }
+//    }
+//
+//    private long square_gf2(long Ci)
+//    {
+//        Ci = (Ci ^ (Ci << 8)) & (0x00FF00FF00FF00FFL);
+//        Ci = (Ci ^ (Ci << 4)) & (0x0F0F0F0F0F0F0F0FL);
+//        Ci = (Ci ^ (Ci << 2)) & (0x3333333333333333L);
+//        Ci = (Ci ^ (Ci << 1)) & (0x5555555555555555L);
+//        return Ci;
+//    }
     public long getDotProduct(int off, Pointer b, int bOff, int len)
     {
         off += cp;
@@ -462,123 +456,6 @@ class Pointer
                 new long[3], new long[3], new long[7]);
             break;
         }
-    }
-
-    public void mul_gf2x(Pointer A, Pointer B, int HFEnq, int NB_WORD_GFqn, int HFEnr)
-    {
-        switch (array.length)
-        {
-        case 6:
-            mul192_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp, new long[2], 0);
-            return;
-        case 9:
-            mul288_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp, new long[3], new long[3], new long[7]);
-            return;
-        case 12:
-            mul384_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[3], new long[3], new long[8]);
-            return;
-        case 13:
-            mul416_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[4], new long[4], new long[13],
-                new long[2], new long[2]);
-            return;
-        case 17:
-            mul544_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[5], new long[5], new long[9],
-                new long[3], new long[3], new long[7]);
-            return;
-        }
-        int i, j, k, b_cp = B.cp, a_cp, c_cp, jc;
-        long b, mask, mask1, mask2;
-        for (i = 0; i < HFEnq; ++i)
-        {
-            b = B.array[b_cp];
-            mask = -(b & 1L);
-            a_cp = A.cp;
-            c_cp = cp;
-            /* j=0 */
-            for (j = 0; j < NB_WORD_GFqn; ++j)
-            {
-                array[c_cp++] ^= A.array[a_cp++] & mask;
-            }
-
-            /* The last 64-bit block BL of A contains HFEnr bits.
-               So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-            for (j = 1, jc = 63; j <= 64 - HFEnr; ++j, --jc)
-            {
-                a_cp = A.cp;
-                c_cp = cp;
-                mask = -((b >>> j) & 1L);
-                mask1 = A.array[a_cp++] & mask;
-                array[c_cp++] ^= mask1 << j;
-                for (k = 1; k < NB_WORD_GFqn; ++k)
-                {
-                    mask2 = A.array[a_cp++] & mask;
-                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
-                    mask1 = mask2;
-                }
-            }
-            for (; j < 64; ++j, --jc)
-            {
-                a_cp = A.cp;
-                c_cp = cp;
-                mask = -((b >>> j) & 1L);
-                mask1 = A.array[a_cp++] & mask;
-                array[c_cp++] ^= mask1 << j;
-                for (k = 1; k < NB_WORD_GFqn; ++k)
-                {
-                    mask2 = A.array[a_cp++] & mask;
-                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
-                    mask1 = mask2;
-                }
-                array[c_cp] ^= mask1 >>> jc;
-            }
-            b_cp++;
-            cp++;
-        }
-        b = B.array[b_cp];
-        /* j=0 */
-        mask = -(b & 1L);
-        a_cp = A.cp;
-        c_cp = cp;
-        /* j=0 */
-        for (j = 0; j < NB_WORD_GFqn; ++j)
-        {
-            array[c_cp++] ^= A.array[a_cp++] & mask;
-        }
-        /* The last 64-bit block BL of A contains HFEnr bits. So, there is no overflow for BL<<j while j<=(64-HFEnr). */
-        int loop_end = HFEnr > 32 ? 65 - HFEnr : HFEnr;
-        for (j = 1, jc = 63; j < loop_end; ++j, --jc)
-        {
-            a_cp = A.cp;
-            c_cp = cp;
-            mask = -((b >>> j) & 1L);
-            mask1 = A.array[a_cp++] & mask;
-            array[c_cp++] ^= mask1 << j;
-            for (k = 1; k < NB_WORD_GFqn; ++k)
-            {
-                mask2 = A.array[a_cp++] & mask;
-                array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
-                mask1 = mask2;
-            }
-        }
-        if (HFEnr > 32)
-        {
-            for (; j < HFEnr; ++j, --jc)
-            {
-                a_cp = A.cp;
-                c_cp = cp;
-                mask = -((b >>> j) & 1L);
-                mask1 = A.array[a_cp++] & mask;
-                array[c_cp++] ^= mask1 << j;
-                for (k = 1; k < NB_WORD_GFqn; ++k)
-                {
-                    mask2 = A.array[a_cp++] & mask;
-                    array[c_cp++] ^= (mask1 >>> jc) | (mask2 << j);
-                    mask1 = mask2;
-                }
-                array[c_cp] ^= mask1 >>> jc;
-            }
-        }
-        cp = 0;
     }
 
     private void MUL64_NO_SIMD_GF2X(long[] C, int c_cp, long A, long B)
@@ -791,6 +668,7 @@ class Pointer
         C[1] = C0^C1^C2
         C[2] = C1^C2^C3
         C[3] = C3 */
+        //TODO: move following code above
         AA = A[a_cp] ^ A[a_cp + 1];
         BB = B[b_cp] ^ B[b_cp + 1];
         MUL64_NO_SIMD_GF2X(RESERVED_BUF, buf_cp, AA, BB);
@@ -897,6 +775,7 @@ class Pointer
         C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];//c4=x4^x3
         C[c_cp + 2] = C[c_cp + 4];//c2=c4=x3^X4
         C[c_cp + 4] ^= C[c_cp + 5];//c4=x3^x4^x5
+        //TODO: move here
         C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];//c3=c1^c4=x1^x2^x3^x4^x5
         C[c_cp + 1] ^= C[c_cp];//c1=x0^x1^x2
         AA = A[a_cp] ^ A[a_cp + 1];
@@ -961,7 +840,7 @@ class Pointer
 //        long[] BB = new long[3];
 //        long[] RESERVED_BUF6 = new long[5];
         mul128_no_simd_gf2x(C, c_cp, A, a_cp, B, b_cp, RESERVED_BUF, 0);
-        mul160_no_simd_gf2x(C, 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF, 0);
+        mul160_no_simd_gf2x(C, c_cp + 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF, 0);
         C[c_cp + 4] ^= C[c_cp + 2];
         C[c_cp + 5] ^= C[c_cp + 3];
         C[c_cp + 2] = C[c_cp + 4] ^ C[c_cp];
