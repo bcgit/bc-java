@@ -360,19 +360,19 @@ public class ASN1GeneralizedTime
         {
             if (hasFractionalSeconds())
             {
-                dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'");
+                dateF = new SimpleDateFormat("yyyyMMddHHmmss.SSS'Z'", LocaleUtil.EN_Locale);
             }
             else if (hasSeconds())
             {
-                dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
+                dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'", LocaleUtil.EN_Locale);
             }
             else if (hasMinutes())
             {
-                dateF = new SimpleDateFormat("yyyyMMddHHmm'Z'");
+                dateF = new SimpleDateFormat("yyyyMMddHHmm'Z'", LocaleUtil.EN_Locale);
             }
             else
             {
-                dateF = new SimpleDateFormat("yyyyMMddHH'Z'");
+                dateF = new SimpleDateFormat("yyyyMMddHH'Z'", LocaleUtil.EN_Locale);
             }
 
             dateF.setTimeZone(new SimpleTimeZone(0, "Z"));
@@ -409,7 +409,7 @@ public class ASN1GeneralizedTime
             d = pruneFractionalSeconds(d);
         }
         
-        return LocaleUtil.epochAdjust(dateF.parse(d));
+        return dateF.parse(d);
     }
 
     protected boolean hasFractionalSeconds()
