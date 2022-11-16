@@ -127,7 +127,8 @@ class GeMSSEngine
         NB_WORD_GFqv = HFEvr != 0 ? HFEvq + 1 : HFEvq;
         HFEmq8 = HFEm >>> 3;
         HFEmr8 = HFEm & 7;
-        NB_BYTES_GFqm = HFEmq8 + 1;//(HFEmq8 + ((HFEmr8 != 0) ? 1 : 0));
+        NB_BYTES_GFqm = HFEmq8 + (HFEmr8 != 0 ? 1 : 0);
+        //System.out.println((NB_BYTES_GFqm & 7));
         NB_WORD_UNCOMP_EQ = ((((HFEnvq * (HFEnvq + 1)) >>> 1) * NB_BITS_UINT) + (HFEnvq + 1) * HFEnvr);
         HFEnvr8 = (HFEnv & 7);
         MASK8_GF2nv = (1 << HFEnvr8) - 1;
@@ -941,6 +942,68 @@ class GeMSSEngine
     private void rem_gf2n(Pointer P, int p_cp, Pointer Pol)
     {
         p_cp += P.getIndex();
+//        if (K2 != 0)
+//        {
+//            if ((HFEn == 544) && (K3 == 128))
+//            {
+//                //REM544_PENTANOMIAL_K3_IS_128_GF2X: dualmodems256
+//                Rem_GF2n.REM544_PENTANOMIAL_K3_IS_128_GF2X(P.array, p_cp, Pol.array, K1,
+//                    K2, KI, KI64, K164, K264, MASK_GF2n);
+//            }
+//            else if (HFEnr != 0)
+//            {
+//                //REM544_PENTANOMIAL_GF2X: fgemss256
+//                Rem_GF2n.REM544_PENTANOMIAL_GF2X(P.array, p_cp, Pol.array, K1, K2, K3,
+//                    KI, KI64, K164, K264, K364, MASK_GF2n);
+//            }
+//        }
+//        else
+//        {
+//            if (HFEn > 256 && HFEn < 289 && K3 > 32 && K3 < 64)
+//            {
+//                //REM288_TRINOMIAL_GF2X:   fgemss128 (NOT SURE),
+//                //REM288_SPECIALIZED_TRINOMIAL_GF2X: whitegemss192, bluegemss192, redgemss192, magentagemss192, cyangemss192
+//                Rem_GF2n.REM288_SPECIALIZED_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3, KI, KI64,
+//                    K364, MASK_GF2n);
+//            }
+//            else if (HFEn == 354)
+//            {
+//                //REM384_SPECIALIZED_TRINOMIAL_GF2X: gemss256, whitegemss256, cyangemss256, magentagemss256
+//                Rem_GF2n.REM384_SPECIALIZED_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3,
+//                    KI, KI64, K364, MASK_GF2n);
+//            }
+//            else if (HFEn == 358)
+//            {
+//                //REM384_SPECIALIZED358_TRINOMIAL_GF2X: bluegemss256, redgemss256
+//                Rem_GF2n.REM384_SPECIALIZED358_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3,
+//                    KI, KI64, K364, MASK_GF2n);
+//            }
+//            else if (HFEn == 402)
+//            {
+//                //REM402_SPECIALIZED_TRINOMIAL_GF2X: fgemss192, dualmodems192
+//                Rem_GF2n.REM402_SPECIALIZED_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3,
+//                    KI, KI64, K364, MASK_GF2n);
+//            }
+//            else
+//            {
+//                switch (NB_WORD_MUL)
+//                {
+//                case 6:
+//                    Rem_GF2n.REM192_SPECIALIZED_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3, KI, KI64,
+//                        K364, MASK_GF2n);
+//                    break;
+//                case 9:
+//                    Rem_GF2n.REM288_SPECIALIZED_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3, KI, KI64,
+//                        K364, MASK_GF2n);
+//                    break;
+//                case 12:
+//                    Rem_GF2n.REM384_TRINOMIAL_GF2X(P.array, p_cp, Pol.array, K3,
+//                        KI, KI64, K364, MASK_GF2n);
+//                }
+//                //REM192_SPECIALIZED_TRINOMIAL_GF2X: gemss128, bluegemss128, redgemss128, whitegemss128, magentagemss128
+//                //REM288_SPECIALIZED_TRINOMIAL_GF2X: whitegemss192, bluegemss192
+//            }
+//        }
         if (K2 != 0)
         {
             if ((HFEn == 544) && (K3 == 128))
@@ -2023,6 +2086,90 @@ class GeMSSEngine
                 mq_rem.move(NB_WORD_UNCOMP_EQ);
             }
         }
+    }
+
+    private void evalMQSnocst8_unrolled_gf2(Pointer c, Pointer x, PointerUnion m, PointerUnion pk_orig)
+    {
+        //PointerUnion mq_rem = new PointerUnion(mq_rem_orig);
+        long xi, xj;
+        int iq, ir, i = HFEnv, jq, jr;
+        int h;
+        final int NB_EQ = (HFEm >>> 3) != 0 ? ((HFEm >>> 3) << 3) : HFEm;
+        final int NB_BYTES_EQ = (NB_EQ & 7) != 0 ? ((NB_EQ >>> 3) + 1) : (NB_EQ >>> 3);
+        final int NB_WORD_EQ = (NB_BYTES_EQ >>> 3) + ((NB_BYTES_EQ & 7) != 0 ? 1 : 0);
+        /* Constant cst_pk */
+        PointerUnion pk = new PointerUnion(pk_orig);
+        System.arraycopy(pk.getArray(), 0, c.getArray(), c.getIndex(), NB_WORD_EQ);
+        pk.moveNextBytes(NB_BYTES_EQ);
+        /* for each row of the quadratic matrix of pk, excepted the last block */
+        for (iq = 0; iq < HFEnvq; ++iq)
+        {
+            xi = m.get(iq);
+            for (ir = 0; ir < NB_BITS_UINT; ++ir, --i)
+            {
+                if ((xi & 1) != 0)
+                {
+                    /* for each column of the quadratic matrix of pk */
+                    /* xj=xi=1 */
+                    c.setXorRange(0, pk, 0, NB_WORD_EQ);
+                    pk.moveNextBytes(NB_BYTES_EQ);
+                    xj = xi >>> 1;
+                    LOOPJR_UNROLLED_64(c, pk, ir + 1, NB_BITS_UINT, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                    for (jq = iq + 1; jq < HFEnvq; ++jq)
+                    {
+                        xj = m.get(jq);
+                        LOOPJR_UNROLLED_64(c, pk, 0, NB_BITS_UINT, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                    }
+                    if (HFEnvr != 0)
+                    {
+                        xj = m.get(HFEnvq);
+                        if (HFEnvr < (LEN_UNROLLED_64 << 1))
+                        {
+                            LOOPJR_NOCST_64(c, pk, 0, HFEnvr, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                        }
+                        else
+                        {
+                            LOOPJR_UNROLLED_64(c, pk, 0, HFEnvr, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                        }
+                    }
+                }
+                else
+                {
+                    pk.moveNextBytes(i * NB_BYTES_EQ);
+                }
+                xi >>>= 1;
+            }
+        }
+        /* the last block */
+        if (HFEnvr != 0)
+        {
+            xi = m.get(HFEnvq);
+            for (ir = 0; ir < HFEnvr; ++ir, --i)
+            {
+                if ((xi & 1) != 0)
+                {
+                    /* for each column of the quadratic matrix of pk */
+                    /* xj=xi=1 */
+                    c.setXorRange(0, pk, 0, NB_WORD_EQ);
+                    pk.moveNextBytes(NB_BYTES_EQ);
+                    xj = xi >>> 1;
+                    if (HFEnvr < (LEN_UNROLLED_64 << 1))
+                    {
+                        LOOPJR_NOCST_64(c, pk, ir + 1, HFEnvr, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                    }
+                    else
+                    {
+                        LOOPJR_UNROLLED_64(c, pk, ir + 1, HFEnvr, xj, NB_BYTES_EQ, NB_WORD_EQ);
+                    }
+                }
+                else
+                {
+                    pk.moveNextBytes(i * NB_BYTES_EQ);
+                }
+                xi >>>= 1;
+            }
+        }
+        MASK_64(c, NB_WORD_EQ - 1, NB_EQ);
     }
 
     /* Uncompress the signature */
@@ -4138,7 +4285,7 @@ class GeMSSEngine
             pk64.setByteIndex(ACCESS_last_equations8 + i * NB_BYTES_EQUATION);
             /* The last equation in input is smaller because compressed */
             cst ^= convMQ_last_uncompressL_gf2(new Pointer(pk_tmp, 1 + i * NB_WORD_UNCOMP_EQ), pk64) << i;
-            if (HFENr8 != 0 && (HFEmr8 > 1))
+            if (HFENr8 != 0 && HFEmr8 > 1)
             {
                 /* Number of lost bits by the zero padding of each equation (without the last) */
                 if (HFEnvr == 0)
@@ -4171,6 +4318,10 @@ class GeMSSEngine
         if (HFEmr8 != 0)
         {
             ret = sign_openHFE_huncomp_pk(message, message.length, signature, pk, new PointerUnion(pk_tmp));
+        }
+        else
+        {
+            ret = sign_openHFE_uncomp_pk(message, message.length, signature, pk);
         }
         return ret;
     }
@@ -4219,6 +4370,7 @@ class GeMSSEngine
         /* *MQS2_cp = MQS2[i*NB_WORD_GFqn] */
         /* *S_cpj = S[j*NB_WORD_GFqn+iq] */
         /* for each row j of S */
+        long MQS_7 = MQS.get(7);
         for (j = 0; j < HFEnv; ++j)
         {
             /* initialisation at the first row of Q */
@@ -4635,6 +4787,103 @@ class GeMSSEngine
         {
             c.setRangeClear(NB_WORD_GFqn, NB_WORD_MMUL - NB_WORD_GFqn);
         }
+    }
+
+    /**
+     * @return 0 for a valid signature, !=0 else.
+     * @brief Verify the signature of the document m of length len bytes, using a
+     * (HFEv-)-based signature scheme. pk can be evaluated with the eval_pk function
+     * @details eval_pk takes 3 arguments here.
+     * @param[in] m   A pointer on a document.
+     * @param[in] len The length in bytes of the document m.
+     * @param[in] sm8 A signature generated by a (HFEv-)-based signature scheme.
+     * @param[in] pk  The public-key, a MQ system with m equations in
+     * GF(2)[x1,...,x_(n+v)].
+     * @param[in] eval_pk The function allowing to evaluate pk. This choice
+     * depends on the chosen representation of pk.
+     * @remark Requirement: when SSE or AVX is enabled, the public-key must be
+     * aligned respectively on 16 or 32 bytes. However, this requirement and the
+     * alignment are disabled for the public/stable version of MQsoft (to be simple
+     * to use, generic for the allocation of pk and to avoid segmentation faults).
+     * @remark This function does not require a constant-time implementation.
+     * @todo To simply the use of the memory alignment for the public-key.
+     */
+    int sign_openHFE_uncomp_pk(byte[] m, int len, byte[] sm8, PointerUnion pk)
+    {
+        Pointer sm = new Pointer(SIZE_SIGN_UNCOMPRESSED - SIZE_SALT_WORD);
+        Pointer Si_tab = new Pointer(NB_WORD_GF2nv);
+        Pointer Si1_tab = new Pointer(NB_WORD_GF2nv);
+        /* Copy of pointer */
+        Pointer tmp;
+        Pointer Si = new Pointer(Si_tab);
+        Pointer Si1 = new Pointer(Si1_tab);
+        /* Vector of D_1, ..., D_(NB_ITE) */
+        Pointer D = new Pointer(NB_ITE * SIZE_DIGEST_UINT);
+        int i;
+        int index;
+        if (NB_ITE == 1)
+        {
+            /* Take the (n+v) first bits */
+            sm.fill(0, sm8, 0, NB_BYTES_GFqnv);
+        }
+        else
+        {
+            uncompress_signHFE(sm, sm8, 0);
+        }
+        byte[] hashbuffer = new byte[64];
+        /* Compute H1 = H(m), the m first bits are D1 */
+        SHA3Digest sha3Digest = new SHA3Digest(Sha3BitStrength);
+        /* Compute H1 = H(m), the m first bits are D1 */
+        sha3Digest.update(m, 0, len);
+        sha3Digest.doFinal(hashbuffer, 0);
+        D.fill(0, hashbuffer, 0, 64);
+        for (i = 1; i < NB_ITE; ++i)
+        {
+            /* Compute Hi = H(H_(i-1)), the m first bits are Di */
+            sha3Digest.reset();
+            sha3Digest.update(hashbuffer, 0, SIZE_DIGEST);//(i - 1) * SIZE_DIGEST_UINT
+            sha3Digest.doFinal(hashbuffer, 0);//i * SIZE_DIGEST_UINT
+            D.fill(i * SIZE_DIGEST_UINT, hashbuffer, 0, 64);
+            /* Clean the previous hash (= extract D_(i-1) from H_(i-1)) */
+            if (HFEmr != 0)
+            {
+                D.setAnd(SIZE_DIGEST_UINT * (i - 1) + NB_WORD_GF2m - 1, MASK_GF2m);
+            }
+            /* Compute Hi = H(H_(i-1)), the m first bits are Di */
+        }
+        /* Compute p(S_(NB_IT),X_(NB_IT)) */
+        evalMQSnocst8_quo_gf2(Si, sm, pk);
+        for (i = NB_ITE - 1; i > 0; --i)
+        {
+            /* Compute Si = xor(p(S_i+1,X_i+1),D_i+1) */
+            Si.setXorRange(0, D, i * SIZE_DIGEST_UINT, NB_WORD_GF2m);
+            /* Compute Si||Xi */
+            index = NB_WORD_GF2nv + (NB_ITE - 1 - i) * NB_WORD_GF2nvm;
+            if (HFEmr != 0)
+            {
+                Si.setAnd(NB_WORD_GF2m - 1, MASK_GF2m);
+                /* Concatenation(Si,Xi): the intersection between S1 and X1 is not null */
+                Si.setXor(NB_WORD_GF2m - 1, sm.get(index));
+                if (NB_WORD_GF2nvm != 1)
+                {
+                    ++index;
+                    Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm - 1);
+                }
+            }
+            else
+            {
+                /* Concatenation(Si,Xi) */
+                Si.copyFrom(NB_WORD_GF2m, sm, index, NB_WORD_GF2nvm);
+            }
+            /* Compute p(Si,Xi) */
+            evalMQSnocst8_quo_gf2(Si, sm, pk);
+            /* Permutation of pointers */
+            tmp = new Pointer(Si1);
+            Si1.changeIndex(Si);
+            Si.changeIndex(tmp);
+        }
+        /* D1'' == D1 */
+        return isEqual_nocst_gf2(Si, D, NB_WORD_GF2m) ? 1 : 0;
     }
 }
 

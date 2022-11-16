@@ -42,6 +42,10 @@ public class GeMSSKeyPairGenerator
         System.arraycopy(seed, 0, sk, 0, sk.length);
         F.fill(0, sk_uncomp, 0, sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
+//        for (i = 0; i < F.getLength(); ++i)
+//        {
+//            System.out.println(i + " " + F.get(i));
+//        }
         Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
         int ret;
         if (engine.HFEDeg > 34)
@@ -70,6 +74,10 @@ public class GeMSSKeyPairGenerator
         }
         else
         {
+//            for (i = 0; i < 100; ++i)
+//            {
+//                System.out.println(i + " " + Q.get(i));
+//            }
             engine.changeVariablesMQS64_gf2(Q, S);
             //changeVariablesMQS_gf2(engine, Q, S);
         }
@@ -112,6 +120,23 @@ public class GeMSSKeyPairGenerator
             else
             {
                 engine.convMQS_one_eq_to_hybrid_rep8_comp_gf2(pk, pk_cp);
+            }
+        }
+        else
+        {
+            PointerUnion pk_last = new PointerUnion(engine.NB_WORD_GF2m << 3);
+            int pk_p = 0, j;
+            for (i = 0; i < engine.NB_MONOMIAL_PK; ++i)
+            {
+                engine.vecMatProduct(pk_last, Q, T, 0, GeMSSEngine.FunctionParams.M);
+                for (j = 0; j < engine.NB_BYTES_GFqm; ++j)
+                {
+                    pk[pk_p] = pk_last.getByte();
+                    pk_p++;
+                    pk_last.moveNextByte();
+                }
+                pk_last.indexReset();
+                Q.move(engine.NB_WORD_GFqn);
             }
         }
         return new AsymmetricCipherKeyPair(new GeMSSPublicKeyParameters(parameters, pk),

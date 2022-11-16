@@ -24,23 +24,15 @@ public class GeMSSTest
     extends TestCase
 {
     //TODO: MQSOFT_REF
-    //bit.h COUNTBITS64, ORBITS64, NORBITS64,
-    //add_gf2n.h
-    //changeVariablesMQS_gf2
-    //evalMQSv_unrolled_gf2
-    //frobeniusMap_multisqr_HFE_gf2nx
-    //inv_gf2n (not sure)
-    //sort_nocst_gf2n
     public void testVectors()
         throws Exception
     {
-        //String testcipher = "fgemss128";//key generation fail
-        //String testcipher = "fgemss192";
-//        String testcipher = "fgemss256";
-        //String testcipher = "dualmodems128";//key generation fail
-        //String testcipher = "dualmodems192";
-//        String testcipher = "dualmodems256";
-        String files = "bluegemss128.rsp redgemss128.rsp gemss128.rsp cyangemss128.rsp whitegemss128.rsp magentagemss128.rsp " +
+
+//        String testcipher = "fgemss256";//key generation fail
+
+//        String testcipher = "dualmodems256";//key generation fail
+        String files = "dualmodems256.rsp fgemss256.rsp dualmodems192.rsp fgemss192.rsp fgemss128.rsp dualmodems128.rsp " +
+            "redgemss128.rsp bluegemss128.rsp gemss128.rsp cyangemss128.rsp whitegemss128.rsp magentagemss128.rsp " +
             "bluegemss192.rsp gemss192.rsp redgemss192.rsp whitegemss192.rsp cyangemss192.rsp magentagemss192.rsp " +
             "cyangemss256.rsp bluegemss256.rsp  whitegemss256.rsp redgemss256.rsp magentagemss256.rsp gemss256.rsp";
 
