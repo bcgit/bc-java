@@ -137,7 +137,6 @@ abstract class Internal
 
     static protected int[] ReadIntsFromProperty(Properties props, String key, int intSize)
     {
-        System.out.println("READING FROM PROPERTY");
         int[] ints = new int[intSize];
         String s = props.getProperty(key);
         String[] vals = s.split(",");
@@ -150,7 +149,6 @@ abstract class Internal
 
     static protected long[] ReadFromProperty(Properties props, String key, int longSize)
     {
-        System.out.println("READING FROM PROPERTY");
         String s = props.getProperty(key);
         s = s.replaceAll(",", "");
         byte[] bytes = Hex.decode(s);
@@ -164,7 +162,6 @@ abstract class Internal
 
     static protected long[][] ReadFromProperty(Properties props, String key, int d1Size, int d2Size)
     {
-        System.out.println("READING FROM PROPERTY");
         String s = props.getProperty(key);
         s = s.replaceAll(",", "");
         byte[] bytes = Hex.decode(s);
@@ -181,7 +178,6 @@ abstract class Internal
 
     static protected long[][][] ReadFromProperty(Properties props, String key, int d1Size, int d2Size, int d3Size)
     {
-        System.out.println("READING FROM PROPERTY");
         String s = props.getProperty(key);
         s = s.replaceAll(",", "");
         byte[] bytes = Hex.decode(s);
