@@ -45,11 +45,7 @@ public class LocaleTest
         Locale list[] = DateFormat.getAvailableLocales();
         for (int i = 0; i != list.length; i++)
         {
-            if (!list[i].getCountry().equals("TH")    // skip Thailand as it appears the JVM is now a day out on this one.
-             && !list[i].getCountry().equals("JP"))   // and it appears the change in era is causing issues here.
-            {
-                doTestLocale(list[i]);
-            }
+            doTestLocale(list[i]);
         }
 
         Locale.setDefault(defLocale);
