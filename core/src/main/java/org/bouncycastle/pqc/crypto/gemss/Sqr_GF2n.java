@@ -59,8 +59,8 @@ class Sqr_GF2n
 
     static void SQR416_NO_SIMD_GF2X(long[] C, long[] A, int a_cp)
     {
-        C[12] = SQR32_NO_SIMD_GF2X(A[a_cp + 2]);
-        SQR128_NO_SIMD_GF2X(C, 8, A, a_cp);
+        C[12] = SQR32_NO_SIMD_GF2X(A[a_cp + 6]);
+        SQR128_NO_SIMD_GF2X(C, 8, A, a_cp + 4);
         SQR256_NO_SIMD_GF2X(C, 0, A, a_cp);
     }
 

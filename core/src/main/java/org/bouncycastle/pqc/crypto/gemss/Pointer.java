@@ -306,7 +306,7 @@ class Pointer
             input_cp += 8;
             i += 8;
         }
-        if (i < len)
+        if (i < len && q < array.length)
         {
             int r = 0;
             array[q] = 0;
@@ -927,14 +927,14 @@ class Pointer
         //MUL96_NO_SIMD_GF2X(C + 4, A + 2, B + 2, tmp, tmp1, tmp2);
         MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]);
         C[c_cp + 6] = MUL32_NO_SIMD_GF2X(A[a_cp + 3], B[b_cp + 3]);
-        C[c_cp + 6] ^= C[c_cp + 1];
+        C[c_cp + 6] ^= C[c_cp + 5];
         C[c_cp + 5] = C[c_cp + 4] ^ C[c_cp + 6];
     /*  C[0] = C0
         C[1] = C0^C1^C2
         C[2] = C1^C2 */
         MUL64_NO_SIMD_GF2X(RESERVED_BUF6, buf_cp, A[a_cp + 2] ^ A[a_cp + 3], B[b_cp + 2] ^ B[b_cp + 3]);
-        C[c_cp + 1] ^= RESERVED_BUF6[buf_cp];
-        C[c_cp + 2] ^= RESERVED_BUF6[buf_cp + 1];
+        C[c_cp + 5] ^= RESERVED_BUF6[buf_cp];
+        C[c_cp + 6] ^= RESERVED_BUF6[buf_cp + 1];
         //end of mul96
         C[c_cp + 2] ^= C[c_cp + 4];
         C[c_cp + 3] ^= C[c_cp + 5];
@@ -947,7 +947,7 @@ class Pointer
         AA[1] = A[a_cp + 1] ^ A[a_cp + 3];
         BB[0] = B[b_cp] ^ B[b_cp + 2];
         BB[1] = B[b_cp + 1] ^ B[b_cp + 3];
-        mul128_no_simd_gf2x(RESERVED_BUF6, 0, AA, 0, BB, 0, RESERVED_BUF6, buf_cp + 4);
+        mul128_no_simd_gf2x(RESERVED_BUF6, buf_cp, AA, 0, BB, 0, RESERVED_BUF6, buf_cp + 4);
         C[c_cp + 2] ^= RESERVED_BUF6[buf_cp];
         C[c_cp + 3] ^= RESERVED_BUF6[buf_cp + 1];
         C[c_cp + 4] ^= RESERVED_BUF6[buf_cp + 2];
@@ -1019,7 +1019,6 @@ class Pointer
         // buffer size: 7+6=13
         mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF, 0);
         mul224_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, AA, BB, RESERVED_BUF, 0);
-        mul128_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, RESERVED_BUF, 0);
         C[6] ^= C[3];
         C[7] ^= C[4];
         C[8] ^= C[5];
