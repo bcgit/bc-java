@@ -47,6 +47,56 @@ public final class Ed25519PublicKeyParameters
         return Arrays.clone(data);
     }
 
+    public boolean verify(int algorithm, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
+    {
+        switch (algorithm)
+        {
+        case Ed25519.Algorithm.Ed25519:
+        {
+            if (null != ctx)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+
+            return Ed25519.verify(sig, sigOff, data, 0, msg, msgOff, msgLen);
+        }
+        case Ed25519.Algorithm.Ed25519ctx:
+        {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+
+            return Ed25519.verify(sig, sigOff, data, 0, ctx, msg, msgOff, msgLen);
+        }
+        case Ed25519.Algorithm.Ed25519ph:
+        {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+            if (Ed25519.PREHASH_SIZE != msgLen)
+            {
+                throw new IllegalArgumentException("msgLen");
+            }
+
+            return Ed25519.verifyPrehash(sig, sigOff, data, 0, ctx, msg, msgOff);
+        }
+        default:
+        {
+            throw new IllegalArgumentException("algorithm");
+        }
+        }
+    }
+
     private static byte[] validate(byte[] buf)
     {
         if (buf.length != KEY_SIZE)

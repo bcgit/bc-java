@@ -22,6 +22,11 @@ public class Ed25519ctxSigner
 
     public Ed25519ctxSigner(byte[] context)
     {
+        if (null == context)
+        {
+            throw new NullPointerException("'context' cannot be null");
+        }
+
         this.context = Arrays.clone(context);
     }
 
@@ -80,7 +85,7 @@ public class Ed25519ctxSigner
         buffer.reset();
     }
 
-    private static class Buffer extends ByteArrayOutputStream
+    private static final class Buffer extends ByteArrayOutputStream
     {
         synchronized byte[] generateSignature(Ed25519PrivateKeyParameters privateKey, byte[] ctx)
         {
@@ -98,8 +103,7 @@ public class Ed25519ctxSigner
                 return false;
             }
 
-            byte[] pk = publicKey.getEncoded();
-            boolean result = Ed25519.verify(signature, 0, pk, 0, ctx, buf, 0, count);
+            boolean result = publicKey.verify(Ed25519.Algorithm.Ed25519ctx, ctx, buf, 0, count, signature, 0);            
             reset();
             return result;
         }
