@@ -89,9 +89,12 @@ class PicnicEngine
     {
         return signatureLength;
     }
+
+    protected final LowmcConstants lowmcConstants;
     
-    PicnicEngine(int picnicParams)
+    PicnicEngine(int picnicParams, LowmcConstants lowmcConstants)
     {
+        this.lowmcConstants = lowmcConstants;
         parameters = picnicParams;
         switch (parameters)
         {
@@ -531,7 +534,7 @@ class PicnicEngine
 
         mpc_xor_constant_verify(tmp, plaintext, 0, stateSizeWords, challenge);
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this, 0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this, 0);
         matrix_mul_offset(tmp, 0,
                 view1.inputShare, 0,
                 current.getData(), current.getMatrixPointer());
@@ -543,7 +546,7 @@ class PicnicEngine
 
         for (int r = 1; r <= numRounds; ++r)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul_offset(tmp, 0,
                     view1.inputShare, 0,
                     current.getData(), current.getMatrixPointer());
@@ -553,12 +556,12 @@ class PicnicEngine
 
             mpc_substitution_verify(tmp, tapes, view1, view2);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             mpc_matrix_mul(tmp, 2*stateSizeWords,
                     tmp, 2*stateSizeWords,
                     current.getData(), current.getMatrixPointer(), 2);
 
-            current = LowmcConstants.RConstant(this, r - 1);
+            current = lowmcConstants.RConstant(this, r - 1);
             mpc_xor_constant_verify(tmp, current.getData(), current.getMatrixPointer(), stateSizeWords, challenge);
             mpc_xor(tmp, tmp, stateSizeWords, 2);
         }
@@ -1541,7 +1544,7 @@ class PicnicEngine
 
         mpc_xor_constant(slab, 3*stateSizeWords, plaintext, 0, stateSizeWords);
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this, 0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this, 0);
         for (int player = 0; player < 3; player++)
         {
             matrix_mul_offset(slab, player  * stateSizeWords, views[player].inputShare, 0,
@@ -1552,7 +1555,7 @@ class PicnicEngine
 
         for (int r = 1; r <= numRounds; r++)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             for (int player = 0; player < 3; player++)
             {
                 matrix_mul_offset(slab, player  * stateSizeWords,
@@ -1562,12 +1565,12 @@ class PicnicEngine
 
             mpc_substitution(slab, tapes, views);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             mpc_matrix_mul(slab, 3*stateSizeWords,
                            slab, 3*stateSizeWords,
                            current.getData(), current.getMatrixPointer(), 3);
 
-            current = LowmcConstants.RConstant(this, r - 1);
+            current = lowmcConstants.RConstant(this, r - 1);
             mpc_xor_constant(slab, 3*stateSizeWords,
                              current.getData(), current.getMatrixPointer(), stateSizeWords);
 
@@ -2032,7 +2035,7 @@ class PicnicEngine
         int[] roundKey = new int[LOWMC_MAX_WORDS];
         int[] state = new int[LOWMC_MAX_WORDS];
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this,0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer()); // roundKey = maskedKey * KMatrix[0]
         xor_array(state, roundKey, plaintext,0, stateSizeWords);      // state = plaintext + roundKey
 
@@ -2041,13 +2044,13 @@ class PicnicEngine
             tapesToWords(tmp_shares, tape);
             mpc_sbox(state, tmp_shares, tape, msg);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             matrix_mul(state, state, current.getData(), current.getMatrixPointer()); // state = state * LMatrix (r-1)
 
-            current = LowmcConstants.RConstant(this,r - 1);
+            current = lowmcConstants.RConstant(this,r - 1);
             xor_array(state, state, current.getData(), current.getMatrixPointer(), stateSizeWords);  // state += RConstant
 
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer());
             xor_array(state, roundKey, state, 0, stateSizeWords);      // state += roundKey
         }
@@ -2365,22 +2368,22 @@ class PicnicEngine
             System.arraycopy(plaintext, 0, output, 0, stateSizeWords);
         }
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this,0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());
 
         xor_array(output, output, roundKey, 0,  stateSizeWords);
 
         for (int r = 1; r <= numRounds; r++)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());
 
             substitution(output);
 
-            current = LowmcConstants.LMatrix(this,r-1);
+            current = lowmcConstants.LMatrix(this,r-1);
             matrix_mul(output, output, current.getData(), current.getMatrixPointer());
 
-            current = LowmcConstants.RConstant(this,r-1);
+            current = lowmcConstants.RConstant(this,r-1);
             xor_array(output, output, current.getData(), current.getMatrixPointer(), stateSizeWords);
             xor_array(output, output, roundKey, 0, stateSizeWords);
         }
