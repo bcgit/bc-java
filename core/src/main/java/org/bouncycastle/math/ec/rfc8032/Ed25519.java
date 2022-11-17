@@ -202,6 +202,11 @@ public abstract class Ed25519
 
     private static boolean checkPointVar(byte[] p)
     {
+        if ((decode32(p, 28) & 0x7FFFFFFF) < P[7])
+        {
+            return true;
+        }
+
         int[] t = new int[COORD_INTS];
         decode32(p, 0, t, 0, COORD_INTS);
         t[COORD_INTS - 1] &= 0x7FFFFFFF;
@@ -223,7 +228,12 @@ public abstract class Ed25519
 
     private static Digest createDigest()
     {
-        return new SHA512Digest();
+        Digest d = new SHA512Digest();
+        if (d.getDigestSize() != 64)
+        {
+            throw new IllegalStateException();
+        }
+        return d;
     }
 
     public static Digest createPrehash()
@@ -369,7 +379,7 @@ public abstract class Ed25519
     public static void generatePublicKey(byte[] sk, int skOff, byte[] pk, int pkOff)
     {
         Digest d = createDigest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] h = new byte[64];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -470,7 +480,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] h = new byte[64];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -493,7 +503,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] h = new byte[64];
 
         d.update(sk, skOff, SECRET_KEY_SIZE);
         d.doFinal(h, 0);
@@ -533,7 +543,7 @@ public abstract class Ed25519
         }
 
         Digest d = createDigest();
-        byte[] h = new byte[d.getDigestSize()];
+        byte[] h = new byte[64];
 
         dom2(d, phflag, ctx);
         d.update(R, 0, POINT_BYTES);

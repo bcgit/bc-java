@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 
-
 public class Ed448Signer
     implements Signer
 {
@@ -23,6 +22,11 @@ public class Ed448Signer
 
     public Ed448Signer(byte[] context)
     {
+        if (null == context)
+        {
+            throw new NullPointerException("'context' cannot be null");
+        }
+        
         this.context = Arrays.clone(context);
     }
 
@@ -81,7 +85,7 @@ public class Ed448Signer
         buffer.reset();
     }
 
-    private static class Buffer extends ByteArrayOutputStream
+    private static final class Buffer extends ByteArrayOutputStream
     {
         synchronized byte[] generateSignature(Ed448PrivateKeyParameters privateKey, byte[] ctx)
         {
@@ -99,8 +103,7 @@ public class Ed448Signer
                 return false;
             }
 
-            byte[] pk = publicKey.getEncoded();
-            boolean result = Ed448.verify(signature, 0, pk, 0, ctx, buf, 0, count);
+            boolean result = publicKey.verify(Ed448.Algorithm.Ed448, ctx, buf, 0, count, signature, 0);
             reset();
             return result;
         }
