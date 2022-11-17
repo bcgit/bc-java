@@ -5,6 +5,19 @@ import org.bouncycastle.crypto.CipherParameters;
 public class PicnicParameters
     implements CipherParameters
 {
+    private static class L1Constants
+    {
+        protected static final LowmcConstantsL1 Instance = new LowmcConstantsL1();
+    }
+    private static class L3Constants
+    {
+        protected static final LowmcConstantsL3 Instance = new LowmcConstantsL3();
+    }
+    private static class L5Constants
+    {
+        protected static final LowmcConstantsL5 Instance = new LowmcConstantsL5();
+    }
+
     public static final PicnicParameters picnicl1fs = new PicnicParameters("picnicl1fs",  1);
     public static final PicnicParameters picnicl1ur = new PicnicParameters("picnicl1ur",  2);
     public static final PicnicParameters picnicl3fs = new PicnicParameters("picnicl3fs",  3);
@@ -36,6 +49,24 @@ public class PicnicParameters
 
     PicnicEngine getEngine()
     {
-        return new PicnicEngine(param);
+        switch (param)
+        {
+            case 1:
+            case 2:
+            case 7:
+            case 10:
+                return new PicnicEngine(param, L1Constants.Instance);
+            case 3:
+            case 4:
+            case 8:
+            case 11:
+                return new PicnicEngine(param, L3Constants.Instance);
+            case 12:
+            case 5:
+            case 6:
+            case 9:
+                return new PicnicEngine(param, L5Constants.Instance);
+            default: return null;
+        }
     }
 }
