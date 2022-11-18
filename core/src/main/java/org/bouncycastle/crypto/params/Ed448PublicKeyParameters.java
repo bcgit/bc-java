@@ -47,6 +47,47 @@ public final class Ed448PublicKeyParameters
         return Arrays.clone(data);
     }
 
+    public boolean verify(int algorithm, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
+    {
+        switch (algorithm)
+        {
+        case Ed448.Algorithm.Ed448:
+        {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+
+            return Ed448.verify(sig, sigOff, data, 0, ctx, msg, msgOff, msgLen);
+        }
+        case Ed448.Algorithm.Ed448ph:
+        {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+            if (Ed448.PREHASH_SIZE != msgLen)
+            {
+                throw new IllegalArgumentException("msgLen");
+            }
+
+            return Ed448.verifyPrehash(sig, sigOff, data, 0, ctx, msg, msgOff);
+        }
+        default:
+        {
+            throw new IllegalArgumentException("algorithm");
+        }
+        }
+    }
+
     private static byte[] validate(byte[] buf)
     {
         if (buf.length != KEY_SIZE)

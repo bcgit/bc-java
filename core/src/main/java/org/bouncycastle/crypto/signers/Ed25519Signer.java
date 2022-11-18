@@ -78,7 +78,7 @@ public class Ed25519Signer
         buffer.reset();
     }
 
-    private static class Buffer extends ByteArrayOutputStream
+    private static final class Buffer extends ByteArrayOutputStream
     {
         synchronized byte[] generateSignature(Ed25519PrivateKeyParameters privateKey)
         {
@@ -96,8 +96,7 @@ public class Ed25519Signer
                 return false;
             }
 
-            byte[] pk = publicKey.getEncoded();
-            boolean result = Ed25519.verify(signature, 0, pk, 0, buf, 0, count);
+            boolean result = publicKey.verify(Ed25519.Algorithm.Ed25519, null, buf, 0, count, signature, 0);
             reset();
             return result;
         }
