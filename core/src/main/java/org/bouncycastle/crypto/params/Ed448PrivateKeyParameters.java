@@ -92,11 +92,28 @@ public final class Ed448PrivateKeyParameters
         {
         case Ed448.Algorithm.Ed448:
         {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
+
             Ed448.sign(data, 0, pk, 0, ctx, msg, msgOff, msgLen, sig, sigOff);
             break;
         }
         case Ed448.Algorithm.Ed448ph:
         {
+            if (null == ctx)
+            {
+                throw new NullPointerException("'ctx' cannot be null");
+            }
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("ctx");
+            }
             if (Ed448.PREHASH_SIZE != msgLen)
             {
                 throw new IllegalArgumentException("msgLen");

@@ -54,7 +54,7 @@ class Tape
 //        {System.out.printf("%08x ", key0[i]);}System.out.println();
 
         // key = key0 x KMatrix[0]^(-1)
-        KMatricesWithPointer current = LowmcConstants.KMatrixInv(engine);
+        KMatricesWithPointer current = engine.lowmcConstants.KMatrixInv(engine);
         engine.matrix_mul(key, key0, current.getData(), current.getMatrixPointer());
 
 //        System.out.print("key: ");
@@ -70,12 +70,12 @@ class Tape
 
         for (int r = engine.numRounds; r > 0; r--)
         {
-            current = LowmcConstants.KMatrix(engine, r);
+            current = engine.lowmcConstants.KMatrix(engine, r);
             engine.matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());    // roundKey = key * KMatrix(r)
 
             engine.xor_array(x, x, roundKey, 0, engine.stateSizeWords);
 
-            current = LowmcConstants.LMatrixInv(engine, r-1);
+            current = engine.lowmcConstants.LMatrixInv(engine, r-1);
             engine.matrix_mul(y, x, current.getData(), current.getMatrixPointer());
 
             if(r == 1)

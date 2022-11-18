@@ -21,6 +21,11 @@ public class Ed448phSigner
 
     public Ed448phSigner(byte[] context)
     {
+        if (null == context)
+        {
+            throw new NullPointerException("'context' cannot be null");
+        }
+
         this.context = Arrays.clone(context);
     }
 
@@ -84,8 +89,13 @@ public class Ed448phSigner
             return false;
         }
 
-        byte[] pk = publicKey.getEncoded();
-        return Ed448.verifyPrehash(signature, 0, pk, 0, context, prehash);
+        byte[] msg = new byte[Ed448.PREHASH_SIZE];
+        if (Ed448.PREHASH_SIZE != prehash. doFinal(msg, 0, Ed448.PREHASH_SIZE))
+        {
+            throw new IllegalStateException("Prehash digest failed");
+        }
+
+        return publicKey.verify(Ed448.Algorithm.Ed448ph, context, msg, 0, Ed448.PREHASH_SIZE, signature, 0);
     }
 
     public void reset()
