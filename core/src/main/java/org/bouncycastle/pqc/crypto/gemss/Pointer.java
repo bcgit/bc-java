@@ -672,22 +672,6 @@ class Pointer
     private void mul128_no_simd_gf2x(long[] C, int c_cp, long[] A, int a_cp, long[] B, int b_cp, long[] RESERVED_BUF, int buf_cp)
     {
         // buffer size: 2
-//        long AA, BB;
-//        //long[] RESERVED_BUF2 = new long[2];
-//        MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);
-//        MUL64_NO_SIMD_GF2X(C, c_cp + 2, A[a_cp + 1], B[b_cp + 1]);
-//        C[c_cp + 2] ^= C[c_cp + 1];
-//        C[c_cp + 1] = C[c_cp] ^ C[c_cp + 2];
-//        C[c_cp + 2] ^= C[c_cp + 3];
-//    /*  C[0] = C0
-//        C[1] = C0^C1^C2
-//        C[2] = C1^C2^C3
-//        C[3] = C3 */
-//        AA = A[a_cp] ^ A[a_cp + 1];
-//        BB = B[b_cp] ^ B[b_cp + 1];
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF, buf_cp, AA, BB);
-//        C[c_cp + 1] ^= RESERVED_BUF[buf_cp];
-//        C[c_cp + 2] ^= RESERVED_BUF[buf_cp + 1];
         MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);//x0, x1
         //c0=x0, c1=x1
         MUL64_NO_SIMD_GF2X(C, c_cp + 2, A[a_cp + 1], B[b_cp + 1]);//x2, x3
@@ -741,61 +725,12 @@ class Pointer
     private void mul160_no_simd_gf2x(long[] C, int c_cp, long[] A, int a_cp, long[] B, int b_cp,
                                      long[] RESERVED_BUF2, int buf_cp)
     {
-        //Buffer size: 2
-//        long AA, BB;
-//        /* A0*B0 */
-//        MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);
-//        /* A2*B2 */
-//        C[c_cp + 4] = MUL32_NO_SIMD_GF2X(A[a_cp + 2], B[b_cp + 2]);
-//        /* A1*B1 */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1], B[b_cp + 1]);
-//        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
-//        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];
-//        //TODO: optimise the following code
-//        C[c_cp + 2] = C[c_cp + 4];
-//        C[c_cp + 3] = C[c_cp + 1];
-//    /*  C[0] = C0
-//        C[1] = C1^C2
-//        C[2] = C4^C3
-//        C[3] = C1^C2
-//        C[4] = C4^C3 */
-//        C[c_cp + 1] ^= C[c_cp];
-//        C[c_cp + 2] ^= C[c_cp + 1];
-//        C[c_cp + 3] ^= C[c_cp + 4];
-//    /*  C[0] = C0
-//        C[1] = C0^(C1^C2)
-//        C[2] = (C0^C1^C2)^(C3^C4)
-//        C[3] = (C1^C2)^(C3^C4)
-//        C[4] = C3^C4 */
-//        AA = A[a_cp] ^ A[a_cp + 1];
-//        BB = B[b_cp] ^ B[b_cp + 1];
-//        /* (A0+A1)*(B0+B1) */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);
-//        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
-//        C[c_cp + 2] ^= RESERVED_BUF2[buf_cp + 1];
-//        AA = A[a_cp + 1] ^ A[a_cp + 2];
-//        BB = B[b_cp + 1] ^ B[b_cp + 2];
-//        /* (A1+A2)*(B1+B2) */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);
-//        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp];
-//        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];
-//        AA = A[a_cp] ^ A[a_cp + 2];
-//        BB = B[b_cp] ^ B[b_cp + 2];
-//        /* (A0+A2)*(B0+B2) */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, AA, BB);
-//        C[c_cp + 2] ^= RESERVED_BUF2[buf_cp];
-//        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp + 1];
-
         MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);
         MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1], B[b_cp + 1]);
         C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
         C[c_cp + 4] = RESERVED_BUF2[buf_cp + 1] ^ MUL32_NO_SIMD_GF2X(A[a_cp + 2], B[b_cp + 2]);
         C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];
         MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp] ^ A[a_cp + 1], B[b_cp] ^ B[b_cp + 1]);
-//        C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];
-//        C[c_cp + 1] ^= C[c_cp];
-//        C[c_cp + 2] = C[c_cp + 4] ^ C[c_cp + 1] ^ RESERVED_BUF2[buf_cp + 1];
-//        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];
         C[c_cp + 1] ^= C[c_cp] ^ RESERVED_BUF2[buf_cp];
         C[c_cp + 2] = C[c_cp + 3] ^ C[c_cp] ^ RESERVED_BUF2[buf_cp + 1];
         /* (A1+A2)*(B1+B2) */
@@ -842,30 +777,6 @@ class Pointer
 //        C[c_cp + 2] ^= RESERVED_BUF2[buf_cp];
 //        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp + 1];
 
-//        /* A0*B0 */
-//        MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);//x0, x1
-//        /* A2*B2 */
-//        MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]);//x4,x5
-//        /* A1*B1 */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1], B[b_cp + 1]);//x2, x3
-//        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];//C1=x1^x2
-//        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];//c4=x4^x3
-//        C[c_cp + 2] = C[c_cp + 4];//c2=c4=x3^X4
-//        C[c_cp + 4] ^= C[c_cp + 5];//c4=x3^x4^x5
-//        C[c_cp + 3] = C[c_cp + 1] ^ C[c_cp + 4];//c3=c1^c4=x1^x2^x3^x4^x5
-//        C[c_cp + 1] ^= C[c_cp];//c1=x0^x1^x2
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp] ^ A[a_cp + 1], B[b_cp] ^ B[b_cp + 1]);//x7, x8
-//        C[c_cp + 2] ^= C[c_cp + 1] ^ RESERVED_BUF2[buf_cp + 1];//c2=x0^x1^x2^x3^x4^x8
-//        C[c_cp + 1] ^= RESERVED_BUF2[buf_cp];//c1=x0^x1^x2^x7
-//        /* (A1+A2)*(B1+B2)  */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp + 1] ^ A[a_cp + 2], B[b_cp + 1] ^ B[b_cp + 2]);//x9,x10
-//        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp];//c3=x1^x2^x3^x4^x5^x9
-//        C[c_cp + 4] ^= RESERVED_BUF2[buf_cp + 1];//c4=x3^x4^x5^x10
-//        /* (A0+A2)*(B0+B2) */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF2, buf_cp, A[a_cp] ^ A[a_cp + 2], B[b_cp] ^ B[b_cp + 2]);
-//        C[c_cp + 2] ^= RESERVED_BUF2[buf_cp];
-//        C[c_cp + 3] ^= RESERVED_BUF2[buf_cp + 1];
-
         /* A0*B0 */
         MUL64_NO_SIMD_GF2X(C, c_cp, A[a_cp], B[b_cp]);//x0, x1
         /* A2*B2 */
@@ -896,34 +807,6 @@ class Pointer
                                      long[] RESERVED_BUF6, int buf_cp)
     {
         //buffer size: 6=4+2
-//        mul128_no_simd_gf2x(C, c_cp, A, a_cp, B, b_cp, RESERVED_BUF6, buf_cp);
-//        //MUL96_NO_SIMD_GF2X(C + 4, A + 2, B + 2, tmp, tmp1, tmp2);
-//        MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]);
-//        C[c_cp + 6] = MUL32_NO_SIMD_GF2X(A[a_cp + 3], B[b_cp + 3]) ^ C[c_cp + 5];
-//        C[c_cp + 5] = C[c_cp + 4] ^ C[c_cp + 6];
-//    /*  C[0] = C0
-//        C[1] = C0^C1^C2
-//        C[2] = C1^C2 */
-//        MUL64_NO_SIMD_GF2X(RESERVED_BUF6, buf_cp, A[a_cp + 2] ^ A[a_cp + 3], B[b_cp + 2] ^ B[b_cp + 3]);
-//        C[c_cp + 5] ^= RESERVED_BUF6[buf_cp];
-//        C[c_cp + 6] ^= RESERVED_BUF6[buf_cp + 1];
-//        //end of mul96
-//        C[c_cp + 2] ^= C[c_cp + 4];
-//        C[c_cp + 3] ^= C[c_cp + 5];
-//        C[c_cp + 4] = C[c_cp + 2];
-//        C[c_cp + 5] = C[c_cp + 3];
-//        C[c_cp + 2] ^= C[c_cp];
-//        C[c_cp + 3] ^= C[c_cp + 1];
-//        C[c_cp + 4] ^= C[c_cp + 6];
-//        AA[0] = A[a_cp] ^ A[a_cp + 2];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 3];
-//        BB[0] = B[b_cp] ^ B[b_cp + 2];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 3];
-//        mul128_no_simd_gf2x(RESERVED_BUF6, buf_cp, AA, 0, BB, 0, RESERVED_BUF6, buf_cp + 4);
-//        C[c_cp + 2] ^= RESERVED_BUF6[buf_cp];
-//        C[c_cp + 3] ^= RESERVED_BUF6[buf_cp + 1];
-//        C[c_cp + 4] ^= RESERVED_BUF6[buf_cp + 2];
-//        C[c_cp + 5] ^= RESERVED_BUF6[buf_cp + 3];
         AA[0] = A[a_cp] ^ A[a_cp + 2];
         AA[1] = A[a_cp + 1] ^ A[a_cp + 3];
         BB[0] = B[b_cp] ^ B[b_cp + 2];
@@ -947,27 +830,6 @@ class Pointer
     private void mul288_no_simd_gf2x(long[] C, int c_cp, long[] A, int a_cp, long[] B, int b_cp, long[] AA, long[] BB, long[] RESERVED_BUF)
     {
         //buffer size: 5+2=7
-//        mul128_no_simd_gf2x(C, c_cp, A, a_cp, B, b_cp, RESERVED_BUF, 0);
-//        mul160_no_simd_gf2x(C, c_cp + 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF, 0);
-//        C[c_cp + 4] ^= C[c_cp + 2];
-//        C[c_cp + 5] ^= C[c_cp + 3];
-//        C[c_cp + 2] = C[c_cp + 4] ^ C[c_cp];
-//        C[c_cp + 3] = C[c_cp + 5] ^ C[c_cp + 1];
-//        C[c_cp + 4] ^= C[c_cp + 6];
-//        C[c_cp + 5] ^= C[c_cp + 7];
-//        C[c_cp + 6] ^= C[c_cp + 8];
-//        AA[0] = A[a_cp] ^ A[a_cp + 2];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 3];
-//        AA[2] = A[a_cp + 4];
-//        BB[0] = B[b_cp] ^ B[b_cp + 2];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 3];
-//        BB[2] = B[b_cp + 4];
-//        mul160_no_simd_gf2x(RESERVED_BUF, 0, AA, 0, BB, 0, RESERVED_BUF, 5);
-//        C[c_cp + 2] ^= RESERVED_BUF[0];
-//        C[c_cp + 3] ^= RESERVED_BUF[1];
-//        C[c_cp + 4] ^= RESERVED_BUF[2];
-//        C[c_cp + 5] ^= RESERVED_BUF[3];
-//        C[c_cp + 6] ^= RESERVED_BUF[4];
         mul128_no_simd_gf2x(C, c_cp, A, a_cp, B, b_cp, RESERVED_BUF, 0);
         mul160_no_simd_gf2x(C, c_cp + 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF, 0);
         AA[0] = A[a_cp] ^ A[a_cp + 2];
@@ -990,30 +852,6 @@ class Pointer
                                      long[] RESERVED_BUF6)
     {
         //buffer size 6+2=8
-//        mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF6, 0);
-//        mul192_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, RESERVED_BUF6, 0);
-//        C[6] ^= C[3];
-//        C[7] ^= C[4];
-//        C[8] ^= C[5];
-//        C[3] = C[6] ^ C[0];
-//        C[4] = C[7] ^ C[1];
-//        C[5] = C[8] ^ C[2];
-//        C[6] ^= C[9];
-//        C[7] ^= C[10];
-//        C[8] ^= C[11];
-//        AA[0] = A[a_cp] ^ A[a_cp + 3];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 4];
-//        AA[2] = A[a_cp + 2] ^ A[a_cp + 5];
-//        BB[0] = B[b_cp] ^ B[b_cp + 3];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 4];
-//        BB[2] = B[b_cp + 2] ^ B[b_cp + 5];
-//        mul192_no_simd_gf2x(RESERVED_BUF6, 0, AA, 0, BB, 0, RESERVED_BUF6, 6);
-//        C[3] ^= RESERVED_BUF6[0];
-//        C[4] ^= RESERVED_BUF6[1];
-//        C[5] ^= RESERVED_BUF6[2];
-//        C[6] ^= RESERVED_BUF6[3];
-//        C[7] ^= RESERVED_BUF6[4];
-//        C[8] ^= RESERVED_BUF6[5];
         mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF6, 0);
         mul192_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, RESERVED_BUF6, 0);
         AA[0] = A[a_cp] ^ A[a_cp + 3];
@@ -1038,34 +876,6 @@ class Pointer
                                      long[] RESERVED_BUF, long[] AA2, long[] BB2)
     {
         // buffer size: 7+6=13
-//        mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF, 0);
-//        mul224_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, AA, BB, RESERVED_BUF, 0);
-//        C[6] ^= C[3];
-//        C[7] ^= C[4];
-//        C[8] ^= C[5];
-//        C[3] = C[6] ^ C[0];
-//        C[4] = C[7] ^ C[1];
-//        C[5] = C[8] ^ C[2];
-//        C[6] ^= C[9];
-//        C[7] ^= C[10];
-//        C[8] ^= C[11];
-//        C[9] ^= C[12];
-//        AA[0] = A[a_cp] ^ A[a_cp + 3];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 4];
-//        AA[2] = A[a_cp + 2] ^ A[a_cp + 5];
-//        AA[3] = A[a_cp + 6];
-//        BB[0] = B[b_cp] ^ B[b_cp + 3];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 4];
-//        BB[2] = B[b_cp + 2] ^ B[b_cp + 5];
-//        BB[3] = B[b_cp + 6];
-//        mul224_no_simd_gf2x(RESERVED_BUF, 0, AA, 0, BB, 0, AA2, BB2, RESERVED_BUF, 7);
-//        C[3] ^= RESERVED_BUF[0];
-//        C[4] ^= RESERVED_BUF[1];
-//        C[5] ^= RESERVED_BUF[2];
-//        C[6] ^= RESERVED_BUF[3];
-//        C[7] ^= RESERVED_BUF[4];
-//        C[8] ^= RESERVED_BUF[5];
-//        C[9] ^= RESERVED_BUF[6];
         mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF, 0);
         mul224_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3, AA, BB, RESERVED_BUF, 0);
         AA[0] = A[a_cp] ^ A[a_cp + 3];
@@ -1093,60 +903,6 @@ class Pointer
     private void mul544_no_simd_gf2x(long[] C, long[] A, int a_cp, long[] B, int b_cp, long[] AA, long[] BB,
                                      long[] RESERVED_BUF9, long[] AA3, long[] BB3, long[] RESERVED_BUF6)
     {
-//        mul128_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF9, 0);
-//        mul128_no_simd_gf2x(C, 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF9, 0);
-//        C[2] ^= C[4];
-//        C[3] ^= C[5];
-//        C[4] = C[2];
-//        C[5] = C[3];
-//        C[2] ^= C[0];
-//        C[3] ^= C[1];
-//        C[4] ^= C[6];
-//        C[5] ^= C[7];
-//        AA[0] = A[a_cp] ^ A[a_cp + 2];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 3];
-//        BB[0] = B[b_cp] ^ B[b_cp + 2];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 3];
-//        mul128_no_simd_gf2x(RESERVED_BUF9, 0, AA, 0, BB, 0, RESERVED_BUF9, 4);
-//        C[2] ^= RESERVED_BUF9[0];
-//        C[3] ^= RESERVED_BUF9[1];
-//        C[4] ^= RESERVED_BUF9[2];
-//        C[5] ^= RESERVED_BUF9[3];
-//        mul288_no_simd_gf2x(C, 8, A, a_cp + 4, B, b_cp + 4, AA3, BB3, RESERVED_BUF9);
-//        C[8] ^= C[4];
-//        C[9] ^= C[5];
-//        C[10] ^= C[6];
-//        C[11] ^= C[7];
-//        C[4] = C[8] ^ C[0];
-//        C[5] = C[9] ^ C[1];
-//        C[6] = C[10] ^ C[2];
-//        C[7] = C[11] ^ C[3];
-//        C[8] ^= C[12];
-//        C[9] ^= C[13];
-//        C[10] ^= C[14];
-//        C[11] ^= C[15];
-//        C[12] ^= C[16];
-//        AA[0] = A[a_cp] ^ A[a_cp + 4];
-//        AA[1] = A[a_cp + 1] ^ A[a_cp + 5];
-//        AA[2] = A[a_cp + 2] ^ A[a_cp + 6];
-//        AA[3] = A[a_cp + 3] ^ A[a_cp + 7];
-//        AA[4] = A[a_cp + 8];
-//        BB[0] = B[b_cp] ^ B[b_cp + 4];
-//        BB[1] = B[b_cp + 1] ^ B[b_cp + 5];
-//        BB[2] = B[b_cp + 2] ^ B[b_cp + 6];
-//        BB[3] = B[b_cp + 3] ^ B[b_cp + 7];
-//        BB[4] = B[b_cp + 8];
-//        mul288_no_simd_gf2x(RESERVED_BUF9, 0, AA, 0, BB, 0, AA3, BB3, RESERVED_BUF6);
-//        C[4] ^= RESERVED_BUF9[0];
-//        C[5] ^= RESERVED_BUF9[1];
-//        C[6] ^= RESERVED_BUF9[2];
-//        C[7] ^= RESERVED_BUF9[3];
-//        C[8] ^= RESERVED_BUF9[4];
-//        C[9] ^= RESERVED_BUF9[5];
-//        C[10] ^= RESERVED_BUF9[6];
-//        C[11] ^= RESERVED_BUF9[7];
-//        C[12] ^= RESERVED_BUF9[8];
-
         mul128_no_simd_gf2x(C, 0, A, a_cp, B, b_cp, RESERVED_BUF9, 0);
         mul128_no_simd_gf2x(C, 4, A, a_cp + 2, B, b_cp + 2, RESERVED_BUF9, 0);
         AA[0] = A[a_cp] ^ A[a_cp + 2];

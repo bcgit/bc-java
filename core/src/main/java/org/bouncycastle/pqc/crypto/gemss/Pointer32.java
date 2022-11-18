@@ -5,11 +5,11 @@ class Pointer32
 {
     private int remainder;
 
-    public Pointer32(Pointer p)
-    {
-        super(p);
-        remainder = 0;
-    }
+//    public Pointer32(Pointer p)
+//    {
+//        super(p);
+//        remainder = 0;
+//    }
 
     public Pointer32()
     {
@@ -43,11 +43,11 @@ class Pointer32
         return (int)(array[cp] >>> (remainder << 4));
     }
 
-    public int getInteger(int p)
-    {
-        int r = remainder + p;
-        int q = (r >>> 1) + cp;
-        r &= 1;
-        return (int)(array[q] >>> (r << 4));
-    }
+//    public int getInteger(int p)
+//    {
+//        int r = remainder + p;
+//        int q = (r >>> 1) + cp;
+//        r &= 1;
+//        return (int)(array[q] >>> (r << 4));
+//    }
 }
