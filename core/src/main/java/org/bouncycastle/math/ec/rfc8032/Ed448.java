@@ -171,6 +171,10 @@ public abstract class Ed448
         {
             return false;
         }
+        if (decode32(p, 52) != P[13])
+        {
+            return true;
+        }
 
         int[] t = new int[COORD_INTS];
         decode32(p, 0, t, 0, COORD_INTS);
