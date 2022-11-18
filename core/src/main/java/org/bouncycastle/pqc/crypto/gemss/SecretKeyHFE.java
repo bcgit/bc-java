@@ -7,16 +7,10 @@ class SecretKeyHFE
         public Pointer poly;
         /* List of the successive differences of the exponents of the monomials of
            poly multiplied by NB_WORD_GFqn */
-        public Pointer L;
+        public int[] L;
 
         public complete_sparse_monic_gf2nx()
         {
-        }
-
-        public complete_sparse_monic_gf2nx(complete_sparse_monic_gf2nx F)
-        {
-            poly = new Pointer(F.poly);
-            L = new Pointer(F.L);
         }
     }
 
@@ -33,6 +27,6 @@ class SecretKeyHFE
     public SecretKeyHFE(GeMSSEngine engine)
     {
         F_struct = new complete_sparse_monic_gf2nx();
-        F_struct.L = new Pointer(engine.NB_COEFS_HFEPOLY);
+        F_struct.L = new int[engine.NB_COEFS_HFEPOLY];
     }
 }
