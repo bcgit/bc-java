@@ -98,7 +98,7 @@ public class S2K
             break;
 
         default:
-            throw new IllegalStateException("Invalid S2K type: " + type);
+            throw new UnsupportedPacketVersionException("Invalid S2K type: " + type);
         }
     }
 
