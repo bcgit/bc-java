@@ -12,7 +12,7 @@ if ! [ -x "$(command -v openjdk_11)" ]; then
 fi
 
 if ! [ -x "$(command -v openjdk_15)" ]; then
-    JAVA_15=/usr/lib/jvm/java-11-openjdk-amd64
+    JAVA_15=/usr/lib/jvm/java-15-openjdk-amd64
   else
     JAVA_15=`openjdk_15`
 fi
@@ -27,7 +27,7 @@ echo "Java 11 ---> $JAVA_11"
 echo "java 15 --->  $JAVA_15"
 
 export JAVA_HOME=$JAVA_9
-export PATH=$JAVA_HOME/bin:$PATH
+export PATH="$JAVA_HOME/bin:$PATH"
 
 if [ $# -ne 1 ]
 then
@@ -43,7 +43,7 @@ rm -rf module.tmp
 # Java 9 Step
 (
     export JAVA_HOME=$JAVA_9
-    export PATH=$JAVA_HOME/bin:$PATH
+    export PATH="$JAVA_HOME/bin:$PATH"
 
     mkdir -p module.tmp/v5
     mkdir -p module.tmp/versions/v9
@@ -85,7 +85,7 @@ rm -rf module.tmp
 # Java 11 Step
 (
     export JAVA_HOME=$JAVA_11
-    export PATH=$JAVA_HOME/bin:$PATH 
+    export "PATH=$JAVA_HOME/bin:$PATH"
 
     cd module.tmp
     if [ -d v11 ]
@@ -112,7 +112,7 @@ cp build/artifacts/jdk1.8/jars/$jarName module.tmp/$jarName
 # Java 11 Step
 (
     export JAVA_HOME=$JAVA_11
-    export PATH=$JAVA_HOME/bin:$PATH 
+    export PATH="$JAVA_HOME/bin:$PATH"
 
     cd module.tmp
     jar uf $jarName --release 9 -C v9 .
@@ -124,7 +124,7 @@ cp build/artifacts/jdk1.8/jars/$jarName module.tmp/$jarName
 # Java 15 Step
 (
     export JAVA_HOME=$JAVA_15
-    export PATH=$JAVA_HOME/bin:$PATH 
+    export PATH="$JAVA_HOME/bin:$PATH"
 
     cd module.tmp
     if [ -d v15 ]
