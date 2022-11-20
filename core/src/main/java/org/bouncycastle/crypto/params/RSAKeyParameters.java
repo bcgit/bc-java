@@ -88,20 +88,29 @@ public class RSAKeyParameters
         }
 
         int bits = modulus.bitLength() / 2;
-        int iterations = bits >= 1536 ? 3
-            : bits >= 1024 ? 4
-            : bits >= 512 ? 7
-            : 50;
+        int iterations = Properties.asInteger("org.bouncycastle.rsa.max_mr_tests", getMRIterations(bits));
 
-        Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(), iterations);
-        if (!mr.isProvablyComposite())
+        if (iterations > 0)
         {
-            throw new IllegalArgumentException("RSA modulus is not composite");
+            Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(), iterations);
+            if (!mr.isProvablyComposite())
+            {
+                throw new IllegalArgumentException("RSA modulus is not composite");
+            }
         }
 
         validated.add(modulus);
         
         return modulus;
+    }
+
+    private static int getMRIterations(int bits)
+    {
+        int iterations = bits >= 1536 ? 3
+            : bits >= 1024 ? 4
+            : bits >= 512 ? 7
+            : 50;
+        return iterations;
     }
 
     public BigInteger getModulus()
