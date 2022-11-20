@@ -9,7 +9,6 @@ import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 
@@ -444,39 +443,39 @@ public class Salsa20Engine
 
         for (int i = rounds; i > 0; i -= 2)
         {
-            x04 ^= Integers.rotateLeft(x00 + x12, 7);
-            x08 ^= Integers.rotateLeft(x04 + x00, 9);
-            x12 ^= Integers.rotateLeft(x08 + x04, 13);
-            x00 ^= Integers.rotateLeft(x12 + x08, 18);
-            x09 ^= Integers.rotateLeft(x05 + x01, 7);
-            x13 ^= Integers.rotateLeft(x09 + x05, 9);
-            x01 ^= Integers.rotateLeft(x13 + x09, 13);
-            x05 ^= Integers.rotateLeft(x01 + x13, 18);
-            x14 ^= Integers.rotateLeft(x10 + x06, 7);
-            x02 ^= Integers.rotateLeft(x14 + x10, 9);
-            x06 ^= Integers.rotateLeft(x02 + x14, 13);
-            x10 ^= Integers.rotateLeft(x06 + x02, 18);
-            x03 ^= Integers.rotateLeft(x15 + x11, 7);
-            x07 ^= Integers.rotateLeft(x03 + x15, 9);
-            x11 ^= Integers.rotateLeft(x07 + x03, 13);
-            x15 ^= Integers.rotateLeft(x11 + x07, 18);
+            x04 ^= Integer.rotateLeft(x00 + x12, 7);
+            x08 ^= Integer.rotateLeft(x04 + x00, 9);
+            x12 ^= Integer.rotateLeft(x08 + x04, 13);
+            x00 ^= Integer.rotateLeft(x12 + x08, 18);
+            x09 ^= Integer.rotateLeft(x05 + x01, 7);
+            x13 ^= Integer.rotateLeft(x09 + x05, 9);
+            x01 ^= Integer.rotateLeft(x13 + x09, 13);
+            x05 ^= Integer.rotateLeft(x01 + x13, 18);
+            x14 ^= Integer.rotateLeft(x10 + x06, 7);
+            x02 ^= Integer.rotateLeft(x14 + x10, 9);
+            x06 ^= Integer.rotateLeft(x02 + x14, 13);
+            x10 ^= Integer.rotateLeft(x06 + x02, 18);
+            x03 ^= Integer.rotateLeft(x15 + x11, 7);
+            x07 ^= Integer.rotateLeft(x03 + x15, 9);
+            x11 ^= Integer.rotateLeft(x07 + x03, 13);
+            x15 ^= Integer.rotateLeft(x11 + x07, 18);
 
-            x01 ^= Integers.rotateLeft(x00 + x03, 7);
-            x02 ^= Integers.rotateLeft(x01 + x00, 9);
-            x03 ^= Integers.rotateLeft(x02 + x01, 13);
-            x00 ^= Integers.rotateLeft(x03 + x02, 18);
-            x06 ^= Integers.rotateLeft(x05 + x04, 7);
-            x07 ^= Integers.rotateLeft(x06 + x05, 9);
-            x04 ^= Integers.rotateLeft(x07 + x06, 13);
-            x05 ^= Integers.rotateLeft(x04 + x07, 18);
-            x11 ^= Integers.rotateLeft(x10 + x09, 7);
-            x08 ^= Integers.rotateLeft(x11 + x10, 9);
-            x09 ^= Integers.rotateLeft(x08 + x11, 13);
-            x10 ^= Integers.rotateLeft(x09 + x08, 18);
-            x12 ^= Integers.rotateLeft(x15 + x14, 7);
-            x13 ^= Integers.rotateLeft(x12 + x15, 9);
-            x14 ^= Integers.rotateLeft(x13 + x12, 13);
-            x15 ^= Integers.rotateLeft(x14 + x13, 18);
+            x01 ^= Integer.rotateLeft(x00 + x03, 7);
+            x02 ^= Integer.rotateLeft(x01 + x00, 9);
+            x03 ^= Integer.rotateLeft(x02 + x01, 13);
+            x00 ^= Integer.rotateLeft(x03 + x02, 18);
+            x06 ^= Integer.rotateLeft(x05 + x04, 7);
+            x07 ^= Integer.rotateLeft(x06 + x05, 9);
+            x04 ^= Integer.rotateLeft(x07 + x06, 13);
+            x05 ^= Integer.rotateLeft(x04 + x07, 18);
+            x11 ^= Integer.rotateLeft(x10 + x09, 7);
+            x08 ^= Integer.rotateLeft(x11 + x10, 9);
+            x09 ^= Integer.rotateLeft(x08 + x11, 13);
+            x10 ^= Integer.rotateLeft(x09 + x08, 18);
+            x12 ^= Integer.rotateLeft(x15 + x14, 7);
+            x13 ^= Integer.rotateLeft(x12 + x15, 9);
+            x14 ^= Integer.rotateLeft(x13 + x12, 13);
+            x15 ^= Integer.rotateLeft(x14 + x13, 18);
         }
 
         x[ 0] = x00 + input[ 0];
