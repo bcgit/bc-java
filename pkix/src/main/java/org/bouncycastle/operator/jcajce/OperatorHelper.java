@@ -68,6 +68,7 @@ class OperatorHelper
 
         asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.rsaEncryption, "RSA/ECB/PKCS1Padding");
         asymmetricWrapperAlgNames.put(OIWObjectIdentifiers.elGamalAlgorithm, "Elgamal/ECB/PKCS1Padding");
+        asymmetricWrapperAlgNames.put(PKCSObjectIdentifiers.id_RSAES_OAEP, "RSA/ECB/OAEPPadding");
 
         asymmetricWrapperAlgNames.put(CryptoProObjectIdentifiers.gostR3410_2001, "ECGOST3410");
 
@@ -264,24 +265,43 @@ class OperatorHelper
     AlgorithmParameters createAlgorithmParameters(AlgorithmIdentifier cipherAlgId)
         throws OperatorCreationException
     {
-        AlgorithmParameters parameters;
+        AlgorithmParameters parameters = null;
 
         if (cipherAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.rsaEncryption))
         {
             return null;
         }
 
-        try
+        if (cipherAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSAES_OAEP))
         {
-            parameters = helper.createAlgorithmParameters(cipherAlgId.getAlgorithm().getId());
+            try
+            {
+                parameters = helper.createAlgorithmParameters("OAEP");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                // try below
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new OperatorCreationException("cannot create algorithm parameters: " + e.getMessage(), e);
+            }
         }
-        catch (NoSuchAlgorithmException e)
+
+        if (parameters == null)
         {
-            return null;   // There's a good chance there aren't any!
-        }
-        catch (NoSuchProviderException e)
-        {
-            throw new OperatorCreationException("cannot create algorithm parameters: " + e.getMessage(), e);
+            try
+            {
+                parameters = helper.createAlgorithmParameters(cipherAlgId.getAlgorithm().getId());
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                return null;   // There's a good chance there aren't any!
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new OperatorCreationException("cannot create algorithm parameters: " + e.getMessage(), e);
+            }
         }
 
         try
