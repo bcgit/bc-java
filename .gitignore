@@ -27,3 +27,4 @@ codesigning.jks
 
 /prov/src/main/core/
 
+bc-build.user.properties
