@@ -59,6 +59,16 @@ public class TaggedCertificationRequest
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
+    public BodyPartID getBodyPartID()
+    {
+        return bodyPartID;
+    }
+
+    public CertificationRequest getCertificationRequest()
+    {
+        return certificationRequest;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
