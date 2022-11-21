@@ -93,7 +93,6 @@ public class GeMSSParameters
         paramsToOid.put(magentagemss128, magentagemss_128);
         paramsToOid.put(magentagemss192, magentagemss_192);
         paramsToOid.put(magentagemss256, magentagemss_256);
-
     }
 
     private final String name;
@@ -103,7 +102,7 @@ public class GeMSSParameters
                             int HFEDegI, int HFEDegJ)// int HFEs
     {
         this.name = name;
-        System.out.print(name + " ");
+        //System.out.print(name + " ");
         this.engine = new GeMSSEngine(K, HFEn, HFEv, HFEDELTA, NB_ITE, HFEDeg, HFEDegI, HFEDegJ);//, HFEs
     }
 
