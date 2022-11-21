@@ -9,6 +9,7 @@ package org.bouncycastle.crypto.digests;
  */
 
 import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Arrays;
 
@@ -268,6 +269,11 @@ public class Blake2xsDigest
      */
     public int doOutput(byte[] out, int outOff, int outLen)
     {
+        if (outOff > (out.length - outLen))
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
         if (h0 == null)
         {
             h0 = new byte[hash.getDigestSize()];
