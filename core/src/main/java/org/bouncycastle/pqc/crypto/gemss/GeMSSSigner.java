@@ -45,8 +45,9 @@ public class GeMSSSigner
     public byte[] generateSignature(byte[] message)
     {
         GeMSSEngine engine = privKey.getParameters().getEngine();
-        byte[] sm8 = new byte[message.length + engine.SIZE_SIGN_HFE];
-        System.arraycopy(message, 0, sm8, engine.SIZE_SIGN_HFE, message.length);
+        final int SIZE_SIGN_HFE = ((engine.HFEnv + (engine.NB_ITE - 1) * (engine.HFEnv - engine.HFEm)) + 7) >>> 3;
+        byte[] sm8 = new byte[message.length + SIZE_SIGN_HFE];
+        System.arraycopy(message, 0, sm8, SIZE_SIGN_HFE, message.length);
         engine.signHFE_FeistelPatarin(random, sm8, message, 0, message.length, privKey.sk);
         return sm8;
     }
