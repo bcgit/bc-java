@@ -11,7 +11,7 @@ class Tree
     private static final Logger LOG = Logger.getLogger(Tree.class.getName());
 
     private static final int MAX_SEED_SIZE_BYTES = 32;
-    private final int MAX_AUX_BYTES;
+//    private final int MAX_AUX_BYTES;
 
 
     private int depth;       /* The depth of the tree */
@@ -36,7 +36,7 @@ class Tree
     public Tree(PicnicEngine engine, int numLeaves, int dataSize)
     {
         this.engine = engine;
-        MAX_AUX_BYTES = ((engine.LOWMC_MAX_AND_GATES + engine.LOWMC_MAX_KEY_BITS) / 8 + 1);
+//        MAX_AUX_BYTES = ((PicnicEngine.LOWMC_MAX_AND_GATES + PicnicEngine.LOWMC_MAX_KEY_BITS) / 8 + 1);
         
         this.depth =  Utils.ceil_log2(numLeaves) + 1;
         this.numNodes = ((1 << (this.depth)) - 1) - ((1 << (this.depth - 1)) - numLeaves);  /* Num nodes in complete - number of missing leaves */
@@ -287,7 +287,8 @@ class Tree
     {
         int[] numNodesRevealed = new int[1];
         numNodesRevealed[0] = 0;
-        int[] revealed = getRevealedNodes(hideList, hideListSize, numNodesRevealed);
+//        int[] revealed =
+        getRevealedNodes(hideList, hideListSize, numNodesRevealed);
         return numNodesRevealed[0] * engine.seedSizeBytes;
     }
 
@@ -321,7 +322,8 @@ class Tree
     protected int openMerkleTreeSize(int[] missingLeaves, int missingLeavesSize)
     {
         int[] revealedSize = new int[1];
-        int[] revealed = this.getRevealedMerkleNodes(missingLeaves, missingLeavesSize, revealedSize);
+//        int[] revealed =
+        getRevealedMerkleNodes(missingLeaves, missingLeavesSize, revealedSize);
         return revealedSize[0] * engine.digestSizeBytes;
     }
 
@@ -432,7 +434,7 @@ class Tree
             /* One node may not have a right child when there's an odd number of leaves */
             engine.digest.update(this.nodes[2 * parent + 2],0, engine.digestSizeBytes);
         }
-        engine.digest.update(salt,0, engine.saltSizeBytes);
+        engine.digest.update(salt,0, PicnicEngine.saltSizeBytes);
         engine.digest.update(Pack.intToLittleEndian(parent), 0, 2);
         engine.digest.doFinal(this.nodes[parent], 0, engine.digestSizeBytes);
         this.haveNode[parent] = true;
@@ -526,10 +528,9 @@ class Tree
 
     private void hashSeed(byte[] digest_arr, byte[] inputSeed, byte[] salt, byte hashPrefix, int repIndex, int nodeIndex)
     {
-
         engine.digest.update(hashPrefix);
         engine.digest.update(inputSeed, 0, engine.seedSizeBytes);
-        engine.digest.update(salt, 0, engine.saltSizeBytes);
+        engine.digest.update(salt, 0, PicnicEngine.saltSizeBytes);
         engine.digest.update(Pack.shortToLittleEndian((short)(repIndex & 0xffff)), 0, 2); //todo check endianness
         engine.digest.update(Pack.shortToLittleEndian((short)(nodeIndex & 0xffff)), 0, 2); //todo check endianness
         engine.digest.doFinal(digest_arr, 0, 2 * engine.seedSizeBytes);

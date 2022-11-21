@@ -883,26 +883,26 @@ class SIDH_Compressed
 
     // Alice's ephemeral public key generation using compression -- SIDH protocol
     // Output: PrivateKeyA[MSG_BYTES + engine.params.SECRETKEY_A_BYTES] <- x(K_A) where K_A = PA + sk_A*Q_A
-    private int EphemeralKeyGeneration_A(byte[] PrivateKeyA, byte[] CompressedPKA)
-    {
-        int[] rs = new int[3],
-              D = new int[engine.params.DLEN_3];
-        long[] c0 = new long[engine.params.NWORDS_ORDER],
-               d0 = new long[engine.params.NWORDS_ORDER],
-               c1 = new long[engine.params.NWORDS_ORDER],
-               d1 = new long[engine.params.NWORDS_ORDER];
-        long[][] a24 = new long[2][engine.params.NWORDS_FIELD];
-        long[][][] f = new long[4][2][engine.params.NWORDS_FIELD];
-        long[][][][] As = new long[engine.params.MAX_Alice+1][5][2][engine.params.NWORDS_FIELD];
-        PointProjFull[] Rs = new PointProjFull[2];
-
-        FullIsogeny_A_dual(PrivateKeyA, As, a24, 0);
-        BuildOrdinary3nBasis_dual(a24, As, Rs, rs, rs, 2);
-        Tate3_pairings(Rs, f);
-        Dlogs3_dual(f, D, d0, c0, d1, c1);
-        Compress_PKA_dual(d0, c0, d1, c1, a24, rs, CompressedPKA);
-        return 0;
-    }
+//    private int EphemeralKeyGeneration_A(byte[] PrivateKeyA, byte[] CompressedPKA)
+//    {
+//        int[] rs = new int[3],
+//              D = new int[engine.params.DLEN_3];
+//        long[] c0 = new long[engine.params.NWORDS_ORDER],
+//               d0 = new long[engine.params.NWORDS_ORDER],
+//               c1 = new long[engine.params.NWORDS_ORDER],
+//               d1 = new long[engine.params.NWORDS_ORDER];
+//        long[][] a24 = new long[2][engine.params.NWORDS_FIELD];
+//        long[][][] f = new long[4][2][engine.params.NWORDS_FIELD];
+//        long[][][][] As = new long[engine.params.MAX_Alice+1][5][2][engine.params.NWORDS_FIELD];
+//        PointProjFull[] Rs = new PointProjFull[2];
+//
+//        FullIsogeny_A_dual(PrivateKeyA, As, a24, 0);
+//        BuildOrdinary3nBasis_dual(a24, As, Rs, rs, rs, 2);
+//        Tate3_pairings(Rs, f);
+//        Dlogs3_dual(f, D, d0, c0, d1, c1);
+//        Compress_PKA_dual(d0, c0, d1, c1, a24, rs, CompressedPKA);
+//        return 0;
+//    }
 
     // Bob's ephemeral shared secret computation using compression
     // It produces a shared secret key SharedSecretB using his secret key PrivateKeyB and Alice's decompressed data point_R and param_A

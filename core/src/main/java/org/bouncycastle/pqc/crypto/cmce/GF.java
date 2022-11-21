@@ -11,11 +11,6 @@ abstract class GF
         return (short)((a - 1) >> 31);
     }
 
-//    final short gf_add(short left, short right)
-//    {
-//        return (short)(left ^ right);
-//    }
-
     abstract protected void gf_mul_poly(int length, int[] poly, short[] out, short[] left, short[] right, int[] temp);
     abstract protected void gf_sqr_poly(int length, int[] poly, short[] out, short[] input, int[] temp);
 

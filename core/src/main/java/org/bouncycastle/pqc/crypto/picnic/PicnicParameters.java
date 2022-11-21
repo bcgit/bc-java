@@ -7,15 +7,15 @@ public class PicnicParameters
 {
     private static class L1Constants
     {
-        protected static final LowmcConstantsL1 Instance = new LowmcConstantsL1();
+        static final LowmcConstantsL1 INSTANCE = new LowmcConstantsL1();
     }
     private static class L3Constants
     {
-        protected static final LowmcConstantsL3 Instance = new LowmcConstantsL3();
+        static final LowmcConstantsL3 INSTANCE = new LowmcConstantsL3();
     }
     private static class L5Constants
     {
-        protected static final LowmcConstantsL5 Instance = new LowmcConstantsL5();
+        static final LowmcConstantsL5 INSTANCE = new LowmcConstantsL5();
     }
 
     public static final PicnicParameters picnicl1fs = new PicnicParameters("picnicl1fs",  1);
@@ -55,18 +55,19 @@ public class PicnicParameters
             case 2:
             case 7:
             case 10:
-                return new PicnicEngine(param, L1Constants.Instance);
+                return new PicnicEngine(param, L1Constants.INSTANCE);
             case 3:
             case 4:
             case 8:
             case 11:
-                return new PicnicEngine(param, L3Constants.Instance);
+                return new PicnicEngine(param, L3Constants.INSTANCE);
             case 12:
             case 5:
             case 6:
             case 9:
-                return new PicnicEngine(param, L5Constants.Instance);
-            default: return null;
+                return new PicnicEngine(param, L5Constants.INSTANCE);
+            default:
+                return null;
         }
     }
 }
