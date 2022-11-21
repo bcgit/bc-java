@@ -6,6 +6,7 @@ import java.util.Stack;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.params.Blake3Parameters;
 import org.bouncycastle.util.Arrays;
@@ -459,12 +460,6 @@ public class Blake3Digest
                        final int pOutOffset,
                        final int pOutLen)
     {
-        /* Reject if we are already outputting */
-        if (outputting)
-        {
-            throw new IllegalStateException(ERR_OUTPUTTING);
-        }
-
         /* Build the required output */
         final int length = doOutput(pOut, pOutOffset, pOutLen);
 
@@ -477,6 +472,11 @@ public class Blake3Digest
                         final int pOutOffset,
                         final int pOutLen)
     {
+        if (pOutOffset > (pOut.length - pOutLen))
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
         /* If we have not started outputting yet */
         if (!outputting)
         {
