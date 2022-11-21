@@ -42,7 +42,7 @@ public class GeMSSKeyPairGenerator
         System.arraycopy(seed, 0, sk, 0, sk.length);
         F.fill(0, sk_uncomp, 0, sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
-        Pointer Q = new Pointer(engine.MQnv_GFqn_SIZE);
+        Pointer Q = new Pointer(engine.NB_MONOMIAL_PK * engine.NB_WORD_GFqn);
         int ret;
         if (engine.HFEDeg > 34)
         {
@@ -104,7 +104,7 @@ public class GeMSSKeyPairGenerator
                 }
             }
             pk_cp.indexReset();
-            if (engine.HFENr8 != 0 && (engine.HFEmr8 > 1))
+            if (engine.HFENr8 != 0 && engine.HFEmr8 > 1)
             {
                 engine.convMQS_one_eq_to_hybrid_rep8_uncomp_gf2(pk, pk_cp);
             }
