@@ -319,14 +319,14 @@ class GeMSSEngine
             --HFEn_1rightmost;
         }
         //System.out.println(" " + ((HFEv & 7) != 0));
-        if (HFEDeg > 34)
-        {
-            System.out.println(" " + (HFEnvr != 0));
-        }
-        else
-        {
-            System.out.println(" ");
-        }
+//        if (HFEDeg > 34)
+//        {
+//            System.out.println(" " + (HFEnvr != 0));
+//        }
+//        else
+//        {
+//            System.out.println(" ");
+//        }
     }
 
     int genSecretMQS_gf2_opt(Pointer MQS, Pointer F)
