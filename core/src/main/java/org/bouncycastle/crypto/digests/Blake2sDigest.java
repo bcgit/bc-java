@@ -26,6 +26,7 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -455,6 +456,11 @@ public class Blake2sDigest
      */
     public int doFinal(byte[] out, int outOffset)
     {
+        if (outOffset > (out.length - digestLength))
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+
         f0 = 0xFFFFFFFF;
         t0 += bufferPos;
         // bufferPos may be < 64, so (t0 == 0) does not work
