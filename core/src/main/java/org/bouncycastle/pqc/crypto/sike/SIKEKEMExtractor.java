@@ -25,7 +25,6 @@ public class SIKEKEMExtractor
     private void initCipher(SIKEParameters param)
     {
         engine = param.getEngine();
-        SIKEPrivateKeyParameters privateParams = (SIKEPrivateKeyParameters)key;
     }
 
     public byte[] extractSecret(byte[] encapsulation)

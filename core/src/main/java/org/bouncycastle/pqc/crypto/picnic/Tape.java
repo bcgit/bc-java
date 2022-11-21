@@ -40,11 +40,11 @@ class Tape
      */
     protected void computeAuxTape(byte[] inputs)
     {
-        int[] roundKey = new int[engine.LOWMC_MAX_WORDS];
-        int[] x = new int[engine.LOWMC_MAX_WORDS];
-        int[] y = new int[engine.LOWMC_MAX_WORDS];
-        int[] key = new int[engine.LOWMC_MAX_WORDS];
-        int[] key0 = new int[engine.LOWMC_MAX_WORDS];
+        int[] roundKey = new int[PicnicEngine.LOWMC_MAX_WORDS];
+        int[] x = new int[PicnicEngine.LOWMC_MAX_WORDS];
+        int[] y = new int[PicnicEngine.LOWMC_MAX_WORDS];
+        int[] key = new int[PicnicEngine.LOWMC_MAX_WORDS];
+        int[] key0 = new int[PicnicEngine.LOWMC_MAX_WORDS];
 
         key0[engine.stateSizeWords - 1] = 0;
         tapesToParityBits(key0, engine.stateSizeBits);
