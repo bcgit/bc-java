@@ -22,10 +22,7 @@ final class GF13
 
             for (int j = 0; j < i; j++)
             {
-                int t = temp[i + j];
-                t ^= gf_mul_ext(left_i, right[j]);
-                t ^= gf_mul_ext(left[j], right_i);
-                temp[i + j] = t;
+                temp[i + j] ^= gf_mul_ext_par(left_i, right[j], left[j], right_i);
             }
 
             temp[i + i] = gf_mul_ext(left_i, right_i);
@@ -112,8 +109,7 @@ final class GF13
 
     protected int gf_mul_ext(short in0, short in1)
     {
-        int x = in0;
-        int y = in1;
+        int x = in0, y = in1;
 
         int z = x * (y & 1);
         for (int i = 1; i < 13; i++)
@@ -122,6 +118,22 @@ final class GF13
         }
 
         return z;
+    }
+
+    private int gf_mul_ext_par(short in0, short in1, short in2, short in3)
+    {
+        int x0 = in0, y0 = in1, x1 = in2, y1 = in3;
+        
+        int z0 = x0 * (y0 & 1);
+        int z1 = x1 * (y1 & 1);
+
+        for (int i = 1; i < 13; i++)
+        {
+            z0 ^= x0 * (y0 & (1 << i));
+            z1 ^= x1 * (y1 & (1 << i));
+        }
+
+        return z0 ^ z1;
     }
 
     protected short gf_reduce(int x)

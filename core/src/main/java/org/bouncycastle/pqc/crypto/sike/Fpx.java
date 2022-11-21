@@ -1738,11 +1738,11 @@ class Fpx
     }
 
     // GF(p^2) subtraction with correction with 4*p, c = a-b+4p in GF(p^2).
-    private void mp2_sub_p4(long[][] a, long[][] b, long[][] c)
-    {
-        mp_subPRIME_p4(a[0], b[0], c[0]);
-        mp_subPRIME_p4(a[1], b[1], c[1]);
-    }
+//    private void mp2_sub_p4(long[][] a, long[][] b, long[][] c)
+//    {
+//        mp_subPRIME_p4(a[0], b[0], c[0]);
+//        mp_subPRIME_p4(a[1], b[1], c[1]);
+//    }
 
     // Multiprecision multiplication, c = a*b mod p.
     protected void fpmul_mont(long[] ma, long[] mb, long[] mc)

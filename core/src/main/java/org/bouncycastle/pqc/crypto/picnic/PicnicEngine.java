@@ -26,15 +26,15 @@ class PicnicEngine
 
     /* Maximum lengths in bytes */
     private static final int PICNIC_MAX_LOWMC_BLOCK_SIZE = 32;
-    private static final int PICNIC_MAX_PUBLICKEY_SIZE = (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);
+//    private static final int PICNIC_MAX_PUBLICKEY_SIZE = (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);
     /**
      * < Largest serialized public key size, in bytes
      */
-    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);
+//    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);
     /**
      * < Largest serialized private key size, in bytes
      */
-    private static final int PICNIC_MAX_SIGNATURE_SIZE = 209522;
+//    private static final int PICNIC_MAX_SIGNATURE_SIZE = 209522;
     /**
      * < Largest signature size, in bytes
      */
@@ -874,7 +874,7 @@ class PicnicEngine
                  * We simulate the MPC with one fewer party; the unopned party's values are all set to zero. */
                 int unopened = sig.challengeP[indexOf(sig.challengeC, numOpenedRounds, t)];
 
-                int tapeLengthBytes = 2 * andSizeBytes;
+//                int tapeLengthBytes = 2 * andSizeBytes;
                 if(unopened != last)
                 {  // sig.proofs[t].aux is only set when P_t != N
                     tapes[t].setAuxBits(sig.proofs[t].aux);

@@ -22,10 +22,7 @@ final class GF12
 
             for (int j = 0; j < i; j++)
             {
-                int t = temp[i + j];
-                t ^= gf_mul_ext(left_i, right[j]);
-                t ^= gf_mul_ext(left[j], right_i);
-                temp[i + j] = t;
+                temp[i + j] ^= gf_mul_ext_par(left_i, right[j], left[j], right_i);
             }
 
             temp[i + i] = gf_mul_ext(left_i, right_i);
@@ -130,8 +127,7 @@ final class GF12
 
     protected int gf_mul_ext(short left, short right)
     {
-        int x = left;
-        int y = right;
+        int x = left, y = right;
 
         int z = x * (y & 1);
         for (int i = 1; i < 12; i++)
@@ -140,6 +136,22 @@ final class GF12
         }
 
         return z;
+    }
+
+    private int gf_mul_ext_par(short left0, short right0, short left1, short right1)
+    {
+        int x0 = left0, y0 = right0, x1 = left1, y1 = right1;
+
+        int z0 = x0 * (y0 & 1);
+        int z1 = x1 * (y1 & 1);
+
+        for (int i = 1; i < 12; i++)
+        {
+            z0 ^= x0 * (y0 & (1 << i));
+            z1 ^= x1 * (y1 & (1 << i));
+        }
+
+        return z0 ^ z1;
     }
 
     protected short gf_reduce(int x)
