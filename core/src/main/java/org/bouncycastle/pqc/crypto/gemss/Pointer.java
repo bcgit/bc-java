@@ -63,6 +63,26 @@ class Pointer
         array[cp] ^= v;
     }
 
+    public void setXorRange(Pointer p, int len)
+    {
+        int outOff = cp;
+        int inOff = p.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff++] ^= p.array[inOff++];
+        }
+    }
+
+    public void setXorRange(Pointer p, int inOff, int len)
+    {
+        int outOff = cp;
+        inOff += p.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff++] ^= p.array[inOff++];
+        }
+    }
+
     public void setXorRange(int outOff, Pointer p, int inOff, int len)
     {
         outOff += cp;
@@ -333,21 +353,12 @@ class Pointer
 
     public int is0_gf2n(int p, int size)
     {
-        long r;
-        int i;
-        r = get(p);
-        for (i = 1; i < size; ++i)
+        long r = get(p);
+        for (int i = 1; i < size; ++i)
         {
             r |= get(p + i);
         }
-
-        for (i = 64; i > 0; i >>>= 1)
-        {
-            r |= r >>> i;
-        }
-        r = ~r;
-        r &= 1;
-        return (int)r;
+        return (int)GeMSSUtils.NORBITS_UINT(r);
     }
 
     public void setOneShiftWithMove(int j, int loop, int move)
@@ -376,17 +387,11 @@ class Pointer
     {
         off += cp;
         long r = array[off];
-        int i;
-        for (i = 1; i < size; ++i)
+        for (int i = 1; i < size; ++i)
         {
             r |= array[off++];
         }
-        for (i = size; i > 0; i >>>= 1)
-        {
-            r |= r >>> i;
-        }
-        r &= 1;
-        return r;
+        return GeMSSUtils.ORBITS_UINT(r);
     }
 
     public int setRange_xi(long xi, int k, int len)
@@ -398,26 +403,33 @@ class Pointer
         return k;
     }
 
+    public int searchDegree(int da, int db, int NB_WORD_GFqn)
+    {
+        while (is0_gf2n(da * NB_WORD_GFqn, NB_WORD_GFqn) != 0 && da >= db)
+        {
+            --da;
+        }
+        return da;
+    }
+
     public void mul_gf2x(Pointer A, Pointer B)
     {
         switch (array.length)
         {
         case 6:
-            mul192_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp);//, new long[2], 0);
+            mul192_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp);
             break;
         case 9:
-            mul288_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp, new long[4]);//new long[3], new long[3],
+            mul288_no_simd_gf2x(array, 0, A.array, A.cp, B.array, B.cp, new long[4]);
             break;
         case 12:
-            mul384_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[6]);//new long[3], new long[3],
+            mul384_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[6]);
             break;
         case 13:
-            mul416_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[7]);// new long[4], new long[4], new long[13]);
-            //new long[2], new long[2]);
+            mul416_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[7]);
             break;
         case 17:
-            mul544_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[5], new long[5], new long[9],
-                new long[4]);//new long[3], new long[3],
+            mul544_no_simd_gf2x(array, A.array, A.cp, B.array, B.cp, new long[5], new long[5], new long[9], new long[4]);
             break;
         }
     }
