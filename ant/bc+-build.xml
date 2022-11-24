@@ -990,6 +990,7 @@
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
                 <fileset dir="${test.target.src.dir}">
                     <include name="**/AllTests.java" />
+                    <exclude name="${env.JUNIT_EXCLUDE_TESTS}" if="env.JUNIT_EXCLUDE_TESTS" />
                 </fileset>
             </batchtest>
         </junit>
