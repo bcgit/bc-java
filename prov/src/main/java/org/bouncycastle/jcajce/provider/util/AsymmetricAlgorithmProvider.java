@@ -1,9 +1,11 @@
 package org.bouncycastle.jcajce.provider.util;
 
+import java.security.KeyFactorySpi;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.provider.symmetric.AES;
 
 public abstract class AsymmetricAlgorithmProvider
     extends AlgorithmProvider
@@ -96,6 +98,23 @@ public abstract class AsymmetricAlgorithmProvider
         {
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + oid, algorithm);
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + oid, algorithm);
+        }
+    }
+
+    protected void addKeyFactoryAlgorithm(
+        ConfigurableProvider provider,
+        String algorithm,
+        String className,
+        ASN1ObjectIdentifier oid,
+        AsymmetricKeyInfoConverter keyInfoConverter)
+    {
+        provider.addAlgorithm("KeyFactory." + algorithm, className);
+        if (oid != null)
+        {
+            provider.addAlgorithm("Alg.Alias.KeyFactory." + oid, algorithm);
+            provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + oid, algorithm);
+
+            provider.addKeyInfoConverter(oid, keyInfoConverter);
         }
     }
 
