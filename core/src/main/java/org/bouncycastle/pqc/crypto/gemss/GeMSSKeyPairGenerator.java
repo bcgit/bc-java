@@ -81,7 +81,6 @@ public class GeMSSKeyPairGenerator
         {
             final int MQ_GFqm8_SIZE = (engine.NB_MONOMIAL_PK * engine.NB_BYTES_GFqm + ((8 - (engine.NB_BYTES_GFqm & 7)) & 7));
             Pointer pk_tmp = new PointerUnion(MQ_GFqm8_SIZE);
-            //mixEquationsMQS8_gf2(pk_tmp,Q,T);
             i = (engine.NB_BYTES_GFqm & 7) != 0 ? 1 : 0;
             Pointer Q_cp = new Pointer(Q);
             PointerUnion pk_cp = new PointerUnion((PointerUnion)pk_tmp);
@@ -98,7 +97,7 @@ public class GeMSSKeyPairGenerator
             {
                 Pointer pk_last = new Pointer(engine.NB_WORD_GF2m);
                 engine.vecMatProduct(pk_last, Q_cp, T, GeMSSEngine.FunctionParams.M);
-                for (i = 0; i < engine.NB_WORD_GF2m; ++i)//engine.HFEmq
+                for (i = 0; i < engine.NB_WORD_GF2m; ++i)
                 {
                     pk_cp.set(i, pk_last.get(i));
                 }
