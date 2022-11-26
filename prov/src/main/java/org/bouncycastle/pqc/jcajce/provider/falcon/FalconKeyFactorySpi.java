@@ -10,58 +10,35 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
 public class FalconKeyFactorySpi
-    extends KeyFactorySpi
-    implements AsymmetricKeyInfoConverter
+    extends BaseKeyFactorySpi
 {
-    public PrivateKey engineGeneratePrivate(KeySpec keySpec)
-            throws InvalidKeySpecException
+    private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
+
+    static
     {
-        if (keySpec instanceof PKCS8EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to PKCS#8 from the spec
-            byte[] encKey = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-
-            try
-            {
-                return generatePrivate(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(encKey)));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unsupported key specification: "
-                + keySpec.getClass() + ".");
+        keyOids.add(BCObjectIdentifiers.falcon_512);
+        keyOids.add(BCObjectIdentifiers.falcon_1024);
     }
 
-    public PublicKey engineGeneratePublic(KeySpec keySpec)
-            throws InvalidKeySpecException
+    public FalconKeyFactorySpi()
     {
-        if (keySpec instanceof X509EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to X.509 from the spec
-            byte[] encKey = ((X509EncodedKeySpec)keySpec).getEncoded();
+        super(keyOids);
+    }
 
-            // decode the SubjectPublicKeyInfo data structure to the pki object
-            try
-            {
-                return generatePublic(SubjectPublicKeyInfo.getInstance(encKey));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unknown key specification: " + keySpec + ".");
+    public FalconKeyFactorySpi(ASN1ObjectIdentifier keyOid)
+    {
+        super(keyOid);
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
@@ -112,5 +89,23 @@ public class FalconKeyFactorySpi
             throws IOException
     {
         return new BCFalconPublicKey(keyInfo);
+    }
+
+    public static class Falcon512
+        extends FalconKeyFactorySpi
+    {
+        public Falcon512()
+        {
+            super(BCObjectIdentifiers.falcon_512);
+        }
+    }
+
+    public static class Falcon1024
+        extends FalconKeyFactorySpi
+    {
+        public Falcon1024()
+        {
+            super(BCObjectIdentifiers.falcon_1024);
+        }
     }
 }
