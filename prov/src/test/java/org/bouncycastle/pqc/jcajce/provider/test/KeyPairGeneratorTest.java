@@ -24,6 +24,11 @@ public abstract class KeyPairGeneratorTest
 
     protected final void performKeyPairEncodingTest(KeyPair keyPair)
     {
+        performKeyPairEncodingTest(null, keyPair);
+    }
+
+    protected final void performKeyPairEncodingTest(String name, KeyPair keyPair)
+    {
         try
         {
             PublicKey pubKey = keyPair.getPublic();
@@ -46,6 +51,21 @@ public abstract class KeyPairGeneratorTest
             assertEquals(privKey.getAlgorithm(), decPrivKey.getAlgorithm());
             assertEquals(privKey.hashCode(), decPrivKey.hashCode());
 
+            if (name != null)
+            {
+                KeyFactory nkf = KeyFactory.getInstance(name, "BCPQC");
+
+                decPubKey = nkf.generatePublic(pubKeySpec);
+                decPrivKey = nkf.generatePrivate(privKeySpec);
+
+                assertEquals(pubKey, decPubKey);
+                assertEquals(pubKey.getAlgorithm(), decPubKey.getAlgorithm());
+                assertEquals(pubKey.hashCode(), decPubKey.hashCode());
+
+                assertEquals(privKey, decPrivKey);
+                assertEquals(privKey.getAlgorithm(), decPrivKey.getAlgorithm());
+                assertEquals(privKey.hashCode(), decPrivKey.hashCode());
+            }
             checkSerialisation(pubKey);
             checkSerialisation(privKey);
         }

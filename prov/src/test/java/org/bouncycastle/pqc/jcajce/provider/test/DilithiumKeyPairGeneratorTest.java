@@ -43,7 +43,7 @@ public class DilithiumKeyPairGeneratorTest
         for (int i = 0; i != specs.length; i++)
         {
             kpg.initialize(specs[i], new SecureRandom());
-            performKeyPairEncodingTest(kpg.generateKeyPair());
+            performKeyPairEncodingTest(specs[i].getName(), kpg.generateKeyPair());
         }
     }
 

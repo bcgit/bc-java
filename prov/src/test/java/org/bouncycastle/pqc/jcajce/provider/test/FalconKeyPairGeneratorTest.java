@@ -21,6 +21,9 @@ public class FalconKeyPairGeneratorTest
         throws Exception
     {
         kf = KeyFactory.getInstance("Falcon", "BCPQC");
+        KeyFactory kf1 = KeyFactory.getInstance("Falcon-512", "BCPQC");
+        KeyFactory kf2 = KeyFactory.getInstance("Falcon-1024", "BCPQC");
+
     }
 
     public void testKeyPairEncoding()
@@ -39,7 +42,7 @@ public class FalconKeyPairGeneratorTest
         for (int i = 0; i != specs.length; i++)
         {
             kpg.initialize(specs[i], new SecureRandom());
-            performKeyPairEncodingTest(kpg.generateKeyPair());
+            performKeyPairEncodingTest(specs[i].getName(), kpg.generateKeyPair());
         }
     }
 

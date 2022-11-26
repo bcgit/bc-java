@@ -10,58 +10,41 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
 public class KyberKeyFactorySpi
-    extends KeyFactorySpi
-    implements AsymmetricKeyInfoConverter
+    extends BaseKeyFactorySpi
 {
-    public PrivateKey engineGeneratePrivate(KeySpec keySpec)
-            throws InvalidKeySpecException
+    private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
+
+    static
     {
-        if (keySpec instanceof PKCS8EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to PKCS#8 from the spec
-            byte[] encKey = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-
-            try
-            {
-                return generatePrivate(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(encKey)));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unsupported key specification: "
-                + keySpec.getClass() + ".");
+        keyOids.add(BCObjectIdentifiers.kyber512);
+        keyOids.add(BCObjectIdentifiers.kyber768);
+        keyOids.add(BCObjectIdentifiers.kyber1024);
+        keyOids.add(BCObjectIdentifiers.kyber512_aes);
+        keyOids.add(BCObjectIdentifiers.kyber768_aes);
+        keyOids.add(BCObjectIdentifiers.kyber1024_aes);
     }
 
-    public PublicKey engineGeneratePublic(KeySpec keySpec)
-            throws InvalidKeySpecException
+    public KyberKeyFactorySpi()
     {
-        if (keySpec instanceof X509EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to X.509 from the spec
-            byte[] encKey = ((X509EncodedKeySpec)keySpec).getEncoded();
+        super(keyOids);
+    }
 
-            // decode the SubjectPublicKeyInfo data structure to the pki object
-            try
-            {
-                return generatePublic(SubjectPublicKeyInfo.getInstance(encKey));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unknown key specification: " + keySpec + ".");
+    public KyberKeyFactorySpi(ASN1ObjectIdentifier keyOid)
+    {
+        super(keyOid);
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
@@ -112,5 +95,59 @@ public class KyberKeyFactorySpi
             throws IOException
     {
         return new BCKyberPublicKey(keyInfo);
+    }
+
+    public static class Kyber512
+        extends KyberKeyFactorySpi
+    {
+        public Kyber512()
+        {
+            super(BCObjectIdentifiers.kyber512);
+        }
+    }
+
+    public static class Kyber768
+        extends KyberKeyFactorySpi
+    {
+        public Kyber768()
+        {
+            super(BCObjectIdentifiers.kyber768);
+        }
+    }
+
+    public static class Kyber1024
+        extends KyberKeyFactorySpi
+    {
+        public Kyber1024()
+        {
+            super(BCObjectIdentifiers.kyber1024);
+        }
+    }
+
+    public static class Kyber512_AES
+        extends KyberKeyFactorySpi
+    {
+        public Kyber512_AES()
+        {
+            super(BCObjectIdentifiers.kyber512_aes);
+        }
+    }
+
+    public static class Kyber768_AES
+        extends KyberKeyFactorySpi
+    {
+        public Kyber768_AES()
+        {
+            super(BCObjectIdentifiers.kyber768_aes);
+        }
+    }
+
+    public static class Kyber1024_AES
+        extends KyberKeyFactorySpi
+    {
+        public Kyber1024_AES()
+        {
+            super(BCObjectIdentifiers.kyber1024_aes);
+        }
     }
 }
