@@ -64,9 +64,7 @@ public final class Ed25519PrivateKeyParameters
         {
             if (null == cachedPublicKey)
             {
-                byte[] publicKey = new byte[Ed25519.PUBLIC_KEY_SIZE];
-                Ed25519.generatePublicKey(data, 0, publicKey, 0);
-                cachedPublicKey = new Ed25519PublicKeyParameters(publicKey, 0);
+                cachedPublicKey = new Ed25519PublicKeyParameters(Ed25519.generatePublicKey(data, 0));
             }
 
             return cachedPublicKey;
