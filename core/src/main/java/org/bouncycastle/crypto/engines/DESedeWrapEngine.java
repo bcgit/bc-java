@@ -178,8 +178,8 @@ public class DESedeWrapEngine
       System.arraycopy(this.iv, 0, TEMP2, 0, this.iv.length);
       System.arraycopy(TEMP1, 0, TEMP2, this.iv.length, TEMP1.length);
 
-      // Reverse the order of the octets in TEMP2 and call the result TEMP3.
-      byte[] TEMP3 = reverse(TEMP2);
+      // Reverse the order of the octets in TEMP2.
+      Arrays.reverseInPlace(TEMP2);
 
       // Encrypt TEMP3 in CBC mode using the KEK and an initialization vector
       // of 0x 4a dd a2 2c 79 e8 21 05. The resulting cipher text is the desired
@@ -188,12 +188,12 @@ public class DESedeWrapEngine
 
       this.engine.init(true, param2);
 
-      for (int currentBytePos = 0; currentBytePos != TEMP3.length; currentBytePos += blockSize) 
+      for (int currentBytePos = 0; currentBytePos != TEMP2.length; currentBytePos += blockSize) 
       {
-         engine.processBlock(TEMP3, currentBytePos, TEMP3, currentBytePos);
+         engine.processBlock(TEMP2, currentBytePos, TEMP2, currentBytePos);
       }
 
-      return TEMP3;
+      return TEMP2;
    }
 
    /**
@@ -246,15 +246,15 @@ public class DESedeWrapEngine
 
       this.engine.init(false, param2);
 
-      byte TEMP3[] = new byte[inLen];
+      byte TEMP2[] = new byte[inLen];
 
       for (int currentBytePos = 0; currentBytePos != inLen; currentBytePos += blockSize) 
       {
-         engine.processBlock(in, inOff + currentBytePos, TEMP3, currentBytePos);
+         engine.processBlock(in, inOff + currentBytePos, TEMP2, currentBytePos);
       }
 
-      // Reverse the order of the octets in TEMP3 and call the result TEMP2.
-      byte[] TEMP2 = reverse(TEMP3);
+      // Reverse the order of the octets in TEMP2.
+      Arrays.reverseInPlace(TEMP2);
 
       // Decompose TEMP2 into IV, the first 8 octets, and TEMP1, the remaining octets.
       this.iv = new byte[8];
@@ -336,15 +336,5 @@ public class DESedeWrapEngine
         byte[] checksum)
     {
         return Arrays.constantTimeAreEqual(calculateCMSKeyChecksum(key), checksum);
-    }
-
-    private static byte[] reverse(byte[] bs)
-    {
-        byte[] result = new byte[bs.length];
-        for (int i = 0; i < bs.length; i++) 
-        {
-           result[i] = bs[bs.length - (i + 1)];
-        }
-        return result;
     }
 }

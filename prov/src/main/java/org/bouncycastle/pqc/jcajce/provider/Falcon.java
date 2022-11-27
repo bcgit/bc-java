@@ -20,6 +20,10 @@ public class Falcon
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("KeyFactory.FALCON", PREFIX + "FalconKeyFactorySpi");
+
+            addKeyFactoryAlgorithm(provider, "FALCON-512", PREFIX + "FalconKeyFactorySpi$Falcon512", BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi.Falcon512());
+            addKeyFactoryAlgorithm(provider, "FALCON-1024", PREFIX + "FalconKeyFactorySpi$Falcon1024", BCObjectIdentifiers.falcon_1024,  new FalconKeyFactorySpi.Falcon1024());
+
             provider.addAlgorithm("KeyPairGenerator.FALCON", PREFIX + "FalconKeyPairGeneratorSpi");
 
             addKeyPairGeneratorAlgorithm(provider, "FALCON-512", PREFIX + "FalconKeyPairGeneratorSpi$Falcon512", BCObjectIdentifiers.falcon_512);
@@ -29,11 +33,6 @@ public class Falcon
 
             addSignatureAlgorithm(provider, "FALCON-512", PREFIX + "SignatureSpi$Falcon512", BCObjectIdentifiers.falcon_512);
             addSignatureAlgorithm(provider, "FALCON-1024", PREFIX + "SignatureSpi$Falcon1024", BCObjectIdentifiers.falcon_1024);
-
-            AsymmetricKeyInfoConverter keyFact = new FalconKeyFactorySpi();
-
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.falcon_512, "FALCON", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.falcon_1024, "FALCON", keyFact);
         }
     }
 }
