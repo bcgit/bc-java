@@ -277,10 +277,12 @@ class Pointer
 
     public void set1_gf2n(int startPos, int size)
     {
-        array[cp + startPos] = 1;
+        int pos = cp + startPos;
+        array[pos++] = 1L;
+        //Arrays.fill(array, pos, size - 1, 0L);
         for (int i = 1; i < size; ++i)
         {
-            array[cp + startPos + i] = 0;
+            array[pos++] = 0L;
         }
     }
 
@@ -333,7 +335,7 @@ class Pointer
         bOff += b.cp;
         for (int i = 0; i < len; ++i)
         {
-            array[outOff + i] = a.array[aOff + i] ^ b.array[bOff + i];
+            array[outOff++] = a.array[aOff++] ^ b.array[bOff++];
         }
     }
 
