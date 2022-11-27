@@ -64,9 +64,7 @@ public final class Ed448PrivateKeyParameters
         {
             if (null == cachedPublicKey)
             {
-                byte[] publicKey = new byte[Ed448.PUBLIC_KEY_SIZE];
-                Ed448.generatePublicKey(data, 0, publicKey, 0);
-                cachedPublicKey = new Ed448PublicKeyParameters(publicKey, 0);
+                cachedPublicKey = new Ed448PublicKeyParameters(Ed448.generatePublicKey(data, 0));
             }
 
             return cachedPublicKey;

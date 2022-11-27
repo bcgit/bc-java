@@ -143,6 +143,33 @@ public abstract class Nat224
         return (int)c;
     }
 
+    public static int addTo(int[] x, int[] z, int cIn)
+    {
+        long c = cIn & M;
+        c += (x[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += (x[6] & M) + (z[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
     public static int addTo(int[] x, int xOff, int[] z, int zOff, int cIn)
     {
         long c = cIn & M;

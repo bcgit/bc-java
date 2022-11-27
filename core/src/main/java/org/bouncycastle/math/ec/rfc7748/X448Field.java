@@ -156,6 +156,18 @@ public abstract class X448Field
         decode224(x, xOff + 7, z, 8);
     }
 
+    public static void decode(byte[] x, int[] z)
+    {
+        decode56(x, 0, z, 0);
+        decode56(x, 7, z, 2);
+        decode56(x, 14, z, 4);
+        decode56(x, 21, z, 6);
+        decode56(x, 28, z, 8);
+        decode56(x, 35, z, 10);
+        decode56(x, 42, z, 12);
+        decode56(x, 49, z, 14);
+    }
+
     public static void decode(byte[] x, int xOff, int[] z)
     {
         decode56(x, xOff, z, 0);
@@ -166,6 +178,18 @@ public abstract class X448Field
         decode56(x, xOff + 35, z, 10);
         decode56(x, xOff + 42, z, 12);
         decode56(x, xOff + 49, z, 14);
+    }
+
+    public static void decode(byte[] x, int xOff, int[] z, int zOff)
+    {
+        decode56(x, xOff, z, zOff);
+        decode56(x, xOff + 7, z, zOff + 2);
+        decode56(x, xOff + 14, z, zOff + 4);
+        decode56(x, xOff + 21, z, zOff + 6);
+        decode56(x, xOff + 28, z, zOff + 8);
+        decode56(x, xOff + 35, z, zOff + 10);
+        decode56(x, xOff + 42, z, zOff + 12);
+        decode56(x, xOff + 49, z, zOff + 14);
     }
 
     private static void decode224(int[] x, int xOff, int[] z, int zOff)
@@ -214,7 +238,19 @@ public abstract class X448Field
         encode224(x, 8, z, zOff + 7);
     }
 
-    public static void encode(int[] x,  byte[] z , int zOff)
+    public static void encode(int[] x, byte[] z)
+    {
+        encode56(x, 0, z, 0);
+        encode56(x, 2, z, 7);
+        encode56(x, 4, z, 14);
+        encode56(x, 6, z, 21);
+        encode56(x, 8, z, 28);
+        encode56(x, 10, z, 35);
+        encode56(x, 12, z, 42);
+        encode56(x, 14, z, 49);
+    }
+
+    public static void encode(int[] x, byte[] z, int zOff)
     {
         encode56(x, 0, z, zOff);
         encode56(x, 2, z, zOff + 7);
@@ -224,6 +260,18 @@ public abstract class X448Field
         encode56(x, 10, z, zOff + 35);
         encode56(x, 12, z, zOff + 42);
         encode56(x, 14, z, zOff + 49);
+    }
+
+    public static void encode(int[] x, int xOff, byte[] z, int zOff)
+    {
+        encode56(x, xOff, z, zOff);
+        encode56(x, xOff + 2, z, zOff + 7);
+        encode56(x, xOff + 4, z, zOff + 14);
+        encode56(x, xOff + 6, z, zOff + 21);
+        encode56(x, xOff + 8, z, zOff + 28);
+        encode56(x, xOff + 10, z, zOff + 35);
+        encode56(x, xOff + 12, z, zOff + 42);
+        encode56(x, xOff + 14, z, zOff + 49);
     }
 
     private static void encode224(int[] x, int xOff, int[] is, int off)
