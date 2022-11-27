@@ -4,6 +4,7 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.SavableDigest;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -21,7 +22,7 @@ import org.bouncycastle.util.Pack;
  */
 public class SHA256Digest
     extends GeneralDigest
-    implements EncodableDigest
+    implements SavableDigest
 {
     private static final int    DIGEST_LENGTH = 32;
 
