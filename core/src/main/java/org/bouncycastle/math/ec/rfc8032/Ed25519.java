@@ -7,9 +7,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X25519Field;
 import org.bouncycastle.math.raw.Interleave;
-import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.math.raw.Nat256;
-import org.bouncycastle.util.Arrays;
 
 /**
  * A low-level implementation of the Ed25519, Ed25519ctx, and Ed25519ph instantiations of the Edwards-Curve
@@ -33,11 +31,17 @@ public abstract class Ed25519
         public static final int Ed25519ph = 2;
     }
 
-    private static class F extends X25519Field {};
+    public static final class PublicPoint
+    {
+        final int[] data;
 
-    private static final long M08L = 0x000000FFL;
-    private static final long M28L = 0x0FFFFFFFL;
-    private static final long M32L = 0xFFFFFFFFL;
+        PublicPoint(int[] data)
+        {
+            this.data = data;
+        }
+    }
+
+    private static class F extends X25519Field {};
 
     private static final int COORD_INTS = 8;
     private static final int POINT_BYTES = COORD_INTS * 4;
@@ -56,19 +60,22 @@ public abstract class Ed25519
 
     private static final int[] P = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0x7FFFFFFF };
-    private static final int[] L = new int[]{ 0x5CF5D3ED, 0x5812631A, 0xA2F79CD6, 0x14DEF9DE, 0x00000000, 0x00000000,
-        0x00000000, 0x10000000 };
 
-    private static final int L0 = -0x030A2C13;      // L0:26/--
-    private static final int L1 =  0x012631A6;      // L1:24/22
-    private static final int L2 =  0x079CD658;      // L2:27/--
-    private static final int L3 = -0x006215D1;      // L3:23/--
-    private static final int L4 =  0x000014DF;      // L4:12/11
+    private static final int[] ORDER8_y1 = new int[]{ 0x706A17C7, 0x4FD84D3D, 0x760B3CBA, 0x0F67100D, 0xFA53202A,
+        0xC6CC392C, 0x77FDC74E, 0x7A03AC92 };
+    private static final int[] ORDER8_y2 = new int[]{ 0x8F95E826, 0xB027B2C2, 0x89F4C345, 0xF098EFF2, 0x05ACDFD5,
+        0x3933C6D3, 0x880238B1, 0x05FC536D };
 
     private static final int[] B_x = new int[]{ 0x0325D51A, 0x018B5823, 0x007B2C95, 0x0304A92D, 0x00D2598E, 0x01D6DC5C,
         0x01388C7F, 0x013FEC0A, 0x029E6B72, 0x0042D26D };
     private static final int[] B_y = new int[]{ 0x02666658, 0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, 0x02666666,
         0x01999999, 0x00666666, 0x03333333, 0x00CCCCCC, };
+
+    // 2^128 * B
+    private static final int[] B128_x = new int[]{ 0x00B7E824, 0x0011EB98, 0x003E5FC8, 0x024E1739, 0x0131CD0B,
+        0x014E29A0, 0x034E6138, 0x0132C952, 0x03F9E22F, 0x00984F5F };
+    private static final int[] B128_y = new int[]{ 0x03F5A66B, 0x02AF4452, 0x0049E5BB, 0x00F28D26, 0x0121A17C,
+        0x02C29C3A, 0x0047AD89, 0x0087D95F, 0x0332936E, 0x00BE5933 };
 
     // Note that d == -121665/121666
     private static final int[] C_d = new int[]{ 0x035978A3, 0x02D37284, 0x018AB75E, 0x026A0A0E, 0x0000E014, 0x0379E898,
@@ -78,19 +85,21 @@ public abstract class Ed25519
     private static final int[] C_d4 = new int[]{ 0x0165E2B2, 0x034DCA13, 0x002ADD7A, 0x01A8283B, 0x00038052, 0x01E7A260,
         0x03407977, 0x019CE331, 0x01C56DFF, 0x00901B67 };
 
-    private static final int WNAF_WIDTH = 5;
-    private static final int WNAF_WIDTH_BASE = 7;
+//    private static final int WNAF_WIDTH = 5;
+    private static final int WNAF_WIDTH_128 = 4;
+    private static final int WNAF_WIDTH_BASE = 6;
 
     // scalarMultBase is hard-coded for these values of blocks, teeth, spacing so they can't be freely changed
     private static final int PRECOMP_BLOCKS = 8;
     private static final int PRECOMP_TEETH = 4;
     private static final int PRECOMP_SPACING = 8;
-//    private static final int PRECOMP_RANGE = PRECOMP_BLOCKS * PRECOMP_TEETH * PRECOMP_SPACING; // range == 256
+    private static final int PRECOMP_RANGE = PRECOMP_BLOCKS * PRECOMP_TEETH * PRECOMP_SPACING; // range == 256
     private static final int PRECOMP_POINTS = 1 << (PRECOMP_TEETH - 1);
     private static final int PRECOMP_MASK = PRECOMP_POINTS - 1;
 
     private static final Object PRECOMP_LOCK = new Object();
     private static PointPrecomp[] PRECOMP_BASE_WNAF = null;
+    private static PointPrecomp[] PRECOMP_BASE128_WNAF = null;    
     private static int[] PRECOMP_BASE_COMB = null;
 
     private static class PointAccum
@@ -140,18 +149,15 @@ public abstract class Ed25519
 
     private static byte[] calculateS(byte[] r, byte[] k, byte[] s)
     {
-        int[] t = new int[SCALAR_INTS * 2];     decodeScalar(r, 0, t);
-        int[] u = new int[SCALAR_INTS];         decodeScalar(k, 0, u);
-        int[] v = new int[SCALAR_INTS];         decodeScalar(s, 0, v);
+        int[] t = new int[SCALAR_INTS * 2];     Scalar25519.decode(r, t);
+        int[] u = new int[SCALAR_INTS];         Scalar25519.decode(k, u);
+        int[] v = new int[SCALAR_INTS];         Scalar25519.decode(s, v);
 
         Nat256.mulAddTo(u, v, t);
 
         byte[] result = new byte[SCALAR_BYTES * 2];
-        for (int i = 0; i < t.length; ++i)
-        {
-            encode32(t[i], result, i * 4);
-        }
-        return reduceScalar(result);
+        Codec.encode32(t, 0, t.length, result, 0);
+        return Scalar25519.reduce(result);
     }
 
     private static boolean checkContextVar(byte[] ctx , byte phflag)
@@ -160,14 +166,14 @@ public abstract class Ed25519
             || ctx != null && ctx.length < 256;
     }
 
-    private static int checkPoint(int[] x, int[] y)
+    private static int checkPoint(PointAffine p)
     {
         int[] t = F.create();
         int[] u = F.create();
         int[] v = F.create();
 
-        F.sqr(x, u);
-        F.sqr(y, v);
+        F.sqr(p.x, u);
+        F.sqr(p.y, v);
         F.mul(u, v, t);
         F.sub(v, u, v);
         F.mul(t, C_d, t);
@@ -178,16 +184,16 @@ public abstract class Ed25519
         return F.isZero(t);
     }
 
-    private static int checkPoint(int[] x, int[] y, int[] z)
+    private static int checkPoint(PointAccum p)
     {
         int[] t = F.create();
         int[] u = F.create();
         int[] v = F.create();
         int[] w = F.create();
 
-        F.sqr(x, u);
-        F.sqr(y, v);
-        F.sqr(z, w);
+        F.sqr(p.x, u);
+        F.sqr(p.y, v);
+        F.sqr(p.z, w);
         F.mul(u, v, t);
         F.sub(v, u, v);
         F.mul(v, w, v);
@@ -200,23 +206,60 @@ public abstract class Ed25519
         return F.isZero(t);
     }
 
+    private static boolean checkPointFullVar(byte[] p)
+    {
+        int y7 = Codec.decode32(p, 28) & 0x7FFFFFFF;
+
+        int t0 = y7;
+        int t1 = y7 ^ P[7];
+        int t2 = y7 ^ ORDER8_y1[7];
+        int t3 = y7 ^ ORDER8_y2[7];
+
+        for (int i = COORD_INTS - 2; i > 0; --i)
+        {
+            int yi = Codec.decode32(p, i * 4);
+
+            t0 |= yi;
+            t1 |= yi ^ P[i];
+            t2 |= yi ^ ORDER8_y1[i];
+            t3 |= yi ^ ORDER8_y2[i];
+        }
+
+        int y0 = Codec.decode32(p, 0);
+
+        // Reject 0 and 1
+        if (t0 == 0 && (y0 + Integer.MIN_VALUE) <= (1 + Integer.MIN_VALUE))
+            return false;
+
+        // Reject P - 1 and non-canonical encodings (i.e. >= P)
+        if (t1 == 0 && (y0 + Integer.MIN_VALUE) >= (P[0] - 1 + Integer.MIN_VALUE))
+            return false;
+
+        t2 |= y0 ^ ORDER8_y1[0];
+        t3 |= y0 ^ ORDER8_y2[0];
+
+        // Reject order 8 points
+        return (t2 != 0) & (t3 != 0);
+    }
+
+    private static boolean checkPointOrderVar(PointAffine p)
+    {
+        PointAccum r = new PointAccum();
+        scalarMultOrderVar(p, r);
+        return normalizeToNeutralElementVar(r);
+    }
+
     private static boolean checkPointVar(byte[] p)
     {
-        if ((decode32(p, 28) & 0x7FFFFFFF) < P[7])
+        if ((Codec.decode32(p, 28) & 0x7FFFFFFF) < P[7])
         {
             return true;
         }
 
         int[] t = new int[COORD_INTS];
-        decode32(p, 0, t, 0, COORD_INTS);
+        Codec.decode32(p, 0, t, 0, COORD_INTS);
         t[COORD_INTS - 1] &= 0x7FFFFFFF;
         return !Nat256.gte(t, P);
-    }
-
-    private static boolean checkScalarVar(byte[] s, int[] n)
-    {
-        decodeScalar(s, 0, n);
-        return !Nat256.gte(n, L);
     }
 
     private static byte[] copy(byte[] buf, int off, int len)
@@ -241,43 +284,11 @@ public abstract class Ed25519
         return createDigest();
     }
 
-    private static int decode24(byte[] bs, int off)
+    private static boolean decodePointVar(byte[] p, boolean negate, PointAffine r)
     {
-        int n = bs[  off] & 0xFF;
-        n |= (bs[++off] & 0xFF) << 8;
-        n |= (bs[++off] & 0xFF) << 16;
-        return n;
-    }
+        int x_0 = (p[POINT_BYTES - 1] & 0x80) >>> 7;
 
-    private static int decode32(byte[] bs, int off)
-    {
-        int n = bs[off] & 0xFF;
-        n |= (bs[++off] & 0xFF) << 8;
-        n |= (bs[++off] & 0xFF) << 16;
-        n |=  bs[++off]         << 24;
-        return n;
-    }
-
-    private static void decode32(byte[] bs, int bsOff, int[] n, int nOff, int nLen)
-    {
-        for (int i = 0; i < nLen; ++i)
-        {
-            n[nOff + i] = decode32(bs, bsOff + i * 4);
-        }
-    }
-
-    private static boolean decodePointVar(byte[] p, int pOff, boolean negate, PointAffine r)
-    {
-        byte[] py = copy(p, pOff, POINT_BYTES);
-        if (!checkPointVar(py))
-        {
-            return false;
-        }
-
-        int x_0 = (py[POINT_BYTES - 1] & 0x80) >>> 7;
-        py[POINT_BYTES - 1] &= 0x7F;
-
-        F.decode(py, 0, r.y);
+        F.decode(p, r.y);
 
         int[] u = F.create();
         int[] v = F.create();
@@ -301,69 +312,57 @@ public abstract class Ed25519
         if (negate ^ (x_0 != (r.x[0] & 1)))
         {
             F.negate(r.x, r.x);
+            F.normalize(r.x);
         }
 
         return true;
     }
 
-    private static void decodeScalar(byte[] k, int kOff, int[] n)
-    {
-        decode32(k, kOff, n, 0, SCALAR_INTS);
-    }
-
     private static void dom2(Digest d, byte phflag, byte[] ctx)
     {
-        if (ctx != null)
-        {
-            int n = DOM2_PREFIX.length;
-            byte[] t = new byte[n + 2 + ctx.length];
-            System.arraycopy(DOM2_PREFIX, 0, t, 0, n);
-            t[n] = phflag;
-            t[n + 1] = (byte)ctx.length;
-            System.arraycopy(ctx, 0, t, n + 2, ctx.length);
+//        assert ctx != null;
 
-            d.update(t, 0, t.length);
-        }
+        int n = DOM2_PREFIX.length;
+        byte[] t = new byte[n + 2 + ctx.length];
+        System.arraycopy(DOM2_PREFIX, 0, t, 0, n);
+        t[n] = phflag;
+        t[n + 1] = (byte)ctx.length;
+        System.arraycopy(ctx, 0, t, n + 2, ctx.length);
+
+        d.update(t, 0, t.length);
     }
 
-    private static void encode24(int n, byte[] bs, int off)
+    private static void encodePoint(PointAffine p, byte[] r, int rOff)
     {
-        bs[  off] = (byte)(n       );
-        bs[++off] = (byte)(n >>>  8);
-        bs[++off] = (byte)(n >>> 16);
+        F.encode(p.y, r, rOff);
+        r[rOff + POINT_BYTES - 1] |= (p.x[0] & 1) << 7;
     }
 
-    private static void encode32(int n, byte[] bs, int off)
+    public static void encodePublicPoint(PublicPoint publicPoint, byte[] pk, int pkOff)
     {
-        bs[  off] = (byte)(n       );
-        bs[++off] = (byte)(n >>>  8);
-        bs[++off] = (byte)(n >>> 16);
-        bs[++off] = (byte)(n >>> 24);
+        F.encode(publicPoint.data, F.SIZE, pk, pkOff);
+        pk[pkOff + POINT_BYTES - 1] |= (publicPoint.data[0] & 1) << 7;
     }
 
-    private static void encode56(long n, byte[] bs, int off)
+    private static int encodeResult(PointAccum p, byte[] r, int rOff)
     {
-        encode32((int)n, bs, off);
-        encode24((int)(n >>> 32), bs, off + 4);
-    }
+        PointAffine q = new PointAffine();
+        normalizeToAffine(p, q);
 
-    private static int encodePoint(PointAccum p, byte[] r, int rOff)
-    {
-        int[] x = F.create();
-        int[] y = F.create();
+        int result = checkPoint(q);
 
-        F.inv(p.z, y);
-        F.mul(p.x, y, x);
-        F.mul(p.y, y, y);
-        F.normalize(x);
-        F.normalize(y);
-
-        int result = checkPoint(x, y);
-
-        F.encode(y, r, rOff);
-        r[rOff + POINT_BYTES - 1] |= ((x[0] & 1) << 7);
+        encodePoint(q, r, rOff);
 
         return result;
+    }
+
+    private static PublicPoint exportPoint(PointAffine p)
+    {
+        int[] data = new int[F.SIZE * 2];
+        F.copy(p.x, 0, data, 0);
+        F.copy(p.y, 0, data, F.SIZE);
+
+        return new PublicPoint(data);
     }
 
     public static void generatePrivateKey(SecureRandom random, byte[] k)
@@ -390,81 +389,74 @@ public abstract class Ed25519
         scalarMultBaseEncoded(s, pk, pkOff);
     }
 
+    public static PublicPoint generatePublicKey(byte[] sk, int skOff)
+    {
+        Digest d = createDigest();
+        byte[] h = new byte[64];
+
+        d.update(sk, skOff, SECRET_KEY_SIZE);
+        d.doFinal(h, 0);
+
+        byte[] s = new byte[SCALAR_BYTES];
+        pruneScalar(h, 0, s);
+
+        PointAccum p = new PointAccum();
+        scalarMultBase(s, p);
+
+        PointAffine q = new PointAffine();
+        normalizeToAffine(p, q);
+
+        if (0 == checkPoint(q))
+        {
+            throw new IllegalStateException();
+        }
+
+        return exportPoint(q);
+    }
+
     private static int getWindow4(int[] x, int n)
     {
         int w = n >>> 3, b = (n & 7) << 2;
         return (x[w] >>> b) & 15;
     }
 
-    private static byte[] getWnafVar(int[] n, int width)
+    private static void groupCombBits(int[] n)
     {
-//        assert 0 <= n[SCALAR_INTS - 1] && n[SCALAR_INTS - 1] <= L[SCALAR_INTS - 1];
-//        assert 2 <= width && width <= 8;
-
-        int[] t = new int[SCALAR_INTS * 2];
+        /*
+         * Because we are using 4 teeth and 8 spacing, each limb of n corresponds to one of the 8 blocks.
+         * Therefore we can efficiently group the bits for each comb position using a (double) shuffle. 
+         */
+        for (int i = 0; i < n.length; ++i)
         {
-            int tPos = t.length, c = 0;
-            int i = SCALAR_INTS;
-            while (--i >= 0)
-            {
-                int next = n[i];
-                t[--tPos] = (next >>> 16) | (c << 16);
-                t[--tPos] = c = next;
-            }
+            n[i] = Interleave.shuffle2(n[i]);
         }
-
-        byte[] ws = new byte[253];
-
-        final int lead = 32 - width;
-
-        int j = 0, carry = 0;
-        for (int i = 0; i < t.length; ++i, j -= 16)
-        {
-            int word = t[i];
-            while (j < 16)
-            {
-                int word16 = word >>> j;
-                int bit = word16 & 1;
-
-                if (bit == carry)
-                {
-                    ++j;
-                    continue;
-                }
-
-                int digit = (word16 | 1) << lead;
-                carry = digit >>> 31;
-
-                ws[(i << 4) + j] = (byte)(digit >> lead);
-
-                j += width;
-            }
-        }
-
-//        assert carry == 0;
-
-        return ws;
     }
 
     private static void implSign(Digest d, byte[] h, byte[] s, byte[] pk, int pkOff, byte[] ctx, byte phflag, byte[] m,
         int mOff, int mLen, byte[] sig, int sigOff)
     {
-        dom2(d, phflag, ctx);
+        if (ctx != null)
+        {
+            dom2(d, phflag, ctx);
+        }
         d.update(h, SCALAR_BYTES, SCALAR_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] r = reduceScalar(h);
+        byte[] r = Scalar25519.reduce(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncoded(r, R, 0);
 
-        dom2(d, phflag, ctx);
+        if (ctx != null)
+        {
+            dom2(d, phflag, ctx);
+        }
         d.update(R, 0, POINT_BYTES);
         d.update(pk, pkOff, POINT_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] k = reduceScalar(h);
+        byte[] k = Scalar25519.reduce(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -524,6 +516,7 @@ public abstract class Ed25519
 
         byte[] R = copy(sig, sigOff, POINT_BYTES);
         byte[] S = copy(sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+        byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
         if (!checkPointVar(R))
         {
@@ -531,13 +524,22 @@ public abstract class Ed25519
         }
 
         int[] nS = new int[SCALAR_INTS];
-        if (!checkScalarVar(S, nS))
+        if (!Scalar25519.checkVar(S, nS))
+        {
+            return false;
+        }
+
+        if (!checkPointFullVar(A))
+            return false;
+
+        PointAffine pR = new PointAffine();
+        if (!decodePointVar(R, true, pR))
         {
             return false;
         }
 
         PointAffine pA = new PointAffine();
-        if (!decodePointVar(pk, pkOff, true, pA))
+        if (!decodePointVar(A, true, pA))
         {
             return false;
         }
@@ -545,22 +547,90 @@ public abstract class Ed25519
         Digest d = createDigest();
         byte[] h = new byte[64];
 
-        dom2(d, phflag, ctx);
+        if (ctx != null)
+        {
+            dom2(d, phflag, ctx);
+        }
         d.update(R, 0, POINT_BYTES);
-        d.update(pk, pkOff, POINT_BYTES);
+        d.update(A, 0, POINT_BYTES);
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] k = reduceScalar(h);
+        byte[] k = Scalar25519.reduce(h);
 
         int[] nA = new int[SCALAR_INTS];
-        decodeScalar(k, 0, nA);
+        Scalar25519.decode(k, nA);
 
-        PointAccum pR = new PointAccum();
-        scalarMultStrausVar(nS, nA, pA, pR);
+        int[] v0 = new int[4];
+        int[] v1 = new int[4];
+        Scalar25519.reduceBasisVar(nA, v0, v1);
+        Scalar25519.multiply128Var(nS, v1, nS);
 
-        byte[] check = new byte[POINT_BYTES];
-        return 0 != encodePoint(pR, check, 0) && Arrays.areEqual(check, R);
+        PointAccum pZ = new PointAccum();
+        scalarMultStraus128Var(nS, v0, pA, v1, pR, pZ);
+        return normalizeToNeutralElementVar(pZ);
+    }
+
+    private static boolean implVerify(byte[] sig, int sigOff, PublicPoint publicPoint, byte[] ctx, byte phflag,
+        byte[] m, int mOff, int mLen)
+    {
+        if (!checkContextVar(ctx, phflag))
+        {
+            throw new IllegalArgumentException("ctx");
+        }
+
+        byte[] R = copy(sig, sigOff, POINT_BYTES);
+        byte[] S = copy(sig, sigOff + POINT_BYTES, SCALAR_BYTES);
+
+        if (!checkPointVar(R))
+        {
+            return false;
+        }
+
+        int[] nS = new int[SCALAR_INTS];
+        if (!Scalar25519.checkVar(S, nS))
+        {
+            return false;
+        }
+
+        PointAffine pR = new PointAffine();
+        if (!decodePointVar(R, true, pR))
+        {
+            return false;
+        }
+
+        PointAffine pA = new PointAffine();
+        F.negate(publicPoint.data, pA.x);
+        F.copy(publicPoint.data, F.SIZE, pA.y, 0);
+
+        byte[] A = new byte[PUBLIC_KEY_SIZE];
+        encodePublicPoint(publicPoint, A, 0);
+
+        Digest d = createDigest();
+        byte[] h = new byte[64];
+
+        if (ctx != null)
+        {
+            dom2(d, phflag, ctx);
+        }
+        d.update(R, 0, POINT_BYTES);
+        d.update(A, 0, POINT_BYTES);
+        d.update(m, mOff, mLen);
+        d.doFinal(h, 0);
+
+        byte[] k = Scalar25519.reduce(h);
+
+        int[] nA = new int[SCALAR_INTS];
+        Scalar25519.decode(k, nA);
+
+        int[] v0 = new int[4];
+        int[] v1 = new int[4];
+        Scalar25519.reduceBasisVar(nA, v0, v1);
+        Scalar25519.multiply128Var(nS, v1, nS);
+
+        PointAccum pZ = new PointAccum();
+        scalarMultStraus128Var(nS, v0, pA, v1, pR, pZ);
+        return normalizeToNeutralElementVar(pZ);
     }
 
     private static void invertDoubleZs(PointExtended[] points)
@@ -597,14 +667,32 @@ public abstract class Ed25519
         F.copy(u, 0, points[0].z, 0);
     }
 
-    private static boolean isNeutralElementVar(int[] x, int[] y)
-    {
-        return F.isZeroVar(x) && F.isOneVar(y);
-    }
+//    private static boolean isNeutralElementVar(int[] x, int[] y)
+//    {
+//        return F.isZeroVar(x) && F.isOneVar(y);
+//    }
 
     private static boolean isNeutralElementVar(int[] x, int[] y, int[] z)
     {
         return F.isZeroVar(x) && F.areEqualVar(y, z);
+    }
+
+    private static void normalizeToAffine(PointAccum p, PointAffine r)
+    {
+        F.inv(p.z, r.y);
+        F.mul(r.y, p.x, r.x);
+        F.mul(r.y, p.y, r.y);
+        F.normalize(r.x);
+        F.normalize(r.y);
+    }
+
+    private static boolean normalizeToNeutralElementVar(PointAccum p)
+    {
+        F.normalize(p.x);
+        F.normalize(p.y);
+        F.normalize(p.z);
+
+        return isNeutralElementVar(p.x, p.y, p.z);
     }
 
     private static void pointAdd(PointExtended p, PointExtended q, PointExtended r, PointTemp t)
@@ -841,18 +929,19 @@ public abstract class Ed25519
         F.cnegate(sign, r.xyd);
     }
 
-    private static void pointPrecompute(PointAffine p, PointExtended[] points, int count, PointTemp t)
+    private static void pointPrecompute(PointAffine p, PointExtended[] points, int pointsOff, int pointsLen,
+        PointTemp t)
     {
-//        assert count > 0;
+//        assert pointsLen > 0;
 
-        pointCopy(p, points[0] = new PointExtended());
+        pointCopy(p, points[pointsOff] = new PointExtended());
 
         PointExtended d = new PointExtended();
-        pointAdd(points[0], points[0], d, t);
+        pointAdd(points[pointsOff], points[pointsOff], d, t);
 
-        for (int i = 1; i < count; ++i)
+        for (int i = 1; i < pointsLen; ++i)
         {
-            pointAdd(points[i - 1], d, points[i] = new PointExtended(), t);
+            pointAdd(points[pointsOff + i - 1], d, points[pointsOff + i] = new PointExtended(), t);
         }
     }
 
@@ -929,23 +1018,29 @@ public abstract class Ed25519
     {
         synchronized (PRECOMP_LOCK)
         {
-            if (PRECOMP_BASE_WNAF != null && PRECOMP_BASE_COMB != null)
+            if (PRECOMP_BASE_COMB != null)
             {
                 return;
             }
 
             int wnafPoints = 1 << (WNAF_WIDTH_BASE - 2);
             int combPoints = PRECOMP_BLOCKS * PRECOMP_POINTS;
-            int totalPoints = wnafPoints + combPoints;
+            int totalPoints = wnafPoints * 2 + combPoints;
 
             PointExtended[] points = new PointExtended[totalPoints];
             PointTemp t = new PointTemp();
 
-            PointAffine b = new PointAffine();
-            F.copy(B_x, 0, b.x, 0);
-            F.copy(B_y, 0, b.y, 0);
+            PointAffine B = new PointAffine();
+            F.copy(B_x, 0, B.x, 0);
+            F.copy(B_y, 0, B.y, 0);
 
-            pointPrecompute(b, points, wnafPoints, t);
+            pointPrecompute(B, points, 0, wnafPoints, t);
+
+            PointAffine B128 = new PointAffine();
+            F.copy(B128_x, 0, B128.x, 0);
+            F.copy(B128_y, 0, B128.y, 0);
+
+            pointPrecompute(B128, points, wnafPoints, wnafPoints, t);
 
             PointAccum p = new PointAccum();
             F.copy(B_x, 0, p.x, 0);
@@ -954,12 +1049,13 @@ public abstract class Ed25519
             F.copy(p.x, 0, p.u, 0);
             F.copy(p.y, 0, p.v, 0);
 
-            int pointsIndex = wnafPoints;
+            int pointsIndex = wnafPoints * 2;
             PointExtended[] toothPowers = new PointExtended[PRECOMP_TEETH];
             for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
             {
                 toothPowers[tooth] = new PointExtended();
             }
+
             PointExtended u = new PointExtended();
             for (int block = 0; block < PRECOMP_BLOCKS; ++block)
             {
@@ -1029,10 +1125,32 @@ public abstract class Ed25519
                 F.normalize(r.xyd);
             }
 
+            PRECOMP_BASE128_WNAF = new PointPrecomp[wnafPoints];
+            for (int i = 0; i < wnafPoints; ++i)
+            {
+                PointExtended q = points[wnafPoints + i];
+                PointPrecomp r = PRECOMP_BASE128_WNAF[i] = new PointPrecomp();
+
+                // Calculate x/2 and y/2 (because the z value holds half the inverse; see above).
+                F.mul(q.x, q.z, q.x);
+                F.mul(q.y, q.z, q.y);
+
+                // y/2 +/- x/2
+                F.apm(q.y, q.x, r.ypx_h, r.ymx_h);
+
+                // x/2 * y/2 * (4.d) == x.y.d
+                F.mul(q.x, q.y, r.xyd);
+                F.mul(r.xyd, C_d4, r.xyd);
+
+                F.normalize(r.ymx_h);
+                F.normalize(r.ypx_h);
+                F.normalize(r.xyd);
+            }
+
             PRECOMP_BASE_COMB = F.createTable(combPoints * 3);
             PointPrecomp s = new PointPrecomp();
             int off = 0;
-            for (int i = wnafPoints; i < totalPoints; ++i)
+            for (int i = wnafPoints * 2; i < totalPoints; ++i)
             {
                 PointExtended q = points[i];
 
@@ -1055,7 +1173,7 @@ public abstract class Ed25519
                 F.copy(s.ypx_h, 0, PRECOMP_BASE_COMB, off);       off += F.SIZE;
                 F.copy(s.xyd  , 0, PRECOMP_BASE_COMB, off);       off += F.SIZE;
             }
-//            assert off == precompBaseComb.length;
+//            assert off == PRECOMP_BASE_COMB.length;
         }
     }
 
@@ -1068,154 +1186,11 @@ public abstract class Ed25519
         r[SCALAR_BYTES - 1] |= 0x40;
     }
 
-    private static byte[] reduceScalar(byte[] n)
-    {
-        long x00 =  decode32(n,  0)       & M32L;   // x00:32/--
-        long x01 = (decode24(n,  4) << 4) & M32L;   // x01:28/--
-        long x02 =  decode32(n,  7)       & M32L;   // x02:32/--
-        long x03 = (decode24(n, 11) << 4) & M32L;   // x03:28/--
-        long x04 =  decode32(n, 14)       & M32L;   // x04:32/--
-        long x05 = (decode24(n, 18) << 4) & M32L;   // x05:28/--
-        long x06 =  decode32(n, 21)       & M32L;   // x06:32/--
-        long x07 = (decode24(n, 25) << 4) & M32L;   // x07:28/--
-        long x08 =  decode32(n, 28)       & M32L;   // x08:32/--
-        long x09 = (decode24(n, 32) << 4) & M32L;   // x09:28/--
-        long x10 =  decode32(n, 35)       & M32L;   // x10:32/--
-        long x11 = (decode24(n, 39) << 4) & M32L;   // x11:28/--
-        long x12 =  decode32(n, 42)       & M32L;   // x12:32/--
-        long x13 = (decode24(n, 46) << 4) & M32L;   // x13:28/--
-        long x14 =  decode32(n, 49)       & M32L;   // x14:32/--
-        long x15 = (decode24(n, 53) << 4) & M32L;   // x15:28/--
-        long x16 =  decode32(n, 56)       & M32L;   // x16:32/--
-        long x17 = (decode24(n, 60) << 4) & M32L;   // x17:28/--
-        long x18 =  n[63]                 & M08L;   // x18:08/--
-        long t;
-
-//        x18 += (x17 >> 28); x17 &= M28L;
-        x09 -= x18 * L0;                            // x09:34/28
-        x10 -= x18 * L1;                            // x10:33/30
-        x11 -= x18 * L2;                            // x11:35/28
-        x12 -= x18 * L3;                            // x12:32/31
-        x13 -= x18 * L4;                            // x13:28/21
-
-        x17 += (x16 >> 28); x16 &= M28L;            // x17:28/--, x16:28/--
-        x08 -= x17 * L0;                            // x08:54/32
-        x09 -= x17 * L1;                            // x09:52/51
-        x10 -= x17 * L2;                            // x10:55/34
-        x11 -= x17 * L3;                            // x11:51/36
-        x12 -= x17 * L4;                            // x12:41/--
-
-//        x16 += (x15 >> 28); x15 &= M28L;
-        x07 -= x16 * L0;                            // x07:54/28
-        x08 -= x16 * L1;                            // x08:54/53
-        x09 -= x16 * L2;                            // x09:55/53
-        x10 -= x16 * L3;                            // x10:55/52
-        x11 -= x16 * L4;                            // x11:51/41
-
-        x15 += (x14 >> 28); x14 &= M28L;            // x15:28/--, x14:28/--
-        x06 -= x15 * L0;                            // x06:54/32
-        x07 -= x15 * L1;                            // x07:54/53
-        x08 -= x15 * L2;                            // x08:56/--
-        x09 -= x15 * L3;                            // x09:55/54
-        x10 -= x15 * L4;                            // x10:55/53
-
-//        x14 += (x13 >> 28); x13 &= M28L;
-        x05 -= x14 * L0;                            // x05:54/28
-        x06 -= x14 * L1;                            // x06:54/53
-        x07 -= x14 * L2;                            // x07:56/--
-        x08 -= x14 * L3;                            // x08:56/51
-        x09 -= x14 * L4;                            // x09:56/--
-
-        x13 += (x12 >> 28); x12 &= M28L;            // x13:28/22, x12:28/--
-        x04 -= x13 * L0;                            // x04:54/49
-        x05 -= x13 * L1;                            // x05:54/53
-        x06 -= x13 * L2;                            // x06:56/--
-        x07 -= x13 * L3;                            // x07:56/52
-        x08 -= x13 * L4;                            // x08:56/52
-
-        x12 += (x11 >> 28); x11 &= M28L;            // x12:28/24, x11:28/--
-        x03 -= x12 * L0;                            // x03:54/49
-        x04 -= x12 * L1;                            // x04:54/51
-        x05 -= x12 * L2;                            // x05:56/--
-        x06 -= x12 * L3;                            // x06:56/52
-        x07 -= x12 * L4;                            // x07:56/53
-
-        x11 += (x10 >> 28); x10 &= M28L;            // x11:29/--, x10:28/--
-        x02 -= x11 * L0;                            // x02:55/32
-        x03 -= x11 * L1;                            // x03:55/--
-        x04 -= x11 * L2;                            // x04:56/55
-        x05 -= x11 * L3;                            // x05:56/52
-        x06 -= x11 * L4;                            // x06:56/53
-
-        x10 += (x09 >> 28); x09 &= M28L;            // x10:29/--, x09:28/--
-        x01 -= x10 * L0;                            // x01:55/28
-        x02 -= x10 * L1;                            // x02:55/54
-        x03 -= x10 * L2;                            // x03:56/55
-        x04 -= x10 * L3;                            // x04:57/--
-        x05 -= x10 * L4;                            // x05:56/53
-
-        x08 += (x07 >> 28); x07 &= M28L;            // x08:56/53, x07:28/--
-        x09 += (x08 >> 28); x08 &= M28L;            // x09:29/25, x08:28/--
-
-        t    = x08 >>> 27;
-        x09 += t;                                   // x09:29/26
-
-        x00 -= x09 * L0;                            // x00:55/53
-        x01 -= x09 * L1;                            // x01:55/54
-        x02 -= x09 * L2;                            // x02:57/--
-        x03 -= x09 * L3;                            // x03:57/--
-        x04 -= x09 * L4;                            // x04:57/42
-
-        x01 += (x00 >> 28); x00 &= M28L;
-        x02 += (x01 >> 28); x01 &= M28L;
-        x03 += (x02 >> 28); x02 &= M28L;
-        x04 += (x03 >> 28); x03 &= M28L;
-        x05 += (x04 >> 28); x04 &= M28L;
-        x06 += (x05 >> 28); x05 &= M28L;
-        x07 += (x06 >> 28); x06 &= M28L;
-        x08 += (x07 >> 28); x07 &= M28L;
-        x09  = (x08 >> 28); x08 &= M28L;
-
-        x09 -= t;
-
-//        assert x09 == 0L || x09 == -1L;
-
-        x00 += x09 & L0;
-        x01 += x09 & L1;
-        x02 += x09 & L2;
-        x03 += x09 & L3;
-        x04 += x09 & L4;
-
-        x01 += (x00 >> 28); x00 &= M28L;
-        x02 += (x01 >> 28); x01 &= M28L;
-        x03 += (x02 >> 28); x02 &= M28L;
-        x04 += (x03 >> 28); x03 &= M28L;
-        x05 += (x04 >> 28); x04 &= M28L;
-        x06 += (x05 >> 28); x05 &= M28L;
-        x07 += (x06 >> 28); x06 &= M28L;
-        x08 += (x07 >> 28); x07 &= M28L;
-
-        byte[] r = new byte[SCALAR_BYTES];
-        encode56(x00 | (x01 << 28), r,  0);
-        encode56(x02 | (x03 << 28), r,  7);
-        encode56(x04 | (x05 << 28), r, 14);
-        encode56(x06 | (x07 << 28), r, 21);
-        encode32((int)x08,          r, 28);
-        return r;
-    }
-
     private static void scalarMult(byte[] k, PointAffine p, PointAccum r)
     {
         int[] n = new int[SCALAR_INTS];
-        decodeScalar(k, 0, n);
-
-        // Recode the scalar into signed-digit form
-        {
-            //int c1 =
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
-            //int c2 =
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
-        }
+        Scalar25519.decode(k, n);
+        Scalar25519.toSignedDigits(256, n, n);
 
         PointPrecompZ q = new PointPrecompZ();
         PointTemp t = new PointTemp();
@@ -1252,24 +1227,9 @@ public abstract class Ed25519
         precompute();
 
         int[] n = new int[SCALAR_INTS];
-        decodeScalar(k, 0, n);
-
-        // Recode the scalar into signed-digit form, then group comb bits in each block
-        {
-            //int c1 =
-            Nat.cadd(SCALAR_INTS, ~n[0] & 1, n, L, n);      //assert c1 == 0;
-            //int c2 =
-            Nat.shiftDownBit(SCALAR_INTS, n, 1);            //assert c2 == (1 << 31);
-
-            /*
-             * Because we are using 4 teeth and 8 spacing, each limb of n corresponds to one of the 8 blocks.
-             * Therefore we can efficiently group the bits for each comb position using a (double) shuffle. 
-             */
-            for (int i = 0; i < SCALAR_INTS; ++i)
-            {
-                n[i] = Interleave.shuffle2(n[i]);
-            }
-        }
+        Scalar25519.decode(k, n);
+        Scalar25519.toSignedDigits(PRECOMP_RANGE, n, n);
+        groupCombBits(n);
 
         PointPrecomp p = new PointPrecomp();
         PointTemp t = new PointTemp();
@@ -1280,16 +1240,16 @@ public abstract class Ed25519
         int cOff = (PRECOMP_SPACING - 1) * PRECOMP_TEETH;
         for (;;)
         {
-            for (int b = 0; b < PRECOMP_BLOCKS; ++b)
+            for (int block = 0; block < PRECOMP_BLOCKS; ++block)
             {
-                int w = n[b] >>> cOff;
+                int w = n[block] >>> cOff;
                 int sign = (w >>> (PRECOMP_TEETH - 1)) & 1;
                 int abs = (w ^ -sign) & PRECOMP_MASK;
 
 //                assert sign == 0 || sign == 1;
 //                assert 0 <= abs && abs < PRECOMP_POINTS;
 
-                pointLookup(b, abs, p);
+                pointLookup(block, abs, p);
 
                 F.cnegate(resultSign ^ sign, r.x);
                 F.cnegate(resultSign ^ sign, r.u);
@@ -1314,7 +1274,7 @@ public abstract class Ed25519
     {
         PointAccum p = new PointAccum();
         scalarMultBase(k, p);
-        if (0 == encodePoint(p, r, rOff))
+        if (0 == encodeResult(p, r, rOff))
         {
             throw new IllegalStateException();
         }
@@ -1335,19 +1295,23 @@ public abstract class Ed25519
 
         PointAccum p = new PointAccum();
         scalarMultBase(n, p);
-        if (0 == checkPoint(p.x, p.y, p.z))
+        if (0 == checkPoint(p))
         {
             throw new IllegalStateException();
         }
+
         F.copy(p.y, 0, y, 0);
         F.copy(p.z, 0, z, 0);
     }
 
     private static void scalarMultOrderVar(PointAffine p, PointAccum r)
     {
-        byte[] ws_p = getWnafVar(L, WNAF_WIDTH);
+        byte[] ws_p = new byte[253];
 
-        int count = 1 << (WNAF_WIDTH - 2);
+        // NOTE: WNAF_WIDTH_128 because of the special structure of the order
+        Scalar25519.getOrderWnafVar(WNAF_WIDTH_128, ws_p);
+
+        int count = 1 << (WNAF_WIDTH_128 - 2);
         PointPrecompZ[] tp = new PointPrecompZ[count];
         PointTemp t = new PointTemp();
         pointPrecomputeZ(p, tp, count, t);
@@ -1359,10 +1323,8 @@ public abstract class Ed25519
             int wp = ws_p[bit];
             if (wp != 0)
             {
-                int sign = wp >> 31;
-                int index = (wp ^ sign) >>> 1;
-
-                pointAddVar((sign != 0), tp[index], r, t);
+                int index = (wp >> 1) ^ (wp >> 31);
+                pointAddVar(wp < 0, tp[index], r, t);
             }
 
             if (--bit < 0)
@@ -1374,47 +1336,69 @@ public abstract class Ed25519
         }
     }
 
-    private static void scalarMultStrausVar(int[] nb, int[] np, PointAffine p, PointAccum r)
+    private static void scalarMultStraus128Var(int[] nb, int[] np, PointAffine p, int[] nq, PointAffine q, PointAccum r)
     {
+//        assert nb.length == SCALAR_INTS;
+//        assert nb[SCALAR_INTS - 1] >>> 29 == 0;
+//        assert np.length == 4;
+//        assert nq.length == 4;
+
         precompute();
 
-        byte[] ws_b = getWnafVar(nb, WNAF_WIDTH_BASE);
-        byte[] ws_p = getWnafVar(np, WNAF_WIDTH);
+        byte[] ws_b = new byte[256];
+        byte[] ws_p = new byte[128];
+        byte[] ws_q = new byte[128];
 
-        int count = 1 << (WNAF_WIDTH - 2);
+        Wnaf.getSignedVar(nb, WNAF_WIDTH_BASE, ws_b);
+        Wnaf.getSignedVar(np, WNAF_WIDTH_128, ws_p);
+        Wnaf.getSignedVar(nq, WNAF_WIDTH_128, ws_q);
+
+        int count = 1 << (WNAF_WIDTH_128 - 2);
         PointPrecompZ[] tp = new PointPrecompZ[count];
+        PointPrecompZ[] tq = new PointPrecompZ[count];
         PointTemp t = new PointTemp();
         pointPrecomputeZ(p, tp, count, t);
+        pointPrecomputeZ(q, tq, count, t);
 
         pointSetNeutral(r);
 
-        for (int bit = 252;;)
+        int bit = 128;
+        while (--bit >= 0)
         {
             int wb = ws_b[bit];
             if (wb != 0)
             {
-                int sign = wb >> 31;
-                int index = (wb ^ sign) >>> 1;
+                int index = (wb >> 1) ^ (wb >> 31);
+                pointAddVar(wb < 0, PRECOMP_BASE_WNAF[index], r, t);
+            }
 
-                pointAddVar(sign != 0, PRECOMP_BASE_WNAF[index], r, t);
+            int wb128 = ws_b[128 + bit];
+            if (wb128 != 0)
+            {
+                int index = (wb128 >> 1) ^ (wb128 >> 31);
+                pointAddVar(wb128 < 0, PRECOMP_BASE128_WNAF[index], r, t);
             }
 
             int wp = ws_p[bit];
             if (wp != 0)
             {
-                int sign = wp >> 31;
-                int index = (wp ^ sign) >>> 1;
-
-                pointAddVar(sign != 0, tp[index], r, t);
+                int index = (wp >> 1) ^ (wp >> 31);
+                pointAddVar(wp < 0, tp[index], r, t);
             }
 
-            if (--bit < 0)
+            int wq = ws_q[bit];
+            if (wq != 0)
             {
-                break;
+                int index = (wq >> 1) ^ (wq >> 31);
+                pointAddVar(wq < 0, tq[index], r, t);
             }
 
             pointDouble(r);
         }
+
+        // NOTE: Together with the final pointDouble of the loop, this clears the cofactor of 8
+        pointDouble(r);
+        pointDouble(r);
     }
 
     public static void sign(byte[] sk, int skOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
@@ -1425,7 +1409,8 @@ public abstract class Ed25519
         implSign(sk, skOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
     }
 
-    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen, byte[] sig,
+        int sigOff)
     {
         byte[] ctx = null;
         byte phflag = 0x00;
@@ -1440,7 +1425,8 @@ public abstract class Ed25519
         implSign(sk, skOff, ctx, phflag, m, mOff, mLen, sig, sigOff);
     }
 
-    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen, byte[] sig, int sigOff)
+    public static void sign(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen,
+        byte[] sig, int sigOff)
     {
         byte phflag = 0x00;
 
@@ -1454,7 +1440,8 @@ public abstract class Ed25519
         implSign(sk, skOff, ctx, phflag, ph, phOff, PREHASH_SIZE, sig, sigOff);
     }
 
-    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff, byte[] sig, int sigOff)
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff,
+        byte[] sig, int sigOff)
     {
         byte phflag = 0x01;
 
@@ -1474,7 +1461,8 @@ public abstract class Ed25519
         implSign(sk, skOff, ctx, phflag, m, 0, m.length, sig, sigOff);
     }
 
-    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, Digest ph, byte[] sig, int sigOff)
+    public static void signPrehash(byte[] sk, int skOff, byte[] pk, int pkOff, byte[] ctx, Digest ph, byte[] sig,
+        int sigOff)
     {
         byte[] m = new byte[PREHASH_SIZE];
         if (PREHASH_SIZE != ph.doFinal(m, 0))
@@ -1489,34 +1477,74 @@ public abstract class Ed25519
 
     public static boolean validatePublicKeyFull(byte[] pk, int pkOff)
     {
-        PointAffine p = new PointAffine();
-        if (!decodePointVar(pk, pkOff, false, p))
+        byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
+
+        if (!checkPointFullVar(A))
         {
             return false;
         }
 
-        F.normalize(p.x);
-        F.normalize(p.y);
-
-        if (isNeutralElementVar(p.x, p.y))
+        PointAffine pA = new PointAffine();
+        if (!decodePointVar(A, false, pA))
         {
             return false;
         }
 
-        PointAccum r = new PointAccum();
-        scalarMultOrderVar(p, r);
+        return checkPointOrderVar(pA);
+    }
 
-        F.normalize(r.x);
-        F.normalize(r.y);
-        F.normalize(r.z);
+    public static PublicPoint validatePublicKeyFullExport(byte[] pk, int pkOff)
+    {
+        byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
 
-        return isNeutralElementVar(r.x, r.y, r.z);
+        if (!checkPointFullVar(A))
+        {
+            return null;
+        }
+
+        PointAffine pA = new PointAffine();
+        if (!decodePointVar(A, false, pA))
+        {
+            return null;
+        }
+
+        if (!checkPointOrderVar(pA))
+        {
+            return null;
+        }
+
+        return exportPoint(pA);
     }
 
     public static boolean validatePublicKeyPartial(byte[] pk, int pkOff)
     {
-        PointAffine p = new PointAffine();
-        return decodePointVar(pk, pkOff, false, p);
+        byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
+
+        if (!checkPointFullVar(A))
+        {
+            return false;
+        }
+
+        PointAffine pA = new PointAffine();
+        return decodePointVar(A, false, pA);
+    }
+
+    public static PublicPoint validatePublicKeyPartialExport(byte[] pk, int pkOff)
+    {
+        byte[] A = copy(pk, pkOff, PUBLIC_KEY_SIZE);
+
+        if (!checkPointFullVar(A))
+        {
+            return null;
+        }
+
+        PointAffine pA = new PointAffine();
+        if (!decodePointVar(A, false, pA))
+        {
+            return null;
+        }
+
+        return exportPoint(pA);
     }
 
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] m, int mOff, int mLen)
@@ -1527,6 +1555,14 @@ public abstract class Ed25519
         return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, mOff, mLen);
     }
 
+    public static boolean verify(byte[] sig, int sigOff, PublicPoint publicPoint, byte[] m, int mOff, int mLen)
+    {
+        byte[] ctx = null;
+        byte phflag = 0x00;
+
+        return implVerify(sig, sigOff, publicPoint, ctx, phflag, m, mOff, mLen);
+    }
+
     public static boolean verify(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] m, int mOff, int mLen)
     {
         byte phflag = 0x00;
@@ -1534,11 +1570,27 @@ public abstract class Ed25519
         return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, mOff, mLen);
     }
 
+    public static boolean verify(byte[] sig, int sigOff, PublicPoint publicPoint, byte[] ctx, byte[] m, int mOff,
+        int mLen)
+    {
+        byte phflag = 0x00;
+
+        return implVerify(sig, sigOff, publicPoint, ctx, phflag, m, mOff, mLen);
+    }
+
     public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, byte[] ph, int phOff)
     {
         byte phflag = 0x01;
 
         return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, ph, phOff, PREHASH_SIZE);
+    }
+
+    public static boolean verifyPrehash(byte[] sig, int sigOff, PublicPoint publicPoint, byte[] ctx, byte[] ph,
+        int phOff)
+    {
+        byte phflag = 0x01;
+
+        return implVerify(sig, sigOff, publicPoint, ctx, phflag, ph, phOff, PREHASH_SIZE);
     }
 
     public static boolean verifyPrehash(byte[] sig, int sigOff, byte[] pk, int pkOff, byte[] ctx, Digest ph)
@@ -1552,5 +1604,18 @@ public abstract class Ed25519
         byte phflag = 0x01;
 
         return implVerify(sig, sigOff, pk, pkOff, ctx, phflag, m, 0, m.length);
+    }
+
+    public static boolean verifyPrehash(byte[] sig, int sigOff, PublicPoint publicPoint, byte[] ctx, Digest ph)
+    {
+        byte[] m = new byte[PREHASH_SIZE];
+        if (PREHASH_SIZE != ph.doFinal(m, 0))
+        {
+            throw new IllegalArgumentException("ph");
+        }
+
+        byte phflag = 0x01;
+
+        return implVerify(sig, sigOff, publicPoint, ctx, phflag, m, 0, m.length);
     }
 }

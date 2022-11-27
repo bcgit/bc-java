@@ -5,6 +5,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 
 public class Dilithium
 {
@@ -20,6 +21,14 @@ public class Dilithium
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("KeyFactory.DILITHIUM", PREFIX + "DilithiumKeyFactorySpi");
+
+            addKeyFactoryAlgorithm(provider, "DILITHIUM2", PREFIX + "DilithiumKeyFactorySpi$Base2", BCObjectIdentifiers.dilithium2, new DilithiumKeyFactorySpi.Base2());
+            addKeyFactoryAlgorithm(provider, "DILITHIUM3", PREFIX + "DilithiumKeyFactorySpi$Base3", BCObjectIdentifiers.dilithium3, new DilithiumKeyFactorySpi.Base3());
+            addKeyFactoryAlgorithm(provider, "DILITHIUM5", PREFIX + "DilithiumKeyFactorySpi$Base5", BCObjectIdentifiers.dilithium5, new DilithiumKeyFactorySpi.Base5());
+            addKeyFactoryAlgorithm(provider, "DILITHIUM2-AES", PREFIX + "DilithiumKeyFactorySpi$Base2_AES", BCObjectIdentifiers.dilithium2_aes, new DilithiumKeyFactorySpi.Base2());
+            addKeyFactoryAlgorithm(provider, "DILITHIUM3-AES", PREFIX + "DilithiumKeyFactorySpi$Base3_AES", BCObjectIdentifiers.dilithium3_aes, new DilithiumKeyFactorySpi.Base3());
+            addKeyFactoryAlgorithm(provider, "DILITHIUM5-AES", PREFIX + "DilithiumKeyFactorySpi$Base5_AES", BCObjectIdentifiers.dilithium5_aes, new DilithiumKeyFactorySpi.Base5());
+
             provider.addAlgorithm("KeyPairGenerator.DILITHIUM", PREFIX + "DilithiumKeyPairGeneratorSpi");
 
             addKeyPairGeneratorAlgorithm(provider, "DILITHIUM2", PREFIX + "DilithiumKeyPairGeneratorSpi$Base2", BCObjectIdentifiers.dilithium2);
@@ -37,15 +46,6 @@ public class Dilithium
             addSignatureAlgorithm(provider, "DILITHIUM2-AES", PREFIX + "SignatureSpi$Base2_AES", BCObjectIdentifiers.dilithium2_aes);
             addSignatureAlgorithm(provider, "DILITHIUM3-AES", PREFIX + "SignatureSpi$Base3_AES", BCObjectIdentifiers.dilithium3_aes);
             addSignatureAlgorithm(provider, "DILITHIUM5-AES", PREFIX + "SignatureSpi$Base5_AES", BCObjectIdentifiers.dilithium5_aes);
-
-            AsymmetricKeyInfoConverter keyFact = new DilithiumKeyFactorySpi();
-
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium2, "DILITHIUM", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium3, "DILITHIUM", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium5, "DILITHIUM", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium2_aes, "DILITHIUM", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium3_aes, "DILITHIUM", keyFact);
-            registerKeyFactoryOid(provider, BCObjectIdentifiers.dilithium5_aes, "DILITHIUM", keyFact);
         }
     }
 }

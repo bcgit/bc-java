@@ -2,18 +2,17 @@ package org.bouncycastle.math.ec.rfc8032.test;
 
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
+import junit.framework.TestCase;
+
 public class Ed448Test
     extends TestCase
 {
     private static final SecureRandom RANDOM = new SecureRandom();
-
-    private static final byte[] NEUTRAL = Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
 //    @BeforeClass
 //    public static void init()
@@ -27,6 +26,7 @@ public class Ed448Test
     {
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed448.PUBLIC_KEY_SIZE];
         byte[] ctx = new byte[RANDOM.nextInt() & 7];
         byte[] m = new byte[255];
         byte[] sig1 = new byte[Ed448.SIGNATURE_SIZE];
@@ -38,7 +38,14 @@ public class Ed448Test
         for (int i = 0; i < 10; ++i)
         {
             RANDOM.nextBytes(sk);
-            Ed448.generatePublicKey(sk, 0, pk, 0);
+            Ed448.PublicPoint publicPoint = Ed448.generatePublicKey(sk, 0);
+            Ed448.encodePublicPoint(publicPoint, pk, 0);
+
+            {
+                Ed448.generatePublicKey(sk, 0, pk2, 0);
+
+                assertTrue("Ed448 consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
 
             int mLen = RANDOM.nextInt() & 255;
 
@@ -47,14 +54,29 @@ public class Ed448Test
 
             assertTrue("Ed448 consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
 
-            boolean shouldVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+            {
+                boolean shouldVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
 
-            assertTrue("Ed448 consistent sign/verify #" + i, shouldVerify);
+                assertTrue("Ed448 consistent sign/verify #" + i, shouldVerify);
+            }
+            {
+                boolean shouldVerify = Ed448.verify(sig1, 0, publicPoint, ctx, m, 0, mLen);
+
+                assertTrue("Ed448 consistent sign/verify #" + i, shouldVerify);
+            }
 
             sig1[Ed448.PUBLIC_KEY_SIZE - 1] ^= 0x80;
-            boolean shouldNotVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
 
-            assertFalse("Ed448 consistent verification failure #" + i, shouldNotVerify);
+            {
+                boolean shouldNotVerify = Ed448.verify(sig1, 0, pk, 0, ctx, m, 0, mLen);
+
+                assertFalse("Ed448 consistent verification failure #" + i, shouldNotVerify);
+            }
+            {
+                boolean shouldNotVerify = Ed448.verify(sig1, 0, publicPoint, ctx, m, 0, mLen);
+
+                assertFalse("Ed448 consistent verification failure #" + i, shouldNotVerify);
+            }
         }
     }
 
@@ -63,6 +85,7 @@ public class Ed448Test
     {
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
+        byte[] pk2 = new byte[Ed448.PUBLIC_KEY_SIZE];
         byte[] ctx = new byte[RANDOM.nextInt() & 7];
         byte[] m = new byte[255];
         byte[] ph = new byte[Ed448.PREHASH_SIZE];
@@ -75,7 +98,14 @@ public class Ed448Test
         for (int i = 0; i < 10; ++i)
         {
             RANDOM.nextBytes(sk);
-            Ed448.generatePublicKey(sk, 0, pk, 0);
+            Ed448.PublicPoint publicPoint = Ed448.generatePublicKey(sk, 0);
+            Ed448.encodePublicPoint(publicPoint, pk, 0);
+
+            {
+                Ed448.generatePublicKey(sk, 0, pk2, 0);
+
+                assertTrue("Ed448 consistent generation #" + i, Arrays.areEqual(pk, pk2));
+            }
 
             int mLen = RANDOM.nextInt() & 255;
 
@@ -88,14 +118,29 @@ public class Ed448Test
 
             assertTrue("Ed448ph consistent signatures #" + i, Arrays.areEqual(sig1, sig2));
 
-            boolean shouldVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+            {
+                boolean shouldVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
 
-            assertTrue("Ed448ph consistent sign/verify #" + i, shouldVerify);
+                assertTrue("Ed448ph consistent sign/verify #" + i, shouldVerify);
+            }
+            {
+                boolean shouldVerify = Ed448.verifyPrehash(sig1, 0, publicPoint, ctx, ph, 0);
+
+                assertTrue("Ed448ph consistent sign/verify #" + i, shouldVerify);
+            }
 
             sig1[Ed448.PUBLIC_KEY_SIZE - 1] ^= 0x80;
-            boolean shouldNotVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
 
-            assertFalse("Ed448ph consistent verification failure #" + i, shouldNotVerify);
+            {
+                boolean shouldNotVerify = Ed448.verifyPrehash(sig1, 0, pk, 0, ctx, ph, 0);
+
+                assertFalse("Ed448ph consistent verification failure #" + i, shouldNotVerify);
+            }
+            {
+                boolean shouldNotVerify = Ed448.verifyPrehash(sig1, 0, publicPoint, ctx, ph, 0);
+
+                assertFalse("Ed448ph consistent verification failure #" + i, shouldNotVerify);
+            }
         }
     }
 
@@ -466,8 +511,6 @@ public class Ed448Test
 
     public void testPublicKeyValidationFull()
     {
-        assertFalse(Ed448.validatePublicKeyFull(NEUTRAL, 0));
-
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
 
@@ -478,13 +521,21 @@ public class Ed448Test
             assertTrue(Ed448.validatePublicKeyFull(pk, 0));
         }
 
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        // Small order points (canonical encodings)
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
 
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));        
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+        // Small order points (non-canonical encodings)
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+
+        // Non-canonical encodings
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("00000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
+        assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("00000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
         assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"), 0));
         assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000081"), 0));
 
@@ -513,8 +564,6 @@ public class Ed448Test
 
     public void testPublicKeyValidationPartial()
     {
-        assertTrue(Ed448.validatePublicKeyPartial(NEUTRAL, 0));
-
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
 
@@ -525,13 +574,21 @@ public class Ed448Test
             assertTrue(Ed448.validatePublicKeyPartial(pk, 0));
         }
 
-        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        // Small order points (canonical encodings)
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
 
-        assertTrue (Ed448.validatePublicKeyPartial(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));        
-        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
-        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+        // Small order points (non-canonical encodings)
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+
+        // Non-canonical encodings
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("00000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00"), 0));
+        assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("00000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000081"), 0));
 

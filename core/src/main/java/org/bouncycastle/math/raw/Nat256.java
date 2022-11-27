@@ -158,6 +158,36 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int addTo(int[] x, int[] z, int cIn)
+    {
+        long c = cIn & M;
+        c += (x[0] & M) + (z[0] & M);
+        z[0] = (int)c;
+        c >>>= 32;
+        c += (x[1] & M) + (z[1] & M);
+        z[1] = (int)c;
+        c >>>= 32;
+        c += (x[2] & M) + (z[2] & M);
+        z[2] = (int)c;
+        c >>>= 32;
+        c += (x[3] & M) + (z[3] & M);
+        z[3] = (int)c;
+        c >>>= 32;
+        c += (x[4] & M) + (z[4] & M);
+        z[4] = (int)c;
+        c >>>= 32;
+        c += (x[5] & M) + (z[5] & M);
+        z[5] = (int)c;
+        c >>>= 32;
+        c += (x[6] & M) + (z[6] & M);
+        z[6] = (int)c;
+        c >>>= 32;
+        c += (x[7] & M) + (z[7] & M);
+        z[7] = (int)c;
+        c >>>= 32;
+        return (int)c;
+    }
+
     public static int addTo(int[] x, int xOff, int[] z, int zOff, int cIn)
     {
         long c = cIn & M;
@@ -599,6 +629,77 @@ public abstract class Nat256
             zz[zzOff + 7] = (int)c;
             c >>>= 32;
             zz[zzOff + 8] = (int)c;
+        }
+    }
+
+    public static void mul128(int[] x, int[] y128, int[] zz)
+    {
+        long x_0 = x[0] & M;
+        long x_1 = x[1] & M;
+        long x_2 = x[2] & M;
+        long x_3 = x[3] & M;
+        long x_4 = x[4] & M;
+        long x_5 = x[5] & M;
+        long x_6 = x[6] & M;
+        long x_7 = x[7] & M;
+
+        {
+            long c = 0, y_0 = y128[0] & M;
+            c += y_0 * x_0;
+            zz[0] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_1;
+            zz[1] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_2;
+            zz[2] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_3;
+            zz[3] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_4;
+            zz[4] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_5;
+            zz[5] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_6;
+            zz[6] = (int)c;
+            c >>>= 32;
+            c += y_0 * x_7;
+            zz[7] = (int)c;
+            c >>>= 32;
+            zz[8] = (int)c;
+        }
+
+        for (int i = 1; i < 4; ++i)
+        {
+            long c = 0, y_i = y128[i] & M;
+            c += y_i * x_0 + (zz[i + 0] & M);
+            zz[i + 0] = (int)c;
+            c >>>= 32;
+            c += y_i * x_1 + (zz[i + 1] & M);
+            zz[i + 1] = (int)c;
+            c >>>= 32;
+            c += y_i * x_2 + (zz[i + 2] & M);
+            zz[i + 2] = (int)c;
+            c >>>= 32;
+            c += y_i * x_3 + (zz[i + 3] & M);
+            zz[i + 3] = (int)c;
+            c >>>= 32;
+            c += y_i * x_4 + (zz[i + 4] & M);
+            zz[i + 4] = (int)c;
+            c >>>= 32;
+            c += y_i * x_5 + (zz[i + 5] & M);
+            zz[i + 5] = (int)c;
+            c >>>= 32;
+            c += y_i * x_6 + (zz[i + 6] & M);
+            zz[i + 6] = (int)c;
+            c >>>= 32;
+            c += y_i * x_7 + (zz[i + 7] & M);
+            zz[i + 7] = (int)c;
+            c >>>= 32;
+            zz[i + 8] = (int)c;
         }
     }
 
@@ -1347,9 +1448,69 @@ public abstract class Nat256
         return (int)c;
     }
 
+    public static int subFrom(int[] x, int[] z, int cIn)
+    {
+        long c = cIn & M;
+        c += (z[0] & M) - (x[0] & M);
+        z[0] = (int)c;
+        c >>= 32;
+        c += (z[1] & M) - (x[1] & M);
+        z[1] = (int)c;
+        c >>= 32;
+        c += (z[2] & M) - (x[2] & M);
+        z[2] = (int)c;
+        c >>= 32;
+        c += (z[3] & M) - (x[3] & M);
+        z[3] = (int)c;
+        c >>= 32;
+        c += (z[4] & M) - (x[4] & M);
+        z[4] = (int)c;
+        c >>= 32;
+        c += (z[5] & M) - (x[5] & M);
+        z[5] = (int)c;
+        c >>= 32;
+        c += (z[6] & M) - (x[6] & M);
+        z[6] = (int)c;
+        c >>= 32;
+        c += (z[7] & M) - (x[7] & M);
+        z[7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
     public static int subFrom(int[] x, int xOff, int[] z, int zOff)
     {
         long c = 0;
+        c += (z[zOff + 0] & M) - (x[xOff + 0] & M);
+        z[zOff + 0] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 1] & M) - (x[xOff + 1] & M);
+        z[zOff + 1] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 2] & M) - (x[xOff + 2] & M);
+        z[zOff + 2] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 3] & M) - (x[xOff + 3] & M);
+        z[zOff + 3] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 4] & M) - (x[xOff + 4] & M);
+        z[zOff + 4] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 5] & M) - (x[xOff + 5] & M);
+        z[zOff + 5] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 6] & M) - (x[xOff + 6] & M);
+        z[zOff + 6] = (int)c;
+        c >>= 32;
+        c += (z[zOff + 7] & M) - (x[xOff + 7] & M);
+        z[zOff + 7] = (int)c;
+        c >>= 32;
+        return (int)c;
+    }
+
+    public static int subFrom(int[] x, int xOff, int[] z, int zOff, int cIn)
+    {
+        long c = cIn & M;
         c += (z[zOff + 0] & M) - (x[xOff + 0] & M);
         z[zOff + 0] = (int)c;
         c >>= 32;
