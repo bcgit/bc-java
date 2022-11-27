@@ -93,6 +93,7 @@ class GeMSSEngine
         this.HFEDeg = HFEDeg;
         this.HFEDegI = HFEDegI;
         this.HFEDegJ = HFEDegJ;
+        NB_BYTES_GFqn = (HFEn >>> 3) + (((HFEn & 7) != 0) ? 1 : 0);
         SIZE_ROW = HFEDegI + 1;
         HFEnv = HFEn + HFEv;
         HFEnq = HFEn >>> 6;
@@ -104,18 +105,23 @@ class GeMSSEngine
         switch (NB_WORD_MUL)
         {
         case 6:
+            //gemss128, bluegemss128, redgemss128, whitegemss128, cyangemss128, magentagemss128
             mul = new Mul_GF2x.Mul6();
             break;
         case 9:
+            //gemss192, bluegemss192, redgemss192, whitegemss192, cyangemss192, magentagemss192, fgemss128, dualmodems128
             mul = new Mul_GF2x.Mul9();
             break;
         case 12:
+            //gemss256, bluegemss256, redgemss256, whitegemss256, cyangemss256, magentagemss256
             mul = new Mul_GF2x.Mul12();
             break;
         case 13:
+            //fgemss192, dualmodems192
             mul = new Mul_GF2x.Mul13();
             break;
         case 17:
+            //fgemss256, dualmodems256
             mul = new Mul_GF2x.Mul17();
             break;
         }
@@ -131,12 +137,11 @@ class GeMSSEngine
         HFEmr8 = HFEm & 7;
         NB_BYTES_GFqm = HFEmq8 + (HFEmr8 != 0 ? 1 : 0);
         NB_WORD_UNCOMP_EQ = ((((HFEnvq * (HFEnvq + 1)) >>> 1) * NB_BITS_UINT) + (HFEnvq + 1) * HFEnvr);
-        HFEnvr8 = (HFEnv & 7);
-        NB_BYTES_GFqnv = ((HFEnv >>> 3) + ((HFEnvr8 != 0) ? 1 : 0));
+        HFEnvr8 = HFEnv & 7;
+        NB_BYTES_GFqnv = (HFEnv >>> 3) + ((HFEnvr8 != 0) ? 1 : 0);
         VAL_BITS_M = Math.min(HFEDELTA + HFEv, 8 - HFEmr8);
         MASK_GF2m = GeMSSUtils.maskUINT(HFEmr);
         MASK_GF2n = GeMSSUtils.maskUINT(HFEnr);
-        NB_BYTES_GFqn = (HFEn >>> 3) + (((HFEn & 7) != 0) ? 1 : 0);
         if (K <= 128)
         {
             ShakeBitStrength = 128;
@@ -698,8 +703,7 @@ class GeMSSEngine
 
     void mul_xorrange_move(Pointer res, Pointer A, Pointer B)
     {
-        mul.mul_gf2x(Buffer_NB_WORD_MUL, A, B);
-        res.setXorRange(Buffer_NB_WORD_MUL, NB_WORD_MMUL);
+        mul.mul_gf2x_xor(res, A, B);
         A.move(NB_WORD_GFqn);
         B.move(NB_WORD_GFqn);
     }
@@ -713,8 +717,7 @@ class GeMSSEngine
 
     public void mul_xorrange(Pointer res, Pointer A, Pointer B)
     {
-        mul.mul_gf2x(Buffer_NB_WORD_MUL, A, B);
-        res.setXorRange(Buffer_NB_WORD_MUL, NB_WORD_MMUL);
+        mul.mul_gf2x_xor(res, A, B);
     }
 
     public void mul_rem_xorrange(Pointer res, Pointer A, Pointer B)
@@ -859,7 +862,7 @@ class GeMSSEngine
         else if (ifCondition == 1)
         {
             /* ir = 0 */
-            Sinv_cpi.set(iq, 1);
+            Sinv_cpi.set(iq, 1L);
             Sinv_cpi.move(nextrow);
         }
         /* Here, Sinv_cpi is at the end of S_inv */
@@ -1055,7 +1058,6 @@ class GeMSSEngine
             if ((nb_bits & 63) != 0)
             {
                 setPk2_loop(pk2, pk64, nb_bits, iq);
-                //pk2.set(k, pk64.get(k) >>> (nb_bits & 63));
                 pk2.set(iq, pk64.get(iq) >>> (nb_bits & 63));
                 if (((nb_bits & 63) + ir) > 64)
                 {
@@ -1068,6 +1070,7 @@ class GeMSSEngine
             }
             else
             {
+                //TODO Pointer.for_set
                 for (k = 0; k <= iq; ++k)
                 {
                     pk2.set(k, pk64.get(k));
@@ -1092,6 +1095,7 @@ class GeMSSEngine
         }
         else
         {
+            ////TODO Pointer.for_set
             for (k = 0; k <= iq; ++k)
             {
                 pk2.set(k, pk64.get(k));
@@ -1101,6 +1105,7 @@ class GeMSSEngine
 
     private void setPk2_loop(Pointer pk2, Pointer pk64, int nb_bits, int iq)
     {
+        //TODO:
         for (int k = 0; k < iq; ++k)
         {
             pk2.set(k, (pk64.get(k) >>> (nb_bits & 63)) ^ (pk64.get(k + 1) << (64 - (nb_bits & 63))));
@@ -1156,6 +1161,7 @@ class GeMSSEngine
                 if ((((NB_MONOMIAL_PK - LOST_BITS + 7) >>> 3) & 7) != 0)//Except cyangemss192, magentagemss192
                 {
                     final int NB_WHOLE_BLOCKS = ((HFEnv - ((64 - ((NB_MONOMIAL_PK - LOST_BITS - HFEnvr) & 63)) & 63)) >>> 6);
+                    //TODO:
                     for (k = 0; k < NB_WHOLE_BLOCKS; ++k)
                     {
                         pk2.set(k, (pk64.get(k) >>> (nb_bits & 63)) ^ (pk64.getWithCheck(k + 1) << (64 - (nb_bits & 63))));
@@ -1189,6 +1195,7 @@ class GeMSSEngine
             {
                 if ((((NB_MONOMIAL_PK - LOST_BITS + 7) >>> 3) & 7) != 0)
                 {
+                    //TODO Pointer.for_set
                     for (k = 0; k < iq; ++k)
                     {
                         pk2.set(k, pk64.get(k));
@@ -1197,6 +1204,7 @@ class GeMSSEngine
                 }
                 else
                 {
+                    //TODO Pointer.for_set
                     for (k = 0; k <= iq; ++k)
                     {
                         pk2.set(k, pk64.get(k));
@@ -1222,6 +1230,7 @@ class GeMSSEngine
             }
             else
             {
+                //TODO Pointer.for_set
                 for (k = 0; k < iq; ++k)
                 {
                     pk2.set(k, pk64.get(k));
@@ -1896,7 +1905,7 @@ class GeMSSEngine
     private void LOOPJR(Pointer S, Pointer L, Pointer U, int NB_IT, int iq, int jq)
     {
         int mini = Math.min(iq, jq);
-        S.set(0, 0);
+        S.set(0L);
         long tmp;
         for (int jr = 0; jr < NB_IT; ++jr)
         {
@@ -2162,7 +2171,7 @@ class GeMSSEngine
         /* Step 1: compute X^(2^(HFEDegI+1)) */
         d = 2 << HFEDegI;
         /* Xqn is initialized to 0 with calloc, so the multiprecision word is initialized to 1 just by setting the first word */
-        Xqn.set(d * NB_WORD_GFqn, 1);
+        Xqn.set(d * NB_WORD_GFqn, 1L);
         /* Step 2: reduction of X^(2^(HFEDegI+1)) modulo (F-U) */
         divsqr_r_HFE_cstdeg_gf2nx(Xqn, d, F, cst);
         for (i = HFEDegI + 1; i < HFEn; ++i)
@@ -2173,7 +2182,7 @@ class GeMSSEngine
             divsqr_r_HFE_cstdeg_gf2nx(Xqn, (HFEDeg - 1) << 1, F, cst);
         }
         /* (X^(2^n) mod (F-U)) - X */
-        Xqn.setXor(NB_WORD_GFqn, 1);
+        Xqn.setXor(NB_WORD_GFqn, 1L);
         return getD_for_not0_or_plus(Xqn);
     }
 
@@ -2450,7 +2459,7 @@ class GeMSSEngine
         }
         F_dense.changeIndex(F_dense_orig);
         /* Leading term: 1 */
-        F_dense.set(HFEDeg * NB_WORD_GFqn, 1);
+        F_dense.set(HFEDeg * NB_WORD_GFqn, 1L);
     }
 
     int div_r_gf2nx(Pointer A, int da, Pointer B, int db)
@@ -3589,7 +3598,6 @@ class GeMSSEngine
     void evalHFEv_gf2nx(Pointer Fxv, Pointer F, Pointer xv)
     {
         Pointer cur_acc = new Pointer(NB_WORD_MUL);
-        //Pointer prod = new Pointer(NB_WORD_MUL);
         Pointer acc = new Pointer(NB_WORD_MUL);
         Pointer tab_Xqj = new Pointer((HFEDegI + 1) * NB_WORD_GFqn);
         Pointer tab_Xqj_cp2 = new Pointer();
@@ -3608,6 +3616,7 @@ class GeMSSEngine
         }
         /* Evaluation of the constant, quadratic in the vinegars */
         int endloop = (NB_WORD_GFqn + NB_WORD_GFqv) == NB_WORD_GF2nv ? NB_WORD_GFqv : NB_WORD_GFqv - 1;
+        //TODO setRangeRotate
         for (j = 0; j < endloop; ++j)
         {
             V.set(j, (xv.get(NB_WORD_GFqn - 1 + j) >>> HFEnr) ^ (xv.get(NB_WORD_GFqn + j) << (64 - HFEnr)));
@@ -3702,7 +3711,7 @@ class GeMSSEngine
         /* Copy of pointer */
         Pointer Si = new Pointer(Si_tab);
         /* Vector of D_1, ..., D_(NB_ITE) */
-        Pointer D = new Pointer(SIZE_DIGEST_UINT);//NB_ITE * SIZE_DIGEST_UINT
+        Pointer D = new Pointer(SIZE_DIGEST_UINT);
         /* Take the (n+v) first bits */
         sm.fill(0, sm8, 0, NB_BYTES_GFqnv);
         byte[] hashbuffer = new byte[64];

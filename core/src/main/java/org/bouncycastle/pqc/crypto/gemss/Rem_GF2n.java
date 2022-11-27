@@ -112,8 +112,7 @@ abstract class Rem_GF2n
         private final int k164;
         private final int k264;
 
-        public REM544_PENTANOMIAL_K3_IS_128_GF2X(int k1, int k2, int ki, int ki64,
-                                                 int k164, int k264, long mask)
+        public REM544_PENTANOMIAL_K3_IS_128_GF2X(int k1, int k2, int ki, int ki64, int k164, int k264, long mask)
         {
             this.k1 = k1;
             this.k2 = k2;
@@ -133,8 +132,8 @@ abstract class Rem_GF2n
             long Q6 = (Pol[14] >>> ki) ^ (Pol[15] << ki64);
             long Q7 = (Pol[15] >>> ki) ^ (Pol[16] << ki64);
             long Q8 = (Pol[16] >>> ki);
-            long Q0 = (Pol[8] >>> ki) ^ (Pol[9] << ki64) ^ (Pol[16] >>> (k264)) ^ (Q6 >>> ki) ^ (Q7 << ki64);
-            long Q1 = (Pol[9] >>> ki) ^ (Pol[10] << ki64) ^ (Q7 >>> ki) ^ (Q8 << ki64);
+            long Q0 = ((Pol[8] ^ Q6) >>> ki) ^ ((Pol[9] ^ Q7) << ki64) ^ (Pol[16] >>> k264);
+            long Q1 = ((Pol[9] ^ Q7) >>> ki) ^ ((Pol[10] ^ Q8) << ki64);
             P[p_cp] = Pol[0] ^ Q0 ^ (Q0 << k1) ^ (Q0 << k2);
             P[p_cp + 1] = Pol[1] ^ Q1 ^ (Q0 >>> k164) ^ (Q1 << k1) ^ (Q0 >>> k264) ^ (Q1 << k2);
             P[p_cp + 2] = Pol[2] ^ Q2 ^ Q0 ^ (Q1 >>> k164) ^ (Q2 << k1) ^ (Q1 >>> k264) ^ (Q2 << k2);
@@ -155,8 +154,8 @@ abstract class Rem_GF2n
             long Q6 = (Pol[14] >>> ki) ^ (Pol[15] << ki64);
             long Q7 = (Pol[15] >>> ki) ^ (Pol[16] << ki64);
             long Q8 = (Pol[16] >>> ki);
-            long Q0 = (Pol[8] >>> ki) ^ (Pol[9] << ki64) ^ (Pol[16] >>> (k264)) ^ (Q6 >>> ki) ^ (Q7 << ki64);
-            long Q1 = (Pol[9] >>> ki) ^ (Pol[10] << ki64) ^ (Q7 >>> ki) ^ (Q8 << ki64);
+            long Q0 = ((Pol[8] ^ Q6) >>> ki) ^ ((Pol[9] ^ Q7) << ki64) ^ (Pol[16] >>> k264);
+            long Q1 = ((Pol[9] ^ Q7) >>> ki) ^ ((Pol[10] ^ Q8) << ki64);
             P[p_cp] ^= Pol[0] ^ Q0 ^ (Q0 << k1) ^ (Q0 << k2);
             P[p_cp + 1] ^= Pol[1] ^ Q1 ^ (Q0 >>> k164) ^ (Q1 << k1) ^ (Q0 >>> k264) ^ (Q1 << k2);
             P[p_cp + 2] ^= Pol[2] ^ Q2 ^ Q0 ^ (Q1 >>> k164) ^ (Q2 << k1) ^ (Q1 >>> k264) ^ (Q2 << k2);
@@ -380,13 +379,12 @@ abstract class Rem_GF2n
 
         public void rem_gf2n(long[] P, int p_cp, long[] Pol)
         {
-            long Q0 = ((Pol)[5] >>> ki) ^ ((Pol)[6] << ki64);
-            long Q1 = ((Pol)[6] >>> ki) ^ ((Pol)[7] << ki64);
-            long Q2 = ((Pol)[7] >>> ki) ^ ((Pol)[8] << ki64);
-            long Q3 = ((Pol)[8] >>> ki) ^ ((Pol)[9] << ki64);
-            long Q4 = ((Pol)[9] >>> ki) ^ ((Pol)[10] << ki64);
-            long Q5 = ((Pol)[10] >>> ki) ^ ((Pol)[11] << ki64);
-            //long R = Q0 ^ ((ki >= k3) ? Q5 >>> (ki - k3) : (Q4 >>> (k364 + ki)) ^ (Q5 << (k3 - ki)));
+            long Q0 = (Pol[5] >>> ki) ^ (Pol[6] << ki64);
+            long Q1 = (Pol[6] >>> ki) ^ (Pol[7] << ki64);
+            long Q2 = (Pol[7] >>> ki) ^ (Pol[8] << ki64);
+            long Q3 = (Pol[8] >>> ki) ^ (Pol[9] << ki64);
+            long Q4 = (Pol[9] >>> ki) ^ (Pol[10] << ki64);
+            long Q5 = (Pol[10] >>> ki) ^ (Pol[11] << ki64);
             long R = Q0 ^ (Q5 >>> ki_k3);
             P[p_cp] = Pol[0] ^ R ^ (R << k3);
             P[p_cp + 1] = Pol[1] ^ Q1 ^ (Q0 >>> k364) ^ (Q1 << k3);
@@ -398,12 +396,12 @@ abstract class Rem_GF2n
 
         public void rem_gf2n_xor(long[] P, int p_cp, long[] Pol)
         {
-            long Q0 = ((Pol)[5] >>> ki) ^ ((Pol)[6] << ki64);
-            long Q1 = ((Pol)[6] >>> ki) ^ ((Pol)[7] << ki64);
-            long Q2 = ((Pol)[7] >>> ki) ^ ((Pol)[8] << ki64);
-            long Q3 = ((Pol)[8] >>> ki) ^ ((Pol)[9] << ki64);
-            long Q4 = ((Pol)[9] >>> ki) ^ ((Pol)[10] << ki64);
-            long Q5 = ((Pol)[10] >>> ki) ^ ((Pol)[11] << ki64);
+            long Q0 = (Pol[5] >>> ki) ^ (Pol[6] << ki64);
+            long Q1 = (Pol[6] >>> ki) ^ (Pol[7] << ki64);
+            long Q2 = (Pol[7] >>> ki) ^ (Pol[8] << ki64);
+            long Q3 = (Pol[8] >>> ki) ^ (Pol[9] << ki64);
+            long Q4 = (Pol[9] >>> ki) ^ (Pol[10] << ki64);
+            long Q5 = (Pol[10] >>> ki) ^ (Pol[11] << ki64);
             long R = Q0 ^ (Q5 >>> ki_k3);
             P[p_cp] ^= Pol[0] ^ R ^ (R << k3);
             P[p_cp + 1] ^= Pol[1] ^ Q1 ^ (Q0 >>> k364) ^ (Q1 << k3);
