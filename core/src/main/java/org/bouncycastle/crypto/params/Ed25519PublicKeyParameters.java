@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 public final class Ed25519PublicKeyParameters
@@ -13,7 +12,7 @@ public final class Ed25519PublicKeyParameters
 {
     public static final int KEY_SIZE = Ed25519.PUBLIC_KEY_SIZE;
 
-    private final byte[] data = new byte[KEY_SIZE];
+    private final Ed25519.PublicPoint publicPoint;
 
     public Ed25519PublicKeyParameters(byte[] buf)
     {
@@ -24,27 +23,45 @@ public final class Ed25519PublicKeyParameters
     {
         super(false);
 
-        System.arraycopy(buf, off, data, 0, KEY_SIZE);
+        this.publicPoint = parse(buf, off);
     }
 
     public Ed25519PublicKeyParameters(InputStream input) throws IOException
     {
         super(false);
 
+        byte[] data = new byte[KEY_SIZE];
+
         if (KEY_SIZE != Streams.readFully(input, data))
         {
             throw new EOFException("EOF encountered in middle of Ed25519 public key");
         }
+
+        this.publicPoint = parse(data, 0);
+    }
+
+    public Ed25519PublicKeyParameters(Ed25519.PublicPoint publicPoint)
+    {
+        super(false);
+
+        if (publicPoint == null)
+        {
+            throw new NullPointerException("'publicPoint' cannot be null");
+        }
+
+        this.publicPoint = publicPoint;
     }
 
     public void encode(byte[] buf, int off)
     {
-        System.arraycopy(data, 0, buf, off, KEY_SIZE);
+        Ed25519.encodePublicPoint(publicPoint, buf, off);
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.clone(data);
+        byte[] data = new byte[KEY_SIZE];
+        encode(data, 0);
+        return data;
     }
 
     public boolean verify(int algorithm, byte[] ctx, byte[] msg, int msgOff, int msgLen, byte[] sig, int sigOff)
@@ -58,7 +75,7 @@ public final class Ed25519PublicKeyParameters
                 throw new IllegalArgumentException("ctx");
             }
 
-            return Ed25519.verify(sig, sigOff, data, 0, msg, msgOff, msgLen);
+            return Ed25519.verify(sig, sigOff, publicPoint, msg, msgOff, msgLen);
         }
         case Ed25519.Algorithm.Ed25519ctx:
         {
@@ -71,7 +88,7 @@ public final class Ed25519PublicKeyParameters
                 throw new IllegalArgumentException("ctx");
             }
 
-            return Ed25519.verify(sig, sigOff, data, 0, ctx, msg, msgOff, msgLen);
+            return Ed25519.verify(sig, sigOff, publicPoint, ctx, msg, msgOff, msgLen);
         }
         case Ed25519.Algorithm.Ed25519ph:
         {
@@ -88,13 +105,23 @@ public final class Ed25519PublicKeyParameters
                 throw new IllegalArgumentException("msgLen");
             }
 
-            return Ed25519.verifyPrehash(sig, sigOff, data, 0, ctx, msg, msgOff);
+            return Ed25519.verifyPrehash(sig, sigOff, publicPoint, ctx, msg, msgOff);
         }
         default:
         {
             throw new IllegalArgumentException("algorithm");
         }
         }
+    }
+
+    private static Ed25519.PublicPoint parse(byte[] buf, int off)
+    {
+        Ed25519.PublicPoint publicPoint = Ed25519.validatePublicKeyPartialExport(buf, off);
+        if (publicPoint == null)
+        {
+            throw new IllegalArgumentException("invalid public key");
+        }
+        return publicPoint;
     }
 
     private static byte[] validate(byte[] buf)

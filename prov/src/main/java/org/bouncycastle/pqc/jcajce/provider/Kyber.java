@@ -20,6 +20,14 @@ public class Kyber
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("KeyFactory.KYBER", PREFIX + "KyberKeyFactorySpi");
+
+            addKeyFactoryAlgorithm(provider, "KYBER512", PREFIX + "KyberKeyFactorySpi$Kyber512", BCObjectIdentifiers.kyber512, new KyberKeyFactorySpi.Kyber512());
+            addKeyFactoryAlgorithm(provider, "KYBER768", PREFIX + "KyberKeyFactorySpi$Kyber768", BCObjectIdentifiers.kyber768, new KyberKeyFactorySpi.Kyber768());
+            addKeyFactoryAlgorithm(provider, "KYBER1024", PREFIX + "KyberKeyFactorySpi$Kyber1024", BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi.Kyber1024());
+            addKeyFactoryAlgorithm(provider, "KYBER512-AES", PREFIX + "KyberKeyFactorySpi$Kyber512_AES", BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi.Kyber512_AES());
+            addKeyFactoryAlgorithm(provider, "KYBER768-AES", PREFIX + "KyberKeyFactorySpi$Kyber768_AES", BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi.Kyber768_AES());
+            addKeyFactoryAlgorithm(provider, "KYBER1024-AES", PREFIX + "KyberKeyFactorySpi$Kyber1024_AES", BCObjectIdentifiers.kyber1024_aes, new KyberKeyFactorySpi.Kyber1024_AES());
+
             provider.addAlgorithm("KeyPairGenerator.KYBER", PREFIX + "KyberKeyPairGeneratorSpi");
 
             addKeyPairGeneratorAlgorithm(provider, "KYBER512", PREFIX + "KyberKeyPairGeneratorSpi$Kyber512", BCObjectIdentifiers.kyber512);

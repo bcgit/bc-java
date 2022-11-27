@@ -152,11 +152,25 @@ public abstract class X25519Field
         z[9] &= M24;
     }
 
+    public static void decode(byte[] x, int[] z)
+    {
+        decode128(x, 0, z, 0);
+        decode128(x, 16, z, 5);
+        z[9] &= M24;
+    }
+
     public static void decode(byte[] x, int xOff, int[] z)
     {
         decode128(x, xOff, z, 0);
         decode128(x, xOff + 16, z, 5);
         z[9] &= M24;
+    }
+
+    public static void decode(byte[] x, int xOff, int[] z, int zOff)
+    {
+        decode128(x, xOff, z, zOff);
+        decode128(x, xOff + 16, z, zOff + 5);
+        z[zOff + 9] &= M24;
     }
 
     private static void decode128(int[] is, int off, int[] z, int zOff)
@@ -199,10 +213,22 @@ public abstract class X25519Field
         encode128(x, 5, z, zOff + 4);
     }
 
+    public static void encode(int[] x, byte[] z)
+    {
+        encode128(x, 0, z, 0);
+        encode128(x, 5, z, 16);
+    }
+
     public static void encode(int[] x, byte[] z, int zOff)
     {
         encode128(x, 0, z, zOff);
         encode128(x, 5, z, zOff + 16);
+    }
+
+    public static void encode(int[] x, int xOff, byte[] z, int zOff)
+    {
+        encode128(x, xOff, z, zOff);
+        encode128(x, xOff + 5, z, zOff + 16);
     }
 
     private static void encode128(int[] x, int xOff, int[] is, int off)

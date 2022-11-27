@@ -48,7 +48,7 @@ public class KyberKeyPairGeneratorTest
         {
             kpg.initialize(specs[i], new SecureRandom());
             KeyPair kp = kpg.generateKeyPair();
-            performKeyPairEncodingTest(kp);
+            performKeyPairEncodingTest(specs[i].getName(), kp);
 
             assertEquals(kp.getPublic(), ((KyberPrivateKey)kp.getPrivate()).getPublicKey());;
         }
