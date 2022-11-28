@@ -34,7 +34,7 @@ public class GeMSSKeyPairGenerator
         Pointer F = new Pointer(sk_uncomp_length >>> 3);
         byte[] sk_uncomp = new byte[sk_uncomp_length];
         SHAKEDigest shakeDigest = new SHAKEDigest(engine.ShakeBitStrength);
-        shakeDigest.update(seed, 0, engine.SIZE_SEED_SK);//engine.SIZE_SEED_SK
+        shakeDigest.update(seed, 0, engine.SIZE_SEED_SK);
         shakeDigest.doFinal(sk_uncomp, 0, sk_uncomp_length);
         byte[] sk = new byte[engine.SIZE_SEED_SK];
         final int SIZE_PK_HFE = (engine.NB_MONOMIAL_PK * engine.HFEm + 7) >> 3;
@@ -46,11 +46,11 @@ public class GeMSSKeyPairGenerator
         int ret;
         if (engine.HFEDeg > 34)
         {
-            ret = engine.genSecretMQS_gf2_opt(Q, F);
-            if (ret != 0)
-            {
-                throw new IllegalArgumentException("Error");
-            }
+            engine.genSecretMQS_gf2_opt(Q, F);
+//            if (ret != 0)
+//            {
+//                throw new IllegalArgumentException("Error");
+//            }
         }
         Pointer S = new Pointer(engine.MATRIXnv_SIZE);
         Pointer T = new Pointer(S);

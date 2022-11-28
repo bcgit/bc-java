@@ -51,6 +51,12 @@ public class GeMSSParameters
     private static final Integer magentagemss_128 = Integers.valueOf(0x0601);
     private static final Integer magentagemss_192 = Integers.valueOf(0x0602);
     private static final Integer magentagemss_256 = Integers.valueOf(0x0603);
+    private static final Integer fgemss_128 = Integers.valueOf(0x0701);
+    private static final Integer fgemss_192 = Integers.valueOf(0x0702);
+    private static final Integer fgemss_256 = Integers.valueOf(0x0703);
+    private static final Integer dualmodems_128 = Integers.valueOf(0x0801);
+    private static final Integer dualmodems_192 = Integers.valueOf(0x0802);
+    private static final Integer dualmodems_256 = Integers.valueOf(0x0803);
     private static final Map<Integer, GeMSSParameters> oidToParams = new HashMap<Integer, GeMSSParameters>();
     private static final Map<GeMSSParameters, Integer> paramsToOid = new HashMap<GeMSSParameters, Integer>();
 
@@ -74,6 +80,12 @@ public class GeMSSParameters
         oidToParams.put(magentagemss_128, magentagemss128);
         oidToParams.put(magentagemss_192, magentagemss192);
         oidToParams.put(magentagemss_256, magentagemss256);
+        oidToParams.put(fgemss_128, fgemss128);
+        oidToParams.put(fgemss_192, fgemss192);
+        oidToParams.put(fgemss_256, fgemss256);
+        oidToParams.put(dualmodems_128, dualmodems128);
+        oidToParams.put(dualmodems_192, dualmodems192);
+        oidToParams.put(dualmodems_256, dualmodems256);
 
         paramsToOid.put(gemss128, gemss_128);
         paramsToOid.put(gemss192, gemss_192);
@@ -93,17 +105,23 @@ public class GeMSSParameters
         paramsToOid.put(magentagemss128, magentagemss_128);
         paramsToOid.put(magentagemss192, magentagemss_192);
         paramsToOid.put(magentagemss256, magentagemss_256);
+        paramsToOid.put(fgemss128, fgemss_128);
+        paramsToOid.put(fgemss192, fgemss_192);
+        paramsToOid.put(fgemss256, fgemss_256);
+        paramsToOid.put(dualmodems128, dualmodems_128);
+        paramsToOid.put(dualmodems192, dualmodems_192);
+        paramsToOid.put(dualmodems256, dualmodems_256);
     }
 
     private final String name;
     private final GeMSSEngine engine;
 
     private GeMSSParameters(String name, int K, int HFEn, int HFEv, int HFEDELTA, int NB_ITE, int HFEDeg,
-                            int HFEDegI, int HFEDegJ)// int HFEs
+                            int HFEDegI, int HFEDegJ)
     {
         this.name = name;
         //System.out.print(name + " ");
-        this.engine = new GeMSSEngine(K, HFEn, HFEv, HFEDELTA, NB_ITE, HFEDeg, HFEDegI, HFEDegJ);//, HFEs
+        this.engine = new GeMSSEngine(K, HFEn, HFEv, HFEDELTA, NB_ITE, HFEDeg, HFEDegI, HFEDegJ);
     }
 
     public String getName()
@@ -142,7 +160,6 @@ public class GeMSSParameters
     public GeMSSEngine getEngine()
     {
         return this.engine;
-
     }
 
 
