@@ -683,13 +683,14 @@ abstract class Mul_GF2x
         MUL64_NO_SIMD_GF2X(Buffer, 4, A[a_cp + 2], B[b_cp + 2]);//x4,x5
         /* A1*B1 */
         MUL64_NO_SIMD_GF2X(Buffer, 2, A[a_cp + 1], B[b_cp + 1]);//x2, x3
+        C[c_cp] ^= Buffer[0];
         Buffer[1] ^= Buffer[2];//C1=x1^x2
         Buffer[3] ^= Buffer[4];//c3=x3^x4
         Buffer[4] = Buffer[3] ^ Buffer[5];//c4=x3+x4+x5
-        C[c_cp + 2] ^= Buffer[3] ^ Buffer[1] ^ Buffer[0];//c2=x1+x2+x3+x4
+        Buffer[0] ^= Buffer[1];
+        C[c_cp + 1] ^= Buffer[0];
+        C[c_cp + 2] ^= Buffer[3] ^ Buffer[0];//c2=x1+x2+x3+x4
         C[c_cp + 3] ^= Buffer[1] ^ Buffer[4];//c3=x1+x2+x4+x5
-        C[c_cp + 1] ^= Buffer[0] ^ Buffer[1];
-        C[c_cp] ^= Buffer[0];
         C[c_cp + 4] ^= Buffer[4];
         C[c_cp + 5] ^= Buffer[5];
         MUL64_NO_SIMD_GF2X_XOR(C, c_cp + 1, A[a_cp] ^ A[a_cp + 1], B[b_cp] ^ B[b_cp + 1]);//x6, x7
