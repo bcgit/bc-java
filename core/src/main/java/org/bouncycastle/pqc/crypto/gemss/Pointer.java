@@ -196,9 +196,9 @@ class Pointer
         int left = 64 - right;
         outOff += cp;
         inOff += p.cp;
-        for (int i = 0; i < len; ++i, ++inOff)
+        for (int i = 0; i < len; ++i)
         {
-            array[outOff++] = (p.array[inOff] >>> left) | (p.array[inOff + 1] << right);
+            array[outOff++] = (p.array[inOff] >>> left) ^ (p.array[++inOff] << right);
         }
     }
 
@@ -349,16 +349,6 @@ class Pointer
         return (int)GeMSSUtils.NORBITS_UINT(r);
     }
 
-    public void setOneShiftWithMove(int j, int loop, int move)
-    {
-        for (; j < loop; ++j)
-        {
-            /* It is a^(i*NB_BITS_UINT + j) */
-            array[cp] = 1L << j;
-            cp += move;
-        }
-    }
-
     public long getDotProduct(int off, Pointer b, int bOff, int len)
     {
         off += cp;
@@ -398,5 +388,51 @@ class Pointer
             --da;
         }
         return da;
+    }
+
+    public void setRangePointerUnion(PointerUnion p, int len)
+    {
+        if (p.remainder == 0)
+        {
+            System.arraycopy(p.array, p.cp, array, cp, len);
+        }
+        else
+        {
+            int left = (8 - p.remainder) << 3;
+            int right = p.remainder << 3;
+            int outOff = cp;
+            int inOff = p.cp;
+            for (int i = 0; i < len; ++i)
+            {
+                array[outOff++] = (p.array[inOff] >>> right) ^ (p.array[++inOff] << left);
+            }
+        }
+    }
+
+    public void setRangePointerUnion(PointerUnion p, int len, int shift)
+    {
+        int right2 = shift & 63;
+        int left2 = 64 - right2;
+        int outOff = cp;
+        int inOff = p.cp;
+        if (p.remainder == 0)
+        {
+            for (int i = 0; i < len; ++i)
+            {
+                array[outOff++] = (p.array[inOff] >>> right2) ^ (p.array[inOff + 1] << left2);
+                inOff++;
+            }
+        }
+        else
+        {
+            int right1 = p.remainder << 3;
+            int left1 = ((8 - p.remainder) << 3);
+            for (int i = 0; i < len; ++i)
+            {
+                array[outOff++] = (((p.array[inOff] >>> right1) | (p.array[inOff + 1] << left1)) >>> right2) ^
+                    (((p.array[inOff + 1] >>> right1) | (p.array[inOff + 2] << left1)) << left2);
+                inOff++;
+            }
+        }
     }
 }
