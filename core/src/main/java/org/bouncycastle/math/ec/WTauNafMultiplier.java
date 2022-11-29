@@ -29,12 +29,10 @@ public class WTauNafMultiplier extends AbstractECMultiplier
 
         ECPoint.AbstractF2m p = (ECPoint.AbstractF2m)point;
         ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m)p.getCurve();
-        int m = curve.getFieldSize();
         byte a = curve.getA().toBigInteger().byteValue();
         byte mu = Tnaf.getMu(a);
-        BigInteger[] s = curve.getSi();
 
-        ZTauElement rho = Tnaf.partModReduction(k, m, a, s, mu, (byte)10);
+        ZTauElement rho = Tnaf.partModReduction(curve, k, a, mu, (byte)10);
 
         return multiplyWTnaf(p, rho, a, mu);
     }
@@ -55,8 +53,7 @@ public class WTauNafMultiplier extends AbstractECMultiplier
 
         BigInteger tw = Tnaf.getTw(mu, Tnaf.WIDTH);
 
-        byte[]u = Tnaf.tauAdicWNaf(mu, lambda, Tnaf.WIDTH,
-            BigInteger.valueOf(Tnaf.POW_2_WIDTH), tw, alpha);
+        byte[] u = Tnaf.tauAdicWNaf(mu, lambda, Tnaf.WIDTH, tw.intValue(), alpha);
 
         return multiplyFromWTnaf(p, u);
     }
