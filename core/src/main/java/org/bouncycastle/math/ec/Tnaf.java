@@ -28,11 +28,6 @@ class Tnaf
     public static final byte WIDTH = 4;
 
     /**
-     * 2<sup>4</sup>
-     */
-    public static final byte POW_2_WIDTH = 16;
-
-    /**
      * The <code>&alpha;<sub>u</sub></code>'s for <code>a=0</code> as an array
      * of <code>ZTauElement</code>s.
      */
@@ -451,10 +446,7 @@ class Tnaf
             throw new IllegalArgumentException("mu must be 1 or -1");
         }
 
-        BigInteger u0;
-        BigInteger u1;
-        BigInteger u2;
-
+        BigInteger u0, u1, u2;
         if (doV)
         {
             u0 = ECConstants.TWO;
@@ -469,26 +461,18 @@ class Tnaf
         for (int i = 1; i < k; i++)
         {
             // u2 = mu*u1 - 2*u0;
-            BigInteger s = null;
-            if (mu == 1)
+            BigInteger s = u1;
+            if (mu < 0)
             {
-                s = u1;
+                s = s.negate();
             }
-            else
-            {
-                // mu == -1
-                s = u1.negate();
-            }
-            
+
             u2 = s.subtract(u0.shiftLeft(1));
             u0 = u1;
             u1 = u2;
-//            System.out.println(i + ": " + u2);
-//            System.out.println();
         }
 
-        BigInteger[] retVal = {u0, u1};
-        return retVal;
+        return new BigInteger[]{ u0, u1 };
     }
 
     /**
@@ -519,11 +503,7 @@ class Tnaf
             BigInteger[] us = getLucas(mu, w, false);
             BigInteger twoToW = ECConstants.ZERO.setBit(w);
             BigInteger u1invert = us[1].modInverse(twoToW);
-            BigInteger tw;
-            tw = ECConstants.TWO.multiply(us[0]).multiply(u1invert).mod(twoToW);
-//            System.out.println("mu = " + mu);
-//            System.out.println("tw = " + tw);
-            return tw;
+            return us[0].shiftLeft(1).multiply(u1invert).mod(twoToW);
         }
     }
 
@@ -542,22 +522,7 @@ class Tnaf
             throw new IllegalArgumentException("si is defined for Koblitz curves only");
         }
 
-        int m = curve.getFieldSize();
-        int a = curve.getA().toBigInteger().intValue();
-        byte mu = getMu(a);
-        int shifts = getShiftsForCofactor(curve.getCofactor());
-        int index = m + 3 - a;
-        BigInteger[] ui = getLucas(mu, index, false);
-        if (mu == 1)
-        {
-            ui[0] = ui[0].negate();
-            ui[1] = ui[1].negate();
-        }
-
-        BigInteger dividend0 = ECConstants.ONE.add(ui[1]).shiftRight(shifts);
-        BigInteger dividend1 = ECConstants.ONE.add(ui[0]).shiftRight(shifts).negate();
-
-        return new BigInteger[] { dividend0, dividend1 };
+        return getSi(curve.getFieldSize(), curve.getA().toBigInteger().intValue(), curve.getCofactor());
     }
 
     public static BigInteger[] getSi(int fieldSize, int curveA, BigInteger cofactor)
@@ -608,9 +573,11 @@ class Tnaf
      * modular reduction.
      * @return <code>&rho; := k partmod (&tau;<sup>m</sup> - 1)/(&tau; - 1)</code>
      */
-    public static ZTauElement partModReduction(BigInteger k, int m, byte a,
-            BigInteger[] s, byte mu, byte c)
+    public static ZTauElement partModReduction(ECCurve.AbstractF2m curve, BigInteger k, byte a, byte mu, byte c)
     {
+        int m = curve.getFieldSize();
+        BigInteger[] s = curve.getSi();
+
         // d0 = s[0] + mu*s[1]; mu is either 1 or -1
         BigInteger d0;
         if (mu == 1)
@@ -622,20 +589,29 @@ class Tnaf
             d0 = s[0].subtract(s[1]);
         }
 
-        BigInteger[] v = getLucas(mu, m, true);
-        BigInteger vm = v[1];
+        BigInteger vm;
+        if (curve.isKoblitz())
+        {
+            /*
+             * Jerome A. Solinas, "Improved Algorithms for Arithmetic on Anomalous Binary Curves", (21).
+             */
+            vm = ECConstants.ONE.shiftLeft(m).add(ECConstants.ONE).subtract(
+                curve.getOrder().multiply(curve.getCofactor()));
+        }
+        else
+        {
+            BigInteger[] v = getLucas(mu, m, true);
+            vm = v[1];
+        }
 
-        SimpleBigDecimal lambda0 = approximateDivisionByN(
-                k, s[0], vm, a, m, c);
-        
-        SimpleBigDecimal lambda1 = approximateDivisionByN(
-                k, s[1], vm, a, m, c);
+        SimpleBigDecimal lambda0 = approximateDivisionByN(k, s[0], vm, a, m, c);
+        SimpleBigDecimal lambda1 = approximateDivisionByN(k, s[1], vm, a, m, c);
 
         ZTauElement q = round(lambda0, lambda1, mu);
 
         // r0 = n - d0*q0 - 2*s1*q1
         BigInteger r0 = k.subtract(d0.multiply(q.u)).subtract(
-                BigInteger.valueOf(2).multiply(s[1]).multiply(q.v));
+            s[1].multiply(q.v).shiftLeft(1));
 
         // r1 = s1*q0 - s0*q1
         BigInteger r1 = s[1].multiply(q.u).subtract(s[0].multiply(q.v));
@@ -654,11 +630,10 @@ class Tnaf
     public static ECPoint.AbstractF2m multiplyRTnaf(ECPoint.AbstractF2m p, BigInteger k)
     {
         ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m) p.getCurve();
-        int m = curve.getFieldSize();
         int a = curve.getA().toBigInteger().intValue();
         byte mu = getMu(a);
-        BigInteger[] s = curve.getSi();
-        ZTauElement rho = partModReduction(k, m, (byte)a, s, mu, (byte)10);
+
+        ZTauElement rho = partModReduction(curve, k, (byte)a, mu, (byte)10);
 
         return multiplyTnaf(p, rho);
     }
@@ -678,9 +653,7 @@ class Tnaf
         byte mu = getMu(curve.getA());
         byte[] u = tauAdicNaf(mu, lambda);
 
-        ECPoint.AbstractF2m q = multiplyFromTnaf(p, u);
-
-        return q;
+        return multiplyFromTnaf(p, u);
     }
 
     /**
@@ -732,10 +705,9 @@ class Tnaf
      * @return The <code>[&tau;]</code>-adic window NAF of
      * <code>&lambda;</code>.
      */
-    public static byte[] tauAdicWNaf(byte mu, ZTauElement lambda,
-            byte width, BigInteger pow2w, BigInteger tw, ZTauElement[] alpha)
+    public static byte[] tauAdicWNaf(byte mu, ZTauElement lambda, int width, int tw, ZTauElement[] alpha)
     {
-        if (!((mu == 1) || (mu == -1)))
+        if (!(mu == 1 || mu == -1))
         {
             throw new IllegalArgumentException("mu must be 1 or -1");
         }
@@ -751,8 +723,10 @@ class Tnaf
         // The array holding the TNAF
         byte[] u = new byte[maxLength];
 
+        int pow2Width = 1 << width;
+
         // 2^(width - 1)
-        BigInteger pow2wMin1 = pow2w.shiftRight(1);
+        int pow2wMin1 = pow2Width >>> 1;
 
         // Split lambda into two BigIntegers to simplify calculations
         BigInteger r0 = lambda.u;
@@ -760,65 +734,38 @@ class Tnaf
         int i = 0;
 
         // while lambda <> (0, 0)
-        while (!((r0.equals(ECConstants.ZERO))&&(r1.equals(ECConstants.ZERO))))
+        while ((r0.signum() | r1.signum()) != 0)
         {
-            // if r0 is odd
             if (r0.testBit(0))
             {
-                // uUnMod = r0 + r1*tw mod 2^width
-                BigInteger uUnMod
-                    = r0.add(r1.multiply(tw)).mod(pow2w);
-                
-                byte uLocal;
-                // if uUnMod >= 2^(width - 1)
-                if (uUnMod.compareTo(pow2wMin1) >= 0)
+                int uUnMod = (r0.intValue() + (r1.intValue() * tw)) & (pow2Width - 1);
+
+                if (uUnMod >= pow2wMin1)
                 {
-                    uLocal = (byte) uUnMod.subtract(pow2w).intValue();
+                    u[i] = (byte)(uUnMod - pow2Width);
+                    r0 = r0.add(alpha[pow2Width - uUnMod].u);
+                    r1 = r1.add(alpha[pow2Width - uUnMod].v);
                 }
                 else
                 {
-                    uLocal = (byte) uUnMod.intValue();
-                }
-                // uLocal is now in [-2^(width-1), 2^(width-1)-1]
-
-                u[i] = uLocal;
-                boolean s = true;
-                if (uLocal < 0)
-                {
-                    s = false;
-                    uLocal = (byte)-uLocal;
-                }
-                // uLocal is now >= 0
-
-                if (s)
-                {
-                    r0 = r0.subtract(alpha[uLocal].u);
-                    r1 = r1.subtract(alpha[uLocal].v);
-                }
-                else
-                {
-                    r0 = r0.add(alpha[uLocal].u);
-                    r1 = r1.add(alpha[uLocal].v);
+                    u[i] = (byte)uUnMod;
+                    r0 = r0.subtract(alpha[uUnMod].u);
+                    r1 = r1.subtract(alpha[uUnMod].v);
                 }
             }
-            else
-            {
-                u[i] = 0;
-            }
 
-            BigInteger t = r0;
+            ++i;
 
+            BigInteger t = r0.shiftRight(1);
             if (mu == 1)
             {
-                r0 = r1.add(r0.shiftRight(1));
+                r0 = r1.add(t);
             }
-            else
+            else // mu == -1
             {
-                // mu == -1
-                r0 = r1.subtract(r0.shiftRight(1));
+                r0 = r1.subtract(t);
             }
-            r1 = t.shiftRight(1).negate();
-            i++;
+            r1 = t.negate();
         }
         return u;
     }
