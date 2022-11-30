@@ -2,6 +2,8 @@ package org.bouncycastle.math.ec;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.BigIntegers;
+
 /**
  * Class holding methods for point multiplication based on the window
  * &tau;-adic nonadjacent form (WTNAF). The algorithms are based on the
@@ -31,12 +33,16 @@ class Tnaf
      * The <code>&alpha;<sub>u</sub></code>'s for <code>a=0</code> as an array
      * of <code>ZTauElement</code>s.
      */
-    public static final ZTauElement[] alpha0 = {
-        null,
-        new ZTauElement(ECConstants.ONE, ECConstants.ZERO), null,
-        new ZTauElement(MINUS_THREE, MINUS_ONE), null,
-        new ZTauElement(MINUS_ONE, MINUS_ONE), null,
-        new ZTauElement(ECConstants.ONE, MINUS_ONE), null
+    public static final ZTauElement[] alpha0 =
+    {
+        null, new ZTauElement(ECConstants.ONE, ECConstants.ZERO),
+        null, new ZTauElement(MINUS_THREE, MINUS_ONE),
+        null, new ZTauElement(MINUS_ONE, MINUS_ONE),
+        null, new ZTauElement(ECConstants.ONE, MINUS_ONE),
+        null, new ZTauElement(MINUS_ONE, ECConstants.ONE),
+        null, new ZTauElement(ECConstants.ONE, ECConstants.ONE),
+        null, new ZTauElement(ECConstants.THREE, ECConstants.ONE),
+        null, new ZTauElement(MINUS_ONE, ECConstants.ZERO),
     };
 
     /**
@@ -51,11 +57,16 @@ class Tnaf
      * The <code>&alpha;<sub>u</sub></code>'s for <code>a=1</code> as an array
      * of <code>ZTauElement</code>s.
      */
-    public static final ZTauElement[] alpha1 = {null,
-        new ZTauElement(ECConstants.ONE, ECConstants.ZERO), null,
-        new ZTauElement(MINUS_THREE, ECConstants.ONE), null,
-        new ZTauElement(MINUS_ONE, ECConstants.ONE), null,
-        new ZTauElement(ECConstants.ONE, ECConstants.ONE), null
+    public static final ZTauElement[] alpha1 =
+    {
+        null, new ZTauElement(ECConstants.ONE, ECConstants.ZERO),
+        null, new ZTauElement(MINUS_THREE, ECConstants.ONE),
+        null, new ZTauElement(MINUS_ONE, ECConstants.ONE),
+        null, new ZTauElement(ECConstants.ONE, ECConstants.ONE),
+        null, new ZTauElement(MINUS_ONE, MINUS_ONE),
+        null, new ZTauElement(ECConstants.ONE, MINUS_ONE),
+        null, new ZTauElement(ECConstants.THREE, MINUS_ONE),
+        null, new ZTauElement(MINUS_ONE, ECConstants.ZERO),
     };
 
     /**
@@ -76,31 +87,29 @@ class Tnaf
      */
     public static BigInteger norm(final byte mu, ZTauElement lambda)
     {
-        BigInteger norm;
-
         // s1 = u^2
         BigInteger s1 = lambda.u.multiply(lambda.u);
 
         // s2 = u * v
-        BigInteger s2 = lambda.u.multiply(lambda.v);
+//        BigInteger s2 = lambda.u.multiply(lambda.v);
 
         // s3 = 2 * v^2
-        BigInteger s3 = lambda.v.multiply(lambda.v).shiftLeft(1);
+//        BigInteger s3 = lambda.v.multiply(lambda.v).shiftLeft(1);
 
         if (mu == 1)
         {
-            norm = s1.add(s2).add(s3);
+//            return s1.add(s2).add(s3);
+            return lambda.v.shiftLeft(1).add(lambda.u).multiply(lambda.v).add(s1);
         }
         else if (mu == -1)
         {
-            norm = s1.subtract(s2).add(s3);
+//            return s1.subtract(s2).add(s3);
+            return lambda.v.shiftLeft(1).subtract(lambda.u).multiply(lambda.v).add(s1);
         }
         else
         {
             throw new IllegalArgumentException("mu must be 1 or -1");
         }
-
-        return norm;
     }
 
     /**
@@ -650,10 +659,11 @@ class Tnaf
     public static ECPoint.AbstractF2m multiplyTnaf(ECPoint.AbstractF2m p, ZTauElement lambda)
     {
         ECCurve.AbstractF2m curve = (ECCurve.AbstractF2m)p.getCurve();
+        ECPoint.AbstractF2m pNeg = (ECPoint.AbstractF2m)p.negate();
         byte mu = getMu(curve.getA());
         byte[] u = tauAdicNaf(mu, lambda);
 
-        return multiplyFromTnaf(p, u);
+        return multiplyFromTnaf(p, pNeg, u);
     }
 
     /**
@@ -665,11 +675,10 @@ class Tnaf
     * @param u The the TNAF of <code>&lambda;</code>..
     * @return <code>&lambda; * p</code>
     */
-    public static ECPoint.AbstractF2m multiplyFromTnaf(ECPoint.AbstractF2m p, byte[] u)
+    public static ECPoint.AbstractF2m multiplyFromTnaf(ECPoint.AbstractF2m p, ECPoint.AbstractF2m pNeg, byte[] u)
     {
         ECCurve curve = p.getCurve();
         ECPoint.AbstractF2m q = (ECPoint.AbstractF2m)curve.getInfinity();
-        ECPoint.AbstractF2m pNeg = (ECPoint.AbstractF2m)p.negate();
         int tauCount = 0;
         for (int i = u.length - 1; i >= 0; i--)
         {
@@ -724,49 +733,71 @@ class Tnaf
         byte[] u = new byte[maxLength];
 
         int pow2Width = 1 << width;
-
-        // 2^(width - 1)
-        int pow2wMin1 = pow2Width >>> 1;
+        int pow2Mask = pow2Width - 1;
+        int s = 32 - width;
 
         // Split lambda into two BigIntegers to simplify calculations
-        BigInteger r0 = lambda.u;
-        BigInteger r1 = lambda.v;
-        int i = 0;
+        BigInteger R0 = lambda.u;
+        BigInteger R1 = lambda.v;
+        int uPos = 0;
 
         // while lambda <> (0, 0)
-        while ((r0.signum() | r1.signum()) != 0)
+        while (R0.bitLength() > 62 || R1.bitLength() > 62)
         {
-            if (r0.testBit(0))
+            if (R0.testBit(0))
             {
-                int uUnMod = (r0.intValue() + (r1.intValue() * tw)) & (pow2Width - 1);
+                int uVal = R0.intValue() + (R1.intValue() * tw);
+                int alphaPos = uVal & pow2Mask;
 
-                if (uUnMod >= pow2wMin1)
-                {
-                    u[i] = (byte)(uUnMod - pow2Width);
-                    r0 = r0.add(alpha[pow2Width - uUnMod].u);
-                    r1 = r1.add(alpha[pow2Width - uUnMod].v);
-                }
-                else
-                {
-                    u[i] = (byte)uUnMod;
-                    r0 = r0.subtract(alpha[uUnMod].u);
-                    r1 = r1.subtract(alpha[uUnMod].v);
-                }
+                u[uPos] = (byte)((uVal << s) >> s);
+                R0 = R0.subtract(alpha[alphaPos].u);
+                R1 = R1.subtract(alpha[alphaPos].v);
             }
 
-            ++i;
+            ++uPos;
 
-            BigInteger t = r0.shiftRight(1);
+            BigInteger t = R0.shiftRight(1);
             if (mu == 1)
             {
-                r0 = r1.add(t);
+                R0 = R1.add(t);
             }
             else // mu == -1
             {
-                r0 = r1.subtract(t);
+                R0 = R1.subtract(t);
             }
-            r1 = t.negate();
+            R1 = t.negate();
         }
+
+        long r0_64 = BigIntegers.longValueExact(R0);
+        long r1_64 = BigIntegers.longValueExact(R1);
+
+        // while lambda <> (0, 0)
+        while ((r0_64 | r1_64) != 0L)
+        {
+            if ((r0_64 & 1L) != 0L)
+            {
+                int uVal = (int)r0_64 + ((int)r1_64 * tw);
+                int alphaPos = uVal & pow2Mask;
+
+                u[uPos] = (byte)((uVal << s) >> s);
+                r0_64 -= alpha[alphaPos].u.intValue();
+                r1_64 -= alpha[alphaPos].v.intValue();
+            }
+
+            ++uPos;
+
+            long t_64 = r0_64 >> 1;
+            if (mu == 1)
+            {
+                r0_64 = r1_64 + t_64;
+            }
+            else // mu == -1
+            {
+                r0_64 = r1_64 - t_64;
+            }
+            r1_64 = -t_64;
+        }
+        
         return u;
     }
 
@@ -778,6 +809,7 @@ class Tnaf
      */
     public static ECPoint.AbstractF2m[] getPreComp(ECPoint.AbstractF2m p, byte a)
     {
+        ECPoint.AbstractF2m pNeg = (ECPoint.AbstractF2m)p.negate();
         byte[][] alphaTnaf = (a == 0) ? Tnaf.alpha0Tnaf : Tnaf.alpha1Tnaf;
 
         ECPoint.AbstractF2m[] pu = new ECPoint.AbstractF2m[(alphaTnaf.length + 1) >>> 1];
@@ -786,7 +818,7 @@ class Tnaf
         int precompLen = alphaTnaf.length;
         for (int i = 3; i < precompLen; i += 2)
         {
-            pu[i >>> 1] = Tnaf.multiplyFromTnaf(p, alphaTnaf[i]);
+            pu[i >>> 1] = Tnaf.multiplyFromTnaf(p, pNeg, alphaTnaf[i]);
         }
 
         p.getCurve().normalizeAll(pu);
