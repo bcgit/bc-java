@@ -162,20 +162,10 @@ class Pointer
         }
     }
 
-    public void setRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
+    public void setXorRangeAndMask(Pointer p, int len, long mask)
     {
-        outOff += cp;
-        inOff += p.cp;
-        for (int i = 0; i < len; ++i)
-        {
-            array[outOff++] = p.array[inOff++] & mask;
-        }
-    }
-
-    public void setXorRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
-    {
-        outOff += cp;
-        inOff += p.cp;
+        int outOff = cp;
+        int inOff = p.cp;
         for (int i = 0; i < len; ++i)
         {
             array[outOff++] ^= p.array[inOff++] & mask;
@@ -279,7 +269,6 @@ class Pointer
     {
         int pos = cp + startPos;
         array[pos++] = 1L;
-        //Arrays.fill(array, pos, size - 1, 0L);
         for (int i = 1; i < size; ++i)
         {
             array[pos++] = 0L;
@@ -339,6 +328,27 @@ class Pointer
         }
     }
 
+    public void setRangeFromXor(Pointer a, Pointer b, int len)
+    {
+        for (int i = 0, outOff = cp, aOff = a.cp, bOff = b.cp; i < len; ++i)
+        {
+            array[outOff++] = a.array[aOff++] ^ b.array[bOff++];
+        }
+    }
+
+    public void setRangeFromXorAndMask_xor(Pointer a, Pointer b, long mask, int len)
+    {
+        int outOff = cp;
+        int a_cp = a.cp;
+        int b_cp = b.cp;
+        for (int i = 0; i < len; ++i)
+        {
+            array[outOff] = (a.array[a_cp] ^ b.array[b_cp]) & mask;
+            a.array[a_cp++] ^= array[outOff];
+            b.array[b_cp++] ^= array[outOff++];
+        }
+    }
+
     public int is0_gf2n(int p, int size)
     {
         long r = get(p);
@@ -361,15 +371,23 @@ class Pointer
         return res;
     }
 
-    public long isNot0_gf2n(int off, int size)
+    public int getD_for_not0_or_plus(int NB_WORD_GFqn, int start)
     {
-        off += cp;
-        long r = array[off];
-        for (int i = 1; i < size; ++i)
+        int i, j, d, pos;
+        long mask, b;
+        /* Search the degree of X^(2^n) - X mod (F-U) */
+        for (i = start, d = 0, mask = 0L, pos = cp; i > 0; --i)
         {
-            r |= array[off++];
+            b = array[pos++];
+            for (j = 1; j < NB_WORD_GFqn; ++j)
+            {
+                b |= array[pos++];
+            }
+            mask |= GeMSSUtils.ORBITS_UINT(b);
+            /* We add 1 to d as soon as we exceed all left zero coefficients */
+            d += mask;
         }
-        return GeMSSUtils.ORBITS_UINT(r);
+        return d;
     }
 
     public int setRange_xi(long xi, int k, int len)
@@ -419,8 +437,7 @@ class Pointer
         {
             for (int i = 0; i < len; ++i)
             {
-                array[outOff++] = (p.array[inOff] >>> right2) ^ (p.array[inOff + 1] << left2);
-                inOff++;
+                array[outOff++] = (p.array[inOff] >>> right2) ^ (p.array[++inOff] << left2);
             }
         }
         else
@@ -429,10 +446,68 @@ class Pointer
             int left1 = ((8 - p.remainder) << 3);
             for (int i = 0; i < len; ++i)
             {
-                array[outOff++] = (((p.array[inOff] >>> right1) | (p.array[inOff + 1] << left1)) >>> right2) ^
-                    (((p.array[inOff + 1] >>> right1) | (p.array[inOff + 2] << left1)) << left2);
-                inOff++;
+                array[outOff++] = (((p.array[inOff] >>> right1) | (p.array[++inOff] << left1)) >>> right2) ^
+                    (((p.array[inOff] >>> right1) | (p.array[inOff + 1] << left1)) << left2);
             }
         }
+    }
+
+    public void setRangePointerUnion_Check(PointerUnion p, int len, int shift)
+    {
+        int right2 = shift & 63;
+        int left2 = 64 - right2;
+        int outOff = cp;
+        int inOff = p.cp;
+        int i;
+        if (p.remainder == 0)
+        {
+            for (i = 0; i < len && inOff < p.array.length - 1; ++i)
+            {
+                array[outOff++] = (p.array[inOff] >>> right2) ^ (p.array[++inOff] << left2);
+            }
+            if (i < len)
+            {
+                array[outOff] = (p.array[inOff] >>> right2);
+            }
+        }
+        else
+        {
+            int right1 = p.remainder << 3;
+            int left1 = ((8 - p.remainder) << 3);
+            for (i = 0; i < len && inOff < p.array.length - 2; ++i)
+            {
+                array[outOff++] = (((p.array[inOff] >>> right1) | (p.array[++inOff] << left1)) >>> right2) ^
+                    (((p.array[inOff] >>> right1) | (p.array[inOff + 1] << left1)) << left2);
+            }
+            if (i < len)
+            {
+                array[outOff] = (((p.array[inOff] >>> right1) | (p.array[++inOff] << left1)) >>> right2) ^
+                    ((p.array[inOff] >>> right1) << left2);
+            }
+        }
+    }
+
+    public int isEqual_nocst_gf2(Pointer b, int len)
+    {
+        int inOff = b.cp;
+        int outOff = cp;
+        for (int i = 0; i < len; ++i)
+        {
+            if (array[outOff++] != b.array[inOff++])
+            {
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+    public void swap(Pointer b)
+    {
+        long[] tmp_array = b.array;
+        int tmp_cp = b.cp;
+        b.array = array;
+        b.cp = cp;
+        array = tmp_array;
+        cp = tmp_cp;
     }
 }

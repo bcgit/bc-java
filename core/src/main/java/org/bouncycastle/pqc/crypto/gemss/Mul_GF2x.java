@@ -119,7 +119,6 @@ abstract class Mul_GF2x
         public void mul_gf2x_xor(Pointer res, Pointer A, Pointer B)
         {
             mul416_no_simd_gf2x_xor(res.array, A.array, A.cp, B.array, B.cp, Buffer, Buffer2);
-//            res.setXorRange(C, C.array.length);
         }
     }
 
@@ -702,7 +701,7 @@ abstract class Mul_GF2x
 
     private static void mul288_no_simd_gf2x(long[] C, int c_cp, long[] A, int a_cp, long[] B, int b_cp, long[] RESERVED_BUF)
     {
-        mul128_no_simd_gf2x(C, c_cp, A, a_cp, B, b_cp);
+        mul128_no_simd_gf2x(C, c_cp, A[a_cp], A[a_cp + 1], B[b_cp], B[b_cp + 1]);
         MUL64_NO_SIMD_GF2X(C, c_cp + 4, A[a_cp + 2], B[b_cp + 2]); //x0,x1
         MUL64_NO_SIMD_GF2X(C, c_cp + 7, A[a_cp + 3], B[b_cp + 3]);//x2,x3
         C[c_cp + 7] ^= C[c_cp + 5];//x1+x2
@@ -740,7 +739,7 @@ abstract class Mul_GF2x
 
     private static void mul288_no_simd_gf2x_xor(long[] C, int c_cp, long[] A, int a_cp, long[] B, int b_cp, long[] Buffer)
     {
-        mul128_no_simd_gf2x(Buffer, 0, A, a_cp, B, b_cp);
+        mul128_no_simd_gf2x(Buffer, 0, A[a_cp], A[a_cp + 1], B[b_cp], B[b_cp + 1]);
         MUL64_NO_SIMD_GF2X(Buffer, 4, A[a_cp + 2], B[b_cp + 2]); //x0,x1
         MUL64_NO_SIMD_GF2X(Buffer, 7, A[a_cp + 3], B[b_cp + 3]);//x2,x3
         Buffer[7] ^= Buffer[5];//x1+x2
@@ -870,7 +869,7 @@ abstract class Mul_GF2x
     private static void mul416_no_simd_gf2x(long[] C, long[] A, int a_cp, long[] B, int b_cp, long[] RESERVED_BUF)
     {
         mul192_no_simd_gf2x(C, 0, A, a_cp, B, b_cp);
-        mul128_no_simd_gf2x(C, 6, A, a_cp + 3, B, b_cp + 3);
+        mul128_no_simd_gf2x(C, 6, A[a_cp + 3], A[a_cp + 4], B[b_cp + 3], B[b_cp + 4]);
         MUL64_NO_SIMD_GF2X(C, 10, A[a_cp + 5], B[b_cp + 5]);
         C[12] = MUL32_NO_SIMD_GF2X(A[a_cp + 6], B[b_cp + 6]) ^ C[11];
         C[11] = C[10] ^ C[12];
@@ -913,7 +912,7 @@ abstract class Mul_GF2x
     private static void mul416_no_simd_gf2x_xor(long[] C, long[] A, int a_cp, long[] B, int b_cp, long[] Buffer, long[] Buffer2)
     {
         mul192_no_simd_gf2x(Buffer, 0, A, a_cp, B, b_cp);
-        mul128_no_simd_gf2x(Buffer, 6, A, a_cp + 3, B, b_cp + 3);
+        mul128_no_simd_gf2x(Buffer, 6, A[a_cp + 3], A[a_cp + 4], B[b_cp + 3], B[b_cp + 4]);
         MUL64_NO_SIMD_GF2X(Buffer, 10, A[a_cp + 5], B[b_cp + 5]);
         Buffer[12] = MUL32_NO_SIMD_GF2X(A[a_cp + 6], B[b_cp + 6]) ^ Buffer[11];
         Buffer[11] = Buffer[10] ^ Buffer[12];
@@ -969,8 +968,8 @@ abstract class Mul_GF2x
     private static void mul544_no_simd_gf2x(long[] C, long[] A, int a_cp, long[] B, int b_cp, long[] AA, long[] BB,
                                             long[] RESERVED_BUF9)
     {
-        mul128_no_simd_gf2x(C, 0, A, a_cp, B, b_cp);
-        mul128_no_simd_gf2x(C, 4, A, a_cp + 2, B, b_cp + 2);
+        mul128_no_simd_gf2x(C, 0, A[a_cp], A[a_cp + 1], B[b_cp], B[b_cp + 1]);
+        mul128_no_simd_gf2x(C, 4, A[a_cp + 2], A[a_cp + 3], B[b_cp + 2], B[b_cp + 3]);
         C[4] ^= C[2];
         C[5] ^= C[3];
         C[2] = C[4] ^ C[0];
@@ -1009,8 +1008,8 @@ abstract class Mul_GF2x
     private static void mul544_no_simd_gf2x_xor(long[] C, long[] A, int a_cp, long[] B, int b_cp, long[] AA, long[] BB,
                                                 long[] Buffer, long[] Buffer2)
     {
-        mul128_no_simd_gf2x(Buffer, 0, A, a_cp, B, b_cp);
-        mul128_no_simd_gf2x(Buffer, 4, A, a_cp + 2, B, b_cp + 2);
+        mul128_no_simd_gf2x(Buffer, 0, A[a_cp], A[a_cp + 1], B[b_cp], B[b_cp + 1]);
+        mul128_no_simd_gf2x(Buffer, 4, A[a_cp + 2], A[a_cp + 3], B[b_cp + 2], B[b_cp + 3]);
         Buffer[4] ^= Buffer[2];
         Buffer[5] ^= Buffer[3];
         Buffer[2] = Buffer[4] ^ Buffer[0];
