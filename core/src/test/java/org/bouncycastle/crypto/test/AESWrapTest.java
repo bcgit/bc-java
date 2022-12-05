@@ -216,15 +216,27 @@ public class AESWrapTest
         }
 
         //
-        // short test
+        // short tests
         //
+        try
+        {
+            wrapper.init(false, key);
+
+            wrapper.unwrap(buf, 0, 0);
+
+            fail("failed unwrap short test 1.");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            // expected
+        }
         try
         {
             wrapper.init(false, key);
 
             wrapper.unwrap(buf, 0, buf.length / 2);
 
-            fail("failed unwrap short test.");
+            fail("failed unwrap short test 2.");
         }
         catch (InvalidCipherTextException e)
         {
@@ -237,7 +249,7 @@ public class AESWrapTest
 
             wrapper.wrap(buf, 0, 15);
 
-            fail("ailed wrap length test.");
+            fail("failed wrap length test.");
         }
         catch (DataLengthException e)
         {

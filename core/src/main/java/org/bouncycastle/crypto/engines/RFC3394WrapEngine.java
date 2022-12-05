@@ -143,6 +143,10 @@ public class RFC3394WrapEngine
         {
             throw new IllegalStateException("not set for unwrapping");
         }
+        if (inLen < iv.length)
+        {
+            throw new InvalidCipherTextException("unwrap data too short");
+        }
 
         int     n = inLen / 8;
 
