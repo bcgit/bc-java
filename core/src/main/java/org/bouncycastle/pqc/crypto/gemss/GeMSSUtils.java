@@ -51,9 +51,9 @@ public class GeMSSUtils
     /* Compare two UINT in constant-time */
     static long CMP_LT_UINT(long a, long b)
     {
-        return (((((a) >>> 63) ^ ((b) >>> 63)) & ((((a) >>> 63) - ((b) >>> 63)) >>> 63))
-            ^ ((((a) >>> 63) ^ ((b) >>> 63) ^ 1L) & ((((a) & (0x7FFFFFFFFFFFFFFFL))
-            - ((b) & (0x7FFFFFFFFFFFFFFFL))) >>> 63)));
+        return ((((a >>> 63) ^ (b >>> 63)) & (((a >>> 63) - (b >>> 63)) >>> 63))
+            ^ (((a >>> 63) ^ (b >>> 63) ^ 1L) & (((a & (0x7FFFFFFFFFFFFFFFL))
+            - (b & (0x7FFFFFFFFFFFFFFFL))) >>> 63)));
     }
 
     static long maskUINT(int k)

@@ -25,7 +25,7 @@ public class GeMSSKeyPairGenerator
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         GeMSSEngine engine = parameters.getEngine();
-        int i;
+        int i, ret;
         byte[] seed = sec_rand(engine.SIZE_SEED_SK);
         int NB_COEFS_HFEPOLY = (2 + engine.HFEDegJ + ((engine.HFEDegI * (engine.HFEDegI + 1)) >>> 1));
         int NB_COEFS_HFEVPOLY = (NB_COEFS_HFEPOLY + (engine.NB_MONOMIAL_VINEGAR - 1) + (engine.HFEDegI + 1) * engine.HFEv);
@@ -43,14 +43,9 @@ public class GeMSSKeyPairGenerator
         F.fill(0, sk_uncomp, 0, sk_uncomp.length);
         engine.cleanMonicHFEv_gf2nx(F);
         Pointer Q = new Pointer(engine.NB_MONOMIAL_PK * engine.NB_WORD_GFqn);
-        int ret;
         if (engine.HFEDeg > 34)
         {
             engine.genSecretMQS_gf2_opt(Q, F);
-//            if (ret != 0)
-//            {
-//                throw new IllegalArgumentException("Error");
-//            }
         }
         Pointer S = new Pointer(engine.MATRIXnv_SIZE);
         Pointer T = new Pointer(S);
@@ -80,51 +75,46 @@ public class GeMSSKeyPairGenerator
         if (engine.HFEmr8 != 0)
         {
             final int MQ_GFqm8_SIZE = (engine.NB_MONOMIAL_PK * engine.NB_BYTES_GFqm + ((8 - (engine.NB_BYTES_GFqm & 7)) & 7));
-            Pointer pk_tmp = new PointerUnion(MQ_GFqm8_SIZE);
-            i = (engine.NB_BYTES_GFqm & 7) != 0 ? 1 : 0;
-            Pointer Q_cp = new Pointer(Q);
-            PointerUnion pk_cp = new PointerUnion((PointerUnion)pk_tmp);
+            PointerUnion pk_cp = new PointerUnion(MQ_GFqm8_SIZE);
             /* for each monomial of MQS and pk */
-            for (; i < engine.NB_MONOMIAL_PK; ++i)
+            for (i = (engine.NB_BYTES_GFqm & 7) != 0 ? 1 : 0; i < engine.NB_MONOMIAL_PK; ++i)
             {
-                engine.vecMatProduct(pk_cp, Q_cp, T, GeMSSEngine.FunctionParams.M);
+                engine.vecMatProduct(pk_cp, Q, T, GeMSSEngine.FunctionParams.M);
                 /* next monomial */
-                Q_cp.move(engine.NB_WORD_GFqn);
+                Q.move(engine.NB_WORD_GFqn);
                 pk_cp.moveNextBytes(engine.NB_BYTES_GFqm);
             }
             /* Last monomial: we fill the last bytes of pk without 64-bit cast. */
             if ((engine.NB_BYTES_GFqm & 7) != 0)
             {
                 Pointer pk_last = new Pointer(engine.NB_WORD_GF2m);
-                engine.vecMatProduct(pk_last, Q_cp, T, GeMSSEngine.FunctionParams.M);
+                engine.vecMatProduct(pk_last, Q, T, GeMSSEngine.FunctionParams.M);
                 for (i = 0; i < engine.NB_WORD_GF2m; ++i)
                 {
                     pk_cp.set(i, pk_last.get(i));
                 }
             }
             pk_cp.indexReset();
+            byte[] pk_U = new byte[engine.HFEmr8 * engine.NB_BYTES_EQUATION];
+            engine.convMQS_one_to_last_mr8_equations_gf2(pk_U, pk_cp);
+            pk_cp.indexReset();
             if (engine.HFENr8 != 0 && engine.HFEmr8 > 1)
             {
-                engine.convMQS_one_eq_to_hybrid_rep8_uncomp_gf2(pk, pk_cp);
+                engine.convMQS_one_eq_to_hybrid_rep8_uncomp_gf2(pk, pk_cp, pk_U);
             }
             else
             {
-                engine.convMQS_one_eq_to_hybrid_rep8_comp_gf2(pk, pk_cp);
+                engine.convMQS_one_eq_to_hybrid_rep8_comp_gf2(pk, pk_cp, pk_U);
             }
         }
         else
         {
             PointerUnion pk_last = new PointerUnion(engine.NB_WORD_GF2m << 3);
-            int pk_p = 0, j;
+            int pk_p = 0;
             for (i = 0; i < engine.NB_MONOMIAL_PK; ++i)
             {
                 engine.vecMatProduct(pk_last, Q, T, GeMSSEngine.FunctionParams.M);
-                for (j = 0; j < engine.NB_BYTES_GFqm; ++j)
-                {
-                    pk[pk_p] = pk_last.getByte();
-                    pk_p++;
-                    pk_last.moveNextByte();
-                }
+                pk_p = pk_last.toBytesMove(pk, pk_p, engine.NB_BYTES_GFqm);
                 pk_last.indexReset();
                 Q.move(engine.NB_WORD_GFqn);
             }
