@@ -48,7 +48,7 @@ public class RFC3394WrapEngine
     public RFC3394WrapEngine(BlockCipher engine, boolean useReverseDirection)
     {
         this.engine = engine;
-        this.wrapCipherMode = (useReverseDirection) ? false : true;
+        this.wrapCipherMode = !useReverseDirection;
     }
 
     public void init(
@@ -91,6 +91,10 @@ public class RFC3394WrapEngine
         {
             throw new IllegalStateException("not set for wrapping");
         }
+        if (inLen < 8)
+        {
+            throw new DataLengthException("wrap data must be at least 8 bytes");
+        }
 
         int     n = inLen / 8;
 
@@ -99,34 +103,41 @@ public class RFC3394WrapEngine
             throw new DataLengthException("wrap data must be a multiple of 8 bytes");
         }
 
-        byte[]  block = new byte[inLen + iv.length];
-        byte[]  buf = new byte[8 + iv.length];
+        engine.init(wrapCipherMode, param);
 
+        byte[] block = new byte[inLen + iv.length];
         System.arraycopy(iv, 0, block, 0, iv.length);
         System.arraycopy(in, inOff, block, iv.length, inLen);
 
-        engine.init(wrapCipherMode, param);
-
-        for (int j = 0; j != 6; j++)
+        if (n == 1)
         {
-            for (int i = 1; i <= n; i++)
+            engine.processBlock(block, 0, block, 0);
+        }
+        else
+        {
+            byte[] buf = new byte[8 + iv.length];
+
+            for (int j = 0; j != 6; j++)
             {
-                System.arraycopy(block, 0, buf, 0, iv.length);
-                System.arraycopy(block, 8 * i, buf, iv.length, 8);
-                engine.processBlock(buf, 0, buf, 0);
-
-                int t = n * j + i;
-                for (int k = 1; t != 0; k++)
+                for (int i = 1; i <= n; i++)
                 {
-                    byte    v = (byte)t;
+                    System.arraycopy(block, 0, buf, 0, iv.length);
+                    System.arraycopy(block, 8 * i, buf, iv.length, 8);
+                    engine.processBlock(buf, 0, buf, 0);
 
-                    buf[iv.length - k] ^= v;
+                    int t = n * j + i;
+                    for (int k = 1; t != 0; k++)
+                    {
+                        byte    v = (byte)t;
 
-                    t >>>= 8;
+                        buf[iv.length - k] ^= v;
+
+                        t >>>= 8;
+                    }
+
+                    System.arraycopy(buf, 0, block, 0, 8);
+                    System.arraycopy(buf, 8, block, 8 * i, 8);
                 }
-
-                System.arraycopy(buf, 0, block, 0, 8);
-                System.arraycopy(buf, 8, block, 8 * i, 8);
             }
         }
 
@@ -143,7 +154,7 @@ public class RFC3394WrapEngine
         {
             throw new IllegalStateException("not set for unwrapping");
         }
-        if (inLen < iv.length)
+        if (inLen < 16)
         {
             throw new InvalidCipherTextException("unwrap data too short");
         }
@@ -155,37 +166,46 @@ public class RFC3394WrapEngine
             throw new InvalidCipherTextException("unwrap data must be a multiple of 8 bytes");
         }
 
-        byte[]  block = new byte[inLen - iv.length];
-        byte[]  a = new byte[iv.length];
-        byte[]  buf = new byte[8 + iv.length];
-
-        System.arraycopy(in, inOff, a, 0, iv.length);
-        System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
-
         engine.init(!wrapCipherMode, param);
+
+        byte[] block = new byte[inLen - iv.length];
+        byte[] a = new byte[iv.length];
+        byte[] buf = new byte[8 + iv.length];
 
         n = n - 1;
 
-        for (int j = 5; j >= 0; j--)
+        if (n == 1)
         {
-            for (int i = n; i >= 1; i--)
+            engine.processBlock(in, inOff, buf, 0);
+            System.arraycopy(buf, 0, a, 0, iv.length);
+            System.arraycopy(buf, iv.length, block, 0, 8);
+        }
+        else
+        {
+            System.arraycopy(in, inOff, a, 0, iv.length);
+            System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
+
+            for (int j = 5; j >= 0; j--)
             {
-                System.arraycopy(a, 0, buf, 0, iv.length);
-                System.arraycopy(block, 8 * (i - 1), buf, iv.length, 8);
-
-                int t = n * j + i;
-                for (int k = 1; t != 0; k++)
+                for (int i = n; i >= 1; i--)
                 {
-                    byte    v = (byte)t;
-
-                    buf[iv.length - k] ^= v;
-
-                    t >>>= 8;
+                    System.arraycopy(a, 0, buf, 0, iv.length);
+                    System.arraycopy(block, 8 * (i - 1), buf, iv.length, 8);
+    
+                    int t = n * j + i;
+                    for (int k = 1; t != 0; k++)
+                    {
+                        byte    v = (byte)t;
+    
+                        buf[iv.length - k] ^= v;
+    
+                        t >>>= 8;
+                    }
+    
+                    engine.processBlock(buf, 0, buf, 0);
+                    System.arraycopy(buf, 0, a, 0, 8);
+                    System.arraycopy(buf, 8, block, 8 * (i - 1), 8);
                 }
-
-                engine.processBlock(buf, 0, buf, 0);
-                System.arraycopy(buf, 0, a, 0, 8);
-                System.arraycopy(buf, 8, block, 8 * (i - 1), 8);
             }
         }
 
