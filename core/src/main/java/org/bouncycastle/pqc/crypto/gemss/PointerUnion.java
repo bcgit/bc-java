@@ -190,6 +190,20 @@ class PointerUnion
         return res;
     }
 
+    public int toBytesMove(byte[] output, int outOff, int length)
+    {
+        for (int i = 0; i < length; ++i)
+        {
+            output[outOff++] = (byte)(array[cp] >>> (remainder++ << 3));
+            if (remainder == 8)
+            {
+                remainder = 0;
+                cp++;
+            }
+        }
+        return outOff;
+    }
+
     @Override
     public void setXor(int p, long v)
     {
@@ -218,20 +232,20 @@ class PointerUnion
         }
     }
 
-    public void setXorRangeAndMask(int outOff, Pointer p, int inOff, int len, long mask)
+    public void setXorRangeAndMask(Pointer p, int len, long mask)
     {
         if (remainder == 0)
         {
-            super.setXorRangeAndMask(outOff, p, inOff, len, mask);
+            super.setXorRangeAndMask(p, len, mask);
             return;
         }
-        outOff += cp;
+        int outOff = cp;
         long v;
-        for (int i = 0; i < len; ++i, ++outOff)
+        for (int i = 0; i < len; ++i)
         {
-            v = p.get(i + inOff) & mask;
+            v = p.get(i) & mask;
             array[outOff] ^= v << (remainder << 3);
-            array[outOff + 1] ^= v >>> ((8 - remainder) << 3);
+            array[++outOff] ^= v >>> ((8 - remainder) << 3);
         }
     }
 
@@ -240,20 +254,21 @@ class PointerUnion
         array[cp] ^= (v & 0xFFL) << (remainder << 3);
     }
 
-    public void setXorByte(int p, long v)
-    {
-        int r = p + remainder + (cp << 3);
-        int q = r >>> 3;
-        r &= 7;
-        array[q] ^= (v & 0xFFL) << (r << 3);
-    }
-
     public void setAndByte(int p, long v)
     {
         int r = p + remainder + (cp << 3);
         int q = r >>> 3;
         r &= 7;
         array[q] &= ((v & 0xFFL) << (r << 3)) | ~(0xFFL << (r << 3));
+    }
+
+    public void setAndThenXorByte(int p, long v1, long v2)
+    {
+        int r = p + remainder + (cp << 3);
+        int q = r >>> 3;
+        r &= 7;
+        array[q] &= ((v1 & 0xFFL) << (r << 3)) | ~(0xFFL << (r << 3));
+        array[q] ^= (v2 & 0xFFL) << (r << 3);
     }
 
     @Override
