@@ -496,6 +496,28 @@ public class SP80038GTest
         }
     }
 
+    public void testFF1Rounding()
+    {
+        int radix = 256;
+        byte[] key = Hex.decodeStrict("000102030405060708090a0b0c0d0e0f");
+        byte[] tweak = Hex.decodeStrict("0001020304050607");
+        byte[] asciiPT = Hex.decodeStrict("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738");
+        byte[] asciiCT = Hex.decodeStrict("dc18bef8b7d23aa77d1daf7a50c2253c4bacb772129f70805ecd413775bc3bdf7927ce70f455dacf4fdf61b61ac73a5c90fd3d1759dca0bf27");
+        byte[] result = new byte[asciiPT.length];
+
+        FPEEngine fpeEngine = new FPEFF1Engine();
+        FPEParameters fpeParameters = new FPEParameters(new KeyParameter(key), radix, tweak);
+
+        fpeEngine.init(true, fpeParameters);
+        fpeEngine.processBlock(asciiPT, 0, asciiPT.length, result, 0);
+        isTrue("Failed FF1 rounding test (encryption)", areEqual(asciiCT, result));
+
+        fpeEngine.init(false, fpeParameters);
+        fpeEngine.processBlock(asciiCT, 0, asciiCT.length, result, 0);
+
+        isTrue("Failed FF1 rounding test (decryption)", areEqual(asciiPT, result));
+    }
+
     private void testFF3_1Bounds()
         throws IOException
     {
@@ -598,6 +620,7 @@ public class SP80038GTest
         testFF1();
         testFF1w();
         testFF1Bounds();
+        testFF1Rounding();
         testFF3_1();
         testFF3_1w();
         testFF3_1_255();

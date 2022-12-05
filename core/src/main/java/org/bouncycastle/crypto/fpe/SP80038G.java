@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /*
@@ -64,8 +65,8 @@ class SP80038G
     {
         int radix = radixConverter.getRadix();
         int t = T.length;
-        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
-        int d = (((b + 3) / 4) * 4) + 4;
+        int b = calculateB_FF1(radix, v);
+        int d = (b + 7) & ~3;
 
         byte[] P = calculateP_FF1(radix, (byte)u, n, t);
 
@@ -172,8 +173,8 @@ class SP80038G
         int radix = radixConverter.getRadix();
         int t = T.length;
 
-        int b = ((int)Math.ceil(Math.log((double)radix) * (double)v / LOG2) + 7) / 8;
-        int d = (((b + 3) / 4) * 4) + 4;
+        int b = calculateB_FF1(radix, v);
+        int d = (b + 7) & ~3;
 
         byte[] P = calculateP_FF1(radix, (byte)u, n, t);
 
@@ -254,6 +255,26 @@ class SP80038G
         byte[] tweak64 = calculateTweak64_FF3_1(tweak56);
 
         return encryptFF3(cipher, radixConverter, tweak64, buf, off, len);
+    }
+
+    protected static int calculateB_FF1(int radix, int v)
+    {
+//        return (BigInteger.valueOf(radix).pow(v).subtract(BigInteger.ONE).bitLength() + 7) / 8;
+
+        int powersOfTwo = Integers.numberOfTrailingZeros(radix); 
+        int bits = powersOfTwo * v;
+
+        int oddPart = radix >>> powersOfTwo;
+        if (oddPart != 1)
+        {
+            // Old version with rounding issues, especially for power of 2 radix, but maybe others.
+//            bits += (int)Math.ceil(Math.log((double)oddPart) * (double)v / LOG2);
+
+            // Exact calculation, with possible performance issues if v is too large.
+            bits += BigInteger.valueOf(oddPart).pow(v).bitLength();
+        }
+
+        return (bits + 7) / 8;
     }
 
     protected static BigInteger[] calculateModUV(BigInteger bigRadix, int u, int v)
