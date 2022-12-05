@@ -18,7 +18,7 @@ public class AESWrapEngine
     }
 
     /**
-     * Create an AESWrapEngine where the underlying cipher is set to decrypt for wrapping, encrypt for unwrapping.
+     * Create an AESWrapEngine where the underlying cipher is (optionally) set to decrypt for wrapping, encrypt for unwrapping.
      *
      * @param useReverseDirection true if underlying cipher should be used in decryption mode, false otherwise.
      */

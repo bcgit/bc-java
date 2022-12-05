@@ -181,6 +181,12 @@ public class AESWrapTest
         byte[]  out7 = Hex.decode("cba01acbdb4c7c39fa59babb383c485f318837208731a81c735b5be6ba710375a1159e26a9b57228");
         wrapTest(7, kek7, in7, out7, true);
 
+        // Example of 64-bit input (which uses a simplified wrapping algorithm)
+        byte[]  kek8 = Hex.decode("574957151fc2afe0fa3dc7a9a7da6495");
+        byte[]  in8 = Hex.decode("0001020304050607");
+        byte[]  out8 = Hex.decode("6f0b501f1f2f59e3ae605aa679ce43a6");
+        wrapTest(8, kek8, in8, out8);
+
         Wrapper      wrapper = new AESWrapEngine();
         KeyParameter key = new KeyParameter(new byte[16]);
         byte[]       buf = new byte[16];
