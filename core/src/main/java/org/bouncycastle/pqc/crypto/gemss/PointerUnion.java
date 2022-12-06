@@ -6,13 +6,11 @@ class PointerUnion
     extends Pointer
 {
     protected int remainder;
-    private int size;
 
     public PointerUnion(byte[] arr)
     {
         super((arr.length >> 3) + ((arr.length & 7) != 0 ? 1 : 0));
-        size = arr.length;
-        for (int i = 0, q = 0, r = 0; i < arr.length && q < array.length; ++q)
+        for (int i = 0, q = 0, r; i < arr.length && q < array.length; ++q)
         {
             for (r = 0; r < 8 && i < arr.length; ++r, ++i)
             {
@@ -22,31 +20,21 @@ class PointerUnion
         remainder = 0;
     }
 
-    public PointerUnion(PointerUnion pu, int p)
-    {
-        super(pu, p);
-        size = pu.size;
-        remainder = pu.remainder;
-    }
-
     public PointerUnion(int p)
     {
         super((p >>> 3) + ((p & 7) != 0 ? 1 : 0));
-        size = p;
         remainder = 0;
     }
 
     public PointerUnion(PointerUnion p)
     {
         super(p);
-        size = p.size;
         remainder = p.remainder;
     }
 
     public PointerUnion(Pointer p)
     {
         super(p);
-        size = p.array.length << 3;
         remainder = 0;
     }
 
@@ -129,11 +117,6 @@ class PointerUnion
         int q = cp + ((p + remainder) >>> 3);
         int r = (remainder + p) & 7;
         return (byte)(array[q] >>> (r << 3));
-    }
-
-    public int getSize()
-    {
-        return size;
     }
 
     @Override
@@ -239,13 +222,15 @@ class PointerUnion
             super.setXorRangeAndMask(p, len, mask);
             return;
         }
-        int outOff = cp;
+        int outOff = cp, inOff = p.cp;
         long v;
+        int left = remainder << 3, right = ((8 - remainder) << 3);
         for (int i = 0; i < len; ++i)
         {
-            v = p.get(i) & mask;
-            array[outOff] ^= v << (remainder << 3);
-            array[++outOff] ^= v >>> ((8 - remainder) << 3);
+            //v = p.get(i) & mask;
+            v = p.array[inOff++] & mask;
+            array[outOff] ^= v << left;
+            array[++outOff] ^= v >>> right;
         }
     }
 

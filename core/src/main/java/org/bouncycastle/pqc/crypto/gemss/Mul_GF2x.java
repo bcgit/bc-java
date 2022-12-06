@@ -1,7 +1,5 @@
 package org.bouncycastle.pqc.crypto.gemss;
 
-import java.nio.Buffer;
-
 abstract class Mul_GF2x
 {
     public abstract void mul_gf2x(Pointer C, Pointer A, Pointer B);
