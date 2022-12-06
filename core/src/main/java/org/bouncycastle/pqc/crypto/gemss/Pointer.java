@@ -155,9 +155,9 @@ class Pointer
         {
             int right = p.remainder << 3;
             int left = ((8 - p.remainder) << 3);
-            for (int i = 0; i < len; ++i, ++inOff)
+            for (int i = 0; i < len; ++i)
             {
-                array[outOff++] ^= (p.array[inOff] >>> right) | (p.array[1 + inOff] << left);
+                array[outOff++] ^= (p.array[inOff] >>> right) | (p.array[++inOff] << left);
             }
         }
     }
