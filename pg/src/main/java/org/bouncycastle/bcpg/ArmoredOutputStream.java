@@ -231,6 +231,17 @@ public class ArmoredOutputStream
     }
 
     /**
+     * Start a clear text signed message - backwards compatibility.
+     * @param hashAlgorithm hash algorithm
+     */
+    public void beginClearText(
+        int hashAlgorithm)
+        throws IOException
+    {
+        beginClearText(new int[] { hashAlgorithm });
+    }
+
+    /**
      * Start a clear text signed message.
      * @param hashAlgorithms hash algorithms
      */
