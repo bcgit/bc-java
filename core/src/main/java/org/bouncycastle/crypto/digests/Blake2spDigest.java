@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 public class Blake2spDigest
     implements ExtendedDigest
@@ -35,6 +34,9 @@ public class Blake2spDigest
     private final int BLAKE2S_OUTBYTES = 32;
     private final int PARALLELISM_DEGREE = 8;
 
+    private final byte[] singleByte = new byte[1];
+
+
     public Blake2spDigest(byte[] key)
     {
         param = new byte[32];
@@ -58,7 +60,8 @@ public class Blake2spDigest
     @Override
     public void update(byte in)
     {
-
+        singleByte[0] = in;
+        update(singleByte, 0, 1);
     }
 
     @Override
