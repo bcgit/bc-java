@@ -95,6 +95,8 @@ public class Blake2sDigest
     private int nodeDepth = 0;
     private int innerHashLength = 0;
 
+    private boolean isLastNode = false;
+
 
     /**
      * Whenever this buffer overflows, it will be processed in the compress()
@@ -130,7 +132,8 @@ public class Blake2sDigest
     private int f0 = 0;
 
     // For Tree Hashing Mode, not used here:
-    // private long f1 = 0L; // finalization flag, for last node: ~0L
+     private int f1 = 0;
+    // finalization flag, for last node: ~0L
 
     // digest purpose
     private final CryptoServicePurpose purpose;
@@ -279,6 +282,24 @@ public class Blake2sDigest
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, digestBytes*8, purpose));
         init(null, null, null);
     }
+    Blake2sDigest (byte[] key, byte[] param)
+    {
+        this.purpose = CryptoServicePurpose.ANY;
+        digestLength = param[0];
+        keyLength = param[1];
+        fanout = param[2];
+        depth = param[3];
+        leafLength = Pack.littleEndianToInt(param, 4);
+        nodeOffset |= Pack.littleEndianToInt(param, 8);
+        //xoflength
+        nodeDepth = param[14];
+        innerHashLength = param[15];
+        byte[] salt = new byte[8];
+        byte[] personalization = new byte[8];
+        System.arraycopy(param, 16, salt, 0, 8);
+        System.arraycopy(param, 24, personalization, 0, 8);
+        init(salt, personalization, key);
+    }
 
     // initialize the digest's parameters
     private void init(byte[] salt, byte[] personalization, byte[] key)
@@ -350,7 +371,7 @@ public class Blake2sDigest
         internalState[12] = t0 ^ blake2s_IV[4];
         internalState[13] = t1 ^ blake2s_IV[5];
         internalState[14] = f0 ^ blake2s_IV[6];
-        internalState[15] = blake2s_IV[7];// ^ f1 with f1 = 0
+        internalState[15] = f1 ^ blake2s_IV[7];
     }
 
     /**
@@ -462,6 +483,10 @@ public class Blake2sDigest
         }
 
         f0 = 0xFFFFFFFF;
+        if(isLastNode)
+        {
+            f1 = 0xFFFFFFFF;
+        }
         t0 += bufferPos;
         // bufferPos may be < 64, so (t0 == 0) does not work
         // for 2^32 < message length > 2^32 - 63
@@ -497,8 +522,10 @@ public class Blake2sDigest
     {
         bufferPos = 0;
         f0 = 0;
+        f1 = 0;
         t0 = 0;
         t1 = 0;
+        isLastNode = false;
         chainValue = null;
         Arrays.fill(buffer, (byte)0);
         if (key != null)
@@ -549,6 +576,11 @@ public class Blake2sDigest
         internalState[posD] = Integers.rotateRight(internalState[posD] ^ internalState[posA], 8);
         internalState[posC] = internalState[posC] + internalState[posD];
         internalState[posB] = Integers.rotateRight(internalState[posB] ^ internalState[posC], 7);
+    }
+
+    protected void setAsLastNode()
+    {
+        isLastNode = true;
     }
 
     /**
