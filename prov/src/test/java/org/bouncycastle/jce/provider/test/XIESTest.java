@@ -14,7 +14,6 @@ import javax.crypto.SealedObject;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.IESParameterSpec;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -109,7 +108,8 @@ public class XIESTest
             }
             catch (IllegalArgumentException e)
             {
-                isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+//                isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+                isTrue("message ", "cannot handle supplied parameter spec: must be passed IES parameters".equals(e.getMessage()));
             }
 
             try
@@ -132,8 +132,12 @@ public class XIESTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("X25519", "BC");
         KeyPair keyPair = kpg.generateKeyPair();
 
+        byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
+        byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
+        IESParameterSpec params = new IESParameterSpec(derivation, encoding,128);
+
         Cipher cipher = Cipher.getInstance("XIES", "BC");
-        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic());
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic(), params);
 
         String toEncrypt = "Hello";
 
@@ -143,7 +147,7 @@ public class XIESTest
         // Using a SealedObject to encrypt the same string fails with a NullPointerException
         SealedObject sealedObject = new SealedObject(toEncrypt, cipher);
 
-        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate(), params);
 
         String result = (String)sealedObject.getObject(cipher);
 
@@ -173,18 +177,18 @@ public class XIESTest
         Cipher c1 = Cipher.getInstance(cipher);
         Cipher c2 = Cipher.getInstance(cipher);
 
-        // Testing with null parameters and DHAES mode off
-        c1.init(Cipher.ENCRYPT_MODE, Pub, new SecureRandom());
-        c2.init(Cipher.DECRYPT_MODE, Priv, c1.getParameters());
-
-        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
-
-        out1 = c1.doFinal(message, 0, message.length);
-        out2 = c2.doFinal(out1, 0, out1.length);
-        if (!areEqual(out2, message))
-        {
-            fail(testname + " test failed with null parameters, DHAES mode false.");
-        }
+        // Null parameters no longer supported
+//        c1.init(Cipher.ENCRYPT_MODE, Pub, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, Priv, c1.getParameters());
+//
+//        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
+//
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//        {
+//            fail(testname + " test failed with null parameters, DHAES mode false.");
+//        }
 
         // Testing with given parameters and DHAES mode off
         c1.init(Cipher.ENCRYPT_MODE, Pub, p, new SecureRandom());
