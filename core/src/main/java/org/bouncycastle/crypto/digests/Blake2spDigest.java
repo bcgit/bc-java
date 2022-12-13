@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 public class Blake2spDigest
     implements ExtendedDigest
@@ -89,10 +90,11 @@ public class Blake2spDigest
             left = 0;
         }
 
+        //TODO: make threads run each iteration
         for (int i = 0; i < PARALLELISM_DEGREE; i++)
         {
             int inlen = len;
-            int inOffset = 0; // = offset?
+            int inOffset = offset;
             inOffset += i * BLAKE2S_BLOCKBYTES;
 
             while (inlen >= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES)
