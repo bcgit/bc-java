@@ -43,7 +43,6 @@ import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -269,18 +268,19 @@ public class IESCipher
     {
         otherKeyParameter = null;
 
-        // Use default parameters (including cipher key size) if none are specified
-        if (engineSpec == null)
-        {
-            byte[] nonce = null;
-            if (ivLength != 0 && opmode == Cipher.ENCRYPT_MODE)
-            {
-                nonce = new byte[ivLength];
-                random.nextBytes(nonce);
-            }
-            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher(), nonce);
-        }
-        else if (engineSpec instanceof IESParameterSpec)
+        // NOTE: For secure usage, sender and receiver should agree on a fixed value for the nonce.
+//        if (engineSpec == null)
+//        {
+//            byte[] nonce = null;
+//            if (ivLength != 0 && opmode == Cipher.ENCRYPT_MODE)
+//            {
+//                nonce = new byte[ivLength];
+//                random.nextBytes(nonce);
+//            }
+//            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher(), nonce);
+//        }
+//        else
+        if (engineSpec instanceof IESParameterSpec)
         {
             this.engineSpec = (IESParameterSpec)engineSpec;
         }
@@ -416,8 +416,6 @@ public class IESCipher
         }
 
         final ECDomainParameters ecParams = ((ECKeyParameters)key).getParameters();
-
-        final byte[] V;
 
         if (otherKeyParameter != null)
         {
