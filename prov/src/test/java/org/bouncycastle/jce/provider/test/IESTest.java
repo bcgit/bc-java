@@ -236,6 +236,7 @@ public class IESTest
         }
     }
 
+    // Misnamed now that null parameters no longer supported
     public void doDefTest(
         KeyPairGenerator    g,
         Cipher              c1,
@@ -262,9 +263,12 @@ public class IESTest
         IEKeySpec   c1Key = new IEKeySpec(aPriv, bPub);
         IEKeySpec   c2Key = new IEKeySpec(bPriv, aPub);
 
-        c1.init(Cipher.ENCRYPT_MODE, c1Key);
+        byte[]  d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+        byte[]  e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
 
-        AlgorithmParameters param = c1.getParameters();
+        IESParameterSpec param = new IESParameterSpec(d, e, 128);
+
+        c1.init(Cipher.ENCRYPT_MODE, c1Key, param);
 
         c2.init(Cipher.DECRYPT_MODE, c2Key, param);
 

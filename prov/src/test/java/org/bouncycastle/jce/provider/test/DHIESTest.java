@@ -173,7 +173,8 @@ public class DHIESTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+//            isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            isTrue("message ", "cannot handle supplied parameter spec: must be passed IES parameters".equals(e.getMessage()));
         }
 
         try
@@ -206,18 +207,18 @@ public class DHIESTest
         DHPublicKey   pub = (DHPublicKey)keyPair.getPublic();
         DHPrivateKey  priv = (DHPrivateKey)keyPair.getPrivate();
 
-        // Testing with default parameters and DHAES mode off
-        c1.init(Cipher.ENCRYPT_MODE, pub, new SecureRandom());
-        c2.init(Cipher.DECRYPT_MODE, priv, c1.getParameters());
-
-        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
-
-        out1 = c1.doFinal(message, 0, message.length);
-        out2 = c2.doFinal(out1, 0, out1.length);
-        if (!areEqual(out2, message))
-        {
-            fail(testname + " test failed with default parameters, DHAES mode false.");
-        }
+        // Null parameters no longer supported
+//        c1.init(Cipher.ENCRYPT_MODE, pub, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, priv, c1.getParameters());
+//
+//        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
+//
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//        {
+//            fail(testname + " test failed with default parameters, DHAES mode false.");
+//        }
         
         // Testing with given parameters and DHAES mode off
         c1.init(Cipher.ENCRYPT_MODE, pub, p, new SecureRandom());
@@ -227,15 +228,15 @@ public class DHIESTest
         if (!areEqual(out2, message))
             fail(testname + " test failed with non-null parameters, DHAES mode false.");
         
-        // Testing with null parameters and DHAES mode on
-        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
-        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
-        c1.init(Cipher.ENCRYPT_MODE, pub, new SecureRandom());
-        c2.init(Cipher.DECRYPT_MODE, priv, c1.getParameters(), new SecureRandom());
-        out1 = c1.doFinal(message, 0, message.length);
-        out2 = c2.doFinal(out1, 0, out1.length);
-        if (!areEqual(out2, message))
-            fail(testname + " test failed with null parameters, DHAES mode true.");
+        // Null parameters no longer supported
+//        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
+//        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
+//        c1.init(Cipher.ENCRYPT_MODE, pub, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, priv, c1.getParameters(), new SecureRandom());
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//            fail(testname + " test failed with null parameters, DHAES mode true.");
      
         
         // Testing with given parameters and DHAES mode on

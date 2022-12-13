@@ -109,7 +109,8 @@ public class ECIESVectorTest
 
         KeyPair keyPair = new KeyPair(ecFact.generatePublic(new X509EncodedKeySpec(p256_1_pub)), ecFact.generatePrivate(new PKCS8EncodedKeySpec(p256_1_pri)));
 
-        doTestNoParams("ECIES with P-256 None", keyPair, "ECIES", p256_1_eph, p256_1_no_params);
+        // Null parameters no longer supported
+//        doTestNoParams("ECIES with P-256 None", keyPair, "ECIES", p256_1_eph, p256_1_no_params);
         doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "ECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding1, 128), p256_1_with_params11);
         doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "ECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding2, 128), p256_1_with_params12);
         doTestWithParams("ECIES with P-256 KP1 P11", keyPair, "ECIES", p256_1_eph, new IESParameterSpec(derivation1, encoding3, 128), p256_1_with_params13);
@@ -128,7 +129,8 @@ public class ECIESVectorTest
 
         keyPair = new KeyPair(ecFact.generatePublic(new X509EncodedKeySpec(p256_2_pub)), ecFact.generatePrivate(new PKCS8EncodedKeySpec(p256_2_pri)));
 
-        doTestNoParams("ECIES with P-256 None", keyPair, "ECIES", p256_2_eph, p256_2_no_params);
+        // Null parameters no longer supported
+//        doTestNoParams("ECIES with P-256 None", keyPair, "ECIES", p256_2_eph, p256_2_no_params);
         doTestWithParams("ECIES with P-256 KP2 P11", keyPair, "ECIES", p256_2_eph, new IESParameterSpec(derivation1, encoding1, 128), p256_2_with_params11);
         doTestWithParams("ECIES with P-256 KP2 P11", keyPair, "ECIES", p256_2_eph, new IESParameterSpec(derivation1, encoding2, 128), p256_2_with_params12);
         doTestWithParams("ECIES with P-256 KP2 P11", keyPair, "ECIES", p256_2_eph, new IESParameterSpec(derivation1, encoding3, 128), p256_2_with_params13);
@@ -138,7 +140,8 @@ public class ECIESVectorTest
 
         keyPair = new KeyPair(ecFact.generatePublic(new X509EncodedKeySpec(p521_1_pub)), ecFact.generatePrivate(new PKCS8EncodedKeySpec(p521_1_pri)));
 
-        doTestNoParams("ECIES with P-521 None", keyPair, "ECIES", p521_1_eph, p521_1_no_params);
+        // Null parameters no longer supported
+//        doTestNoParams("ECIES with P-521 None", keyPair, "ECIES", p521_1_eph, p521_1_no_params);
         doTestWithParams("ECIES with P-521 KP1 P11", keyPair, "ECIES", p521_1_eph, new IESParameterSpec(derivation1, encoding1, 128), p521_1_with_params11);
         doTestWithParams("ECIES with P-521 KP1 P11", keyPair, "ECIES", p521_1_eph, new IESParameterSpec(derivation1, encoding2, 128), p521_1_with_params12);
         doTestWithParams("ECIES with P-521 KP1 P11", keyPair, "ECIES", p521_1_eph, new IESParameterSpec(derivation1, encoding3, 128), p521_1_with_params13);
@@ -148,7 +151,8 @@ public class ECIESVectorTest
 
         keyPair = new KeyPair(ecFact.generatePublic(new X509EncodedKeySpec(p521_2_pub)), ecFact.generatePrivate(new PKCS8EncodedKeySpec(p521_2_pri)));
 
-        doTestNoParams("ECIES with default", keyPair, "ECIES", p521_2_eph, p521_2_no_params);
+        // Null parameters no longer supported
+//        doTestNoParams("ECIES with default", keyPair, "ECIES", p521_2_eph, p521_2_no_params);
         doTestWithParams("ECIES with P-521 KP2 P11", keyPair, "ECIES", p521_2_eph, new IESParameterSpec(derivation1, encoding1, 128), p521_2_with_params11);
         doTestWithParams("ECIES with P-521 KP2 P12", keyPair, "ECIES", p521_2_eph, new IESParameterSpec(derivation1, encoding2, 128), p521_2_with_params12);
         doTestWithParams("ECIES with P-521 KP2 P13", keyPair, "ECIES", p521_2_eph, new IESParameterSpec(derivation1, encoding3, 128), p521_2_with_params13);
@@ -157,41 +161,38 @@ public class ECIESVectorTest
         doTestWithParams("ECIES with P-521 KP2 P21", keyPair, "ECIES", p521_2_eph, new IESParameterSpec(derivation2, encoding3, 128), p521_2_with_params23);
     }
 
-    public void doTestNoParams(
-        String testname,
-        KeyPair keyPair,
-        String cipher,
-        byte[] ephPrivateValue,
-        byte[] expected)
-        throws Exception
-    {
-
-
-        byte[] out1, out2;
-
-        // Generate static key pair
-        ECPublicKey   Pub = (ECPublicKey)keyPair.getPublic();
-        ECPrivateKey  Priv = (ECPrivateKey)keyPair.getPrivate();
-
-        Cipher c1 = Cipher.getInstance(cipher);
-        Cipher c2 = Cipher.getInstance(cipher);
-
-        // Testing with null parameters and DHAES mode off
-        c1.init(Cipher.ENCRYPT_MODE, Pub, new FixedSecureRandom(ephPrivateValue));
-        c2.init(Cipher.DECRYPT_MODE, Priv, new FixedSecureRandom(ephPrivateValue));
-        out1 = c1.doFinal(message, 0, message.length);
-
-        if (!areEqual(out1, expected))
-        {
-            fail(testname + " test failed encrypt with null parameters, DHAES mode false.");
-        }
-
-        out2 = c2.doFinal(out1, 0, out1.length);
-        if (!areEqual(out2, message))
-        {
-            fail(testname + " test failed decrypt with null parameters, DHAES mode false.");
-        }
-    }
+//    public void doTestNoParams(
+//        String testname,
+//        KeyPair keyPair,
+//        String cipher,
+//        byte[] ephPrivateValue,
+//        byte[] expected)
+//        throws Exception
+//    {
+//        byte[] out1, out2;
+//
+//        // Generate static key pair
+//        ECPublicKey   Pub = (ECPublicKey)keyPair.getPublic();
+//        ECPrivateKey  Priv = (ECPrivateKey)keyPair.getPrivate();
+//
+//        Cipher c1 = Cipher.getInstance(cipher);
+//        Cipher c2 = Cipher.getInstance(cipher);
+//
+//        c1.init(Cipher.ENCRYPT_MODE, Pub, new FixedSecureRandom(ephPrivateValue));
+//        c2.init(Cipher.DECRYPT_MODE, Priv, new FixedSecureRandom(ephPrivateValue));
+//        out1 = c1.doFinal(message, 0, message.length);
+//
+//        if (!areEqual(out1, expected))
+//        {
+//            fail(testname + " test failed encrypt with null parameters, DHAES mode false.");
+//        }
+//
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//        {
+//            fail(testname + " test failed decrypt with null parameters, DHAES mode false.");
+//        }
+//    }
 
     public void doTestWithParams(
         String testname,
