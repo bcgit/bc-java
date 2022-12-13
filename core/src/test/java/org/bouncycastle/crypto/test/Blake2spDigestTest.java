@@ -143,7 +143,26 @@ public class Blake2spDigestTest
             }
         }
     }
-    public void testMyTest() throws Exception
+    public void testOffset()
+    {
+        byte[] key = Hex.decode("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+        String res = "8dbcc0589a3d17296a7a58e2f1eff0e2aa4210b58d1f88b86d7ba5f29dd3b583";
+        String in = "000102";
+        byte[] output = new byte[32];
+        Blake2spDigest digest = new Blake2spDigest(key);
+        digest.update(Hex.decode("9999"+in), 2, 3);
+        digest.doFinal(output, 0);
+        assertTrue("BLAKE2s mismatch on update offset", Arrays.areEqual(Hex.decode(res), output));
+
+        Arrays.fill(output, (byte)0);
+        output = Arrays.concatenate(Hex.decode("9999"), output);
+        digest.update(Hex.decode(in), 0, 3);
+        digest.doFinal(output, 2);
+        assertTrue("BLAKE2s mismatch on doFinal offset", Arrays.areEqual(Hex.decode("9999" + res), output));
+
+
+    }
+    public void testReset()
     {
         byte[] key = new byte[32];
         byte[] buf = new byte[256];
@@ -188,7 +207,6 @@ public class Blake2spDigestTest
                 {
                     assertTrue("BLAKE2s mismatch on test vector: ", Arrays.areEqual(stepOne[i], hash));
                 }
-
             }
         }
     }
