@@ -3,15 +3,10 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 public class Blake2spDigest
     implements ExtendedDigest
 {
-
-    /**
-     * Position of last inserted byte
-     **/
     private int bufferPos = 0; // a value from 0 up to BLOCK_LENGTH_BYTES
 
     private int keyLength = 0; // 0 - 32 bytes
@@ -71,14 +66,8 @@ public class Blake2spDigest
         int left = bufferPos;
         int remainingLength = 8*BLAKE2S_BLOCKBYTES - left;
 
-//        System.out.println("fill: " + remainingLength);
-//        System.out.println("len: " + len);
-//        System.out.println("left: " + left);
-
         if(left != 0 && len >= remainingLength)
         {
-//            System.out.println("in if");
-
             System.arraycopy(message, offset, buffer, left, remainingLength);
 
             for (int i = 0; i < PARALLELISM_DEGREE; i++)
@@ -108,23 +97,17 @@ public class Blake2spDigest
         offset += len - len % ( PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES );
         len %= PARALLELISM_DEGREE * BLAKE2S_BLOCKBYTES;
 
-//        System.out.println("in: " + offset);
-//        System.out.println("len: " + len);
-
         if(len > 0)
         {
             System.arraycopy(message, offset, buffer, left, len);
         }
 
         bufferPos = left + len;
-//        System.out.println("buffpos: " + bufferPos);
-
     }
 
     @Override
     public int doFinal(byte[] out, int outOff)
     {
-//        System.out.println("FINAL");
         byte[][] hash = new byte[PARALLELISM_DEGREE][BLAKE2S_OUTBYTES];
 
         int remainingLength = 0; // left bytes of buffer
@@ -134,7 +117,6 @@ public class Blake2spDigest
             if (bufferPos > i * BLAKE2S_BLOCKBYTES)
             {
                 remainingLength = bufferPos - i * BLAKE2S_BLOCKBYTES;
-//                System.out.println("left: " + remainingLength);
 
                 if (remainingLength > BLAKE2S_BLOCKBYTES)
                 {
@@ -145,7 +127,6 @@ public class Blake2spDigest
             }
 
             S[i].doFinal(hash[i], 0);
-//            System.out.println(i + " hash: " + Hex.toHexString(hash[i]));
         }
 
         for (int i = 0; i < PARALLELISM_DEGREE; i++)
@@ -178,16 +159,11 @@ public class Blake2spDigest
         {
             byte[] block = new byte[BLAKE2S_BLOCKBYTES];
             System.arraycopy(key, 0, block, 0, keyLength);
-//            System.out.println("block: " + Hex.toHexString(block));
             for (int i = 0; i < PARALLELISM_DEGREE; i++)
             {
                 S[i].update(block, 0, BLAKE2S_BLOCKBYTES);
             }
-
-            //TODO zeroization of key
         }
-
-//        init(this.key);
     }
 
     @Override
@@ -206,7 +182,6 @@ public class Blake2spDigest
             {
                 throw new IllegalArgumentException("Keys > 32 bytes are not supported");
             }
-//            this.key = new byte[keyLength];
             this.key = Arrays.clone(key);
         }
 
@@ -245,13 +220,10 @@ public class Blake2spDigest
         {
             byte[] block = new byte[BLAKE2S_BLOCKBYTES];
             System.arraycopy(key, 0, block, 0, keyLength);
-//            System.out.println("block: " + Hex.toHexString(block));
             for (int i = 0; i < PARALLELISM_DEGREE; i++)
             {
                 S[i].update(block, 0, BLAKE2S_BLOCKBYTES);
             }
-
-            //TODO zeroization of key
         }
     }
 }
