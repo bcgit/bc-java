@@ -109,8 +109,4 @@ public class Grain128Test
         fail("mismatch on " + name, expected, new String(Hex.encode(found)));
     }
 
-    public static void main(String[] args)
-    {
-        runTest(new Grain128Test());
-    }
 }
