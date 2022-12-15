@@ -189,6 +189,7 @@ public class RegressionTest
             new RadixConverterTest(),
             new Grain128AEADTest(),
             new ConcatenationKDFTest(),
+            new ISAPTest(),
         };
 
     public static void main(String[] args)
