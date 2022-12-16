@@ -5,12 +5,9 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
-
-
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
-
 
 public class ISAPEngine
     implements AEADBlockCipher
@@ -71,8 +68,7 @@ public class ISAPEngine
         protected long ISAP_IV1_64;
         protected long ISAP_IV2_64;
         protected long ISAP_IV3_64;
-        protected long x0, x1, x2, x3, x4;
-        protected long t0, t1, t2, t3, t4;
+        protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4;
         protected final int[][] R = {{19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
 
         public void init()
@@ -95,8 +91,8 @@ public class ISAPEngine
 
         protected void ABSORB_MAC(byte[] src, int len)
         {
-            long[] src64 = new long[getLongSize(len)];
-            littleEndianToLong(src, src64);
+            long[] src64 = new long[src.length >> 3];
+            Pack.littleEndianToLong(src, 0, src64, 0, src64.length);
             int idx = 0;
             while (len >= ISAP_rH_SZ)
             {
@@ -105,21 +101,17 @@ public class ISAPEngine
                 len -= ISAP_rH_SZ;
             }
             /* Absorb final ad block */
-            byte[] xo = Pack.longToLittleEndian(x0);
-            xo[ISAP_rH_SZ - 1 - len] ^= 0x80;
-            while (len > 0)
+            for (int i = 0; i < len; ++i)
             {
-                xo[ISAP_rH_SZ - len] ^= src[(idx << 3) + --len];
+                x0 ^= (src[(idx << 3) + i] & 0xFFL) << ((7 - i) << 3);
             }
-            x0 = Pack.littleEndianToLong(xo, 0);
+            x0 ^= 0x80L << ((7 - len) << 3);
             P12();
         }
 
         public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
             // Init State
-            byte[] state = new byte[ISAP_STATE_SZ];
-            long[] state64 = new long[5];
             t0 = t1 = t2 = t3 = t4 = x3 = x4 = 0;
             x0 = npub64[0];
             x1 = npub64[1];
@@ -130,31 +122,26 @@ public class ISAPEngine
             x4 ^= 1L;
             ABSORB_MAC(c, clen);
             // Derive K*
-            Pack.longToLittleEndian(U64BIG(x0), state, 0);
-            Pack.longToLittleEndian(U64BIG(x1), state, 8);
-            Pack.longToLittleEndian(U64BIG(x2), state, 16);
-            Pack.longToLittleEndian(U64BIG(x3), state, 24);
-            Pack.longToLittleEndian(U64BIG(x4), state, 32);
-            isap_rk(ISAP_IV2_64, state, CRYPTO_KEYBYTES, state64, CRYPTO_KEYBYTES);
-            x0 = U64BIG(state64[0]);
-            x1 = U64BIG(state64[1]);
-            x2 = U64BIG(state64[2]);
-            x3 = U64BIG(state64[3]);
-            x4 = U64BIG(state64[4]);
+            Pack.longToLittleEndian(U64BIG(x0), tag, 0);
+            Pack.longToLittleEndian(U64BIG(x1), tag, 8);
+            long tmp_x2 = x2, tmp_x3 = x3, tmp_x4 = x4;
+            isap_rk(ISAP_IV2_64, tag, CRYPTO_KEYBYTES);
+            x2 = tmp_x2;
+            x3 = tmp_x3;
+            x4 = tmp_x4;
             // Squeeze tag
             P12();
-            state64[0] = U64BIG(x0);
-            state64[1] = U64BIG(x1);
-            Pack.longToLittleEndian(state64, 0, 2, tag, 0);
+            Pack.longToLittleEndian(U64BIG(x0), tag, 0);
+            Pack.longToLittleEndian(U64BIG(x1), tag, 8);
         }
 
-        public void isap_rk(long iv64, byte[] y, int ylen, long[] out64, int outlen)
+        public void isap_rk(long iv64, byte[] y, int ylen)
         {
             // Init state
             t0 = t1 = t2 = t3 = t4 = x3 = x4 = 0;
             x0 = k64[0];
             x1 = k64[1];
-            x2 = iv64;//U64BIG(iv64);
+            x2 = iv64;
             P12();
             // Absorb Y
             for (int i = 0; i < (ylen << 3) - 1; i++)
@@ -164,37 +151,20 @@ public class ISAPEngine
             }
             x0 ^= (((y[ylen - 1]) & 0x01L) << 7) << 56;
             P12();
-            // Extract K*
-            out64[0] = U64BIG(x0);
-            out64[1] = U64BIG(x1);
-            if (outlen == 24)
-            {
-                out64[2] = U64BIG(x2);
-            }
-            else
-            {
-                out64[2] = Pack.littleEndianToLong(y, 16);
-                out64[3] = Pack.littleEndianToLong(y, 24);
-                out64[4] = Pack.littleEndianToLong(y, 32);
-            }
         }
 
         public void isap_enc(byte[] m, int mlen, byte[] c, int clen)
         {
-            long[] state64 = new long[3];
             // Init state
-            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES, state64, ISAP_STATE_SZ - CRYPTO_NPUBBYTES);
+            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES);
             t0 = t1 = t2 = t3 = t4 = 0;
-            x0 = U64BIG(state64[0]);
-            x1 = U64BIG(state64[1]);
-            x2 = U64BIG(state64[2]);
             x3 = npub64[0];
             x4 = npub64[1];
             PX1();
             /* Encrypt m */
-            long[] m64 = new long[getLongSize(mlen)];
-            littleEndianToLong(m, m64);
-            long[] c64 = new long[getLongSize(clen)];
+            long[] m64 = new long[m.length >> 3];
+            Pack.littleEndianToLong(m, 0, m64, 0, m64.length);
+            long[] c64 = new long[m64.length];
             int idx = 0;
             while (mlen >= ISAP_rH_SZ)
             {
@@ -221,39 +191,32 @@ public class ISAPEngine
             return (x >>> n) | (x << (64 - n));
         }
 
+        protected long U64BIG(long x)
+        {
+            return ((ROTR(x, 8) & (0xFF000000FF000000L)) | (ROTR(x, 24) & (0x00FF000000FF0000L)) |
+                (ROTR(x, 40) & (0x0000FF000000FF00L)) | (ROTR(x, 56) & (0x000000FF000000FFL)));
+        }
+
         protected void ROUND(long C)
         {
-            x2 ^= C ^ x1;
+            t2 = x2 ^ C ^ x1;
             t0 = x0 ^ x4;
             t4 = x4 ^ x3;
-            t3 = x3;
-            t1 = x1;
-            t2 = x2;
-            x0 = t0 ^ ((~t1) & t2);
-            x2 = t2 ^ ((~t3) & t4);
-            x4 = t4 ^ ((~t0) & t1);
-            x1 = t1 ^ ((~t2) & t3) ^ x0;
-            x3 = t3 ^ ((~t4) & t0) ^ x2;
-            t1 = x1;
-            x1 = ROTR(x1, R[1][0]);
-            t2 = x2;
-            x2 = ROTR(x2, R[2][0]);
-            t4 = x4;
-            t2 ^= x2;
+            x0 = t0 ^ ((~x1) & t2);
+            x2 = t2 ^ ((~x3) & t4);
+            x4 = t4 ^ ((~t0) & x1);
+            t1 = x1 ^ ((~t2) & x3) ^ x0;
+            t3 = x3 ^ ((~t4) & t0) ^ x2;
+            t1 ^= x1 = ROTR(t1, R[1][0]);
+            t2 = x2 ^ (x2 = ROTR(x2, R[2][0]));
             x2 = ~(ROTR(x2, R[2][1] - R[2][0]) ^ t2);
-            t3 = x3;
-            t1 ^= x1;
-            x3 = ROTR(x3, R[3][0]);
-            x0 ^= x4;
-            x4 = ROTR(x4, R[4][0]);
-            t3 ^= x3;
+            t3 ^= x3 = ROTR(t3, R[3][0]);
+            t0 = x0 ^= x4;
+            t4 = x4 ^ (x4 = ROTR(x4, R[4][0]));
             x1 = ROTR(x1, R[1][1] - R[1][0]) ^ t1;
-            t0 = x0;
             x3 = ROTR(x3, R[3][1] - R[3][0]) ^ t3;
-            t4 ^= x4;
             x4 = ROTR(x4, R[4][1] - R[4][0]) ^ t4;
-            x0 = ROTR(x0, R[0][0]);
-            t0 ^= x0;
+            t0 ^= x0 = ROTR(x0, R[0][0]);
             x0 = ROTR(x0, R[0][1] - R[0][0]) ^ t0;
         }
 
@@ -276,24 +239,6 @@ public class ISAPEngine
             ROUND(0x69);
             ROUND(0x5a);
             ROUND(0x4b);
-        }
-
-        protected long U64BIG(long x)
-        {
-            return ((ROTR(x, 8) & (0xFF000000FF000000L)) | (ROTR(x, 24) & (0x00FF000000FF0000L)) |
-                (ROTR(x, 40) & (0x0000FF000000FF00L)) | (ROTR(x, 56) & (0x000000FF000000FFL)));
-        }
-
-        private void littleEndianToLong(byte[] input, long[] output)
-        {
-            Pack.littleEndianToLong(input, 0, output, 0, input.length >> 3);
-            if ((input.length & 7) != 0)
-            {
-                for (int i = (input.length >> 3) << 3; i < input.length; ++i)
-                {
-                    output[output.length - 1] |= (input[i] & 0xFFL) << ((i & 7) << 3);
-                }
-            }
         }
     }
 
@@ -410,17 +355,11 @@ public class ISAPEngine
                 }
                 else
                 {
-                    for (int i = 0; i < ISAP_rH_SZ; i++)
+                    for (int i = 0; i < rem_bytes; i++)
                     {
-                        if (i < rem_bytes)
-                        {
-                            SX[i >> 1] ^= (src[idx++] & 0xFF) << ((i & 1) << 3);
-                        }
-                        else if (i == rem_bytes)
-                        {
-                            SX[i >> 1] ^= 0x80 << ((i & 1) << 3);
-                        }
+                        SX[i >> 1] ^= (src[idx++] & 0xFF) << ((i & 1) << 3);
                     }
+                    SX[rem_bytes >> 1] ^= 0x80 << ((rem_bytes & 1) << 3);
                     PermuteRoundsHX(SX, E, C);
                     break;
                 }
