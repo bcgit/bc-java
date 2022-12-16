@@ -199,25 +199,36 @@ public class ISAPEngine
 
         protected void ROUND(long C)
         {
-            t2 = x2 ^ C ^ x1;
-            t0 = x0 ^ x4;
-            t4 = x4 ^ x3;
-            x0 = t0 ^ ((~x1) & t2);
-            x2 = t2 ^ ((~x3) & t4);
-            x4 = t4 ^ ((~t0) & x1);
-            t1 = x1 ^ ((~t2) & x3) ^ x0;
-            t3 = x3 ^ ((~t4) & t0) ^ x2;
-            t1 ^= x1 = ROTR(t1, R[1][0]);
-            t2 = x2 ^ (x2 = ROTR(x2, R[2][0]));
-            x2 = ~(ROTR(x2, R[2][1] - R[2][0]) ^ t2);
-            t3 ^= x3 = ROTR(t3, R[3][0]);
-            t0 = x0 ^= x4;
-            t4 = x4 ^ (x4 = ROTR(x4, R[4][0]));
-            x1 = ROTR(x1, R[1][1] - R[1][0]) ^ t1;
-            x3 = ROTR(x3, R[3][1] - R[3][0]) ^ t3;
-            x4 = ROTR(x4, R[4][1] - R[4][0]) ^ t4;
-            t0 ^= x0 = ROTR(x0, R[0][0]);
-            x0 = ROTR(x0, R[0][1] - R[0][0]) ^ t0;
+//            t2 = x2 ^ C ^ x1;
+//            t0 = x0 ^ x4;
+//            t4 = x4 ^ x3;
+//            x0 = t0 ^ ((~x1) & t2);
+//            x2 = t2 ^ ((~x3) & t4);
+//            x4 = t4 ^ ((~t0) & x1);
+//            t1 = x1 ^ ((~t2) & x3) ^ x0;
+//            t3 = x3 ^ ((~t4) & t0) ^ x2;
+//            t1 ^= x1 = ROTR(t1, 39);
+//            t2 = x2 ^ (x2 = ROTR(x2, 1));
+//            x2 = ~(ROTR(x2, 5) ^ t2);
+//            t3 ^= x3 = ROTR(t3, 10);
+//            t0 = x0 ^= x4;
+//            t4 = x4 ^ (x4 = ROTR(x4, 7));
+//            x1 = ROTR(x1, 22) ^ t1;
+//            x3 = ROTR(x3, 7) ^ t3;
+//            x4 = ROTR(x4, 34) ^ t4;
+//            t0 ^= x0 = ROTR(x0, 19);
+//            x0 = ROTR(x0, 9) ^ t0;
+
+            t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
+            t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
+            t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
+            t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
+            t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
+            x0 = t0 ^ ROTR(t0, 19) ^ ROTR(t0, 28);
+            x1 = t1 ^ ROTR(t1, 39) ^ ROTR(t1, 61);
+            x2 = ~(t2 ^ ROTR(t2, 1) ^ ROTR(t2, 6));
+            x3 = t3 ^ ROTR(t3, 10) ^ ROTR(t3, 17);
+            x4 = t4 ^ ROTR(t4, 7) ^ ROTR(t4, 41);
         }
 
         protected void P12()
