@@ -932,7 +932,6 @@ public class ISAPEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        //output.length:=input.length+ISAP_TAG_SZ;
         ad = aadData.toByteArray();
         ISAPAEAD.isap_mac(ad, ad.length, c, c.length, output, outOff);
         mac = output;
@@ -942,12 +941,14 @@ public class ISAPEngine
 
     @Override
     public byte[] getMac()
-        throws InvalidCipherTextException
     {
         if (!aadFinished)
         {
             byte[] output = new byte[8];
-            doFinal(output, 0);
+            ad = aadData.toByteArray();
+            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, output, 0);
+            mac = output;
+            aadFinished = true;
         }
         return mac;
     }
