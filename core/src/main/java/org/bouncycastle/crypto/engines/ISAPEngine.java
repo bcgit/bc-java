@@ -1,13 +1,25 @@
 package org.bouncycastle.crypto.engines;
 
+import java.io.ByteArrayOutputStream;
+
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
+
+/**
+ * ISAP AEAD v2, https://isap.iaik.tugraz.at/
+ * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/isap-spec-final.pdf
+ * <p>
+ * ISAP AEAD v2 with reference to C Reference Impl from: https://github.com/isap-lwc/isap-code-package
+ * </p>
+ */
 
 public class ISAPEngine
     implements AEADBlockCipher
@@ -25,16 +37,16 @@ public class ISAPEngine
         switch (isapType)
         {
         case ISAP_A_128A:
-            isap = new ISAP_A_128A();
+            ISAPAEAD = new ISAPAEAD_A_128A();
             break;
         case ISAP_K_128A:
-            isap = new ISAP_K_128A();
+            ISAPAEAD = new ISAPAEAD_K_128A();
             break;
         case ISAP_A_128:
-            isap = new ISAP_A_128();
+            ISAPAEAD = new ISAPAEAD_A_128();
             break;
         case ISAP_K_128:
-            isap = new ISAP_K_128();
+            ISAPAEAD = new ISAPAEAD_K_128();
             break;
         }
     }
@@ -46,22 +58,27 @@ public class ISAPEngine
     private byte[] c;
     private byte[] ad;
     private byte[] npub;
-    private byte[] message;
+    private byte[] mac;
+    private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     int ISAP_rH;
     int ISAP_rH_SZ;
-    private Isap isap;
+    private ISAP_AEAD ISAPAEAD;
+    private boolean encFinished;
+    private boolean aadFinished;
 
-    private interface Isap
+    private interface ISAP_AEAD
     {
-        void isap_enc(byte[] m, int mlen, byte[] c, int clen);
+        void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen);
 
         void init();
 
-        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag);
+        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff);
+
+        void reset();
     }
 
-    private abstract class ISAP_A
-        implements Isap
+    public abstract class ISAPAEAD_A
+        implements ISAP_AEAD
     {
         protected long[] k64;
         protected long[] npub64;
@@ -83,6 +100,7 @@ public class ISAPEngine
             Pack.littleEndianToLong(k, 0, k64, 0, k64.length);
             k64[0] = U64BIG(k64[0]);
             k64[1] = U64BIG(k64[1]);
+            reset();
         }
 
         protected abstract void PX1();
@@ -109,13 +127,13 @@ public class ISAPEngine
             P12();
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
+        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
         {
             // Init State
-            t0 = t1 = t2 = t3 = t4 = x3 = x4 = 0;
             x0 = npub64[0];
             x1 = npub64[1];
             x2 = ISAP_IV1_64;
+            x3 = x4 = 0;
             P12();
             ABSORB_MAC(ad, adlen);
             // Domain seperation
@@ -131,17 +149,17 @@ public class ISAPEngine
             x4 = tmp_x4;
             // Squeeze tag
             P12();
-            Pack.longToLittleEndian(U64BIG(x0), tag, 0);
-            Pack.longToLittleEndian(U64BIG(x1), tag, 8);
+            Pack.longToLittleEndian(U64BIG(x0), tag, tagOff);
+            Pack.longToLittleEndian(U64BIG(x1), tag, tagOff + 8);
         }
 
         public void isap_rk(long iv64, byte[] y, int ylen)
         {
             // Init state
-            t0 = t1 = t2 = t3 = t4 = x3 = x4 = 0;
             x0 = k64[0];
             x1 = k64[1];
             x2 = iv64;
+            x3 = x4 = 0;
             P12();
             // Absorb Y
             for (int i = 0; i < (ylen << 3) - 1; i++)
@@ -153,32 +171,80 @@ public class ISAPEngine
             P12();
         }
 
-        public void isap_enc(byte[] m, int mlen, byte[] c, int clen)
+        public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
         {
-            // Init state
-            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES);
-            t0 = t1 = t2 = t3 = t4 = 0;
-            x3 = npub64[0];
-            x4 = npub64[1];
-            PX1();
             /* Encrypt m */
-            long[] m64 = new long[m.length >> 3];
-            Pack.littleEndianToLong(m, 0, m64, 0, m64.length);
+            long[] m64 = new long[mlen >> 3];
+            Pack.littleEndianToLong(m, mOff, m64, 0, m64.length);
             long[] c64 = new long[m64.length];
             int idx = 0;
             while (mlen >= ISAP_rH_SZ)
             {
-                c64[idx] = U64BIG(x0) ^ m64[idx++];
+                c64[idx] = U64BIG(x0) ^ m64[idx];
                 PX1();
+                idx++;
                 mlen -= ISAP_rH_SZ;
             }
-            Pack.longToLittleEndian(c64, 0, c.length >> 3, c, 0);
+            Pack.longToLittleEndian(c64, 0, c64.length, c, cOff);
             /* Encrypt final m block */
             byte[] xo = Pack.longToLittleEndian(x0);
             while (mlen > 0)
             {
-                c[(idx << 3) + mlen - 1] = (byte)(xo[ISAP_rH_SZ - mlen] ^ m[(idx << 3) + --mlen]);
+                c[(idx << 3) + cOff + mlen - 1] = (byte)(xo[ISAP_rH_SZ - mlen] ^ m[(idx << 3) + mOff + --mlen]);
             }
+        }
+
+        int crypto_hash(byte[] output, byte[] input, int len)
+        {
+            t0 = t1 = t2 = t3 = t4 = 0;
+            final int ASCON_128_RATE = 8;
+            /* init state */
+            x0 = (((long)(8 * 8) << 48) | ((long)(12) << 40) | ((long)(32 * 8) << 0));
+            x1 = x2 = x3 = x4 = 0;
+            P12();
+            /* absorb */
+            long[] in64 = new long[len >> 3];
+            Pack.longToLittleEndian(in64, 0, in64.length, input, 0);
+            int idx = 0;
+            while (len >= 8)
+            {
+                x0 ^= U64BIG(in64[idx]);
+                P12();
+                idx++;
+                len -= 8;
+            }
+            /* absorb final input block */
+            byte[] lane8 = Pack.longToLittleEndian(x0);
+            lane8[ASCON_128_RATE - 1 - len] ^= 0x80;
+            while (len > 0)
+            {
+                x0 ^= (input[(idx << 3) + len] & 0xFFL) << ((7 - len) << 3);
+                len--;
+            }
+            P12();
+            // squeeze
+            long[] out64 = new long[4];
+            idx = 0;
+            int outlen = 32;
+            while (outlen > ASCON_128_RATE)
+            {
+                out64[idx] = U64BIG(x0);
+                P12();
+                idx++;
+                outlen -= ASCON_128_RATE;
+            }
+            /* squeeze final output block */
+            out64[idx] = U64BIG(x0);
+            return 0;
+        }
+
+        public void reset()
+        {
+            // Init state
+            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES);
+            x3 = npub64[0];
+            x4 = npub64[1];
+            PX1();
         }
 
         private int getLongSize(int x)
@@ -199,26 +265,6 @@ public class ISAPEngine
 
         protected void ROUND(long C)
         {
-//            t2 = x2 ^ C ^ x1;
-//            t0 = x0 ^ x4;
-//            t4 = x4 ^ x3;
-//            x0 = t0 ^ ((~x1) & t2);
-//            x2 = t2 ^ ((~x3) & t4);
-//            x4 = t4 ^ ((~t0) & x1);
-//            t1 = x1 ^ ((~t2) & x3) ^ x0;
-//            t3 = x3 ^ ((~t4) & t0) ^ x2;
-//            t1 ^= x1 = ROTR(t1, 39);
-//            t2 = x2 ^ (x2 = ROTR(x2, 1));
-//            x2 = ~(ROTR(x2, 5) ^ t2);
-//            t3 ^= x3 = ROTR(t3, 10);
-//            t0 = x0 ^= x4;
-//            t4 = x4 ^ (x4 = ROTR(x4, 7));
-//            x1 = ROTR(x1, 22) ^ t1;
-//            x3 = ROTR(x3, 7) ^ t3;
-//            x4 = ROTR(x4, 34) ^ t4;
-//            t0 ^= x0 = ROTR(x0, 19);
-//            x0 = ROTR(x0, 9) ^ t0;
-
             t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
             t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
             t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
@@ -231,7 +277,7 @@ public class ISAPEngine
             x4 = t4 ^ ROTR(t4, 7) ^ ROTR(t4, 41);
         }
 
-        protected void P12()
+        public void P12()
         {
             ROUND(0xf0);
             ROUND(0xe1);
@@ -253,10 +299,10 @@ public class ISAPEngine
         }
     }
 
-    private class ISAP_A_128A
-        extends ISAP_A
+    private class ISAPAEAD_A_128A
+        extends ISAPAEAD_A
     {
-        public ISAP_A_128A()
+        public ISAPAEAD_A_128A()
         {
             ISAP_IV1_64 = 108156764297430540L;
             ISAP_IV2_64 = 180214358335358476L;
@@ -274,10 +320,10 @@ public class ISAPEngine
         }
     }
 
-    private class ISAP_A_128
-        extends ISAP_A
+    private class ISAPAEAD_A_128
+        extends ISAPAEAD_A
     {
-        public ISAP_A_128()
+        public ISAPAEAD_A_128()
         {
             ISAP_IV1_64 = 108156764298152972L;
             ISAP_IV2_64 = 180214358336080908L;
@@ -295,8 +341,8 @@ public class ISAPEngine
         }
     }
 
-    private abstract class ISAP_K
-        implements Isap
+    private abstract class ISAPAEAD_K
+        implements ISAP_AEAD
     {
         final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - CRYPTO_NPUBBYTES;
         protected short[] ISAP_IV1_16;
@@ -304,28 +350,11 @@ public class ISAPEngine
         protected short[] ISAP_IV3_16;
         protected short[] k16;
         protected short[] iv16;
-        private final short[] KeccakF400RoundConstants = {
-            (short)0x0001,
-            (short)0x8082,
-            (short)0x808a,
-            (short)0x8000,
-            (short)0x808b,
-            (short)0x0001,
-            (short)0x8081,
-            (short)0x8009,
-            (short)0x008a,
-            (short)0x0088,
-            (short)0x8009,
-            (short)0x000a,
-            (short)0x808b,
-            (short)0x008b,
-            (short)0x8089,
-            (short)0x8003,
-            (short)0x8002,
-            (short)0x0080,
-            (short)0x800a,
-            (short)0x000a,
-        };
+        private final int[] KeccakF400RoundConstants = {0x0001, 0x8082, 0x808a, 0x8000, 0x808b, 0x0001, 0x8081, 0x8009,
+            0x008a, 0x0088, 0x8009, 0x000a, 0x808b, 0x008b, 0x8089, 0x8003, 0x8002, 0x0080, 0x800a, 0x000a};
+        protected short[] SX = new short[25];
+        protected short[] E = new short[25];
+        protected short[] C = new short[5];
 
         public void init()
         {
@@ -335,6 +364,18 @@ public class ISAPEngine
             byteToShort(k, k16, k16.length);
             iv16 = new short[npub.length >> 1];
             byteToShort(npub, iv16, iv16.length);
+            reset();
+        }
+
+        public void reset()
+        {
+            // Init state
+            SX = new short[25];
+            E = new short[25];
+            C = new short[5];
+            isap_rk(ISAP_IV3_16, npub, CRYPTO_NPUBBYTES, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
+            System.arraycopy(iv16, 0, SX, 17, 8);
+            PermuteRoundsKX(SX, E, C);
         }
 
         protected abstract void PermuteRoundsHX(short[] SX, short[] E, short[] C);
@@ -397,11 +438,9 @@ public class ISAPEngine
             System.arraycopy(SX, 0, out16, 0, outlen == ISAP_STATE_SZ_CRYPTO_NPUBBYTES ? 17 : 8);
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
+        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
         {
-            short[] E = new short[25];
-            short[] SX = new short[25];
-            short[] C = new short[5];
+            SX = new short[25];
             // Init state
             System.arraycopy(iv16, 0, SX, 0, 8);
             System.arraycopy(ISAP_IV1_16, 0, SX, 8, 4);
@@ -413,24 +452,16 @@ public class ISAPEngine
             // Absorb C
             ABSORB_MAC(SX, c, clen, E, C);
             // Derive K*
-            shortToByte(SX, tag);
+            shortToByte(SX, tag, tagOff);
             isap_rk(ISAP_IV2_16, tag, CRYPTO_KEYBYTES, SX, CRYPTO_KEYBYTES, C);
             // Squeeze tag
             PermuteRoundsHX(SX, E, C);
-            shortToByte(SX, tag);
+            shortToByte(SX, tag, tagOff);
         }
 
-        public void isap_enc(byte[] m, int mlen, byte[] c, int clen)
+        public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
         {
-            // Init state
-            short[] SX = new short[25];
-            short[] E = new short[25];
-            short[] C = new short[5];
-            isap_rk(ISAP_IV3_16, npub, CRYPTO_NPUBBYTES, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
-            System.arraycopy(iv16, 0, SX, 17, 8);
-            PermuteRoundsKX(SX, E, C);
             // Squeeze key stream
-            int idx = 0;
             while (true)
             {
                 if (mlen > ISAP_rH_SZ)
@@ -438,7 +469,7 @@ public class ISAPEngine
                     // Squeeze full lane and continue
                     for (int i = 0; i < ISAP_rH_SZ; ++i)
                     {
-                        c[idx] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[idx++]);
+                        c[cOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[mOff++]);
                     }
                     mlen -= ISAP_rH_SZ;
                     PermuteRoundsKX(SX, E, C);
@@ -448,7 +479,7 @@ public class ISAPEngine
                     // Squeeze full or partial lane and stop
                     for (int i = 0; i < mlen; ++i)
                     {
-                        c[idx] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[idx++]);
+                        c[cOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[mOff++]);
                     }
                     break;
                 }
@@ -471,11 +502,11 @@ public class ISAPEngine
             }
         }
 
-        private void shortToByte(short[] input, byte[] output)
+        private void shortToByte(short[] input, byte[] output, int outOff)
         {
             for (int i = 0; i < 8; ++i)
             {
-                Pack.shortToLittleEndian(input[i], output, (i << 1));
+                Pack.shortToLittleEndian(input[i], output, outOff + (i << 1));
             }
         }
 
@@ -726,10 +757,10 @@ public class ISAPEngine
         }
     }
 
-    private class ISAP_K_128A
-        extends ISAP_K
+    private class ISAPAEAD_K_128A
+        extends ISAPAEAD_K
     {
-        public ISAP_K_128A()
+        public ISAPAEAD_K_128A()
         {
             ISAP_IV1_16 = new short[]{-32767, 400, 272, 2056};
             ISAP_IV2_16 = new short[]{-32766, 400, 272, 2056};
@@ -756,10 +787,10 @@ public class ISAPEngine
         }
     }
 
-    private class ISAP_K_128
-        extends ISAP_K
+    private class ISAPAEAD_K_128
+        extends ISAPAEAD_K
     {
-        public ISAP_K_128()
+        public ISAPAEAD_K_128()
         {
             ISAP_IV1_16 = new short[]{-32767, 400, 3092, 3084};
             ISAP_IV2_16 = new short[]{-32766, 400, 3092, 3084};
@@ -799,41 +830,41 @@ public class ISAPEngine
         throws IllegalArgumentException
     {
         /**
-         * Grain encryption and decryption is completely symmetrical, so the
+         * ISAP encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
-//        if (!(params instanceof ParametersWithIV))
-//        {
-//            throw new IllegalArgumentException(
-//                "Grain-128AEAD init parameters must include an IV");
-//        }
+        if (!(params instanceof ParametersWithIV))
+        {
+            throw new IllegalArgumentException(
+                "ISAP AEAD init parameters must include an IV");
+        }
 
         ParametersWithIV ivParams = (ParametersWithIV)params;
 
         byte[] iv = ivParams.getIV();
 
-//        if (iv == null || iv.length != 12)
-//        {
-//            throw new IllegalArgumentException(
-//                "Grain-128AEAD requires exactly 12 bytes of IV");
-//        }
-//
-//        if (!(ivParams.getParameters() instanceof KeyParameter))
-//        {
-//            throw new IllegalArgumentException(
-//                "Grain-128AEAD init parameters must include a key");
-//        }
+        if (iv == null || iv.length != 16)
+        {
+            throw new IllegalArgumentException(
+                "ISAP AEAD requires exactly 12 bytes of IV");
+        }
+
+        if (!(ivParams.getParameters() instanceof KeyParameter))
+        {
+            throw new IllegalArgumentException(
+                "ISAP AEAD init parameters must include a key");
+        }
 
         KeyParameter key = (KeyParameter)ivParams.getParameters();
         byte[] keyBytes = key.getKey();
-//        if (keyBytes.length != 16)
-//        {
-//            throw new IllegalArgumentException(
-//                "Grain-128AEAD key must be 128 bits long");
-//        }
-//
-//        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-//            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        if (keyBytes.length != 16)
+        {
+            throw new IllegalArgumentException(
+                "ISAP AEAD key must be 128 bits long");
+        }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
+            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
 
         /**
          * Initialize variables.
@@ -842,45 +873,58 @@ public class ISAPEngine
         k = new byte[keyBytes.length];
         System.arraycopy(iv, 0, npub, 0, iv.length);
         System.arraycopy(keyBytes, 0, k, 0, keyBytes.length);
-        isap.init();
+        ISAPAEAD.init();
+        reset();
     }
 
     @Override
     public String getAlgorithmName()
     {
-        return null;
+        return "ISAP";
     }
 
     @Override
     public void processAADByte(byte in)
     {
-
+        aadData.write(in);
     }
 
     @Override
     public void processAADBytes(byte[] in, int inOff, int len)
     {
-        //TODO:
-        ad = in;
+        aadData.write(in, inOff, len);
     }
 
     @Override
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
-        return 0;
+        if (aadFinished)
+        {
+            throw new IllegalStateException("plaintext/ciphertext must be processed before associated data");
+        }
+        if (encFinished)
+        {
+            throw new IllegalStateException("plaintext can be loaded only once");
+        }
+        return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
     @Override
-    public int processBytes(byte[] in, int inOff, int len, byte[] output, int outOff)
+    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        message = in;
-        if (message.length > 0)
+        if (aadFinished)
         {
-            isap.isap_enc(message, message.length, output, output.length);
+            throw new IllegalStateException("plaintext/ciphertext must be processed before associated data");
         }
+        if (encFinished)
+        {
+            throw new IllegalStateException("plaintext can be loaded only once");
+        }
+        ISAPAEAD.isap_enc(input, inOff, len, output, outOff, output.length);
         c = output;
+        encFinished = true;
         return 0;
     }
 
@@ -889,36 +933,43 @@ public class ISAPEngine
         throws IllegalStateException, InvalidCipherTextException
     {
         //output.length:=input.length+ISAP_TAG_SZ;
-        int adlen = 0;
-        if (ad != null)
-        {
-            adlen = ad.length;
-        }
-        isap.isap_mac(ad, adlen, c, c.length, output);
-        return 0;
+        ad = aadData.toByteArray();
+        ISAPAEAD.isap_mac(ad, ad.length, c, c.length, output, outOff);
+        mac = output;
+        aadFinished = true;
+        return output.length;
     }
 
     @Override
     public byte[] getMac()
+        throws InvalidCipherTextException
     {
-        return new byte[0];
+        if (!aadFinished)
+        {
+            byte[] output = new byte[8];
+            doFinal(output, 0);
+        }
+        return mac;
     }
 
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return 0;
+        return len;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return 0;
+        return len + 8;
     }
 
     @Override
     public void reset()
     {
-
+        aadData.reset();
+        ISAPAEAD.reset();
+        aadFinished = false;
+        encFinished = false;
     }
 }
