@@ -86,7 +86,6 @@ public class ISAPEngine
         protected long ISAP_IV2_64;
         protected long ISAP_IV3_64;
         protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4;
-        protected final int[][] R = {{19, 28}, {39, 61}, {1, 6}, {10, 17}, {7, 41}};
 
         public void init()
         {
@@ -192,50 +191,6 @@ public class ISAPEngine
             {
                 c[(idx << 3) + cOff + mlen - 1] = (byte)(xo[ISAP_rH_SZ - mlen] ^ m[(idx << 3) + mOff + --mlen]);
             }
-        }
-
-        int crypto_hash(byte[] output, byte[] input, int len)
-        {
-            t0 = t1 = t2 = t3 = t4 = 0;
-            final int ASCON_128_RATE = 8;
-            /* init state */
-            x0 = (((long)(8 * 8) << 48) | ((long)(12) << 40) | ((long)(32 * 8) << 0));
-            x1 = x2 = x3 = x4 = 0;
-            P12();
-            /* absorb */
-            long[] in64 = new long[len >> 3];
-            Pack.longToLittleEndian(in64, 0, in64.length, input, 0);
-            int idx = 0;
-            while (len >= 8)
-            {
-                x0 ^= U64BIG(in64[idx]);
-                P12();
-                idx++;
-                len -= 8;
-            }
-            /* absorb final input block */
-            byte[] lane8 = Pack.longToLittleEndian(x0);
-            lane8[ASCON_128_RATE - 1 - len] ^= 0x80;
-            while (len > 0)
-            {
-                x0 ^= (input[(idx << 3) + len] & 0xFFL) << ((7 - len) << 3);
-                len--;
-            }
-            P12();
-            // squeeze
-            long[] out64 = new long[4];
-            idx = 0;
-            int outlen = 32;
-            while (outlen > ASCON_128_RATE)
-            {
-                out64[idx] = U64BIG(x0);
-                P12();
-                idx++;
-                outlen -= ASCON_128_RATE;
-            }
-            /* squeeze final output block */
-            out64[idx] = U64BIG(x0);
-            return 0;
         }
 
         public void reset()
