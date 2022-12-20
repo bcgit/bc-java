@@ -19,7 +19,7 @@ public class ISAPDigest
     private long t0, t1, t2, t3, t4;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    protected void ROUND(long C)
+    private void ROUND(long C)
     {
         t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
         t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
@@ -33,7 +33,7 @@ public class ISAPDigest
         x4 = t4 ^ ROTR(t4, 7) ^ ROTR(t4, 41);
     }
 
-    public void P12()
+    private void P12()
     {
         ROUND(0xf0);
         ROUND(0xe1);
