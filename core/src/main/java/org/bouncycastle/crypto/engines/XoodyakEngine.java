@@ -119,7 +119,7 @@ public class XoodyakEngine
         {
             throw new IllegalArgumentException("Encryption must be done before associated data is processed");
         }
-        int IOLen = output.length;
+        int IOLen = len;
         int splitLen;
         byte[] P = new byte[Rkout];
         int Cu = 0x80;
@@ -127,7 +127,7 @@ public class XoodyakEngine
         {
             splitLen = Math.min(IOLen, Rkout); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             System.arraycopy(input, inOff, P, 0, splitLen);
-            Up(null, 0, 0, Cu); /* Up without extract */
+            Up(null, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
             for (int i = 0; i < splitLen; i++)
             {
@@ -138,7 +138,7 @@ public class XoodyakEngine
             IOLen -= splitLen;
         }
         while (IOLen != 0);
-        return 0;
+        return len;
     }
 
     @Override
@@ -159,7 +159,7 @@ public class XoodyakEngine
         }
         else
         {
-            Up(tag, 0, TAGLEN, 0x40);
+            Up(tag, TAGLEN, 0x40);
             aadFinished = true;
         }
 
@@ -203,7 +203,7 @@ public class XoodyakEngine
         {
             if (phase != PhaseUp)
             {
-                Up(null, 0, 0, 0);
+                Up(null, 0, 0);
             }
             splitLen = Math.min(XLen, r);
             Down(X, Xoff, splitLen, Cd);
@@ -214,7 +214,7 @@ public class XoodyakEngine
         while (XLen != 0);
     }
 
-    private void Up(byte[] Yi, int YiOff, int YiLen, int Cu)
+    private void Up(byte[] Yi, int YiLen, int Cu)
     {
         if (mode != MODE.ModeHash)
         {
@@ -275,7 +275,7 @@ public class XoodyakEngine
         phase = PhaseUp;
         if (Yi != null)
         {
-            System.arraycopy(state, YiOff, Yi, 0, YiLen);
+            System.arraycopy(state, 0, Yi, 0, YiLen);
         }
     }
 
