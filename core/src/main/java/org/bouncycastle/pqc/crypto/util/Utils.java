@@ -307,7 +307,6 @@ class Utils
         hqcOids.put(HQCParameters.hqc192, BCObjectIdentifiers.hqc192);
         hqcOids.put(HQCParameters.hqc256, BCObjectIdentifiers.hqc256);
 
-
         rainbowParams.put(BCObjectIdentifiers.rainbow_III_classic, RainbowParameters.rainbowIIIclassic);
         rainbowParams.put(BCObjectIdentifiers.rainbow_III_circumzenithal, RainbowParameters.rainbowIIIcircumzenithal);
         rainbowParams.put(BCObjectIdentifiers.rainbow_III_compressed, RainbowParameters.rainbowIIIcompressed);
@@ -321,6 +320,45 @@ class Utils
         rainbowOids.put(RainbowParameters.rainbowVclassic, BCObjectIdentifiers.rainbow_V_classic);
         rainbowOids.put(RainbowParameters.rainbowVcircumzenithal, BCObjectIdentifiers.rainbow_V_circumzenithal);
         rainbowOids.put(RainbowParameters.rainbowVcompressed, BCObjectIdentifiers.rainbow_V_compressed);
+
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_128s, BCObjectIdentifiers.sphincsPlus_haraka_128s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_128f, BCObjectIdentifiers.sphincsPlus_haraka_128f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192s, BCObjectIdentifiers.sphincsPlus_sha2_192s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192f, BCObjectIdentifiers.sphincsPlus_sha2_192f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_192s, BCObjectIdentifiers.sphincsPlus_haraka_192s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_192f, BCObjectIdentifiers.sphincsPlus_haraka_192f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256s, BCObjectIdentifiers.sphincsPlus_sha2_256s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256f, BCObjectIdentifiers.sphincsPlus_sha2_256f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256s, BCObjectIdentifiers.sphincsPlus_shake_256s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256f, BCObjectIdentifiers.sphincsPlus_shake_256f_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256s, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
+        sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256f, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
+
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, SPHINCSPlusParameters.sha2_128s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, SPHINCSPlusParameters.sha2_128f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, SPHINCSPlusParameters.shake_128s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3, SPHINCSPlusParameters.shake_128f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3, SPHINCSPlusParameters.haraka_128s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3, SPHINCSPlusParameters.haraka_128f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3, SPHINCSPlusParameters.sha2_192s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3, SPHINCSPlusParameters.sha2_192f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3, SPHINCSPlusParameters.shake_192s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3, SPHINCSPlusParameters.shake_192f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3, SPHINCSPlusParameters.haraka_192s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3, SPHINCSPlusParameters.haraka_192f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3, SPHINCSPlusParameters.sha2_256s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3, SPHINCSPlusParameters.sha2_256f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3, SPHINCSPlusParameters.shake_256s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, SPHINCSPlusParameters.shake_256f);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, SPHINCSPlusParameters.haraka_256s);
+        sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, SPHINCSPlusParameters.haraka_256f);
+
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -475,24 +513,11 @@ class Utils
 
     static ASN1ObjectIdentifier sphincsPlusOidLookup(SPHINCSPlusParameters params)
     {
-        int pId = SPHINCSPlusParameters.getID(params);
-
-        if ((pId & 0x030000) == 0x030000)
-        {
-            return BCObjectIdentifiers.sphincsPlus_haraka;
-        }
-
-        if ((pId & 0x030000) == 0x020000)
-        {
-            return BCObjectIdentifiers.sphincsPlus_shake_256;
-        }
-
-        if ((pId & 0x05) == 0x05 || (pId & 0x06) == 0x06)
-        {
-            return BCObjectIdentifiers.sphincsPlus_sha_512;
-        }
-
-        return BCObjectIdentifiers.sphincsPlus_sha_256;
+        return (ASN1ObjectIdentifier)sphincsPlusOids.get(params);
+    }
+    static SPHINCSPlusParameters sphincsPlusParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SPHINCSPlusParameters)sphincsPlusParams.get(oid);
     }
 
     static ASN1ObjectIdentifier mcElieceOidLookup(CMCEParameters params)
