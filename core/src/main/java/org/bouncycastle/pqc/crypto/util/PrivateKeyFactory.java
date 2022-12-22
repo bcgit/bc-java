@@ -203,35 +203,49 @@ public class PrivateKeyFactory
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
         {
-            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+            KyberPrivateKey kyberKey = KyberPrivateKey.getInstance(keyInfo.parsePrivateKey());
+            KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
 
-            KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
-            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
-            if (version != 0)
+            KyberPublicKey pubKey = kyberKey.getPublicKey();
+            if(pubKey != null)
             {
-                throw new IOException("unknown private key version: " + version);
+                return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(), kyberKey.getNonce(),
+                        kyberKey.getPublicKey().getT(), kyberKey.getPublicKey().getRho());
             }
- 
-             if (keyInfo.getPublicKeyData() != null)
-             {
-                 ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
-                 return new KyberPrivateKeyParameters(spParams,
-                     DEROctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                     DEROctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                     DEROctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                     ASN1OctetString.getInstance(pubKey.getObjectAt(0)).getOctets(), // t
-                     ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // rho
-             }
-             else
-             {
-                 return new KyberPrivateKeyParameters(spParams,
-                     ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                     ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                     ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                     null,
-                     null);
-             }
+            return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(), kyberKey.getNonce(),
+                     null, null);
+
+
+
+//            ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+//
+//            KyberParameters spParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+//
+//            int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+//            if (version != 0)
+//            {
+//                throw new IOException("unknown private key version: " + version);
+//            }
+//
+//             if (keyInfo.getPublicKeyData() != null)
+//             {
+//                 ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+//                 return new KyberPrivateKeyParameters(spParams,
+//                     DEROctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+//                     DEROctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+//                     DEROctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+//                     ASN1OctetString.getInstance(pubKey.getObjectAt(0)).getOctets(), // t
+//                     ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // rho
+//             }
+//             else
+//             {
+//                 return new KyberPrivateKeyParameters(spParams,
+//                     ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+//                     ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+//                     ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+//                     null,
+//                     null);
+//             }
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
