@@ -145,7 +145,6 @@ public class PrivateKeyInfoFactory
             SPHINCSPLUSPrivateKey spPriv = new SPHINCSPLUSPrivateKey(0, params.getSeed(), params.getPrf(), spPub);
 
             return new PrivateKeyInfo(algorithmIdentifier, spPriv, attributes);
-//            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
