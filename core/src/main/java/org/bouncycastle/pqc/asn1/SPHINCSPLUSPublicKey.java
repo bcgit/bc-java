@@ -34,11 +34,11 @@ public class SPHINCSPLUSPublicKey
 
     public byte[] getPkseed()
     {
-        return pkseed;
+        return Arrays.clone(pkseed);
     }
     public byte[] getPkroot()
     {
-        return pkroot;
+        return Arrays.clone(pkroot);
     }
 
     public ASN1Primitive toASN1Primitive()
