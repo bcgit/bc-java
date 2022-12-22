@@ -16,13 +16,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSPublicKey;
+import org.bouncycastle.pqc.asn1.*;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
@@ -546,23 +540,31 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
+//            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+//
+//            KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+//
+//            return new KyberPublicKeyParameters(kyberParameters, keyEnc);
+            KyberPublicKey kyberKey = KyberPublicKey.getInstance(keyInfo.parsePublicKey());
+
             KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            ASN1Primitive obj = keyInfo.parsePublicKey();
-            if (obj instanceof ASN1Sequence)
-            {
-                ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
-
-                return new KyberPublicKeyParameters(kyberParameters,
-                    ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
-                    ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
-            }
-            else
-            {
-                byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
-
-                return new KyberPublicKeyParameters(kyberParameters, encKey);
-            }
+            return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
+//            ASN1Primitive obj = keyInfo.parsePublicKey();
+//            if (obj instanceof ASN1Sequence)
+//            {
+//                ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+//
+//                return new KyberPublicKeyParameters(kyberParameters,
+//                    ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+//                    ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+//            }
+//            else
+//            {
+//                byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+//
+//                return new KyberPublicKeyParameters(kyberParameters, encKey);
+//            }
         }
     }
 
