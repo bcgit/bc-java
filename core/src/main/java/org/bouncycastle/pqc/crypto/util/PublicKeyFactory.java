@@ -395,7 +395,7 @@ public class PublicKeyFactory
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            SPHINCSPlusParameters spParams = SPHINCSPlusParameters.getParams(Integers.valueOf(Pack.bigEndianToInt(keyEnc, 0)));
+            SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
         }
