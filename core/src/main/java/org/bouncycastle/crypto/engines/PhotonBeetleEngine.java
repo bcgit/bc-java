@@ -185,9 +185,9 @@ public class PhotonBeetleEngine
     {
         A = aadData.toByteArray();
         M = input;
-        int mlen = input.length, adlen = A.length, i;
-        byte c0 = select((mlen != 0), ((adlen % RATE_INBYTES) == 0), (byte)3, (byte)4);
-        byte c1 = select((adlen != 0), ((mlen % RATE_INBYTES) == 0), (byte)5, (byte)6);
+        int adlen = A.length, i;
+        byte c0 = select((len != 0), ((adlen % RATE_INBYTES) == 0), (byte)3, (byte)4);
+        byte c1 = select((adlen != 0), ((len % RATE_INBYTES) == 0), (byte)5, (byte)6);
         int Dlen_inblocks, LastDBlocklen;
         if (adlen != 0)
         {
@@ -206,17 +206,17 @@ public class PhotonBeetleEngine
             }
             state[STATE_INBYTES - 1] ^= c0 << LAST_THREE_BITS_OFFSET;
         }
-        if (mlen != 0)
+        if (len != 0)
         {
-            Dlen_inblocks = (mlen + RATE_INBYTES - 1) / RATE_INBYTES;
+            Dlen_inblocks = (len + RATE_INBYTES - 1) / RATE_INBYTES;
             for (i = 0; i < Dlen_inblocks - 1; i++)
             {
                 PHOTON_Permutation();
-                rhoohr(output, outOff + i * RATE_INBYTES, input, RATE_INBYTES);
+                rhoohr(output, outOff + i * RATE_INBYTES, input, inOff + i * RATE_INBYTES, RATE_INBYTES);
             }
             PHOTON_Permutation();
-            LastDBlocklen = mlen - i * RATE_INBYTES;
-            rhoohr(output, outOff + i * RATE_INBYTES, input, LastDBlocklen);
+            LastDBlocklen = len - i * RATE_INBYTES;
+            rhoohr(output, outOff + i * RATE_INBYTES, input, inOff + i * RATE_INBYTES, LastDBlocklen);
             if (LastDBlocklen < RATE_INBYTES)
             {
                 state[LastDBlocklen] ^= 0x01; // ozs
@@ -283,7 +283,6 @@ public class PhotonBeetleEngine
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
         encrypted = false;
-
     }
 
     void PHOTON_Permutation()
@@ -373,7 +372,7 @@ public class PhotonBeetleEngine
         return option4;
     }
 
-    void rhoohr(byte[] ciphertext, int offset, byte[] plaintext, int DBlen_inbytes)
+    void rhoohr(byte[] ciphertext, int outOff, byte[] plaintext, int inOff, int DBlen_inbytes)
     {
         byte[] OuterState_part1_ROTR1 = state_2d[0];
         int i, loop_end = Math.min(DBlen_inbytes, RATE_INBYTES_HALF);
@@ -385,13 +384,13 @@ public class PhotonBeetleEngine
         i = 0;
         while (i < loop_end)
         {
-            ciphertext[i + offset] = (byte)(state[i + RATE_INBYTES_HALF] ^ plaintext[i++ + offset]);
+            ciphertext[i + outOff] = (byte)(state[i + RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
         }
         while (i < DBlen_inbytes)
         {
-            ciphertext[i + offset] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES_HALF] ^ plaintext[i++ + offset]);
+            ciphertext[i + outOff] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
         }
-        XOR(plaintext, offset, DBlen_inbytes);
+        XOR(plaintext, inOff, DBlen_inbytes);
     }
 
     void XOR(byte[] in_right, int rOff, int iolen_inbytes)
