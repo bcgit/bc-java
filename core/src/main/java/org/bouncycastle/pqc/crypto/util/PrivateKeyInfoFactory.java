@@ -230,16 +230,12 @@ public class PrivateKeyInfoFactory
         {
             FalconPrivateKeyParameters params = (FalconPrivateKeyParameters)privateKey;
 
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(new ASN1Integer(1));
-            v.add(new DEROctetString(params.getSpolyf()));
-            v.add(new DEROctetString(params.getG()));
-            v.add(new DEROctetString(params.getSpolyF()));
-
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, params.getPublicKey());
+            FalconPublicKey falconPub = new FalconPublicKey(params.getPublicKey());
+            FalconPrivateKey falconPriv = new FalconPrivateKey(0, params.getSpolyf(), params.getG(), params.getSpolyF(), falconPub);
+
+            return new PrivateKeyInfo(algorithmIdentifier, falconPriv, attributes);
         }
         else if (privateKey instanceof KyberPrivateKeyParameters)
         {
