@@ -5,39 +5,32 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
+ * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
+ * <p>
+ * Photon-Beetle with reference to C Reference Impl from: https://github.com/PHOTON-Beetle/Software
+ * </p>
+ */
 public class PhotonBeetleDigest
     implements Digest
 {
     private byte[] state;
+    private byte[][] state_2d;
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    private int CRYPTO_KEYBYTES = 16;
-    private int CRYPTO_NSECBYTES = 0;
-    private int INITIAL_RATE_INBITS = 128;
-    private int INITIAL_RATE_INBYTES = ((INITIAL_RATE_INBITS + 7) / 8);
-    private int CRYPTO_NPUBBYTES = 16;
-    private int CRYPTO_ABYTES = 16;
-    private int CRYPTO_NOOVERLAP = 1;
-    private int RATE_INBITS;
-    private int RATE_INBYTES;
-    private int SQUEEZE_RATE_INBITS = 128;
-    private int SQUEEZE_RATE_INBYTES = ((SQUEEZE_RATE_INBITS + 7) / 8);
-    private int CAPACITY_INBITS;
-    private int CAPACITY_INBYTES;
-    private int STATE_INBITS;
-    private int STATE_INBYTES;
-    private int KEY_INBITS;
-    private int KEY_INBYTES = CRYPTO_KEYBYTES;
-    private int NOUNCE_INBYTES = CRYPTO_NPUBBYTES;
-    private int TAG_INBITS = 256;
-    private int TAG_INBYTES = ((TAG_INBITS + 7) / 8);
-    private int LAST_THREE_BITS_OFFSET;
-    private int ENC = 0;
-    private int DEC = 1;
+    private final int INITIAL_RATE_INBYTES = 16;
+    private int RATE_INBYTES = 4;
+    private int SQUEEZE_RATE_INBYTES = 16;
+    private int STATE_INBYTES = 32;
+    private int TAG_INBYTES = 32;
+    private int LAST_THREE_BITS_OFFSET = 5;
     private int ROUND = 12;
     private int D = 8;
+    private int Dq = 3;
+    private int Dr = 7;
+    private int DSquare = 64;
     private int S = 4;
-    private final byte ReductionPoly = 0x3;
-    private final byte WORDFILTER = (byte)((1 << S) - 1);
+    private int S_1 = 3;
     private byte[][] RC = {//[D][12]
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
@@ -63,26 +56,20 @@ public class PhotonBeetleDigest
 
     public PhotonBeetleDigest()
     {
-        RATE_INBITS = 32;
-        CAPACITY_INBITS = 224;
-        RATE_INBYTES = ((RATE_INBITS + 7) / 8);
-        CAPACITY_INBYTES = ((CAPACITY_INBITS + 7) / 8);
-        STATE_INBITS = (RATE_INBITS + CAPACITY_INBITS);
-        STATE_INBYTES = ((STATE_INBITS + 7) / 8);
-        KEY_INBITS = (CRYPTO_KEYBYTES * 8);
-        LAST_THREE_BITS_OFFSET = (STATE_INBITS - (STATE_INBYTES - 1) * 8 - 3);
+        state = new byte[STATE_INBYTES];
+        state_2d = new byte[D][D];
     }
 
     @Override
     public String getAlgorithmName()
     {
-        return null;
+        return "Photon-Beetle Hash";
     }
 
     @Override
     public int getDigestSize()
     {
-        return 0;
+        return TAG_INBYTES;
     }
 
     @Override
@@ -98,278 +85,132 @@ public class PhotonBeetleDigest
     }
 
     @Override
-    public int doFinal(byte[] out, int outOff)
+    public int doFinal(byte[] output, int outOff)
     {
-        byte[] State = new byte[STATE_INBYTES];
-        byte c0;
         byte[] input = buffer.toByteArray();
         int inlen = input.length;
         if (inlen == 0)
         {
-            XOR_const(State, (byte)1);
+            state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
         else if (inlen <= INITIAL_RATE_INBYTES)
         {
-            c0 = select((inlen < INITIAL_RATE_INBYTES), (byte)1, (byte)2);
-            System.arraycopy(input, 0, State, 0, inlen);
+            System.arraycopy(input, 0, state, 0, inlen);
             if (inlen < INITIAL_RATE_INBYTES)
             {
-                State[inlen] ^= 0x01; // ozs
+                state[inlen] ^= 0x01; // ozs
             }
-            XOR_const(State, c0);
+            state[STATE_INBYTES - 1] ^= (inlen < INITIAL_RATE_INBYTES ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
         else
         {
-            System.arraycopy(input, 0, State, 0, INITIAL_RATE_INBYTES);
+            System.arraycopy(input, 0, state, 0, INITIAL_RATE_INBYTES);
             inlen -= INITIAL_RATE_INBYTES;
-            c0 = select((inlen % RATE_INBYTES) == 0, (byte)1, (byte)2);
-            HASH(State, input, INITIAL_RATE_INBYTES, inlen, c0);
+            int Dlen_inblocks = (inlen + RATE_INBYTES - 1) / RATE_INBYTES;
+            int i, LastDBlocklen;
+            for (i = 0; i < Dlen_inblocks - 1; i++)
+            {
+                PHOTON_Permutation();
+                XOR(input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, RATE_INBYTES);
+            }
+            PHOTON_Permutation();
+            LastDBlocklen = inlen - i * RATE_INBYTES;
+            XOR(input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, LastDBlocklen);
+            if (LastDBlocklen < RATE_INBYTES)
+            {
+                state[LastDBlocklen] ^= 0x01; // ozs
+            }
+            state[STATE_INBYTES - 1] ^= (inlen % RATE_INBYTES == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
-        TAG(out, State);
-        return 0;
+        PHOTON_Permutation();
+        System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
+        PHOTON_Permutation();
+        System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, TAG_INBYTES - SQUEEZE_RATE_INBYTES);
+        return TAG_INBYTES;
+    }
+
+    void XOR(byte[] in_right, int rOff, int iolen_inbytes)
+    {
+        for (int i = 0; i < iolen_inbytes; i++)
+        {
+            state[i] ^= in_right[i + rOff];
+        }
     }
 
     @Override
     public void reset()
     {
         buffer.reset();
+        Arrays.fill(state, (byte)0);
     }
 
-    private void XOR_const(byte[] State_inout, byte ant)
+    void PHOTON_Permutation()
     {
-        State_inout[STATE_INBYTES - 1] ^= ((ant & 0xFF) << LAST_THREE_BITS_OFFSET);
-    }
-
-    private void TAG(byte[] Tag_out, byte[] State)
-    {
-        int i = TAG_INBYTES;
-        int Tag_out_idx = 0;
-        while (i > SQUEEZE_RATE_INBYTES)
+        int i, j, k, l;
+        for (i = 0; i < DSquare; i++)
         {
-            PHOTON_Permutation(State);
-            System.arraycopy(State, 0, Tag_out, Tag_out_idx, SQUEEZE_RATE_INBYTES);
-            Tag_out_idx += SQUEEZE_RATE_INBYTES;
-            i -= SQUEEZE_RATE_INBYTES;
+            state_2d[i >>> Dq][i & Dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
         }
-        PHOTON_Permutation(State);
-        System.arraycopy(State, 0, Tag_out, Tag_out_idx, i);
-    }
-
-    void PHOTON_Permutation(byte[] State_in)
-    {
-        byte[][] state = new byte[D][D];
-        int i;
-        for (i = 0; i < D * D; i++)
+        for (int round = 0; round < ROUND; round++)
         {
-            state[i / D][i % D] = (byte)(((State_in[i / 2] & 0xFF) >>> (4 * (i & 1))) & 0xf);
-        }
-        Permutation(state, ROUND);
-        Arrays.fill(State_in, 0, (D * D) / 2, (byte)0);
-        for (i = 0; i < D * D; i++)
-        {
-            State_in[i / 2] |= (state[i / D][i % D] & 0xf) << (4 * (i & 1));
-        }
-    }
-
-
-    private byte select(boolean condition, byte option1, byte option2)
-    {
-        if (condition)
-        {
-            return option1;
-        }
-        return option2;
-    }
-
-    private void HASH(byte[] State, byte[] Data_in, int Data_in_off, int Dlen_inbytes, byte ant)
-    {
-        int Dlen_inblocks = (Dlen_inbytes + RATE_INBYTES - 1) / RATE_INBYTES;
-        int LastDBlocklen;
-        int i;
-
-        for (i = 0; i < Dlen_inblocks - 1; i++)
-        {
-            PHOTON_Permutation(State);
-            XOR(State, State, 0, Data_in, Data_in_off + i * RATE_INBYTES, RATE_INBYTES);
-        }
-        PHOTON_Permutation(State);
-        LastDBlocklen = Dlen_inbytes - i * RATE_INBYTES;
-        XOR(State, State, 0, Data_in, Data_in_off + i * RATE_INBYTES, LastDBlocklen);
-        if (LastDBlocklen < RATE_INBYTES)
-        {
-            State[LastDBlocklen] ^= 0x01; // ozs
-        }
-
-        XOR_const(State, ant);
-    }
-
-    private void ENCorDEC(byte[] State_inout, byte[] Data_out, byte[] Data_in, int Dlen_inbytes, byte ant, int EncDecInd)
-    {
-        byte[] State = State_inout;
-        int Dlen_inblocks = (Dlen_inbytes + RATE_INBYTES - 1) / RATE_INBYTES;
-        int LastDBlocklen;
-        int i;
-
-        for (i = 0; i < Dlen_inblocks - 1; i++)
-        {
-            PHOTON_Permutation(State);
-            rhoohr(State, Data_out, i * RATE_INBYTES, Data_in, i * RATE_INBYTES, RATE_INBYTES, EncDecInd);
-        }
-        PHOTON_Permutation(State);
-        LastDBlocklen = Dlen_inbytes - i * RATE_INBYTES;
-        rhoohr(State, Data_out, i * RATE_INBYTES, Data_in, i * RATE_INBYTES, LastDBlocklen, EncDecInd);
-        if (LastDBlocklen < RATE_INBYTES)
-        {
-            State[LastDBlocklen] ^= 0x01; // ozs
-        }
-
-        XOR_const(State, ant);
-    }
-
-    void rhoohr(byte[] OuterState_inout, byte[] DataBlock_out, int dbo_off, byte[] DataBlock_in, int dbi_off, int DBlen_inbytes, int EncDecInd)
-    {
-        ShuffleXOR(DataBlock_out, dbo_off, OuterState_inout, 0, DataBlock_in, dbi_off, DBlen_inbytes);
-        if (EncDecInd == ENC)
-        {
-            XOR(OuterState_inout, OuterState_inout, 0, DataBlock_in, dbi_off, DBlen_inbytes);
-        }
-        else
-        {
-            XOR(OuterState_inout, OuterState_inout, 0, DataBlock_out, dbo_off, DBlen_inbytes);
-        }
-    }
-
-    void XOR(byte[] out, byte[] in_left, int lOff, byte[] in_right, int rOff, int iolen_inbytes)
-    {
-        for (int i = 0; i < iolen_inbytes; i++)
-        {
-            out[i] = (byte)(in_left[i + lOff] ^ in_right[i + rOff]);
-        }
-    }
-
-    void ShuffleXOR(byte[] DataBlock_out, int dbo_off, byte[] OuterState_in, int osi_off, byte[] DataBlock_in, int dbi_off, int DBlen_inbytes)
-    {
-        int OuterState_part2_idx = osi_off + RATE_INBYTES / 2;
-        byte[] OuterState_part1_ROTR1 = new byte[RATE_INBYTES / 2];
-        int i;
-        ROTR1(OuterState_part1_ROTR1, OuterState_in, osi_off, RATE_INBYTES / 2);
-        i = 0;
-        while ((i < DBlen_inbytes) && (i < RATE_INBYTES / 2))
-        {
-            DataBlock_out[i + dbo_off] = (byte)(OuterState_in[i + OuterState_part2_idx] ^ DataBlock_in[i + dbi_off]);
-            i++;
-        }
-        while (i < DBlen_inbytes)
-        {
-            DataBlock_out[i + dbo_off] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES / 2] ^ DataBlock_in[i + dbi_off]);
-            i++;
-        }
-    }
-
-    void ROTR1(byte[] output, byte[] input, int inOff, int iolen_inbytes)
-    {
-        byte tmp = input[inOff];
-        int i;
-        for (i = 0; i < iolen_inbytes - 1; i++)
-        {
-            output[i] = (byte)(((input[inOff + i] & 0xFF) >>> 1) | ((input[(inOff + i + 1)] & 1) << 7));
-        }
-        output[iolen_inbytes - 1] = (byte)(((input[inOff + i] & 0xFF) >>> 1) | ((tmp & 1) << 7));
-    }
-
-    void Permutation(byte[][] state, int R)
-    {
-        int i;
-        for (i = 0; i < R; i++)
-        {
-            //if(DEBUG) printf("--- Round %d ---\n", i);
-            AddKey(state, i); //PrintState(state);
-            SubCell(state); //PrintState(state);
-            ShiftRow(state); //PrintState(state);
-            MixColumn(state);
-            //PrintState(state);
-        }
-    }
-
-    void AddKey(byte[][] state, int round)
-    {
-        for (int i = 0; i < D; i++)
-        {
-            state[i][0] ^= RC[i][round];
-        }
-    }
-
-    void SubCell(byte[][] state)
-    {
-        int i, j;
-        for (i = 0; i < D; i++)
-        {
-            for (j = 0; j < D; j++)
-            {
-                state[i][j] = sbox[state[i][j]];
-            }
-        }
-    }
-
-    void ShiftRow(byte[][] state)
-    {
-        int i, j;
-        byte[] tmp = new byte[D];
-        for (i = 1; i < D; i++)
-        {
-            for (j = 0; j < D; j++)
-            {
-                tmp[j] = state[i][j];
-            }
-            for (j = 0; j < D; j++)
-            {
-                state[i][j] = tmp[(j + i) % D];
-            }
-        }
-    }
-
-    void MixColumn(byte[][] state)
-    {
-        int i, j, k;
-        byte[] tmp = new byte[D];
-        for (j = 0; j < D; j++)
-        {
+            //AddKey
             for (i = 0; i < D; i++)
             {
-                byte sum = 0;
-                for (k = 0; k < D; k++)
+                state_2d[i][0] ^= RC[i][round];
+            }
+            //SubCell
+            for (i = 0; i < D; i++)
+            {
+                for (j = 0; j < D; j++)
                 {
-                    sum ^= FieldMult(MixColMatrix[i][k], state[k][j]);
+                    state_2d[i][j] = sbox[state_2d[i][j]];
                 }
-                tmp[i] = sum;
             }
-            for (i = 0; i < D; i++)
+            //ShiftRow
+            for (i = 1; i < D; i++)
             {
-                state[i][j] = tmp[i];
+                System.arraycopy(state_2d[i], 0, state, 0, D);
+                System.arraycopy(state, i, state_2d[i], 0, D - i);
+                System.arraycopy(state, 0, state_2d[i], D - i, i);
+            }
+            //MixColumn
+            for (j = 0; j < D; j++)
+            {
+                for (i = 0; i < D; i++)
+                {
+                    byte sum = 0;
+                    for (k = 0; k < D; k++)
+                    {
+                        int x = MixColMatrix[i][k], ret = 0, b = state_2d[k][j];
+                        for (l = 0; l < S; l++)
+                        {
+                            if (((b >>> l) & 1) != 0)
+                            {
+                                ret ^= x;
+                            }
+                            if (((x >>> S_1) & 1) != 0)
+                            {
+                                x <<= 1;
+                                x ^= 0x3;
+                            }
+                            else
+                            {
+                                x <<= 1;
+                            }
+                        }
+                        sum ^= ret & 15;
+                    }
+                    state[i] = sum;
+                }
+                for (i = 0; i < D; i++)
+                {
+                    state_2d[i][j] = state[i];
+                }
             }
         }
-    }
-
-    byte FieldMult(byte a, byte b)
-    {
-        int x = a, ret = 0;
-        int i;
-        for (i = 0; i < S; i++)
+        for (i = 0; i < DSquare; i += 2)
         {
-            if (((b >>> i) & 1) != 0)
-            {
-                ret ^= x;
-            }
-            if (((x >>> (S - 1)) & 1) != 0)
-            {
-                x <<= 1;
-                x ^= ReductionPoly;
-            }
-            else
-            {
-                x <<= 1;
-            }
+            state[i >>> 1] = (byte)(((state_2d[i >>> Dq][i & Dr] & 0xf)) | ((state_2d[i >>> Dq][(i + 1) & Dr] & 0xf) << 4));
         }
-        return (byte)(ret & WORDFILTER);
     }
 }

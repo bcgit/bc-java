@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.digests.PhotonBeetleDigest;
 import org.bouncycastle.crypto.engines.PhotonBeetleEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -101,11 +102,11 @@ public class PhotonBeetleTest
                 ptByte = Hex.decode((String)map.get("PT"));
                 rv = new byte[ptByte.length];
                 PhotonBeetle.processBytes(ptByte, 0, ptByte.length, rv, 0);
-                byte[] mac = new byte[16 + ptByte.length];
+                byte[] mac = new byte[16];
                 PhotonBeetle.doFinal(mac, 0);
-                if (!areEqual(mac, Hex.decode((String)map.get("CT"))))
+                if (!areEqual(Arrays.concatenate(rv, mac), Hex.decode((String)map.get("CT"))))
                 {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), mac);
+                    mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), Arrays.concatenate(rv, mac));
                 }
 //                else
 //                {
