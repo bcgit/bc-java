@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.ntru;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048509;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048677;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS4096821;
@@ -11,7 +12,7 @@ import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
  * NTRU cipher parameter sets
  */
 public class NTRUParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     /**
      * NTRU-HPS parameter set with n = 509 and q = 2048.
