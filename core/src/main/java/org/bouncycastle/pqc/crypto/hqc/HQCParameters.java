@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 public class HQCParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     // 128 bits security
     public static final HQCParameters hqc128 = new HQCParameters("hqc-128", 17669, 46, 384, 16, 31, 15, 66, 75, 75, 16767881, 4, new int[]{89, 69, 153, 116, 176, 117, 111, 75, 73, 233, 242, 233, 65, 210, 21, 139, 103, 173, 67, 118, 105, 210, 174, 110, 74, 69, 228, 82, 255, 181, 1});
