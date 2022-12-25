@@ -43,7 +43,6 @@ public class KyberParameterSpec
 
     public static KyberParameterSpec fromName(String name)
     {
-        System.err.println(name);
         return (KyberParameterSpec)parameters.get(Strings.toLowerCase(name));
     }
 }
