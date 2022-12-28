@@ -135,10 +135,10 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessageBuilder addExtension(
-            ASN1ObjectIdentifier oid,
-            boolean              critical,
-            ASN1Encodable        value)
-            throws CertIOException
+        ASN1ObjectIdentifier oid,
+        boolean              critical,
+        ASN1Encodable        value)
+        throws CertIOException
     {
         CRMFUtil.addExtension(extGenerator, oid, critical, value);
 
@@ -146,9 +146,9 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessageBuilder addExtension(
-            ASN1ObjectIdentifier oid,
-            boolean              critical,
-            byte[]               value)
+        ASN1ObjectIdentifier oid,
+        boolean              critical,
+        byte[]               value)
     {
         extGenerator.addExtension(oid, critical, value);
 
@@ -249,7 +249,7 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessage build()
-            throws CRMFException
+        throws CRMFException
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
