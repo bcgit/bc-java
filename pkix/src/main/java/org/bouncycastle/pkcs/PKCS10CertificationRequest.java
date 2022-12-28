@@ -236,7 +236,7 @@ public class PKCS10CertificationRequest
         for (int i = 0; i != attributes.length; i++)
         {
             Attribute encodable = attributes[i];
-            if (encodable.getAttrType() == PKCSObjectIdentifiers.pkcs_9_at_extensionRequest)
+            if (encodable.getAttrType().equals(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest))
             {
                 ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
                 ASN1Sequence extensionSequence = ASN1Sequence.getInstance(encodable.getAttrValues().getObjectAt(0));
