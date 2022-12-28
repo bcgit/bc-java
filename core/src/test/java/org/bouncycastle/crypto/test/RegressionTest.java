@@ -188,6 +188,7 @@ public class RegressionTest
             new DigestConstraintsTest(),
             new RadixConverterTest(),
             new Grain128AEADTest(),
+            new ElephantTest(),
             new ConcatenationKDFTest(),
         };
 
