@@ -50,6 +50,7 @@ public class CertificateRequestMessageBuilder
     private POPOPrivKey popoPrivKey;
     private ASN1Null popRaVerified;
     private PKMACValue agreeMAC;
+    private AttributeTypeAndValue[] attributeTypeAndValues;
 
     public CertificateRequestMessageBuilder(BigInteger certReqId)
     {
@@ -58,6 +59,14 @@ public class CertificateRequestMessageBuilder
         this.extGenerator = new ExtensionsGenerator();
         this.templateBuilder = new CertTemplateBuilder();
         this.controls = new ArrayList();
+        this.attributeTypeAndValues = new AttributeTypeAndValue[0];
+    }
+
+    public CertificateRequestMessageBuilder setAttributeTypeAndValues(AttributeTypeAndValue[] attributeTypeAndValues) {
+        if( attributeTypeAndValues != null) {
+            this.attributeTypeAndValues = attributeTypeAndValues;
+        }
+        return this;
     }
 
     public CertificateRequestMessageBuilder setPublicKey(SubjectPublicKeyInfo publicKey)
@@ -126,10 +135,10 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessageBuilder addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean              critical,
-        ASN1Encodable        value)
-        throws CertIOException
+            ASN1ObjectIdentifier oid,
+            boolean              critical,
+            ASN1Encodable        value)
+            throws CertIOException
     {
         CRMFUtil.addExtension(extGenerator, oid, critical, value);
 
@@ -137,9 +146,9 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessageBuilder addExtension(
-        ASN1ObjectIdentifier oid,
-        boolean              critical,
-        byte[]               value)
+            ASN1ObjectIdentifier oid,
+            boolean              critical,
+            byte[]               value)
     {
         extGenerator.addExtension(oid, critical, value);
 
@@ -240,7 +249,7 @@ public class CertificateRequestMessageBuilder
     }
 
     public CertificateRequestMessage build()
-        throws CRMFException
+            throws CRMFException
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -269,10 +278,7 @@ public class CertificateRequestMessageBuilder
 
         CertRequest request = CertRequest.getInstance(new DERSequence(v));
 
-        v = new ASN1EncodableVector();
-
-        v.add(request);
-
+        ProofOfPossession proofOfPossession = new ProofOfPossession();
         if (popSigner != null)
         {
             CertTemplate template = request.getCertTemplate();
@@ -292,31 +298,31 @@ public class CertificateRequestMessageBuilder
 
                     builder.setPublicKeyMac(pkmacGenerator, password);
                 }
-
-                v.add(new ProofOfPossession(builder.build(popSigner)));
+                proofOfPossession = new ProofOfPossession(builder.build(popSigner));
             }
             else
             {
                 ProofOfPossessionSigningKeyBuilder builder = new ProofOfPossessionSigningKeyBuilder(request);
-
-                v.add(new ProofOfPossession(builder.build(popSigner)));
+                proofOfPossession = new ProofOfPossession(builder.build(popSigner));
             }
         }
         else if (popoPrivKey != null)
         {
-            v.add(new ProofOfPossession(popoType, popoPrivKey));
+            proofOfPossession = new ProofOfPossession(popoType, popoPrivKey);
         }
         else if (agreeMAC != null)
         {
-            v.add(new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT,
-                    POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC))));
+            proofOfPossession = new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT,
+                    POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC)));
 
         }
         else if (popRaVerified != null)
         {
-            v.add(new ProofOfPossession());
+            proofOfPossession = new ProofOfPossession();
         }
 
-        return new CertificateRequestMessage(CertReqMsg.getInstance(new DERSequence(v)));
+        CertReqMsg certReqMsg = new CertReqMsg(request, proofOfPossession, attributeTypeAndValues);
+
+        return new CertificateRequestMessage(certReqMsg);
     }
 }
