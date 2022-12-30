@@ -14,7 +14,11 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-
+/**
+ * Sparkle v1.2, based on the current round 3 submission, https://sparkle-lwc.github.io/
+ * Reference C implementation: https://github.com/cryptolu/sparkle
+ * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/sparkle-spec-final.pdf
+ */
 public class SparkleEngine
     implements AEADBlockCipher
 {
