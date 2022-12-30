@@ -6,6 +6,11 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
+/**
+ * Sparkle v1.2, based on the current round 3 submission, https://sparkle-lwc.github.io/
+ * Reference C implementation: https://github.com/cryptolu/sparkle
+ * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/sparkle-spec-final.pdf
+ */
 public class SparkleDigest
     implements Digest
 {
@@ -219,7 +224,7 @@ public class SparkleDigest
             outlen += RATE_BYTES;
             outOff += RATE_BYTES;
         }
-        return 0;
+        return DIGEST_BYTES;
     }
 
     @Override
