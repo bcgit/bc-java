@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.digests.SparkleDigest;
 import org.bouncycastle.crypto.engines.SparkleEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -28,6 +29,8 @@ public class SparkleTest
         testVectors(SparkleEngine.SparkleParameters.SCHWAEMM192_192, "192_192");
         testVectors(SparkleEngine.SparkleParameters.SCHWAEMM256_128, "128_256");
         testVectors(SparkleEngine.SparkleParameters.SCHWAEMM256_256, "256_256");
+        testVectorsHash(SparkleDigest.SparkleParameters.ESCH256, "256");
+        testVectorsHash(SparkleDigest.SparkleParameters.ESCH384, "384");
     }
 
 
@@ -77,6 +80,50 @@ public class SparkleTest
             }
         }
         System.out.println("Sparkle AEAD pass");
+    }
+
+    private void testVectorsHash(SparkleDigest.SparkleParameters sparkleParameters, String filename)
+        throws Exception
+    {
+        SparkleDigest Sparkle = new SparkleDigest(sparkleParameters);
+        CipherParameters params;
+        InputStream src = SparkleTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/sparkle/LWC_HASH_KAT_" + filename + ".txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        byte[] ptByte, adByte;
+        byte[] rv;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+//                if (!map.get("Count").equals("3"))
+//                {
+//                    continue;
+//                }
+                Sparkle.reset();
+                ptByte = Hex.decode((String)map.get("Msg"));
+                Sparkle.update(ptByte, 0, ptByte.length);
+                byte[] hash = new byte[Sparkle.getDigestSize()];
+                Sparkle.doFinal(hash, 0);
+                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
+                {
+                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+//                else
+//                {
+//                    System.out.println("Keystream " + map.get("Count") + " pass");
+//                }
+                map.clear();
+                Sparkle.reset();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+        System.out.println("Sparkle Hash pass");
     }
 
 

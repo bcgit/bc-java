@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
@@ -24,18 +25,17 @@ public class SparkleEngine
         SCHWAEMM192_192,
         SCHWAEMM256_256
     }
-
-    private int[] state;
-    private int[] k;
-    private int[] npub;
-    private byte[] m;
-    private byte[] tag;
-    private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final int[] state;
+    private final int[] k;
+    private final int[] npub;
+    private final byte[] tag;
+    private boolean encrypted;
+    private boolean aadFinished;
+    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private final int SCHWAEMM_KEY_LEN;
     private final int SCHWAEMM_NONCE_LEN;
     private final int SPARKLE_STEPS_SLIM;
     private final int SPARKLE_STEPS_BIG;
-    private final int MAX_BRANCHES = 8;
     private final int KEY_WORDS;
     private final int TAG_WORDS;
     private final int TAG_BYTES;
@@ -124,7 +124,7 @@ public class SparkleEngine
         return ROT(((x) ^ ((x) << 16)), 16);
     }
 
-    private final int[] RCON = {0xB7E15162, 0xBF715880, 0x38B4DA56, 0x324E7738, 0xBB1185EB, 0x4F7C7B57,
+    private static final int[] RCON = {0xB7E15162, 0xBF715880, 0x38B4DA56, 0x324E7738, 0xBB1185EB, 0x4F7C7B57,
         0xCFBFA1C8, 0xC2B3293D};
 
     void sparkle_opt(int[] state, int brans, int steps)
@@ -133,7 +133,7 @@ public class SparkleEngine
         for (i = 0; i < steps; i++)
         {
             // Add round ant
-            state[1] ^= RCON[i % MAX_BRANCHES];
+            state[1] ^= RCON[i & 7];
             state[3] ^= i;
             // ARXBOX layer
             for (j = 0; j < 2 * brans; j += 2)
@@ -185,75 +185,10 @@ public class SparkleEngine
         return i;
     }
 
-// Rho and rate-whitening for the encryption of plaintext. The third parameter
-// indicates whether the uint8_t-pointers 'in' and 'out' are properly aligned
-// to permit casting to int-pointers. If this is the case then array 'in'
-// and 'out' are processed directly, otherwise 'in' is copied to an aligned
-// buffer.
-
-    private void rho_whi_enc(int[] state, byte[] out, int outOff, byte[] in, int inOff, int aligned)
-    {
-        int[] buffer = new int[RATE_WORDS];
-        int[] in32;
-        int[] out32;
-        int tmp1, tmp2;
-        int i, j;
-        if (aligned != 0)
-        {  // 'in' and 'out' can be casted to int pointer
-            in32 = Pack.littleEndianToInt(in, inOff, in.length >>> 2);
-            out32 = Pack.littleEndianToInt(out, outOff, out.length >>> 2);
-        }
-        else
-        {  // 'in' or 'out' is not sufficiently aligned for casting
-            Pack.littleEndianToInt(in, inOff, buffer, 0, RATE_BYTES);
-            in32 = out32 = buffer;
-        }
-        for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
-        {
-            tmp1 = state[i];
-            tmp2 = state[j];
-            state[i] = state[j] ^ in32[i] ^ state[RATE_WORDS + i];
-            state[j] ^= tmp1 ^ in32[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
-            out32[i] = in32[i] ^ tmp1;
-            out32[j] = in32[j] ^ tmp2;
-        }
-        Pack.intToLittleEndian(out32, 0, RATE_WORDS, out, outOff);
-    }
-
-    // Rho and rate-whitening for the encryption of the last plaintext block. Since
-    // this last block may require padding, it is always copied to a buffer.
-    private void rho_whi_enc_last(int[] state, byte[] out, int outOff, byte[] in, int inOff, int inlen)
-    {
-        int[] buffer = new int[RATE_WORDS];
-        int tmp1, tmp2;
-        int i, j;
-        for (i = 0; i < inlen; ++i)
-        {
-            buffer[i >>> 2] |= (in[inOff++] & 0xff) << ((i & 3) << 3);
-        }
-        if (inlen < RATE_BYTES)
-        {  // padding
-            buffer[i >>> 2] |= 0x80 << ((i & 3) << 3);
-        }
-        for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
-        {
-            tmp1 = state[i];
-            tmp2 = state[j];
-            state[i] = state[j] ^ buffer[i] ^ state[RATE_WORDS + i];
-            state[j] ^= tmp1 ^ buffer[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
-            buffer[i] ^= tmp1;
-            buffer[j] ^= tmp2;
-        }
-        for (i = 0; i < inlen; ++i)
-        {
-            out[outOff++] = (byte)(buffer[i >>> 2] >>> ((i & 3) << 3));
-        }
-    }
-
     // The ProcessAssocData function absorbs the associated data, which becomes
-// only authenticated but not encrypted, into the state (in blocks of size
-// RATE_BYTES). Note that this function MUST NOT be called when the length of
-// the associated data is 0.
+    // only authenticated but not encrypted, into the state (in blocks of size
+    // RATE_BYTES). Note that this function MUST NOT be called when the length of
+    // the associated data is 0.
     void ProcessAssocData(int[] state, byte[] in, int inlen)
     {
         // Main Authentication Loop
@@ -302,22 +237,35 @@ public class SparkleEngine
         sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
     }
 
-    // The ProcessPlainText function encrypts the plaintext (in blocks of size
-// RATE_BYTES) and generates the respective ciphertext. The uint8_t-array 'in'
-// contains the plaintext and the ciphertext is written to uint8_t-array 'out'
-// ('in' and 'out' can be the same array, i.e. they can have the same start
-// address). Note that this function MUST NOT be called when the length of the
-// plaintext is 0.
-    void ProcessPlainText(int[] state, byte[] out, byte[] in, int inlen)
+    // The ProcessPlainText function encrypts the plaintext (input blocks of size
+    // RATE_BYTES) and generates the respective ciphertext. The uint8_t-array 'input'
+    // contains the plaintext and the ciphertext is written to uint8_t-array 'output'
+    // ('input' and 'output' can be the same array, i.e. they can have the same start
+    // address). Note that this function MUST NOT be called when the length of the
+    // plaintext is 0.
+    void ProcessPlainText(int[] state, byte[] output, byte[] input, int inOff, int inlen)
     {
-        // check whether 'in' and 'out' can be casted to int pointer
-        int aligned = 1;//(((int)in) | ((int)out)) % UI32_ALIGN_BYTES == 0;
         // Main Encryption Loop
-        int outOff = 0, inOff = 0;
+        int outOff = 0, tmp1, tmp2, i, j;
+        int[] in32 = Pack.littleEndianToInt(input, inOff, input.length >>> 2);
+        int[] out32 = new int[output.length >>> 2];
         while (inlen > RATE_BYTES)
         {
             // combined Rho and rate-whitening operation
-            rho_whi_enc(state, out, outOff, in, inOff, aligned);
+            // Rho and rate-whitening for the encryption of plaintext. The third parameter
+            // indicates whether the uint8_t-pointers 'input' and 'output' are properly aligned
+            // to permit casting to int-pointers. If this is the case then array 'input'
+            // and 'output' are processed directly, otherwise 'input' is copied to an aligned buffer.
+            for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
+            {
+                tmp1 = state[i];
+                tmp2 = state[j];
+                state[i] = state[j] ^ in32[i + (inOff >> 2)] ^ state[RATE_WORDS + i];
+                state[j] ^= tmp1 ^ in32[j + (inOff >> 2)] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                out32[i] = in32[i] ^ tmp1;
+                out32[j] = in32[j] ^ tmp2;
+            }
+            Pack.intToLittleEndian(out32, 0, RATE_WORDS, output, outOff);
             // execute SPARKLE with slim number of steps
             sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_SLIM);
             inlen -= RATE_BYTES;
@@ -328,7 +276,30 @@ public class SparkleEngine
         // addition of ant M2 or M3 to the state
         state[STATE_WORDS - 1] ^= ((inlen < RATE_BYTES) ? _M2 : _M3);
         // combined Rho and rate-whitening (incl. padding)
-        rho_whi_enc_last(state, out, outOff, in, inOff, inlen);
+        // Rho and rate-whitening for the encryption of the last plaintext block. Since
+        // this last block may require padding, it is always copied to a buffer.
+        int[] buffer = new int[RATE_WORDS];
+        for (i = 0; i < inlen; ++i)
+        {
+            buffer[i >>> 2] |= (input[inOff++] & 0xff) << ((i & 3) << 3);
+        }
+        if (inlen < RATE_BYTES)
+        {  // padding
+            buffer[i >>> 2] |= 0x80 << ((i & 3) << 3);
+        }
+        for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
+        {
+            tmp1 = state[i];
+            tmp2 = state[j];
+            state[i] = state[j] ^ buffer[i] ^ state[RATE_WORDS + i];
+            state[j] ^= tmp1 ^ buffer[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
+            buffer[i] ^= tmp1;
+            buffer[j] ^= tmp2;
+        }
+        for (i = 0; i < inlen; ++i)
+        {
+            output[outOff++] = (byte)(buffer[i >>> 2] >>> ((i & 3) << 3));
+        }
         // execute SPARKLE with big number of steps
         sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
     }
@@ -343,10 +314,10 @@ public class SparkleEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-/**
- * Sparkle encryption and decryption is completely symmetrical, so the
- * 'forEncryption' is irrelevant.
- */
+        /**
+         * Sparkle encryption and decryption is completely symmetrical, so the
+         * 'forEncryption' is irrelevant.
+         */
         if (!(params instanceof ParametersWithIV))
         {
             throw new IllegalArgumentException(
@@ -389,64 +360,72 @@ public class SparkleEngine
     }
 
     @Override
-    public void processAADByte(byte in)
+    public void processAADByte(byte input)
     {
-        aadData.write(in);
+        aadData.write(input);
     }
 
     @Override
-    public void processAADBytes(byte[] in, int inOff, int len)
+    public void processAADBytes(byte[] input, int inOff, int len)
     {
-        aadData.write(in, inOff, len);
+        aadData.write(input, inOff, len);
     }
 
     @Override
-    public int processByte(byte in, byte[] out, int outOff)
+    public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
-        return 0;
+        return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     @Override
-    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        m = in;
+        if (encrypted)
+        {
+            throw new IllegalArgumentException("Sparkle has processed encryption/decryption");
+        }
         byte[] ad = aadData.toByteArray();
-        int msize = m.length;
         int adsize = ad.length;
         if (adsize != 0)
         {
             ProcessAssocData(state, ad, adsize);
         }
-        if (msize != 0)
+        if (len != 0)
         {
-            ProcessPlainText(state, out, m, msize);
+            ProcessPlainText(state, output, input, inOff, len);
         }
-        return 0;
+        return len;
     }
 
     @Override
-    public int doFinal(byte[] out, int outOff)
+    public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
         getMac();
-        System.arraycopy(tag, 0, out, outOff, TAG_BYTES);
-        return 0;
+        System.arraycopy(tag, 0, output, outOff, TAG_BYTES);
+        reset(false);
+        return TAG_BYTES;
     }
 
     @Override
     public byte[] getMac()
     {
-        // the key to the capacity part of the state.
-        int[] buffer = new int[TAG_WORDS];
-        // to prevent (potentially) unaligned memory accesses
-        System.arraycopy(k, 0, buffer, 0, KEY_WORDS);
-        // add key to the capacity-part of the state
-        for (int i = 0; i < KEY_WORDS; i++)
+        if (!aadFinished)
         {
-            state[RATE_WORDS + i] ^= buffer[i];
+            // the key to the capacity part of the state.
+            int[] buffer = new int[TAG_WORDS];
+            // to prevent (potentially) unaligned memory accesses
+            System.arraycopy(k, 0, buffer, 0, KEY_WORDS);
+            // add key to the capacity-part of the state
+            for (int i = 0; i < KEY_WORDS; i++)
+            {
+                state[RATE_WORDS + i] ^= buffer[i];
+            }
+            aadFinished = true;
         }
+        encrypted = true;
         Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, tag, 0);
         return tag;
     }
@@ -466,6 +445,15 @@ public class SparkleEngine
     @Override
     public void reset()
     {
+        reset(true);
+    }
+
+    private void reset(boolean clearMac)
+    {
+        if (clearMac)
+        {
+            Arrays.fill(tag, (byte)0);
+        }
         // The Initialize function loads nonce and key into the state and executes the
         // SPARKLE permutation with the big number of steps.
         // load nonce into the rate-part of the state
@@ -475,5 +463,7 @@ public class SparkleEngine
         // execute SPARKLE with big number of steps
         sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
         aadData.reset();
+        encrypted = false;
+        aadFinished = false;
     }
 }
