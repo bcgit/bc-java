@@ -153,7 +153,7 @@ public class AllTests
         TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
     }
 
-    public void testBasicMessageWithAttributeTypeAndValue()
+    public void testBasicMessageWithRegInfo()
             throws Exception
     {
         KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
@@ -172,7 +172,7 @@ public class AllTests
 
         certReqBuild.setSubject(new X500Principal("CN=Test"))
                 .setPublicKey(kp.getPublic())
-                .setAttributeTypeAndValues(atavArr)
+                .setRegInfo(atavArr)
                 .setProofOfPossessionSigningKeySigner(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(kp.getPrivate()));
 
         JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
