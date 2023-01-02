@@ -50,7 +50,7 @@ public class CertificateRequestMessageBuilder
     private POPOPrivKey popoPrivKey;
     private ASN1Null popRaVerified;
     private PKMACValue agreeMAC;
-    private AttributeTypeAndValue[] attributeTypeAndValues;
+    private AttributeTypeAndValue[] regInfo;
 
     public CertificateRequestMessageBuilder(BigInteger certReqId)
     {
@@ -59,13 +59,13 @@ public class CertificateRequestMessageBuilder
         this.extGenerator = new ExtensionsGenerator();
         this.templateBuilder = new CertTemplateBuilder();
         this.controls = new ArrayList();
-        this.attributeTypeAndValues = new AttributeTypeAndValue[0];
+        this.regInfo = null;
     }
 
-    public CertificateRequestMessageBuilder setAttributeTypeAndValues(AttributeTypeAndValue[] attributeTypeAndValues) {
-        if( attributeTypeAndValues != null) {
-            this.attributeTypeAndValues = attributeTypeAndValues;
-        }
+    public CertificateRequestMessageBuilder setRegInfo(AttributeTypeAndValue[] regInfo)
+    {
+        this.regInfo = regInfo;
+
         return this;
     }
 
@@ -113,8 +113,7 @@ public class CertificateRequestMessageBuilder
      * Request a validity period for the certificate. Either, but not both, of the date parameters may be null.
      *
      * @param notBeforeDate not before date for certificate requested.
-     * @param notAfterDate not after date for the certificate requested.
-     *
+     * @param notAfterDate  not after date for the certificate requested.
      * @return the current builder.
      */
     public CertificateRequestMessageBuilder setValidity(Date notBeforeDate, Date notAfterDate)
@@ -136,8 +135,8 @@ public class CertificateRequestMessageBuilder
 
     public CertificateRequestMessageBuilder addExtension(
         ASN1ObjectIdentifier oid,
-        boolean              critical,
-        ASN1Encodable        value)
+        boolean critical,
+        ASN1Encodable value)
         throws CertIOException
     {
         CRMFUtil.addExtension(extGenerator, oid, critical, value);
@@ -147,8 +146,8 @@ public class CertificateRequestMessageBuilder
 
     public CertificateRequestMessageBuilder addExtension(
         ASN1ObjectIdentifier oid,
-        boolean              critical,
-        byte[]               value)
+        boolean critical,
+        byte[] value)
     {
         extGenerator.addExtension(oid, critical, value);
 
@@ -313,7 +312,7 @@ public class CertificateRequestMessageBuilder
         else if (agreeMAC != null)
         {
             proofOfPossession = new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT,
-                    POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC)));
+                POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC)));
 
         }
         else if (popRaVerified != null)
@@ -321,7 +320,7 @@ public class CertificateRequestMessageBuilder
             proofOfPossession = new ProofOfPossession();
         }
 
-        CertReqMsg certReqMsg = new CertReqMsg(request, proofOfPossession, attributeTypeAndValues);
+        CertReqMsg certReqMsg = new CertReqMsg(request, proofOfPossession, regInfo);
 
         return new CertificateRequestMessage(certReqMsg);
     }
