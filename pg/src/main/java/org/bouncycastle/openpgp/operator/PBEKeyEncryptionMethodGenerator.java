@@ -29,6 +29,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
     private SecureRandom random;
     private int s2kCount;
     private boolean wantsSessionInfo;
+    private Integer sessionInfoAlgo;
 
     /**
      * Construct a PBE key generator using the default iteration count (<code>0x60</code> == 65536
@@ -98,6 +99,15 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
     public boolean wantsSessionInfo() {
         return this.wantsSessionInfo;
+    }
+
+    public Integer getSessionInfoAlgo() {
+        return sessionInfoAlgo;
+    }
+
+    public PBEKeyEncryptionMethodGenerator setSessionInfoAlgo(Integer sessionInfoAlgo) {
+        this.sessionInfoAlgo = sessionInfoAlgo;
+        return this;
     }
 
     public void setWantsSessionInfo(boolean wantsSessionInfo) {

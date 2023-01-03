@@ -191,14 +191,20 @@ public class PGPEncryptedDataGenerator
         {
             PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(i);
             ContainedPacket packet;
+            int encAlgo = defAlgorithm;
+            Integer overrideEncAlgo = m.getSessionInfoAlgo();
+            if (overrideEncAlgo != null) {
+                encAlgo = overrideEncAlgo.intValue();
+            }
+
             if (m.wantsSessionInfo()) {
                 if (sessionInfo == null) {
                     key = PGPUtil.makeRandomKey(defAlgorithm, rand);
                     sessionInfo = createSessionInfo(defAlgorithm, key);
                 }
-                packet = m.generate(defAlgorithm, sessionInfo);
+                packet = m.generate(encAlgo, sessionInfo);
             } else {
-                packet = m.generate(defAlgorithm, null);
+                packet = m.generate(encAlgo, null);
             }
             pOut.writePacket(packet);
         }

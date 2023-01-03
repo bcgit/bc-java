@@ -25,6 +25,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     protected boolean sessionKeyObfuscation;
 
+    private Integer sessionInfoAlgo;
+
     protected PublicKeyKeyEncryptionMethodGenerator(
         PGPPublicKey pubKey)
     {
@@ -63,6 +65,15 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     {
         this.sessionKeyObfuscation = enabled;
 
+        return this;
+    }
+
+    public Integer getSessionInfoAlgo() {
+        return sessionInfoAlgo;
+    }
+
+    public PublicKeyKeyEncryptionMethodGenerator setSessionInfoAlgo(Integer sessionInfoAlgo) {
+        this.sessionInfoAlgo = sessionInfoAlgo;
         return this;
     }
 

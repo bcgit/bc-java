@@ -14,6 +14,10 @@ public abstract class PGPKeyEncryptionMethodGenerator
         return true;
     }
 
+    public Integer getSessionInfoAlgo() {
+        return null;
+    }
+
     /**
      * Generates a packet encoding the details of this encryption method.
      * 
