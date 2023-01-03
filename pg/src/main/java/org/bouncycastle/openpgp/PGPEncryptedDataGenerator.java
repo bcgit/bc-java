@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
@@ -186,36 +186,21 @@ public class PGPEncryptedDataGenerator
         defAlgorithm = dataEncryptorBuilder.getAlgorithm();
         rand = dataEncryptorBuilder.getSecureRandom();
 
-        if (methods.size() == 1)
+        byte[] sessionInfo = null;
+        for (int i = 0; i != methods.size(); i++)
         {
-            if (methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
-            {
-                PBEKeyEncryptionMethodGenerator m = (PBEKeyEncryptionMethodGenerator)methods.get(0);
-
-                key = m.getKey(dataEncryptorBuilder.getAlgorithm());
-
-                pOut.writePacket(((PGPKeyEncryptionMethodGenerator)methods.get(0)).generate(defAlgorithm, null));
+            PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(i);
+            ContainedPacket packet;
+            if (m.wantsSessionInfo()) {
+                if (sessionInfo == null) {
+                    key = PGPUtil.makeRandomKey(defAlgorithm, rand);
+                    sessionInfo = createSessionInfo(defAlgorithm, key);
+                }
+                packet = m.generate(defAlgorithm, sessionInfo);
+            } else {
+                packet = m.generate(defAlgorithm, null);
             }
-            else
-            {
-                key = PGPUtil.makeRandomKey(defAlgorithm, rand);
-                byte[] sessionInfo = createSessionInfo(defAlgorithm, key);
-                PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(0);
-
-                pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
-            }
-        }
-        else // multiple methods
-        {
-            key = PGPUtil.makeRandomKey(defAlgorithm, rand);
-            byte[] sessionInfo = createSessionInfo(defAlgorithm, key);
-
-            for (int i = 0; i != methods.size(); i++)
-            {
-                PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(i);
-
-                pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
-            }
+            pOut.writePacket(packet);
         }
 
         try

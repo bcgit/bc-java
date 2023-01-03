@@ -10,6 +10,10 @@ import org.bouncycastle.openpgp.PGPException;
  */
 public abstract class PGPKeyEncryptionMethodGenerator
 {
+    public boolean wantsSessionInfo() {
+        return true;
+    }
+
     /**
      * Generates a packet encoding the details of this encryption method.
      * 
