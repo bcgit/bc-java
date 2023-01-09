@@ -68,6 +68,8 @@ public class ConcatenationKDFGenerator
     /**
      * fill len bytes of the output buffer with bytes generated from
      * the derivation function.
+     * 
+     * One-Step Key Derivation from NIST SP 800-56C Rev. 2
      *
      * @throws DataLengthException if the out buffer is too small.
      */
@@ -81,34 +83,22 @@ public class ConcatenationKDFGenerator
         {
             throw new OutputLengthException("output buffer too small");
         }
+        if (len <= 0)
+        {
+            throw new IllegalArgumentException("len must be greater than 0");
+        }
 
+        int     reps = (len + hLen - 1) / hLen;
         byte[]  hashBuf = new byte[hLen];
         byte[]  C = new byte[4];
-        int     counter = 1;
+        int     counter = 0;
         int     outputLen = 0;
 
         digest.reset();
 
-        if (len > hLen)
+        for (int i = 1; i <= reps; i++)
         {
-            do
-            {
-                ItoOSP(counter, C);
-
-                digest.update(C, 0, C.length);
-                digest.update(shared, 0, shared.length);
-                digest.update(otherInfo, 0, otherInfo.length);
-
-                digest.doFinal(hashBuf, 0);
-
-                System.arraycopy(hashBuf, 0, out, outOff + outputLen, hLen);
-                outputLen += hLen;
-            }
-            while ((counter++) < (len / hLen));
-        }
-
-        if (outputLen < len)
-        {
+            counter++;
             ItoOSP(counter, C);
 
             digest.update(C, 0, C.length);
@@ -117,7 +107,16 @@ public class ConcatenationKDFGenerator
 
             digest.doFinal(hashBuf, 0);
 
-            System.arraycopy(hashBuf, 0, out, outOff + outputLen, len - outputLen);
+            if (i < reps)
+            {
+                System.arraycopy(hashBuf, 0, out, outOff + outputLen, hLen);
+                outputLen += hLen;
+            }
+            else
+            {
+                System.arraycopy(hashBuf, 0, out, outOff + outputLen, len - outputLen);
+                outputLen += len - outputLen;
+            }
         }
 
         return len;
