@@ -28,6 +28,7 @@ public class ConcatenationKDFTest
         implSHA1Test();
         implSHA256Test();
         implSHA512Test();
+        implKDFPositiveLenTest();
     }
 
     private void implSHA1Test()
@@ -67,10 +68,10 @@ public class ConcatenationKDFTest
         Random random = new Random();
         ConcatenationKDFGenerator kdf = new ConcatenationKDFGenerator(digest);
 
-        for (int count = 0; count <= expectedBytes.length; ++count)
+        for (int count = 1; count <= expectedBytes.length; ++count)
         {
             Arrays.fill(output, (byte)0);
-            int outputPos = random.nextInt(16); 
+            int outputPos = random.nextInt(16);
 
             kdf.init(new KDFParameters(sharedSecretBytes, otherInfoBytes));
             kdf.generateBytes(output, outputPos, count);
@@ -79,6 +80,41 @@ public class ConcatenationKDFTest
             {
                 fail("ConcatenationKDF (" + digest.getAlgorithmName() + ") failed for count of " + count);
             }
+        }
+    }
+
+    private void implKDFPositiveLenTest()
+    {
+        String sharedSecret = "e65b1905878b95f68b5535bd3b2b1013";
+        String otherInfo = "830221b1730d9176f807d407";
+        byte[] sharedSecretBytes = Hex.decodeStrict(sharedSecret);
+        byte[] otherInfoBytes = Hex.decodeStrict(otherInfo);
+        byte[] output = new byte[2048];
+        int len = 0;
+
+        ConcatenationKDFGenerator kdf = new ConcatenationKDFGenerator(new SHA512Digest());
+        kdf.init(new KDFParameters(sharedSecretBytes, otherInfoBytes));
+        try {
+            kdf.generateBytes(output, 0, len);
+            fail("ConcatenationKDF must ignore the len parameter with value zero");
+        } catch (IllegalArgumentException iae) {
+            isEquals(
+                "Expect valid ConcatenationKDF error message",
+                "len must be greater than 0",
+                iae.getMessage()
+            );
+        }
+
+        len = -1;
+        try {
+            kdf.generateBytes(output, 0, len);
+            fail("ConcatenationKDF must ignore the len parameter with negative value");
+        } catch (IllegalArgumentException iae) {
+            isEquals(
+                "Expect valid ConcatenationKDF error message",
+                "len must be greater than 0",
+                iae.getMessage()
+            );
         }
     }
 
