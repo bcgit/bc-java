@@ -9,7 +9,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -188,7 +188,6 @@ public class DRBG
 
             return new SP800SecureRandomBuilder(new EntropySourceProvider()
             {
-                @Override
                 public EntropySource get(int bitsRequired)
                 {
                     return new HybridEntropySource(entropyDaemon, bitsRequired);
@@ -303,19 +302,25 @@ public class DRBG
     private static class EntropyDaemon
         implements Runnable
     {
-        private final ConcurrentLinkedQueue<Runnable> tasks = new ConcurrentLinkedQueue<Runnable>();
+        private final LinkedList<Runnable> tasks = new LinkedList<Runnable>();
 
         void addTask(Runnable task)
         {
-            tasks.add(task);
+            synchronized (tasks)
+            {
+                tasks.add(task);
+            }
         }
 
-        @Override
         public void run()
         {
             while (!Thread.currentThread().isInterrupted())
             {
-                Runnable task = tasks.poll();
+                Runnable task;
+                synchronized (tasks)
+                {
+                    task = tasks.poll();
+                }
 
                 if (task != null)
                 {
@@ -519,13 +524,11 @@ public class DRBG
             .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
         }
 
-        @Override
         public boolean isPredictionResistant()
         {
             return true;
         }
 
-        @Override
         public byte[] getEntropy()
         {
             byte[] entropy = new byte[bytesRequired];
@@ -549,7 +552,6 @@ public class DRBG
             return entropy;
         }
 
-        @Override
         public int entropySize()
         {
             return bytesRequired * 8;
