@@ -258,10 +258,9 @@ public class JceAsymmetricKeyWrapper
             }
             catch (InvalidKeyException e)
             {
-                e.printStackTrace();
             }
             catch (GeneralSecurityException e)
-            {   e.printStackTrace();
+            {
             }
             catch (IllegalStateException e)
             {
