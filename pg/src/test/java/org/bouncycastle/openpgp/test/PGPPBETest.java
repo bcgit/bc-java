@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -233,6 +234,27 @@ public class PGPPBETest
             fail("wrong plain text in generated packet");
         }
 
+        //
+        // encrypt - force sessionKey
+        cbOut = new ByteArrayOutputStream();
+        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
+
+        cPk.setForceSessionKey(true);
+        cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
+
+        cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+
+        cOut.write(bOut.toByteArray());
+
+        cOut.close();
+
+        out = decryptMessage(cbOut.toByteArray(), cDate);
+
+        if (!areEqual(out, text))
+        {
+            fail("wrong plain text in generated packet: " + Strings.fromByteArray(out));
+        }
+        
         //
         // encrypt - partial packet style.
         //
