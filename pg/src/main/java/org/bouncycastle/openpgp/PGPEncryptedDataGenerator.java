@@ -79,6 +79,7 @@ public class PGPEncryptedDataGenerator
     private List methods = new ArrayList();
     private int defAlgorithm;
     private SecureRandom rand;
+    private boolean forceSessionKey = false;
 
     /**
      * Base constructor.
@@ -103,6 +104,17 @@ public class PGPEncryptedDataGenerator
 
         this.defAlgorithm = dataEncryptorBuilder.getAlgorithm();
         this.rand = dataEncryptorBuilder.getSecureRandom();
+    }
+
+    /**
+     * Some versions of PGP always expect a session key, this will force use
+     * of a session key even if a single PBE encryptor is provided.
+     *
+     * @param forceSessionKey true if a session key should always be used, default is false.
+     */
+    public void setForceSessionKey(boolean forceSessionKey)
+    {
+        this.forceSessionKey = forceSessionKey;
     }
 
     /**
@@ -188,7 +200,7 @@ public class PGPEncryptedDataGenerator
 
         if (methods.size() == 1)
         {
-            if (methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
+            if (!forceSessionKey && methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
             {
                 PBEKeyEncryptionMethodGenerator m = (PBEKeyEncryptionMethodGenerator)methods.get(0);
 
@@ -200,6 +212,7 @@ public class PGPEncryptedDataGenerator
             {
                 key = PGPUtil.makeRandomKey(defAlgorithm, rand);
                 byte[] sessionInfo = createSessionInfo(defAlgorithm, key);
+
                 PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(0);
 
                 pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
