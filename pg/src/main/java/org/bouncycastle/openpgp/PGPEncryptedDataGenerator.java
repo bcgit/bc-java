@@ -200,13 +200,14 @@ public class PGPEncryptedDataGenerator
 
         if (methods.size() == 1)
         {
-            if (!forceSessionKey && methods.get(0) instanceof PBEKeyEncryptionMethodGenerator)
+            boolean isPBE = methods.get(0) instanceof PBEKeyEncryptionMethodGenerator;
+            if (isPBE && !forceSessionKey)
             {
                 PBEKeyEncryptionMethodGenerator m = (PBEKeyEncryptionMethodGenerator)methods.get(0);
 
-                key = m.getKey(dataEncryptorBuilder.getAlgorithm());
+                key = m.getKey(defAlgorithm);
 
-                pOut.writePacket(((PGPKeyEncryptionMethodGenerator)methods.get(0)).generate(defAlgorithm, null));
+                pOut.writePacket(m.generate(defAlgorithm, null));
             }
             else
             {
@@ -215,7 +216,7 @@ public class PGPEncryptedDataGenerator
 
                 PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(0);
 
-                pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
+                writeWrappedSessionKey(m, sessionInfo);
             }
         }
         else // multiple methods
@@ -227,7 +228,7 @@ public class PGPEncryptedDataGenerator
             {
                 PGPKeyEncryptionMethodGenerator m = (PGPKeyEncryptionMethodGenerator)methods.get(i);
 
-                pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
+                writeWrappedSessionKey(m, sessionInfo);
             }
         }
 
@@ -315,6 +316,20 @@ public class PGPEncryptedDataGenerator
         catch (Exception e)
         {
             throw new PGPException("Exception creating cipher", e);
+        }
+    }
+
+    private void writeWrappedSessionKey(PGPKeyEncryptionMethodGenerator m, byte[] sessionInfo)
+        throws IOException, PGPException
+    {
+        if (m instanceof PBEKeyEncryptionMethodGenerator)
+        {
+            pOut.writePacket(m.generate(
+                ((PBEKeyEncryptionMethodGenerator)m).getSessionKeyWrapperAlgorithm(defAlgorithm), sessionInfo));
+        }
+        else
+        {
+            pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
         }
     }
 
