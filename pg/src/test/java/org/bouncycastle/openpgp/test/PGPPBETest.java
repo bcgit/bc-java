@@ -254,7 +254,32 @@ public class PGPPBETest
         {
             fail("wrong plain text in generated packet: " + Strings.fromByteArray(out));
         }
-        
+
+        //
+         // encrypt - force sessionKey, set wrapping algorithm
+         cbOut = new ByteArrayOutputStream();
+         cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
+
+         cPk.setForceSessionKey(true);
+
+         JcePBEKeyEncryptionMethodGenerator pbeKeyEncryptionMethodGenerator = new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC");
+         pbeKeyEncryptionMethodGenerator.setSessionKeyWrapperAlgorithm(PGPEncryptedData.AES_256);
+
+         cPk.addMethod(pbeKeyEncryptionMethodGenerator);
+
+         cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+
+         cOut.write(bOut.toByteArray());
+
+         cOut.close();
+
+         out = decryptMessage(cbOut.toByteArray(), cDate);
+
+         if (!areEqual(out, text))
+         {
+             fail("wrong plain text in generated packet: " + Strings.fromByteArray(out));
+         }
+
         //
         // encrypt - partial packet style.
         //
@@ -264,7 +289,7 @@ public class PGPPBETest
         rand.nextBytes(test);
         
         bOut = new ByteArrayOutputStream();
-        
+
         comData = new PGPCompressedDataGenerator(
                                  PGPCompressedData.ZIP);
         comOut = comData.open(bOut);
