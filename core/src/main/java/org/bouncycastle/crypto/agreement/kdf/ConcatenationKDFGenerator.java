@@ -77,6 +77,10 @@ public class ConcatenationKDFGenerator
         int     len)
         throws DataLengthException, IllegalArgumentException
     {
+        if (len <= 0)
+        {
+            throw new IllegalArgumentException("len must be > 0");
+        }
         if ((out.length - len) < outOff)
         {
             throw new OutputLengthException("output buffer too small");
