@@ -18,7 +18,6 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("MLS tests");
 
-        suite.addTestSuite(HelloTest.class);
         suite.addTestSuite(TreeMathTest.class);
 
         return new BCTestSetup(suite);
