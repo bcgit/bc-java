@@ -10,17 +10,16 @@ public class AllTests
     extends TestCase
 {
     public static void main(String[] args)
-        throws Exception
     {
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()
-        throws Exception
     {
-        TestSuite suite = new TestSuite("TLS tests");
+        TestSuite suite = new TestSuite("MLS tests");
 
         suite.addTestSuite(HelloTest.class);
+        suite.addTestSuite(TreeMathTest.class);
 
         return new BCTestSetup(suite);
     }
