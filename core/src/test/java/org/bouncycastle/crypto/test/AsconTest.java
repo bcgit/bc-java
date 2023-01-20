@@ -53,7 +53,6 @@ public class AsconTest
         InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/LWC_AEAD_KAT_" + filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        byte[] ptByte, adByte;
         byte[] rv;
         HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
@@ -61,19 +60,22 @@ public class AsconTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("34"))
+//                if (!map.get("Count").equals("793"))
 //                {
 //                    continue;
 //                }
-                params = new ParametersWithIV(new KeyParameter(Hex.decode((String)map.get("Key"))), Hex.decode((String)map.get("Nonce")));
+                byte[] key = Hex.decode(map.get("Key"));
+                byte[] nonce = Hex.decode(map.get("Nonce"));
+                byte[] ad = Hex.decode(map.get("AD"));
+                byte[] pt = Hex.decode(map.get("PT"));
+                byte[] ct = Hex.decode(map.get("CT"));
+                params = new ParametersWithIV(new KeyParameter(key), nonce);
                 Ascon.init(true, params);
-                adByte = Hex.decode((String)map.get("AD"));
-                Ascon.processAADBytes(adByte, 0, adByte.length);
-                ptByte = Hex.decode((String)map.get("PT"));
-                rv = new byte[Ascon.getOutputSize(ptByte.length)];
-                Ascon.processBytes(ptByte, 0, ptByte.length, rv, 0);
-                Ascon.doFinal(rv, ptByte.length);
-                if (!areEqual(rv, Hex.decode((String)map.get("CT"))))
+                Ascon.processAADBytes(ad, 0, ad.length);
+                rv = new byte[Ascon.getOutputSize(pt.length)];
+                int len = Ascon.processBytes(pt, 0, pt.length, rv, 0);
+                Ascon.doFinal(rv, len);
+                if (!areEqual(rv, ct))
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
@@ -81,8 +83,21 @@ public class AsconTest
 //                {
 //                    System.out.println("Keystream " + map.get("Count") + " pass");
 //                }
-                map.clear();
                 Ascon.reset();
+                Ascon.init(false, params);
+                //Decrypt
+                Ascon.processAADBytes(ad, 0, ad.length);
+                rv = new byte[pt.length + 16];
+                len = Ascon.processBytes(ct, 0, ct.length, rv, 0);
+                Ascon.doFinal(rv, len);
+                byte[] pt_recovered = new byte[pt.length];
+                System.arraycopy(rv, 0, pt_recovered, 0, pt.length);
+                if (!areEqual(pt, pt_recovered))
+                {
+                    mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
+                }
+                Ascon.reset();
+                map.clear();
             }
             else
             {
@@ -213,12 +228,12 @@ public class AsconTest
         {
             fail("mac should not match");
         }
-
-        aeadBlockCipher.processByte((byte)0, c1, 0);
+        aeadBlockCipher.reset();
+        aeadBlockCipher.processBytes(new byte[16], 0, 16, new byte[16], 0);
         try
         {
-            aeadBlockCipher.processByte((byte)0, c1, 0);
-            fail("processByte(s) can be called once only");
+            aeadBlockCipher.processAADByte((byte)0);
+            fail("processAADByte(s) cannot be called after encryption/decryption");
         }
         catch (IllegalArgumentException e)
         {
@@ -226,8 +241,8 @@ public class AsconTest
         }
         try
         {
-            aeadBlockCipher.processBytes(new byte[]{0}, 0, 1, c1, 0);
-            fail("processByte(s) can be called once only");
+            aeadBlockCipher.processAADBytes(new byte[]{0}, 0, 1);
+            fail("processAADByte(s) cannot be called once only");
         }
         catch (IllegalArgumentException e)
         {
@@ -255,7 +270,7 @@ public class AsconTest
         }
         try
         {
-            aeadBlockCipher.processBytes(new byte[]{0}, 0, 1, new byte[1], 1);
+            aeadBlockCipher.processBytes(new byte[16], 0, 16, new byte[16], 8);
             fail("output for processBytes is too short");
         }
         catch (OutputLengthException e)
@@ -292,21 +307,45 @@ public class AsconTest
         byte[] aad3 = {0, 0, 1, 2, 3, 4, 5};
         byte[] m2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        byte[] m4 = new byte[m2.length];
         aeadBlockCipher.reset();
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
-        aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
-        aeadBlockCipher.doFinal(c2, m2.length);
+        int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
+        aeadBlockCipher.doFinal(c2, offset);
         aeadBlockCipher.reset();
         aeadBlockCipher.processAADBytes(aad3, 1, aad2.length);
-        aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
-        aeadBlockCipher.doFinal(c3, m2.length + 1);
+        offset = aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
+        aeadBlockCipher.doFinal(c3, offset + 1);
         byte[] c3_partial = new byte[c2.length];
         System.arraycopy(c3, 1, c3_partial, 0, c2.length);
         if (!areEqual(c2, c3_partial))
         {
             fail("mac should match for the same AAD and message with different offset for both input and output");
         }
+        aeadBlockCipher.reset();
+        aeadBlockCipher.init(false, params);
+        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+        offset = aeadBlockCipher.processBytes(c2, 0, c2.length, m4, 0);
+        aeadBlockCipher.doFinal(m4, offset);
+        if (!areEqual(m2, m4))
+        {
+            fail("The encryption and decryption does not recover the plaintext");
+        }
         System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
+        c2[c2.length - 1] ^= 1;
+        aeadBlockCipher.reset();
+        aeadBlockCipher.init(false, params);
+        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+        offset = aeadBlockCipher.processBytes(c2, 0, c2.length, m4, 0);
+        try
+        {
+            aeadBlockCipher.doFinal(m4, offset);
+            fail("The decryption should fail");
+        }
+        catch (IllegalArgumentException e)
+        {
+            //expected;
+        }
     }
 
     private void testParameters(AsconEngine ascon, int keySize, int ivSize, int macSize)
