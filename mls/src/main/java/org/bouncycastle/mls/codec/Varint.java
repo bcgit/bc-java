@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.codec;
 
 public class Varint {
+    public static final long HEADER_OFFSET = 6;
     public static final long HEADER_1 = 0x00L;
     public static final long HEADER_2 = 0x4000L;
     public static final long HEADER_4 = 0x80000000L;

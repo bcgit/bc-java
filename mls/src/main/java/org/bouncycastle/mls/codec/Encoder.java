@@ -73,18 +73,6 @@ public class Encoder {
         }
     }
 
-    private void encodeVarint(long val) throws IOException {
-        if (val <= Varint.MAX_1) {
-            encodeInt(Varint.HEADER_1 | val, 1);
-        } else if (val <= Varint.MAX_2) {
-            encodeInt(Varint.HEADER_2 | val, 2);
-        } else if (val <= Varint.MAX_4) {
-            encodeInt(Varint.HEADER_4 | val, 2);
-        } else {
-            throw new IOException("Varint is too big to encode");
-        }
-    }
-
     private void encodeArray(Object val, MLSField opts) throws IOException, IllegalAccessException {
         int length = Array.getLength(val);
         if (opts != null && opts.length() != length) {
@@ -100,6 +88,18 @@ public class Encoder {
         // Otherwise, recursively encode entries
         for (int i = 0; i < length; i++) {
             encode(Array.get(val, i));
+        }
+    }
+
+    private void encodeVarint(long val) throws IOException {
+        if (val <= Varint.MAX_1) {
+            encodeInt(Varint.HEADER_1 | val, 1);
+        } else if (val <= Varint.MAX_2) {
+            encodeInt(Varint.HEADER_2 | val, 2);
+        } else if (val <= Varint.MAX_4) {
+            encodeInt(Varint.HEADER_4 | val, 4);
+        } else {
+            throw new IOException("Varint is too big to encode");
         }
     }
 
