@@ -145,14 +145,12 @@ public class AsconEngine
         {
             x |= (bytes[i + inOff] & 0xFFL) << (i << 3);
         }
-        //long x = Pack.littleEndianToLong(bytes, inOff);
         x &= ~MASK(n);
         x |= U64BIG(w);
         for (int i = 0; i < n; ++i)
         {
             bytes[i + inOff] = (byte)(x >>> (i << 3));
         }
-//        Pack.longToLittleEndian(x, bytes, inOff);
     }
 
     private long LOADBYTES(final byte[] bytes, int inOff, int n)
@@ -312,7 +310,6 @@ public class AsconEngine
             cOff += ASCON_AEAD_RATE;
             clen -= ASCON_AEAD_RATE;
         }
-
     }
 
     private long CLEAR(long w, int n)
@@ -625,7 +622,6 @@ public class AsconEngine
             }
             return len;
         }
-
     }
 
     @Override

@@ -31,13 +31,13 @@ public class AsconTest
         throws Exception
     {
         AsconEngine Ascon = new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
-        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize());
+        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize(), 8);
         testParameters(Ascon, 20, 16, 16);
         Ascon = new AsconEngine(AsconEngine.AsconParameters.ascon128a);
-        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize());
+        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize(), 16);
         testParameters(Ascon, 16, 16, 16);
         Ascon = new AsconEngine(AsconEngine.AsconParameters.ascon128);
-        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize());
+        testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize(), 8);
         testParameters(Ascon, 16, 16, 16);
         testVectors(AsconEngine.AsconParameters.ascon80pq, "160_128");
         testVectors(AsconEngine.AsconParameters.ascon128a, "128_128_a");
@@ -107,7 +107,7 @@ public class AsconTest
         System.out.println(Ascon.getAlgorithmName() + " " + Ascon.getAlgorithmVersion() + " Pass");
     }
 
-    private void testExceptions(AEADBlockCipher aeadBlockCipher, int keysize, int ivsize)
+    private void testExceptions(AEADBlockCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
         throws Exception
     {
         CipherParameters params;
@@ -303,6 +303,7 @@ public class AsconTest
 
         byte[] c2 = new byte[aeadBlockCipher.getOutputSize(10)];
         byte[] c3 = new byte[aeadBlockCipher.getOutputSize(10) + 2];
+
         byte[] aad2 = {0, 1, 2, 3, 4};
         byte[] aad3 = {0, 0, 1, 2, 3, 4, 5};
         byte[] m2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -346,6 +347,35 @@ public class AsconTest
         {
             //expected;
         }
+
+        byte[] m7 = new byte[blocksize * 2];
+        for (int i = 0; i < m7.length; ++i)
+        {
+            m7[i] = (byte)rand.nextInt();
+        }
+        byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
+        byte[] c8 = new byte[c7.length];
+        byte[] c9 = new byte[c7.length];
+        aeadBlockCipher.init(true, params);
+        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+        offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
+        aeadBlockCipher.doFinal(c7, offset);
+        aeadBlockCipher.reset();
+        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+        offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
+        offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
+        aeadBlockCipher.doFinal(c8, offset);
+        aeadBlockCipher.reset();
+        int split = rand.nextInt(blocksize * 2);
+        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+        offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
+        offset += aeadBlockCipher.processBytes(m7, split, m7.length - split, c9, offset);
+        aeadBlockCipher.doFinal(c9, offset);
+        if (!areEqual(c7, c8) || !areEqual(c7, c9))
+        {
+            fail("Splitting input of plaintext should output the same ciphertext");
+        }
+
     }
 
     private void testParameters(AsconEngine ascon, int keySize, int ivSize, int macSize)
