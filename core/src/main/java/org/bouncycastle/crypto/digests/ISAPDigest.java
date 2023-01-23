@@ -1,7 +1,10 @@
 package org.bouncycastle.crypto.digests;
 
 import java.io.ByteArrayOutputStream;
+
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -81,12 +84,20 @@ public class ISAPDigest
     @Override
     public void update(byte[] input, int inOff, int len)
     {
+        if ((inOff + len) > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
         buffer.write(input, inOff, len);
     }
 
     @Override
     public int doFinal(byte[] out, int outOff)
     {
+        if (32 + outOff > out.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
         t0 = t1 = t2 = t3 = t4 = 0;
         /* init state */
         x0 = -1255492011513352131L;
@@ -123,6 +134,7 @@ public class ISAPDigest
         /* squeeze final output block */
         out64[idx] = U64BIG(x0);
         Pack.longToLittleEndian(out64, out, outOff);
+        buffer.reset();
         return 32;
     }
 

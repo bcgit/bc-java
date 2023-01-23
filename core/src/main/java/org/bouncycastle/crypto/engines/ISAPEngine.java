@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -24,6 +25,7 @@ import org.bouncycastle.util.Pack;
 public class ISAPEngine
     implements AEADBlockCipher
 {
+
     public enum IsapType
     {
         ISAP_A_128A,
@@ -38,19 +40,26 @@ public class ISAPEngine
         {
         case ISAP_A_128A:
             ISAPAEAD = new ISAPAEAD_A_128A();
+            algorithmName = "ISAP-A-128A AEAD";
             break;
         case ISAP_K_128A:
             ISAPAEAD = new ISAPAEAD_K_128A();
+            algorithmName = "ISAP-K-128A AEAD";
             break;
         case ISAP_A_128:
             ISAPAEAD = new ISAPAEAD_A_128();
+            algorithmName = "ISAP-A-128 AEAD";
             break;
         case ISAP_K_128:
             ISAPAEAD = new ISAPAEAD_K_128();
+            algorithmName = "ISAP-K-128 AEAD";
             break;
         }
     }
 
+    private String algorithmName;
+    private boolean forEncryption;
+    private boolean initialised;
     final int CRYPTO_KEYBYTES = 16;
     final int CRYPTO_NPUBBYTES = 16;
     final int ISAP_STATE_SZ = 40;
@@ -60,11 +69,11 @@ public class ISAPEngine
     private byte[] npub;
     private byte[] mac;
     private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    int ISAP_rH;
-    int ISAP_rH_SZ;
+    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private int ISAP_rH;
+    private int ISAP_rH_SZ;
     private ISAP_AEAD ISAPAEAD;
-    private boolean encFinished;
-    private boolean aadFinished;
 
     private interface ISAP_AEAD
     {
@@ -87,10 +96,14 @@ public class ISAPEngine
         protected long ISAP_IV3_64;
         protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4;
 
-        public void init()
+        public ISAPAEAD_A()
         {
             ISAP_rH = 64;
             ISAP_rH_SZ = (ISAP_rH + 7) >> 3;
+        }
+
+        public void init()
+        {
             npub64 = new long[getLongSize(npub.length)];
             Pack.littleEndianToLong(npub, 0, npub64, 0, npub64.length);
             npub64[0] = U64BIG(npub64[0]);
@@ -311,10 +324,14 @@ public class ISAPEngine
         protected short[] E = new short[25];
         protected short[] C = new short[5];
 
-        public void init()
+        public ISAPAEAD_K()
         {
             ISAP_rH = 144;
             ISAP_rH_SZ = (ISAP_rH + 7) >> 3;
+        }
+
+        public void init()
+        {
             k16 = new short[k.length >> 1];
             byteToShort(k, k16, k16.length);
             iv16 = new short[npub.length >> 1];
@@ -419,7 +436,7 @@ public class ISAPEngine
             // Squeeze key stream
             while (true)
             {
-                if (mlen > ISAP_rH_SZ)
+                if (mlen >= ISAP_rH_SZ)
                 {
                     // Squeeze full lane and continue
                     for (int i = 0; i < ISAP_rH_SZ; ++i)
@@ -784,10 +801,7 @@ public class ISAPEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
-         * ISAP encryption and decryption is completely symmetrical, so the
-         * 'forEncryption' is irrelevant.
-         */
+        this.forEncryption = forEncryption;
         if (!(params instanceof ParametersWithIV))
         {
             throw new IllegalArgumentException(
@@ -829,13 +843,14 @@ public class ISAPEngine
         System.arraycopy(iv, 0, npub, 0, iv.length);
         System.arraycopy(keyBytes, 0, k, 0, keyBytes.length);
         ISAPAEAD.init();
+        initialised = true;
         reset();
     }
 
     @Override
     public String getAlgorithmName()
     {
-        return "ISAP";
+        return algorithmName;
     }
 
     @Override
@@ -847,6 +862,11 @@ public class ISAPEngine
     @Override
     public void processAADBytes(byte[] in, int inOff, int len)
     {
+        if ((inOff + len) > in.length)
+        {
+            throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
+        }
+
         aadData.write(in, inOff, len);
     }
 
@@ -854,14 +874,6 @@ public class ISAPEngine
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
-        if (aadFinished)
-        {
-            throw new IllegalStateException("plaintext/ciphertext must be processed before associated data");
-        }
-        if (encFinished)
-        {
-            throw new IllegalStateException("plaintext can be loaded only once");
-        }
         return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
@@ -869,17 +881,32 @@ public class ISAPEngine
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        if (aadFinished)
+        if (!initialised)
         {
-            throw new IllegalStateException("plaintext/ciphertext must be processed before associated data");
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        if (encFinished)
+        if ((inOff + len) > input.length)
         {
-            throw new IllegalStateException("plaintext can be loaded only once");
+            throw new DataLengthException("input buffer too short");
         }
-        ISAPAEAD.isap_enc(input, inOff, len, output, outOff, output.length);
-        c = output;
-        encFinished = true;
+        message.write(input, inOff, len);
+        if (forEncryption)
+        {
+            if (message.size() >= ISAP_rH_SZ)
+            {
+                len = message.size() / ISAP_rH_SZ * ISAP_rH_SZ;
+                if (outOff + len > output.length)
+                {
+                    throw new OutputLengthException("output buffer is too short");
+                }
+                byte[] enc_input = message.toByteArray();
+                ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
+                outputStream.write(output, outOff, len);
+                message.reset();
+                message.write(enc_input, len, enc_input.length - len);
+                return len;
+            }
+        }
         return 0;
     }
 
@@ -887,24 +914,56 @@ public class ISAPEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        ad = aadData.toByteArray();
-        ISAPAEAD.isap_mac(ad, ad.length, c, c.length, output, outOff);
-        mac = output;
-        aadFinished = true;
-        return output.length;
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
+        int len;
+        if (forEncryption)
+        {
+            byte[] enc_input = message.toByteArray();
+            len = enc_input.length;
+            if (outOff + len + 16 > output.length)
+            {
+                throw new OutputLengthException("output buffer is too short");
+            }
+            ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
+            outputStream.write(output, outOff, len);
+            outOff += len;
+            ad = aadData.toByteArray();
+            c = outputStream.toByteArray();
+            mac = new byte[16];
+            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac, 0);
+            System.arraycopy(mac, 0, output, outOff, 16);
+            len += 16;
+        }
+        else
+        {
+            ad = aadData.toByteArray();
+            c = message.toByteArray();
+            mac = new byte[16];
+            len = c.length - mac.length;
+            if (len + outOff > output.length)
+            {
+                throw new OutputLengthException("output buffer is too short");
+            }
+            ISAPAEAD.isap_mac(ad, ad.length, c, len, mac, 0);
+            ISAPAEAD.reset();
+            for (int i = 0; i < 16; ++i)
+            {
+                if (mac[i] != c[len + i])
+                {
+                    throw new IllegalArgumentException("Mac does not match");
+                }
+            }
+            ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
+        }
+        return len;
     }
 
     @Override
     public byte[] getMac()
     {
-        if (!aadFinished)
-        {
-            byte[] output = new byte[8];
-            ad = aadData.toByteArray();
-            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, output, 0);
-            mac = output;
-            aadFinished = true;
-        }
         return mac;
     }
 
@@ -917,15 +976,34 @@ public class ISAPEngine
     @Override
     public int getOutputSize(int len)
     {
-        return len + 8;
+        return len + 16;
     }
 
     @Override
     public void reset()
     {
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
         aadData.reset();
         ISAPAEAD.reset();
-        aadFinished = false;
-        encFinished = false;
+        message.reset();
+        outputStream.reset();
+    }
+
+    public int getKeyBytesSize()
+    {
+        return CRYPTO_KEYBYTES;
+    }
+
+    public int getIVBytesSize()
+    {
+        return CRYPTO_NPUBBYTES;
+    }
+
+    public int getBlockSize()
+    {
+        return ISAP_rH_SZ;
     }
 }
