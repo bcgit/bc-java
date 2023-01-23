@@ -190,6 +190,7 @@ public class RegressionTest
             new Grain128AEADTest(),
             new AsconTest(),
             new ConcatenationKDFTest(),
+            new ISAPTest(),
         };
 
     public static void main(String[] args)
