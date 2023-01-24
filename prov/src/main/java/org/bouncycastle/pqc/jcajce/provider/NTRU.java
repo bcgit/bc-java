@@ -28,6 +28,10 @@ public class NTRU
 
             provider.addAlgorithm("Cipher.NTRU", PREFIX + "NTRUCipherSpi$Base");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_ntru, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps2048509, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps2048677, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhps4096821, "NTRU");
+            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.ntruhrss701, "NTRU");
 
             registerOid(provider, BCObjectIdentifiers.pqc_kem_ntru, "NTRU", keyFact);
             registerOid(provider, BCObjectIdentifiers.ntruhps2048509, "NTRU", keyFact);
