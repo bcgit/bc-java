@@ -20,6 +20,8 @@ public class AllTests
 
         suite.addTestSuite(TreeMathTest.class);
         suite.addTestSuite(CodecTest.class);
+        suite.addTestSuite(CipherSuiteTest.class);
+        suite.addTestSuite(SecretTest.class);
 
         return new BCTestSetup(suite);
     }

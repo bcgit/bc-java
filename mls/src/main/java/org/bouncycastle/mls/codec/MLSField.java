@@ -11,8 +11,8 @@ public @interface MLSField {
     // Java reflection does not guarantee retrieval in declaration order, so we need to specify it in an annotation
     int order();
 
-    // Java arrays do not have a fixed size set at compile time, so we need to specify.
-    int length() default 0;
+    // Java arrays do not have a fixed size set at compile time, so we need to specify. A length < 0 indicates a variable-sized array.
+    int length() default -1;
 
     // Information about the type parameters to Java generics is not available at compile time or by reflection.
     Class<?> element() default Byte.class;

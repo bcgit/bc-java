@@ -15,6 +15,12 @@ public class Encoder {
         stream = new ByteArrayOutputStream();
     }
 
+    public static byte[] encodeValue(Object val) throws IOException, IllegalAccessException {
+        Encoder enc = new Encoder();
+        enc.encode(val);
+        return enc.toByteArray();
+    }
+
     public void encode(Object val) throws IOException, IllegalAccessException {
         encode(val, null);
     }
@@ -75,7 +81,19 @@ public class Encoder {
 
     private void encodeArray(Object val, MLSField opts) throws IOException, IllegalAccessException {
         int length = Array.getLength(val);
-        if (opts != null && opts.length() != length) {
+        if (opts == null || opts.length() < 0) {
+            // Encode as vector
+            Encoder content = new Encoder();
+            for (int i = 0; i < length; i++) {
+                content.encode(Array.get(val, i));
+            }
+
+            encodeVarint(content.stream.size());
+            content.stream.writeTo(stream);
+            return;
+        }
+
+        if (opts.length() != length) {
             throw new IllegalArgumentException("Array does not have correct length");
         }
 
