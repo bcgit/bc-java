@@ -9,9 +9,9 @@ import org.bouncycastle.mls.crypto.Secret;
 public class SecretTest
     extends TestCase
 {
-    public void testConsume() throws Exception {
-        CipherSuite suite = new CipherSuite(CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519);
+    private final CipherSuite suite = new CipherSuite(CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519);
 
+    public void testConsume() throws Exception {
         //     +--> b1 --> c1 --> d1
         //     |
         // a --+
@@ -38,8 +38,18 @@ public class SecretTest
         assertTrue(d1.isConsumed());
     }
 
-    public void testDerive() {
-        // TODO test correctness of HkdfExpandLabel and DeriveSecret
+    public void testDerive() throws Exception {
+        Secret base = new Secret(new byte[] {1, 2, 3, 4});
+
+        // TODO test correctness of ExpandWithLabel
+
+        Secret deriveSecretExpected = base.expandWithLabel(suite, "test", new byte[]{}, 32);
+        Secret deriveSecretActual = base.deriveSecret(suite, "test");
+        assertEquals(deriveSecretActual, deriveSecretExpected);
+
+        Secret deriveTreeSecretExpected = base.expandWithLabel(suite, "test", new byte[]{5, 6, 7, 8}, 16);
+        Secret deriveTreeSecretActual = base.deriveTreeSecret(suite, "test", 0x05060708, 16);
+        assertEquals(deriveTreeSecretActual, deriveTreeSecretExpected);
     }
 
     public static TestSuite suite()

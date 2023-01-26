@@ -1,20 +1,18 @@
 package org.bouncycastle.mls;
+
 public class TreeSize {
+    private final long leafCount;
     private final long depth;
 
-    private TreeSize(long depthIn) {
-        depth = depthIn;
+    private TreeSize(long leafCount, long depth) {
+        this.leafCount = leafCount;
+        this.depth = depth;
     }
 
     public static TreeSize forLeaves(long leafCount) {
         assert leafCount >= 0;
-
-        long depth = Long.SIZE - Long.numberOfLeadingZeros(leafCount);
-        if (leafCount > (1L << (depth - 1))) {
-            depth += 1;
-        }
-
-        return new TreeSize(depth);
+        long depth = Long.SIZE - Long.numberOfLeadingZeros(leafCount - 1);
+        return new TreeSize(leafCount, depth);
     }
 
     public long depth() {
@@ -22,10 +20,10 @@ public class TreeSize {
     }
 
     public long leafCount() {
-        return 1L << (depth - 1);
+        return leafCount;
     }
 
     public long width() {
-        return 2 * leafCount() - 1;
+        return (1L << (depth + 1)) - 1;
     }
 }

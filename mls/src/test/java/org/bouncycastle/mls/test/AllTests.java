@@ -22,6 +22,7 @@ public class AllTests
         suite.addTestSuite(CodecTest.class);
         suite.addTestSuite(CipherSuiteTest.class);
         suite.addTestSuite(SecretTest.class);
+        suite.addTestSuite(GroupKeysTest.class);
 
         return new BCTestSetup(suite);
     }

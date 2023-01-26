@@ -4,9 +4,9 @@ import org.bouncycastle.mls.codec.Encoder;
 import org.bouncycastle.mls.codec.MLSField;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Secret {
     Secret parent;
@@ -20,6 +20,14 @@ public class Secret {
     private Secret(Secret parentIn, byte[] valueIn) {
         parent = parentIn;
         value = valueIn;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Secret secret = (Secret) o;
+        return Objects.equals(parent, secret.parent) && Arrays.equals(value, secret.value);
     }
 
     public final byte[] value() {
@@ -44,8 +52,6 @@ public class Secret {
     }
 
     public static class KDFLabel {
-        static final Charset charset = StandardCharsets.UTF_8;
-
         @MLSField(order=1)
         public short length;
         @MLSField(order=2)
@@ -57,7 +63,7 @@ public class Secret {
         KDFLabel(short lengthIn, String labelIn, byte[] contextIn) {
             length = lengthIn;
             context = contextIn;
-            label = ("MLS 1.0 " + labelIn).getBytes(charset);
+            label = ("MLS 1.0 " + labelIn).getBytes(StandardCharsets.UTF_8);
         }
     }
 
@@ -69,6 +75,10 @@ public class Secret {
     }
 
     public Secret deriveSecret(CipherSuite suite, String label) throws IOException, IllegalAccessException {
-        return expandWithLabel(suite, label, new byte[] {}, suite.getKDF().hashLength());
+        return expandWithLabel(suite, label, new byte[] {}, suite.getKDF().getHashLength());
+    }
+
+    public Secret deriveTreeSecret(CipherSuite suite, String label, int generation, int length) throws IOException, IllegalAccessException {
+        return expandWithLabel(suite, label, Encoder.encodeValue(generation), length);
     }
 }

@@ -33,7 +33,7 @@ public class NodeIndex {
     }
 
     public static NodeIndex root(TreeSize size) {
-        return new NodeIndex((1L << (size.depth() - 1)) - 1);
+        return new NodeIndex((1L << size.depth()) - 1);
     }
 
     @Override

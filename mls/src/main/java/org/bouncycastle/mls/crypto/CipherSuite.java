@@ -17,9 +17,14 @@ public class CipherSuite {
     public static final short MLS_256_DHKEMP384_AES256GCM_SHA384_P384  = 0x0007 ;
 
     public interface KDF {
-        int hashLength();
+        int getHashLength();
         byte[] extract(byte[] salt, byte[] ikm);
         byte[] expand(byte [] prk, byte[] info, int length);
+    }
+
+    public interface AEAD {
+        int getKeySize();
+        int getNonceSize();
     }
 
     static class HKDF implements KDF {
@@ -30,7 +35,7 @@ public class CipherSuite {
         }
 
         @Override
-        public int hashLength() {
+        public int getHashLength() {
             return kdf.getDigest().getDigestSize();
         }
 
@@ -48,28 +53,78 @@ public class CipherSuite {
         }
     }
 
+    static class AES128GCM implements AEAD {
+
+        @Override
+        public int getKeySize() {
+            return 16;
+        }
+
+        @Override
+        public int getNonceSize() {
+            return 12;
+        }
+    }
+
+    static class AES256GCM implements AEAD {
+
+        @Override
+        public int getKeySize() {
+            return 32;
+        }
+
+        @Override
+        public int getNonceSize() {
+            return 12;
+        }
+    }
+
+    static class ChaCha20Poly1305 implements AEAD {
+
+        @Override
+        public int getKeySize() {
+            return 32;
+        }
+
+        @Override
+        public int getNonceSize() {
+            return 12;
+        }
+    }
+
     KDF kdf;
+    AEAD aead;
 
     public CipherSuite(short suite) {
         // TODO Configure digest
         // TODO Configure KEM
-        // TODO Configure AEAD
         // TODO Configure Signature
         switch (suite) {
             case MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
             case MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
+                kdf = new HKDF(new SHA256Digest());
+                aead = new AES128GCM();
+                break;
+
             case MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
                 kdf = new HKDF(new SHA256Digest());
+                aead = new ChaCha20Poly1305();
                 break;
 
             case MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
                 kdf = new HKDF(new SHA384Digest());
+                aead = new AES256GCM();
                 break;
 
             case MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
             case MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
+                kdf = new HKDF(new SHA512Digest());
+                aead = new AES256GCM();
+                break;
+
             case MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
                 kdf = new HKDF(new SHA512Digest());
+                aead = new ChaCha20Poly1305();
                 break;
 
             default:
@@ -80,4 +135,6 @@ public class CipherSuite {
     public KDF getKDF() {
         return kdf;
     }
+
+    public AEAD getAEAD() { return aead; }
 }
