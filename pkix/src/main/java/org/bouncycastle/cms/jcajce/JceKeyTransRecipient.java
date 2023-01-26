@@ -15,6 +15,8 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.cms.GenericKemTransParameters;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
 import org.bouncycastle.asn1.cryptopro.GostR3410KeyTransport;
@@ -185,6 +187,38 @@ public abstract class JceKeyTransRecipient
                 return keyCipher.unwrap(Arrays.concatenate(encKey.getEncryptedKey(), encKey.getMacKey()), helper.getBaseCipherName(encryptedKeyAlgorithm.getAlgorithm()), Cipher.SECRET_KEY);
             }
             catch (Exception e)
+            {
+                throw new CMSException("exception unwrapping key: " + e.getMessage(), e);
+            }
+        }
+        else if (BCObjectIdentifiers.bc_kem.equals(keyEncryptionAlgorithm.getAlgorithm()))
+        {
+            // TODO: note there is a move to change the type for KEMs from KeyTrans, expect this to change
+            GenericKemTransParameters gktParams = GenericKemTransParameters.getInstance(keyEncryptionAlgorithm.getParameters());
+            JceAsymmetricKeyUnwrapper unwrapper = helper.createAsymmetricUnwrapper(gktParams.getKem(), recipientKey).setMustProduceEncodableUnwrappedKey(unwrappedKeyMustBeEncodable);
+
+            if (!extraMappings.isEmpty())
+            {
+                for (Iterator it = extraMappings.keySet().iterator(); it.hasNext(); )
+                {
+                    ASN1ObjectIdentifier algorithm = (ASN1ObjectIdentifier)it.next();
+
+                    unwrapper.setAlgorithmMapping(algorithm, (String)extraMappings.get(algorithm));
+                }
+            }
+
+            try
+            {
+                Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
+
+                if (validateKeySize)
+                {
+                    helper.keySizeCheck(encryptedKeyAlgorithm, key);
+                }
+
+                return key;
+            }
+            catch (OperatorException e)
             {
                 throw new CMSException("exception unwrapping key: " + e.getMessage(), e);
             }
