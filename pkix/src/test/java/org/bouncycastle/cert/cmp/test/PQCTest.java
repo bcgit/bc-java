@@ -50,6 +50,7 @@ import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
@@ -65,6 +66,7 @@ import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.BigIntegers;
 
 public class PQCTest
@@ -186,6 +188,149 @@ public class PQCTest
         RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
 
         assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.kyber512.getId());
+
+        // Note: we don't specify the provider here as we're actually using both BC and BCPQC
+
+        byte[] recData = recInfo.getContent(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+
+        assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
+
+        // this is the preferred way of recovering an encrypted certificate
+
+        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+
+        X509CertificateHolder receivedCert = new X509CertificateHolder(receivedCMPCert.getX509v3PKCert());
+
+        X509CertificateHolder caCertHolder = certRepMessage.getX509Certificates()[0];
+
+        assertEquals(true, receivedCert.isSignatureValid(new JcaContentVerifierProviderBuilder().build(caCertHolder)));
+
+        // confirmation message calculation
+
+        CertificateConfirmationContent content = new CertificateConfirmationContentBuilder()
+            .addAcceptedCertificate(cert, BigInteger.ONE)
+            .build(new JcaDigestCalculatorProviderBuilder().build());
+
+        message = new ProtectedPKIMessageBuilder(sender, recipient)
+            .setBody(PKIBody.TYPE_CERT_CONFIRM, content)
+            .build(senderMacCalculator);
+
+        assertTrue(content.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
+        assertEquals(PKIBody.TYPE_CERT_CONFIRM, message.getBody().getType());
+
+        // confirmation receiving
+
+        CertificateConfirmationContent recContent = CertificateConfirmationContent.fromPKIBody(message.getBody());
+
+        assertTrue(recContent.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
+    }
+
+    public void testNTRURequestWithDilithiumCA()
+        throws Exception
+    {
+        char[] senderMacPassword = "secret".toCharArray();
+        GeneralName sender = new GeneralName(new X500Name("CN=Kyber Subject"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+
+        KeyPair dilKp = dilKpGen.generateKeyPair();
+
+        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+
+        KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("NTRU", "BCPQC");
+
+        kybKpGen.initialize(NTRUParameterSpec.ntruhrss701);
+
+        KeyPair kybKp = kybKpGen.generateKeyPair();
+
+        // initial request
+
+        JcaCertificateRequestMessageBuilder certReqBuild = new JcaCertificateRequestMessageBuilder(BigIntegers.ONE);
+
+        certReqBuild
+            .setPublicKey(kybKp.getPublic())
+            .setSubject(X500Name.getInstance(sender.getName()))
+            .setProofOfPossessionSubsequentMessage(SubsequentMessage.encrCert);
+
+        CertificateReqMessagesBuilder certReqMsgsBldr = new CertificateReqMessagesBuilder();
+
+        certReqMsgsBldr.addRequest(certReqBuild.build());
+
+        MacCalculator senderMacCalculator = new JcePBMac1CalculatorBuilder("HmacSHA256", 256).setProvider("BC").build(senderMacPassword);
+
+        ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
+            .setBody(PKIBody.TYPE_INIT_REQ, certReqMsgsBldr.build())
+            .build(senderMacCalculator);
+
+        // extract
+
+        assertTrue(message.getProtectionAlgorithm().equals(senderMacCalculator.getAlgorithmIdentifier()));
+
+        PBEMacCalculatorProvider macCalcProvider = new JcePBMac1CalculatorProviderBuilder().setProvider("BC").build();
+
+        assertTrue(message.verify(macCalcProvider, senderMacPassword));
+
+        assertEquals(PKIBody.TYPE_INIT_REQ, message.getBody().getType());
+
+        CertificateReqMessages requestMessages = CertificateReqMessages.fromPKIBody(message.getBody());
+        CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
+        CertTemplate certTemplate = senderReqMessage.getCertTemplate();
+
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+
+        // Send response with encrypted certificate
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
+                    new JceAsymmetricKeyWrapper(
+                        new KEMParameterSpec("AES-KWP", 192),
+                        new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey())));
+
+        CMSEnvelopedData encryptedCert = edGen.generate(
+                                new CMSProcessableCMPCertificate(cert),
+                                new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC).setProvider("BC").build());
+
+        CertificateResponseBuilder certRespBuilder = new CertificateResponseBuilder(senderReqMessage.getCertReqId(), new PKIStatusInfo(PKIStatus.granted));
+
+        certRespBuilder.withCertificate(encryptedCert);
+
+        CertificateRepMessageBuilder repMessageBuilder = new CertificateRepMessageBuilder(caCert);
+
+        repMessageBuilder.addCertificateResponse(certRespBuilder.build());
+
+        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+
+        CertificateRepMessage repMessage = repMessageBuilder.build();
+
+        ProtectedPKIMessage responsePkixMessage = new ProtectedPKIMessageBuilder(sender, recipient)
+            .setBody(PKIBody.TYPE_INIT_REP, repMessage)
+            .build(signer);
+
+        // decrypt the certificate
+
+        assertTrue(responsePkixMessage.verify(new JcaContentVerifierProviderBuilder().build(caCert)));
+
+        CertificateRepMessage certRepMessage = CertificateRepMessage.fromPKIBody(responsePkixMessage.getBody());
+
+        CertificateResponse certResp = certRepMessage.getResponses()[0];
+
+        assertEquals(true, certResp.hasEncryptedCertificate());
+
+        // this is the long-way to decrypt, for testing
+        CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
+        RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
+
+        assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.bc_kem.getId());
 
         // Note: we don't specify the provider here as we're actually using both BC and BCPQC
 
