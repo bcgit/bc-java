@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.util;
 
 import java.io.IOException;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
@@ -237,10 +236,11 @@ public class SubjectPublicKeyInfoFactory
             KyberPublicKeyParameters params = (KyberPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
-            ASN1EncodableVector v = new ASN1EncodableVector();
-            v.add(new DEROctetString(params.getT()));
-            v.add(new DEROctetString(params.getRho()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(v));
+//            ASN1EncodableVector v = new ASN1EncodableVector();
+//            v.add(new DEROctetString(params.getT()));
+//            v.add(new DEROctetString(params.getRho()));
+//            return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(v));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(params.getT(), params.getRho()));
         }
         else if (publicKey instanceof NTRULPRimePublicKeyParameters)
         {
