@@ -1,6 +1,9 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
+import org.bouncycastle.pqc.crypto.KEMParameters;
+
 public class KyberParameters
+    implements KEMParameters
 {
     public static final KyberParameters kyber512 = new KyberParameters("kyber512", 2, 128, false);
     public static final KyberParameters kyber768 = new KyberParameters("kyber768", 3, 192, false);

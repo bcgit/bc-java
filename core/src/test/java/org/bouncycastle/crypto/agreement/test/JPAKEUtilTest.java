@@ -102,7 +102,7 @@ public class JPAKEUtilTest
 
         BigInteger gB = JPAKEUtil.calculateGA(pg1.getP(), gx3, gx1, gx2);
 
-        BigInteger s = JPAKEUtil.calculateS("password".toCharArray());
+        BigInteger s = JPAKEUtil.calculateS(pg1.getQ(), "password".toCharArray());
 
         BigInteger xs = JPAKEUtil.calculateX2s(pg1.getQ(), x4, s);
 

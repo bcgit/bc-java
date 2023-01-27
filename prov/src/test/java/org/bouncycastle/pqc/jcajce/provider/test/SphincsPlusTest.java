@@ -73,7 +73,7 @@ public class SphincsPlusTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_simple, new RiggedRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f, new RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
