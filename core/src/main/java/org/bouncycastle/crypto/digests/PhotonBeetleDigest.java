@@ -2,7 +2,9 @@ package org.bouncycastle.crypto.digests;
 
 import java.io.ByteArrayOutputStream;
 
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -81,12 +83,20 @@ public class PhotonBeetleDigest
     @Override
     public void update(byte[] input, int inOff, int len)
     {
+        if ((inOff + len) > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
         buffer.write(input, inOff, len);
     }
 
     @Override
     public int doFinal(byte[] output, int outOff)
     {
+        if (32 + outOff > output.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
         byte[] input = buffer.toByteArray();
         int inlen = input.length;
         if (inlen == 0)
