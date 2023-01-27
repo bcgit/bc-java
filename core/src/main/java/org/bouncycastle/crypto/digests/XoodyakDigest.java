@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.digests;
 
+import java.io.ByteArrayOutputStream;
+
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -29,6 +33,7 @@ public class XoodyakDigest
     private final int TAGLEN = 16;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
+    private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     enum MODE
     {
@@ -57,12 +62,30 @@ public class XoodyakDigest
     @Override
     public void update(byte input)
     {
-        update(new byte[]{input}, 0, 1);
+        buffer.write(input);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
+        if ((inOff + len) > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+        buffer.write(input, inOff, len);
+
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff)
+    {
+        if (32 + outOff > output.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
+        byte[] input = buffer.toByteArray();
+        int inOff = 0;
+        int len = buffer.size();
         int Cd = 0x03;
         int splitLen;
         do
@@ -78,11 +101,6 @@ public class XoodyakDigest
             len -= splitLen;
         }
         while (len != 0);
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-    {
         Up(output, outOff, TAGLEN, 0x40);
         Down(null, 0, 0, 0);
         Up(output, outOff + TAGLEN, TAGLEN, 0);
@@ -96,6 +114,7 @@ public class XoodyakDigest
         phase = PhaseUp;
         mode = MODE.ModeHash;
         Rabsorb = Rhash;
+        buffer.reset();
     }
 
     private void Up(byte[] Yi, int YiOff, int YiLen, int Cu)
