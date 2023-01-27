@@ -21,6 +21,12 @@ public class SPHINCSPlusPrivateKeyParameters
         this.pk = new PK(Arrays.copyOfRange(skpkEncoded, 2 * n, 3 * n), Arrays.copyOfRange(skpkEncoded, 3 * n, 4 * n));
     }
 
+    public SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters parameters, byte[] skSeed, byte[] prf, byte[] pkSeed, byte[] pkRoot)
+    {
+        super(true, parameters);
+        this.sk = new SK(skSeed, prf);
+        this.pk = new PK(pkSeed, pkRoot);
+    }
     SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters parameters, SK sk, PK pk)
     {
         super(true, parameters);
@@ -41,6 +47,10 @@ public class SPHINCSPlusPrivateKeyParameters
     public byte[] getPublicSeed()
     {
         return Arrays.clone(pk.seed);
+    }
+    public byte[] getRoot()
+    {
+        return Arrays.clone(pk.root);
     }
 
     public byte[] getPublicKey()

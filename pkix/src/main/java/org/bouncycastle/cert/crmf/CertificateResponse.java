@@ -1,9 +1,7 @@
 package org.bouncycastle.cert.crmf;
 
 import java.util.Collection;
-import java.util.Iterator;
 
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CertResponse;
 import org.bouncycastle.asn1.cmp.CertifiedKeyPair;
@@ -14,7 +12,6 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.Recipient;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
-import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 
 /**
  * High level wrapper for the CertResponse CRMF structure.
@@ -34,7 +31,7 @@ public class CertificateResponse
      *
      * @return true if certificate in response encrypted, false otherwise.
      */
-    public boolean hasEncryptecCertificate()
+    public boolean hasEncryptedCertificate()
     {
         return certResponse.getCertifiedKeyPair().getCertOrEncCert().hasEncryptedCertificate();
     }
@@ -48,7 +45,7 @@ public class CertificateResponse
     public CMSEnvelopedData getEncryptedCertificate()
         throws CMSException
     {
-        if (!hasEncryptecCertificate())
+        if (!hasEncryptedCertificate())
         {
             throw new IllegalStateException("encrypted certificate asked for, none found");
         }
@@ -95,7 +92,7 @@ public class CertificateResponse
     public CMPCertificate getCertificate()
         throws CMSException
     {
-        if (hasEncryptecCertificate())
+        if (hasEncryptedCertificate())
         {
             throw new IllegalStateException("plaintext certificate asked for, none found");
         }

@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.saber;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 public class SABERParameters
-    implements CipherParameters
+    implements KEMParameters
 {
 
     public static final SABERParameters lightsaberkem128r3 = new SABERParameters("lightsaberkem128r3", 2, 128, false, false);

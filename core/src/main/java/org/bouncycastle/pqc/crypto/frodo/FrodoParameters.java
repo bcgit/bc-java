@@ -1,11 +1,11 @@
 package org.bouncycastle.pqc.crypto.frodo;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 public class FrodoParameters
-    implements CipherParameters
+    implements KEMParameters
 {
 
     private static final short[] cdf_table640  = new short[]{4643, 13363, 20579, 25843, 29227, 31145, 32103, 32525, 32689, 32745, 32762, 32766, 32767};

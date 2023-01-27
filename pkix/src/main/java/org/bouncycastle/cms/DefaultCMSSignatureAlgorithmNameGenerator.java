@@ -252,6 +252,18 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         {
             return "Falcon-1024";
         }
+        if (BCObjectIdentifiers.dilithium2.equals(encryptionAlgOID))
+        {
+            return "Dilithium2";
+        }
+        if (BCObjectIdentifiers.dilithium3.equals(encryptionAlgOID))
+        {
+            return "Dilithium3";
+        }
+        if (BCObjectIdentifiers.dilithium5.equals(encryptionAlgOID))
+        {
+            return "Dilithium5";
+        }
 
         if (BCObjectIdentifiers.picnic_signature.equals(encryptionAlgOID))
         {

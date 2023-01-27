@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.bike;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 public class BIKEParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     // 128 bits security
     public static final BIKEParameters bike128 = new BIKEParameters("bike128", 12323, 142, 134, 256, 5, 3, 128);

@@ -1,12 +1,12 @@
 package org.bouncycastle.pqc.crypto.ntruprime;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 /**
  * StreamLined NTRU Prime Parameter Specs
  */
 public class SNTRUPrimeParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     public static final SNTRUPrimeParameters sntrup653 = new SNTRUPrimeParameters("sntrup653", 653, 4621, 288,
                                                                     994, 865, 994, 1518, 16);

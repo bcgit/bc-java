@@ -26,20 +26,48 @@ public class SPHINCSPlus
 
             addSignatureAlgorithm(provider, "SPHINCSPLUS", PREFIX + "SignatureSpi$Direct", BCObjectIdentifiers.sphincsPlus);
 
-            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_256);
-            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha_256);
-            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha_512);
-            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_128f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_128s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_128f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_192s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_192f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_192s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_192f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_192s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_192f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_256s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_256f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_256s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_256f_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
 
             provider.addAlgorithm("Alg.Alias.Signature.SPHINCS+", "SPHINCSPLUS");
 
             AsymmetricKeyInfoConverter keyFact = new SPHINCSPlusKeyFactorySpi();
 
             registerOid(provider, BCObjectIdentifiers.sphincsPlus, "SPHINCSPLUS", keyFact);
-            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCSPLUS", keyFact);
-            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCSPLUS", keyFact);
-            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCSPLUS", keyFact);
-            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_128f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_128s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_128f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_192s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_192f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_192s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_192f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_192s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_192f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_256s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_256f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_256s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_shake_256f_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, "SPHINCSPLUS", keyFact);
+            registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, "SPHINCSPLUS", keyFact);
         }
     }
 }

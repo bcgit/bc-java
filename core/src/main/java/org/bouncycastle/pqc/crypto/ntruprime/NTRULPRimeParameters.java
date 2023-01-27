@@ -1,12 +1,13 @@
 package org.bouncycastle.pqc.crypto.ntruprime;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 /**
  * NTRU LPRime Parameter Specs
  */
 public class NTRULPRimeParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     public static final NTRULPRimeParameters ntrulpr653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
         2175, 113, 2031, 290,
