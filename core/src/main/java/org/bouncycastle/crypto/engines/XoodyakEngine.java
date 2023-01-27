@@ -224,7 +224,6 @@ public class XoodyakEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-
         byte[] blocks = message.toByteArray();
         int len = message.size();
         if ((forEncryption && len + TAGLEN + outOff > output.length) || (!forEncryption && len - TAGLEN + outOff > output.length))
@@ -245,6 +244,7 @@ public class XoodyakEngine
         else
         {
             int inOff = len - TAGLEN;
+            rv = inOff;
             encrypt(blocks, 0, inOff, output, outOff);
             tag = new byte[TAGLEN];
             Up(tag, TAGLEN, 0x40);
@@ -255,7 +255,6 @@ public class XoodyakEngine
                     throw new IllegalArgumentException("Mac does not match");
                 }
             }
-            rv = len;
         }
         reset(false);
         return rv;
