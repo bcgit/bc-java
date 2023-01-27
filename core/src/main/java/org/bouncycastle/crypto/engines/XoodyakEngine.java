@@ -1,10 +1,15 @@
 package org.bouncycastle.crypto.engines;
 
+import java.io.ByteArrayOutputStream;
+
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -19,8 +24,9 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    implements AEADCipher
+    implements AEADBlockCipher
 {
+    private boolean forEncryption;
     private byte[] state;
     private int phase;
     private MODE mode;
@@ -41,6 +47,16 @@ public class XoodyakEngine
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean aadFinished;
+    private boolean encrypted;
+    private boolean initialised = false;
+    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+
+    @Override
+    public BlockCipher getUnderlyingCipher()
+    {
+        return null;
+    }
 
     enum MODE
     {
@@ -52,9 +68,7 @@ public class XoodyakEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
-         * Xoodyak encryption and decryption is completely symmetrical, so the 'forEncryption' is irrelevant.
-         */
+        this.forEncryption = forEncryption;
         if (!(params instanceof ParametersWithIV))
         {
             throw new IllegalArgumentException("Xoodyak init parameters must include an IV");
@@ -79,6 +93,7 @@ public class XoodyakEngine
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
         state = new byte[48];
         tag = new byte[TAGLEN];
+        initialised = true;
         reset();
     }
 
@@ -91,13 +106,27 @@ public class XoodyakEngine
     @Override
     public void processAADByte(byte input)
     {
-        AbsorbAny(new byte[]{input}, 0, 1, Rabsorb, 0x03);
+        if (aadFinished)
+        {
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + getBlockSize() +
+                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+        }
+        aadData.write(input);
     }
 
     @Override
     public void processAADBytes(byte[] input, int inOff, int len)
     {
-        AbsorbAny(input, inOff, len, Rabsorb, 0x03);
+        if (aadFinished)
+        {
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + getBlockSize() +
+                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+        }
+        if ((inOff + len) > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+        aadData.write(input, inOff, len);
     }
 
     @Override
@@ -107,37 +136,83 @@ public class XoodyakEngine
         return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
+    private void processAAD()
+    {
+        if (!aadFinished)
+        {
+            byte[] ad = aadData.toByteArray();
+            AbsorbAny(ad, 0, ad.length, Rabsorb, 0x03);
+            aadFinished = true;
+        }
+    }
+
     @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
         if (mode != MODE.ModeKeyed)
         {
             throw new IllegalArgumentException("Xoodyak has not been initialised");
         }
-        else if (aadFinished)
+        if (inOff + len > input.length)
         {
-            throw new IllegalArgumentException("Encryption must be done before associated data is processed");
+            throw new DataLengthException("input buffer too short");
         }
+        message.write(input, inOff, len);
+        int blockLen = message.size() - (forEncryption ? 0 : TAGLEN);
+        if (blockLen >= getBlockSize())
+        {
+            byte[] blocks = message.toByteArray();
+            len = blockLen / getBlockSize() * getBlockSize();
+            if (len + outOff > output.length)
+            {
+                throw new OutputLengthException("output buffer is too short");
+            }
+            processAAD();
+            encrypt(blocks, 0, len, output, outOff);
+            message.reset();
+            message.write(blocks, len, blocks.length - len);
+            return len;
+        }
+        return 0;
+    }
+
+    private int encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
+    {
         int IOLen = len;
         int splitLen;
         byte[] P = new byte[Rkout];
-        int Cu = 0x80;
-        do
+        int Cu = encrypted ? 0 : 0x80;
+        while (IOLen != 0 || !encrypted)
         {
             splitLen = Math.min(IOLen, Rkout); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            System.arraycopy(input, inOff, P, 0, splitLen);
+            if (forEncryption)
+            {
+                System.arraycopy(input, inOff, P, 0, splitLen);
+            }
             Up(null, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
             for (int i = 0; i < splitLen; i++)
             {
-                output[inOff++] = (byte)(input[outOff++] ^ state[i]);
+                output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
             }
-            Down(P, 0, splitLen, 0x00);
+            if (forEncryption)
+            {
+                Down(P, 0, splitLen, 0x00);
+            }
+            else
+            {
+                Down(output, outOff, splitLen, 0x00);
+            }
             Cu = 0x00;
+            outOff += splitLen;
             IOLen -= splitLen;
+            encrypted = true;
         }
-        while (IOLen != 0);
         return len;
     }
 
@@ -145,24 +220,50 @@ public class XoodyakEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        getMac();
-        System.arraycopy(tag, 0, output, outOff, TAGLEN);
-        return TAGLEN;
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
+
+        byte[] blocks = message.toByteArray();
+        int len = message.size();
+        if ((forEncryption && len + TAGLEN + outOff > output.length) || (!forEncryption && len - TAGLEN + outOff > output.length))
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+        processAAD();
+        int rv = 0;
+        if (forEncryption)
+        {
+            encrypt(blocks, 0, len, output, outOff);
+            outOff += len;
+            tag = new byte[TAGLEN];
+            Up(tag, TAGLEN, 0x40);
+            System.arraycopy(tag, 0, output, outOff, TAGLEN);
+            rv = len + TAGLEN;
+        }
+        else
+        {
+            int inOff = len - TAGLEN;
+            encrypt(blocks, 0, inOff, output, outOff);
+            tag = new byte[TAGLEN];
+            Up(tag, TAGLEN, 0x40);
+            for (int i = 0; i < TAGLEN; ++i)
+            {
+                if (tag[i] != blocks[inOff++])
+                {
+                    throw new IllegalArgumentException("Mac does not match");
+                }
+            }
+            rv = len;
+        }
+        reset(false);
+        return rv;
     }
 
     @Override
     public byte[] getMac()
     {
-        if (aadFinished)
-        {
-            return tag;
-        }
-        else
-        {
-            Up(tag, TAGLEN, 0x40);
-            aadFinished = true;
-        }
-
         return tag;
     }
 
@@ -181,9 +282,25 @@ public class XoodyakEngine
     @Override
     public void reset()
     {
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
+        reset(true);
+    }
+
+    private void reset(boolean clearMac)
+    {
+        if (clearMac)
+        {
+            tag = null;
+        }
         Arrays.fill(state, (byte)0);
         aadFinished = false;
+        encrypted = false;
         phase = PhaseUp;
+        message.reset();
+        aadData.reset();
         //Absorb key
         int KLen = K.length;
         int IDLen = iv.length;
@@ -298,5 +415,20 @@ public class XoodyakEngine
     private int ROTL32(int a, int offset)
     {
         return (a << (offset & 31)) ^ (a >>> ((32 - (offset)) & 31));
+    }
+
+    public int getBlockSize()
+    {
+        return Rkout;
+    }
+
+    public int getKeyBytesSize()
+    {
+        return 16;
+    }
+
+    public int getIVBytesSize()
+    {
+        return 16;
     }
 }
