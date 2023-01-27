@@ -50,7 +50,7 @@ public class CMCEPublicKey
 
     public static  CMCEPublicKey getInstance(Object o)
     {
-        if (o instanceof CMCEPrivateKey)
+        if (o instanceof CMCEPublicKey)
         {
             return (CMCEPublicKey) o;
         }

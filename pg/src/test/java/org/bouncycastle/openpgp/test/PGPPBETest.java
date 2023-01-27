@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -234,6 +235,52 @@ public class PGPPBETest
         }
 
         //
+        // encrypt - force sessionKey
+        cbOut = new ByteArrayOutputStream();
+        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
+
+        cPk.setForceSessionKey(true);
+        cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
+
+        cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+
+        cOut.write(bOut.toByteArray());
+
+        cOut.close();
+
+        out = decryptMessage(cbOut.toByteArray(), cDate);
+
+        if (!areEqual(out, text))
+        {
+            fail("wrong plain text in generated packet: " + Strings.fromByteArray(out));
+        }
+
+        //
+         // encrypt - force sessionKey, set wrapping algorithm
+         cbOut = new ByteArrayOutputStream();
+         cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
+
+         cPk.setForceSessionKey(true);
+
+         JcePBEKeyEncryptionMethodGenerator pbeKeyEncryptionMethodGenerator = new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC");
+         pbeKeyEncryptionMethodGenerator.setSessionKeyWrapperAlgorithm(PGPEncryptedData.AES_256);
+
+         cPk.addMethod(pbeKeyEncryptionMethodGenerator);
+
+         cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+
+         cOut.write(bOut.toByteArray());
+
+         cOut.close();
+
+         out = decryptMessage(cbOut.toByteArray(), cDate);
+
+         if (!areEqual(out, text))
+         {
+             fail("wrong plain text in generated packet: " + Strings.fromByteArray(out));
+         }
+
+        //
         // encrypt - partial packet style.
         //
         SecureRandom    rand = new SecureRandom();
@@ -242,7 +289,7 @@ public class PGPPBETest
         rand.nextBytes(test);
         
         bOut = new ByteArrayOutputStream();
-        
+
         comData = new PGPCompressedDataGenerator(
                                  PGPCompressedData.ZIP);
         comOut = comData.open(bOut);

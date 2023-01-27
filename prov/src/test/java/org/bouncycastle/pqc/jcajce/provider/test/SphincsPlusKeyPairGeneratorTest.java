@@ -31,9 +31,24 @@ public class SphincsPlusKeyPairGeneratorTest
     {
         kf = KeyFactory.getInstance("SPHINCSPlus", "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus.getId(), "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256.getId(), "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha_256.getId(), "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha_512.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_192s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_192f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3.getId(), "BCPQC");
     }
 
     public void testKeySpecs()
@@ -59,59 +74,51 @@ public class SphincsPlusKeyPairGeneratorTest
 
         SPHINCSPlusParameterSpec[] params =
             {
-                SPHINCSPlusParameterSpec.sha2_128f,
                 SPHINCSPlusParameterSpec.sha2_128s,
-                SPHINCSPlusParameterSpec.sha2_192f,
-                SPHINCSPlusParameterSpec.sha2_192s,
-                SPHINCSPlusParameterSpec.sha2_256f,
-                SPHINCSPlusParameterSpec.sha2_256s,
-                SPHINCSPlusParameterSpec.sha2_128f_simple,
-                SPHINCSPlusParameterSpec.sha2_128s_simple,
-                SPHINCSPlusParameterSpec.sha2_192f_simple,
-                SPHINCSPlusParameterSpec.sha2_192s_simple,
-                SPHINCSPlusParameterSpec.sha2_256f_simple,
-                SPHINCSPlusParameterSpec.sha2_256s_simple,
-                SPHINCSPlusParameterSpec.shake_128f,
+                SPHINCSPlusParameterSpec.sha2_128f,
                 SPHINCSPlusParameterSpec.shake_128s,
-                SPHINCSPlusParameterSpec.shake_192f,
+                SPHINCSPlusParameterSpec.shake_128f,
+                SPHINCSPlusParameterSpec.haraka_128s,
+                SPHINCSPlusParameterSpec.haraka_128f,
+
+                SPHINCSPlusParameterSpec.sha2_192s,
+                SPHINCSPlusParameterSpec.sha2_192f,
                 SPHINCSPlusParameterSpec.shake_192s,
-                SPHINCSPlusParameterSpec.shake_256f,
+                SPHINCSPlusParameterSpec.shake_192f,
+                SPHINCSPlusParameterSpec.haraka_192s,
+                SPHINCSPlusParameterSpec.haraka_192f,
+
+                SPHINCSPlusParameterSpec.sha2_256s,
+                SPHINCSPlusParameterSpec.sha2_256f,
                 SPHINCSPlusParameterSpec.shake_256s,
-                SPHINCSPlusParameterSpec.shake_128f_simple,
-                SPHINCSPlusParameterSpec.shake_128s_simple,
-                SPHINCSPlusParameterSpec.shake_192f_simple,
-                SPHINCSPlusParameterSpec.shake_192s_simple,
-                SPHINCSPlusParameterSpec.shake_256f_simple,
-                SPHINCSPlusParameterSpec.shake_256s_simple
+                SPHINCSPlusParameterSpec.shake_256f,
+                SPHINCSPlusParameterSpec.haraka_256s,
+                SPHINCSPlusParameterSpec.haraka_256f,
             };
 
         // expected object identifiers
         ASN1ObjectIdentifier[] oids =
             {
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_512,
-                BCObjectIdentifiers.sphincsPlus_sha_512,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_256,
-                BCObjectIdentifiers.sphincsPlus_sha_512,
-                BCObjectIdentifiers.sphincsPlus_sha_512,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256,
-                BCObjectIdentifiers.sphincsPlus_shake_256
+                BCObjectIdentifiers.sphincsPlus_sha2_128s_r3,
+                BCObjectIdentifiers.sphincsPlus_sha2_128f_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_128s_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_128f_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_128s_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_128f_r3,
+
+                BCObjectIdentifiers.sphincsPlus_sha2_192s_r3,
+                BCObjectIdentifiers.sphincsPlus_sha2_192f_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_192s_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_192f_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_192s_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_192f_r3,
+
+                BCObjectIdentifiers.sphincsPlus_sha2_256s_r3,
+                BCObjectIdentifiers.sphincsPlus_sha2_256f_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_256s_r3,
+                BCObjectIdentifiers.sphincsPlus_shake_256f_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_256s_r3,
+                BCObjectIdentifiers.sphincsPlus_haraka_256f_r3,
             };
         
         kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");

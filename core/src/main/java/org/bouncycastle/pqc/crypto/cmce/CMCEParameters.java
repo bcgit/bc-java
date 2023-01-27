@@ -1,9 +1,9 @@
 package org.bouncycastle.pqc.crypto.cmce;
 
-import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.pqc.crypto.KEMParameters;
 
 public class CMCEParameters
-    implements CipherParameters
+    implements KEMParameters
 {
     private static int[] poly3488 = new int[]{3, 1, 0};
     private static int[] poly4608 = new int[]{10, 9, 6, 0};

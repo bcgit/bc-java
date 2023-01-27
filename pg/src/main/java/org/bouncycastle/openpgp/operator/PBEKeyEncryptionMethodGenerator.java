@@ -28,6 +28,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
     private S2K s2k;
     private SecureRandom random;
     private int s2kCount;
+    private int wrapAlg = -1;
 
     /**
      * Construct a PBE key generator using the default iteration count (<code>0x60</code> == 65536
@@ -93,6 +94,40 @@ public abstract class PBEKeyEncryptionMethodGenerator
         this.random = random;
 
         return this;
+    }
+
+    /**
+     * Set a specific algorithm to be used where this PBE method generator is
+     * used to wrap a session key for encrypting data, rather than providing the
+     * encryption key for the data.
+     * <p>
+     * The default wrapping algorithm is the same algorithm as the one specified for
+     * data encryption with the PGPEncryptedDataGenerator used.
+     * </p>
+     *
+     * @return the current generator.
+     */
+    public PBEKeyEncryptionMethodGenerator setSessionKeyWrapperAlgorithm(int wrapAlg)
+    {
+        this.wrapAlg = wrapAlg;
+
+        return this;
+    }
+
+    /**
+     * Return the key wrapping algorithm this PBE key method is associated with.
+     *
+     * @param defaultWrapAlg the default wrapping algorithm if none was set.
+     * @return the PBE method's wrapping algorithm, defaultWrapAlg is setSessionKeyWrapperAlgorithm was not called.
+     */
+    public int getSessionKeyWrapperAlgorithm(int defaultWrapAlg)
+    {
+        if (wrapAlg < 0)
+        {
+            return defaultWrapAlg;
+        }
+
+        return wrapAlg;
     }
 
     /**

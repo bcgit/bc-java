@@ -46,10 +46,24 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
         algorithms.put(BCObjectIdentifiers.falcon_512, "FALCON");
         algorithms.put(BCObjectIdentifiers.falcon_1024, "FALCON");
-        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_256, "SPHINCS+");
-        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha_512, "SPHINCS+");
-        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256, "SPHINCS+");
-        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, "SPHINCS+");
+        algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, "SPHINCS+");
 
         algorithms.put(NISTObjectIdentifiers.id_sha224, "SHA224");
         algorithms.put(NISTObjectIdentifiers.id_sha256, "SHA256");

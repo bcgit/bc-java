@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
 
+// TODO: add constructor for KDF
 public class KEMParameterSpec
     implements AlgorithmParameterSpec
 {

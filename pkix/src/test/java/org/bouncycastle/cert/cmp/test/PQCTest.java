@@ -9,7 +9,6 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -17,12 +16,10 @@ import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.PKIBody;
 import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
-import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -35,11 +32,11 @@ import org.bouncycastle.cert.cmp.CertificateConfirmationContent;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContentBuilder;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessage;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessageBuilder;
-import org.bouncycastle.cert.crmf.CertificateRepMessageBuilder;
 import org.bouncycastle.cert.crmf.CertificateRepMessage;
-import org.bouncycastle.cert.crmf.CertificateRequestMessage;
+import org.bouncycastle.cert.crmf.CertificateRepMessageBuilder;
 import org.bouncycastle.cert.crmf.CertificateReqMessages;
 import org.bouncycastle.cert.crmf.CertificateReqMessagesBuilder;
+import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.cert.crmf.CertificateResponse;
 import org.bouncycastle.cert.crmf.CertificateResponseBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
@@ -48,7 +45,6 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
-import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
@@ -177,12 +173,12 @@ public class PQCTest
 
         CertificateResponse certResp = certRepMessage.getResponses()[0];
 
-        assertEquals(true, certResp.hasEncryptecCertificate());
+        assertEquals(true, certResp.hasEncryptedCertificate());
 
         // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
         RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
-
+//                System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(receivedEnvelope.getEncoded())));
         Collection c = recipients.getRecipients();
 
         assertEquals(1, c.size());
