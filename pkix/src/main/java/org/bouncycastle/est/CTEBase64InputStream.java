@@ -14,13 +14,12 @@ class CTEBase64InputStream
     protected final byte[] rawBuf = new byte[1024];
     protected final byte[] data = new byte[768];
     protected final OutputStream dataOutputStream;
-    protected final Long max;
     protected int rp;
     protected int wp;
     protected boolean end;
     protected long read;
 
-    public CTEBase64InputStream(InputStream src, Long limit)
+    public CTEBase64InputStream(InputStream src)
     {
         this.src = src;
         this.dataOutputStream = new OutputStream()
@@ -31,7 +30,6 @@ class CTEBase64InputStream
                 data[wp++] = (byte)b;
             }
         };
-        this.max = limit;
     }
 
     // Pulls a line from the source, decodes it and returns the decoded length.
@@ -39,11 +37,6 @@ class CTEBase64InputStream
     protected int pullFromSrc()
         throws IOException
     {
-
-        if (this.read >= this.max)
-        {
-            return -1;
-        }
 
         int j = 0;
         int c = 0;
@@ -70,7 +63,7 @@ class CTEBase64InputStream
                 read += 1;
             }
         }
-        while (j > -1 && c < rawBuf.length && j != 10 && this.read < this.max);
+        while (j > -1 && c < rawBuf.length && j != 10);
 
         if (c > 0)
         {

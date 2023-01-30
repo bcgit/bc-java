@@ -164,7 +164,7 @@ public class ESTResponse
         //
         if ("base64".equalsIgnoreCase(getHeader("content-transfer-encoding")))
         {
-            inputStream = new CTEBase64InputStream(inputStream, getContentLength());
+            inputStream = new CTEBase64InputStream(inputStream);
         }
     }
 
