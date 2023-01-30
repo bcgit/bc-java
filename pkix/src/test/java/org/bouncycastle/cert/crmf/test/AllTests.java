@@ -22,14 +22,9 @@ import javax.security.auth.x500.X500Principal;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
-import org.bouncycastle.asn1.crmf.EncKeyWithID;
-import org.bouncycastle.asn1.crmf.EncryptedValue;
-import org.bouncycastle.asn1.crmf.POPOSigningKey;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.cmp.CMPObjectIdentifiers;
+import org.bouncycastle.asn1.crmf.*;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -156,6 +151,51 @@ public class AllTests
 
         TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
         TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
+    }
+
+    public void testBasicMessageWithRegInfo()
+            throws Exception
+    {
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+
+        AttributeTypeAndValue regInfoATaV = new AttributeTypeAndValue(
+                CMPObjectIdentifiers.regInfo_utf8Pairs,
+                new DERUTF8String("CertType?Server%"));
+        AttributeTypeAndValue[] atavArr = new AttributeTypeAndValue[1];
+        atavArr[0] = regInfoATaV;
+
+        JcaCertificateRequestMessageBuilder certReqBuild = new JcaCertificateRequestMessageBuilder(BigInteger.ONE);
+
+        certReqBuild.setSubject(new X500Principal("CN=Test"))
+                .setPublicKey(kp.getPublic())
+                .setRegInfo(atavArr)
+                .setProofOfPossessionSigningKeySigner(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(kp.getPrivate()));
+
+        JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
+
+
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPopo().getObject());
+
+        Signature sig = Signature.getInstance("SHA1withRSA", "BC");
+
+        sig.initVerify(certReqMsg.getPublicKey());
+
+        // this is the original approach in RFC 2511 - there's a typo in RFC 4211, the standard contradicts itself
+        // between 4.1. 3 and then a couple of paragraphs later.
+        sig.update(certReqMsg.toASN1Structure().getCertReq().getEncoded(ASN1Encoding.DER));
+
+        TestCase.assertTrue(sig.verify(popoSign.getSignature().getOctets()));
+
+        TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
+        TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
+
+        CertReqMsg certReqMsgASN1 = certReqMsg.toASN1Structure();
+        TestCase.assertEquals(1, certReqMsgASN1.getRegInfo().length);
+        TestCase.assertEquals(atavArr[0], certReqMsgASN1.getRegInfo()[0]);
     }
 
     public void testBasicMessageWithArchiveControl()
@@ -325,7 +365,7 @@ public class AllTests
         kGen.initialize(512);
 
         KeyPair kp = kGen.generateKeyPair();
-        
+
         JcaEncryptedValueBuilder build = new JcaEncryptedValueBuilder(new JceAsymmetricKeyWrapper(kp.getPublic()).setProvider(BC), new JceCRMFEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
 
         EncryptedValue value = build.build(kp.getPrivate());

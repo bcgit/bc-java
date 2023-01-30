@@ -11,13 +11,13 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusKey;
+import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class BCSPHINCSPlusPrivateKey
-    implements PrivateKey, SPHINCSPlusKey
+    implements PrivateKey, SPHINCSPlusPrivateKey
 {
     private static final long serialVersionUID = 1L;
 

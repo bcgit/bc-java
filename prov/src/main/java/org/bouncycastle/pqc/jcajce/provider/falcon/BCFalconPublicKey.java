@@ -37,14 +37,14 @@ public class BCFalconPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        init((FalconPublicKeyParameters) PublicKeyFactory.createKey(keyInfo));
+        init((FalconPublicKeyParameters)PublicKeyFactory.createKey(keyInfo));
     }
-
     private void init(FalconPublicKeyParameters params)
     {
         this.params = params;
         this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
+
 
     /**
      * Compare this Falcon public key with another object.
@@ -63,7 +63,7 @@ public class BCFalconPublicKey
         {
             BCFalconPublicKey otherKey = (BCFalconPublicKey)o;
 
-            return Arrays.areEqual(getEncoded(), otherKey.getEncoded());
+            return Arrays.areEqual(this.getEncoded(), otherKey.getEncoded());
         }
 
         return false;

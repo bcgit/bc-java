@@ -25,13 +25,13 @@ public class BCKyberPrivateKey
 
     private transient KyberPrivateKeyParameters params;
     private transient String algorithm;
-    private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCKyberPrivateKey(
             KyberPrivateKeyParameters params)
     {
-        init(params, null);
+        this.params = params;
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     public BCKyberPrivateKey(PrivateKeyInfo keyInfo)
@@ -43,13 +43,8 @@ public class BCKyberPrivateKey
     private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        init((KyberPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
-    }
-
-    private void init(KyberPrivateKeyParameters params, ASN1Set attributes)
-    {
-        this.attributes = attributes;
-        this.params = params;
+        this.attributes = keyInfo.getAttributes();;
+        this.params = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
@@ -91,12 +86,16 @@ public class BCKyberPrivateKey
 
     public byte[] getEncoded()
     {
-        if (encoding == null)
+        try
         {
-            encoding = KeyUtil.getEncodedPrivateKeyInfo(params, attributes);
-        }
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
 
-        return Arrays.clone(encoding);
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
     }
 
     public KyberPublicKey getPublicKey()

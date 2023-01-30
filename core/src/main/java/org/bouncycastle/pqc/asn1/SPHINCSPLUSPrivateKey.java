@@ -33,12 +33,12 @@ public class SPHINCSPLUSPrivateKey
 
     public byte[] getSkseed()
     {
-        return skseed;
+        return Arrays.clone(skseed);
     }
 
     public byte[] getSkprf()
     {
-        return skprf;
+        return Arrays.clone(skprf);
     }
 
     public SPHINCSPLUSPublicKey getPublicKey()
@@ -56,7 +56,7 @@ public class SPHINCSPLUSPrivateKey
         this.version = version;
         this.skseed = skseed;
         this.skprf = skprf;
-        PublicKey = publicKey;
+        this.PublicKey = publicKey;
     }
 
     public SPHINCSPLUSPrivateKey(ASN1Sequence seq)
