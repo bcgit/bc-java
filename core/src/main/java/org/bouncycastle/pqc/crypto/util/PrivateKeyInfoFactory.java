@@ -12,17 +12,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPrivateKey;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPublicKey;
-import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
-import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.asn1.*;
 import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
@@ -145,7 +135,6 @@ public class PrivateKeyInfoFactory
             SPHINCSPLUSPrivateKey spPriv = new SPHINCSPLUSPrivateKey(0, params.getSeed(), params.getPrf(), spPub);
 
             return new PrivateKeyInfo(algorithmIdentifier, spPriv, attributes);
-//            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
@@ -241,35 +230,23 @@ public class PrivateKeyInfoFactory
         {
             FalconPrivateKeyParameters params = (FalconPrivateKeyParameters)privateKey;
 
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(new ASN1Integer(1));
-            v.add(new DEROctetString(params.getSpolyf()));
-            v.add(new DEROctetString(params.getG()));
-            v.add(new DEROctetString(params.getSpolyF()));
-
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.falconOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, params.getPublicKey());
+            FalconPublicKey falconPub = new FalconPublicKey(params.getPublicKey());
+            FalconPrivateKey falconPriv = new FalconPrivateKey(0, params.getSpolyf(), params.getG(), params.getSpolyF(), falconPub);
+
+            return new PrivateKeyInfo(algorithmIdentifier, falconPriv, attributes);
         }
         else if (privateKey instanceof KyberPrivateKeyParameters)
         {
             KyberPrivateKeyParameters params = (KyberPrivateKeyParameters)privateKey;
             
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(new ASN1Integer(0));
-            v.add(new DEROctetString(params.getS()));
-            v.add(new DEROctetString(params.getHPK()));
-            v.add(new DEROctetString(params.getNonce()));
-
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 
-            ASN1EncodableVector vPub = new ASN1EncodableVector();
-            vPub.add(new DEROctetString(params.getT()));
-            vPub.add(new DEROctetString(params.getRho()));
+            KyberPublicKey kyberPub = new KyberPublicKey(params.getT(), params.getRho());
+            KyberPrivateKey kyberPriv = new KyberPrivateKey(0, params.getS(), params.getHPK(), params.getNonce(), kyberPub);
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, new DERSequence(vPub).getEncoded());
+            return new PrivateKeyInfo(algorithmIdentifier, kyberPriv, attributes);
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {

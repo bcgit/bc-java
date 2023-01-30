@@ -9,11 +9,9 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
 import java.security.Security;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -50,8 +48,6 @@ import org.bouncycastle.util.Strings;
  */
 public class DRBG
 {
-    private static final Logger LOG = Logger.getLogger(DRBG.class.getName());
-
     private static final String PREFIX = DRBG.class.getName();
 
     // {"Provider class name","SecureRandomSpi class name"}
@@ -92,7 +88,7 @@ public class DRBG
 
     static
     {
-        entropyDaemon = new EntropyDaemon();
+        entropyDaemon = new EntropyDaemon(DRBG.class);
         entropyThread = new Thread(entropyDaemon, "BC Entropy Daemon");
         entropyThread.setDaemon(true);
         entropyThread.start();
@@ -188,7 +184,6 @@ public class DRBG
 
             return new SP800SecureRandomBuilder(new EntropySourceProvider()
             {
-                @Override
                 public EntropySource get(int bitsRequired)
                 {
                     return new HybridEntropySource(entropyDaemon, bitsRequired);
@@ -300,54 +295,6 @@ public class DRBG
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
     }
 
-    private static class EntropyDaemon
-        implements Runnable
-    {
-        private final ConcurrentLinkedQueue<Runnable> tasks = new ConcurrentLinkedQueue<Runnable>();
-
-        void addTask(Runnable task)
-        {
-            tasks.add(task);
-        }
-
-        @Override
-        public void run()
-        {
-            while (!Thread.currentThread().isInterrupted())
-            {
-                Runnable task = tasks.poll();
-
-                if (task != null)
-                {
-                    try
-                    {
-                        task.run();
-                    }
-                    catch (Throwable e)
-                    {
-                        // ignore
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        Thread.sleep(5000);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
-
-            if (LOG.isLoggable(Level.FINE))
-            {
-                LOG.fine("entropy thread interrupted - exiting");
-            }
-        }
-    }
-
     private static class CoreSecureRandom
         extends SecureRandom
     {
@@ -355,24 +302,6 @@ public class DRBG
         {
             super((SecureRandomSpi)initialEntropySourceAndSpi[1], (Provider)initialEntropySourceAndSpi[0]);
         }
-    }
-
-    private static long getPause()
-    {
-        String pauseSetting = Properties.getPropertyValue("org.bouncycastle.drbg.gather_pause_secs");
-
-        if (pauseSetting != null)
-        {
-            try
-            {
-                return Long.parseLong(pauseSetting) * 1000;
-            }
-            catch (Exception e)
-            {
-                return 5000;
-            }
-        }
-        return 5000;
     }
 
     private static void sleep(long ms)
@@ -479,18 +408,6 @@ public class DRBG
         }
     }
 
-    private interface IncrementalEntropySource
-        extends EntropySource
-    {
-        /**
-         * Pause allows for a gap between fetches. We only want this after we've initialised.
-         * @param pause time in milliseconds to pause in build up seed.
-         * @return the resulting seed
-         */
-        byte[] getEntropy(long pause)
-            throws InterruptedException;
-    }
-
     private static class HybridEntropySource
         implements EntropySource
     {
@@ -519,13 +436,11 @@ public class DRBG
             .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
         }
 
-        @Override
         public boolean isPredictionResistant()
         {
             return true;
         }
 
-        @Override
         public byte[] getEntropy()
         {
             byte[] entropy = new byte[bytesRequired];
@@ -549,7 +464,6 @@ public class DRBG
             return entropy;
         }
 
-        @Override
         public int entropySize()
         {
             return bytesRequired * 8;
@@ -564,7 +478,6 @@ public class DRBG
             private final int byteLength;
             private final AtomicReference entropy = new AtomicReference();
             private final AtomicBoolean scheduled = new AtomicBoolean(false);
-            private final long pause;
 
             SignallingEntropySource(EntropyDaemon entropyDaemon, AtomicBoolean seedAvailable, EntropySourceProvider baseRandom, int bitsRequired)
             {
@@ -572,7 +485,6 @@ public class DRBG
                 this.seedAvailable = seedAvailable;
                 this.entropySource = (IncrementalEntropySource)baseRandom.get(bitsRequired);
                 this.byteLength = (bitsRequired + 7) / 8;
-                this.pause = getPause();
             }
 
             public boolean isPredictionResistant()
@@ -616,7 +528,7 @@ public class DRBG
             {
                 if (!scheduled.getAndSet(true))
                 {
-                    entropyDaemon.addTask(new EntropyGatherer(entropySource));
+                    entropyDaemon.addTask(new EntropyGatherer(entropySource, seedAvailable, entropy));
                 }
             }
 
@@ -624,114 +536,7 @@ public class DRBG
             {
                 return byteLength * 8;
             }
-
-            private class EntropyGatherer
-                implements Runnable
-            {
-                private final IncrementalEntropySource baseRandom;
-
-                EntropyGatherer(IncrementalEntropySource baseRandom)
-                {
-                    this.baseRandom = baseRandom;
-                }
-
-                public void run()
-                {
-                    try
-                    {
-                        entropy.set(baseRandom.getEntropy(pause));
-                        seedAvailable.set(true);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        if (LOG.isLoggable(Level.FINE))
-                        {
-                            LOG.fine("entropy request interrupted - exiting");
-                        }
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
         }
     }
 
-    private static class IncrementalEntropySourceProvider
-        implements EntropySourceProvider
-    {
-        private final SecureRandom random;
-        private final boolean predictionResistant;
-
-        /**
-         * Create a entropy source provider based on the passed in SecureRandom.
-         *
-         * @param random                the SecureRandom to base EntropySource construction on.
-         * @param isPredictionResistant boolean indicating if the SecureRandom is based on prediction resistant entropy or not (true if it is).
-         */
-        public IncrementalEntropySourceProvider(SecureRandom random, boolean isPredictionResistant)
-        {
-            this.random = random;
-            this.predictionResistant = isPredictionResistant;
-        }
-
-        /**
-         * Return an entropy source that will create bitsRequired bits of entropy on
-         * each invocation of getEntropy().
-         *
-         * @param bitsRequired size (in bits) of entropy to be created by the provided source.
-         * @return an EntropySource that generates bitsRequired bits of entropy on each call to its getEntropy() method.
-         */
-        public EntropySource get(final int bitsRequired)
-        {
-            return new IncrementalEntropySource()
-            {
-                final int numBytes = (bitsRequired + 7) / 8;
-
-                public boolean isPredictionResistant()
-                {
-                    return predictionResistant;
-                }
-
-                public byte[] getEntropy()
-                {
-                    try
-                    {
-                        return getEntropy(0);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
-                    }
-                }
-
-                public byte[] getEntropy(long pause)
-                    throws InterruptedException
-                {
-                    byte[] seed = new byte[numBytes];
-                    for (int i = 0; i < numBytes / 8; i++)
-                    {
-                        // we need to be mindful that we may not be the only thread/process looking for entropy
-                        sleep(pause);
-                        byte[] rn = random.generateSeed(8);
-                        System.arraycopy(rn, 0, seed, i * 8, rn.length);
-                    }
-
-                    int extra = numBytes - ((numBytes / 8) * 8);
-                    if (extra != 0)
-                    {
-                        sleep(pause);
-                        byte[] rn = random.generateSeed(extra);
-                        System.arraycopy(rn, 0, seed, seed.length - rn.length, rn.length);
-                    }
-
-                    return seed;
-                }
-
-                public int entropySize()
-                {
-                    return bitsRequired;
-                }
-            };
-        }
-    }
 }
