@@ -48,7 +48,7 @@ public class JcaJceUtils
             public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s)
                 throws java.security.cert.CertificateException
             {
-
+                throw new IllegalStateException("attempt to authenticate client connection");
             }
 
             public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s)
@@ -81,7 +81,7 @@ public class JcaJceUtils
             public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
                 throws CertificateException
             {
-
+                throw new IllegalStateException("attempt to authenticate client connection");
             }
 
             public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
@@ -115,7 +115,8 @@ public class JcaJceUtils
                         param.setRevocationEnabled(false);
                     }
 
-                    PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)pathBuilder.build(param);
+                    // Throws exception on failure, results ignored for now.
+                    PKIXCertPathValidatorResult ignored = (PKIXCertPathValidatorResult)pathBuilder.build(param);
 
                     validateServerCertUsage(x509Certificates[0]);
 
