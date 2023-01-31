@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -28,22 +29,23 @@ public class ElephantEngine
         elephant200
     }
 
-    private ElephantParameters parameters;
-    private int BLOCK_SIZE;
+    private boolean forEncryption;
+    private final String algorithmName;
+    private final ElephantParameters parameters;
+    private final int BLOCK_SIZE;
     private int nBits;
     private int nSBox;
-    private int nRounds;
+    private final int nRounds;
     private byte lfsrIV;
-    private byte[] m;
+    private byte[] tag;
     private byte[] npub;
     private byte[] expanded_key;
-    private byte[] tag_buffer;
-    private byte CRYPTO_KEYBYTES = 16;
-    private byte CRYPTO_NPUBBYTES = 12;
-    private byte CRYPTO_ABYTES;
-    private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private boolean encrypted;
-    private boolean aadFinished;
+    private final byte CRYPTO_KEYBYTES = 16;
+    private final byte CRYPTO_NPUBBYTES = 12;
+    private final byte CRYPTO_ABYTES;
+    private boolean initialised;
+    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
 
     private final byte[] sBoxLayer = {
         (byte)0xee, (byte)0xed, (byte)0xeb, (byte)0xe0, (byte)0xe2, (byte)0xe1, (byte)0xe4, (byte)0xef, (byte)0xe7, (byte)0xea, (byte)0xe8, (byte)0xe5, (byte)0xe9, (byte)0xec, (byte)0xe3, (byte)0xe6,
@@ -82,6 +84,7 @@ public class ElephantEngine
             nRounds = 80;
             lfsrIV = 0x75;
             CRYPTO_ABYTES = 8;
+            algorithmName = "Elephant 160 AEAD";
             break;
         case elephant176:
             BLOCK_SIZE = 22;
@@ -90,15 +93,20 @@ public class ElephantEngine
             nRounds = 90;
             lfsrIV = 0x45;
             CRYPTO_ABYTES = 8;
+            algorithmName = "Elephant 176 AEAD";
             break;
         case elephant200:
             BLOCK_SIZE = 25;
             nRounds = 18;
             CRYPTO_ABYTES = 16;
+            algorithmName = "Elephant 200 AEAD";
             break;
+        default:
+            throw new IllegalArgumentException("Invalid parameter settings for Elephant");
         }
         this.parameters = parameters;
-        tag_buffer = new byte[BLOCK_SIZE];
+
+        initialised = false;
         reset(false);
     }
 
@@ -221,7 +229,7 @@ public class ElephantEngine
 
 
     // State should be BLOCK_SIZE bytes long
-// Note: input may be equal to output
+    // Note: input may be equal to output
     void lfsr_step(byte[] output, byte[] input)
     {
         switch (parameters)
@@ -249,8 +257,8 @@ public class ElephantEngine
     }
 
     // Write the ith assocated data block to "output".
-// The nonce is prepended and padding is added as required.
-// adlen is the length of the associated data in bytes
+    // The nonce is prepended and padding is added as required.
+    // adlen is the length of the associated data in bytes
     void get_ad_block(byte[] output, byte[] ad, int adlen, byte[] npub, int i)
     {
         int len = 0;
@@ -291,7 +299,7 @@ public class ElephantEngine
     // clen is the length of the ciphertext in bytes
     void get_c_block(byte[] output, byte[] c, int cOff, int clen, int i)
     {
-        int block_offset = cOff + i * BLOCK_SIZE;
+        int block_offset = i * BLOCK_SIZE;
         // If clen is divisible by BLOCK_SIZE, add an additional padding block
         if (block_offset == clen)
         {
@@ -303,13 +311,13 @@ public class ElephantEngine
         // Fill with ciphertext if available
         if (BLOCK_SIZE <= r_clen)
         { // enough ciphertext
-            System.arraycopy(c, block_offset, output, 0, BLOCK_SIZE);
+            System.arraycopy(c, cOff + block_offset, output, 0, BLOCK_SIZE);
         }
         else
         { // not enough ciphertext, need to pad
             if (r_clen > 0) // c might be nullptr
             {
-                System.arraycopy(c, block_offset, output, 0, r_clen);
+                System.arraycopy(c, cOff + block_offset, output, 0, r_clen);
             }
             Arrays.fill(output, r_clen, BLOCK_SIZE, (byte)0);
             output[r_clen] = 0x01;
@@ -326,52 +334,41 @@ public class ElephantEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
-         * Elephant encryption and decryption is completely symmetrical, so the
-         * 'forEncryption' is irrelevant.
-         */
+        this.forEncryption = forEncryption;
         if (!(params instanceof ParametersWithIV))
         {
-            throw new IllegalArgumentException(
-                "Elephant init parameters must include an IV");
+            throw new IllegalArgumentException(algorithmName + " init parameters must include an IV");
         }
-
         ParametersWithIV ivParams = (ParametersWithIV)params;
-
         npub = ivParams.getIV();
-
-        if (npub == null || npub.length != 12)
+        if (npub == null || npub.length != CRYPTO_NPUBBYTES)
         {
-            throw new IllegalArgumentException(
-                "Elephant requires exactly 12 bytes of IV");
+            throw new IllegalArgumentException(algorithmName + " requires exactly 12 bytes of IV");
         }
-
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
-            throw new IllegalArgumentException(
-                "Elephant init parameters must include a key");
+            throw new IllegalArgumentException(algorithmName + " init parameters must include a key");
         }
-
         KeyParameter key = (KeyParameter)ivParams.getParameters();
         byte[] k = key.getKey();
-        if (k.length != 16)
+        if (k.length != CRYPTO_KEYBYTES)
         {
-            throw new IllegalArgumentException(
-                "Elephant key must be 128 bits long");
+            throw new IllegalArgumentException(algorithmName + " key must be 128 bits long");
         }
         // Storage for the expanded key L
         expanded_key = new byte[BLOCK_SIZE];
         System.arraycopy(k, 0, expanded_key, 0, CRYPTO_KEYBYTES);
         permutation(expanded_key);
-
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        initialised = true;
+        reset(false);
     }
 
     @Override
     public String getAlgorithmName()
     {
-        return "Elephant AEAD";
+        return algorithmName;
     }
 
     @Override
@@ -383,6 +380,10 @@ public class ElephantEngine
     @Override
     public void processAADBytes(byte[] input, int inOff, int len)
     {
+        if (inOff + len > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
         aadData.write(input, inOff, len);
     }
 
@@ -397,14 +398,33 @@ public class ElephantEngine
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        if (encrypted)
+        if (inOff + len > input.length)
         {
-            throw new IllegalArgumentException("Encryption has been processed");
+            throw new DataLengthException("input buffer too short");
         }
-        m = new byte[len];
-        System.arraycopy(input, inOff, m, 0, len);
+        message.write(input, inOff, len);
+        return 0;
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff)
+        throws IllegalStateException, InvalidCipherTextException
+    {
+        if (!initialised)
+        {
+            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+        }
+        int len = message.size();
+        if ((forEncryption && len + outOff + CRYPTO_ABYTES > output.length) ||
+            (!forEncryption && len + outOff - CRYPTO_ABYTES > output.length))
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
+        byte[] tag_buffer = new byte[BLOCK_SIZE];
+        byte[] m = message.toByteArray();
         byte[] ad = aadData.toByteArray();
-        int mlen = len, adlen = ad.length;
+        int mlen = len - (forEncryption ? 0 : CRYPTO_ABYTES);
+        int adlen = ad.length;
         int nblocks_c = 1 + mlen / BLOCK_SIZE;
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
         int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
@@ -437,11 +457,17 @@ public class ElephantEngine
                 xor_block(buffer, m, offset, r_size);
                 System.arraycopy(buffer, 0, output, offset + outOff, r_size);
             }
-
             if (i > 0 && i <= nblocks_c)
             {
                 // Compute tag for ciphertext block
-                get_c_block(buffer, output, outOff, mlen, i - 1);//encrypt != 0 ? c : m
+                if (forEncryption)
+                {
+                    get_c_block(buffer, output, outOff, mlen, i - 1);
+                }
+                else
+                {
+                    get_c_block(buffer, m, 0, mlen, i - 1);
+                }
                 xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
                 xor_block(buffer, next_mask, 0, BLOCK_SIZE);
                 permutation(buffer);
@@ -466,16 +492,26 @@ public class ElephantEngine
             next_mask = temp;
             offset += BLOCK_SIZE;
         }
-        encrypted = true;
-        return 0;
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
-    {
-        byte[] tag = getMac();
-        System.arraycopy(tag, 0, output, outOff, tag.length);
+        outOff += mlen;
+        tag = new byte[CRYPTO_ABYTES];
+        xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
+        permutation(tag_buffer);
+        xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
+        if (forEncryption)
+        {
+            System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
+            System.arraycopy(tag, 0, output, outOff, tag.length);
+        }
+        else
+        {
+            for (int i = 0; i < CRYPTO_ABYTES; ++i)
+            {
+                if (tag_buffer[i] != m[mlen + i])
+                {
+                    throw new IllegalArgumentException("Mac does not match");
+                }
+            }
+        }
         reset(false);
         return 0;
     }
@@ -483,14 +519,6 @@ public class ElephantEngine
     @Override
     public byte[] getMac()
     {
-        byte[] tag = new byte[CRYPTO_ABYTES];
-        if (!aadFinished)
-        {
-            xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
-            permutation(tag_buffer);
-            xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
-        }
-        System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
         return tag;
     }
 
@@ -516,9 +544,24 @@ public class ElephantEngine
     {
         if (clearMac)
         {
-            aadData.reset();
+            tag = null;
         }
-        encrypted = false;
-        aadFinished = false;
+        aadData.reset();
+        message.reset();
+    }
+
+    public int getKeyBytesSize()
+    {
+        return CRYPTO_KEYBYTES;
+    }
+
+    public int getIVBytesSize()
+    {
+        return CRYPTO_NPUBBYTES;
+    }
+
+    public int getBlockSize()
+    {
+        return CRYPTO_ABYTES;
     }
 }
