@@ -4,7 +4,6 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -153,9 +152,6 @@ psk_secret (or 0) --> KDF.Extract
 
         Secret encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
         this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
-        encryptionSecret.consume();
-
-        epochSecret.consume();
     }
 
     public KeyScheduleEpoch next(TreeSize treeSize, Secret forceInitSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {

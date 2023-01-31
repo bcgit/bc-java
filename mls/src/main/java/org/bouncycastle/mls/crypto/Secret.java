@@ -1,7 +1,6 @@
 package org.bouncycastle.mls.crypto;
 
-import org.bouncycastle.mls.codec.Encoder;
-import org.bouncycastle.mls.codec.MLSField;
+import org.bouncycastle.mls.codec.MLSOutputStream;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -70,34 +69,37 @@ public class Secret {
         return new Secret(derivedSecret, new Secret[] {this});
     }
 
-    public static class KDFLabel {
-        @MLSField(order=1)
+    public static class KDFLabel implements MLSOutputStream.Writable {
         public short length;
-        @MLSField(order=2)
         public byte[] label;
-
-        @MLSField(order=3)
         public byte[] context;
 
-        KDFLabel(short lengthIn, String labelIn, byte[] contextIn) {
-            length = lengthIn;
-            context = contextIn;
-            label = ("MLS 1.0 " + labelIn).getBytes(StandardCharsets.UTF_8);
+        KDFLabel(short length, String label, byte[] context) {
+            this.length = length;
+            this.label = ("MLS 1.0 " + label).getBytes(StandardCharsets.UTF_8);
+            this.context = context;
+        }
+
+        @Override
+        public void writeTo(MLSOutputStream stream) throws IOException {
+            stream.write(length);
+            stream.writeOpaque(label);
+            stream.writeOpaque(context);
         }
     }
 
-    public Secret expandWithLabel(CipherSuite suite, String label, byte[] context, int length) throws IOException, IllegalAccessException {
+    public Secret expandWithLabel(CipherSuite suite, String label, byte[] context, int length) throws IOException {
         KDFLabel kdfLabelStr = new KDFLabel((short) length, label, context);
-        byte[] kdfLabel = Encoder.encodeValue(kdfLabelStr);
+        byte[] kdfLabel = MLSOutputStream.encode(kdfLabelStr);
         byte[] derivedSecret = suite.getKDF().expand(value, kdfLabel, length);
         return new Secret(derivedSecret, new Secret[] {this});
     }
 
-    public Secret deriveSecret(CipherSuite suite, String label) throws IOException, IllegalAccessException {
+    public Secret deriveSecret(CipherSuite suite, String label) throws IOException {
         return expandWithLabel(suite, label, new byte[] {}, suite.getKDF().getHashLength());
     }
 
-    public Secret deriveTreeSecret(CipherSuite suite, String label, int generation, int length) throws IOException, IllegalAccessException {
-        return expandWithLabel(suite, label, Encoder.encodeValue(generation), length);
+    public Secret deriveTreeSecret(CipherSuite suite, String label, int generation, int length) throws IOException {
+        return expandWithLabel(suite, label, MLSOutputStream.encode(generation), length);
     }
 }

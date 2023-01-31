@@ -3,15 +3,12 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.PrintTestResult;
-import org.bouncycastle.mls.codec.Decoder;
-import org.bouncycastle.mls.codec.Encoder;
-import org.bouncycastle.mls.codec.MLSField;
+import org.bouncycastle.mls.codec.*;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import static org.junit.Assert.assertArrayEquals;
 
 public class CodecTest
     extends TestCase
@@ -27,27 +24,41 @@ public class CodecTest
     private final long valUint64 = 0x8888888888888888L;
     private final String encUint64 = "8888888888888888";
 
-    public static class ExampleStruct {
-        @MLSField(order=1)
+    public static class ExampleStruct implements MLSInputStream.Readable, MLSOutputStream.Writable {
         public short a;
-
-        @MLSField(order=2, length=4)
-        public int[] b;
-
-        @MLSField(order=3, optional=true)
+        public Integer[] b;
         public Byte c;
-
-        @MLSField(order=4)
         public ArrayList<Byte> d;
+        public byte[] e;
+
+        public ExampleStruct(short a, Integer[] b, Byte c, ArrayList<Byte> d, byte[] e) {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+            this.e = e;
+        }
 
         @SuppressWarnings("unused")
-        public ExampleStruct() {}
+        public ExampleStruct(MLSInputStream stream) throws IOException {
+            this.a = (short) stream.read(short.class);
+            this.b = (Integer[]) stream.readArray(Integer.class, 4);
+            this.c = (byte) stream.readOptional(byte.class);
 
-        public ExampleStruct(short aIn, int[] bIn, Byte cIn, ArrayList<Byte> dIn) {
-            a = aIn;
-            b = bIn;
-            c = cIn;
-            d = dIn;
+            this.d = new ArrayList<>();
+            stream.readList(this.d, byte.class);
+
+            this.
+                    e = stream.readOpaque();
+        }
+
+        @Override
+        public void writeTo(MLSOutputStream stream) throws IOException {
+            stream.write(this.a);
+            stream.writeArray(this.b);
+            stream.writeOptional(this.c);
+            stream.writeList(this.d);
+            stream.writeOpaque(this.e);
         }
 
         @Override
@@ -60,44 +71,41 @@ public class CodecTest
     }
 
     private final ExampleStruct valStruct = new ExampleStruct((short) 0x1111,
-            new int[] { 0x22222222, 0x33333333, 0x44444444, 0x55555555 },
+            new Integer[] { 0x22222222, 0x33333333, 0x44444444, 0x55555555 },
             (byte) 0x66,
-            new ArrayList<>(Arrays.asList((byte) 0x77, (byte) 0x88)));
-    private final String encStruct = "1111222222223333333344444444555555550166027788";
+            new ArrayList<>(Arrays.asList((byte) 0x77, (byte) 0x88)),
+            new byte[] {(byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99});
+    private final String encStruct = "11112222222233333333444444445555555501660277880499999999";
 
-    private <T> void doEncodeTest(T val, String hexExpected) throws Exception {
-        byte[] expected = Hex.decode(hexExpected);
-        Encoder enc = new Encoder();
-        enc.encode(val);
-        byte[] actual = enc.toByteArray();
-        assertArrayEquals(actual, expected);
+    private <T> void doWriteTest(T val, String hexExpected) throws Exception {
+        byte[] actual = MLSOutputStream.encode(val);
+        String hexActual = Hex.toHexString(actual);
+        assertEquals(hexActual, hexExpected);
     }
 
-    public void testEncode() throws Exception {
-        doEncodeTest(valBool, encBool);
-        doEncodeTest(valUint8, encUint8);
-        doEncodeTest(valUint16, encUint16);
-        doEncodeTest(valUint32, encUint32);
-        doEncodeTest(valUint64, encUint64);
-        doEncodeTest(valStruct, encStruct);
+    public void testWrite() throws Exception {
+        doWriteTest(valBool, encBool);
+        doWriteTest(valUint8, encUint8);
+        doWriteTest(valUint16, encUint16);
+        doWriteTest(valUint32, encUint32);
+        doWriteTest(valUint64, encUint64);
+        doWriteTest(valStruct, encStruct);
     }
 
-    private <T> void doDecodeTest(String hexEncoded, T expected) throws Exception {
+    private <T> void doReadTest(String hexEncoded, T expected) throws Exception {
         byte[] encoded = Hex.decode(hexEncoded);
-        Decoder dec = new Decoder(encoded);
         @SuppressWarnings("unchecked")
-        T actual = (T) dec.decode(expected.getClass());
+        T actual = (T) MLSInputStream.decode(encoded, expected.getClass());
         assertEquals(actual, expected);
     }
 
-    public void testDecode() throws Exception {
-
-        doDecodeTest(encBool, valBool);
-        doDecodeTest(encUint8, valUint8);
-        doDecodeTest(encUint16, valUint16);
-        doDecodeTest(encUint32, valUint32);
-        doDecodeTest(encUint64, valUint64);
-        doDecodeTest(encStruct, valStruct);
+    public void testRead() throws Exception {
+        doReadTest(encBool, valBool);
+        doReadTest(encUint8, valUint8);
+        doReadTest(encUint16, valUint16);
+        doReadTest(encUint32, valUint32);
+        doReadTest(encUint64, valUint64);
+        doReadTest(encStruct, valStruct);
     }
 
     public static TestSuite suite()
