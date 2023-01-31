@@ -6,20 +6,23 @@ import org.bouncycastle.mls.codec.MLSField;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Objects;
 
 public class Secret {
-    Secret parent;
     byte[] value;
+    Secret[] parents;
 
-    public Secret(byte[] valueIn) {
-        parent = null;
-        value = valueIn;
+    public Secret(byte[] value) {
+        this.value = value;
+        this.parents = null;
     }
 
-    private Secret(Secret parentIn, byte[] valueIn) {
-        parent = parentIn;
-        value = valueIn;
+    private Secret(byte[] value, Secret[] parents) {
+        this.value = value;
+        this.parents = parents;
+    }
+
+    public static Secret zero(CipherSuite suite) {
+        return new Secret(new byte[suite.getKDF().getHashLength()]);
     }
 
     @Override
@@ -27,7 +30,7 @@ public class Secret {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Secret secret = (Secret) o;
-        return Objects.equals(parent, secret.parent) && Arrays.equals(value, secret.value);
+        return Arrays.equals(value, secret.value) && Arrays.equals(parents, secret.parents);
     }
 
     public final byte[] value() {
@@ -35,7 +38,7 @@ public class Secret {
     }
 
     public boolean isConsumed() {
-        return value == null && parent == null;
+        return value == null && parents == null;
     }
 
     public void consume() {
@@ -43,12 +46,28 @@ public class Secret {
             return;
         }
 
+        // Zeroize this secret
         Arrays.fill(value, (byte) 0);
         value = null;
-        if (parent != null) {
-            parent.consume();
+
+        // Consume any linked parents
+        if (parents != null) {
+            for (Secret parent : parents) {
+                parent.consume();
+            }
+            parents = null;
         }
-        parent = null;
+    }
+
+    public static Secret extract(CipherSuite suite, Secret salt, Secret ikm) {
+        byte[] prk = suite.getKDF().extract(salt.value(), ikm.value());
+        return new Secret(prk, new Secret[] {salt, ikm});
+    }
+
+    public Secret expand(CipherSuite suite, String label, int length) {
+        byte[] labelData = label.getBytes(StandardCharsets.UTF_8);
+        byte[] derivedSecret = suite.getKDF().expand(value, labelData, length);
+        return new Secret(derivedSecret, new Secret[] {this});
     }
 
     public static class KDFLabel {
@@ -71,7 +90,7 @@ public class Secret {
         KDFLabel kdfLabelStr = new KDFLabel((short) length, label, context);
         byte[] kdfLabel = Encoder.encodeValue(kdfLabelStr);
         byte[] derivedSecret = suite.getKDF().expand(value, kdfLabel, length);
-        return new Secret(this, derivedSecret);
+        return new Secret(derivedSecret, new Secret[] {this});
     }
 
     public Secret deriveSecret(CipherSuite suite, String label) throws IOException, IllegalAccessException {

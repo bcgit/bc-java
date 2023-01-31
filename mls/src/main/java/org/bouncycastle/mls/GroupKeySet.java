@@ -10,21 +10,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GroupKeys {
+public class GroupKeySet {
     final CipherSuite suite;
     final int secretSize;
+    // We store a commitment to the encryption secret that was used to create this structure, so that we can compare
+    // for  purposes of equivalence checking without violating forward secrecy.
+    final Secret encryptionSecretCommit;
 
     SecretTree secretTree;
     Map<LeafIndex, HashRatchet> handshakeRatchets;
     Map<LeafIndex, HashRatchet> applicationRatchets;
 
 
-    public GroupKeys(CipherSuite suiteIn, TreeSize treeSize, Secret encryptionSecret) {
-        suite = suiteIn;
-        secretSize = suite.getKDF().getHashLength();
-        secretTree = new SecretTree(treeSize, encryptionSecret);
-        handshakeRatchets = new HashMap<>();
-        applicationRatchets = new HashMap<>();
+    public GroupKeySet(CipherSuite suite, TreeSize treeSize, Secret encryptionSecret) throws IOException, IllegalAccessException {
+        this.suite = suite;
+        this.secretSize = suite.getKDF().getHashLength();
+        this.encryptionSecretCommit = encryptionSecret.deriveSecret(suite, "commitment");
+        this.secretTree = new SecretTree(treeSize, encryptionSecret);
+        this.handshakeRatchets = new HashMap<>();
+        this.applicationRatchets = new HashMap<>();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GroupKeySet that = (GroupKeySet) o;
+        return secretSize == that.secretSize && suite.equals(that.suite) && encryptionSecretCommit.equals(that.encryptionSecretCommit);
     }
 
     void initRatchets(LeafIndex sender) throws IOException, IllegalAccessException {
