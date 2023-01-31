@@ -110,7 +110,7 @@ public class ElephantEngine
         reset(false);
     }
 
-    void permutation(byte[] state)
+    private void permutation(byte[] state)
     {
         switch (parameters)
         {
@@ -157,7 +157,7 @@ public class ElephantEngine
         }
     }
 
-    byte rotl(byte b)
+    private byte rotl(byte b)
     {
         return (byte)(((b & 0xFF) << 1) | ((b & 0xFF) >>> 7));
     }
@@ -172,7 +172,7 @@ public class ElephantEngine
         return x + y * 5;
     }
 
-    void KeccakP200Round(byte[] state, int indexRound)
+    private void KeccakP200Round(byte[] state, int indexRound)
     {
         int x, y;
         byte[] tempA = new byte[25];
@@ -230,7 +230,7 @@ public class ElephantEngine
 
     // State should be BLOCK_SIZE bytes long
     // Note: input may be equal to output
-    void lfsr_step(byte[] output, byte[] input)
+    private void lfsr_step(byte[] output, byte[] input)
     {
         switch (parameters)
         {
@@ -248,7 +248,7 @@ public class ElephantEngine
         System.arraycopy(input, 1, output, 0, BLOCK_SIZE - 1);
     }
 
-    void xor_block(byte[] state, byte[] block, int bOff, int size)
+    private void xor_block(byte[] state, byte[] block, int bOff, int size)
     {
         for (int i = 0; i < size; ++i)
         {
@@ -259,7 +259,7 @@ public class ElephantEngine
     // Write the ith assocated data block to "output".
     // The nonce is prepended and padding is added as required.
     // adlen is the length of the associated data in bytes
-    void get_ad_block(byte[] output, byte[] ad, int adlen, byte[] npub, int i)
+    private void get_ad_block(byte[] output, byte[] ad, int adlen, byte[] npub, int i)
     {
         int len = 0;
         // First block contains nonce
@@ -297,7 +297,7 @@ public class ElephantEngine
 
     // Return the ith ciphertext block.
     // clen is the length of the ciphertext in bytes
-    void get_c_block(byte[] output, byte[] c, int cOff, int clen, int i)
+    private void get_c_block(byte[] output, byte[] c, int cOff, int clen, int i)
     {
         int block_offset = i * BLOCK_SIZE;
         // If clen is divisible by BLOCK_SIZE, add an additional padding block
@@ -391,7 +391,8 @@ public class ElephantEngine
     public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
-        return processBytes(new byte[]{input}, 0, 1, output, outOff);
+        message.write(input);
+        return 0;
     }
 
     @Override
@@ -501,6 +502,7 @@ public class ElephantEngine
         {
             System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
             System.arraycopy(tag, 0, output, outOff, tag.length);
+            mlen += CRYPTO_ABYTES;
         }
         else
         {
@@ -513,7 +515,7 @@ public class ElephantEngine
             }
         }
         reset(false);
-        return 0;
+        return mlen;
     }
 
     @Override
