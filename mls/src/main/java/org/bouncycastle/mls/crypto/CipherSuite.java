@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.params.HKDFParameters;
 
 public class CipherSuite {
@@ -92,8 +93,9 @@ public class CipherSuite {
         }
     }
 
-    KDF kdf;
-    AEAD aead;
+    final KDF kdf;
+    final AEAD aead;
+    final HPKE hpke;
 
     public CipherSuite(short suite) {
         // TODO Configure digest
@@ -101,30 +103,45 @@ public class CipherSuite {
         // TODO Configure Signature
         switch (suite) {
             case MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
+                kdf = new HKDF(new SHA256Digest());
+                aead = new AES128GCM();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
+                break;
+
             case MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
                 kdf = new HKDF(new SHA256Digest());
                 aead = new AES128GCM();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
                 break;
 
             case MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
                 kdf = new HKDF(new SHA256Digest());
                 aead = new ChaCha20Poly1305();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_CHACHA20_POLY1305);
                 break;
 
             case MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
                 kdf = new HKDF(new SHA384Digest());
                 aead = new AES256GCM();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256);
                 break;
 
             case MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
+                kdf = new HKDF(new SHA512Digest());
+                aead = new AES256GCM();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
+                break;
+
             case MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
                 kdf = new HKDF(new SHA512Digest());
                 aead = new AES256GCM();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_P521_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
                 break;
 
             case MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
                 kdf = new HKDF(new SHA512Digest());
                 aead = new ChaCha20Poly1305();
+                hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305);
                 break;
 
             default:
@@ -137,4 +154,6 @@ public class CipherSuite {
     }
 
     public AEAD getAEAD() { return aead; }
+
+    public HPKE getHPKE() { return hpke; }
 }
