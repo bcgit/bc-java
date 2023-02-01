@@ -1,7 +1,9 @@
 package org.bouncycastle.mls;
 
+import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.mls.protocol.PreSharedKeyID;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -9,8 +11,13 @@ import java.util.List;
 
 public class KeyScheduleEpoch {
     public static class PSKWithSecret {
-        byte[] id;
+        PreSharedKeyID id;
         Secret secret;
+
+        public PSKWithSecret(PreSharedKeyID id, Secret secret) {
+            this.id = id;
+            this.secret = secret;
+        }
     }
 
     public static class JoinSecrets {
@@ -24,14 +31,53 @@ public class KeyScheduleEpoch {
         private final Secret welcomeSecret; // Held to avoid consuming joinerSecret
         private final Secret memberSecret; // Held to derive further secrets
 
-        static Secret pskSecret(CipherSuite suite, List<PSKWithSecret> psks) throws IOException, IllegalAccessException {
+        static class PSKLabel implements MLSOutputStream.Writable {
+            PreSharedKeyID id;
+            short index;
+            short count;
+
+            public PSKLabel(PreSharedKeyID id, short index, short count) {
+                this.id = id;
+                this.index = index;
+                this.count = count;
+            }
+
+            @Override
+            public void writeTo(MLSOutputStream stream) throws IOException {
+                stream.write(id);
+                stream.write(index);
+                stream.write(count);
+            }
+        }
+
+        /*
+                         0                               0    = psk_secret_[0]
+                         |                               |
+                         V                               V
+        psk_[0]   --> Extract --> ExpandWithLabel --> Extract = psk_secret_[1]
+                                                         |
+                         0                               |
+                         |                               |
+                         V                               V
+        psk_[1]   --> Extract --> ExpandWithLabel --> Extract = psk_secret_[2]
+                                                         |
+                         0                              ...
+                         |                               |
+                         V                               V
+        psk_[n-1] --> Extract --> ExpandWithLabel --> Extract = psk_secret_[n]
+         */
+        static Secret pskSecret(CipherSuite suite, List<PSKWithSecret> psks) throws IOException {
             Secret pskSecret = Secret.zero(suite);
             if (psks == null || psks.isEmpty()) {
                 return pskSecret;
             }
 
+            short index = 0;
+            short count = (short) psks.size();
             for (PSKWithSecret psk : psks) {
-                byte[] pskLabel = new byte[0]; // TODO actually encode the PSK label
+                PSKLabel label = new PSKLabel(psk.id, index, count);
+                byte[] pskLabel = MLSOutputStream.encode(label);
+                index += 1;
 
                 Secret pskExtracted = Secret.extract(suite, Secret.zero(suite), psk.secret);
                 Secret pskInput = pskExtracted.expandWithLabel(suite, "derived psk", pskLabel, suite.getKDF().getHashLength());
@@ -56,7 +102,7 @@ public class KeyScheduleEpoch {
                          V
                     joiner_secret
 
-    */
+        */
         static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
             Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
             Secret joinerSecret = preJoinerSecret.expandWithLabel(suite,"joiner", context, suite.getKDF().getHashLength());
@@ -81,7 +127,7 @@ psk_secret (or 0) --> KDF.Extract
                           V
                      epoch_secret
      */
-        public JoinSecrets(CipherSuite suite, Secret joinerSecret, List<PSKWithSecret> psks) throws IOException, IllegalAccessException {
+        public JoinSecrets(CipherSuite suite, Secret joinerSecret, List<PSKWithSecret> psks) throws IOException {
             this.suite = suite;
             this.joinerSecret = joinerSecret;
             this.memberSecret = Secret.extract(suite, joinerSecret, pskSecret(suite, psks));

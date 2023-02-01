@@ -20,6 +20,7 @@ public class AllTests
 
         suite.addTestSuite(TreeMathTest.class);
         suite.addTestSuite(CodecTest.class);
+        suite.addTestSuite(ProtocolTest.class);
         suite.addTestSuite(CipherSuiteTest.class);
         suite.addTestSuite(SecretTest.class);
         suite.addTestSuite(GroupKeySetTest.class);

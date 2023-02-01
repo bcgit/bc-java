@@ -77,7 +77,7 @@ public class CodecTest
             new byte[] {(byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99});
     private final String encStruct = "11112222222233333333444444445555555501660277880499999999";
 
-    private <T> void doWriteTest(T val, String hexExpected) throws Exception {
+    protected <T> void doWriteTest(T val, String hexExpected) throws Exception {
         byte[] actual = MLSOutputStream.encode(val);
         String hexActual = Hex.toHexString(actual);
         assertEquals(hexActual, hexExpected);
@@ -92,7 +92,7 @@ public class CodecTest
         doWriteTest(valStruct, encStruct);
     }
 
-    private <T> void doReadTest(String hexEncoded, T expected) throws Exception {
+    protected <T> void doReadTest(String hexEncoded, T expected) throws Exception {
         byte[] encoded = Hex.decode(hexEncoded);
         @SuppressWarnings("unchecked")
         T actual = (T) MLSInputStream.decode(encoded, expected.getClass());
