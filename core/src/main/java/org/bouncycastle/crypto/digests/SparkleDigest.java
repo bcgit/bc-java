@@ -2,7 +2,9 @@ package org.bouncycastle.crypto.digests;
 
 import java.io.ByteArrayOutputStream;
 
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -20,6 +22,7 @@ public class SparkleDigest
         ESCH384
     }
 
+    private String algorithmName;
     private final int[] state;
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final int DIGEST_BYTES;
@@ -42,12 +45,14 @@ public class SparkleDigest
             SPARKLE_STATE = 384;
             SPARKLE_STEPS_SLIM = 7;
             SPARKLE_STEPS_BIG = 11;
+            algorithmName = "ESCH-256";
             break;
         case ESCH384:
             ESCH_DIGEST_LEN = 384;
             SPARKLE_STATE = 512;
             SPARKLE_STEPS_SLIM = 8;
             SPARKLE_STEPS_BIG = 12;
+            algorithmName = "ESCH-384";
             break;
         default:
             throw new IllegalArgumentException("Invalid definition of SCHWAEMM instance");
@@ -125,7 +130,7 @@ public class SparkleDigest
     @Override
     public String getAlgorithmName()
     {
-        return "Sparkle Hash";
+        return algorithmName;
     }
 
     @Override
@@ -143,12 +148,20 @@ public class SparkleDigest
     @Override
     public void update(byte[] input, int inOff, int len)
     {
+        if (inOff + len > input.length)
+        {
+            throw new DataLengthException(algorithmName + " input buffer too short");
+        }
         message.write(input, inOff, len);
     }
 
     @Override
     public int doFinal(byte[] output, int outOff)
     {
+        if (outOff + DIGEST_BYTES > output.length)
+        {
+            throw new OutputLengthException(algorithmName + " input buffer too short");
+        }
         byte[] input = message.toByteArray();
         int inlen = input.length, i, tmpx, tmpy, inOff = 0;
         // Main Hashing Loop

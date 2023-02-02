@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -29,18 +30,24 @@ public class SparkleEngine
         SCHWAEMM192_192,
         SCHWAEMM256_256
     }
+
+    private String algorithmName;
+    private boolean forEncryption;
     private final int[] state;
     private final int[] k;
     private final int[] npub;
-    private final byte[] tag;
+    private byte[] tag;
+    private boolean initialised;
     private boolean encrypted;
     private boolean aadFinished;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final int SCHWAEMM_KEY_LEN;
     private final int SCHWAEMM_NONCE_LEN;
     private final int SPARKLE_STEPS_SLIM;
     private final int SPARKLE_STEPS_BIG;
     private final int KEY_WORDS;
+    private final int KEY_BYTES;
     private final int TAG_WORDS;
     private final int TAG_BYTES;
     private final int STATE_BRANS;
@@ -68,6 +75,7 @@ public class SparkleEngine
             SPARKLE_CAPACITY = 128;
             SPARKLE_STEPS_SLIM = 7;
             SPARKLE_STEPS_BIG = 10;
+            algorithmName = "SCHWAEMM128-128";
             break;
         case SCHWAEMM256_128:
             SCHWAEMM_KEY_LEN = 128;
@@ -77,6 +85,7 @@ public class SparkleEngine
             SPARKLE_CAPACITY = 128;
             SPARKLE_STEPS_SLIM = 7;
             SPARKLE_STEPS_BIG = 11;
+            algorithmName = "SCHWAEMM256-128";
             break;
         case SCHWAEMM192_192:
             SCHWAEMM_KEY_LEN = 192;
@@ -86,6 +95,7 @@ public class SparkleEngine
             SPARKLE_CAPACITY = 192;
             SPARKLE_STEPS_SLIM = 7;
             SPARKLE_STEPS_BIG = 11;
+            algorithmName = "SCHWAEMM192-192";
             break;
         case SCHWAEMM256_256:
             SCHWAEMM_KEY_LEN = 256;
@@ -95,11 +105,13 @@ public class SparkleEngine
             SPARKLE_CAPACITY = 256;
             SPARKLE_STEPS_SLIM = 8;
             SPARKLE_STEPS_BIG = 12;
+            algorithmName = "SCHWAEMM256-256";
             break;
         default:
             throw new IllegalArgumentException("Invalid definition of SCHWAEMM instance");
         }
         KEY_WORDS = SCHWAEMM_KEY_LEN >>> 5;
+        KEY_BYTES = SCHWAEMM_KEY_LEN >>> 3;
         TAG_WORDS = SCHWAEMM_TAG_LEN >>> 5;
         TAG_BYTES = SCHWAEMM_TAG_LEN >>> 3;
         STATE_BRANS = SPARKLE_STATE >>> 6;
@@ -113,9 +125,9 @@ public class SparkleEngine
         _M2 = (((2 ^ (1 << CAP_BRANS))) << 24);
         _M3 = (((3 ^ (1 << CAP_BRANS))) << 24);
         state = new int[STATE_WORDS];
-        tag = new byte[TAG_BYTES];
         k = new int[KEY_WORDS];
         npub = new int[RATE_WORDS];
+        initialised = false;
     }
 
     private int ROT(int x, int n)
@@ -193,8 +205,15 @@ public class SparkleEngine
     // only authenticated but not encrypted, into the state (in blocks of size
     // RATE_BYTES). Note that this function MUST NOT be called when the length of
     // the associated data is 0.
-    void ProcessAssocData(int[] state, byte[] in, int inlen)
+    void ProcessAssocData(int[] state)
     {
+        int inlen = aadData.size();
+        if (aadFinished || inlen == 0)
+        {
+            return;
+        }
+        aadFinished = true;
+        byte[] in = aadData.toByteArray();
         // Main Authentication Loop
         int inOff = 0, tmp, i, j;
         int[] in32 = Pack.littleEndianToInt(in, inOff, in.length >>> 2);
@@ -247,12 +266,13 @@ public class SparkleEngine
     // ('input' and 'output' can be the same array, i.e. they can have the same start
     // address). Note that this function MUST NOT be called when the length of the
     // plaintext is 0.
-    void ProcessPlainText(int[] state, byte[] output, byte[] input, int inOff, int inlen)
+    private int ProcessPlainText(int[] state, byte[] output, byte[] input, int inOff, int inlen)
     {
         // Main Encryption Loop
         int outOff = 0, tmp1, tmp2, i, j;
         int[] in32 = Pack.littleEndianToInt(input, inOff, input.length >>> 2);
         int[] out32 = new int[output.length >>> 2];
+        int rv = 0;
         while (inlen > RATE_BYTES)
         {
             // combined Rho and rate-whitening operation
@@ -264,8 +284,16 @@ public class SparkleEngine
             {
                 tmp1 = state[i];
                 tmp2 = state[j];
-                state[i] = state[j] ^ in32[i + (inOff >> 2)] ^ state[RATE_WORDS + i];
-                state[j] ^= tmp1 ^ in32[j + (inOff >> 2)] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                if (forEncryption)
+                {
+                    state[i] = state[j] ^ in32[i + (inOff >> 2)] ^ state[RATE_WORDS + i];
+                    state[j] ^= tmp1 ^ in32[j + (inOff >> 2)] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                }
+                else
+                {
+                    state[i] ^= state[j] ^ in32[i + (inOff >> 2)] ^ state[RATE_WORDS + i];
+                    state[j] = tmp1 ^ in32[j + (inOff >> 2)] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                }
                 out32[i] = in32[i] ^ tmp1;
                 out32[j] = in32[j] ^ tmp2;
             }
@@ -275,37 +303,10 @@ public class SparkleEngine
             inlen -= RATE_BYTES;
             outOff += RATE_BYTES;
             inOff += RATE_BYTES;
+            rv += RATE_BYTES;
+            encrypted = true;
         }
-        // Encryption of Last Block
-        // addition of ant M2 or M3 to the state
-        state[STATE_WORDS - 1] ^= ((inlen < RATE_BYTES) ? _M2 : _M3);
-        // combined Rho and rate-whitening (incl. padding)
-        // Rho and rate-whitening for the encryption of the last plaintext block. Since
-        // this last block may require padding, it is always copied to a buffer.
-        int[] buffer = new int[RATE_WORDS];
-        for (i = 0; i < inlen; ++i)
-        {
-            buffer[i >>> 2] |= (input[inOff++] & 0xff) << ((i & 3) << 3);
-        }
-        if (inlen < RATE_BYTES)
-        {  // padding
-            buffer[i >>> 2] |= 0x80 << ((i & 3) << 3);
-        }
-        for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
-        {
-            tmp1 = state[i];
-            tmp2 = state[j];
-            state[i] = state[j] ^ buffer[i] ^ state[RATE_WORDS + i];
-            state[j] ^= tmp1 ^ buffer[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
-            buffer[i] ^= tmp1;
-            buffer[j] ^= tmp2;
-        }
-        for (i = 0; i < inlen; ++i)
-        {
-            output[outOff++] = (byte)(buffer[i >>> 2] >>> ((i & 3) << 3));
-        }
-        // execute SPARKLE with big number of steps
-        sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
+        return rv;
     }
 
     @Override
@@ -318,60 +319,69 @@ public class SparkleEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
-         * Sparkle encryption and decryption is completely symmetrical, so the
-         * 'forEncryption' is irrelevant.
-         */
+        this.forEncryption = forEncryption;
         if (!(params instanceof ParametersWithIV))
         {
-            throw new IllegalArgumentException(
-                "Sparkle init parameters must include an IV");
+            throw new IllegalArgumentException(algorithmName + " init parameters must include an IV");
         }
 
         ParametersWithIV ivParams = (ParametersWithIV)params;
         byte[] iv = ivParams.getIV();
 
-        if (iv == null || iv.length != SCHWAEMM_NONCE_LEN >> 3)
+        if (iv == null || iv.length != RATE_BYTES)
         {
-            throw new IllegalArgumentException(
-                "Sparkle requires exactly 16 bytes of IV");
+            throw new IllegalArgumentException(algorithmName + " requires exactly " + RATE_BYTES + " bytes of IV");
         }
         Pack.littleEndianToInt(iv, 0, npub, 0, RATE_WORDS);
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
         {
-            throw new IllegalArgumentException(
-                "Sparkle init parameters must include a key");
+            throw new IllegalArgumentException(algorithmName + " init parameters must include a key");
         }
 
         KeyParameter key = (KeyParameter)ivParams.getParameters();
         byte[] key8 = key.getKey();
-        if (key8.length != SCHWAEMM_KEY_LEN >> 3)
+        if (key8.length != KEY_BYTES)
         {
-            throw new IllegalArgumentException("Sparkle key must be 128 bits long");
+            throw new IllegalArgumentException(algorithmName + " key must be " + KEY_BYTES + " bits long");
         }
         Pack.littleEndianToInt(key8, 0, k, 0, KEY_WORDS);
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        initialised = true;
         reset();
     }
 
     @Override
     public String getAlgorithmName()
     {
-        return "Sparkle AEAD";
+        return algorithmName;
     }
 
     @Override
     public void processAADByte(byte input)
     {
+        if (encrypted)
+        {
+            throw new IllegalArgumentException(algorithmName + ": AAD cannot be added after reading a full block(" +
+                getBlockSize() + " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+        }
         aadData.write(input);
     }
 
     @Override
     public void processAADBytes(byte[] input, int inOff, int len)
     {
+        if (encrypted)
+        {
+            throw new IllegalArgumentException(algorithmName + ": AAD cannot be added after reading a full block(" +
+                getBlockSize() + " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+        }
+        if (inOff + len > input.length)
+        {
+            throw new DataLengthException(algorithmName + " input buffer too short");
+        }
         aadData.write(input, inOff, len);
     }
 
@@ -386,19 +396,32 @@ public class SparkleEngine
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        if (encrypted)
+        if (!initialised)
         {
-            throw new IllegalArgumentException("Sparkle has processed encryption/decryption");
+            throw new IllegalArgumentException(algorithmName + " Need call init function before encryption/decryption");
         }
-        byte[] ad = aadData.toByteArray();
-        int adsize = ad.length;
-        if (adsize != 0)
+        if (inOff + len > input.length)
         {
-            ProcessAssocData(state, ad, adsize);
+            throw new DataLengthException(algorithmName + " input buffer too short");
         }
-        if (len != 0)
+        message.write(input, inOff, len);
+        len = 0;
+        if ((forEncryption && message.size() > getBlockSize()) ||
+            (!forEncryption && message.size() - TAG_BYTES > getBlockSize()))
         {
-            ProcessPlainText(state, output, input, inOff, len);
+            len = (message.size() - (forEncryption ? 0 : TAG_BYTES));
+            if (len / RATE_BYTES * RATE_BYTES + outOff > output.length)
+            {
+                throw new OutputLengthException(algorithmName + " output buffer is too short");
+            }
+            byte[] m = message.toByteArray();
+            ProcessAssocData(state);
+            if (len != 0)
+            {
+                len = ProcessPlainText(state, output, m, 0, len);
+            }
+            message.reset();
+            message.write(m, len, m.length - len);
         }
         return len;
     }
@@ -407,8 +430,89 @@ public class SparkleEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        getMac();
-        System.arraycopy(tag, 0, output, outOff, TAG_BYTES);
+        if (!initialised)
+        {
+            throw new IllegalArgumentException(algorithmName + " needs call init function before dofinal");
+        }
+        int inlen = message.size() - (forEncryption ? 0 : TAG_BYTES);
+        if ((forEncryption && inlen + TAG_BYTES + outOff > output.length) ||
+            (!forEncryption && inlen + outOff > output.length))
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
+        ProcessAssocData(state);
+        int i, j, tmp1, tmp2;
+        byte[] input = message.toByteArray();
+        int inOff = 0;
+        if (encrypted || inlen != 0)
+        {
+            // Encryption of Last Block
+            // addition of ant M2 or M3 to the state
+            state[STATE_WORDS - 1] ^= ((inlen < RATE_BYTES) ? _M2 : _M3);
+            // combined Rho and rate-whitening (incl. padding)
+            // Rho and rate-whitening for the encryption of the last plaintext block. Since
+            // this last block may require padding, it is always copied to a buffer.
+            int[] buffer = new int[RATE_WORDS];
+            for (i = 0; i < inlen; ++i)
+            {
+                buffer[i >>> 2] |= (input[inOff++] & 0xff) << ((i & 3) << 3);
+            }
+            if (inlen < RATE_BYTES)
+            {
+                if (!forEncryption)
+                {
+                    int tmp = (i & 3) << 3;
+                    buffer[i >>> 2] |= (state[i >>> 2] >>> tmp) << tmp;
+                    tmp = (i >>> 2) + 1;
+                    System.arraycopy(state, tmp, buffer, tmp, RATE_WORDS - tmp);
+                }
+                buffer[i >>> 2] ^= 0x80 << ((i & 3) << 3);
+            }
+            for (i = 0, j = RATE_WORDS / 2; i < RATE_WORDS / 2; i++, j++)
+            {
+                tmp1 = state[i];
+                tmp2 = state[j];
+                if (forEncryption)
+                {
+                    state[i] = state[j] ^ buffer[i] ^ state[RATE_WORDS + i];
+                    state[j] ^= tmp1 ^ buffer[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                }
+                else
+                {
+                    state[i] ^= state[j] ^ buffer[i] ^ state[RATE_WORDS + i];
+                    state[j] = tmp1 ^ buffer[j] ^ state[RATE_WORDS + CAP_INDEX(j)];
+                }
+                buffer[i] ^= tmp1;
+                buffer[j] ^= tmp2;
+            }
+            for (i = 0; i < inlen; ++i)
+            {
+                output[outOff++] = (byte)(buffer[i >>> 2] >>> ((i & 3) << 3));
+            }
+            // execute SPARKLE with big number of steps
+            sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
+        }
+        // add key to the capacity-part of the state
+        for (i = 0; i < KEY_WORDS; i++)
+        {
+            state[RATE_WORDS + i] ^= k[i];
+        }
+        tag = new byte[TAG_BYTES];
+        Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, tag, 0);
+        if (forEncryption)
+        {
+            System.arraycopy(tag, 0, output, outOff, TAG_BYTES);
+        }
+        else
+        {
+            for (i = 0; i < TAG_BYTES; ++i)
+            {
+                if (tag[i] != input[inlen + i])
+                {
+                    throw new IllegalArgumentException(algorithmName + " mac does not match");
+                }
+            }
+        }
         reset(false);
         return TAG_BYTES;
     }
@@ -416,21 +520,6 @@ public class SparkleEngine
     @Override
     public byte[] getMac()
     {
-        if (!aadFinished)
-        {
-            // the key to the capacity part of the state.
-            int[] buffer = new int[TAG_WORDS];
-            // to prevent (potentially) unaligned memory accesses
-            System.arraycopy(k, 0, buffer, 0, KEY_WORDS);
-            // add key to the capacity-part of the state
-            for (int i = 0; i < KEY_WORDS; i++)
-            {
-                state[RATE_WORDS + i] ^= buffer[i];
-            }
-            aadFinished = true;
-        }
-        encrypted = true;
-        Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, tag, 0);
         return tag;
     }
 
@@ -449,6 +538,10 @@ public class SparkleEngine
     @Override
     public void reset()
     {
+        if (!initialised)
+        {
+            throw new IllegalArgumentException(algorithmName + " needs call init function before reset");
+        }
         reset(true);
     }
 
@@ -456,7 +549,7 @@ public class SparkleEngine
     {
         if (clearMac)
         {
-            Arrays.fill(tag, (byte)0);
+            tag = null;
         }
         // The Initialize function loads nonce and key into the state and executes the
         // SPARKLE permutation with the big number of steps.
@@ -467,7 +560,23 @@ public class SparkleEngine
         // execute SPARKLE with big number of steps
         sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
         aadData.reset();
+        message.reset();
         encrypted = false;
         aadFinished = false;
+    }
+
+    public int getBlockSize()
+    {
+        return RATE_BYTES;
+    }
+
+    public int getKeyBytesSize()
+    {
+        return KEY_BYTES;
+    }
+
+    public int getIVBytesSize()
+    {
+        return RATE_BYTES;
     }
 }
