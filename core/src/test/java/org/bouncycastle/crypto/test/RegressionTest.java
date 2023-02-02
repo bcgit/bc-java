@@ -192,8 +192,9 @@ public class RegressionTest
             new PhotonBeetleTest(),
             new XoodyakTest(),
             new AsconTest(),
-            new ConcatenationKDFTest(),
+            new SparkleTest(),
             new ISAPTest(),
+            new ConcatenationKDFTest(),
         };
 
     public static void main(String[] args)
