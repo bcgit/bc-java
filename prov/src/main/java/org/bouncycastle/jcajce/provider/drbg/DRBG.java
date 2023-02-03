@@ -12,7 +12,6 @@ import java.security.Security;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.macs.HMac;
@@ -88,10 +87,7 @@ public class DRBG
 
     static
     {
-        entropyDaemon = new EntropyDaemon(DRBG.class);
-        entropyThread = new Thread(entropyDaemon, "BC Entropy Daemon");
-        entropyThread.setDaemon(true);
-        entropyThread.start();
+        entropyDaemon = new EntropyDaemon();
     }
 
     public static class Mappings
@@ -174,8 +170,35 @@ public class DRBG
                 .setPersonalizationString(personalisationString)
                 .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
         }
+        else if (Properties.isOverrideSet("org.bouncycastle.drbg.no_thread"))
+        {
+            EntropySource initSource = new HybridStaticEntropySource(256);
+
+            byte[] personalisationString = isPredictionResistant
+                ? generateDefaultPersonalizationString(initSource.getEntropy())
+                : generateNonceIVPersonalizationString(initSource.getEntropy());
+
+            return new SP800SecureRandomBuilder(new EntropySourceProvider()
+                        {
+                            public EntropySource get(int bitsRequired)
+                            {
+                                return new HybridStaticEntropySource(bitsRequired);
+                            }
+                        })
+                .setPersonalizationString(personalisationString)
+                .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
+        }
         else
         {
+            synchronized (entropyDaemon)
+            {
+                if (entropyThread == null)
+                {
+                    entropyThread = new Thread(entropyDaemon, "BC Entropy Daemon");
+                    entropyThread.setDaemon(true);
+                    entropyThread.start();
+                }
+            }
             EntropySource source = new HybridEntropySource(entropyDaemon, 256);
 
             byte[] personalisationString = isPredictionResistant
@@ -305,7 +328,7 @@ public class DRBG
     }
 
     private static void sleep(long ms)
-            throws InterruptedException
+        throws InterruptedException
     {
         if (ms != 0)
         {
@@ -432,8 +455,8 @@ public class DRBG
                     return entropySource;
                 }
             })
-            .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
-            .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
+                .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
+                .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
         }
 
         public boolean isPredictionResistant()
@@ -504,7 +527,7 @@ public class DRBG
                     throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
                 }
             }
-            
+
             public byte[] getEntropy(long pause)
                 throws InterruptedException
             {
@@ -539,4 +562,58 @@ public class DRBG
         }
     }
 
+    private static class HybridStaticEntropySource
+        implements EntropySource
+    {
+        private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
+        private final AtomicInteger samples = new AtomicInteger(0);
+
+        private final SP800SecureRandom drbg;
+        private final EntropySource entropySource;
+        private final int bytesRequired;
+        private final byte[] additionalInput = Pack.longToBigEndian(System.currentTimeMillis());
+
+        HybridStaticEntropySource(final int bitsRequired)
+        {
+            EntropySourceProvider entropyProvider = createCoreEntropySourceProvider();
+            bytesRequired = (bitsRequired + 7) / 8;
+            // remember for the seed generator we need the correct security strength for SHA-512
+            entropySource = entropyProvider.get(256);
+            drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
+            {
+                public EntropySource get(final int bitsRequired)
+                {
+                    return entropySource;
+                }
+            })
+                .setPersonalizationString(Strings.toByteArray("Bouncy Castle Hybrid Entropy Source"))
+                .buildHMAC(new HMac(new SHA512Digest()), entropySource.getEntropy(), false);     // 32 byte nonce
+        }
+
+        public boolean isPredictionResistant()
+        {
+            return true;
+        }
+
+        public byte[] getEntropy()
+        {
+            byte[] entropy = new byte[bytesRequired];
+
+            // after 20 samples we'll start to check if there is new seed material.
+            if (samples.getAndIncrement() > 100)
+            {
+                drbg.reseed(additionalInput);
+                samples.set(0);
+            }
+
+            drbg.nextBytes(entropy);
+
+            return entropy;
+        }
+
+        public int entropySize()
+        {
+            return bytesRequired * 8;
+        }
+    }
 }
