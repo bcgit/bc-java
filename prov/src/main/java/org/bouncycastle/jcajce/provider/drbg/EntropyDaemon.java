@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.provider.drbg;
 
-import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -11,11 +10,9 @@ class EntropyDaemon
     private static final Logger LOG = Logger.getLogger(EntropyDaemon.class.getName());
 
     private final LinkedList<Runnable> tasks = new LinkedList<Runnable>();
-    private final WeakReference parentClassMonitor;
 
-    public EntropyDaemon(Class parentClass)
+    public EntropyDaemon()
     {
-        this.parentClassMonitor = new WeakReference(parentClass);
     }
 
     void addTask(Runnable task)
@@ -28,7 +25,7 @@ class EntropyDaemon
 
     public void run()
     {
-        while (!Thread.currentThread().isInterrupted() && parentClassMonitor.get() != null)
+        while (!Thread.currentThread().isInterrupted())
         {
             Runnable task;
             synchronized (tasks)
