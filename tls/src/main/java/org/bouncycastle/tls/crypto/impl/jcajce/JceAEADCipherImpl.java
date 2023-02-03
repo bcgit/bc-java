@@ -96,9 +96,9 @@ public class JceAEADCipherImpl
                 AlgorithmParameters algParams = helper.createAlgorithmParameters(algorithmParamsName);
 
                 // believe it or not but there are things out there that do not support the ASN.1 encoding...
-                if (GcmSpecUtil.gcmSpecExists())
+                if (GCMUtil.isGCMParameterSpecAvailable())
                 {
-                    algParams.init(GcmSpecUtil.createGcmSpec(nonce, macSize));
+                    algParams.init(GCMUtil.createGCMParameterSpec(macSize * 8, nonce));
                 }
                 else
                 {

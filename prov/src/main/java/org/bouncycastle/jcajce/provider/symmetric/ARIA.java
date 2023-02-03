@@ -322,7 +322,7 @@ public final class ARIA
         {
             if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                if (GcmSpecUtil.gcmSpecExists())
+                if (GcmSpecUtil.gcmSpecExtractable())
                 {
                     return GcmSpecUtil.extractGcmSpec(gcmParams.toASN1Primitive());
                 }
@@ -407,7 +407,7 @@ public final class ARIA
         {
             if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                if (GcmSpecUtil.gcmSpecExists())
+                if (GcmSpecUtil.gcmSpecExtractable())
                 {
                     return GcmSpecUtil.extractGcmSpec(ccmParams.toASN1Primitive());
                 }

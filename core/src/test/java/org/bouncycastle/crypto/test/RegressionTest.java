@@ -188,6 +188,12 @@ public class RegressionTest
             new DigestConstraintsTest(),
             new RadixConverterTest(),
             new Grain128AEADTest(),
+            new ElephantTest(),
+            new PhotonBeetleTest(),
+            new XoodyakTest(),
+            new AsconTest(),
+            new SparkleTest(),
+            new ISAPTest(),
             new ConcatenationKDFTest(),
         };
 

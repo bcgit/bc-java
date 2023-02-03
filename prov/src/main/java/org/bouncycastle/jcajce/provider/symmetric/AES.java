@@ -682,7 +682,7 @@ public final class AES
         {
             if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                if (GcmSpecUtil.gcmSpecExists())
+                if (GcmSpecUtil.gcmSpecExtractable())
                 {
                     return GcmSpecUtil.extractGcmSpec(gcmParams.toASN1Primitive());
                 }
@@ -767,7 +767,7 @@ public final class AES
         {
             if (paramSpec == AlgorithmParameterSpec.class || GcmSpecUtil.isGcmSpec(paramSpec))
             {
-                if (GcmSpecUtil.gcmSpecExists())
+                if (GcmSpecUtil.gcmSpecExtractable())
                 {
                     return GcmSpecUtil.extractGcmSpec(ccmParams.toASN1Primitive());
                 }
