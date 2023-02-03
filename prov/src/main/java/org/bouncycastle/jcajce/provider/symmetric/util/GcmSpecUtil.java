@@ -10,29 +10,52 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.util.Integers;
 
 public class GcmSpecUtil
 {
-    static final Class gcmSpecClass = ClassUtil.loadClass(GcmSpecUtil.class, "javax.crypto.spec.GCMParameterSpec");
-
-    static final Method tLen;
-    static final Method iv;
+    static final Class gcmSpecClass;
+    private static final Constructor constructor;
+    private static final Method tLen;
+    private static final Method iv;
 
     static
     {
+        gcmSpecClass = ClassUtil.loadClass(GcmSpecUtil.class, "javax.crypto.spec.GCMParameterSpec");
+
         if (gcmSpecClass != null)
         {
+            constructor = extractConstructor();
             tLen = extractMethod("getTLen");
             iv = extractMethod("getIV");
         }
         else
         {
+            constructor = null;
             tLen = null;
             iv = null;
+        }
+    }
+
+    private static Constructor extractConstructor()
+    {
+        try
+        {
+            return (Constructor)AccessController.doPrivileged(new PrivilegedExceptionAction()
+            {
+                public Object run()
+                    throws Exception
+                {
+                    return gcmSpecClass.getConstructor(new Class[]{ Integer.TYPE, byte[].class });
+                }
+            });
+        }
+        catch (PrivilegedActionException e)
+        {
+            return null;
         }
     }
 
@@ -60,6 +83,11 @@ public class GcmSpecUtil
         return gcmSpecClass != null;
     }
 
+    public static boolean gcmSpecExtractable()
+    {
+        return constructor != null;
+    }
+
     public static boolean isGcmSpec(AlgorithmParameterSpec paramSpec)
     {
         return gcmSpecClass != null && gcmSpecClass.isInstance(paramSpec);
@@ -76,13 +104,8 @@ public class GcmSpecUtil
         try
         {
             GCMParameters gcmParams = GCMParameters.getInstance(spec);
-            Constructor constructor = gcmSpecClass.getConstructor(new Class[]{Integer.TYPE, byte[].class});
 
             return (AlgorithmParameterSpec)constructor.newInstance(new Object[] { Integers.valueOf(gcmParams.getIcvLen() * 8), gcmParams.getNonce() });
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new InvalidParameterSpecException("No constructor found!");   // should never happen
         }
         catch (Exception e)
         {
