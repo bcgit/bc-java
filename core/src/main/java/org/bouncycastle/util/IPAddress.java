@@ -12,8 +12,7 @@ public class IPAddress
      *
      * @return true if a valid address, false otherwise
      */
-    public static boolean isValid(
-        String address)
+    public static boolean isValid(String address)
     {
         return isValidIPv4(address) || isValidIPv6(address);
     }
@@ -25,8 +24,7 @@ public class IPAddress
      *
      * @return true if a valid address with netmask, false otherwise
      */
-    public static boolean isValidWithNetMask(
-        String address)
+    public static boolean isValidWithNetMask(String address)
     {
         return isValidIPv4WithNetmask(address) || isValidIPv6WithNetmask(address);
     }
@@ -38,79 +36,42 @@ public class IPAddress
      *
      * @return true if a valid IPv4 address, false otherwise
      */
-    public static boolean isValidIPv4(
-        String address)
+    public static boolean isValidIPv4(String address)
     {
-        if (address.length() == 0)
+        int length = address.length();
+        if (length < 7 || length > 15)
         {
             return false;
         }
 
-        int octet;
-        int octets = 0;
-        
-        String temp = address+".";
-
-        int pos;
-        int start = 0;
-        while (start < temp.length()
-            && (pos = temp.indexOf('.', start)) > start)
+        int pos = 0;
+        for (int octetIndex = 0; octetIndex < 3; ++octetIndex)
         {
-            if (octets == 4)
+            int end = address.indexOf('.', pos);
+
+            if (!isParseableIPv4Octet(address, pos, end))
             {
                 return false;
             }
-            try
-            {
-                octet = Integer.parseInt(temp.substring(start, pos));
-            }
-            catch (NumberFormatException ex)
-            {
-                return false;
-            }
-            if (octet < 0 || octet > 255)
-            {
-                return false;
-            }
-            start = pos + 1;
-            octets++;
+
+            pos = end + 1;
         }
 
-        return octets == 4;
+        return isParseableIPv4Octet(address, pos, length);
     }
 
-    public static boolean isValidIPv4WithNetmask(
-        String address)
+    public static boolean isValidIPv4WithNetmask(String address)
     {
         int index = address.indexOf("/");
-        String mask = address.substring(index + 1);
-
-        return (index > 0) && isValidIPv4(address.substring(0, index))
-                           && (isValidIPv4(mask) || isMaskValue(mask, 32));
-    }
-
-    public static boolean isValidIPv6WithNetmask(
-        String address)
-    {
-        int index = address.indexOf("/");
-        String mask = address.substring(index + 1);
-
-        return (index > 0) && (isValidIPv6(address.substring(0, index))
-                           && (isValidIPv6(mask) || isMaskValue(mask, 128)));
-    }
-
-    private static boolean isMaskValue(String component, int size)
-    {
-        try
-        {
-            int value = Integer.parseInt(component);
-
-            return value >= 0 && value <= size;
-        }
-        catch (NumberFormatException e)
+        if (index < 1)
         {
             return false;
         }
+
+        String before = address.substring(0, index);
+        String after = address.substring(index + 1);
+
+        return isValidIPv4(before) && (isValidIPv4(after) || isParseableIPv4Mask(after));
     }
 
     /**
@@ -120,72 +81,131 @@ public class IPAddress
      *
      * @return true if a valid IPv6 address, false otherwise
      */
-    public static boolean isValidIPv6(
-        String address)
+    public static boolean isValidIPv6(String address)
     {
         if (address.length() == 0)
         {
             return false;
         }
 
-        int octet;
-        int octets = 0;
+        char firstChar = address.charAt(0);
+        if (firstChar != ':' && Character.digit(firstChar, 16) < 0)
+        {
+            return false;
+        }        
 
+        int segmentCount = 0;
         String temp = address + ":";
         boolean doubleColonFound = false;
-        int pos;
-        int start = 0;
-        while (start < temp.length()
-            && (pos = temp.indexOf(':', start)) >= start)
+
+        int pos = 0, end;
+        while (pos < temp.length() && (end = temp.indexOf(':', pos)) >= pos)
         {
-            if (octets == 8)
+            if (segmentCount == 8)
             {
                 return false;
             }
 
-            if (start != pos)
+            if (pos != end)
             {
-                String value = temp.substring(start, pos);
+                String value = temp.substring(pos, end);
 
-                if (pos == (temp.length() - 1) && value.indexOf('.') > 0)
+                if (end == temp.length() - 1 && value.indexOf('.') > 0)
                 {
+                    // add an extra one as address covers 2 words.
+                    if (++segmentCount == 8)
+                    {
+                        return false;
+                    }
                     if (!isValidIPv4(value))
                     {
                         return false;
                     }
-
-                    octets++; // add an extra one as address covers 2 words.
                 }
-                else
+                else if (!isParseableIPv6Segment(temp, pos, end))
                 {
-                    try
-                    {
-                        octet = Integer.parseInt(temp.substring(start, pos), 16);
-                    }
-                    catch (NumberFormatException ex)
-                    {
-                        return false;
-                    }
-                    if (octet < 0 || octet > 0xffff)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
             else
             {
-                if (pos != 1 && pos != temp.length() - 1 && doubleColonFound)
+                if (end != 1 && end != temp.length() - 1 && doubleColonFound)
                 {
                     return false;
                 }
                 doubleColonFound = true;
             }
-            start = pos + 1;
-            octets++;
+
+            pos = end + 1;
+            ++segmentCount;
         }
 
-        return octets == 8 || doubleColonFound;
+        return segmentCount == 8 || doubleColonFound;
+    }
+
+    public static boolean isValidIPv6WithNetmask(String address)
+    {
+        int index = address.indexOf("/");
+        if (index < 1)
+        {
+            return false;
+        }
+
+        String before = address.substring(0, index);
+        String after = address.substring(index + 1);
+
+        return isValidIPv6(before) && (isValidIPv6(after) || isParseableIPv6Mask(after));
+    }
+
+    private static boolean isParseableIPv4Mask(String s)
+    {
+        return isParseable(s, 0, s.length(), 10, 2, false, 0, 32);
+    }
+
+    private static boolean isParseableIPv4Octet(String s, int pos, int end)
+    {
+        return isParseable(s, pos, end, 10, 3, true, 0, 255);
+    }
+
+    private static boolean isParseableIPv6Mask(String s)
+    {
+        return isParseable(s, 0, s.length(), 10, 3, false, 1, 128);
+    }
+
+    private static boolean isParseableIPv6Segment(String s, int pos, int end)
+    {
+        return isParseable(s, pos, end, 16, 4, true, 0x0000, 0xFFFF);
+    }
+
+    private static boolean isParseable(String s, int pos, int end, int radix, int maxLength, boolean allowLeadingZero,
+        int minValue, int maxValue)
+    {
+        int length = end - pos;
+        if (length < 1 | length > maxLength)
+        {
+            return false;
+        }
+
+        boolean checkLeadingZero = length > 1 & !allowLeadingZero; 
+        if (checkLeadingZero && Character.digit(s.charAt(pos), radix) <= 0)
+        {
+            return false;
+        }
+
+        int value = 0;
+        while (pos < end)
+        {
+            char c = s.charAt(pos++);
+            int d = Character.digit(c, radix);
+            if (d < 0)
+            {
+                return false;
+            }
+
+            value *= radix;
+            value += d;
+        }
+
+        return value >= minValue & value <= maxValue;
     }
 }
-
-
