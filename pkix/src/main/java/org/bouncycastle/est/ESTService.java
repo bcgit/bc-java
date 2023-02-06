@@ -157,13 +157,10 @@ public class ESTService
 
                 try
                 {
-                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
-                    {
-                        ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                        SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
-                        caCerts = spkr.getCertificates();
-                        crlHolderStore = spkr.getCRLs();
-                    }
+                    ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+                    SimplePKIResponse spkr = new SimplePKIResponse(ContentInfo.getInstance((ASN1Sequence)ain.readObject()));
+                    caCerts = spkr.getCertificates();
+                    crlHolderStore = spkr.getCRLs();
                 }
                 catch (Throwable ex)
                 {
@@ -680,12 +677,9 @@ public class ESTService
             case 200:
                 try
                 {
-                    if (resp.getContentLength() != null && resp.getContentLength() > 0)
-                    {
-                        ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
-                        ASN1Sequence seq = ASN1Sequence.getInstance(ain.readObject());
-                        response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
-                    }
+                    ASN1InputStream ain = new ASN1InputStream(resp.getInputStream());
+                    ASN1Sequence seq = ASN1Sequence.getInstance(ain.readObject());
+                    response = new CSRAttributesResponse(CsrAttrs.getInstance(seq));
                 }
                 catch (Throwable ex)
                 {
