@@ -502,6 +502,7 @@ public class SparkleEngine
         if (forEncryption)
         {
             System.arraycopy(tag, 0, output, outOff, TAG_BYTES);
+            inlen += TAG_BYTES;
         }
         else
         {
@@ -514,7 +515,7 @@ public class SparkleEngine
             }
         }
         reset(false);
-        return TAG_BYTES;
+        return inlen;
     }
 
     @Override
