@@ -2,6 +2,9 @@ package org.bouncycastle.bcpg;
 
 import java.io.IOException;
 
+/**
+ * @deprecated Will be removed
+ */
 public abstract class OutputStreamPacket
 {
     protected BCPGOutputStream    out;
