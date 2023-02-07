@@ -13,7 +13,6 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
 import org.bouncycastle.asn1.crmf.CertRequest;
@@ -311,9 +310,7 @@ public class CertificateRequestMessageBuilder
         }
         else if (agreeMAC != null)
         {
-            proofOfPossession = new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT,
-                POPOPrivKey.getInstance(new DERTaggedObject(false, POPOPrivKey.agreeMAC, agreeMAC)));
-
+            proofOfPossession = new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT, new POPOPrivKey(agreeMAC));
         }
         else if (popRaVerified != null)
         {
