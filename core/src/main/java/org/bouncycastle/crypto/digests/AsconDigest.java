@@ -17,45 +17,35 @@ public class AsconDigest
         AsconXofA,
     }
 
+    AsconParameters asconParameters;
+
     public AsconDigest(AsconParameters parameters)
     {
+        this.asconParameters = parameters;
         switch (parameters)
         {
         case AsconHash:
             ASCON_PB_ROUNDS = 12;
-            ASCON_IV = (((long)(ASCON_HASH_RATE * 8) << 48) |
-                ((long)(ASCON_PA_ROUNDS) << 40) |
-                ((long)(ASCON_HASH_BYTES * 8)));
             algorithmName = "Ascon-Hash";
             break;
         case AsconHashA:
             ASCON_PB_ROUNDS = 8;
-            ASCON_IV = (((long)(ASCON_HASH_RATE * 8) << 48) |
-                ((long)(ASCON_PA_ROUNDS) << 40) |
-                ((long)(ASCON_PA_ROUNDS - ASCON_PB_ROUNDS) << 32) |
-                ((long)(ASCON_HASH_BYTES * 8)));
             algorithmName = "Ascon-HashA";
             break;
         case AsconXof:
             ASCON_PB_ROUNDS = 12;
-            ASCON_IV = (((long)(ASCON_HASH_RATE * 8) << 48) |
-                ((long)(ASCON_PA_ROUNDS) << 40));
             algorithmName = "Ascon-Xof";
             break;
         case AsconXofA:
             ASCON_PB_ROUNDS = 8;
-            ASCON_IV = (((long)(ASCON_HASH_RATE * 8) << 48) |
-                ((long)(ASCON_PA_ROUNDS) << 40) |
-                ((long)(ASCON_PA_ROUNDS - ASCON_PB_ROUNDS) << 32));
             algorithmName = "Ascon-XofA";
             break;
         default:
             throw new IllegalArgumentException("Invalid parameter settings for Ascon Hash");
         }
+        reset();
     }
-
     private String algorithmName;
-
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private long x0;
     private long x1;
@@ -63,14 +53,7 @@ public class AsconDigest
     private long x3;
     private long x4;
     private final int CRYPTO_BYTES = 32;
-    private final long ASCON_IV;
-    private final int ASCON_HASH_RATE = 8;
-    private final int ASCON_PA_ROUNDS = 12;
-    private int ASCON_PB_ROUNDS;
-
-
-    private int ASCON_HASH_BYTES = 32;
-
+    private final int ASCON_PB_ROUNDS;
     private long ROR(long x, int n)
     {
         return x >>> n | x << (64 - n);
@@ -173,14 +156,8 @@ public class AsconDigest
         byte[] input = buffer.toByteArray();
         int len = buffer.size();
         int inOff = 0;
-        /* initialize */
-        x0 = ASCON_IV;
-        x1 = 0;
-        x2 = 0;
-        x3 = 0;
-        x4 = 0;
-        P(ASCON_PA_ROUNDS);
         /* absorb full plaintext blocks */
+        int ASCON_HASH_RATE = 8;
         while (len >= ASCON_HASH_RATE)
         {
             x0 ^= LOADBYTES(input, inOff, 8);
@@ -191,6 +168,7 @@ public class AsconDigest
         /* absorb final plaintext block */
         x0 ^= LOADBYTES(input, inOff, len);
         x0 ^= PAD(len);
+        int ASCON_PA_ROUNDS = 12;
         P(ASCON_PA_ROUNDS);
         /* squeeze full output blocks */
         len = CRYPTO_BYTES;
@@ -203,6 +181,7 @@ public class AsconDigest
         }
         /* squeeze final output block */
         STOREBYTES(output, outOff, x0, len);
+        reset();
         return CRYPTO_BYTES;
     }
 
@@ -210,5 +189,37 @@ public class AsconDigest
     public void reset()
     {
         buffer.reset();
+        /* initialize */
+        switch (asconParameters)
+        {
+        case AsconHashA:
+            x0 = 92044056785660070L;
+            x1 = 8326807761760157607L;
+            x2 = 3371194088139667532L;
+            x3 = -2956994353054992515L;
+            x4 = -6828509670848688761L;
+            break;
+        case AsconHash:
+            x0 = -1255492011513352131L;
+            x1 = -8380609354527731710L;
+            x2 = -5437372128236807582L;
+            x3 = 4834782570098516968L;
+            x4 = 3787428097924915520L;
+            break;
+        case AsconXof:
+            x0 = -5368810569253202922L;
+            x1 = 3121280575360345120L;
+            x2 = 7395939140700676632L;
+            x3 = 6533890155656471820L;
+            x4 = 5710016986865767350L;
+            break;
+        case AsconXofA:
+            x0 = 4940560291654768690L;
+            x1 = -3635129828240960206L;
+            x2 = -597534922722107095L;
+            x3 = 2623493988082852443L;
+            x4 = -6283826724160825537L;
+            break;
+        }
     }
 }
