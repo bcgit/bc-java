@@ -45,6 +45,7 @@ public class AsconDigest
         }
         reset();
     }
+
     private String algorithmName;
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private long x0;
@@ -54,6 +55,7 @@ public class AsconDigest
     private long x4;
     private final int CRYPTO_BYTES = 32;
     private final int ASCON_PB_ROUNDS;
+
     private long ROR(long x, int n)
     {
         return x >>> n | x << (64 - n);
