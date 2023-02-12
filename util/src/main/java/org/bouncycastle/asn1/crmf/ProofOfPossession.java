@@ -33,6 +33,7 @@ public class ProofOfPossession
             break;
         case 2:
         case 3:
+            // CHOICE so explicit
             obj = POPOPrivKey.getInstance(tagged, true);
             break;
         default:
