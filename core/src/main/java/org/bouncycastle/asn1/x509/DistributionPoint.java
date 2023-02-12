@@ -59,6 +59,7 @@ public class DistributionPoint
             switch (t.getTagNo())
             {
             case 0:
+                // CHOICE so explicit
                 distributionPoint = DistributionPointName.getInstance(t, true);
                 break;
             case 1:

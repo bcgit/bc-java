@@ -8,7 +8,10 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.digests.AsconDigest;
+import org.bouncycastle.crypto.digests.XoodyakDigest;
 import org.bouncycastle.crypto.engines.AsconEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -28,6 +31,14 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testVectorsHash(AsconDigest.AsconParameters.AsconHashA, "asconhasha");
+        testVectorsHash(AsconDigest.AsconParameters.AsconHash, "asconhash");
+        testVectorsHash(AsconDigest.AsconParameters.AsconXof, "asconxof");
+        testVectorsHash(AsconDigest.AsconParameters.AsconXofA, "asconxofa");
+        testExceptions(new AsconDigest(AsconDigest.AsconParameters.AsconHashA), 32);
+        testExceptions(new AsconDigest(AsconDigest.AsconParameters.AsconHash), 32);
+        testExceptions(new AsconDigest(AsconDigest.AsconParameters.AsconXof), 32);
+        testExceptions(new AsconDigest(AsconDigest.AsconParameters.AsconXofA), 32);
         AsconEngine Ascon = new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
         testExceptions(Ascon, Ascon.getKeyBytesSize(), Ascon.getIVBytesSize(), 8);
         testParameters(Ascon, 20, 16, 16);
@@ -391,6 +402,76 @@ public class AsconTest
             fail("mac bytes of " + ascon.getAlgorithmName() + " is not correct");
         }
         System.out.println(ascon.getAlgorithmName() + " test Parameters pass");
+    }
+
+    private void testVectorsHash(AsconDigest.AsconParameters AsconParameters, String filename)
+        throws Exception
+    {
+        AsconDigest Ascon = new AsconDigest(AsconParameters);
+        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/Ascon/" + filename + "_LWC_HASH_KAT_256.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        byte[] ptByte;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+//                if (!map.get("Count").equals("3"))
+//                {
+//                    continue;
+//                }
+                Ascon.reset();
+                ptByte = Hex.decode((String)map.get("Msg"));
+                Ascon.update(ptByte, 0, ptByte.length);
+                byte[] hash = new byte[Ascon.getDigestSize()];
+                Ascon.doFinal(hash, 0);
+                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
+                {
+                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+//                else
+//                {
+//                    System.out.println("Keystream " + map.get("Count") + " pass");
+//                }
+                map.clear();
+                Ascon.reset();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+        System.out.println("Ascon Hash pass");
+    }
+
+    private void testExceptions(Digest digest, int digestsize)
+    {
+        if (digest.getDigestSize() != digestsize)
+        {
+            fail(digest.getAlgorithmName() + ": digest size is not correct");
+        }
+
+        try
+        {
+            digest.update(new byte[1], 1, 1);
+            fail(digest.getAlgorithmName() + ": input for update is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+        try
+        {
+            digest.doFinal(new byte[digest.getDigestSize() - 1], 2);
+            fail(digest.getAlgorithmName() + ": output for dofinal is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+        System.out.println(digest.getAlgorithmName() + " test Exceptions pass");
     }
 
 
