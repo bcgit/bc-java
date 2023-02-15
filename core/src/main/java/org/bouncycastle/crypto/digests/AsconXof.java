@@ -3,38 +3,38 @@ package org.bouncycastle.crypto.digests;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.Xof;
 
-/* ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
+/* ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
  * <p>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
  * <p>
- * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
+ * ASCON v1.2 XOF with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
-public class AsconDigest
-    implements Digest
+public class AsconXof
+    implements Xof
 {
     public enum AsconParameters
     {
-        AsconHash,
-        AsconHashA,
+        AsconXof,
+        AsconXofA,
     }
 
-    AsconParameters asconParameters;
+    AsconXof.AsconParameters asconParameters;
 
-    public AsconDigest(AsconParameters parameters)
+    public AsconXof(AsconXof.AsconParameters parameters)
     {
         this.asconParameters = parameters;
         switch (parameters)
         {
-        case AsconHash:
+        case AsconXof:
             ASCON_PB_ROUNDS = 12;
-            algorithmName = "Ascon-Hash";
+            algorithmName = "Ascon-Xof";
             break;
-        case AsconHashA:
+        case AsconXofA:
             ASCON_PB_ROUNDS = 8;
-            algorithmName = "Ascon-HashA";
+            algorithmName = "Ascon-XofA";
             break;
         default:
             throw new IllegalArgumentException("Invalid parameter settings for Ascon Hash");
@@ -145,7 +145,7 @@ public class AsconDigest
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
+    public int doOutput(byte[] output, int outOff, int outLen)
     {
         if (CRYPTO_BYTES + outOff > output.length)
         {
@@ -184,26 +184,45 @@ public class AsconDigest
     }
 
     @Override
+    public int doFinal(byte[] output, int outOff)
+    {
+        return doOutput(output, outOff, getDigestSize());
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff, int outLen)
+    {
+        return doOutput(output, outOff, outLen);
+    }
+
+    @Override
+    public int getByteLength()
+    {
+        return 8;
+    }
+
+    @Override
     public void reset()
     {
         buffer.reset();
         /* initialize */
         switch (asconParameters)
         {
-        case AsconHashA:
-            x0 = 92044056785660070L;
-            x1 = 8326807761760157607L;
-            x2 = 3371194088139667532L;
-            x3 = -2956994353054992515L;
-            x4 = -6828509670848688761L;
+        case AsconXof:
+            x0 = -5368810569253202922L;
+            x1 = 3121280575360345120L;
+            x2 = 7395939140700676632L;
+            x3 = 6533890155656471820L;
+            x4 = 5710016986865767350L;
             break;
-        case AsconHash:
-            x0 = -1255492011513352131L;
-            x1 = -8380609354527731710L;
-            x2 = -5437372128236807582L;
-            x3 = 4834782570098516968L;
-            x4 = 3787428097924915520L;
+        case AsconXofA:
+            x0 = 4940560291654768690L;
+            x1 = -3635129828240960206L;
+            x2 = -597534922722107095L;
+            x3 = 2623493988082852443L;
+            x4 = -6283826724160825537L;
             break;
         }
     }
 }
+
