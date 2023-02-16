@@ -109,7 +109,7 @@ public class CipherFactory
             CCMParameters ccmParameters = CCMParameters.getInstance(encryptionAlgID.getParameters());
             if (!(encKey instanceof KeyParameter))
             {
-                throw new IllegalArgumentException("key data must be accessible for GCM operation");
+                throw new IllegalArgumentException("key data must be accessible for CCM operation");
             }
             AEADParameters aeadParameters = new AEADParameters((KeyParameter)encKey, ccmParameters.getIcvLen() * 8, ccmParameters.getNonce());
             cipher.init(forEncryption, aeadParameters);
