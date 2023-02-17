@@ -13,7 +13,7 @@ public abstract class RecipientInformation
 {
     protected RecipientId rid;
     protected AlgorithmIdentifier   keyEncAlg;
-    protected AlgorithmIdentifier messageAlgorithm;
+    protected AlgorithmIdentifier   messageAlgorithm;
     protected CMSSecureReadable     secureReadable;
 
     private AuthAttributesProvider additionalData;

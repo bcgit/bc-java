@@ -93,7 +93,7 @@ public class JceSymmetricKeyWrapper
             return new AlgorithmIdentifier(new ASN1ObjectIdentifier(
                     "1.2.840.113549.1.9.16.3.7"), new ASN1Integer(58));
         }
-        else if (algorithm.startsWith("AES"))
+        else if (algorithm.startsWith("AES") || algorithm.startsWith(NISTObjectIdentifiers.aes.getId()))
         {
             ASN1ObjectIdentifier wrapOid;
 

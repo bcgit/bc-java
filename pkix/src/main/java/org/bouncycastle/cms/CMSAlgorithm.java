@@ -99,4 +99,6 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  RIPEMD160 = TeleTrusTObjectIdentifiers.ripemd160.intern();
     public static final ASN1ObjectIdentifier  RIPEMD256 = TeleTrusTObjectIdentifiers.ripemd256.intern();
 
+    public static final ASN1ObjectIdentifier  SHAKE128_LEN = NISTObjectIdentifiers.id_shake128_len.intern();
+    public static final ASN1ObjectIdentifier  SHAKE256_LEN = NISTObjectIdentifiers.id_shake256_len.intern();
 }
