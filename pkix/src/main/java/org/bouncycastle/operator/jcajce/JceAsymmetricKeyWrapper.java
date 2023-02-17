@@ -29,8 +29,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.cms.GenericKemTransParameters;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
 import org.bouncycastle.asn1.cryptopro.GostR3410KeyTransport;
@@ -44,7 +42,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
-import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -52,7 +49,6 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.AsymmetricKeyWrapper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
 import org.bouncycastle.util.Arrays;
 
 public class JceAsymmetricKeyWrapper
@@ -237,68 +233,6 @@ public class JceAsymmetricKeyWrapper
                 throw new OperatorException("exception wrapping key: " + e.getMessage(), e);
             }
         }
-        else if (BCObjectIdentifiers.bc_kem.equals(getAlgorithmIdentifier().getAlgorithm()))
-        {
-            GenericKemTransParameters gktParams = GenericKemTransParameters.getInstance(getAlgorithmIdentifier().getParameters());
-            Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(gktParams.getKem().getAlgorithm(), extraMappings);
-            AlgorithmParameters algParams = null;
-
-            try
-            {
-                // in this case there are algorithm parameters, but they're not for key wrapping.
-                algParams = helper.createAlgorithmParameters(gktParams.getKem());
-
-                if (algParams != null)
-                {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, algParams, random);
-                }
-                else
-                {
-                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, random);
-                }
-                encryptedKeyBytes = keyEncryptionCipher.wrap(OperatorUtils.getJceKey(encryptionKey));
-            }
-            catch (InvalidKeyException e)
-            {
-            }
-            catch (GeneralSecurityException e)
-            {
-            }
-            catch (IllegalStateException e)
-            {
-            }
-            catch (UnsupportedOperationException e)
-            {
-            }
-            catch (ProviderException e)
-            {
-            }
-
-            // some providers do not support WRAP (this appears to be only for asymmetric algorithms)
-            if (encryptedKeyBytes == null)
-            {
-                try
-                {
-                    if (algParams != null)
-                    {
-                        keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, algParams, random);
-                    }
-                    else
-                    {
-                        keyEncryptionCipher.init(Cipher.ENCRYPT_MODE, publicKey, random);
-                    }
-                    encryptedKeyBytes = keyEncryptionCipher.doFinal(OperatorUtils.getJceKey(encryptionKey).getEncoded());
-                }
-                catch (InvalidKeyException e)
-                {
-                    throw new OperatorException("unable to encrypt contents key", e);
-                }
-                catch (GeneralSecurityException e)
-                {
-                    throw new OperatorException("unable to encrypt contents key", e);
-                }
-            }
-        }
         else
         {
             Cipher keyEncryptionCipher = helper.createAsymmetricWrapper(getAlgorithmIdentifier().getAlgorithm(), extraMappings);
@@ -391,20 +325,6 @@ public class JceAsymmetricKeyWrapper
             {
                 throw new IllegalArgumentException("unknown MGF: " + oaepSpec.getMGFAlgorithm());
             }
-        }
-        if (algorithmParameterSpec instanceof KEMParameterSpec)
-        {
-            KEMParameterSpec kemSpec = (KEMParameterSpec)algorithmParameterSpec;
-
-            // TODO: not just kyber and NTRU at the moment.
-            // NOTE: there's a new draft RFC on the way for this one, this will change.
-            if (pubKey instanceof NTRUKey)
-            {
-                return new AlgorithmIdentifier(BCObjectIdentifiers.bc_kem,     // TODO: test OID
-                                        new GenericKemTransParameters(new AlgorithmIdentifier(BCObjectIdentifiers.ntruhrss701), new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes192_wrap)));
-            }
-            return new AlgorithmIdentifier(BCObjectIdentifiers.bc_kem,     // TODO: test OID
-                        new GenericKemTransParameters(new AlgorithmIdentifier(BCObjectIdentifiers.kyber512), new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes128_wrap)));
         }
 
         throw new IllegalArgumentException("unknown spec: " + algorithmParameterSpec.getClass().getName());
