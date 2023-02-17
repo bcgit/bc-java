@@ -49,6 +49,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.KEMKeyUnwrapper;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
@@ -655,6 +656,12 @@ public class EnvelopedDataHelper
     public SymmetricKeyUnwrapper createSymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, SecretKey keyEncryptionKey)
     {
         return helper.createSymmetricUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey);
+    }
+
+    public KEMKeyUnwrapper createKEMUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey)
+    {
+        keyEncryptionKey = CMSUtils.cleanPrivateKey(keyEncryptionKey);
+        return helper.createKEMUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey);
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier(ASN1ObjectIdentifier macOID, AlgorithmParameterSpec paramSpec)

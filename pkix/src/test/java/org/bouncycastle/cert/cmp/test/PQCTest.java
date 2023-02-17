@@ -48,9 +48,9 @@ import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
-import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
-import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
-import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.cms.jcajce.JceCMSKEMKeyWrapper;
+import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
@@ -60,7 +60,6 @@ import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
-import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -144,8 +143,8 @@ public class PQCTest
 
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
 
-        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
-                    new JceAsymmetricKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert))));
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
+                    new JceCMSKEMKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert), CMSAlgorithm.SHAKE256_LEN, CMSAlgorithm.AES256_WRAP)));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
@@ -179,6 +178,25 @@ public class PQCTest
 
         // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
+
+//        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert_enveloped.pem"));
+//        pOut.writeObject(receivedEnvelope.toASN1Structure());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_priv.pem"));
+//        pOut.writeObject(kybKp.getPrivate());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert.pem"));
+//        pOut.writeObject(cert);
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/issuer_cert.pem"));
+//        pOut.writeObject(caCert);
+//        pOut.close();
+//
+//        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
+
         RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
 //                System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(receivedEnvelope.getEncoded())));
         Collection c = recipients.getRecipients();
@@ -191,13 +209,13 @@ public class PQCTest
 
         // Note: we don't specify the provider here as we're actually using both BC and BCPQC
 
-        byte[] recData = recInfo.getContent(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+        byte[] recData = recInfo.getContent(new JceKEMEnvelopedRecipient(kybKp.getPrivate()));
 
         assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
 
         // this is the preferred way of recovering an encrypted certificate
 
-        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKEMEnvelopedRecipient(kybKp.getPrivate()));
 
         X509CertificateHolder receivedCert = new X509CertificateHolder(receivedCMPCert.getX509v3PKCert());
 
@@ -244,14 +262,14 @@ public class PQCTest
 
         kybKpGen.initialize(NTRUParameterSpec.ntruhrss701);
 
-        KeyPair kybKp = kybKpGen.generateKeyPair();
+        KeyPair ntruKp = kybKpGen.generateKeyPair();
 
         // initial request
 
         JcaCertificateRequestMessageBuilder certReqBuild = new JcaCertificateRequestMessageBuilder(BigIntegers.ONE);
 
         certReqBuild
-            .setPublicKey(kybKp.getPublic())
+            .setPublicKey(ntruKp.getPublic())
             .setSubject(X500Name.getInstance(sender.getName()))
             .setProofOfPossessionSubsequentMessage(SubsequentMessage.encrCert);
 
@@ -286,10 +304,8 @@ public class PQCTest
 
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
 
-        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
-                    new JceAsymmetricKeyWrapper(
-                        new KEMParameterSpec("AES-KWP", 192),
-                        new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey())));
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
+                    new JceCMSKEMKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.SHAKE256_LEN, CMSAlgorithm.AES256_WRAP)));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
@@ -330,17 +346,17 @@ public class PQCTest
 
         RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
 
-        assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.bc_kem.getId());
+        assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.ntruhrss701.getId());
 
         // Note: we don't specify the provider here as we're actually using both BC and BCPQC
 
-        byte[] recData = recInfo.getContent(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+        byte[] recData = recInfo.getContent(new JceKEMEnvelopedRecipient(ntruKp.getPrivate()));
 
         assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
 
         // this is the preferred way of recovering an encrypted certificate
 
-        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKeyTransEnvelopedRecipient(kybKp.getPrivate()));
+        CMPCertificate receivedCMPCert = certResp.getCertificate(new JceKEMEnvelopedRecipient(ntruKp.getPrivate()));
 
         X509CertificateHolder receivedCert = new X509CertificateHolder(receivedCMPCert.getX509v3PKCert());
 

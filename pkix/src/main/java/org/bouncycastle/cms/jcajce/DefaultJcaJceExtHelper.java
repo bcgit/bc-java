@@ -6,6 +6,7 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
+import org.bouncycastle.operator.KEMKeyUnwrapper;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceKTSKeyUnwrapper;
@@ -30,5 +31,10 @@ class DefaultJcaJceExtHelper
     public SymmetricKeyUnwrapper createSymmetricUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, SecretKey keyEncryptionKey)
     {
         return new JceSymmetricKeyUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey);
+    }
+
+    public KEMKeyUnwrapper createKEMUnwrapper(AlgorithmIdentifier keyEncryptionAlgorithm, PrivateKey keyEncryptionKey)
+    {
+        return new JceCMSKEMKeyUnwrapper(keyEncryptionAlgorithm, keyEncryptionKey);
     }
 }

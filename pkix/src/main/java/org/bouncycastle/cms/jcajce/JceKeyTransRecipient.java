@@ -16,7 +16,7 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.cms.GenericKemTransParameters;
+import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
 import org.bouncycastle.asn1.cryptopro.GostR3410KeyTransport;
@@ -194,7 +194,7 @@ public abstract class JceKeyTransRecipient
         else if (BCObjectIdentifiers.bc_kem.equals(keyEncryptionAlgorithm.getAlgorithm()))
         {
             // TODO: note there is a move to change the type for KEMs from KeyTrans, expect this to change
-            GenericKemTransParameters gktParams = GenericKemTransParameters.getInstance(keyEncryptionAlgorithm.getParameters());
+            KEMRecipientInfo gktParams = KEMRecipientInfo.getInstance(keyEncryptionAlgorithm.getParameters());
             JceAsymmetricKeyUnwrapper unwrapper = helper.createAsymmetricUnwrapper(gktParams.getKem(), recipientKey).setMustProduceEncodableUnwrappedKey(unwrappedKeyMustBeEncodable);
 
             if (!extraMappings.isEmpty())

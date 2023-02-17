@@ -9,9 +9,12 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cms.KEKRecipientInfo;
+import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.KeyTransRecipientInfo;
+import org.bouncycastle.asn1.cms.OtherRecipientInfo;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -46,6 +49,15 @@ class CMSEnvelopedHelper
         {
             infos.add(new KeyTransRecipientInformation(
                 (KeyTransRecipientInfo)recipInfo, messageAlgorithm, secureReadable, additionalData));
+        }
+        else if (recipInfo instanceof OtherRecipientInfo)
+        {
+            OtherRecipientInfo otherRecipientInfo = OtherRecipientInfo.getInstance(recipInfo);
+            if (BCObjectIdentifiers.bc_kem.equals(otherRecipientInfo.getType())) // TODO: use INA value
+            {
+                infos.add(new KEMRecipientInformation(
+                    KEMRecipientInfo.getInstance(otherRecipientInfo.getValue()), messageAlgorithm, secureReadable, additionalData));
+            }
         }
         else if (recipInfo instanceof KEKRecipientInfo)
         {
