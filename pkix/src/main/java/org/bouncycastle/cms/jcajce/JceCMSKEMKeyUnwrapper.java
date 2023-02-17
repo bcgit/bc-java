@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -11,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cms.CMSORIforKEMOtherInfo;
 import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -106,6 +108,17 @@ public class JceCMSKEMKeyUnwrapper
             SHAKEDigest sd = new SHAKEDigest(256);               // TODO: support something other than SHAKE256
 
             sd.update(secretEnc, 0, secretEnc.length);
+
+            try
+            {
+                byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(wrapAlg, kekLength).getEncoded();
+                sd.update(oriInfoEnc, 0, oriInfoEnc.length);
+            }
+            catch (IOException e)
+            {
+                // should never happer
+                throw new OperatorException("cannot encode CMSORIforKEMOtherInfo");
+            }
 
             byte[] keyEnc = new byte[kekLength];
 
