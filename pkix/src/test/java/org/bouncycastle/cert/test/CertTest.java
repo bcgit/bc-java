@@ -65,6 +65,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.AltSignatureAlgorithm;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
@@ -74,6 +75,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.SubjectAltPublicKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -4166,6 +4168,154 @@ public class CertTest
         cert.getEncoded();
     }
 
+    public void checkCreationDilithiumWithECDSA()
+        throws Exception
+    {
+        if (Security.getProvider("BCPQC") == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
+        }
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new SecureRandom());
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        PrivateKey ecPrivKey = ecKp.getPrivate();
+        PublicKey ecPubKey = ecKp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create base certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPrivKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            builder.build(), BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + SIX_MONTHS),
+            builder.build(), ecPubKey)
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                new X509KeyUsage(X509KeyUsage.encipherOnly))
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
+                new DERSequence(KeyPurposeId.anyExtendedKeyUsage))
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.17"), true,
+                new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")))
+            .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        isTrue("oid wrong: " + cert.getSigAlgOID(), X9ObjectIdentifiers.ecdsa_with_SHA256.getId().equals(cert.getSigAlgOID()));
+        isTrue("params wrong", null == cert.getSigAlgParams());
+
+        //
+        // copy certificate
+        //
+
+        cert.checkValidity(new Date());
+
+        cert.verify(cert.getPublicKey());
+
+        isEquals("name mismatch: " + cert.getSigAlgName(), "SHA256WITHECDSA", cert.getSigAlgName());
+        
+        // check encoded works
+        cert.getEncoded();
+
+        X509CertificateHolder certHolder = new JcaX509CertificateHolder(cert);
+
+        isTrue("alt key wrong", SubjectAltPublicKeyInfo.fromExtensions(certHolder.getExtensions()).equals(ASN1Primitive.fromByteArray(pubKey.getEncoded())));
+    }
+
+    public void checkCreationDilithiumSigWithECDSASig()
+        throws Exception
+    {
+        if (Security.getProvider("BCPQC") == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
+        }
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new SecureRandom());
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        PrivateKey ecPrivKey = ecKp.getPrivate();
+        PublicKey ecPubKey = ecKp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create base certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPrivKey);
+
+        ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(privKey);
+
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            builder.build(), BigInteger.valueOf(1),
+            new Date(System.currentTimeMillis() - 50000),
+            new Date(System.currentTimeMillis() + SIX_MONTHS),
+            builder.build(), ecPubKey)
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
+                new X509KeyUsage(X509KeyUsage.encipherOnly))
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
+                new DERSequence(KeyPurposeId.anyExtendedKeyUsage))
+            .addExtension(new ASN1ObjectIdentifier("2.5.29.17"), true,
+                new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")))
+            .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen, false, altSigGen));
+
+        isTrue("oid wrong: " + cert.getSigAlgOID(), X9ObjectIdentifiers.ecdsa_with_SHA256.getId().equals(cert.getSigAlgOID()));
+        isTrue("params wrong", null == cert.getSigAlgParams());
+
+        //
+        // copy certificate
+        //
+
+        cert.checkValidity(new Date());
+
+        cert.verify(cert.getPublicKey());
+
+        isEquals("name mismatch: " + cert.getSigAlgName(), "SHA256WITHECDSA", cert.getSigAlgName());
+
+        // check encoded works
+        cert.getEncoded();
+
+        X509CertificateHolder certHolder = new JcaX509CertificateHolder(cert);
+
+        isTrue("alt sig alg wrong", AltSignatureAlgorithm.fromExtensions(certHolder.getExtensions()).equals(altSigGen.getAlgorithmIdentifier()));
+        isTrue("alt key wrong", SubjectAltPublicKeyInfo.fromExtensions(certHolder.getExtensions()).equals(ASN1Primitive.fromByteArray(pubKey.getEncoded())));
+
+        isTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(pubKey)));
+    }
+
     public void checkCreationComposite()
         throws Exception
     {
@@ -5181,8 +5331,11 @@ public class CertTest
         checkCreationFalcon();
         checkCreationDilithium();
         checkCreationPicnic();
-        
+
         checkSm3WithSm2Creation();
+
+        checkCreationDilithiumWithECDSA();
+        checkCreationDilithiumSigWithECDSASig();
 
         checkCreationComposite();
         checkCompositeCertificateVerify();
