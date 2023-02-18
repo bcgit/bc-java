@@ -1,18 +1,25 @@
 package org.bouncycastle.cert;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -404,6 +411,82 @@ public class X509v2CRLBuilder
             tbsGen.setExtensions(extGenerator.generate());
         }
 
-        return CertUtils.generateFullCRL(signer, tbsGen.generateTBSCertList());
+        return generateFullCRL(signer, tbsGen.generateTBSCertList());
+    }
+
+    /**
+     * Generate an X.509 CRL, based on the current issuer
+     * using the passed in signer and containing altSignatureAlgorithm and altSignatureValue extensions
+     * based on the passed altSigner.
+     *
+     * @param signer the content signer to be used to generate the signature validating the CRL.
+     * @param altSigner the content signer used to create the altSignatureAlgorithm and altSignatureValue extension.
+     * @return a holder containing the resulting signed CRL.
+     */
+    public X509CRLHolder build(
+        ContentSigner signer,
+        boolean isCritical,
+        ContentSigner altSigner)
+    {
+        tbsGen.setSignature(signer.getAlgorithmIdentifier());
+
+        try
+        {
+            extGenerator.addExtension(Extension.altSignatureAlgorithm, isCritical, altSigner.getAlgorithmIdentifier());
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("cannot add altSignatureAlgorithm extension");
+        }
+
+        tbsGen.setExtensions(extGenerator.generate());
+
+        try
+        {
+            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generateTBSCertList())));
+
+            tbsGen.setExtensions(extGenerator.generate());
+
+            TBSCertList tbsCert = tbsGen.generateTBSCertList();
+
+            return new X509CRLHolder(generateCRLStructure(tbsCert, signer.getAlgorithmIdentifier(), generateSig(signer, tbsCert)));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("cannot produce certificate signature");
+        }
+    }
+
+    private static X509CRLHolder generateFullCRL(ContentSigner signer, TBSCertList tbsCertList)
+    {
+        try
+        {
+            return new X509CRLHolder(generateCRLStructure(tbsCertList, signer.getAlgorithmIdentifier(), generateSig(signer, tbsCertList)));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("cannot produce certificate signature");
+        }
+    }
+
+    private static CertificateList generateCRLStructure(TBSCertList tbsCertList, AlgorithmIdentifier sigAlgId, byte[] signature)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsCertList);
+        v.add(sigAlgId);
+        v.add(new DERBitString(signature));
+
+        return CertificateList.getInstance(new DERSequence(v));
+    }
+
+    private static byte[] generateSig(ContentSigner signer, ASN1Object tbsObj)
+        throws IOException
+    {
+        OutputStream sOut = signer.getOutputStream();
+        tbsObj.encodeTo(sOut, ASN1Encoding.DER);
+        sOut.close();
+
+        return signer.getSignature();
     }
 }

@@ -3012,6 +3012,138 @@ public class CertTest
         crl.verify(compPub);
     }
 
+    public void checkCrlECDSAwithDilithiumCreation()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpg.initialize(new ECGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator dlKpg = KeyPairGenerator.getInstance("Dilithium2", "BCPQC");
+
+        dlKpg.initialize(DilithiumParameterSpec.dilithium2);
+
+        KeyPair dlKp = dlKpg.generateKeyPair();
+
+        PrivateKey dlPriv = dlKp.getPrivate();
+        PublicKey dlPub = dlKp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
+            .add("SHA256withECDSA")
+            .add("LMS")
+            .build();
+        CompositePublicKey compPub = new CompositePublicKey(ecPub, dlPub);
+        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, dlPriv);
+
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPriv);
+        ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(dlPriv);
+
+        Date now = new Date();
+
+        X509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(new X500Principal("CN=Test CA"), now);
+
+        crlGen.setNextUpdate(new Date(now.getTime() + 100000));
+
+        Vector extOids = new Vector();
+        Vector extValues = new Vector();
+
+        CRLReason crlReason = CRLReason.lookup(CRLReason.privilegeWithdrawn);
+
+        try
+        {
+            extOids.addElement(Extension.reasonCode);
+            extValues.addElement(new Extension(Extension.reasonCode, false, new DEROctetString(crlReason.getEncoded())));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("error encoding reason: " + e);
+        }
+
+        Extensions entryExtensions = generateExtensions(extOids, extValues);
+
+        crlGen.addCRLEntry(BigInteger.ONE, now, entryExtensions);
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(ecKp.getPublic()));
+
+        X509CRLHolder crlHolder = crlGen.build(sigGen, false, altSigGen);
+
+        X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
+
+        // verify test
+        crl.verify(ecPub);
+
+        // verify with provider
+        crl.verify(ecPub, BC);
+
+        isTrue("primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub)));
+        isTrue("secodnary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
+
+        if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
+        {
+            fail("failed CRL issuer test");
+        }
+
+        byte[] authExt = crl.getExtensionValue(Extension.authorityKeyIdentifier.getId());
+
+        if (authExt == null)
+        {
+            fail("failed to find CRL extension");
+        }
+
+        AuthorityKeyIdentifier authId = AuthorityKeyIdentifier.getInstance(ASN1OctetString.getInstance(authExt).getOctets());
+
+        X509CRLEntry entry = crl.getRevokedCertificate(BigInteger.ONE);
+
+        if (entry == null)
+        {
+            fail("failed to find CRL entry");
+        }
+
+        if (!entry.getSerialNumber().equals(BigInteger.ONE))
+        {
+            fail("CRL cert serial number does not match");
+        }
+
+        if (!entry.hasExtensions())
+        {
+            fail("CRL entry extension not found");
+        }
+
+        byte[] ext = entry.getExtensionValue(Extension.reasonCode.getId());
+
+        if (ext != null)
+        {
+            ASN1Enumerated reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
+
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
+            {
+                fail("CRL entry reasonCode wrong");
+            }
+        }
+        else
+        {
+            fail("CRL entry reasonCode not found");
+        }
+    }
+
     /*
      * we generate a self signed certificate for the sake of testing - GOST3410
      */
@@ -5357,6 +5489,7 @@ public class CertTest
         checkCRLCreation4();
         checkCRLCreation5();
         checkCRLCompositeCreation();
+        checkCrlECDSAwithDilithiumCreation();
 
         pemTest();
         pkcs7Test();

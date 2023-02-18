@@ -15,7 +15,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AltSignatureAlgorithm;
@@ -333,19 +332,8 @@ public class X509CertificateHolder
             {
                 v.add(tbsSeq.getObjectAt(i));
             }
-            ASN1Sequence extSeq = ASN1Sequence.getInstance(tbsCert.getExtensions());
-            ASN1EncodableVector extV = new ASN1EncodableVector();
-            for (int i = 0; i != extSeq.size(); i++)
-            {
-                ASN1Sequence ext = ASN1Sequence.getInstance(extSeq.getObjectAt(i));
 
-                if (!Extension.altSignatureValue.equals(ext.getObjectAt(0)))
-                {
-                    extV.add(ext);
-                }
-            }
-
-            v.add(new DERTaggedObject(true, 3, new DERSequence(extV)));
+            v.add(CertUtils.trimExtensions(tbsCert.getExtensions()));
 
             TBSCertificate.getInstance(new DERSequence(v)).encodeTo(sOut, ASN1Encoding.DER);
 
