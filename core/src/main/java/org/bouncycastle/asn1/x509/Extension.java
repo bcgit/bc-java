@@ -180,6 +180,21 @@ public class Extension
      */
     public static final ASN1ObjectIdentifier expiredCertsOnCRL = new ASN1ObjectIdentifier("2.5.29.60").intern();
 
+    /**
+     * the subject’s alternative public key information
+     */
+    public static final ASN1ObjectIdentifier subjectAltPublicKeyInfo = new ASN1ObjectIdentifier("2.5.29.72").intern();
+
+    /**
+     * the algorithm identifier for the alternative digital signature algorithm.
+     */
+    public static final ASN1ObjectIdentifier altSignatureAlgorithm = new ASN1ObjectIdentifier("2.5.29.73").intern();
+
+    /**
+     * alternative signature shall be created by the issuer using its alternative private key.
+     */
+    public static final ASN1ObjectIdentifier altSignatureValue = new ASN1ObjectIdentifier("2.5.29.74").intern();
+
     private ASN1ObjectIdentifier extnId;
     private boolean             critical;
     private ASN1OctetString      value;
