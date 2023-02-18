@@ -409,7 +409,7 @@ public class AsconTest
         throws Exception
     {
         AsconDigest Ascon = new AsconDigest(AsconParameters);
-        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/Ascon/" + filename + "_LWC_HASH_KAT_256.txt");
+        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/" + filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;
@@ -451,7 +451,7 @@ public class AsconTest
         throws Exception
     {
         AsconXof Ascon = new AsconXof(AsconParameters);
-        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/Ascon/" + filename + "_LWC_HASH_KAT_256.txt");
+        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/" + filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;
