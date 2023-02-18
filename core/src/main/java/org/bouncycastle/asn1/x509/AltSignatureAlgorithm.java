@@ -64,16 +64,17 @@ public class AltSignatureAlgorithm
 
     private AltSignatureAlgorithm(ASN1Sequence s)
     {
-        if (s.size() != 2)
-        {
-            throw new IllegalArgumentException("extension should contain only 2 elements");
-        }
         algorithm = AlgorithmIdentifier.getInstance(s);
     }
 
     public AltSignatureAlgorithm(AlgorithmIdentifier algorithm)
     {
         this.algorithm = algorithm;
+    }
+
+    public AltSignatureAlgorithm(ASN1ObjectIdentifier algorithm)
+    {
+        this(algorithm, null);
     }
 
     public AltSignatureAlgorithm(ASN1ObjectIdentifier algorithm, ASN1Encodable parameters)
