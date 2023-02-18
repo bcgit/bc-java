@@ -377,6 +377,48 @@ public class X509v3CertificateBuilder
         }
     }
 
+    /**
+     * Generate an X.509 certificate, based on the current issuer and subject
+     * using the passed in signer and containing altSignatureAlgorithm and altSignatureValue extensions
+     * based on the passed altSigner.
+     *
+     * @param signer the content signer to be used to generate the signature validating the certificate.
+     * @param altSigner the content signer used to create the altSignatureAlgorithm and altSignatureValue extension.
+     * @return a holder containing the resulting signed certificate.
+     */
+    public X509CertificateHolder build(
+        ContentSigner signer,
+        boolean isCritical,
+        ContentSigner altSigner)
+    {
+        tbsGen.setSignature(signer.getAlgorithmIdentifier());
+
+        try
+        {
+            extGenerator.addExtension(Extension.altSignatureAlgorithm, isCritical, altSigner.getAlgorithmIdentifier());
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("cannot add altSignatureAlgorithm extension");
+        }
+
+        tbsGen.setExtensions(extGenerator.generate());
+
+        try
+        {
+            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generateTBSCertificate())));
+
+            tbsGen.setExtensions(extGenerator.generate());
+            
+            TBSCertificate tbsCert = tbsGen.generateTBSCertificate();
+            return new X509CertificateHolder(generateStructure(tbsCert, signer.getAlgorithmIdentifier(), generateSig(signer, tbsCert)));
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("cannot produce certificate signature");
+        }
+    }
+
     private static byte[] generateSig(ContentSigner signer, ASN1Object tbsObj)
         throws IOException
     {
