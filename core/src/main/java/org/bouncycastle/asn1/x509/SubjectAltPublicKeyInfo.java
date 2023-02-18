@@ -3,7 +3,6 @@ package org.bouncycastle.asn1.x509;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -42,7 +41,7 @@ public class SubjectAltPublicKeyInfo
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(ASN1OctetString.getInstance(obj, explicit));
+        return getInstance(ASN1Sequence.getInstance(obj, explicit));
     }
 
     public static SubjectAltPublicKeyInfo getInstance(
