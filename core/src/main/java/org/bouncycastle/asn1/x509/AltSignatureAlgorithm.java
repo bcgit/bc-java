@@ -1,6 +1,8 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -72,6 +74,11 @@ public class AltSignatureAlgorithm
     public AltSignatureAlgorithm(AlgorithmIdentifier algorithm)
     {
         this.algorithm = algorithm;
+    }
+
+    public AltSignatureAlgorithm(ASN1ObjectIdentifier algorithm, ASN1Encodable parameters)
+    {
+        this.algorithm = new AlgorithmIdentifier(algorithm, parameters);
     }
 
     public AlgorithmIdentifier getAlgorithm()
