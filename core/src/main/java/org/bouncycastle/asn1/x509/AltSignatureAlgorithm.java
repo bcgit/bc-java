@@ -51,7 +51,7 @@ public class AltSignatureAlgorithm
         }
         else if (obj != null)
         {
-            return new AltSignatureAlgorithm(ASN1Sequence.getInstance(obj));
+            return new AltSignatureAlgorithm(AlgorithmIdentifier.getInstance(obj));
         }
 
         return null;
@@ -60,11 +60,6 @@ public class AltSignatureAlgorithm
     public static AltSignatureAlgorithm fromExtensions(Extensions extensions)
     {
         return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.altSignatureAlgorithm));
-    }
-
-    private AltSignatureAlgorithm(ASN1Sequence s)
-    {
-        algorithm = AlgorithmIdentifier.getInstance(s);
     }
 
     public AltSignatureAlgorithm(AlgorithmIdentifier algorithm)

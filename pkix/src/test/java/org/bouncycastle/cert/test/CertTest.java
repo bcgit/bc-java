@@ -3042,15 +3042,8 @@ public class CertTest
         X500NameBuilder builder = createStdBuilder();
 
         //
-        // create the certificate - version 3
+        // create the CRL - version 2
         //
-        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
-            .add("SHA256withECDSA")
-            .add("LMS")
-            .build();
-        CompositePublicKey compPub = new CompositePublicKey(ecPub, dlPub);
-        CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, dlPriv);
-
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPriv);
         ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(dlPriv);
 
@@ -3094,7 +3087,7 @@ public class CertTest
         crl.verify(ecPub, BC);
 
         isTrue("primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub)));
-        isTrue("secodnary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
+        isTrue("secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
