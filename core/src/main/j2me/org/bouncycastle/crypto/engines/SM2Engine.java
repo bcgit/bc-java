@@ -97,6 +97,11 @@ public class SM2Engine
         int inLen)
         throws InvalidCipherTextException
     {
+        if ((inOff + inLen) > in.length || inLen == 0)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+
         if (forEncryption)
         {
             return encrypt(in, inOff, inLen);
