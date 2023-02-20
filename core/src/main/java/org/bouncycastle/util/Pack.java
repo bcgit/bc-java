@@ -147,7 +147,6 @@ public abstract class Pack
      * @param bs    The target.
      * @param off   Position in target to start.
      * @param bytes number of bytes to write.
-     * 
      * @deprecated Will be removed
      */
     public static void longToBigEndian(long value, byte[] bs, int off, int bytes)
@@ -295,6 +294,40 @@ public abstract class Pack
             ns[nsOff + i] = littleEndianToLong(bs, bsOff);
             bsOff += 8;
         }
+    }
+
+    public static void longToLittleEndian_High(long n, byte[] bs, int off, int len)
+    {
+        //Debug.Assert(1 <= len && len <= 8);
+        int pos = 56;
+        bs[off] = (byte)(n >>> pos);
+        for (int i = 1; i < len; ++i)
+        {
+            pos -= 8;
+            bs[off + i] = (byte)(n >>> pos);
+        }
+    }
+
+//    public static void longToLittleEndian_Low(long n, byte[] bs, int off, int len)
+//    {
+//        longToLittleEndian_High(n << ((8 - len) << 3), bs, off, len);
+//    }
+
+    public static long littleEndianToLong_High(byte[] bs, int off, int len)
+    {
+        return littleEndianToLong_Low(bs, off, len) << ((8 - len) << 3);
+    }
+
+    public static long littleEndianToLong_Low(byte[] bs, int off, int len)
+    {
+        //Debug.Assert(1 <= len && len <= 8);
+        long result = bs[off] & 0xFF;
+        for (int i = 1; i < len; ++i)
+        {
+            result <<= 8;
+            result |= bs[off + i] & 0xFF;
+        }
+        return result;
     }
 
     public static byte[] longToLittleEndian(long n)
