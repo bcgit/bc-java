@@ -45,9 +45,11 @@ public class BCECPrivateKey
     private transient ECParameterSpec         ecSpec;
     private transient ProviderConfiguration   configuration;
     private transient ASN1BitString           publicKey;
+    private transient PrivateKeyInfo          privateKeyInfo;
     private transient byte[]                  encoding;
 
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
+
 
     protected BCECPrivateKey()
     {
@@ -253,6 +255,30 @@ public class BCECPrivateKey
     {
         if (encoding == null)
         {
+            PrivateKeyInfo info = getPrivateKeyInfo();
+
+            if (info == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                encoding = info.getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                return null;
+            }
+        }
+
+        return Arrays.clone(encoding);
+    }
+
+    private PrivateKeyInfo getPrivateKeyInfo()
+    {
+        if (privateKeyInfo == null)
+        {
             X962Parameters params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
 
             int orderBitLength;
@@ -265,7 +291,6 @@ public class BCECPrivateKey
                 orderBitLength = ECUtil.getOrderBitLength(configuration, ecSpec.getOrder(), this.getS());
             }
 
-            PrivateKeyInfo info;
             org.bouncycastle.asn1.sec.ECPrivateKey keyStructure;
 
             if (publicKey != null)
@@ -279,9 +304,7 @@ public class BCECPrivateKey
 
             try
             {
-                info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
-
-                encoding = info.getEncoded(ASN1Encoding.DER);
+                privateKeyInfo = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
             }
             catch (IOException e)
             {
@@ -289,7 +312,7 @@ public class BCECPrivateKey
             }
         }
 
-        return Arrays.clone(encoding);
+        return privateKeyInfo;
     }
 
     public ECParameterSpec getParams()
@@ -356,7 +379,25 @@ public class BCECPrivateKey
         {
             ECPrivateKey other = (ECPrivateKey)o;
 
-            return Arrays.constantTimeAreEqual(getEncoded(), other.getEncoded());
+            PrivateKeyInfo info = this.getPrivateKeyInfo();
+            PrivateKeyInfo otherInfo = (other instanceof BCECPrivateKey) ? ((BCECPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
+
+            if (info == null || otherInfo == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
+                boolean keyEquals = Arrays.constantTimeAreEqual(this.getS().toByteArray(), other.getS().toByteArray());
+
+                return algEquals & keyEquals;
+            }
+            catch (IOException e)
+            {
+                 return false;
+            }
         }
 
         return false;
