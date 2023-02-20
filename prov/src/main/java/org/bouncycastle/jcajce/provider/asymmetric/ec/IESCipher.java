@@ -170,7 +170,7 @@ public class IESCipher
         {
             ECCurve c = ((ECKeyParameters)key).getParameters().getCurve();
             int feSize = (c.getFieldSize() + 7) / 8; 
-            len2 = 2 * feSize;
+            len2 = 1 + 2 * feSize;
         }
         else
         {
