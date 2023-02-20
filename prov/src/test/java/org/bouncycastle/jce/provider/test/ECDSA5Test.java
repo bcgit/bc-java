@@ -44,8 +44,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
-import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -55,6 +53,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
+import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jce.ECKeyUtil;
@@ -204,6 +204,29 @@ public class ECDSA5Test
         isTrue(kfBc.getKeySpec(kp.getPublic(), ECPublicKeySpec.class) instanceof ECPublicKeySpec);
         isTrue(kfBc.getKeySpec(kp.getPrivate(), KeySpec.class) instanceof ECPrivateKeySpec);
         isTrue(kfBc.getKeySpec(kp.getPrivate(), ECPrivateKeySpec.class) instanceof ECPrivateKeySpec);
+    }
+
+    private void testEquals()
+        throws Exception
+    {
+        KeyFactory kfBc = KeyFactory.getInstance("EC", "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(256);
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        ECPrivateKey privKey = (ECPrivateKey)kp.getPrivate();
+
+        ECPrivateKeySpec keySpec = new ECPrivateKeySpec(privKey.getS(), privKey.getParams());
+        ECPrivateKey minimalPrivKey = (ECPrivateKey)kfBc.generatePrivate(keySpec);
+
+        isTrue(minimalPrivKey.equals(privKey));
+        isTrue(minimalPrivKey.hashCode() == privKey.hashCode());
+
+        PrivateKey priv = kpGen.generateKeyPair().getPrivate();
+        isTrue(!privKey.equals(priv));
+        isTrue(!minimalPrivKey.equals(priv));
     }
 
     private void pointCompressionTest()
@@ -1322,6 +1345,7 @@ public class ECDSA5Test
     {
         testKeyConversion();
         testAdaptiveKeyConversion();
+        testEquals();
         decodeTest();
         testECDSA239bitPrime();
         testECDSA239bitBinary();
