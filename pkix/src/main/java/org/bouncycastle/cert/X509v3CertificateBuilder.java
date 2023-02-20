@@ -113,9 +113,11 @@ public class X509v3CertificateBuilder
         for (Enumeration en = exts.oids(); en.hasMoreElements();)
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)en.nextElement();
-            // we remove the altSignatureAlgorithm and altSignatureValue extensions as they
-            // need to be regenerated.
-            if (Extension.altSignatureAlgorithm.equals(oid) || Extension.altSignatureValue.equals(oid))
+            // we remove the altSignatureAlgorithm, altSignatureValue, and subjectAltPublicKeyInfo
+            // extensions as they probably need to be regenerated.
+            if (Extension.subjectAltPublicKeyInfo.equals(oid)
+                || Extension.altSignatureAlgorithm.equals(oid)
+                || Extension.altSignatureValue.equals(oid))
             {
                 continue;
             }
