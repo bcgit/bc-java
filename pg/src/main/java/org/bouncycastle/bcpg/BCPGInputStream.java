@@ -210,13 +210,13 @@ public class BCPGInputStream
             }
             else if (l <= 223)
             {
-                int b = in.read();
+                int b = this.read();
 
                 bodyLen = ((l - 192) << 8) + (b) + 192;
             }
             else if (l == 255)
             {
-                bodyLen = (in.read() << 24) | (in.read() << 16) |  (in.read() << 8)  | in.read();
+                bodyLen = (this.read() << 24) | (this.read() << 16) |  (this.read() << 8)  | this.read();
             }
             else
             {
