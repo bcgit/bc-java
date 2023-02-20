@@ -42,6 +42,12 @@ public class PGPPBEEncryptedData
         return keyData.getVersion();
     }
 
+    /**
+     * Symmetric-key algorithm used by this object to protect the session key
+     * ({@link #getSymmetricAlgorithm(PBEDataDecryptorFactory)} with.
+     *
+     * @return password-based encryption algorithm identifier ({@link SymmetricKeyAlgorithmTags})
+     */
     public int getAlgorithm()
     {
         return keyData.getEncAlgorithm();
@@ -51,8 +57,7 @@ public class PGPPBEEncryptedData
      * Return the symmetric key algorithm required to decrypt the data protected by this object.
      *
      * @param dataDecryptorFactory decryptor factory to use to recover the session data.
-     * @return the identifier of the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
-     * encrypt this object.
+     * @return session key algorithm identifier ({@link SymmetricKeyAlgorithmTags})
      * @throws PGPException if the session data cannot be recovered.
      */
     public int getSymmetricAlgorithm(
