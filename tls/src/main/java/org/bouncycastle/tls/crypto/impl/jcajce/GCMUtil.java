@@ -12,7 +12,7 @@ class GCMUtil
 {
     static final Constructor<AlgorithmParameterSpec> gcmParameterSpec = getConstructor();
 
-    static AlgorithmParameterSpec createGCMParameterSpec(int tLen, byte[] src)
+    static AlgorithmParameterSpec createGCMParameterSpec(final int tLen, final byte[] src)
         throws Exception
     {
         if (gcmParameterSpec == null)
