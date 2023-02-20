@@ -2,7 +2,7 @@ package org.bouncycastle.cms;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.cms.OtherRecipientInfo;
@@ -53,9 +53,9 @@ public abstract class KEMRecipientInfoGenerator
         else
         {
             recipId = new RecipientIdentifier(new DEROctetString(subjectKeyIdentifier));
-        };
-                                                                 // TODO: split encrypted bytes
-        return new RecipientInfo(new OtherRecipientInfo(BCObjectIdentifiers.bc_kem,
+        }
+
+        return new RecipientInfo(new OtherRecipientInfo(CMSObjectIdentifiers.id_ori_kem,
             new KEMRecipientInfo(recipId, wrapper.getAlgorithmIdentifier(), new DEROctetString(wrapper.getEncapsulation()), wrapper.getKdfAlgorithmIdentifier(), new ASN1Integer(wrapper.getKekLength()), null, wrapper.getWrapAlgorithmIdentifier(),
             new DEROctetString(encryptedKeyBytes))));
     }
