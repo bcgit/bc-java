@@ -180,7 +180,14 @@ public class IESCipher
         int inLen = buffer.size() + inputLen;
         if (engine.getCipher() == null)
         {
-            len3 = inLen;
+            if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
+            {
+                len3 = inLen - len1 - len2;
+            }
+            else
+            {
+                len3 = inLen;
+            }
         }
         else if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
