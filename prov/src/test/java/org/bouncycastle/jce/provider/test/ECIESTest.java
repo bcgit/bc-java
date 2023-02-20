@@ -363,6 +363,9 @@ public class ECIESTest
             fail(testname + " test failed with non-null parameters, DHAES mode false.");
         }
 
+        isTrue(c1.getOutputSize(message.length) == out1.length);
+        isTrue(c2.getOutputSize(out1.length) >= out2.length);
+        
         //
         // corrupted data test
         //
