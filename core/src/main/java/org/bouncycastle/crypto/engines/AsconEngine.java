@@ -10,8 +10,10 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 
@@ -34,17 +36,24 @@ public class AsconEngine
         ascon128
     }
 
-    private boolean forEncryption;
+    private enum State
+    {
+        Uninitialized,
+        EncInit,
+        EncAad,
+        EncData,
+        EncFinal,
+        DecInit,
+        DecAad,
+        DecData,
+        DecFinal,
+    }
 
     private final AsconParameters asconParameters;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private State m_state = State.Uninitialized;
     private byte[] mac;
-
-    private String algorithmName;
-    private boolean encrypted;
-    private boolean initialised;
-    private boolean aadFinished;
+    private byte[] initialAssociatedText;
+    private final String algorithmName;
     private final int CRYPTO_KEYBYTES;
     private final int CRYPTO_ABYTES;
     private final int ASCON_AEAD_RATE;
@@ -60,6 +69,9 @@ public class AsconEngine
     private long x2;
     private long x3;
     private long x4;
+    private final int m_bufferSizeDecrypt;
+    private final byte[] m_buf;
+    private int m_bufPos = 0;
 
     public AsconEngine(AsconParameters asconParameters)
     {
@@ -91,20 +103,8 @@ public class AsconEngine
             throw new IllegalArgumentException("invalid parameter setting for ASCON AEAD");
         }
         nr = (ASCON_AEAD_RATE == 8) ? 6 : 8;
-        initialised = false;
-        aadFinished = false;
-    }
-
-    private long U64BIG(long x)
-    {
-        return (((0x00000000000000FFL & (x)) << 56) |
-            ((0x000000000000FF00L & (x)) << 40) |
-            ((0x0000000000FF0000L & (x)) << 24) |
-            ((0x00000000FF000000L & (x)) << 8) |
-            ((0x000000FF00000000L & (x)) >>> 8) |
-            ((0x0000FF0000000000L & (x)) >>> 24) |
-            ((0x00FF000000000000L & (x)) >>> 40) |
-            ((0xFF00000000000000L & (x)) >>> 56));
+        m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
+        m_buf = new byte[m_bufferSizeDecrypt];
     }
 
     private long ROR(long x, int n)
@@ -112,63 +112,9 @@ public class AsconEngine
         return x >>> n | x << (64 - n);
     }
 
-    private long KEYROT(long lo2hi, long hi2lo)
-    {
-        return lo2hi << 32 | hi2lo >>> 32;
-    }
-
     private long PAD(int i)
     {
         return 0x80L << (56 - (i << 3));
-    }
-
-    private long MASK(int n)
-    {
-        /* undefined for n == 0 */
-        return ~0L >>> (64 - (n << 3));
-    }
-
-    private long LOAD(final byte[] bytes, int inOff, int n)
-    {
-        long x = 0;
-        for (int i = 0; i < n; ++i)
-        {
-            x |= (bytes[i + inOff] & 0xFFL) << (i << 3);
-        }
-        return U64BIG(x & MASK(n));
-    }
-
-    private void STORE(byte[] bytes, int inOff, long w, int n)
-    {
-        long x = 0;
-        for (int i = 0; i < n; ++i)
-        {
-            x |= (bytes[i + inOff] & 0xFFL) << (i << 3);
-        }
-        x &= ~MASK(n);
-        x |= U64BIG(w);
-        for (int i = 0; i < n; ++i)
-        {
-            bytes[i + inOff] = (byte)(x >>> (i << 3));
-        }
-    }
-
-    private long LOADBYTES(final byte[] bytes, int inOff, int n)
-    {
-        long x = 0;
-        for (int i = 0; i < n; ++i)
-        {
-            x |= (bytes[i + inOff] & 0xFFL) << ((7 - i) << 3);
-        }
-        return x;
-    }
-
-    private void STOREBYTES(byte[] bytes, int inOff, long w, int n)
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            bytes[i + inOff] = (byte)(w >>> ((7 - i) << 3));
-        }
     }
 
     private void ROUND(long C)
@@ -210,15 +156,15 @@ public class AsconEngine
     private void ascon_aeadinit()
     {
         /* initialize */
-        x0 ^= ASCON_IV;
+        x0 = ASCON_IV;
         if (CRYPTO_KEYBYTES == 20)
         {
             x0 ^= K0;
         }
-        x1 ^= K1;
-        x2 ^= K2;
-        x3 ^= N0;
-        x4 ^= N1;
+        x1 = K1;
+        x2 = K2;
+        x3 = N0;
+        x4 = N1;
         P(12);
         if (CRYPTO_KEYBYTES == 20)
         {
@@ -228,163 +174,189 @@ public class AsconEngine
         x4 ^= K2;
     }
 
-    private void ascon_adata(final byte[] ad, int adOff, int adlen)
+    private void checkAad()
     {
-        if (adlen != 0)
+        switch (m_state)
         {
-            /* full associated data blocks */
-            while (adlen >= ASCON_AEAD_RATE)
+        case DecInit:
+            m_state = State.DecAad;
+            break;
+        case EncInit:
+            m_state = State.EncAad;
+            break;
+        case DecAad:
+        case EncAad:
+            break;
+        case EncFinal:
+            throw new IllegalArgumentException(algorithmName + " cannot be reused for encryption");
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private boolean CheckData()
+    {
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            FinishAad(State.DecData);
+            return false;
+        case EncInit:
+        case EncAad:
+            FinishAad(State.EncData);
+            return true;
+        case DecData:
+            return false;
+        case EncData:
+            return true;
+        case EncFinal:
+            throw new IllegalArgumentException(algorithmName + " cannot be reused for encryption");
+        default:
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void ProcessBufferAad(byte[] buffer, int inOff)
+    {
+        x0 ^= Pack.bigEndianToLong(buffer, inOff);
+        if (ASCON_AEAD_RATE == 16)
+        {
+            x1 ^= Pack.bigEndianToLong(buffer, 8 + inOff);
+        }
+        P(nr);
+    }
+
+    private void FinishAad(State nextState)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+            m_buf[m_bufPos] = (byte)0x80;
+            if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
             {
-                x0 ^= LOAD(ad, adOff, 8);
-                if (ASCON_AEAD_RATE == 16)
-                {
-                    x1 ^= LOAD(ad, adOff + 8, 8);
-                }
-                P(nr);
-                adOff += ASCON_AEAD_RATE;
-                adlen -= ASCON_AEAD_RATE;
-            }
-            /* final associated data block */
-            if (ASCON_AEAD_RATE == 16 && adlen >= 8)
-            {
-                x0 ^= LOAD(ad, adOff, 8);
-                adOff += 8;
-                adlen -= 8;
-                x1 ^= PAD(adlen);
-                if (adlen != 0)
-                {
-                    x1 ^= LOAD(ad, adOff, adlen);
-                }
+                x0 ^= Pack.bigEndianToLong(m_buf, 0);
+                x1 ^= Pack.bigEndianToLong(m_buf, 8) & (-1L << (56 - ((m_bufPos - 8) << 3)));
             }
             else
             {
-                x0 ^= PAD(adlen);
-                if (adlen != 0)
-                {
-                    x0 ^= LOAD(ad, adOff, adlen);
-                }
+                x0 ^= Pack.bigEndianToLong(m_buf, 0) & (-1L << (56 - (m_bufPos << 3)));
             }
             P(nr);
+            break;
         }
-        /* domain separation */
+        // domain separation
         x4 ^= 1L;
+        m_bufPos = 0;
+        m_state = nextState;
     }
 
-    private void ascon_encrypt(byte[] c, int cOff, final byte[] m, int mOff, int mlen)
+    private void ProcessBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-        /* full plaintext blocks */
-        while (mlen >= ASCON_AEAD_RATE)
+        if (outOff + ASCON_AEAD_RATE > output.length)
         {
-            x0 ^= LOAD(m, mOff, 8);
-            STORE(c, cOff, x0, 8);
-            if (ASCON_AEAD_RATE == 16)
-            {
-                x1 ^= LOAD(m, mOff + 8, 8);
-                STORE(c, cOff + 8, x1, 8);
-            }
-            P(nr);
-            mOff += ASCON_AEAD_RATE;
-            cOff += ASCON_AEAD_RATE;
-            mlen -= ASCON_AEAD_RATE;
+            throw new OutputLengthException(algorithmName + " output buffer too short");
         }
-    }
+        long t0 = Pack.bigEndianToLong(buffer, bufOff);
+        Pack.longToBigEndian(x0 ^ t0, output, outOff);
+        x0 = t0;
 
-    private void ascon_decrypt(byte[] m, int mOff, byte[] c, int cOff, int clen)
-    {
-        /* full ciphertext blocks */
-        while (clen >= ASCON_AEAD_RATE)
+        if (ASCON_AEAD_RATE == 16)
         {
-            long cx = LOAD(c, cOff, 8);
-            x0 ^= cx;
-            STORE(m, mOff, x0, 8);
-            x0 = cx;
-            if (ASCON_AEAD_RATE == 16)
-            {
-                cx = LOAD(c, cOff + 8, 8);
-                x1 ^= cx;
-                STORE(m, mOff + 8, x1, 8);
-                x1 = cx;
-            }
-            P(nr);
-            mOff += ASCON_AEAD_RATE;
-            cOff += ASCON_AEAD_RATE;
-            clen -= ASCON_AEAD_RATE;
+            long t1 = Pack.bigEndianToLong(buffer, bufOff + 8);
+            Pack.longToBigEndian(x1 ^ t1, output, outOff + 8);
+            x1 = t1;
         }
+        P(nr);
     }
 
-    private long CLEAR(long w, int n)
+    private void ProcessBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-        /* undefined for n == 0 */
-        long mask = 0x00ffffffffffffffL >>> (n * 8 - 8);
-        return w & mask;
-    }
-
-    private void ascon_final(byte[] c, int cOff, final byte[] m, int mOff, int mlen)
-    {
-        if (forEncryption)
+        if (outOff + ASCON_AEAD_RATE > output.length)
         {
-            /* final plaintext block */
-            if (ASCON_AEAD_RATE == 16 && mlen >= 8)
+            throw new OutputLengthException(algorithmName + " output buffer too short");
+        }
+        x0 ^= Pack.bigEndianToLong(buffer, bufOff);
+        Pack.longToBigEndian(x0, output, outOff);
+
+        if (ASCON_AEAD_RATE == 16)
+        {
+            x1 ^= Pack.bigEndianToLong(buffer, bufOff + 8);
+            Pack.longToBigEndian(x1, output, outOff + 8);
+        }
+
+        P(nr);
+    }
+
+    private void ProcessFinalDecrypt(byte[] input, int inOff, int inLen, byte[] output, int outOff)
+    {
+        if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
+        {
+            long c0 = Pack.bigEndianToLong(input, inOff);
+            x0 ^= c0;
+            Pack.longToBigEndian(x0, output, outOff);
+            x0 = c0;
+            inOff += 8;
+            outOff += 8;
+            inLen -= 8;
+            x1 ^= PAD(inLen);
+            if (inLen != 0)
             {
-                x0 ^= LOAD(m, mOff, 8);
-                STORE(c, cOff, x0, 8);
-                mOff += 8;
-                cOff += 8;
-                mlen -= 8;
-                x1 ^= PAD(mlen);
-                if (mlen != 0)
-                {
-                    x1 ^= LOAD(m, mOff, mlen);
-                    STORE(c, cOff, x1, mlen);
-                }
-            }
-            else
-            {
-                x0 ^= PAD(mlen);
-                if (mlen != 0)
-                {
-                    x0 ^= LOAD(m, mOff, mlen);
-                    STORE(c, cOff, x0, mlen);
-                }
+                long c1 = Pack.littleEndianToLong_High(input, inOff, inLen);
+                x1 ^= c1;
+                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
+                x1 &= -1L >>> (inLen << 3);
+                x1 ^= c1;
             }
         }
         else
         {
-            /* final ciphertext block */
-            if (ASCON_AEAD_RATE == 16 && mlen >= 8)
+            x0 ^= PAD(inLen);
+            if (inLen != 0)
             {
-                long cx = LOAD(m, mOff, 8);
-                x0 ^= cx;
-                STORE(c, cOff, x0, 8);
-                x0 = cx;
-                mOff += 8;
-                cOff += 8;
-                mlen -= 8;
-                x1 ^= PAD(mlen);
-                if (mlen != 0)
-                {
-                    cx = LOAD(m, mOff, mlen);
-                    x1 ^= cx;
-                    STORE(c, cOff, x1, mlen);
-                    x1 = CLEAR(x1, mlen);
-                    x1 ^= cx;
-                }
-            }
-            else
-            {
-                x0 ^= PAD(mlen);
-                if (mlen != 0)
-                {
-                    long cx = LOAD(m, mOff, mlen);
-                    x0 ^= cx;
-                    STORE(c, cOff, x0, mlen);
-                    x0 = CLEAR(x0, mlen);
-                    x0 ^= cx;
-                }
+                long c0 = Pack.littleEndianToLong_High(input, inOff, inLen);
+                x0 ^= c0;
+                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
+                x0 &= -1L >>> (inLen << 3);
+                x0 ^= c0;
             }
         }
 
-        /* finalize */
+        FinishData(State.DecFinal);
+    }
+
+    private void ProcessFinalEncrypt(byte[] input, int inOff, int inLen, byte[] output, int outOff)
+    {
+        if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
+        {
+            x0 ^= Pack.bigEndianToLong(input, inOff);
+            Pack.longToBigEndian(x0, output, outOff);
+            inOff += 8;
+            outOff += 8;
+            inLen -= 8;
+            x1 ^= PAD(inLen);
+            if (inLen != 0)
+            {
+                x1 ^= Pack.littleEndianToLong_High(input, inOff, inLen);
+                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
+            }
+        }
+        else
+        {
+            x0 ^= PAD(inLen);
+            if (inLen != 0)
+            {
+                x0 ^= Pack.littleEndianToLong_High(input, inOff, inLen);
+                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
+            }
+        }
+        FinishData(State.EncFinal);
+    }
+
+    private void FinishData(State nextState)
+    {
         switch (asconParameters)
         {
         case ascon128:
@@ -396,14 +368,18 @@ public class AsconEngine
             x3 ^= K2;
             break;
         case ascon80pq:
-            x1 ^= KEYROT(K0, K1);
-            x2 ^= KEYROT(K1, K2);
-            x3 ^= KEYROT(K2, 0L);
+            x1 ^= (K0 << 32 | K1 >> 32);
+            x2 ^= (K1 << 32 | K2 >> 32);
+            x3 ^= K2 << 32;
             break;
+        default:
+            //throw new InvalidOperationException();
         }
         P(12);
         x3 ^= K1;
         x4 ^= K2;
+
+        m_state = nextState;
     }
 
     @Override
@@ -416,46 +392,66 @@ public class AsconEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
+        KeyParameter key;
+        byte[] npub;
+        if (params instanceof AEADParameters)
         {
-            throw new IllegalArgumentException("ASCON init parameters must include an IV");
+            AEADParameters aeadParameters = (AEADParameters)params;
+            key = aeadParameters.getKey();
+            npub = aeadParameters.getNonce();
+            initialAssociatedText = aeadParameters.getAssociatedText();
+
+            int macSizeBits = aeadParameters.getMacSize();
+            if (macSizeBits != CRYPTO_ABYTES * 8)
+            {
+                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
+            }
         }
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-        byte[] npub = ivParams.getIV();
+        else if (params instanceof ParametersWithIV)
+        {
+            ParametersWithIV withIV = (ParametersWithIV)params;
+            key = (KeyParameter)withIV.getParameters();
+            npub = withIV.getIV();
+            initialAssociatedText = null;
+        }
+        else
+        {
+            throw new IllegalArgumentException("invalid parameters passed to Ascon");
+        }
+
+        if (key == null)
+        {
+            throw new IllegalArgumentException("Ascon Init parameters must include a key");
+        }
         if (npub == null || npub.length != CRYPTO_ABYTES)
         {
             throw new IllegalArgumentException(asconParameters + " requires exactly " + CRYPTO_ABYTES + " bytes of IV");
         }
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException(
-                "ASCON init parameters must include a key");
-        }
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
+
         byte[] k = key.getKey();
         if (k.length != CRYPTO_KEYBYTES)
         {
             throw new IllegalArgumentException(asconParameters + " key must be " + CRYPTO_KEYBYTES + " bytes long");
         }
+
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        N0 = LOAD(npub, 0, 8);
-        N1 = LOAD(npub, 8, 8);
+        N0 = Pack.bigEndianToLong(npub, 0);
+        N1 = Pack.bigEndianToLong(npub, 8);
         if (CRYPTO_KEYBYTES == 16)
         {
-            K1 = LOAD(k, 0, 8);
-            K2 = LOAD(k, 8, 8);
+            K1 = Pack.bigEndianToLong(k, 0);
+            K2 = Pack.bigEndianToLong(k, 8);
         }
         else if (CRYPTO_KEYBYTES == 20)
         {
-            K0 = KEYROT(0, LOADBYTES(k, 0, 4));
-            K1 = LOADBYTES(k, 4, 8);
-            K2 = LOADBYTES(k, 12, 8);
+            K0 = Pack.bigEndianToInt(k, 0);
+            K1 = Pack.bigEndianToLong(k, 4);
+            K2 = Pack.bigEndianToLong(k, 12);
         }
-        initialised = true;
+        m_state = forEncryption ? State.EncInit : State.DecInit;
         /*Mask-Gen*/
-        reset();
+        reset(true);
     }
 
     @Override
@@ -472,78 +468,49 @@ public class AsconEngine
     @Override
     public void processAADByte(byte in)
     {
-        if (aadFinished)
+        checkAad();
+        m_buf[m_bufPos] = in;
+        if (++m_bufPos == ASCON_AEAD_RATE)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + ASCON_AEAD_RATE +
-                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+            ProcessBufferAad(m_buf, 0);
         }
-        aadData.write(in);
     }
 
     @Override
-    public void processAADBytes(byte[] in, int inOff, int len)
+    public void processAADBytes(byte[] inBytes, int inOff, int len)
     {
-        if (aadFinished)
+        if ((inOff + len) > inBytes.length)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + ASCON_AEAD_RATE +
-                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
+            throw new DataLengthException("input buffer too short");
         }
-        if ((inOff + len) > in.length)
+        // Don't enter AAD state until we actually get input
+        if (len <= 0)
         {
-            throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
+            return;
         }
-        aadData.write(in, inOff, len);
-    }
-
-    private void processAAD()
-    {
-        if (!aadFinished)
+        checkAad();
+        if (m_bufPos > 0)
         {
-            byte[] ad = aadData.toByteArray();
-            int adlen = aadData.size();
-            /* perform ascon computation */
-            ascon_adata(ad, 0, adlen);
-            aadFinished = true;
-        }
-    }
-
-    private int processBytes(byte[] out, int outOff)
-        throws OutputLengthException
-    {
-        int len = 0;
-        if (forEncryption)
-        {
-            if (message.size() >= ASCON_AEAD_RATE)
+            int available = ASCON_AEAD_RATE - m_bufPos;
+            if (len < available)
             {
-                processAAD();
-                byte[] in = message.toByteArray();
-                len = (in.length / ASCON_AEAD_RATE) * ASCON_AEAD_RATE;
-                if (len + outOff > out.length)
-                {
-                    throw new OutputLengthException("output buffer is too short");
-                }
-                ascon_encrypt(out, outOff, in, 0, len);
-                message.reset();
-                message.write(in, len, in.length - len);
+                System.arraycopy(inBytes, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return;
             }
+            System.arraycopy(inBytes, inOff, m_buf, m_bufPos, available);
+            inOff += available;
+            len -= available;
+            ProcessBufferAad(m_buf, 0);
         }
-        else
+        while (len >= ASCON_AEAD_RATE)
         {
-            if (message.size() - CRYPTO_ABYTES >= ASCON_AEAD_RATE)
-            {
-                processAAD();
-                byte[] in = message.toByteArray();
-                len = ((in.length - CRYPTO_ABYTES) / ASCON_AEAD_RATE) * ASCON_AEAD_RATE;
-                if (len + outOff > out.length)
-                {
-                    throw new OutputLengthException("output buffer is too short");
-                }
-                ascon_decrypt(out, outOff, in, 0, len);
-                message.reset();
-                message.write(in, len, in.length - len);
-            }
+            ProcessBufferAad(inBytes, inOff);
+            inOff += ASCON_AEAD_RATE;
+            len -= ASCON_AEAD_RATE;
         }
-        return len;
+        System.arraycopy(inBytes, inOff, m_buf, 0, len);
+        m_bufPos = len;
     }
 
     @Override
@@ -554,74 +521,136 @@ public class AsconEngine
     }
 
     @Override
-    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+    public int processBytes(byte[] inBytes, int inOff, int len, byte[] outBytes, int outOff)
         throws DataLengthException
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        if ((inOff + len) > in.length)
+        if ((inOff + len) > inBytes.length)
         {
             throw new DataLengthException("input buffer too short");
         }
-        message.write(in, inOff, len);
-        int rv = processBytes(out, outOff);
-        encrypted = true;
-        return rv;
-    }
+        boolean forEncryption = CheckData();
+        int resultLength = 0;
 
-    @Override
-    public int doFinal(byte[] out, int outOff)
-        throws IllegalStateException, InvalidCipherTextException, DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        if (!aadFinished)
-        {
-            processAAD();
-        }
-        if (!encrypted)
-        {
-            processBytes(new byte[]{}, 0, 0, new byte[]{}, 0);
-        }
-        byte[] in = message.toByteArray();
-        int len = in.length;
-        if ((forEncryption && outOff + len + CRYPTO_ABYTES > out.length) ||
-            (!forEncryption && outOff + len - CRYPTO_ABYTES > out.length))
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
         if (forEncryption)
         {
-            ascon_final(out, outOff, in, 0, len);
-            /* set tag */
-            mac = new byte[16];
-            STOREBYTES(mac, 0, x3, 8);
-            STOREBYTES(mac, 8, x4, 8);
-            System.arraycopy(mac, 0, out, len + outOff, 16);
-            reset(false);
-            return len + CRYPTO_ABYTES;
+            if (m_bufPos > 0)
+            {
+                int available = ASCON_AEAD_RATE - m_bufPos;
+                if (len < available)
+                {
+                    System.arraycopy(inBytes, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return 0;
+                }
+
+                System.arraycopy(inBytes, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+
+                ProcessBufferEncrypt(m_buf, 0, outBytes, outOff);
+                resultLength = ASCON_AEAD_RATE;
+                //m_bufPos = 0;
+            }
+
+            while (len >= ASCON_AEAD_RATE)
+            {
+                ProcessBufferEncrypt(inBytes, inOff, outBytes, outOff + resultLength);
+                inOff += ASCON_AEAD_RATE;
+                len -= ASCON_AEAD_RATE;
+                resultLength += ASCON_AEAD_RATE;
+            }
         }
         else
         {
-            len -= CRYPTO_ABYTES;
-            ascon_final(out, outOff, in, 0, len);
-            x3 ^= LOADBYTES(in, len, 8);
-            x4 ^= LOADBYTES(in, len + 8, 8);
-            long result = x3 | x4;
-            result |= result >>> 32;
-            result |= result >>> 16;
-            result |= result >>> 8;
-            reset(true);
-            if ((((((int)(result & 0xffL) - 1L) >>> 8) & 1) - 1) != 0)
+            int available = m_bufferSizeDecrypt - m_bufPos;
+            if (len < available)
             {
-                throw new IllegalArgumentException("Mac does not match");
+                System.arraycopy(inBytes, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
             }
-            return len;
+
+            if (m_bufPos >= ASCON_AEAD_RATE)
+            {
+                ProcessBufferDecrypt(m_buf, 0, outBytes, outOff);
+                m_bufPos -= ASCON_AEAD_RATE;
+                System.arraycopy(m_buf, ASCON_AEAD_RATE, m_buf, 0, m_bufPos);
+                resultLength = ASCON_AEAD_RATE;
+
+                available += ASCON_AEAD_RATE;
+                if (len < available)
+                {
+                    System.arraycopy(inBytes, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return resultLength;
+                }
+            }
+
+            available = ASCON_AEAD_RATE - m_bufPos;
+            System.arraycopy(inBytes, inOff, m_buf, m_bufPos, available);
+            inOff += available;
+            len -= available;
+            ProcessBufferDecrypt(m_buf, 0, outBytes, outOff + resultLength);
+            resultLength += ASCON_AEAD_RATE;
+            //m_bufPos = 0;
+
+            while (len >= m_bufferSizeDecrypt)
+            {
+                ProcessBufferDecrypt(inBytes, inOff, outBytes, outOff + resultLength);
+                inOff += ASCON_AEAD_RATE;
+                len -= ASCON_AEAD_RATE;
+                resultLength += ASCON_AEAD_RATE;
+            }
         }
+
+        System.arraycopy(inBytes, inOff, m_buf, 0, len);
+        m_bufPos = len;
+
+        return resultLength;
+    }
+
+    @Override
+    public int doFinal(byte[] outBytes, int outOff)
+        throws IllegalStateException, InvalidCipherTextException, DataLengthException
+    {
+        boolean forEncryption = CheckData();
+        int resultLength;
+        if (forEncryption)
+        {
+            resultLength = m_bufPos + CRYPTO_ABYTES;
+            if (outOff + resultLength > outBytes.length)
+            {
+                throw new OutputLengthException(algorithmName + " output buffer too short");
+            }
+            ProcessFinalEncrypt(m_buf, 0, m_bufPos, outBytes, outOff);
+            mac = new byte[CRYPTO_ABYTES];
+            Pack.longToBigEndian(x3, mac, 0);
+            Pack.longToBigEndian(x4, mac, 8);
+            System.arraycopy(mac, 0, outBytes, outOff + m_bufPos, CRYPTO_ABYTES);
+            reset(false);
+        }
+        else
+        {
+            if (m_bufPos < CRYPTO_ABYTES)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+            m_bufPos -= CRYPTO_ABYTES;
+            resultLength = m_bufPos;
+            if (outOff + resultLength > outBytes.length)
+            {
+                throw new OutputLengthException(algorithmName + " output buffer too short");
+            }
+            ProcessFinalDecrypt(m_buf, 0, m_bufPos, outBytes, outOff);
+            x3 ^= Pack.bigEndianToLong(m_buf, m_bufPos);
+            x4 ^= Pack.bigEndianToLong(m_buf, m_bufPos + 8);
+            if ((x3 | x4) != 0L)
+            {
+                throw new InvalidCipherTextException("mac check in " + algorithmName + " failed");
+            }
+            reset(true);
+        }
+        return resultLength;
     }
 
     @Override
@@ -633,13 +662,46 @@ public class AsconEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        int total = Math.max(0, len);
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            total = Math.max(0, total - CRYPTO_ABYTES);
+            break;
+        case DecData:
+        case DecFinal:
+            total = Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+            break;
+        case EncData:
+        case EncFinal:
+            total += m_bufPos;
+            break;
+        default:
+            break;
+        }
+        return total - total % ASCON_AEAD_RATE;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return len + CRYPTO_ABYTES;
+        int total = Math.max(0, len);
+
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            return Math.max(0, total - CRYPTO_ABYTES);
+        case DecData:
+        case DecFinal:
+            return Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+        case EncData:
+        case EncFinal:
+            return total + m_bufPos + CRYPTO_ABYTES;
+        default:
+            return total + CRYPTO_ABYTES;
+        }
     }
 
     @Override
@@ -650,19 +712,35 @@ public class AsconEngine
 
     private void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        x0 = x1 = x2 = x3 = x4 = 0;
-        ascon_aeadinit();
-        aadData.reset();
-        message.reset();
-        encrypted = false;
-        aadFinished = false;
         if (clearMac)
         {
             mac = null;
+        }
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
+
+        switch (m_state)
+        {
+        case DecInit:
+        case EncInit:
+            break;
+        case DecAad:
+        case DecData:
+        case DecFinal:
+            m_state = State.DecInit;
+            break;
+        case EncAad:
+        case EncData:
+        case EncFinal:
+            m_state = State.EncFinal;
+            return;
+        default:
+            throw new IllegalArgumentException();
+        }
+        ascon_aeadinit();
+        if (initialAssociatedText != null)
+        {
+            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
         }
     }
 

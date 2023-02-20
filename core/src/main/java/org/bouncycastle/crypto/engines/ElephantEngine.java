@@ -527,7 +527,8 @@ public class ElephantEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        len += message.size() - (forEncryption ? 0 : CRYPTO_ABYTES);
+        return Math.max(0, len);
     }
 
     @Override

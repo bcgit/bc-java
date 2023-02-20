@@ -9,6 +9,7 @@ import java.util.Random;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.AsconDigest;
@@ -65,12 +66,13 @@ public class AsconTest
         String line;
         byte[] rv;
         HashMap<String, String> map = new HashMap<String, String>();
+        Random random = new Random();
         while ((line = bin.readLine()) != null)
         {
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("793"))
+//                if (!map.get("Count").equals("71"))
 //                {
 //                    continue;
 //                }
@@ -83,21 +85,23 @@ public class AsconTest
                 Ascon.init(true, params);
                 Ascon.processAADBytes(ad, 0, ad.length);
                 rv = new byte[Ascon.getOutputSize(pt.length)];
+                random.nextBytes(rv);
                 int len = Ascon.processBytes(pt, 0, pt.length, rv, 0);
                 Ascon.doFinal(rv, len);
                 if (!areEqual(rv, ct))
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
+                else
+                {
+                    System.out.println("Keystream " + map.get("Count") + " pass");
+                }
                 Ascon.reset();
                 Ascon.init(false, params);
                 //Decrypt
                 Ascon.processAADBytes(ad, 0, ad.length);
                 rv = new byte[pt.length + 16];
+                random.nextBytes(rv);
                 len = Ascon.processBytes(ct, 0, ct.length, rv, 0);
                 Ascon.doFinal(rv, len);
                 byte[] pt_recovered = new byte[pt.length];
@@ -231,6 +235,7 @@ public class AsconTest
         {
             fail("mac should be equal when calling dofinal and getMac");
         }
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         byte[] mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.doFinal(mac1, 0);
@@ -238,7 +243,7 @@ public class AsconTest
         {
             fail("mac should not match");
         }
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processBytes(new byte[16], 0, 16, new byte[16], 0);
         try
         {
@@ -278,6 +283,7 @@ public class AsconTest
         {
             //expected
         }
+        aeadBlockCipher.init(true, params);
         try
         {
             aeadBlockCipher.processBytes(new byte[16], 0, 16, new byte[16], 8);
@@ -299,10 +305,10 @@ public class AsconTest
 
         mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         mac2 = new byte[aeadBlockCipher.getOutputSize(0)];
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(new byte[]{0, 0}, 0, 2);
         aeadBlockCipher.doFinal(mac1, 0);
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.doFinal(mac2, 0);
@@ -319,11 +325,11 @@ public class AsconTest
         byte[] m2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         byte[] m4 = new byte[m2.length];
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
         aeadBlockCipher.doFinal(c2, offset);
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad3, 1, aad2.length);
         offset = aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
         aeadBlockCipher.doFinal(c3, offset + 1);
@@ -333,7 +339,6 @@ public class AsconTest
         {
             fail("mac should match for the same AAD and message with different offset for both input and output");
         }
-        aeadBlockCipher.reset();
         aeadBlockCipher.init(false, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(c2, 0, c2.length, m4, 0);
@@ -353,7 +358,7 @@ public class AsconTest
             aeadBlockCipher.doFinal(m4, offset);
             fail("The decryption should fail");
         }
-        catch (IllegalArgumentException e)
+        catch (InvalidCipherTextException e)
         {
             //expected;
         }
@@ -363,19 +368,19 @@ public class AsconTest
         {
             m7[i] = (byte)rand.nextInt();
         }
+        aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
         byte[] c9 = new byte[c7.length];
-        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
         offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
         aeadBlockCipher.doFinal(c8, offset);
-        aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         int split = rand.nextInt(blocksize * 2);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
