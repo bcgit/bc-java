@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.cmp.test;
 
+import java.io.FileWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,6 +19,7 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -52,6 +54,7 @@ import org.bouncycastle.cms.jcajce.JceCMSKEMKeyWrapper;
 import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
@@ -179,23 +182,23 @@ public class PQCTest
         // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
 
-//        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert_enveloped.pem"));
-//        pOut.writeObject(receivedEnvelope.toASN1Structure());
-//        pOut.close();
-//
-//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_priv.pem"));
-//        pOut.writeObject(kybKp.getPrivate());
-//        pOut.close();
-//
-//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert.pem"));
-//        pOut.writeObject(cert);
-//        pOut.close();
-//
-//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/issuer_cert.pem"));
-//        pOut.writeObject(caCert);
-//        pOut.close();
-//
-//        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
+        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert_enveloped.pem"));
+        pOut.writeObject(receivedEnvelope.toASN1Structure());
+        pOut.close();
+
+        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_priv.pem"));
+        pOut.writeObject(kybKp.getPrivate());
+        pOut.close();
+
+        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert.pem"));
+        pOut.writeObject(cert);
+        pOut.close();
+
+        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/issuer_cert.pem"));
+        pOut.writeObject(caCert);
+        pOut.close();
+
+        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
 
         RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
 //                System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(receivedEnvelope.getEncoded())));

@@ -9,7 +9,7 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.KEKRecipientInfo;
 import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
@@ -53,7 +53,7 @@ class CMSEnvelopedHelper
         else if (recipInfo instanceof OtherRecipientInfo)
         {
             OtherRecipientInfo otherRecipientInfo = OtherRecipientInfo.getInstance(recipInfo);
-            if (BCObjectIdentifiers.bc_kem.equals(otherRecipientInfo.getType())) // TODO: use INA value
+            if (CMSObjectIdentifiers.id_ori_kem.equals(otherRecipientInfo.getType()))
             {
                 infos.add(new KEMRecipientInformation(
                     KEMRecipientInfo.getInstance(otherRecipientInfo.getValue()), messageAlgorithm, secureReadable, additionalData));
