@@ -11,7 +11,9 @@ import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.XDHPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
@@ -24,6 +26,8 @@ public class BCXDHPrivateKey
     static final long serialVersionUID = 1L;
 
     transient AsymmetricKeyParameter xdhPrivateKey;
+    transient AsymmetricKeyParameter xdhPublicKey;
+    transient int hashCode;
 
     private final boolean hasPublicKey;
     private final byte[] attributes;
@@ -33,6 +37,15 @@ public class BCXDHPrivateKey
         this.hasPublicKey = true;
         this.attributes = null;
         this.xdhPrivateKey = privKey;
+        if (xdhPrivateKey instanceof X448PrivateKeyParameters)
+        {
+            xdhPublicKey = ((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
+        }
+        else
+        {
+            xdhPublicKey = ((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
+        }
+        this.hashCode = calculateHashCode();
     }
 
     BCXDHPrivateKey(PrivateKeyInfo keyInfo)
@@ -59,11 +72,15 @@ public class BCXDHPrivateKey
         if (EdECObjectIdentifiers.id_X448.equals(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
         {
             xdhPrivateKey = new X448PrivateKeyParameters(encoding);
+            xdhPublicKey = ((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
         }
         else
         {
             xdhPrivateKey = new X25519PrivateKeyParameters(encoding);
+            xdhPublicKey = ((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
         }
+
+        this.hashCode = calculateHashCode();
     }
 
     public String getAlgorithm()
@@ -80,16 +97,35 @@ public class BCXDHPrivateKey
     {
         try
         {
+            PrivateKeyInfo privateKeyInfo = getPrivateKeyInfo();
+
+            if (privateKeyInfo == null)
+            {
+                return null;
+            }
+
+            return privateKeyInfo.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
+    private PrivateKeyInfo getPrivateKeyInfo()
+    {
+        try
+        {
             ASN1Set attrSet = ASN1Set.getInstance(attributes);
             PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(xdhPrivateKey, attrSet);
 
             if (hasPublicKey && !Properties.isOverrideSet("org.bouncycastle.pkcs8.v1_info_only"))
             {
-                return privInfo.getEncoded();
+                return privInfo;
             }
             else
             {
-                return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), attrSet).getEncoded();
+                return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), attrSet);
             }
         }
         catch (IOException e)
@@ -100,14 +136,7 @@ public class BCXDHPrivateKey
 
     public XDHPublicKey getPublicKey()
     {
-        if (xdhPrivateKey instanceof X448PrivateKeyParameters)
-        {
-            return new BCXDHPublicKey(((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey());
-        }
-        else
-        {
-            return new BCXDHPublicKey(((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey());
-        }
+        return new BCXDHPublicKey(xdhPublicKey);
     }
 
     AsymmetricKeyParameter engineGetKeyParameters()
@@ -117,38 +146,64 @@ public class BCXDHPrivateKey
 
     public String toString()
     {
-        AsymmetricKeyParameter pubKey;
-        if (xdhPrivateKey instanceof X448PrivateKeyParameters)
-        {
-            pubKey = ((X448PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
-        }
-        else
-        {
-            pubKey = ((X25519PrivateKeyParameters)xdhPrivateKey).generatePublicKey();
-        }
-        return Utils.keyToString("Private Key", getAlgorithm(), pubKey);
+        return Utils.keyToString("Private Key", getAlgorithm(), xdhPublicKey);
     }
 
     public boolean equals(Object o)
     {
         if (o == this)
-        {
-            return true;
-        }
+         {
+             return true;
+         }
 
-        if (!(o instanceof PrivateKey))
-        {
-            return false;
-        }
+         if (!(o instanceof PrivateKey))
+         {
+             return false;
+         }
 
-        PrivateKey other = (PrivateKey)o;
+         PrivateKey other = (PrivateKey)o;
 
-        return Arrays.areEqual(other.getEncoded(), this.getEncoded());
+         PrivateKeyInfo info = this.getPrivateKeyInfo();
+         PrivateKeyInfo otherInfo = (other instanceof BCXDHPrivateKey) ? ((BCXDHPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
+
+         if (info == null || otherInfo == null)
+         {
+             return false;
+         }
+
+         try
+         {
+             boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
+             boolean keyEquals = Arrays.constantTimeAreEqual(info.getPrivateKey().getEncoded(), otherInfo.getPrivateKey().getEncoded());
+
+             return algEquals & keyEquals;
+         }
+         catch (IOException e)
+         {
+              return false;
+         }
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(this.getEncoded());
+        return hashCode;
+    }
+
+    private int calculateHashCode()
+    {
+        byte[] publicData;
+        if (xdhPublicKey instanceof X448PublicKeyParameters)
+        {
+            publicData = ((X448PublicKeyParameters)xdhPublicKey).getEncoded();
+        }
+        else
+        {
+            publicData = ((X25519PublicKeyParameters)xdhPublicKey).getEncoded();
+        }
+
+        int result = getAlgorithm().hashCode();
+        result = 31 * result + Arrays.hashCode(publicData);
+        return result;
     }
 
     private void readObject(

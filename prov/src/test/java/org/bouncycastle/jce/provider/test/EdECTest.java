@@ -43,6 +43,7 @@ import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -76,9 +77,55 @@ public class EdECTest
         return "EdEC";
     }
 
+    private void testEquals()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("EdDSA", "BC");
+        
+        PrivateKey fullPrivKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(privWithPubEnc));
+        PrivateKey minimalPrivKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(privEnc));
+
+        isTrue(!Arrays.areEqual(minimalPrivKey.getEncoded(), fullPrivKey.getEncoded()));
+        isTrue(minimalPrivKey.equals(fullPrivKey));
+        isTrue(minimalPrivKey.hashCode() == fullPrivKey.hashCode());
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        kpGen.initialize(new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519));
+
+        PrivateKey priv = kpGen.generateKeyPair().getPrivate();
+        isTrue(!fullPrivKey.equals(priv));
+        isTrue(!minimalPrivKey.equals(priv));
+    }
+
+    private void testEqualsXDH()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("XDH", "BC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        kpGen.initialize(new XDHParameterSpec(XDHParameterSpec.X25519));
+
+        PrivateKey fullPrivKey = kpGen.generateKeyPair().getPrivate();
+
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(fullPrivKey.getEncoded());
+        PrivateKey minimalPrivKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey()).getEncoded()));
+
+        isTrue(!Arrays.areEqual(minimalPrivKey.getEncoded(), privInfo.getEncoded()));
+        isTrue(minimalPrivKey.equals(fullPrivKey));
+        isTrue(minimalPrivKey.hashCode() == fullPrivKey.hashCode());
+
+        PrivateKey priv = kpGen.generateKeyPair().getPrivate();
+        isTrue(!fullPrivKey.equals(priv));
+        isTrue(!minimalPrivKey.equals(priv));
+    }
+
     public void performTest()
         throws Exception
     {
+        testEquals();
+        testEqualsXDH();
+
         KeyFactory kFact = KeyFactory.getInstance("EdDSA", "BC");
 
         PublicKey pub = kFact.generatePublic(new X509EncodedKeySpec(pubEnc));
