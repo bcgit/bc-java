@@ -121,7 +121,7 @@ public class X509v3CertificateBuilder
             {
                 continue;
             }
-            extGenerator.addExtension(exts.getExtension((ASN1ObjectIdentifier)en.nextElement()));
+            extGenerator.addExtension(exts.getExtension(oid));
         }
     }
 
