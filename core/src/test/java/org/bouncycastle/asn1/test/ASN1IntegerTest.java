@@ -77,7 +77,7 @@ public class ASN1IntegerTest
         }
         catch (IllegalArgumentException e)
         { 
-            isEquals("test 1", "failed to construct sequence from byte[]: corrupted stream detected", e.getMessage());
+            isEquals("test 1: " + e.getMessage(), "failed to construct sequence from byte[]: malformed integer", e.getMessage());
         }
 
         try
