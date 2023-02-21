@@ -516,56 +516,67 @@ public class ASN1InputStream
          * TODO[asn1] Lookup the universal type object and get it to parse the stream directly (possibly with
          * access to a single temporary buffer replacing tmpBuffers).
          */
-        switch (tagNo)
+        try
         {
-        case BIT_STRING:
-            return ASN1BitString.createPrimitive(defIn.toByteArray());
-        case BMP_STRING:
-            return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
-        case BOOLEAN:
-            return ASN1Boolean.createPrimitive(getBuffer(defIn, tmpBuffers));
-        case ENUMERATED:
-            // TODO Ideally only clone if we used a buffer
-            return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
-        case GENERAL_STRING:
-            return ASN1GeneralString.createPrimitive(defIn.toByteArray());
-        case GENERALIZED_TIME:
-            return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
-        case GRAPHIC_STRING:
-            return ASN1GraphicString.createPrimitive(defIn.toByteArray());
-        case IA5_STRING:
-            return ASN1IA5String.createPrimitive(defIn.toByteArray());
-        case INTEGER:
-            return ASN1Integer.createPrimitive(defIn.toByteArray());
-        case NULL:
-            return ASN1Null.createPrimitive(defIn.toByteArray());
-        case NUMERIC_STRING:
-            return ASN1NumericString.createPrimitive(defIn.toByteArray());
-        case OBJECT_DESCRIPTOR:
-            return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
-        case OBJECT_IDENTIFIER:
-            // TODO Ideally only clone if we used a buffer
-            return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers), true);
-        case OCTET_STRING:
-            return ASN1OctetString.createPrimitive(defIn.toByteArray());
-        case PRINTABLE_STRING:
-            return ASN1PrintableString.createPrimitive(defIn.toByteArray());
-        case RELATIVE_OID:
-            return ASN1RelativeOID.createPrimitive(defIn.toByteArray(), false);
-        case T61_STRING:
-            return ASN1T61String.createPrimitive(defIn.toByteArray());
-        case UNIVERSAL_STRING:
-            return ASN1UniversalString.createPrimitive(defIn.toByteArray());
-        case UTC_TIME:
-            return ASN1UTCTime.createPrimitive(defIn.toByteArray());
-        case UTF8_STRING:
-            return ASN1UTF8String.createPrimitive(defIn.toByteArray());
-        case VIDEOTEX_STRING:
-            return ASN1VideotexString.createPrimitive(defIn.toByteArray());
-        case VISIBLE_STRING:
-            return ASN1VisibleString.createPrimitive(defIn.toByteArray());
-        default:
-            throw new IOException("unknown tag " + tagNo + " encountered");
+            switch (tagNo)
+            {
+            case BIT_STRING:
+                return ASN1BitString.createPrimitive(defIn.toByteArray());
+            case BMP_STRING:
+                return ASN1BMPString.createPrimitive(getBMPCharBuffer(defIn));
+            case BOOLEAN:
+                return ASN1Boolean.createPrimitive(getBuffer(defIn, tmpBuffers));
+            case ENUMERATED:
+                // TODO Ideally only clone if we used a buffer
+                return ASN1Enumerated.createPrimitive(getBuffer(defIn, tmpBuffers), true);
+            case GENERAL_STRING:
+                return ASN1GeneralString.createPrimitive(defIn.toByteArray());
+            case GENERALIZED_TIME:
+                return ASN1GeneralizedTime.createPrimitive(defIn.toByteArray());
+            case GRAPHIC_STRING:
+                return ASN1GraphicString.createPrimitive(defIn.toByteArray());
+            case IA5_STRING:
+                return ASN1IA5String.createPrimitive(defIn.toByteArray());
+            case INTEGER:
+                return ASN1Integer.createPrimitive(defIn.toByteArray());
+            case NULL:
+                return ASN1Null.createPrimitive(defIn.toByteArray());
+            case NUMERIC_STRING:
+                return ASN1NumericString.createPrimitive(defIn.toByteArray());
+            case OBJECT_DESCRIPTOR:
+                return ASN1ObjectDescriptor.createPrimitive(defIn.toByteArray());
+            case OBJECT_IDENTIFIER:
+                // TODO Ideally only clone if we used a buffer
+                return ASN1ObjectIdentifier.createPrimitive(getBuffer(defIn, tmpBuffers), true);
+            case OCTET_STRING:
+                return ASN1OctetString.createPrimitive(defIn.toByteArray());
+            case PRINTABLE_STRING:
+                return ASN1PrintableString.createPrimitive(defIn.toByteArray());
+            case RELATIVE_OID:
+                return ASN1RelativeOID.createPrimitive(defIn.toByteArray(), false);
+            case T61_STRING:
+                return ASN1T61String.createPrimitive(defIn.toByteArray());
+            case UNIVERSAL_STRING:
+                return ASN1UniversalString.createPrimitive(defIn.toByteArray());
+            case UTC_TIME:
+                return ASN1UTCTime.createPrimitive(defIn.toByteArray());
+            case UTF8_STRING:
+                return ASN1UTF8String.createPrimitive(defIn.toByteArray());
+            case VIDEOTEX_STRING:
+                return ASN1VideotexString.createPrimitive(defIn.toByteArray());
+            case VISIBLE_STRING:
+                return ASN1VisibleString.createPrimitive(defIn.toByteArray());
+            default:
+                throw new IOException("unknown tag " + tagNo + " encountered");
+            }
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ASN1Exception(e.getMessage(), e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new ASN1Exception(e.getMessage(), e);
         }
     }
 }
