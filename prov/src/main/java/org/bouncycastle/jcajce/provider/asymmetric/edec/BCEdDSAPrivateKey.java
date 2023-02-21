@@ -11,7 +11,9 @@ import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
@@ -24,6 +26,8 @@ public class BCEdDSAPrivateKey
     static final long serialVersionUID = 1L;
     
     transient AsymmetricKeyParameter eddsaPrivateKey;
+    transient AsymmetricKeyParameter eddsaPublicKey;
+    transient int hashCode;
 
     private final boolean hasPublicKey;
     private final byte[] attributes;
@@ -33,6 +37,15 @@ public class BCEdDSAPrivateKey
         this.hasPublicKey = true;
         this.attributes = null;
         this.eddsaPrivateKey = privKey;
+        if (eddsaPrivateKey instanceof Ed448PrivateKeyParameters)
+        {
+            eddsaPublicKey = ((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
+        }
+        else
+        {
+            eddsaPublicKey = ((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
+        }
+        this.hashCode = calculateHashCode();
     }
 
     BCEdDSAPrivateKey(PrivateKeyInfo keyInfo)
@@ -52,11 +65,15 @@ public class BCEdDSAPrivateKey
         if (EdECObjectIdentifiers.id_Ed448.equals(keyInfo.getPrivateKeyAlgorithm().getAlgorithm()))
         {
             eddsaPrivateKey = new Ed448PrivateKeyParameters(encoding);
+            eddsaPublicKey = ((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
         }
         else
         {
             eddsaPrivateKey = new Ed25519PrivateKeyParameters(encoding);
+            eddsaPublicKey = ((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
         }
+
+        this.hashCode = calculateHashCode();
     }
 
     public String getAlgorithm()
@@ -73,17 +90,33 @@ public class BCEdDSAPrivateKey
     {
         try
         {
+            PrivateKeyInfo keyInfo = getPrivateKeyInfo();
+            if (keyInfo == null)
+            {
+                return null;
+            }
+
+            return keyInfo.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
+    private PrivateKeyInfo getPrivateKeyInfo()
+    {
+        try
+        {
             ASN1Set attrSet = ASN1Set.getInstance(attributes);
             PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(eddsaPrivateKey, attrSet);
 
             if (hasPublicKey && !Properties.isOverrideSet("org.bouncycastle.pkcs8.v1_info_only"))
             {
-                return privInfo.getEncoded();
+                return privInfo;
             }
-            else
-            {
-                return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), attrSet).getEncoded();
-            }
+
+            return new PrivateKeyInfo(privInfo.getPrivateKeyAlgorithm(), privInfo.parsePrivateKey(), attrSet);
         }
         catch (IOException e)
         {
@@ -93,14 +126,7 @@ public class BCEdDSAPrivateKey
 
     public EdDSAPublicKey getPublicKey()
     {
-        if (eddsaPrivateKey instanceof Ed448PrivateKeyParameters)
-        {
-            return new BCEdDSAPublicKey(((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey());
-        }
-        else
-        {
-            return new BCEdDSAPublicKey(((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey());
-        }
+        return new BCEdDSAPublicKey(eddsaPublicKey);
     }
 
     AsymmetricKeyParameter engineGetKeyParameters()
@@ -110,16 +136,7 @@ public class BCEdDSAPrivateKey
 
     public String toString()
     {
-        AsymmetricKeyParameter pubKey;
-        if (eddsaPrivateKey instanceof Ed448PrivateKeyParameters)
-        {
-            pubKey = ((Ed448PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
-        }
-        else
-        {
-            pubKey = ((Ed25519PrivateKeyParameters)eddsaPrivateKey).generatePublicKey();
-        }
-        return Utils.keyToString("Private Key", getAlgorithm(), pubKey);
+        return Utils.keyToString("Private Key", getAlgorithm(), eddsaPublicKey);
     }
 
     public boolean equals(Object o)
@@ -136,12 +153,47 @@ public class BCEdDSAPrivateKey
 
         PrivateKey other = (PrivateKey)o;
 
-        return Arrays.areEqual(other.getEncoded(), this.getEncoded());
+        PrivateKeyInfo info = this.getPrivateKeyInfo();
+        PrivateKeyInfo otherInfo = (other instanceof BCEdDSAPrivateKey) ? ((BCEdDSAPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
+
+        if (info == null || otherInfo == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
+            boolean keyEquals = Arrays.constantTimeAreEqual(info.getPrivateKey().getEncoded(), otherInfo.getPrivateKey().getEncoded());
+
+            return algEquals & keyEquals;
+        }
+        catch (IOException e)
+        {
+             return false;
+        }
     }
 
     public int hashCode()
     {
-        return Arrays.hashCode(this.getEncoded());
+        return hashCode;
+    }
+
+    private int calculateHashCode()
+    {
+        byte[] publicData;
+        if (eddsaPublicKey instanceof Ed448PublicKeyParameters)
+        {
+            publicData = ((Ed448PublicKeyParameters)eddsaPublicKey).getEncoded();
+        }
+        else
+        {
+            publicData = ((Ed25519PublicKeyParameters)eddsaPublicKey).getEncoded();
+        }
+
+        int result = getAlgorithm().hashCode();
+        result = 31 * result + Arrays.hashCode(publicData);
+        return result;
     }
 
     private void readObject(
