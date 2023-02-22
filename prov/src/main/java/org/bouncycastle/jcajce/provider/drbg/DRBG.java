@@ -170,25 +170,7 @@ public class DRBG
                 .setPersonalizationString(personalisationString)
                 .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
         }
-        else if (Properties.isOverrideSet("org.bouncycastle.drbg.no_thread"))
-        {
-            EntropySource initSource = new HybridStaticEntropySource(256);
-
-            byte[] personalisationString = isPredictionResistant
-                ? generateDefaultPersonalizationString(initSource.getEntropy())
-                : generateNonceIVPersonalizationString(initSource.getEntropy());
-
-            return new SP800SecureRandomBuilder(new EntropySourceProvider()
-                        {
-                            public EntropySource get(int bitsRequired)
-                            {
-                                return new HybridStaticEntropySource(bitsRequired);
-                            }
-                        })
-                .setPersonalizationString(personalisationString)
-                .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
-        }
-        else
+        else if (Properties.isOverrideSet("org.bouncycastle.drbg.entropy_thread"))
         {
             synchronized (entropyDaemon)
             {
@@ -214,6 +196,24 @@ public class DRBG
             })
                 .setPersonalizationString(personalisationString)
                 .buildHash(new SHA512Digest(), source.getEntropy(), isPredictionResistant);
+        }
+        else
+        {
+            EntropySource initSource = new OneShotHybridEntropySource(256);
+
+            byte[] personalisationString = isPredictionResistant
+                ? generateDefaultPersonalizationString(initSource.getEntropy())
+                : generateNonceIVPersonalizationString(initSource.getEntropy());
+
+            return new SP800SecureRandomBuilder(new EntropySourceProvider()
+            {
+                public EntropySource get(int bitsRequired)
+                {
+                    return new OneShotHybridEntropySource(bitsRequired);
+                }
+            })
+                .setPersonalizationString(personalisationString)
+                .buildHash(new SHA512Digest(), initSource.getEntropy(), isPredictionResistant);
         }
     }
 
@@ -468,8 +468,8 @@ public class DRBG
         {
             byte[] entropy = new byte[bytesRequired];
 
-            // after 20 samples we'll start to check if there is new seed material.
-            if (samples.getAndIncrement() > 20)
+            // after 128 samples we'll start to check if there is new seed material.
+            if (samples.getAndIncrement() > 128)
             {
                 if (seedAvailable.getAndSet(false))
                 {
@@ -542,8 +542,6 @@ public class DRBG
                     scheduled.set(false);
                 }
 
-                schedule();
-
                 return seed;
             }
 
@@ -562,23 +560,23 @@ public class DRBG
         }
     }
 
-    private static class HybridStaticEntropySource
+    private static class OneShotHybridEntropySource
         implements EntropySource
     {
         private final AtomicBoolean seedAvailable = new AtomicBoolean(false);
         private final AtomicInteger samples = new AtomicInteger(0);
 
         private final SP800SecureRandom drbg;
-        private final EntropySource entropySource;
+        private final SignallingEntropySource entropySource;
         private final int bytesRequired;
         private final byte[] additionalInput = Pack.longToBigEndian(System.currentTimeMillis());
 
-        HybridStaticEntropySource(final int bitsRequired)
+        OneShotHybridEntropySource(final int bitsRequired)
         {
             EntropySourceProvider entropyProvider = createCoreEntropySourceProvider();
             bytesRequired = (bitsRequired + 7) / 8;
             // remember for the seed generator we need the correct security strength for SHA-512
-            entropySource = entropyProvider.get(256);
+            entropySource = new SignallingEntropySource(seedAvailable, entropyProvider, 256);
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
             {
                 public EntropySource get(final int bitsRequired)
@@ -599,11 +597,19 @@ public class DRBG
         {
             byte[] entropy = new byte[bytesRequired];
 
-            // after 20 samples we'll start to check if there is new seed material.
-            if (samples.getAndIncrement() > 100)
+            // after 1024 samples we'll start to check if there is new seed material,
+            // we do this less often than with the daemon based one due to the overheads.
+            if (samples.getAndIncrement() > 1024)
             {
-                drbg.reseed(additionalInput);
-                samples.set(0);
+                if (seedAvailable.getAndSet(false))
+                {
+                    samples.set(0);
+                    drbg.reseed(additionalInput);
+                }
+                else
+                {
+                    entropySource.schedule();
+                }
             }
 
             drbg.nextBytes(entropy);
@@ -614,6 +620,71 @@ public class DRBG
         public int entropySize()
         {
             return bytesRequired * 8;
+        }
+
+        private class SignallingEntropySource
+            implements IncrementalEntropySource
+        {
+            private final AtomicBoolean seedAvailable;
+            private final IncrementalEntropySource entropySource;
+            private final int byteLength;
+            private final AtomicReference entropy = new AtomicReference();
+            private final AtomicBoolean scheduled = new AtomicBoolean(false);
+
+            SignallingEntropySource(AtomicBoolean seedAvailable, EntropySourceProvider baseRandom, int bitsRequired)
+            {
+                this.seedAvailable = seedAvailable;
+                this.entropySource = (IncrementalEntropySource)baseRandom.get(bitsRequired);
+                this.byteLength = (bitsRequired + 7) / 8;
+            }
+
+            public boolean isPredictionResistant()
+            {
+                return true;
+            }
+
+            public byte[] getEntropy()
+            {
+                try
+                {
+                    return getEntropy(0);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("initial entropy fetch interrupted"); // should never happen
+                }
+            }
+
+            public byte[] getEntropy(long pause)
+                throws InterruptedException
+            {
+                byte[] seed = (byte[])entropy.getAndSet(null);
+
+                if (seed == null || seed.length != byteLength)
+                {
+                    seed = entropySource.getEntropy(pause);
+                }
+                else
+                {
+                    scheduled.set(false);
+                }
+
+                return seed;
+            }
+
+            void schedule()
+            {
+                if (!scheduled.getAndSet(true))
+                {
+                    new Thread(new EntropyGatherer(entropySource, seedAvailable, entropy)).start();
+                }
+            }
+
+            public int entropySize()
+            {
+                return byteLength * 8;
+            }
         }
     }
 }
