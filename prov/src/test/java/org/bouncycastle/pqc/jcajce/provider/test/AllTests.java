@@ -53,8 +53,6 @@ public class AllTests
         suite.addTestSuite(FrodoKeyPairGeneratorTest.class);
         suite.addTestSuite(SABERTest.class);
         suite.addTestSuite(SABERKeyPairGeneratorTest.class);
-        suite.addTestSuite(SIKETest.class);
-        suite.addTestSuite(SIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(FalconTest.class);
         suite.addTestSuite(FalconKeyPairGeneratorTest.class);
         suite.addTestSuite(NTRUTest.class);

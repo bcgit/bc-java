@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.sike;
+package org.bouncycastle.pqc.legacy.crypto.sike;
 
 class PointProj
 {

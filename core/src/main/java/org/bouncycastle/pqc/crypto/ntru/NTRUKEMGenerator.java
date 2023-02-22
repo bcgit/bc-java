@@ -32,7 +32,6 @@ public class NTRUKEMGenerator
         this.random = random;
     }
 
-    @Override
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
         NTRUParameterSet parameterSet = ((NTRUPublicKeyParameters)recipientKey).getParameters().parameterSet;
