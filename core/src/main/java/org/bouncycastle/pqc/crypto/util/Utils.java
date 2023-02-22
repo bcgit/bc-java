@@ -28,11 +28,11 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
-import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEParameters;
 import org.bouncycastle.util.Integers;
 
 class Utils
