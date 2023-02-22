@@ -1213,9 +1213,11 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                         pols.add(pOid.getId());
 
-                        if (!ANY_POLICY.equals(pOid.getId())) {
+                        if (!ANY_POLICY.equals(pOid.getId()))
+                        {
                             Set pq;
-                            try {
+                            try
+                            {
                                 pq = getQualifierSet(pInfo.getPolicyQualifiers());
                             }
                             catch (CertPathValidatorException cpve)
