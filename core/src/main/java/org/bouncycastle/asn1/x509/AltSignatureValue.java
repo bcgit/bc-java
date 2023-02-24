@@ -79,6 +79,6 @@ public class AltSignatureValue
 
     public ASN1Primitive toASN1Primitive()
     {
-        return signature.toASN1Primitive();
+        return signature;
     }
 }
