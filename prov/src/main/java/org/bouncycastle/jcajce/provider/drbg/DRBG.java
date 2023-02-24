@@ -677,7 +677,9 @@ public class DRBG
             {
                 if (!scheduled.getAndSet(true))
                 {
-                    new Thread(new EntropyGatherer(entropySource, seedAvailable, entropy)).start();
+                    Thread thread = new Thread(new EntropyGatherer(entropySource, seedAvailable, entropy));
+                    thread.setDaemon(true);
+                    thread.start();
                 }
             }
 
