@@ -4,7 +4,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 
 /**
@@ -39,7 +38,7 @@ public class AltSignatureAlgorithm
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return getInstance(AlgorithmIdentifier.getInstance(obj, explicit));
     }
 
     public static AltSignatureAlgorithm getInstance(
