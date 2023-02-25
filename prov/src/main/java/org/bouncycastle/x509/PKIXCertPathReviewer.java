@@ -11,6 +11,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -136,9 +137,47 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         {
             throw new NullPointerException("certPath was null");
         }
-        this.certPath = certPath;
 
-        certs = certPath.getCertificates();
+        List<Certificate> cs = (List<Certificate>)certPath.getCertificates();
+        if (cs.size() != 1)
+        {
+            // check trust anchor not included in certPath as it will
+            // cause havoc otherwise.
+            Set tas = new HashSet();
+            for (Iterator it = params.getTrustAnchors().iterator(); it.hasNext();)
+            {
+                TrustAnchor ta = (TrustAnchor)it.next();
+
+                tas.add(ta.getTrustedCert());
+            }
+
+            List certs = new ArrayList();
+            for (int i = 0; i != cs.size(); i++)
+            {
+                // don't include the trust anchor
+                if (!tas.contains(cs.get(i)))
+                {
+                    certs.add(cs.get(i));
+                }
+            }
+            try
+            {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+                this.certPath = cf.generateCertPath(certs);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new IllegalStateException("unable to rebuild certpath");
+            }
+            this.certs = certs;
+        }
+        else
+        {
+            this.certPath = certPath;
+            this.certs = certPath.getCertificates();
+        }
+
         n = certs.size();
         if (certs.isEmpty())
         {
