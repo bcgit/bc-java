@@ -54,9 +54,7 @@ import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.TBSCertificate;
-import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStoreBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
@@ -65,9 +63,7 @@ import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.i18n.filter.TrustedInput;
 import org.bouncycastle.i18n.filter.UntrustedInput;
 import org.bouncycastle.mail.smime.SMIMESigned;
-import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Store;
 import org.bouncycastle.x509.CertPathReviewerException;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
 
@@ -177,34 +173,9 @@ public class SignedMailValidator
                     "SignedMailValidator.noSignedMessage");
                 throw new SignedMailValidatorException(msg);
             }
- 
+
             // save certstore and signerInformationStore
-            Store<X509CertificateHolder> certificates = s.getCertificates();
-            JcaCertStoreBuilder storeBuilder = new JcaCertStoreBuilder();
-            // filter out any trust anchors from the CMS certificate set if they appear
-            Set<TrustAnchor> tas = param.getTrustAnchors();
-            Set<X509CertificateHolder> anchors = new HashSet<X509CertificateHolder>(tas.size());
-            for (Iterator<TrustAnchor> it = tas.iterator(); it.hasNext();)
-            {
-               anchors.add(new JcaX509CertificateHolder(it.next().getTrustedCert()));
-            }
-            Collection<X509CertificateHolder> cs = certificates.getMatches(null);
-            boolean foundCaOrEe = false;
-            for (Iterator<X509CertificateHolder> it = cs.iterator(); it.hasNext();)
-            {
-                X509CertificateHolder holder = it.next();
-                if (!anchors.contains(holder))
-                {
-                    foundCaOrEe = true;
-                    storeBuilder.addCertificate(holder);
-                }
-            }
-            // degenerate case - if we're self signed add the trust anchors.
-            if (!foundCaOrEe)
-            {
-                storeBuilder.addCertificates(new CollectionStore(anchors));
-            }
-            certs = storeBuilder.addCRLs(s.getCRLs()).setProvider("BC").build();
+            certs = new JcaCertStoreBuilder().addCertificates(s.getCertificates()).addCRLs(s.getCRLs()).setProvider("BC").build();
             signers = s.getSignerInfos();
 
             // save "from" addresses from message
@@ -938,7 +909,7 @@ public class SignedMailValidator
 
         /**
          * @return the PKIXCertPathReviewer for the CertPath of this signature
-         * or null if an Exception occured.
+         * or null if an Exception occurred.
          */
         public PKIXCertPathReviewer getCertPathReview()
         {
@@ -947,7 +918,7 @@ public class SignedMailValidator
 
         /**
          * @return the CertPath for this signature
-         * or null if an Exception occured.
+         * or null if an Exception occurred.
          */
         public CertPath getCertPath()
         {
