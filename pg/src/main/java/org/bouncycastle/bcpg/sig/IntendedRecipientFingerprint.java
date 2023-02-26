@@ -24,7 +24,7 @@ public class IntendedRecipientFingerprint
         byte[]     fingerprint)
     {
         super(SignatureSubpacketTags.INTENDED_RECIPIENT_FINGERPRINT, critical, false,
-                    Arrays.concatenate(new byte[] { (byte)keyVersion }, fingerprint));
+            Arrays.prepend(fingerprint, (byte)keyVersion));
     }
 
     public int getKeyVersion()

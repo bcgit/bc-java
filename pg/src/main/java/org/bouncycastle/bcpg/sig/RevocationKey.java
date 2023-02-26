@@ -16,11 +16,10 @@ public class RevocationKey extends SignatureSubpacket
         super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, isLongLength, data);
     }
 
-    public RevocationKey(boolean isCritical, byte signatureClass, int keyAlgorithm,
-        byte[] fingerprint)
+    public RevocationKey(boolean isCritical, byte signatureClass, int keyAlgorithm, byte[] fingerprint)
     {
-        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, false, createData(signatureClass,
-            (byte)(keyAlgorithm & 0xff), fingerprint));
+        super(SignatureSubpacketTags.REVOCATION_KEY, isCritical, false,
+            createData(signatureClass, (byte)keyAlgorithm, fingerprint));
     }
 
     private static byte[] createData(byte signatureClass, byte keyAlgorithm, byte[] fingerprint)
@@ -34,17 +33,16 @@ public class RevocationKey extends SignatureSubpacket
 
     public byte getSignatureClass()
     {
-        return this.getData()[0];
+        return data[0];
     }
 
     public int getAlgorithm()
     {
-        return this.getData()[1];
+        return data[1] & 0xff;
     }
 
     public byte[] getFingerprint()
     {
-        byte[] data = this.getData();
         byte[] fingerprint = new byte[data.length - 2];
         System.arraycopy(data, 2, fingerprint, 0, fingerprint.length);
         return fingerprint;

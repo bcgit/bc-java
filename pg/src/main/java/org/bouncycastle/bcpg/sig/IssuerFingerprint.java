@@ -24,7 +24,7 @@ public class IssuerFingerprint
         byte[]     fingerprint)
     {
         super(SignatureSubpacketTags.ISSUER_FINGERPRINT, critical, false,
-                    Arrays.concatenate(new byte[] { (byte)keyVersion }, fingerprint));
+            Arrays.prepend(fingerprint, (byte)keyVersion));
     }
 
     public int getKeyVersion()

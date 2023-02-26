@@ -158,6 +158,7 @@ public class SignaturePacket
             signature[2] = y;
             break;
         case ECDSA:
+        case EDDSA:
             MPInteger    ecR = new MPInteger(in);
             MPInteger    ecS = new MPInteger(in);
 
@@ -165,25 +166,11 @@ public class SignaturePacket
             signature[0] = ecR;
             signature[1] = ecS;
             break;
-        case EDDSA:
-            MPInteger    edR = new MPInteger(in);
-            MPInteger    edS = new MPInteger(in);
-
-            signature = new MPInteger[2];
-            signature[0] = edR;
-            signature[1] = edS;
-            break;
         default:
             if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)
             {
                 signature = null;
-                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                int ch;
-                while ((ch = in.read()) >= 0)
-                {
-                    bOut.write(ch);
-                }
-                signatureEncoding = bOut.toByteArray();
+                signatureEncoding = Streams.readAll(in);
             }
             else
             {
@@ -293,16 +280,14 @@ public class SignaturePacket
     }
 
     /**
-     * Return the signatures fingerprint.
+     * Return the signature's fingerprint.
      * @return fingerprint (digest prefix) of the signature
      */
     public byte[] getFingerPrint()
     {
-        byte[] fp = new byte[fingerPrint.length];
-        System.arraycopy(fingerPrint, 0, fp, 0, fingerPrint.length);
-        return fp;
+        return Arrays.clone(fingerPrint);
     }
-    
+
     /**
      * return the signature trailer that must be included with the data
      * to reconstruct the signature
@@ -401,29 +386,30 @@ public class SignaturePacket
      */
     public byte[] getSignatureBytes()
     {
-        if (signatureEncoding == null)
-        {
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            BCPGOutputStream bcOut = new BCPGOutputStream(bOut);
-
-            for (int i = 0; i != signature.length; i++)
-            {
-                try
-                {
-                    bcOut.writeObject(signature[i]);
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("internal error: " + e);
-                }
-            }
-            return bOut.toByteArray();
-        }
-        else
+        if (signatureEncoding != null)
         {
             return Arrays.clone(signatureEncoding);
         }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        try
+        {
+            BCPGOutputStream bcOut = new BCPGOutputStream(bOut);
+            for (int i = 0; i != signature.length; i++)
+            {
+                bcOut.writeObject(signature[i]);
+            }
+            bcOut.close();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("internal error: " + e);
+        }
+
+        return bOut.toByteArray();
     }
+
     public SignatureSubpacket[] getHashedSubPackets()
     {
         return hashedData;
