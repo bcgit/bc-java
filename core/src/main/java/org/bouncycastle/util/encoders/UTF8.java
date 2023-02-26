@@ -151,7 +151,7 @@ public class UTF8
 
             while (state >= 0)
             {
-                if (i >= utf8.length)
+                if (i >= maxI)
                 {
                     return -1;
                 }
