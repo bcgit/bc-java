@@ -12,6 +12,22 @@ public class BCPGOutputStream
     extends OutputStream
     implements PacketTags, CompressionAlgorithmTags
 {
+    /**
+     * If the argument is a {@link BCPGOutputStream}, return it.
+     * Otherwise wrap it in a {@link BCPGOutputStream} and then return the result.
+     *
+     * @param out output stream
+     * @return BCPGOutputStream
+     */
+    public static BCPGOutputStream wrap(OutputStream out)
+    {
+        if (out instanceof BCPGOutputStream)
+        {
+            return (BCPGOutputStream)out;
+        }
+        return new BCPGOutputStream(out);
+    }
+
     OutputStream    out;
     private boolean useOldFormat;
     private byte[]  partialBuffer;

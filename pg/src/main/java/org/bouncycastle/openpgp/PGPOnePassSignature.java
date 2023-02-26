@@ -225,21 +225,9 @@ public class PGPOnePassSignature
         return bOut.toByteArray();
     }
 
-    public void encode(
-        OutputStream outStream)
+    public void encode(OutputStream outStream)
         throws IOException
     {
-        BCPGOutputStream out;
-
-        if (outStream instanceof BCPGOutputStream)
-        {
-            out = (BCPGOutputStream)outStream;
-        }
-        else
-        {
-            out = new BCPGOutputStream(outStream);
-        }
-
-        out.writePacket(sigPack);
+        BCPGOutputStream.wrap(outStream).writePacket(sigPack);
     }
 }

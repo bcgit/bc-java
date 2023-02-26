@@ -12,19 +12,6 @@ import org.bouncycastle.util.io.Streams;
 public class BCPGInputStream
     extends InputStream implements PacketTags
 {
-    InputStream    in;
-    boolean        next = false;
-    int            nextB;
-
-    boolean        mNext = false;
-    int            mNextB;
-
-    public BCPGInputStream(
-        InputStream    in)
-    {
-        this.in = in;
-    }
-
     /**
      * If the argument is a {@link BCPGInputStream}, return it.
      * Otherwise wrap it in a {@link BCPGInputStream} and then return the result.
@@ -39,6 +26,19 @@ public class BCPGInputStream
             return (BCPGInputStream)in;
         }
         return new BCPGInputStream(in);
+    }
+
+    InputStream    in;
+    boolean        next = false;
+    int            nextB;
+
+    boolean        mNext = false;
+    int            mNextB;
+
+    public BCPGInputStream(
+        InputStream    in)
+    {
+        this.in = in;
     }
 
     public int available()

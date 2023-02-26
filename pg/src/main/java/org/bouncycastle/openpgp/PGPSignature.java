@@ -604,16 +604,7 @@ public class PGPSignature
             return;
         }
 
-        BCPGOutputStream out;
-
-        if (outStream instanceof BCPGOutputStream)
-        {
-            out = (BCPGOutputStream)outStream;
-        }
-        else
-        {
-            out = new BCPGOutputStream(outStream);
-        }
+        BCPGOutputStream out = BCPGOutputStream.wrap(outStream);
 
         out.writePacket(sigPck);
         if (!forTransfer && trustPck != null)
