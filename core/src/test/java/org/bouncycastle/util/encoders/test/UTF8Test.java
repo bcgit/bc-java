@@ -37,12 +37,9 @@ public class UTF8Test
             testIncomplete4_2();
             testIncomplete4_3();
             testLeadingSuffix();
-            testTruncated2_1();
-            testTruncated3_1();
-            testTruncated3_2();
-            testTruncated4_1();
-            testTruncated4_2();
-            testTruncated4_3();
+            testTruncated2();
+            testTruncated3();
+            testTruncated4();
             testValid1();
             testValid2();
             testValid3();
@@ -319,47 +316,34 @@ public class UTF8Test
         }
     }
 
-    private void testTruncated2_1()
+    private void testTruncated2()
     {
-        byte[] utf8 = new byte[1];
+        byte[] utf8 = new byte[2];
         char[] utf16 = new char[1];
 
         for (int i = 0x02; i < 0x20; ++i)
         {
             utf8[0] = (byte)(0xC0 | i);
-            utf16[0] = (char)0xFFFF;
+            utf8[1] = randomSuffix();
+            utf16[0] = (char)0;
 
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
+            // Use truncated length with otherwise valid UTF8
+            int result = UTF8.transcodeToUTF16(utf8, 0, 1, utf16);
 
-            isEquals("testTruncated2_1", result, -1);
+            isEquals("testTruncated2", result, -1);
         }
     }
 
-    private void testTruncated3_1()
+    private void testTruncated3()
     {
-        byte[] utf8 = new byte[1];
-        char[] utf16 = new char[1];
-
-        for (int i = 0x00; i < 0x10; ++i)
-        {
-            utf8[0] = (byte)(0xE0 | i);
-            utf16[0] = (char)0xFFFF;
-
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
-
-            isEquals("testTruncated3_1", result, -1);
-        }
-    }
-
-    private void testTruncated3_2()
-    {
-        byte[] utf8 = new byte[2];
+        byte[] utf8 = new byte[3];
         char[] utf16 = new char[1];
 
         for (int i = 0x00; i < 0x10; ++i)
         {
             utf8[0] = (byte)(0xE0 | i);
             utf8[1] = randomSuffix();
+            utf8[2] = randomSuffix();
             utf16[0] = (char)0;
 
             if (i == 0x00)
@@ -371,60 +355,16 @@ public class UTF8Test
                 utf8[1] &= 0x9F;
             }
 
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
+            // Use truncated length with otherwise valid UTF8
+            int result = UTF8.transcodeToUTF16(utf8, 0, 2, utf16);
 
-            isEquals("testTruncated3_2", result, -1);
-        }
-        
-    }
-
-    private void testTruncated4_1()
-    {
-        byte[] utf8 = new byte[1];
-        char[] utf16 = new char[2];
-
-        for (int i = 0x00; i < 0x05; ++i)
-        {
-            utf8[0] = (byte)(0xF0 | i);
-            utf16[0] = (char)0;
-            utf16[1] = (char)0;
-
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
-
-            isEquals("testTruncated4_1", result, -1);
+            isEquals("testTruncated3", result, -1);
         }
     }
-    
-    private void testTruncated4_2()
+
+    private void testTruncated4()
     {
-        byte[] utf8 = new byte[2];
-        char[] utf16 = new char[2];
-
-        for (int i = 0x00; i < 0x05; ++i)
-        {
-            utf8[0] = (byte)(0xF0 | i);
-            utf8[1] = randomSuffix();
-            utf16[0] = (char)0;
-            utf16[1] = (char)0;
-
-            if (i == 0x00)
-            {
-                utf8[1] |= 0x10 << (R.nextInt() & 1);
-            }
-            else if (i == 0x04)
-            {
-                utf8[1] &= 0x8F;
-            }
-
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
-
-            isEquals("testTruncated4_2", result, -1);
-        }
-    }
-    
-    private void testTruncated4_3()
-    {
-        byte[] utf8 = new byte[3];
+        byte[] utf8 = new byte[4];
         char[] utf16 = new char[2];
 
         for (int i = 0x00; i < 0x05; ++i)
@@ -432,6 +372,7 @@ public class UTF8Test
             utf8[0] = (byte)(0xF0 | i);
             utf8[1] = randomSuffix();
             utf8[2] = randomSuffix();
+            utf8[3] = randomSuffix();
             utf16[0] = (char)0;
             utf16[1] = (char)0;
 
@@ -444,9 +385,10 @@ public class UTF8Test
                 utf8[1] &= 0x8F;
             }
 
-            int result = UTF8.transcodeToUTF16(utf8, utf16);
+            // Use truncated length with otherwise valid UTF8
+            int result = UTF8.transcodeToUTF16(utf8, 0, 3, utf16);
 
-            isEquals("testTruncated4_3", result, -1);
+            isEquals("testTruncated4", result, -1);
         }
     }
 
