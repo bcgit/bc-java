@@ -442,6 +442,16 @@ public class PGPSecretKey
     }
 
     /**
+     * Return the fingerprint of the public key associated with this key.
+     *
+     * @return key fingerprint.
+     */
+    public byte[] getFingerprint()
+    {
+        return pub.getFingerprint();
+    }
+
+    /**
      * Return the S2K usage associated with this key.
      *
      * @return the key's S2K usage
