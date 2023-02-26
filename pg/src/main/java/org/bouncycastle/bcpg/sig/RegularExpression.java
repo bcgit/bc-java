@@ -48,8 +48,6 @@ public class RegularExpression
     private static byte[] toNullTerminatedUTF8ByteArray(String string)
     {
         byte[] utf8 = Strings.toUTF8ByteArray(string);
-        byte[] nullTerminated = new byte[utf8.length + 1];
-        System.arraycopy(utf8, 0, nullTerminated, 0, utf8.length);
-        return nullTerminated;
+        return Arrays.append(utf8, (byte)0);
     }
 }

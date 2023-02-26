@@ -36,7 +36,7 @@ public class AEADEncDataPacket
         chunkSize = (byte)in.read();
 
         iv = new byte[getIVLength(aeadAlgorithm)];
-        in.read(iv, 0, iv.length);
+        in.readFully(iv);
     }
 
     public AEADEncDataPacket(int algorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
