@@ -556,21 +556,10 @@ public class PGPSignature
      * @param forTransfer if the purpose of encoding is to send key to other users.
      * @throws IOException in case of encoding error.
      */
-    public void encode(
-        OutputStream    outStream,
-        boolean         forTransfer)
+    public void encode(OutputStream outStream, boolean forTransfer)
         throws IOException
     {
-        BCPGOutputStream    out;
-        
-        if (outStream instanceof BCPGOutputStream)
-        {
-            out = (BCPGOutputStream)outStream;
-        }
-        else
-        {
-            out = new BCPGOutputStream(outStream);
-        }
+        BCPGOutputStream out = BCPGOutputStream.wrap(outStream);
 
         out.writePacket(sigPck);
         if (!forTransfer && trustPck != null)
