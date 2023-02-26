@@ -727,20 +727,10 @@ public class PGPSecretKey
         return bOut.toByteArray();
     }
 
-    public void encode(
-        OutputStream outStream)
+    public void encode(OutputStream outStream)
         throws IOException
     {
-        BCPGOutputStream out;
-
-        if (outStream instanceof BCPGOutputStream)
-        {
-            out = (BCPGOutputStream)outStream;
-        }
-        else
-        {
-            out = new BCPGOutputStream(outStream);
-        }
+        BCPGOutputStream out = BCPGOutputStream.wrap(outStream);
 
         out.writePacket(secret);
         if (pub.trustPk != null)

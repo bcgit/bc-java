@@ -720,21 +720,10 @@ public class PGPPublicKey
      * @param forTransfer if the purpose of encoding is to send key to other users.
      * @throws IOException in case of encoding error.
      */
-    public void encode(
-        OutputStream outStream,
-        boolean forTransfer)
+    public void encode(OutputStream outStream, boolean forTransfer)
         throws IOException
     {
-        BCPGOutputStream out;
-
-        if (outStream instanceof BCPGOutputStream)
-        {
-            out = (BCPGOutputStream)outStream;
-        }
-        else
-        {
-            out = new BCPGOutputStream(outStream);
-        }
+        BCPGOutputStream out = BCPGOutputStream.wrap(outStream);
 
         out.writePacket(publicPk);
         if (!forTransfer && trustPk != null)
