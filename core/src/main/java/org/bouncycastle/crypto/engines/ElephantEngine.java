@@ -29,6 +29,19 @@ public class ElephantEngine
         elephant200
     }
 
+    private enum State
+    {
+        Uninitialized,
+        EncInit,
+        EncAad, // can process AAD
+        EncData, // cannot process AAD
+        EncFinal,
+        DecInit,
+        DecAad, // can process AAD
+        DecData, // cannot process AAD
+        DecFinal,
+    }
+
     private boolean forEncryption;
     private final String algorithmName;
     private final ElephantParameters parameters;
@@ -44,8 +57,21 @@ public class ElephantEngine
     private final byte CRYPTO_NPUBBYTES = 12;
     private final byte CRYPTO_ABYTES;
     private boolean initialised;
+    private int nb_its;
+    private byte[] ad;
+    private int adOff;
+    private int adlen;
+    private final byte[] tag_buffer;
+    private byte[] previous_mask;
+    private byte[] current_mask;
+    private byte[] next_mask;
+    private final byte[] buffer;
+    private State m_state = State.Uninitialized;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private int inputOff;
+    private byte[] inputMessage;
+    private final byte[] previous_outputMessage;
+    private final byte[] outputMessage;
 
     private final byte[] sBoxLayer = {
         (byte)0xee, (byte)0xed, (byte)0xeb, (byte)0xe0, (byte)0xe2, (byte)0xe1, (byte)0xe4, (byte)0xef, (byte)0xe7, (byte)0xea, (byte)0xe8, (byte)0xe5, (byte)0xe9, (byte)0xec, (byte)0xe3, (byte)0xe6,
@@ -105,7 +131,13 @@ public class ElephantEngine
             throw new IllegalArgumentException("Invalid parameter settings for Elephant");
         }
         this.parameters = parameters;
-
+        tag_buffer = new byte[BLOCK_SIZE];
+        previous_mask = new byte[BLOCK_SIZE];
+        current_mask = new byte[BLOCK_SIZE];
+        next_mask = new byte[BLOCK_SIZE];
+        buffer = new byte[BLOCK_SIZE];
+        previous_outputMessage = new byte[BLOCK_SIZE];
+        outputMessage = new byte[BLOCK_SIZE];
         initialised = false;
         reset(false);
     }
@@ -224,7 +256,7 @@ public class ElephantEngine
             }
         }
         //iota
-        state[index(0, 0)] ^= KeccakRoundConstants[indexRound];
+        state[0] ^= KeccakRoundConstants[indexRound];//index(0,0)
     }
 
 
@@ -256,45 +288,6 @@ public class ElephantEngine
         }
     }
 
-    // Write the ith assocated data block to "output".
-    // The nonce is prepended and padding is added as required.
-    // adlen is the length of the associated data in bytes
-    private void get_ad_block(byte[] output, byte[] ad, int adlen, byte[] npub, int i)
-    {
-        int len = 0;
-        // First block contains nonce
-        // Remark: nonce may not be longer then BLOCK_SIZE
-        if (i == 0)
-        {
-            System.arraycopy(npub, 0, output, 0, CRYPTO_NPUBBYTES);
-            len += CRYPTO_NPUBBYTES;
-        }
-        int block_offset = i * BLOCK_SIZE - ((i != 0) ? 1 : 0) * CRYPTO_NPUBBYTES;
-        // If adlen is divisible by BLOCK_SIZE, add an additional padding block
-        if (i != 0 && block_offset == adlen)
-        {
-            Arrays.fill(output, 0, BLOCK_SIZE, (byte)0);
-            output[0] = 0x01;
-            return;
-        }
-        int r_outlen = BLOCK_SIZE - len;
-        int r_adlen = adlen - block_offset;
-        // Fill with associated data if available
-        if (r_outlen <= r_adlen)
-        { // enough AD
-            System.arraycopy(ad, block_offset, output, len, r_outlen);
-        }
-        else
-        { // not enough AD, need to pad
-            if (r_adlen > 0) // ad might be nullptr
-            {
-                System.arraycopy(ad, block_offset, output, len, r_adlen);
-            }
-            Arrays.fill(output, len + r_adlen, len + r_outlen, (byte)0);
-            output[len + r_adlen] = 0x01;
-        }
-    }
-
     // Return the ith ciphertext block.
     // clen is the length of the ciphertext in bytes
     private void get_c_block(byte[] output, byte[] c, int cOff, int clen, int i)
@@ -311,13 +304,13 @@ public class ElephantEngine
         // Fill with ciphertext if available
         if (BLOCK_SIZE <= r_clen)
         { // enough ciphertext
-            System.arraycopy(c, cOff + block_offset, output, 0, BLOCK_SIZE);
+            System.arraycopy(c, cOff, output, 0, BLOCK_SIZE);
         }
         else
         { // not enough ciphertext, need to pad
             if (r_clen > 0) // c might be nullptr
             {
-                System.arraycopy(c, cOff + block_offset, output, 0, r_clen);
+                System.arraycopy(c, cOff, output, 0, r_clen);
             }
             Arrays.fill(output, r_clen, BLOCK_SIZE, (byte)0);
             output[r_clen] = 0x01;
@@ -362,6 +355,8 @@ public class ElephantEngine
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
         initialised = true;
+        m_state = forEncryption ? State.EncInit : State.DecInit;
+        inputMessage = new byte[BLOCK_SIZE + (forEncryption ? 0 : CRYPTO_ABYTES)];
         reset(false);
     }
 
@@ -391,8 +386,7 @@ public class ElephantEngine
     public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
-        message.write(input);
-        return 0;
+        return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     @Override
@@ -403,8 +397,39 @@ public class ElephantEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        message.write(input, inOff, len);
-        return 0;
+        byte[] ad = aadData.toByteArray();
+
+
+        if (inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES) >= BLOCK_SIZE)
+        {
+            switch (m_state)
+            {
+            case EncInit:
+            case DecInit:
+                processAADBytes(tag_buffer);
+                break;
+            }
+            int mlen = inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES);
+            int adlen = ad.length;
+            int nblocks_c = mlen / BLOCK_SIZE;
+            int nblocks_m = 1 + ((mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1);
+            int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
+            byte[] tempInput = new byte[Math.max(nblocks_c, 1) * BLOCK_SIZE];
+            System.arraycopy(inputMessage, 0, tempInput, 0, inputOff);
+            int templen = tempInput.length - inputOff;
+            System.arraycopy(input, inOff, tempInput, inputOff, tempInput.length - inputOff);
+            processBytes(tempInput, output, outOff, nblocks_c, nblocks_m, nblocks_c, mlen, nblocks_ad);
+            inputOff = len - templen;
+            System.arraycopy(input, inOff + templen, inputMessage, 0, inputOff);
+            nb_its += nblocks_c;
+            return nblocks_c * BLOCK_SIZE;
+        }
+        else
+        {
+            System.arraycopy(input, inOff, inputMessage, inputOff, len);
+            inputOff += len;
+            return 0;
+        }
     }
 
     @Override
@@ -413,87 +438,29 @@ public class ElephantEngine
     {
         if (!initialised)
         {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+            throw new IllegalArgumentException(algorithmName + " needs call init function before doFinal");
         }
-        int len = message.size();
+        int len = inputOff;
         if ((forEncryption && len + outOff + CRYPTO_ABYTES > output.length) ||
             (!forEncryption && len + outOff - CRYPTO_ABYTES > output.length))
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        byte[] tag_buffer = new byte[BLOCK_SIZE];
-        byte[] m = message.toByteArray();
         byte[] ad = aadData.toByteArray();
-        int mlen = len - (forEncryption ? 0 : CRYPTO_ABYTES);
+        switch (m_state)
+        {
+        case EncInit:
+        case DecInit:
+            processAADBytes(tag_buffer);
+            break;
+        }
+        int mlen = len + nb_its * BLOCK_SIZE - (forEncryption ? 0 : CRYPTO_ABYTES);
         int adlen = ad.length;
         int nblocks_c = 1 + mlen / BLOCK_SIZE;
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
         int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
-        // Buffers for storing previous, current and next mask
-        byte[] previous_mask = new byte[BLOCK_SIZE];
-        byte[] current_mask = new byte[BLOCK_SIZE];
-        byte[] next_mask = new byte[BLOCK_SIZE];
-        System.arraycopy(expanded_key, 0, current_mask, 0, BLOCK_SIZE);
-        // Buffer to store current ciphertext/AD block
-        byte[] buffer = new byte[BLOCK_SIZE];
-        // Tag buffer and initialization of tag to first AD block
-        get_ad_block(tag_buffer, ad, adlen, npub, 0);
-        int offset = 0;
-        for (int i = 0; i < nb_it; ++i)
-        {
-            // Compute mask for the next message
-            lfsr_step(next_mask, current_mask);
-            if (i < nblocks_m)
-            {
-                // Compute ciphertext block
-                System.arraycopy(npub, 0, buffer, 0, CRYPTO_NPUBBYTES);
-                Arrays.fill(buffer, CRYPTO_NPUBBYTES, BLOCK_SIZE, (byte)0);
-                xor_block(buffer, current_mask, 0, BLOCK_SIZE);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                permutation(buffer);
-                xor_block(buffer, current_mask, 0, BLOCK_SIZE);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                int r_size = (i == nblocks_m - 1) ? mlen - offset : BLOCK_SIZE;
-                xor_block(buffer, m, offset, r_size);
-                System.arraycopy(buffer, 0, output, offset + outOff, r_size);
-            }
-            if (i > 0 && i <= nblocks_c)
-            {
-                // Compute tag for ciphertext block
-                if (forEncryption)
-                {
-                    get_c_block(buffer, output, outOff, mlen, i - 1);
-                }
-                else
-                {
-                    get_c_block(buffer, m, 0, mlen, i - 1);
-                }
-                xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                permutation(buffer);
-                xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                xor_block(tag_buffer, buffer, 0, BLOCK_SIZE);
-            }
-            // If there is any AD left, compute tag for AD block
-            if (i + 1 < nblocks_ad)
-            {
-                get_ad_block(buffer, ad, adlen, npub, i + 1);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                permutation(buffer);
-                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                xor_block(tag_buffer, buffer, 0, BLOCK_SIZE);
-            }
-            // Cyclically shift the mask buffers
-            // Value of next_mask will be computed in the next iteration
-            byte[] temp = previous_mask;
-            previous_mask = current_mask;
-            current_mask = next_mask;
-            next_mask = temp;
-            offset += BLOCK_SIZE;
-        }
-        outOff += mlen;
+        outOff += processBytes(inputMessage, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad);
         tag = new byte[CRYPTO_ABYTES];
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         permutation(tag_buffer);
@@ -506,9 +473,10 @@ public class ElephantEngine
         }
         else
         {
+            inputOff -= CRYPTO_ABYTES;
             for (int i = 0; i < CRYPTO_ABYTES; ++i)
             {
-                if (tag_buffer[i] != m[mlen + i])
+                if (tag_buffer[i] != inputMessage[inputOff + i])
                 {
                     throw new IllegalArgumentException("Mac does not match");
                 }
@@ -527,14 +495,37 @@ public class ElephantEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        len += message.size() - (forEncryption ? 0 : CRYPTO_ABYTES);
-        return Math.max(0, len);
+        switch (m_state)
+        {
+        case Uninitialized:
+            throw new IllegalArgumentException(algorithmName + " needs call init function before getUpdateOutputSize");
+        case DecFinal:
+        case EncFinal:
+            return 0;
+        case EncAad:
+        case EncData:
+        case EncInit:
+            return inputOff + len + CRYPTO_ABYTES;
+        }
+        return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return len + CRYPTO_ABYTES;
+        switch (m_state)
+        {
+        case Uninitialized:
+            throw new IllegalArgumentException(algorithmName + " needs call init function before getUpdateOutputSize");
+        case DecFinal:
+        case EncFinal:
+            return 0;
+        case EncAad:
+        case EncData:
+        case EncInit:
+            return len + CRYPTO_ABYTES;
+        }
+        return Math.max(0, len - CRYPTO_ABYTES);
     }
 
     @Override
@@ -550,7 +541,10 @@ public class ElephantEngine
             tag = null;
         }
         aadData.reset();
-        message.reset();
+        Arrays.fill(tag_buffer, (byte)0);
+        inputOff = 0;
+        nb_its = 0;
+        adOff = -1;
     }
 
     public int getKeyBytesSize()
@@ -566,5 +560,153 @@ public class ElephantEngine
     public int getBlockSize()
     {
         return CRYPTO_ABYTES;
+    }
+
+    private void checkAad()
+    {
+        switch (m_state)
+        {
+        case DecData:
+            throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the plaintext to be processed exceeds the a block size");
+        case EncData:
+            throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the ciphertext to be processed exceeds the a block size");
+        case EncFinal:
+            throw new IllegalArgumentException(algorithmName + " cannot be reused for encryption");
+        default:
+            break;
+        }
+    }
+
+    private void processAADBytes(byte[] output)
+    {
+        checkAad();
+
+        if (adOff == -1)
+        {
+            adlen = aadData.size();
+            ad = aadData.toByteArray();
+            adOff = 0;
+        }
+        int len = 0;
+        switch (m_state)
+        {
+        case DecInit:
+            System.arraycopy(expanded_key, 0, current_mask, 0, BLOCK_SIZE);
+            System.arraycopy(npub, 0, output, 0, CRYPTO_NPUBBYTES);
+            len += CRYPTO_NPUBBYTES;
+            m_state = State.DecAad;
+            break;
+        case EncInit:
+            System.arraycopy(expanded_key, 0, current_mask, 0, BLOCK_SIZE);
+            System.arraycopy(npub, 0, output, 0, CRYPTO_NPUBBYTES);
+            len += CRYPTO_NPUBBYTES;
+            m_state = State.EncAad;
+            break;
+        case DecAad:
+        case EncAad:
+            // If adlen is divisible by BLOCK_SIZE, add an additional padding block
+            if (adOff == adlen)
+            {
+                Arrays.fill(output, 0, BLOCK_SIZE, (byte)0);
+                output[0] = 0x01;
+                return;
+            }
+            break;
+        case DecData:
+            throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the plaintext to be processed exceeds the a block size");
+        case EncData:
+            throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the ciphertext to be processed exceeds the a block size");
+        case EncFinal:
+            throw new IllegalArgumentException(algorithmName + " cannot be reused for encryption");
+        }
+        int r_outlen = BLOCK_SIZE - len;
+        int r_adlen = adlen - adOff;
+        // Fill with associated data if available
+        if (r_outlen <= r_adlen)
+        { // enough AD
+            System.arraycopy(ad, adOff, output, len, r_outlen);
+            adOff += r_outlen;
+        }
+        else
+        { // not enough AD, need to pad
+            if (r_adlen > 0) // ad might be nullptr
+            {
+                System.arraycopy(ad, adOff, output, len, r_adlen);
+                adOff += r_adlen;
+            }
+            Arrays.fill(output, len + r_adlen, len + r_outlen, (byte)0);
+            output[len + r_adlen] = 0x01;
+            switch (m_state)
+            {
+            case DecAad:
+                m_state = State.DecData;
+                break;
+            case EncAad:
+                m_state = State.EncData;
+                break;
+            }
+        }
+    }
+
+    private int processBytes(byte[] m, byte[] output, int outOff, int nb_it, int nblocks_m, int nblocks_c, int mlen,
+                             int nblocks_ad)
+    {
+        int rv = 0;
+        for (int i = nb_its; i < nb_it; ++i)
+        {
+            // Compute mask for the next message
+            lfsr_step(next_mask, current_mask);
+            if (i < nblocks_m)
+            {
+                // Compute ciphertext block
+                System.arraycopy(npub, 0, buffer, 0, CRYPTO_NPUBBYTES);
+                Arrays.fill(buffer, CRYPTO_NPUBBYTES, BLOCK_SIZE, (byte)0);
+                xor_block(buffer, current_mask, 0, BLOCK_SIZE);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                permutation(buffer);
+                xor_block(buffer, current_mask, 0, BLOCK_SIZE);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                int r_size = (i == nblocks_m - 1) ? mlen - i * BLOCK_SIZE : BLOCK_SIZE;
+                xor_block(buffer, m, 0, r_size);
+                System.arraycopy(buffer, 0, output, outOff, r_size);
+                if (forEncryption)
+                {
+                    System.arraycopy(buffer, 0, outputMessage, 0, r_size);
+                }
+                else
+                {
+                    System.arraycopy(m, 0, outputMessage, 0, r_size);
+                }
+                rv += r_size;
+            }
+            if (i > 0 && i <= nblocks_c)
+            {
+                // Compute tag for ciphertext block
+                get_c_block(buffer, previous_outputMessage, 0, mlen, i - 1);
+                xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                permutation(buffer);
+                xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                xor_block(tag_buffer, buffer, 0, BLOCK_SIZE);
+            }
+            // If there is any AD left, compute tag for AD block
+            if (i + 1 < nblocks_ad)
+            {
+                processAADBytes(buffer);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                permutation(buffer);
+                xor_block(buffer, next_mask, 0, BLOCK_SIZE);
+                xor_block(tag_buffer, buffer, 0, BLOCK_SIZE);
+            }
+            // Cyclically shift the mask buffers
+            // Value of next_mask will be computed in the next iteration
+            byte[] temp = previous_mask;
+            previous_mask = current_mask;
+            current_mask = next_mask;
+            next_mask = temp;
+            System.arraycopy(outputMessage, 0, previous_outputMessage, 0, BLOCK_SIZE);
+        }
+        return rv;
     }
 }
