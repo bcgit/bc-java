@@ -62,15 +62,10 @@ public class ArmoredInputStream
      *
      * @return the offset the data starts in out.
      */
-    private static int decode(
-        int      in0,
-        int      in1,
-        int      in2,
-        int      in3,
-        int[]    out)
+    private static int decode(int in0, int in1, int in2, int in3, byte[] out)
         throws IOException
     {
-        int    b1, b2, b3, b4;
+        int b1, b2, b3, b4;
 
         if (in3 < 0)
         {
@@ -87,7 +82,7 @@ public class ArmoredInputStream
                 throw new IOException("invalid armor");
             }
 
-            out[2] = ((b1 << 2) | (b2 >> 4)) & 0xff;
+            out[2] = (byte)((b1 << 2) | (b2 >> 4));
 
             return 2;
         }
@@ -102,8 +97,8 @@ public class ArmoredInputStream
                 throw new IOException("invalid armor");
             }
 
-            out[1] = ((b1 << 2) | (b2 >> 4)) & 0xff;
-            out[2] = ((b2 << 4) | (b3 >> 2)) & 0xff;
+            out[1] = (byte)((b1 << 2) | (b2 >> 4));
+            out[2] = (byte)((b2 << 4) | (b3 >> 2));
 
             return 1;
         }
@@ -119,9 +114,9 @@ public class ArmoredInputStream
                 throw new IOException("invalid armor");
             }
 
-            out[0] = ((b1 << 2) | (b2 >> 4)) & 0xff;
-            out[1] = ((b2 << 4) | (b3 >> 2)) & 0xff;
-            out[2] = ((b3 << 6) | b4) & 0xff;
+            out[0] = (byte)((b1 << 2) | (b2 >> 4));
+            out[1] = (byte)((b2 << 4) | (b3 >> 2));
+            out[2] = (byte)((b3 << 6) | b4);
 
             return 0;
         }
@@ -135,7 +130,7 @@ public class ArmoredInputStream
 
     InputStream    in;
     boolean        start = true;
-    int[]          outBuf = new int[3];
+    byte[]         outBuf = new byte[3];
     int            bufPtr = 3;
     CRC24          crc = new FastCRC24();
     boolean        crcFound = false;
@@ -430,12 +425,6 @@ public class ArmoredInputStream
                     c = readIgnoreSpace();
                 }
 
-                if (c < 0)                // EOF
-                {
-                    isEndOfStream = true;
-                    return -1;
-                }
-
                 if (c == '=')            // crc reached
                 {
                     bufPtr = decode(readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
@@ -456,7 +445,8 @@ public class ArmoredInputStream
 
                     return read();
                 }
-                else if (c == '-')        // end of record reached
+
+                if (c == '-')        // end of record reached
                 {
                     while ((c = in.read()) >= 0)
                     {
@@ -482,30 +472,30 @@ public class ArmoredInputStream
 
                     return -1;
                 }
-                else                   // data
-                {
-                    bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
-                }
+            }
+
+            if (c < 0)
+            {
+                isEndOfStream = true;
+                return -1;
+            }
+
+            bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
+
+            if (bufPtr == 0)
+            {
+                crc.update3(outBuf, 0);
             }
             else
             {
-                if (c >= 0)
+                for (int i = bufPtr; i < 3; ++i)
                 {
-                    bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
-                }
-                else
-                {
-                    isEndOfStream = true;
-                    return -1;
+                    crc.update(outBuf[i] & 0xFF);
                 }
             }
         }
 
-        c = outBuf[bufPtr++];
-
-        crc.update(c);
-
-        return c;
+        return outBuf[bufPtr++] & 0xFF;
     }
 
     /**

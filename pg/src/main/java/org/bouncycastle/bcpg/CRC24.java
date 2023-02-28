@@ -18,18 +18,21 @@ public class CRC24
     {
     }
 
-    public void update(
-        int b)
+    public void update(int b)
     {
         crc ^= b << 16;
         for (int i = 0; i < 8; i++)
         {
-            crc <<= 1;
-            if ((crc & 0x1000000) != 0)
-            {
-                crc ^= CRC24_POLY;
-            }
+            int carry = ((crc << 8) >> 31) & CRC24_POLY;
+            crc = (crc << 1) ^ carry;
         }
+    }
+
+    public void update3(byte[] buf, int off)
+    {
+    	update(buf[off + 0] & 0xFF);
+    	update(buf[off + 1] & 0xFF);
+    	update(buf[off + 2] & 0xFF);
     }
 
     public int getValue()
