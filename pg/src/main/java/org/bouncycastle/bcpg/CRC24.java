@@ -30,9 +30,9 @@ public class CRC24
 
     public void update3(byte[] buf, int off)
     {
-    	update(buf[off + 0] & 0xFF);
-    	update(buf[off + 1] & 0xFF);
-    	update(buf[off + 2] & 0xFF);
+        update(buf[off + 0] & 0xFF);
+        update(buf[off + 1] & 0xFF);
+        update(buf[off + 2] & 0xFF);
     }
 
     public int getValue()

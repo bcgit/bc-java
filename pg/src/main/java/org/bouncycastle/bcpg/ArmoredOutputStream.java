@@ -447,7 +447,7 @@ public class ArmoredOutputStream
 
         if (bufPtr == 3)
         {
-        	crc.update3(buf, 0);
+            crc.update3(buf, 0);
             encode3(out, buf);
             bufPtr = 0;
             if ((++chunkCount & 0xf) == 0)
