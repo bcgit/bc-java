@@ -566,6 +566,14 @@ public class ASN1InputStream
                 return ASN1VideotexString.createPrimitive(defIn.toByteArray());
             case VISIBLE_STRING:
                 return ASN1VisibleString.createPrimitive(defIn.toByteArray());
+            case TIME:
+            case DATE:
+            case TIME_OF_DAY:
+            case DATE_TIME:
+            case DURATION:
+            case OID_IRI:
+            case RELATIVE_OID_IRI:
+                throw new IOException("unsupported tag " + tagNo + " encountered");
             default:
                 throw new IOException("unknown tag " + tagNo + " encountered");
             }
