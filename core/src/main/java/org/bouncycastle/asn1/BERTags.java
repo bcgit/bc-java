@@ -2,6 +2,7 @@ package org.bouncycastle.asn1;
 
 public interface BERTags
 {
+    // 0x00: Reserved for use by the encoding rules	
     public static final int BOOLEAN             = 0x01;
     public static final int INTEGER             = 0x02;
     public static final int BIT_STRING          = 0x03;
@@ -15,7 +16,8 @@ public interface BERTags
     public static final int EMBEDDED_PDV        = 0x0b; // decimal 11
     public static final int UTF8_STRING         = 0x0c; // decimal 12
     public static final int RELATIVE_OID        = 0x0d; // decimal 13
-                                                        // NOTE: 14-15 are reserved.
+    public static final int TIME                = 0x0e;
+    // 0x0f: Reserved for future editions of this Recommendation | International Standard
     public static final int SEQUENCE            = 0x10; // decimal 16
     public static final int SEQUENCE_OF         = 0x10; // for completeness - used to model a SEQUENCE of the same type.
     public static final int SET                 = 0x11; // decimal 17
@@ -33,6 +35,13 @@ public interface BERTags
     public static final int UNIVERSAL_STRING    = 0x1c; // decimal 28
     public static final int UNRESTRICTED_STRING = 0x1d; // decimal 29
     public static final int BMP_STRING          = 0x1e; // decimal 30
+    public static final int DATE                = 0x1f;
+    public static final int TIME_OF_DAY         = 0x20;
+    public static final int DATE_TIME           = 0x21;
+    public static final int DURATION            = 0x22;
+    public static final int OID_IRI             = 0x23;
+    public static final int RELATIVE_OID_IRI    = 0x24;
+    // 0x25..: Reserved for addenda to this Recommendation | International Standard
 
     public static final int CONSTRUCTED         = 0x20; // decimal 32
 
