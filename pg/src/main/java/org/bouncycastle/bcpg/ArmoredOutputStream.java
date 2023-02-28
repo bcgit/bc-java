@@ -42,20 +42,15 @@ public class ArmoredOutputStream
     /**
      * encode the input data producing a base 64 encoded byte array.
      */
-    private void encode(
-        OutputStream    out,
-        int[]           data,
-        int             len)
+    private static void encode(OutputStream out, byte[] data, int len)
         throws IOException
     {
-        int    d1, d2, d3;
+        int d1, d2, d3;
 
         switch (len)
         {
-        case 0:        /* nothing left to do */
-            break;
         case 1:
-            d1 = data[0];
+            d1 = data[0] & 0xFF;
 
             out.write(encodingTable[(d1 >>> 2) & 0x3f]);
             out.write(encodingTable[(d1 << 4) & 0x3f]);
@@ -63,8 +58,8 @@ public class ArmoredOutputStream
             out.write('=');
             break;
         case 2:
-            d1 = data[0];
-            d2 = data[1];
+            d1 = data[0] & 0xFF;
+            d2 = data[1] & 0xFF;
 
             out.write(encodingTable[(d1 >>> 2) & 0x3f]);
             out.write(encodingTable[((d1 << 4) | (d2 >>> 4)) & 0x3f]);
@@ -72,9 +67,9 @@ public class ArmoredOutputStream
             out.write('=');
             break;
         case 3:
-            d1 = data[0];
-            d2 = data[1];
-            d3 = data[2];
+            d1 = data[0] & 0xFF;
+            d2 = data[1] & 0xFF;
+            d3 = data[2] & 0xFF;
 
             out.write(encodingTable[(d1 >>> 2) & 0x3f]);
             out.write(encodingTable[((d1 << 4) | (d2 >>> 4)) & 0x3f]);
@@ -86,8 +81,24 @@ public class ArmoredOutputStream
         }
     }
 
+    /**
+     * encode the input data producing a base 64 encoded byte array.
+     */
+    private static void encode3(OutputStream out, byte[] data)
+        throws IOException
+    {
+        int d1 = data[0] & 0xFF;
+        int d2 = data[1] & 0xFF;
+        int d3 = data[2] & 0xFF;
+
+        out.write(encodingTable[(d1 >>> 2) & 0x3f]);
+        out.write(encodingTable[((d1 << 4) | (d2 >>> 4)) & 0x3f]);
+        out.write(encodingTable[((d2 << 2) | (d3 >>> 6)) & 0x3f]);
+        out.write(encodingTable[d3 & 0x3f]);
+    }
+
     OutputStream    out;
-    int[]           buf = new int[3];
+    byte[]           buf = new byte[3];
     int             bufPtr = 0;
     CRC24           crc = new FastCRC24();
     int             chunkCount = 0;
@@ -436,7 +447,8 @@ public class ArmoredOutputStream
 
         if (bufPtr == 3)
         {
-            encode(out, buf, bufPtr);
+        	crc.update3(buf, 0);
+            encode3(out, buf);
             bufPtr = 0;
             if ((++chunkCount & 0xf) == 0)
             {
@@ -447,8 +459,7 @@ public class ArmoredOutputStream
             }
         }
 
-        crc.update(b);
-        buf[bufPtr++] = b & 0xff;
+        buf[bufPtr++] = (byte)b;
     }
 
     public void flush()
@@ -465,7 +476,14 @@ public class ArmoredOutputStream
     {
         if (type != null)
         {
-            encode(out, buf, bufPtr);
+            if (bufPtr > 0)
+            {
+                for (int i = 0; i < bufPtr; ++i)
+                {
+                    crc.update(buf[i] & 0xFF);
+                }
+                encode(out, buf, bufPtr);
+            }
 
             for (int i = 0; i != nl.length(); i++)
             {
@@ -473,13 +491,13 @@ public class ArmoredOutputStream
             }
             out.write('=');
 
-            int        crcV = crc.getValue();
+            int crcV = crc.getValue();
 
-            buf[0] = ((crcV >> 16) & 0xff);
-            buf[1] = ((crcV >> 8) & 0xff);
-            buf[2] = (crcV & 0xff);
+            buf[0] = (byte)(crcV >>> 16);
+            buf[1] = (byte)(crcV >>> 8);
+            buf[2] = (byte)crcV;
 
-            encode(out, buf, 3);
+            encode3(out, buf);
 
             for (int i = 0; i != nl.length(); i++)
             {
