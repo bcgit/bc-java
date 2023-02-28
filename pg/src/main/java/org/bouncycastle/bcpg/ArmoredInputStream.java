@@ -439,27 +439,22 @@ public class ArmoredInputStream
                 if (c == '=')            // crc reached
                 {
                     bufPtr = decode(readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
-                    if (bufPtr == 0)
+                    if (bufPtr != 0)
                     {
-                        int i = ((outBuf[0] & 0xff) << 16)
-                                | ((outBuf[1] & 0xff) << 8)
-                                | (outBuf[2] & 0xff);
-
-                        crcFound = true;
-
-                        if (i != crc.getValue())
-                        {
-                            throw new IOException("crc check failed in armored message.");
-                        }
-                        return read();
+                        throw new IOException("malformed crc in armored message.");
                     }
-                    else
+
+                    crcFound = true;
+
+                    int i = ((outBuf[0] & 0xff) << 16)
+                          | ((outBuf[1] & 0xff) << 8)
+                          | (outBuf[2] & 0xff);
+                    if (i != crc.getValue())
                     {
-                        if (detectMissingChecksum)
-                        {
-                            throw new IOException("no crc found in armored message");
-                        }
+                        throw new IOException("crc check failed in armored message.");
                     }
+
+                    return read();
                 }
                 else if (c == '-')        // end of record reached
                 {
