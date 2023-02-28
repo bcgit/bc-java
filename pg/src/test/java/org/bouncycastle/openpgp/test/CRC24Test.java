@@ -13,7 +13,7 @@ public class CRC24Test
 
     private static final byte[] TEST_VECTOR_1 = "Hello, World!\n".getBytes();
     private static final byte[] TEST_VECTOR_2 = new byte[256];
-    private static final byte[] LARGE_RANDOM = new byte[209715200]; // 200 MB
+    private static final byte[] LARGE_RANDOM = new byte[3 * 1024 * 1024]; // 3 MB
 
     static
     {
@@ -86,16 +86,23 @@ public class CRC24Test
         fastImpl.reset();
 
         long start = System.currentTimeMillis();
-        for (int i = 0; i != LARGE_RANDOM.length; i++)
+
+        for (int j = 0; j < 100; ++j)
         {
-            defaultImpl.update(LARGE_RANDOM[i]);
+            for (int i = 0; i != LARGE_RANDOM.length; i += 3)
+            {
+                defaultImpl.update3(LARGE_RANDOM, i);
+            }
         }
         int defVal = defaultImpl.getValue();
         long afterDefault = System.currentTimeMillis();
 
-        for (int i = 0; i != LARGE_RANDOM.length; i++)
+        for (int j = 0; j < 100; ++j)
         {
-            fastImpl.update(LARGE_RANDOM[i]);
+            for (int i = 0; i != LARGE_RANDOM.length; i += 3)
+            {
+                fastImpl.update3(LARGE_RANDOM, i);
+            }
         }
         int fastVal = fastImpl.getValue();
         long afterFast = System.currentTimeMillis();
