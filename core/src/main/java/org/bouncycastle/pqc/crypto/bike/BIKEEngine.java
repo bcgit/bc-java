@@ -237,7 +237,7 @@ class BIKEEngine
         bikeRing.decodeBytes(h0, h0Element);
         long[] sElement = bikeRing.create();
         bikeRing.multiply(c0Element, h0Element, sElement);
-        return transpose(bikeRing.encodeBits(sElement));
+        return bikeRing.encodeBitsTransposed(sElement);
     }
 
     private byte[] BGFDecoder(byte[] s, int[] h0Compact, int[] h1Compact)
@@ -276,17 +276,6 @@ class BIKEEngine
         {
             return null;
         }
-    }
-
-    private byte[] transpose(byte[] in)
-    {
-        byte[] output = new byte[r];
-        output[0] = in[0];
-        for (int i = 1; i < r; i++)
-        {
-            output[i] = in[r - i];
-        }
-        return output;
     }
 
     private void BFIter(byte[] s, byte[] e, int T, int[] h0Compact, int[] h1Compact, int[] h0CompactCol,

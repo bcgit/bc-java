@@ -74,12 +74,13 @@ class BIKERing
 //        assert (z[Size - 1] >> partialBits) == 0L;
     }
 
-    byte[] encodeBits(long[] x)
+    byte[] encodeBitsTransposed(long[] x)
     {
         byte[] bs = new byte[bits];
-        for (int i = 0; i < bits; ++i)
+        bs[0] = (byte)(x[0] & 1L);
+        for (int i = 1; i < bits; ++i)
         {
-            bs[i] = (byte)((x[i >>> 6] >>> (i & 63)) & 1L);
+            bs[bits - i] = (byte)((x[i >>> 6] >>> (i & 63)) & 1L);
         }
         return bs;
     }
