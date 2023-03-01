@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
+import org.bouncycastle.util.Integers;
+
 class Utils
 {
     protected static int numBytes(int numBits)
@@ -59,42 +61,18 @@ class Utils
             x ^= data[i];
         }
 
-        /* Compute parity of x using code from Section 5-2 of
-         * H.S. Warren, *Hacker's Delight*, Pearson Education, 2003.
-         * https://www.hackersdelight.org/hdcodetxt/parity.c.txt
-         */
-        int y = x ^ (x >>> 1);
-        y ^= (y >>> 2);
-        y ^= (y >>> 4);
-        y ^= (y >>> 8);
-        y ^= (y >>> 16);
-        return y & 1;
+        return Integers.bitCount(x & 0xFF) & 1;
     }
 
     protected static int parity16(int x)
     {
-        int y = x ^ (x >>> 1);
-
-        y ^= (y >>> 2);
-        y ^= (y >>> 4);
-        y ^= (y >>> 8);
-        return y & 1;
+        return Integers.bitCount(x & 0xFFFF) & 1;
     }
 
     protected static int parity32(int x)
     {
-        /* Compute parity of x using code from Section 5-2 of
-         * H.S. Warren, *Hacker's Delight*, Pearson Education, 2003.
-         * https://www.hackersdelight.org/hdcodetxt/parity.c.txt
-         */
-        int y = (x ^ (x >>> 1));
-        y ^= (y >>> 2);
-        y ^= (y >>> 4);
-        y ^= (y >>> 8);
-        y ^= (y >>> 16);
-        return (y & 1);
+        return Integers.bitCount(x) & 1;
     }
-
 
     /* Set a specific bit in a byte array to a given value */
     protected static void setBitInWordArray(int[] array, int bitNumber, int val)
