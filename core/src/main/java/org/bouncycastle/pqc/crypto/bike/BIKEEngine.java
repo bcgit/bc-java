@@ -119,10 +119,10 @@ class BIKEEngine
         bikeRing.decodeBytes(h1, h1Element);
 
         // 2. Compute h
-        long[] hElement = bikeRing.create();
-        bikeRing.inv(h0Element, hElement);
-        bikeRing.multiply(hElement, h1Element, hElement);
-        bikeRing.encodeBytes(hElement, h);
+        long[] t = bikeRing.create();
+        bikeRing.inv(h0Element, t);
+        bikeRing.multiply(t, h1Element, t);
+        bikeRing.encodeBytes(t, h);
 
         //3. Parse seed2 as sigma
         System.arraycopy(seeds, L_BYTE, sigma, 0, sigma.length);
@@ -154,19 +154,15 @@ class BIKEEngine
 
         long[] e0Element = bikeRing.create();
         long[] e1Element = bikeRing.create();
-
         bikeRing.decodeBytes(e0Bytes, e0Element);
         bikeRing.decodeBytes(e1Bytes, e1Element);
 
-        long[] hElement = bikeRing.create();
-        bikeRing.decodeBytes(h, hElement);
-
         // 3. Calculate c
-        // calculate c0
-        long[] c0Element = bikeRing.create();
-        bikeRing.multiply(e1Element, hElement, c0Element);
-        bikeRing.add(c0Element, e0Element, c0Element);
-        bikeRing.encodeBytes(c0Element, c0);
+        long[] t = bikeRing.create();
+        bikeRing.decodeBytes(h, t);
+        bikeRing.multiply(t, e1Element, t);
+        bikeRing.add(t, e0Element, t);
+        bikeRing.encodeBytes(t, c0);
 
         //calculate c1
         functionL(e0Bytes, e1Bytes, c1);
@@ -227,13 +223,12 @@ class BIKEEngine
 
     private byte[] computeSyndrome(byte[] c0, byte[] h0)
     {
-        long[] c0Element = bikeRing.create();
-        long[] h0Element = bikeRing.create();
-        bikeRing.decodeBytes(c0, c0Element);
-        bikeRing.decodeBytes(h0, h0Element);
-        long[] sElement = bikeRing.create();
-        bikeRing.multiply(c0Element, h0Element, sElement);
-        return bikeRing.encodeBitsTransposed(sElement);
+        long[] t = bikeRing.create();
+        long[] u = bikeRing.create();
+        bikeRing.decodeBytes(c0, t);
+        bikeRing.decodeBytes(h0, u);
+        bikeRing.multiply(t, u, t);
+        return bikeRing.encodeBitsTransposed(t);
     }
 
     private byte[] BGFDecoder(byte[] s, int[] h0Compact, int[] h1Compact)
