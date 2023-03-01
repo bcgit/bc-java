@@ -23,28 +23,6 @@ class BIKEUtils
         return hammingWeight;
     }
 
-    static void fromByteArrayToBitArray(byte[] out, byte[] in)
-    {
-        int max = (out.length / 8);
-        for (int i = 0; i < max; i++)
-        {
-            for (int j = 0; j != 8; j++)
-            {
-                out[i * 8 + j] = (byte)((in[i] & (1 << j)) >>> j);
-            }
-        }
-        if (out.length % 8 != 0)
-        {
-            int off = max * 8;
-            int count = 0;
-            while (off < out.length)
-            {
-                out[off++] = (byte)((in[max] & (1 << count)) >>> count);
-                count++;
-            }
-        }
-    }
-
     static void fromBitArrayToByteArray(byte[] out, byte[] in, int inOff, int inLen)
     {
         int count = 0;
