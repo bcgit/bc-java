@@ -33,6 +33,7 @@ class BIKEEngine
     private final BIKERing bikeRing;
     private int L_BYTE;
     private int R_BYTE;
+    private int R2_BYTE;
 
     public BIKEEngine(int r, int w, int t, int l, int nbIter, int tau)
     {
@@ -44,7 +45,8 @@ class BIKEEngine
         this.tau = tau;
         this.hw = this.w / 2;
         this.L_BYTE = l / 8;
-        this.R_BYTE = (r + 7) / 8;
+        this.R_BYTE = (r + 7) >>> 3;
+        this.R2_BYTE = (2 * r + 7) >>> 3;
         this.bikeRing = new BIKERing(r);
     }
 
@@ -55,10 +57,10 @@ class BIKEEngine
 
     private byte[] functionH(byte[] seed)
     {
-        byte[] res = new byte[r * 2];
+        byte[] res = new byte[R2_BYTE];
         Xof digest = new SHAKEDigest(256);
         digest.update(seed, 0, seed.length);
-        BIKEUtils.generateRandomByteArray(res,r * 2, t, digest);
+        BIKEUtils.generateRandomByteArray(res, 2 * r, t, digest);
         return res;
     }
 
@@ -204,7 +206,7 @@ class BIKEEngine
 
         // 1. Compute e'
         byte[] ePrimeBits = BGFDecoder(syndrome, h0Compact, h1Compact);
-        byte[] ePrimeBytes = new byte[2 * R_BYTE];
+        byte[] ePrimeBytes = new byte[R2_BYTE];
         BIKEUtils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits, 0, 2 * r);
 
         byte[] e0Bytes = new byte[R_BYTE];
@@ -219,7 +221,7 @@ class BIKEEngine
 
         // 3. Compute K
         byte[] wlist = functionH(mPrime);
-        if (Arrays.areEqual(ePrimeBytes, 0, ePrimeBytes.length, wlist, 0, ePrimeBytes.length))
+        if (Arrays.areEqual(ePrimeBytes, 0, R2_BYTE, wlist, 0, R2_BYTE))
         {
             functionK(mPrime, c0, c1, k);
         }
