@@ -57,7 +57,7 @@ class BIKEEngine
 
     private byte[] functionH(byte[] seed)
     {
-        byte[] res = new byte[R2_BYTE];
+        byte[] res = new byte[2 * R_BYTE];
         Xof digest = new SHAKEDigest(256);
         digest.update(seed, 0, seed.length);
         BIKEUtils.generateRandomByteArray(res, 2 * r, t, digest);
@@ -148,14 +148,9 @@ class BIKEEngine
         // 2. Calculate e0, e1
         byte[] eBytes = functionH(m);
 
-        byte[] eBits = new byte[2 * r];
-        BIKEUtils.fromByteArrayToBitArray(eBits, eBytes);
-
         byte[] e0Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e0Bytes, eBits, 0, r);
-
         byte[] e1Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e1Bytes, eBits, r, r);
+        splitEBytes(eBytes, e0Bytes, e1Bytes);
 
         long[] e0Element = bikeRing.create();
         long[] e1Element = bikeRing.create();
@@ -206,13 +201,12 @@ class BIKEEngine
 
         // 1. Compute e'
         byte[] ePrimeBits = BGFDecoder(syndrome, h0Compact, h1Compact);
-        byte[] ePrimeBytes = new byte[R2_BYTE];
+        byte[] ePrimeBytes = new byte[2 * R_BYTE];
         BIKEUtils.fromBitArrayToByteArray(ePrimeBytes, ePrimeBits, 0, 2 * r);
 
         byte[] e0Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e0Bytes, ePrimeBits, 0, r);
         byte[] e1Bytes = new byte[R_BYTE];
-        BIKEUtils.fromBitArrayToByteArray(e1Bytes, ePrimeBits, r, r);
+        splitEBytes(ePrimeBytes, e0Bytes, e1Bytes);
 
         // 2. Compute m'
         byte[] mPrime = new byte[L_BYTE];
@@ -611,6 +605,23 @@ class BIKEEngine
             }
         }
     }
+
+    private void splitEBytes(byte[] e, byte[] e0, byte[] e1)
+    {
+        int partial = r & 7;
+        System.arraycopy(e, 0, e0, 0, R_BYTE - 1);
+        byte split = e[R_BYTE - 1];
+        byte mask = (byte)(-1 << partial);
+        e0[R_BYTE - 1] = (byte)(split & ~mask);
+
+        byte c = (byte)(split & mask);
+        for (int i = 0; i < R_BYTE; ++i)
+        {
+            byte next = e[R_BYTE + i];
+            e1[i] = (byte)((next << (8 - partial)) | ((c & 0xFF) >>> partial));
+            c = next;
+        }
+    }    
 
     private void updateNewErrorIndex(byte[] e, int index)
     {
