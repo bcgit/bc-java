@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.math.raw.Interleave;
+import org.bouncycastle.math.raw.Mod;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -191,12 +192,6 @@ class BIKERing
         return t + ((t >> 31) & m);
     }
 
-    private static int implModHalf(int m, int x)
-    {
-        int t = -(x & 1);
-        return (x + (m & t)) >>> 1;
-    }
-
     protected void implMultiplyAcc(long[] x, long[] y, long[] zz)
     {
         long[] u = new long[16];
@@ -299,12 +294,27 @@ class BIKERing
         z[size - 1] &= -1L >>> -r;
     }
 
-    private static int generateHalfPower(int r, int n)
+    private static int generateHalfPower(int r, int r32, int n)
     {
         int p = 1;
-        for (int k = 0; k < n; ++k)
+        int k = n;
+        while (k >= 32)
         {
-            p = implModHalf(r, p);
+            int y = r32 * p;
+            long t = (y & 0xFFFFFFFFL) * r;
+            long u = t + p;
+            assert (int)u == 0;
+            p = (int)(u >>> 32);
+            k -= 32;
+        }
+        if (k > 0)
+        {
+            int mk = -1 >>> -k;
+            int y = (r32 * p) & mk;
+            long t = (y & 0xFFFFFFFFL) * r;
+            long u = t + p;
+            assert ((int)u & mk) == 0;
+            p = (int)(u >>> k);
         }
         return p;
     }
@@ -314,12 +324,13 @@ class BIKERing
         int rSub2 = r - 2;
         int bits = 32 - Integers.numberOfLeadingZeros(rSub2);
 
+        int r32 = Mod.inverse32(-r);
         for (int i = 1; i < bits; ++i)
         {
             int m = 1 << (i - 1);
             if (m >= PERMUTATION_CUTOFF && !halfPowers.containsKey(m))
             {
-                halfPowers.put(m, generateHalfPower(r, m));
+                halfPowers.put(m, generateHalfPower(r, r32, m));
             }
 
             if ((rSub2 & (1 << i)) != 0)
@@ -327,7 +338,7 @@ class BIKERing
                 int n = rSub2 & ((1 << i) - 1);
                 if (n >= PERMUTATION_CUTOFF && !halfPowers.containsKey(n))
                 {
-                    halfPowers.put(n, generateHalfPower(r, n));
+                    halfPowers.put(n, generateHalfPower(r, r32, n));
                 }
             }
         }
