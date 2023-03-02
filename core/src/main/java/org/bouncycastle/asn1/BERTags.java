@@ -2,7 +2,7 @@ package org.bouncycastle.asn1;
 
 public interface BERTags
 {
-    // 0x00: Reserved for use by the encoding rules	
+    // 0x00: Reserved for use by the encoding rules
     public static final int BOOLEAN             = 0x01;
     public static final int INTEGER             = 0x02;
     public static final int BIT_STRING          = 0x03;
