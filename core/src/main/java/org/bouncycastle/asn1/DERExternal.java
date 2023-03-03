@@ -84,7 +84,7 @@ public class DERExternal
         }
         if (dataValueDescriptor != null)
         {
-            v.add(dataValueDescriptor.toDERObject());
+            v.add(dataValueDescriptor);
         }
 
         v.add(new DERTaggedObject(0 == encoding, encoding, externalContent));
