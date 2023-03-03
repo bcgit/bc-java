@@ -84,7 +84,7 @@ public class DLExternal
         }
         if (dataValueDescriptor != null)
         {
-            v.add(dataValueDescriptor.toDLObject());
+            v.add(dataValueDescriptor);
         }
 
         v.add(new DLTaggedObject(0 == encoding, encoding, externalContent));
