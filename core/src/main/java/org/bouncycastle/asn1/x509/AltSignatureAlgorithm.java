@@ -32,7 +32,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 public class AltSignatureAlgorithm
     extends ASN1Object
 {
-    private AlgorithmIdentifier algorithm;
+    private final AlgorithmIdentifier algorithm;
 
     public static AltSignatureAlgorithm getInstance(
         ASN1TaggedObject obj,
@@ -76,6 +76,12 @@ public class AltSignatureAlgorithm
         this.algorithm = new AlgorithmIdentifier(algorithm, parameters);
     }
 
+    /**
+     * Return the algorithm identifier representing the alternate signature algorithm
+     * used to generate the alternate signature algorithm value extension.
+     *
+     * @return alternate signature algorithm identifier.
+     */
     public AlgorithmIdentifier getAlgorithm()
     {
         return algorithm;

@@ -33,7 +33,7 @@ import org.bouncycastle.asn1.DERBitString;
 public class AltSignatureValue
     extends ASN1Object
 {
-    private ASN1BitString signature;
+    private final ASN1BitString signature;
 
     public static AltSignatureValue getInstance(
         ASN1TaggedObject obj,
@@ -67,11 +67,21 @@ public class AltSignatureValue
         this.signature = signature;
     }
 
+    /**
+     * Base constructor.
+     *
+     * @param signature  a signature value, based on the enclosing certificate.
+     */
     public AltSignatureValue(byte[] signature)
     {
         this.signature = new DERBitString(signature);
     }
 
+    /**
+     * Return the alternate signature to verify the certificate.
+     *
+     * @return certificate's alternate signature.
+     */
     public ASN1BitString getSignature()
     {
         return signature;
