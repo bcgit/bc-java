@@ -336,10 +336,8 @@ class FrodoEngine
                 for (l = 0; l < B; l++)
                 {
                     //mask
-                    if ((k[byte_index] & mask) == mask)
-                    {
-                        temp += (1 << l);
-                    }
+                    int mult = ((k[byte_index] & mask) == mask) ? 1 : 0;
+                    temp += (1 << l) * mult;
                     mask <<= 1;
                     if (mask == 0)
                     {
