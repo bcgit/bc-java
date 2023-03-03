@@ -19,7 +19,6 @@ class KeccakRandomGenerator
     protected int rate;
     protected int bitsInQueue;
     protected int fixedOutputLength;
-    protected boolean squeezing;
 
     public KeccakRandomGenerator()
     {
@@ -56,20 +55,15 @@ class KeccakRandomGenerator
         }
 
         this.rate = rate;
-        for (int i = 0; i < state.length; ++i)
-        {
-            state[i] = 0L;
-        }
+        Arrays.fill(state, 0L);
         Arrays.fill(this.dataQueue, (byte)0);
         this.bitsInQueue = 0;
-        this.squeezing = false;
         this.fixedOutputLength = (1600 - rate) / 2;
     }
 
-    private void keccakPermutation(long[] s)
+    // TODO Somehow just use the one in KeccakDigest
+    private static void keccakPermutation(long[] A)
     {
-        long[] A = state;
-
         long a00 = A[0], a01 = A[1], a02 = A[2], a03 = A[3], a04 = A[4];
         long a05 = A[5], a06 = A[6], a07 = A[7], a08 = A[8], a09 = A[9];
         long a10 = A[10], a11 = A[11], a12 = A[12], a13 = A[13], a14 = A[14];
@@ -277,7 +271,6 @@ class KeccakRandomGenerator
 
             for (i = 0; i < outLen && i < rateBytes; i++)
             {
-                byte t = (byte)(state[i >> 3] >> (8 * (i & 0x07)));
                 output[count + i] = (byte)(state[i >> 3] >> (8 * (i & 0x07)));
             }
             count = count + i;
@@ -310,29 +303,20 @@ class KeccakRandomGenerator
 
     public void expandSeed(byte[] output, int outLen)
     {
-        int bSize = 8;
-        int r = outLen % bSize;
-        byte[] tmp = new byte[bSize];
-        long[] n = state;
+        int r = outLen & 7;
         keccakIncSqueeze(output, outLen - r);
 
         if (r != 0)
         {
-            keccakIncSqueeze(tmp, bSize);
-            int count = outLen - r;
-            for (int i = 0; i < r; i++)
-            {
-                output[count + i] = tmp[i];
-            }
+            byte[] tmp = new byte[8];
+            keccakIncSqueeze(tmp, 8);
+            System.arraycopy(tmp, 0, output, outLen - r, r);
         }
     }
 
     public void SHAKE256_512_ds(byte[] output, byte[] input, int inLen, byte[] domain)
     {
-        for (int i = 0; i < state.length; i++)
-        {
-            state[i] = 0;
-        }
+        Arrays.fill(state, 0L);
         keccakIncAbsorb(input, inLen);
         keccakIncAbsorb(domain, domain.length);
         keccakIncFinalize(0x1F);
@@ -341,6 +325,6 @@ class KeccakRandomGenerator
 
     private static long toUnsignedLong(int x)
     {
-        return (long)x & 0xffffffffL;
+        return x & 0xffffffffL;
     }
 }
