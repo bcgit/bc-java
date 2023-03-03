@@ -168,6 +168,8 @@ public abstract class ASN1Set
     protected final ASN1Encodable[] elements;
     protected final boolean isSorted;
 
+    protected ASN1Encodable[] sortedElements;
+
     protected ASN1Set()
     {
         this.elements = ASN1EncodableVector.EMPTY_ELEMENTS;
@@ -360,8 +362,12 @@ public abstract class ASN1Set
         }
         else
         {
-            tmp = (ASN1Encodable[])elements.clone();
-            sort(tmp);
+            if (sortedElements == null)
+            {
+                sortedElements = (ASN1Encodable[])elements.clone();
+                sort(sortedElements);
+            }
+            tmp = sortedElements;
         }
 
         return new DERSet(true, tmp);
