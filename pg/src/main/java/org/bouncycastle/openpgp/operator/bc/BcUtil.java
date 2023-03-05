@@ -466,6 +466,7 @@ class BcUtil
             throws IOException
         {
             finish();
+            out.close();
         }
 
         private void writeBlock()

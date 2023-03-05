@@ -653,6 +653,7 @@ class OperatorHelper
             throws IOException
         {
             finish();
+            out.close();
         }
 
         private void writeBlock()
