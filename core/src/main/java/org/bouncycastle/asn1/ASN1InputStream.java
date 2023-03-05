@@ -571,7 +571,7 @@ public class ASN1InputStream
             case TIME_OF_DAY:
             case DATE_TIME:
             case DURATION:
-            case OID_IRI:
+            case OBJECT_IDENTIFIER_IRI:
             case RELATIVE_OID_IRI:
                 throw new IOException("unsupported tag " + tagNo + " encountered");
             default:

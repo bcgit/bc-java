@@ -39,7 +39,7 @@ public interface BERTags
     public static final int TIME_OF_DAY         = 0x20;
     public static final int DATE_TIME           = 0x21;
     public static final int DURATION            = 0x22;
-    public static final int OID_IRI             = 0x23;
+    public static final int OBJECT_IDENTIFIER_IRI = 0x23;
     public static final int RELATIVE_OID_IRI    = 0x24;
     // 0x25..: Reserved for addenda to this Recommendation | International Standard
 
