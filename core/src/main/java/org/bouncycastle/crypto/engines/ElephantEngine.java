@@ -3,14 +3,13 @@ package org.bouncycastle.crypto.engines;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
@@ -20,7 +19,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/elephant-spec-final.pdf
  */
 public class ElephantEngine
-    implements AEADBlockCipher
+    implements AEADCipher
 {
     public enum ElephantParameters
     {
@@ -315,12 +314,6 @@ public class ElephantEngine
             Arrays.fill(output, r_clen, BLOCK_SIZE, (byte)0);
             output[r_clen] = 0x01;
         }
-    }
-
-    @Override
-    public BlockCipher getUnderlyingCipher()
-    {
-        return null;
     }
 
     @Override
