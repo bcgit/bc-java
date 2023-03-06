@@ -1,15 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -27,7 +24,7 @@ import org.bouncycastle.util.Pack;
 
 
 public class AsconEngine
-    implements AEADBlockCipher
+    implements AEADCipher
 {
     public enum AsconParameters
     {
@@ -380,12 +377,6 @@ public class AsconEngine
         x4 ^= K2;
 
         m_state = nextState;
-    }
-
-    @Override
-    public BlockCipher getUnderlyingCipher()
-    {
-        return null;
     }
 
     @Override
