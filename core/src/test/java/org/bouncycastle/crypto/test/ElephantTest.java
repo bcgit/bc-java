@@ -9,7 +9,7 @@ import java.util.Random;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.engines.ElephantEngine;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -108,7 +108,7 @@ public class ElephantTest
         System.out.println("Elephant AEAD pass");
     }
 
-    private void testExceptions(AEADBlockCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
+    private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
         throws Exception
     {
         CipherParameters params;

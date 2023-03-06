@@ -2,14 +2,13 @@ package org.bouncycastle.crypto.engines;
 
 import java.io.ByteArrayOutputStream;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
@@ -23,7 +22,7 @@ import org.bouncycastle.util.Pack;
  */
 
 public class ISAPEngine
-    implements AEADBlockCipher
+    implements AEADCipher
 {
 
     public enum IsapType
@@ -788,13 +787,6 @@ public class ISAPEngine
         {
             rounds12X(SX, E, C);
         }
-    }
-
-
-    @Override
-    public BlockCipher getUnderlyingCipher()
-    {
-        return null;
     }
 
     @Override

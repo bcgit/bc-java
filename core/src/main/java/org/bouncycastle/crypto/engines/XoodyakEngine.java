@@ -2,14 +2,12 @@ package org.bouncycastle.crypto.engines;
 
 import java.io.ByteArrayOutputStream;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -24,7 +22,7 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    implements AEADBlockCipher
+    implements AEADCipher
 {
     private boolean forEncryption;
     private byte[] state;
@@ -51,12 +49,6 @@ public class XoodyakEngine
     private boolean initialised = false;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
-
-    @Override
-    public BlockCipher getUnderlyingCipher()
-    {
-        return null;
-    }
 
     enum MODE
     {
