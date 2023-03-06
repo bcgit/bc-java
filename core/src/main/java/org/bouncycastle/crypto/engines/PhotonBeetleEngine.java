@@ -2,17 +2,15 @@ package org.bouncycastle.crypto.engines;
 
 import java.io.ByteArrayOutputStream;
 
-import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
@@ -23,7 +21,7 @@ import org.bouncycastle.util.Arrays;
  */
 
 public class PhotonBeetleEngine
-    implements AEADBlockCipher
+    implements AEADCipher
 {
     public enum PhotonBeetleParameters
     {
@@ -100,12 +98,6 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         initialised = false;
-    }
-
-    @Override
-    public BlockCipher getUnderlyingCipher()
-    {
-        return null;
     }
 
     @Override
