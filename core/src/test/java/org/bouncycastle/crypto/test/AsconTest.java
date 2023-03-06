@@ -15,7 +15,7 @@ import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.AsconDigest;
 import org.bouncycastle.crypto.digests.AsconXof;
 import org.bouncycastle.crypto.engines.AsconEngine;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -121,7 +121,7 @@ public class AsconTest
         System.out.println(Ascon.getAlgorithmName() + " " + Ascon.getAlgorithmVersion() + " Pass");
     }
 
-    private void testExceptions(AEADBlockCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
+    private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
         throws Exception
     {
         CipherParameters params;
