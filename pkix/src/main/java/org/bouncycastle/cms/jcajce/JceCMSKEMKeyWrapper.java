@@ -4,7 +4,6 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +30,7 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.operator.SymmetricKeyWrapper;
 import org.bouncycastle.operator.jcajce.JceSymmetricKeyWrapper;
+import org.bouncycastle.util.Arrays;
 
 class JceCMSKEMKeyWrapper
     extends KEMKeyWrapper
