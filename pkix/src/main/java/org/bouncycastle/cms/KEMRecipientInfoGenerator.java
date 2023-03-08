@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.cms.OtherRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientIdentifier;
 import org.bouncycastle.asn1.cms.RecipientInfo;
 import org.bouncycastle.operator.GenericKey;
-import org.bouncycastle.operator.KEMKeyWrapper;
 import org.bouncycastle.operator.OperatorException;
 
 public abstract class KEMRecipientInfoGenerator
