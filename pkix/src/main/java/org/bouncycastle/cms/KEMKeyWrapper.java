@@ -1,20 +1,14 @@
-package org.bouncycastle.operator;
+package org.bouncycastle.cms;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.operator.AsymmetricKeyWrapper;
 
 public abstract class KEMKeyWrapper
-    implements KeyWrapper
+    extends AsymmetricKeyWrapper
 {
-    private AlgorithmIdentifier algorithmId;
-
     protected KEMKeyWrapper(AlgorithmIdentifier algorithmId)
     {
-        this.algorithmId = algorithmId;
-    }
-
-    public AlgorithmIdentifier getAlgorithmIdentifier()
-    {
-        return algorithmId;
+        super(algorithmId);
     }
 
     public abstract byte[] getEncapsulation();

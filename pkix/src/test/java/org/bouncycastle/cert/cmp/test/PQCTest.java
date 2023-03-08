@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.cmp.test;
 
-import java.io.FileWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -12,6 +11,7 @@ import java.util.Collection;
 import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.PKIBody;
@@ -19,8 +19,8 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -50,11 +50,9 @@ import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
-import org.bouncycastle.cms.jcajce.JceCMSKEMKeyWrapper;
 import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
@@ -147,7 +145,8 @@ public class PQCTest
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
-                    new JceCMSKEMKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert), CMSAlgorithm.SHAKE256_LEN, CMSAlgorithm.AES256_WRAP)));
+                    new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP).setKDF(
+                        new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(16))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
@@ -182,23 +181,23 @@ public class PQCTest
         // this is the long-way to decrypt, for testing
         CMSEnvelopedData receivedEnvelope = certResp.getEncryptedCertificate();
 
-        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert_enveloped.pem"));
-        pOut.writeObject(receivedEnvelope.toASN1Structure());
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_priv.pem"));
-        pOut.writeObject(kybKp.getPrivate());
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert.pem"));
-        pOut.writeObject(cert);
-        pOut.close();
-
-        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/issuer_cert.pem"));
-        pOut.writeObject(caCert);
-        pOut.close();
-
-        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
+//        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert_enveloped.pem"));
+//        pOut.writeObject(receivedEnvelope.toASN1Structure());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_priv.pem"));
+//        pOut.writeObject(kybKp.getPrivate());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/kyber_cert.pem"));
+//        pOut.writeObject(cert);
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/kyber_cms/issuer_cert.pem"));
+//        pOut.writeObject(caCert);
+//        pOut.close();
+//
+//        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
 
         RecipientInformationStore recipients = receivedEnvelope.getRecipientInfos();
 //                System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(receivedEnvelope.getEncoded())));
@@ -308,7 +307,8 @@ public class PQCTest
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
-                    new JceCMSKEMKeyWrapper(new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.SHAKE256_LEN, CMSAlgorithm.AES256_WRAP)));
+                    new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP)
+                    .setKDF(new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(16))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
