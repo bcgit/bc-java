@@ -8,9 +8,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
@@ -21,15 +18,13 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.KEMKeyWrapper;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
-import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.operator.SymmetricKeyWrapper;
-import org.bouncycastle.operator.jcajce.JceSymmetricKeyWrapper;
+import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
+import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
+import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 class JceCMSKEMKeyWrapper
@@ -154,36 +149,58 @@ class JceCMSKEMKeyWrapper
             }
             else
             {
-                random = CryptoServicesRegistrar.getSecureRandom(random);
+                Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, getAlgorithmIdentifier().getAlgorithm(), new HashMap());
 
-                KeyGenerator kGen = KeyGenerator.getInstance(getAlgorithmIdentifier().getAlgorithm().getId(), "BCPQC");
+                try
+                {
+                    KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm()), kekLength * 8, oriInfoEnc).withKdfAlgorithm(kdfAlgorithm).build();
 
-                kGen.init(new KEMGenerateSpec(publicKey, "Secret"), random);
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, ktsSpec, random);
 
-                SecretKeyWithEncapsulation secretKey = (SecretKeyWithEncapsulation)kGen.generateKey();
+                    byte[] encWithKey = keyEncryptionCipher.wrap(CMSUtils.getJceKey(encryptionKey));
 
-                this.encapsulation = secretKey.getEncapsulation();
+                    int encLength = getKemEncLength(publicKey);
 
-                byte[] secretEnc = secretKey.getEncoded();           // TODO: add UKM
-                SHAKEDigest sd = new SHAKEDigest(256);               // TODO: support something other than SHAKE256
+                    encapsulation = Arrays.copyOfRange(encWithKey, 0, encLength);
 
-                sd.update(secretEnc, 0, secretEnc.length);
-
-                sd.update(oriInfoEnc, 0, oriInfoEnc.length);
-
-                byte[] keyEnc = new byte[kekLength];
-
-                sd.doFinal(keyEnc, 0, keyEnc.length);
-
-                SecretKey wrapKey = new SecretKeySpec(keyEnc, symWrapAlgorithm.getAlgorithm().getId());
-                SymmetricKeyWrapper keyWrapper = new JceSymmetricKeyWrapper(wrapKey).setProvider("BC");
-
-                return keyWrapper.generateWrappedKey(encryptionKey);
+                    return Arrays.copyOfRange(encWithKey, encLength, encWithKey.length);
+                }
+                catch (Exception e)
+                {
+                    throw new OperatorException("Unable to wrap contents key: " + e.getMessage(), e);
+                }
             }
         }
         catch (Exception e)
         {
             throw new OperatorException("unable to wrap contents key: " + e.getMessage(), e);
         }
+    }
+
+    private static Map encLengths = new HashMap();
+
+    static
+    {
+        encLengths.put(KyberParameterSpec.kyber512.getName(), 768);
+        encLengths.put(KyberParameterSpec.kyber768.getName(), 1088);
+        encLengths.put(KyberParameterSpec.kyber1024.getName(), 1568);
+
+        encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), 699);
+        encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), 930);
+        encLengths.put(NTRUParameterSpec.ntruhps4096821.getName(), 1230);
+        encLengths.put(NTRUParameterSpec.ntruhrss701.getName(), 1138);
+    }
+
+    private int getKemEncLength(PublicKey publicKey)
+    {
+        if (publicKey instanceof KyberPublicKey)
+        {
+            return (Integer)encLengths.get(((KyberPublicKey)publicKey).getParameterSpec().getName());
+        }
+        if (publicKey instanceof NTRUKey)
+        {
+            return (Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName());
+        }
+        return 0;
     }
 }

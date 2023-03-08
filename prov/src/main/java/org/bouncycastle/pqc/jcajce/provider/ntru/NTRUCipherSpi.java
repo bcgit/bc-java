@@ -23,51 +23,47 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
-import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.ntruprime.BCNTRULPRimePublicKey;
-import org.bouncycastle.pqc.jcajce.provider.ntruprime.BCSNTRUPrimePrivateKey;
-import org.bouncycastle.pqc.jcajce.provider.ntruprime.BCSNTRUPrimePublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 class NTRUCipherSpi
-        extends CipherSpi
+    extends CipherSpi
 {
     private final String algorithmName;
     private NTRUKEMGenerator kemGen;
-    private KEMParameterSpec kemParameterSpec;
+    private KTSParameterSpec kemParameterSpec;
     private BCNTRUPublicKey wrapKey;
     private BCNTRUPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
 
     NTRUCipherSpi(String algorithmName)
-            throws NoSuchAlgorithmException
+        throws NoSuchAlgorithmException
     {
         this.algorithmName = algorithmName;
     }
 
     @Override
     protected void engineSetMode(String mode)
-            throws NoSuchAlgorithmException
+        throws NoSuchAlgorithmException
     {
         throw new NoSuchAlgorithmException("Cannot support mode " + mode);
     }
 
     @Override
     protected void engineSetPadding(String padding)
-            throws NoSuchPaddingException
+        throws NoSuchPaddingException
     {
         throw new NoSuchPaddingException("Padding " + padding + " unknown");
     }
 
     protected int engineGetKeySize(
-            Key key)
+        Key key)
     {
         return 2048; // TODO
         //throw new IllegalArgumentException("not an valid key!");
@@ -113,7 +109,7 @@ class NTRUCipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, SecureRandom random)
-            throws InvalidKeyException
+        throws InvalidKeyException
     {
         try
         {
@@ -127,7 +123,7 @@ class NTRUCipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, AlgorithmParameterSpec paramSpec, SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException
+        throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         if (paramSpec == null)
         {
@@ -136,12 +132,12 @@ class NTRUCipherSpi
         }
         else
         {
-            if (!(paramSpec instanceof KEMParameterSpec))
+            if (!(paramSpec instanceof KTSParameterSpec))
             {
                 throw new InvalidAlgorithmParameterException(algorithmName + " can only accept KTSParameterSpec");
             }
 
-            kemParameterSpec = (KEMParameterSpec)paramSpec;
+            kemParameterSpec = (KTSParameterSpec)paramSpec;
         }
 
         if (opmode == Cipher.WRAP_MODE)
@@ -175,7 +171,7 @@ class NTRUCipherSpi
 
     @Override
     protected void engineInit(int opmode, Key key, AlgorithmParameters algorithmParameters, SecureRandom random)
-            throws InvalidKeyException, InvalidAlgorithmParameterException
+        throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         AlgorithmParameterSpec paramSpec = null;
 
@@ -202,28 +198,28 @@ class NTRUCipherSpi
 
     @Override
     protected int engineUpdate(byte[] bytes, int i, int i1, byte[] bytes1, int i2)
-            throws ShortBufferException
+        throws ShortBufferException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     @Override
     protected byte[] engineDoFinal(byte[] bytes, int i, int i1)
-            throws IllegalBlockSizeException, BadPaddingException
+        throws IllegalBlockSizeException, BadPaddingException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     @Override
     protected int engineDoFinal(byte[] bytes, int i, int i1, byte[] bytes1, int i2)
-            throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
+        throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
     {
         throw new IllegalStateException("Not supported in a wrapping mode");
     }
 
     protected byte[] engineWrap(
-            Key key)
-            throws IllegalBlockSizeException, InvalidKeyException
+        Key key)
+        throws IllegalBlockSizeException, InvalidKeyException
     {
         byte[] encoded = key.getEncoded();
         if (encoded == null)
@@ -235,11 +231,7 @@ class NTRUCipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
-
-            kWrap.init(true, keyParameter);
+            Wrapper kWrap = WrapUtil.getKeyWrapper(kemParameterSpec, secEnc.getSecret());
 
             byte[] encapsulation = secEnc.getEncapsulation();
 
@@ -264,10 +256,10 @@ class NTRUCipherSpi
     }
 
     protected Key engineUnwrap(
-            byte[] wrappedKey,
-            String wrappedKeyAlgorithm,
-            int wrappedKeyType)
-            throws InvalidKeyException, NoSuchAlgorithmException
+        byte[] wrappedKey,
+        String wrappedKeyAlgorithm,
+        int wrappedKeyType)
+        throws InvalidKeyException, NoSuchAlgorithmException
     {
         // TODO: add support for other types.
         if (wrappedKeyType != Cipher.SECRET_KEY)
@@ -280,19 +272,13 @@ class NTRUCipherSpi
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(secret);
+            Wrapper kWrap = WrapUtil.getKeyUnwrapper(kemParameterSpec, secret);
 
             Arrays.clear(secret);
-
-            kWrap.init(false, keyParameter);
 
             byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
             SecretKey rv = new SecretKeySpec(kWrap.unwrap(keyEncBytes, 0, keyEncBytes.length), wrappedKeyAlgorithm);
-
-            Arrays.clear(keyParameter.getKey());
 
             return rv;
         }
@@ -307,10 +293,10 @@ class NTRUCipherSpi
     }
 
     public static class Base
-            extends NTRUCipherSpi
+        extends NTRUCipherSpi
     {
         public Base()
-                throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
         {
             super("NTRU");
         }
