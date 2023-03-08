@@ -146,7 +146,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
                     new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP).setKDF(
-                        new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(16))));
+                        new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(256))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
@@ -308,7 +308,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
                     new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP)
-                    .setKDF(new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(16))));
+                    .setKDF(new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(256))));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
