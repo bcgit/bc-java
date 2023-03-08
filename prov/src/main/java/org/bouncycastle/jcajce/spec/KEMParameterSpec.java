@@ -1,14 +1,11 @@
 package org.bouncycastle.jcajce.spec;
 
-import java.security.spec.AlgorithmParameterSpec;
-
-// TODO: add constructor for KDF
+/**
+ *  @deprecated use KTSParameterSpec
+ */
 public class KEMParameterSpec
-    implements AlgorithmParameterSpec
+    extends KTSParameterSpec
 {
-    private final String keyAlgorithmName;
-    private final int keySizeInBits;
-
     public KEMParameterSpec(String keyAlgorithmName)
     {
         this(keyAlgorithmName, -1);
@@ -16,18 +13,7 @@ public class KEMParameterSpec
 
     public KEMParameterSpec(String keyAlgorithmName, int keySizeInBits)
     {
-        this.keyAlgorithmName = keyAlgorithmName;
-        this.keySizeInBits = keySizeInBits;
-    }
-
-    /**
-     * Return the name of the symmetric key algorithm for the key returned by this KEM.
-     *
-     * @return key algorithm name.
-     */
-    public String getKeyAlgorithmName()
-    {
-        return keyAlgorithmName;
+        super(keyAlgorithmName, keySizeInBits, null, null, null);
     }
 
     /**
@@ -37,6 +23,6 @@ public class KEMParameterSpec
      */
     public int getKeySizeInBits()
     {
-        return keySizeInBits;
+        return getKeySize();
     }
 }

@@ -94,7 +94,7 @@ public class KTSParameterSpec
         }
     }
 
-    private KTSParameterSpec(
+    protected KTSParameterSpec(
         String wrappingKeyAlgorithm, int keySizeInBits,
         AlgorithmParameterSpec parameterSpec, AlgorithmIdentifier kdfAlgorithm, byte[] otherInfo)
     {

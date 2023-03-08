@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.Date;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.PKIBody;
@@ -19,6 +18,7 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -146,7 +146,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
                     new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP).setKDF(
-                        new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(256))));
+                    new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
@@ -308,7 +308,7 @@ public class PQCTest
 
         edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(senderReqMessage.getCertReqId().getEncoded(),
                     new JcaX509CertificateConverter().setProvider("BC").getCertificate(cert).getPublicKey(), CMSAlgorithm.AES256_WRAP)
-                    .setKDF(new AlgorithmIdentifier(CMSAlgorithm.SHAKE256_LEN, new ASN1Integer(256))));
+                    .setKDF(new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)));
 
         CMSEnvelopedData encryptedCert = edGen.generate(
                                 new CMSProcessableCMPCertificate(cert),
