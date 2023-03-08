@@ -21,32 +21,35 @@ public class ECNamedCurveTable
     public static ECNamedCurveParameterSpec getParameterSpec(
         String  name)
     {
-        X9ECParameters  ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName(name);
+        ASN1ObjectIdentifier oid;
+        try
+        {
+            oid = possibleOID(name) ? new ASN1ObjectIdentifier(name) : null;
+        }
+        catch (IllegalArgumentException e)
+        {
+            oid = null;
+        }
+
+        X9ECParameters ecP;
+        if (oid != null)
+        {
+            ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByOID(oid);
+        }
+        else
+        {
+            ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName(name);
+        }
+
         if (ecP == null)
         {
-            try
+            if (oid != null)
             {
-                ecP = org.bouncycastle.crypto.ec.CustomNamedCurves.getByOID(new ASN1ObjectIdentifier(name));
+                ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID(oid);
             }
-            catch (IllegalArgumentException e)
-            {
-                // ignore - not an oid
-            }
-
-            if (ecP == null)
+            else
             {
                 ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByName(name);
-                if (ecP == null)
-                {
-                    try
-                    {
-                        ecP = org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID(new ASN1ObjectIdentifier(name));
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        // ignore - not an oid
-                    }
-                }
             }
         }
 
@@ -72,5 +75,22 @@ public class ECNamedCurveTable
     public static Enumeration getNames()
     {
         return org.bouncycastle.asn1.x9.ECNamedCurveTable.getNames();
+    }
+
+    private static boolean possibleOID(
+        String identifier)
+    {
+        if (identifier.length() < 3 || identifier.charAt(1) != '.')
+        {
+            return false;
+        }
+
+        char first = identifier.charAt(0);
+        if (first < '0' || first > '2')
+        {
+            return false;
+        }
+
+        return true;
     }
 }
