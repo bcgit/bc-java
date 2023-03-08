@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 
 public interface CMSObjectIdentifiers
@@ -59,5 +58,5 @@ public interface CMSObjectIdentifiers
      */
     ASN1ObjectIdentifier id_ori = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.13");
 
-    ASN1ObjectIdentifier id_ori_kem = BCObjectIdentifiers.bc_kem; // TODO: should be on id_ori arc, use INA value when available.
+    ASN1ObjectIdentifier id_ori_kem = id_ori.branch("3");
 }

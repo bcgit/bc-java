@@ -144,6 +144,7 @@ public abstract class JceKEMRecipient
     {
         // TODO: note there is a move to change the type for KEMs from KeyTrans, expect this to change
         KEMRecipientInfo gktParams = KEMRecipientInfo.getInstance(keyEncryptionAlgorithm.getParameters());
+
         JceCMSKEMKeyUnwrapper unwrapper = (JceCMSKEMKeyUnwrapper)helper.createKEMUnwrapper(keyEncryptionAlgorithm, recipientKey); // TODO: .setMustProduceEncodableUnwrappedKey(unwrappedKeyMustBeEncodable);
 
         if (!extraMappings.isEmpty())
