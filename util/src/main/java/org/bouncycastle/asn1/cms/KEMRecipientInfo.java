@@ -124,6 +124,16 @@ public class KEMRecipientInfo
         return wrap;
     }
 
+    public byte[] getUkm()
+     {
+         if (ukm == null)
+         {
+             return null;
+         }
+
+         return ukm.getOctets();
+     }
+
     public ASN1OctetString getEncryptedKey()
     {
         return encryptedKey;

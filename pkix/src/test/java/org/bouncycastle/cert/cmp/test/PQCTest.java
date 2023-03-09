@@ -281,21 +281,21 @@ public class PQCTest
 
         MacCalculator senderMacCalculator = new JcePBMac1CalculatorBuilder("HmacSHA256", 256).setProvider("BC").build(senderMacPassword);
 
-        ProtectedPKIMessage message = new ProtectedPKIMessageBuilder(sender, recipient)
+        ProtectedPKIMessage initMessage = new ProtectedPKIMessageBuilder(sender, recipient)
             .setBody(PKIBody.TYPE_INIT_REQ, certReqMsgsBldr.build())
             .build(senderMacCalculator);
 
         // extract
 
-        assertTrue(message.getProtectionAlgorithm().equals(senderMacCalculator.getAlgorithmIdentifier()));
+        assertTrue(initMessage.getProtectionAlgorithm().equals(senderMacCalculator.getAlgorithmIdentifier()));
 
         PBEMacCalculatorProvider macCalcProvider = new JcePBMac1CalculatorProviderBuilder().setProvider("BC").build();
 
-        assertTrue(message.verify(macCalcProvider, senderMacPassword));
+        assertTrue(initMessage.verify(macCalcProvider, senderMacPassword));
 
-        assertEquals(PKIBody.TYPE_INIT_REQ, message.getBody().getType());
+        assertEquals(PKIBody.TYPE_INIT_REQ, initMessage.getBody().getType());
 
-        CertificateReqMessages requestMessages = CertificateReqMessages.fromPKIBody(message.getBody());
+        CertificateReqMessages requestMessages = CertificateReqMessages.fromPKIBody(initMessage.getBody());
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
@@ -373,18 +373,48 @@ public class PQCTest
             .addAcceptedCertificate(cert, BigInteger.ONE)
             .build(new JcaDigestCalculatorProviderBuilder().build());
 
-        message = new ProtectedPKIMessageBuilder(sender, recipient)
+        ProtectedPKIMessage certConf = new ProtectedPKIMessageBuilder(sender, recipient)
             .setBody(PKIBody.TYPE_CERT_CONFIRM, content)
             .build(senderMacCalculator);
 
         assertTrue(content.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
-        assertEquals(PKIBody.TYPE_CERT_CONFIRM, message.getBody().getType());
+        assertEquals(PKIBody.TYPE_CERT_CONFIRM, certConf.getBody().getType());
 
         // confirmation receiving
 
-        CertificateConfirmationContent recContent = CertificateConfirmationContent.fromPKIBody(message.getBody());
+        CertificateConfirmationContent recContent = CertificateConfirmationContent.fromPKIBody(certConf.getBody());
 
         assertTrue(recContent.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
+
+//        JcaPEMWriter pOut = new JcaPEMWriter(new FileWriter("/tmp/ntru_dil_cmp/ca_cert.pem"));
+//        pOut.writeObject(caCert);
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/ntru_dil_cmp/ntru_priv.pem"));
+//        pOut.writeObject(ntruKp.getPrivate());
+//        pOut.close();
+//
+//        pOut = new JcaPEMWriter(new FileWriter("/tmp/ntru_dil_cmp/ntru_cert.pem"));
+//        pOut.writeObject(cert);
+//        pOut.close();
+//
+//        OutputStream fOut = new FileOutputStream("/tmp/ntru_dil_cmp/cmp_message.ir");
+//        fOut.write(initMessage.toASN1Structure().getEncoded());
+//        fOut.close();
+//
+//        fOut = new FileOutputStream("/tmp/ntru_dil_cmp/cmp_message.ip");
+//        fOut.write(responsePkixMessage.toASN1Structure().getEncoded());
+//        fOut.close();
+//
+//        fOut = new FileOutputStream("/tmp/ntru_dil_cmp/cmp_message.ip");
+//        fOut.write(responsePkixMessage.toASN1Structure().getEncoded());
+//        fOut.close();
+//
+//        fOut = new FileOutputStream("/tmp/ntru_dil_cmp/cmp_message.certConf");
+//        fOut.write(certConf.toASN1Structure().getEncoded());
+//        fOut.close();
+//
+//        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
     private static X509CertificateHolder makeV3Certificate(String _subDN, KeyPair issKP)
