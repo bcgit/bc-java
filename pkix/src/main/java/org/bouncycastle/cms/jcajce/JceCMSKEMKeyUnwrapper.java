@@ -95,7 +95,7 @@ class JceCMSKEMKeyUnwrapper
         AlgorithmIdentifier symWrapAlgorithm = kemInfo.getWrap();
         try
         {
-            byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength).getEncoded();
+            byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength, kemInfo.getUkm()).getEncoded();
 
             if (privateKey instanceof RSAPrivateKey)
             {
