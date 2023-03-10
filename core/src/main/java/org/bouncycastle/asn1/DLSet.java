@@ -91,6 +91,11 @@ public class DLSet
         super(isSorted, elements);
     }
 
+    DLSet(ASN1Encodable[] elements, ASN1Encodable[] sortedElements)
+    {
+        super(elements, sortedElements);
+    }
+
     private int getContentsLength() throws IOException
     {
         if (contentsLength < 0)
