@@ -15,6 +15,8 @@ import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.openpgp.AEADUtil;
+import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -35,11 +37,13 @@ public class JcePGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private JceAEADUtil aeadHelper = new JceAEADUtil(helper);
     private SecureRandom random;
     private boolean withIntegrityPacket;
     private int encAlgorithm;
     private int aeadAlgorithm = -1;
     private int chunkSize;
+    private boolean isV5StyleAEAD;
 
     /**
      * Constructs a new data encryptor builder for a specified cipher type.
@@ -63,6 +67,7 @@ public class JcePGPDataEncryptorBuilder
      * @param withIntegrityPacket true if an integrity packet is to be included, false otherwise.
      * @return the current builder.
      */
+    @Override
     public JcePGPDataEncryptorBuilder setWithIntegrityPacket(boolean withIntegrityPacket)
     {
         this.withIntegrityPacket = withIntegrityPacket;
@@ -70,11 +75,20 @@ public class JcePGPDataEncryptorBuilder
         return this;
     }
 
+    @Override
+    @Deprecated
     public JcePGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
+        return setWithAEAD(PGPAEADFlavour.OPENPGP_V5, aeadAlgorithm, chunkSize);
+    }
+
+    @Override
+    public JcePGPDataEncryptorBuilder setWithAEAD(PGPAEADFlavour flavour, int aeadAlgorithm, int chunkSize)
+    {
+        this.isV5StyleAEAD = flavour == PGPAEADFlavour.OPENPGP_V5;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
             throw new IllegalStateException("AEAD algorithms can only be used with AES");
         }
@@ -99,6 +113,7 @@ public class JcePGPDataEncryptorBuilder
     public JcePGPDataEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         return this;
     }
@@ -112,6 +127,7 @@ public class JcePGPDataEncryptorBuilder
     public JcePGPDataEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         return this;
     }
@@ -132,11 +148,30 @@ public class JcePGPDataEncryptorBuilder
         return this;
     }
 
+    @Override
     public int getAlgorithm()
     {
         return encAlgorithm;
     }
 
+    @Override
+    public int getAeadAlgorithm()
+    {
+        return aeadAlgorithm;
+    }
+
+    @Override
+    public int getChunkSize()
+    {
+        return chunkSize;
+    }
+
+    @Override
+    public boolean isV5StyleAEAD() {
+        return isV5StyleAEAD;
+    }
+
+    @Override
     public SecureRandom getSecureRandom()
     {
         if (random == null)
@@ -147,12 +182,13 @@ public class JcePGPDataEncryptorBuilder
         return random;
     }
 
+    @Override
     public PGPDataEncryptor build(byte[] keyBytes)
         throws PGPException
     {
         if (aeadAlgorithm > 0)
         {
-            return new MyAeadDataEncryptor(keyBytes);
+            return new MyAeadDataEncryptor(isV5StyleAEAD, keyBytes);
         }
         return new MyPGPDataEncryptor(keyBytes);
     }
@@ -214,25 +250,47 @@ public class JcePGPDataEncryptorBuilder
     private class MyAeadDataEncryptor
         implements PGPAEADDataEncryptor
     {
+        private final boolean isV5StyleAEAD;
         private final Cipher c;
         private final byte[] keyBytes;
         private final byte[] iv;
 
-        MyAeadDataEncryptor(byte[] keyBytes)
+        /**
+         * Create a new data decryptor using AEAD.
+         * If the flavour is {@link PGPAEADFlavour#OPENPGP_V5}, keyBytes contains the key. The IV is randomly generated.
+         * If however the flavour is {@link PGPAEADFlavour#OPENPGP_V6}, keyBytes contains M+N-8 bytes.
+         * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
+         *
+         * @param isV5StyleAEAD whether the encryptor will use v5 or v6 style AEAD
+         * @param keyBytes key or key and iv
+         * @throws PGPException
+         */
+        MyAeadDataEncryptor(boolean isV5StyleAEAD, byte[] keyBytes)
             throws PGPException
         {
-            this.keyBytes = keyBytes;
-            this.c = helper.createAEADCipher(encAlgorithm, aeadAlgorithm);
-            this.iv = new byte[AEADUtils.getIVLength((byte)aeadAlgorithm)];
-
-            getSecureRandom().nextBytes(iv);
+            this.isV5StyleAEAD = isV5StyleAEAD;
+            if (isV5StyleAEAD)
+            {
+                this.keyBytes = keyBytes;
+                // V5 has a random IV
+                this.iv = new byte[AEADUtils.getIVLength((byte)aeadAlgorithm)];
+                getSecureRandom().nextBytes(iv);
+            }
+            else
+            {
+                // V6 has the IV appended to the message key, so we need to split it
+                byte[][] keyAndIv = AEADUtil.splitMessageKeyAndIv(keyBytes, encAlgorithm, aeadAlgorithm);
+                this.keyBytes = keyAndIv[0];
+                this.iv = keyAndIv[1];
+            }
+            this.c = aeadHelper.createAEADCipher(encAlgorithm, aeadAlgorithm);
         }
 
         public OutputStream getOutputStream(OutputStream out)
         {
             try
             {
-                return new OperatorHelper.PGPAeadOutputStream(out, c, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), encAlgorithm, aeadAlgorithm, chunkSize, iv);
+                return new JceAEADUtil.PGPAeadOutputStream(isV5StyleAEAD, out, c, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), iv, encAlgorithm, aeadAlgorithm, chunkSize);
             }
             catch (Exception e)
             {
@@ -250,19 +308,27 @@ public class JcePGPDataEncryptorBuilder
             return c.getBlockSize();
         }
 
+        @Override
         public int getAEADAlgorithm()
         {
             return aeadAlgorithm;
         }
 
+        @Override
         public int getChunkSize()
         {
             return chunkSize;
         }
 
+        @Override
         public byte[] getIV()
         {
             return Arrays.clone(iv);
+        }
+
+        @Override
+        public boolean isV5StyleAEAD() {
+            return isV5StyleAEAD;
         }
     }
 }

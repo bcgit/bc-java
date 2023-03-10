@@ -603,11 +603,9 @@ class JceAEADUtil
         private void writeBlock()
             throws IOException
         {
-            boolean v5StyleAEAD = isV5AEAD;
-
-            byte[] adata = v5StyleAEAD ? new byte[13] : new byte[aaData.length];
+            byte[] adata = isV5AEAD ? new byte[13] : new byte[aaData.length];
             System.arraycopy(aaData, 0, adata, 0, aaData.length);
-            if (v5StyleAEAD)
+            if (isV5AEAD)
             {
                 xorChunkId(adata, chunkIndex);
             }
@@ -638,8 +636,7 @@ class JceAEADUtil
             }
 
             byte[] adata;
-            boolean v5StyleAEAD = isV5AEAD;
-            if (v5StyleAEAD)
+            if (isV5AEAD)
             {
                 adata = new byte[13];
                 System.arraycopy(aaData, 0, adata, 0, aaData.length);
@@ -656,7 +653,7 @@ class JceAEADUtil
             {
                 c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
                 c.updateAAD(adata);
-                if (v5StyleAEAD)
+                if (isV5AEAD)
                 {
                     c.updateAAD(Pack.longToBigEndian(totalBytes));
                 }

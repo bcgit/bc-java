@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
@@ -73,7 +74,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(new SecureRandom());
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        encryptorBuilder.setWithAEAD(PGPAEADFlavour.OPENPGP_V5, AEADAlgorithmTags.OCB, 10);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 
@@ -138,7 +139,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random);
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+        encryptorBuilder.setWithAEAD(PGPAEADFlavour.OPENPGP_V5, AEADAlgorithmTags.OCB, 6);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 
@@ -204,7 +205,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random);
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+        encryptorBuilder.setWithAEAD(PGPAEADFlavour.OPENPGP_V5, AEADAlgorithmTags.OCB, 6);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 

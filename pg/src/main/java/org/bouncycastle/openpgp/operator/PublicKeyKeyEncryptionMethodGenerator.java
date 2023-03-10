@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
+import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.util.Properties;
@@ -145,6 +146,13 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             keyId = pubKey.getKeyID();
         }
         return new PublicKeyEncSessionPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+    }
+
+    @Override
+    public ContainedPacket generate(PGPAEADFlavour aeadFlavour, int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        return null;
     }
 
     abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
