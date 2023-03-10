@@ -23,11 +23,14 @@ public interface PublicKeyAlgorithmTags
      */
     int EDDSA = 22;            // EdDSA - (internet draft, but appearing in use)
     int EDDSA_LEGACY = 22;     // new name for old EDDSA tag.
-    
-    int X25519 = 25;
-    int X448 = 26;
-    int Ed25519 = 27;
-    int Ed448 = 28;
+
+    int AEDH = 23;             // Reserved
+    int AEDSA = 24;            // Reserved
+
+    int X25519 = 25;           // X25519
+    int X448 = 26;             // X448
+    int Ed25519 = 27;          // Ed25519
+    int Ed448 = 28;            // Ed448
 
     int EXPERIMENTAL_1 = 100;
     int EXPERIMENTAL_2 = 101;
