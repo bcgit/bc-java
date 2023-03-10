@@ -134,7 +134,7 @@ public class DERSet
 
     ASN1Primitive toDERObject()
     {
-        return isSorted ? this : super.toDERObject();
+        return (sortedElements != null) ? this : super.toDERObject();
     }
 
     ASN1Primitive toDLObject()
