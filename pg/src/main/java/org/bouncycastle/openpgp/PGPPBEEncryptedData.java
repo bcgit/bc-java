@@ -1,7 +1,5 @@
 package org.bouncycastle.openpgp;
 
-import java.io.InputStream;
-
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
@@ -11,6 +9,8 @@ import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.Arrays;
+
+import java.io.InputStream;
 
 /**
  * A password based encryption object.

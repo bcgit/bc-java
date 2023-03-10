@@ -1,27 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Signature;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.CipherInputStream;
@@ -31,10 +10,21 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.io.Streams;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.InputStream;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Signature;
 
 class OperatorHelper
 {
@@ -124,6 +114,8 @@ class OperatorHelper
         return helper.createKeyPairGenerator(algorithm);
     }
 
+    // OpenPGP V4
+    // SED or SEIPD v1 decryption
     PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
         throws PGPException
     {
@@ -178,103 +170,6 @@ class OperatorHelper
         String mode = (withIntegrityPacket)
             ? "CFB"
             : "OpenPGPCFB";
-
-        String cName = PGPUtil.getSymmetricCipherName(encAlgorithm)
-            + "/" + mode + "/NoPadding";
-
-        return createCipher(cName);
-    }
-
-    static long getChunkLength(int chunkSize)
-    {
-        return 1L << (chunkSize + 6);
-    }
-
-    static byte[] getNonce(byte[] iv, long chunkIndex)
-    {
-        byte[] nonce = Arrays.clone(iv);
-
-        xorChunkId(nonce, chunkIndex);
-
-        return nonce;
-    }
-
-    static void xorChunkId(byte[] nonce, long chunkIndex)
-    {
-        int index = nonce.length - 8;
-
-        nonce[index++] ^= (byte)(chunkIndex >> 56);
-        nonce[index++] ^= (byte)(chunkIndex >> 48);
-        nonce[index++] ^= (byte)(chunkIndex >> 40);
-        nonce[index++] ^= (byte)(chunkIndex >> 32);
-        nonce[index++] ^= (byte)(chunkIndex >> 24);
-        nonce[index++] ^= (byte)(chunkIndex >> 16);
-        nonce[index++] ^= (byte)(chunkIndex >> 8);
-        nonce[index] ^= (byte)(chunkIndex);
-    }
-
-    PGPDataDecryptor createDataDecryptor(final int aeadAlgorithm, final byte[] iv, final int chunkSize, final int encAlgorithm, byte[] key)
-        throws PGPException
-    {
-        try
-        {
-            final SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
-
-            final Cipher c = createAEADCipher(encAlgorithm, aeadAlgorithm);
-
-            return new PGPDataDecryptor()
-            {
-                public InputStream getInputStream(InputStream in)
-                {
-                    try
-                    {
-                        return new PGPAeadInputStream(in, c, secretKey, iv, encAlgorithm, aeadAlgorithm, chunkSize);
-                    }
-                    catch (IOException e)
-                    {
-                        throw Exceptions.illegalStateException("unable to open stream: " + e.getMessage(), e);
-                    }
-                }
-
-                public int getBlockSize()
-                {
-                    return c.getBlockSize();
-                }
-
-                public PGPDigestCalculator getIntegrityCalculator()
-                {
-                    return new SHA1PGPDigestCalculator();
-                }
-            };
-        }
-        catch (PGPException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new PGPException("Exception creating cipher", e);
-        }
-    }
-
-    Cipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
-        throws PGPException
-    {
-        String mode;
-        switch (aeadAlgorithm)
-        {
-        case AEADAlgorithmTags.EAX:
-            mode = "EAX";
-            break;
-        case AEADAlgorithmTags.OCB:
-            mode = "OCB";
-            break;
-        case AEADAlgorithmTags.GCM:
-            mode = "GCM";
-            break;
-        default:
-            throw new PGPException("encountered unknown AEAD algorithm: " + aeadAlgorithm);
-        }
 
         String cName = PGPUtil.getSymmetricCipherName(encAlgorithm)
             + "/" + mode + "/NoPadding";
@@ -389,325 +284,5 @@ class OperatorHelper
         throws NoSuchProviderException, NoSuchAlgorithmException
     {
         return helper.createAlgorithmParameters(algorithm);
-    }
-
-    private static class PGPAeadInputStream
-        extends InputStream
-    {
-        private final InputStream in;
-        private final byte[] buf;
-        private final Cipher c;
-        private final SecretKey secretKey;
-        private final byte[] aaData;
-        private final byte[] iv;
-        private final int chunkLength;
-
-        private byte[] data;
-        private int dataOff;
-        private long chunkIndex = 0;
-        private long totalBytes = 0;
-
-        public PGPAeadInputStream(InputStream in, Cipher c, SecretKey secretKey, byte[] iv, int encAlgorithm, int aeadAlgorithm, int chunkSize)
-            throws IOException
-        {
-            this.in = in;
-            this.iv = iv;
-            this.chunkLength = (int)getChunkLength(chunkSize);
-            this.buf = new byte[chunkLength + 32]; // allow room for chunk tag and message tag
-            this.c = c;
-            this.secretKey = secretKey;
-
-            aaData = new byte[5];
-
-            aaData[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
-            aaData[1] = 0x01;   // packet version
-            aaData[2] = (byte)encAlgorithm;
-            aaData[3] = (byte)aeadAlgorithm;
-            aaData[4] = (byte)chunkSize;
-
-            // prime with 2 * tag len bytes.
-            Streams.readFully(in, buf, 0, 32);
-
-            // load the first block
-            this.data = readBlock();
-            this.dataOff = 0;
-        }
-
-        public int read()
-            throws IOException
-        {
-            if (data != null && dataOff == data.length)
-            {
-                this.data = readBlock();
-                this.dataOff = 0;
-            }
-
-            if (this.data == null)
-            {
-                return -1;
-            }
-
-            return data[dataOff++] & 0xff;
-        }
-
-        public int read(byte[] b, int off, int len)
-            throws IOException
-        {
-            if (data != null && dataOff == data.length)
-            {
-                this.data = readBlock();
-                this.dataOff = 0;
-            }
-
-            if (this.data == null)
-            {
-                return -1;
-            }
-
-            int supplyLen = Math.min(len, available());
-            System.arraycopy(data, dataOff, b, off, supplyLen);
-            dataOff += supplyLen;
-
-            return supplyLen;
-        }
-
-        public long skip(long n)
-            throws IOException
-        {
-            if (n <= 0)
-            {
-                return 0;
-            }
-
-            int skip = (int)Math.min(n, available());
-            dataOff += skip;
-            return skip;
-        }
-
-        public int available()
-            throws IOException
-        {
-            if (data != null && dataOff == data.length)
-            {
-                this.data = readBlock();
-                this.dataOff = 0;
-            }
-
-            if (this.data == null)
-            {
-                return -1;
-            }
-
-            return data.length - dataOff;
-        }
-
-        private byte[] readBlock()
-            throws IOException
-        {
-            // we initialise with the first 16 bytes as there is an additional 16 bytes following
-            // the last chunk (which may not be the exact chunklength).
-            int dataLen = Streams.readFully(in, buf, 32, chunkLength);
-            if (dataLen == 0)
-            {
-                return null;
-            }
-
-            byte[] adata = new byte[13];
-            System.arraycopy(aaData, 0, adata, 0, aaData.length);
-
-            xorChunkId(adata, chunkIndex);
-
-            byte[] decData;
-            try
-            {
-                c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
-
-                c.updateAAD(adata);
-
-                decData = c.doFinal(buf, 0, dataLen + 16);
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
-            }
-
-            totalBytes += decData.length;
-            chunkIndex++;
-
-            System.arraycopy(buf, dataLen + 16, buf, 0, 16); // copy back the "tag"
-
-            if (dataLen != chunkLength)     // it's our last block
-            {
-                adata = new byte[13];
-
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-
-                xorChunkId(adata, chunkIndex);
-                try
-                {
-                    c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
-
-                    c.updateAAD(adata);
-                    c.updateAAD(Pack.longToBigEndian(totalBytes));
-
-                    c.doFinal(buf, 0, 16); // check final tag
-                }
-                catch (GeneralSecurityException e)
-                {
-                    throw new IOException("exception processing final tag: " + e.getMessage());
-                }
-            }
-            else
-            {
-                Streams.readFully(in, buf, 16, 16);   // read the next tag bytes
-            }
-
-            return decData;
-        }
-    }
-
-    static class PGPAeadOutputStream
-        extends OutputStream
-    {
-        private final OutputStream out;
-        private final byte[] data;
-        private final Cipher c;
-        private final SecretKey secretKey;
-        private final byte[] aaData;
-        private final byte[] iv;
-        private final int chunkLength;
-
-        private int dataOff;
-        private long chunkIndex = 0;
-        private long totalBytes = 0;
-
-        public PGPAeadOutputStream(OutputStream out, Cipher c, SecretKey secretKey, int encAlgorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
-        {
-            this.out = out;
-            this.iv = iv;
-            this.chunkLength = (int)getChunkLength(chunkSize);
-            this.data = new byte[chunkLength];
-            this.c = c;
-            this.secretKey = secretKey;
-
-            aaData = new byte[5];
-
-            aaData[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
-            aaData[1] = 0x01;   // packet version
-            aaData[2] = (byte)encAlgorithm;
-            aaData[3] = (byte)aeadAlgorithm;
-            aaData[4] = (byte)chunkSize;
-        }
-
-        public void write(int b)
-            throws IOException
-        {
-            if (dataOff == data.length)
-            {
-                writeBlock();
-            }
-            data[dataOff++] = (byte)b;
-        }
-
-        public void write(byte[] b, int off, int len)
-            throws IOException
-        {
-            if (dataOff == data.length)
-            {
-                writeBlock();
-            }
-
-            if (len < data.length - dataOff)
-            {
-                System.arraycopy(b, off, data, dataOff, len);
-                dataOff += len;
-            }
-            else
-            {
-                int gap = data.length - dataOff;
-                System.arraycopy(b, off, data, dataOff, gap);
-                dataOff += gap;
-                writeBlock();
-
-                len -= gap;
-                off += gap;
-
-                while (len >= data.length)
-                {
-                    System.arraycopy(b, off, data, 0, data.length);
-                    dataOff = data.length;
-                    writeBlock();
-                    len -= data.length;
-                    off += data.length;
-                }
-
-                if (len > 0)
-                {
-                    System.arraycopy(b, off, data, 0, len);
-                    dataOff = len;
-                }
-            }
-        }
-
-        public void close()
-            throws IOException
-        {
-            finish();
-        }
-
-        private void writeBlock()
-            throws IOException
-        {
-            byte[] adata = new byte[13];
-            System.arraycopy(aaData, 0, adata, 0, aaData.length);
-
-            xorChunkId(adata, chunkIndex);
-
-            try
-            {
-                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
-
-                c.updateAAD(adata);
-
-                out.write(c.doFinal(data, 0, dataOff));
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IOException("exception processing chunk " + chunkIndex + ": " + e.getMessage());
-            }
-
-            totalBytes += dataOff;
-            chunkIndex++;
-            dataOff = 0;
-        }
-
-        private void finish()
-            throws IOException
-        {
-            if (dataOff > 0)
-            {
-                writeBlock();
-            }
-
-            byte[] adata = new byte[13];
-            System.arraycopy(aaData, 0, adata, 0, aaData.length);
-
-            xorChunkId(adata, chunkIndex);
-            try
-            {
-                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
-
-                c.updateAAD(adata);
-                c.updateAAD(Pack.longToBigEndian(totalBytes));
-
-                out.write(c.doFinal(aaData, 0, 0)); // output final tag
-
-                out.close();
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new IOException("exception processing final tag: " + e.getMessage());
-            }
-        }
     }
 }
