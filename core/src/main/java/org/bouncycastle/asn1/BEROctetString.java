@@ -87,7 +87,7 @@ public class BEROctetString
      */
     public BEROctetString(byte[] string, int segmentLimit)
     {
-        this(string, null, segmentLimit);
+        this(string, new ASN1OctetString[] { new DEROctetString(string) }, segmentLimit);
     }
 
     /**
@@ -205,6 +205,7 @@ public class BEROctetString
     {
         if (!encodeConstructed())
         {
+            System.err.println("enc: " + encodeConstructed());
             DEROctetString.encode(out, withTag, string, 0, string.length);
             return;
         }
