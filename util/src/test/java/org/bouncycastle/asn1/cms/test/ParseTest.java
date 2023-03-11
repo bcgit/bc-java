@@ -8,9 +8,11 @@ import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.BERTags;
+import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.ContentInfoParser;
 import org.bouncycastle.asn1.cms.EncryptedContentInfoParser;
 import org.bouncycastle.asn1.cms.EnvelopedDataParser;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -278,7 +280,15 @@ public class ParseTest
     {
         parseEnveloped(derExpTest);
     }
-    
+
+    public void testConstructedContentInfo()
+        throws Exception
+    {
+        byte[] contentInfoBytes = Hex.decode("308006092A864886F70D010701A0802480041F746573746520646520617373696E61747572612043414445532041442D5241000000000000");
+        ContentInfo contentInfo = ContentInfo.getInstance(contentInfoBytes);
+        assertTrue(Arrays.areEqual(contentInfo.getEncoded(), contentInfoBytes));
+    }
+
     public void testLongTag()
         throws IOException
     {
