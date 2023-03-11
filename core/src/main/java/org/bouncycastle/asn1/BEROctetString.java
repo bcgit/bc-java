@@ -205,7 +205,6 @@ public class BEROctetString
     {
         if (!encodeConstructed())
         {
-            System.err.println("enc: " + encodeConstructed());
             DEROctetString.encode(out, withTag, string, 0, string.length);
             return;
         }
