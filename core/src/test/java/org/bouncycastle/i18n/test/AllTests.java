@@ -5,9 +5,9 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.i18n.filter.test.HTMLFilterTest;
 import org.bouncycastle.i18n.filter.test.SQLFilterTest;
+import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests extends TestCase
 {
