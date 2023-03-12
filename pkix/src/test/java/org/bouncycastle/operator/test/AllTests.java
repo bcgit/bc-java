@@ -49,7 +49,6 @@ public class AllTests
 {
     private static final byte[] TEST_DATA = "Hello world!".getBytes();
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
 
     public void setUp()
     {

@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.cmp.test;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -15,7 +14,6 @@ import java.util.Date;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERSequence;
@@ -74,6 +72,7 @@ import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -82,7 +81,6 @@ public class AllTests
 {
     private static final byte[] TEST_DATA = "Hello world!".getBytes();
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
 
     /*
      *
@@ -422,16 +420,9 @@ public class AllTests
 
     private static PKIMessage loadMessage(String name)
     {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-
         try
         {
-            return PKIMessage.getInstance(ASN1Primitive.fromByteArray(Streams.readAll(new FileInputStream(dataHome + "/cmp/" + name))));
+            return PKIMessage.getInstance(ASN1Primitive.fromByteArray(Streams.readAll(TestResourceFinder.findTestResource("/cmp", name))));
         }
         catch (IOException e)
         {

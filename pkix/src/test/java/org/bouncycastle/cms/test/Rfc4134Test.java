@@ -1,8 +1,6 @@
 package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -54,6 +52,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -62,8 +61,6 @@ public class Rfc4134Test
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     private static byte[] exContent = getRfc4134Data("ExContent.bin");
     private static byte[] sha1 = Hex.decode("406aec085279ba6e16022d9e0629c0229687dd48");
 
@@ -427,29 +424,9 @@ public class Rfc4134Test
 
     private static byte[] getRfc4134Data(String name)
     {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-
-        //
-        // Try to find it
-        //
-        if (dataHome == null)
-        {
-            File tdCandidate = new File(new File("."), "core/src/test/data");
-            if (tdCandidate.exists() && tdCandidate.isDirectory())
-            {
-                dataHome = tdCandidate.getAbsolutePath();
-            }
-        }
-
-
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-
         try
         {
-            return Streams.readAll(new FileInputStream(dataHome + "/rfc4134/" + name));
+            return Streams.readAll(TestResourceFinder.findTestResource("rfc4134", name));
         }
         catch (IOException e)
         {

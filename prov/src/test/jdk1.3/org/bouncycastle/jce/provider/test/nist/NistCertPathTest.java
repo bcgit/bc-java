@@ -45,8 +45,6 @@ import org.bouncycastle.PrintTestResult;
 public class NistCertPathTest
     extends TestCase
 {
-    private static final String TEST_DATA_HOME = "bc.test.data.home";
-
     private static final String GOOD_CA_CERT = "GoodCACert";
 
     private static final String GOOD_CA_CRL = "GoodCACRL";
@@ -783,7 +781,7 @@ public class NistCertPathTest
         
         try
         {
-            InputStream in = new FileInputStream(getPkitsHome() + "/certs/" + certName + ".crt");
+            InputStream in = TestResourceFinder.findTestResource("PKITS/certs/", certName + ".crt");
             
             CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
             
@@ -812,7 +810,7 @@ public class NistCertPathTest
         
         try
         {
-            InputStream in = new FileInputStream(getPkitsHome() + "/crls/" + crlName + ".crl");
+            InputStream in = TestResourceFinder.findTestResource("PKITS/crls/", crlName + ".crl");
             
             CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
             
@@ -842,18 +840,6 @@ public class NistCertPathTest
         }
         
         return new TrustAnchor(cert, null);
-    }
-    
-    private String getPkitsHome()
-    {
-        String dataHome = System.getProperty(TEST_DATA_HOME);
-        
-        if (dataHome == null)
-        {
-            throw new IllegalStateException(TEST_DATA_HOME + " property not set");
-        }
-        
-        return dataHome + "/PKITS";
     }
     
     public static void main (String[] args) 
