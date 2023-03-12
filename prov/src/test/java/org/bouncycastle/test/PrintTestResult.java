@@ -1,4 +1,4 @@
-package org.bouncycastle;
+package org.bouncycastle.test;
 
 
 import java.util.Enumeration;
