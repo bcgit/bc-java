@@ -1,9 +1,8 @@
-package org.bouncycastle;
+package org.bouncycastle.test;
 
 
 import java.util.Enumeration;
 
-import junit.framework.TestFailure;
 import junit.framework.TestResult;
 
 public class PrintTestResult

@@ -3,7 +3,7 @@ package org.bouncycastle.pkcs.test;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
     extends TestCase
