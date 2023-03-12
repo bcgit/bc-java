@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.math.ntru.test;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,6 +16,7 @@ import org.bouncycastle.pqc.math.ntru.Polynomial;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSS701;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHRSSParameterSet;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUParameterSet;
+import org.bouncycastle.test.TestResourceFinder;
 
 public class HRSSPolynomialTest
     extends TestCase
@@ -64,9 +66,10 @@ public class HRSSPolynomialTest
     }
 
     public void testLift()
+        throws FileNotFoundException
     {
         NTRUParameterSet params = new NTRUHRSS701();
-        InputStream src = PolynomialTest.class.getResourceAsStream(KAT_ROOT + "ntruhrss701/poly_lift.txt");
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/ntruhrss701", "poly_lift.txt");
         List<Map<String, List<Integer>>> testCases = getTestCases(src);
         for (Map<String, List<Integer>> testCase : testCases)
         {
@@ -88,9 +91,10 @@ public class HRSSPolynomialTest
     }
 
     public void testR2Inv()
+        throws FileNotFoundException
     {
         NTRUParameterSet params = new NTRUHRSS701();
-        InputStream src = PolynomialTest.class.getResourceAsStream(KAT_ROOT + "ntruhrss701/poly_R2_inv.txt");
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/ntruhrss701" , "poly_R2_inv.txt");
         List<Map<String, List<Integer>>> testCases = getTestCases(src);
         for (Map<String, List<Integer>> testCase : testCases)
         {
@@ -112,9 +116,10 @@ public class HRSSPolynomialTest
     }
 
     public void testRqInv()
+        throws FileNotFoundException
     {
         NTRUParameterSet params = new NTRUHRSS701();
-        InputStream src = PolynomialTest.class.getResourceAsStream(KAT_ROOT + "ntruhrss701/poly_Rq_inv.txt");
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/ntruhrss701", "poly_Rq_inv.txt");
         List<Map<String, List<Integer>>> testCases = getTestCases(src);
         for (Map<String, List<Integer>> testCase : testCases)
         {
@@ -136,9 +141,10 @@ public class HRSSPolynomialTest
     }
 
     public void testS3Inv()
+        throws FileNotFoundException
     {
         NTRUParameterSet params = new NTRUHRSS701();
-        InputStream src = PolynomialTest.class.getResourceAsStream(KAT_ROOT + "ntruhrss701/poly_S3_inv.txt");
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/ntruhrss701", "poly_S3_inv.txt");
         List<Map<String, List<Integer>>> testCases = getTestCases(src);
         for (Map<String, List<Integer>> testCase : testCases)
         {
