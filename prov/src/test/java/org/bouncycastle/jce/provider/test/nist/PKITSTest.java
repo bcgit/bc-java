@@ -31,6 +31,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
+import org.bouncycastle.test.TestResourceFinder;
 
 /**
  * Utility class to support PKITS testing of the Cert Path library and associated functions.
@@ -354,14 +355,7 @@ class PKITSTest
 
         try
         {
-            String path = getPkitsHome() + "/certs/" + certName + ".crt";
-            InputStream in = this.getClass().getResourceAsStream(path);
-
-            if (in == null)
-            {
-                throw new RuntimeException("Could not find: " + path);
-            }
-
+            InputStream in = TestResourceFinder.findTestResource("PKITS/certs", certName + ".crt");
 
             CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
 
@@ -397,7 +391,7 @@ class PKITSTest
 
         try
         {
-            InputStream in = this.getClass().getResourceAsStream(getPkitsHome() + "/crls/" + crlName + ".crl");
+            InputStream in = TestResourceFinder.findTestResource("PKITS/crls", crlName + ".crl");
 
             CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
 
@@ -432,12 +426,6 @@ class PKITSTest
         }
 
         return new TrustAnchor(cert, null);
-    }
-
-
-    private String getPkitsHome()
-    {
-        return "/PKITS";
     }
 
     public PKITSTest withEndEntity(String endCert)
