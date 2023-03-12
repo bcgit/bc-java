@@ -8,7 +8,7 @@ import java.security.cert.X509Certificate;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 
 /**
  * Marius Schilder's Bleichenbacher's Forgery Attack Tests
