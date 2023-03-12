@@ -12,16 +12,19 @@ test-code-8:
   stage: test
   script:
     - "apply_overlay bc-java ./"
+    - "sh gettestdata.sh"
     - ". cienv-8.sh; \ gradle -stacktrace clean build;"
   
 test-code-11:
   stage: test
   script:
     - "apply_overlay bc-java ./"
+    - "sh gettestdata.sh"
     - ". cienv-11.sh; \ gradle -stacktrace clean build;"
   
 test-code-17:
   stage: test
   script:
     - "apply_overlay bc-java ./"
+    - "sh gettestdata.sh"
     - ". cienv-17.sh; \ gradle -stacktrace clean build;"
