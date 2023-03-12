@@ -20,6 +20,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -56,7 +57,7 @@ public class BIKETest
         {
             String name = files[fileIndex];
 
-            InputStream src = BIKETest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/bike/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/bike", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

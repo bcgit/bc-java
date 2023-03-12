@@ -301,6 +301,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/internal/**/*.java" />
+                 <include name="org/bouncycastle/test/*.java" />
                  <include name="org/bouncycastle/pqc/legacy/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
@@ -343,11 +344,13 @@
                  <exclude name="rfc4134/**" />
                  <exclude name="pgpdata/**" />
                  <exclude name="org/bouncycastle/**/AllTests.java" />
+                 <exclude name="org/bouncycastle/test/*.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/asn1/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
@@ -911,6 +914,7 @@
         <copyStandardFiles toDir="${test.target.dir}" />
 
         <copy todir="${test.target.src.dir}">
+             <fileset dir="${src.dir}" includes="/org/bouncycastle/test/*.java" />
              <fileset dir="${src.dir}" includes="**/*AllTests.java" />
              <fileset dir="${src.dir}" includes="**/math/**/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
