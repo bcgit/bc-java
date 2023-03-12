@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -94,7 +95,7 @@ public class CrystalsDilithiumTest
         {
             String name = files[fileindex];
             System.out.println("testing: " + name);
-            InputStream src = CrystalsDilithiumTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/dilithium/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/dilithium", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();

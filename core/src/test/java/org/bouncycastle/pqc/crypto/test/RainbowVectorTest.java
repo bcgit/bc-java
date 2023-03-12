@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowSigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -47,7 +48,7 @@ public class RainbowVectorTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = RainbowVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/rainbow/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/rainbow", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

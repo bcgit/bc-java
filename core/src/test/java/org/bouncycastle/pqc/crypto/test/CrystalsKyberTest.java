@@ -21,8 +21,8 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.newhope.NHOtherInfoGenerator;
 import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -148,7 +148,7 @@ public class CrystalsKyberTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = CrystalsKyberTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/kyber/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
