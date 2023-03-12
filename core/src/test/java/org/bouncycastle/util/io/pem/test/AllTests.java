@@ -6,15 +6,12 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestFailure;
-import junit.framework.TestResult;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
