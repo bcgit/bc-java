@@ -17,6 +17,7 @@ import org.bouncycastle.pqc.crypto.gemss.GeMSSParameters;
 import org.bouncycastle.pqc.crypto.gemss.GeMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.gemss.GeMSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.gemss.GeMSSSigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -42,7 +43,7 @@ public class GeMSSTest
         for (int i = 0; i < fileList.length; i++)
         {
             String name = fileList[i];
-            InputStream src = GeMSSTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/gemss/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/gemss", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String testcase = name.replace(".rsp", "");
             System.out.println("Testing on " + testcase);

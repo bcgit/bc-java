@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -58,7 +59,7 @@ public class FrodoVectorTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/frodo/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/frodo", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
