@@ -1,13 +1,10 @@
 package org.bouncycastle.oer.test;
 
-import java.util.Enumeration;
-
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestResult;
 import junit.framework.TestSuite;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 
 
