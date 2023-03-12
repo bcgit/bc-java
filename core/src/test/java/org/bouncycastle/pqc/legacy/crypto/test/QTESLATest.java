@@ -20,6 +20,7 @@ import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
@@ -191,7 +192,7 @@ public class QTESLATest
         //
         // Values put in file because vectors exceeded length of string constant.
         //
-        BufferedReader bin = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/org/bouncycastle/pqc/crypto/test/q3pIII.txt")));
+        BufferedReader bin = new BufferedReader(new InputStreamReader(TestResourceFinder.findTestResource("pqc/crypto", "q3pIII.txt")));
 
         byte[] seed = Hex.decode(bin.readLine());
         byte[] msg = Hex.decode(bin.readLine());
@@ -254,8 +255,8 @@ public class QTESLATest
         throws Exception
     {
         String[] files = new String[]{
-            "/org/bouncycastle/pqc/crypto/test/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-I.rsp",
-            "/org/bouncycastle/pqc/crypto/test/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-III.rsp",
+            "pqc/crypto/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-I.rsp",
+            "pqc/crypto/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-III.rsp",
         };
 
         for (int f = 0; f != files.length; f++)
@@ -263,7 +264,7 @@ public class QTESLATest
             String file = files[f];
 
             List<QTeslaKatVector> vectors =
-                new QTeslaKatParser(file, QTESLATest.class.getResourceAsStream(file))
+                new QTeslaKatParser(file, TestResourceFinder.findTestResource("pqc/crypto/qTeslaR2/KAT/ref", file))
                     .parse("count");
 
             TestCase.assertEquals(100, vectors.size());

@@ -19,6 +19,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -70,15 +71,12 @@ public class CMCEVectorTest
             CMCEParameters.mceliece8192128fr3
         };
 
-//        files = "6960-119-cmce.rsp";// 8192-128-cmce.rsp";
-//        files = "8192-128-cmce.rsp";
-//        String files = "4608-96-cmce.rsp";// 6688-128-cmce.rsp 6960-119-cmce.rsp 8192-128-cmce.rsp";
         TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = CMCEVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/cmce/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/cmce", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

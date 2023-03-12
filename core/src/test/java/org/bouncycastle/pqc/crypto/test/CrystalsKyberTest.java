@@ -1,14 +1,19 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
@@ -16,12 +21,33 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class CrystalsKyberTest
     extends TestCase
 {
+    public void testPrivInfoGeneration()
+        throws IOException
+    {
+        SecureRandom random = new SecureRandom();
+        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partA = partyU.getSuppPrivInfoPartA();
+
+        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
+
+        DEROtherInfo otherInfoU = partyU.generate(partB);
+
+        DEROtherInfo otherInfoV = partyV.generate();
+
+        Assert.assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
+    }
+    
     public void testKyber()
     {
         /*
@@ -122,7 +148,7 @@ public class CrystalsKyberTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = CrystalsKyberTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/kyber/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

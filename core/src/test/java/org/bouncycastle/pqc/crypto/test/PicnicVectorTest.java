@@ -18,6 +18,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
@@ -95,7 +96,7 @@ public class PicnicVectorTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = PicnicVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/picnic/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/picnic", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

@@ -20,6 +20,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -36,14 +37,14 @@ public class HQCTest
     public void testVectors()
         throws Exception
     {
-//        boolean full = System.getProperty("test.full", "false").equals("true");
+        boolean full = System.getProperty("test.full", "false").equals("true");
 
         String[] files;
         // test cases
         files = new String[]{
-            "PQCkemKAT_2289.rsp",
-            "PQCkemKAT_4562.rsp",
-            "PQCkemKAT_7285.rsp"
+                "hqc-128_kat.rsp",
+                "hqc-192_kat.rsp",
+                "hqc-256_kat.rsp",
         };
 
         HQCParameters[] listParams = new HQCParameters[]{
@@ -58,7 +59,7 @@ public class HQCTest
             System.out.println("Working Directory = " + System.getProperty("user.dir"));
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = HQCTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/hqc/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/hqc", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

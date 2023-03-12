@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -31,20 +33,26 @@ public class NTRUTest
         NTRUParameters.ntruhps4096821,
         NTRUParameters.ntruhrss701
     };
+    private final String[] katBase = {
+        "ntruhps2048509",
+        "ntruhps2048677",
+        "ntruhps4096821",
+        "ntruhrss701"
+    };
     private final String[] katFiles = {
-        "ntruhps2048509/PQCkemKAT_935.rsp",
-        "ntruhps2048677/PQCkemKAT_1234.rsp",
-        "ntruhps4096821/PQCkemKAT_1590.rsp",
-        "ntruhrss701/PQCkemKAT_1450.rsp"
+        "PQCkemKAT_935.rsp",
+        "PQCkemKAT_1234.rsp",
+        "PQCkemKAT_1590.rsp",
+        "PQCkemKAT_1450.rsp"
     };
 
     public void testPQCgenKAT_kem()
+        throws FileNotFoundException
     {
         for (int i = 0; i < this.params.length; i++)
         {
             NTRUParameters param = params[i];
-            String katFile = katFiles[i];
-            InputStream src = NTRUTest.class.getResourceAsStream(KAT_ROOT + katFile);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/" + katBase[i], katFiles[i]);
             List<NTRUKAT> kats = NTRUKAT.getKAT(src);
 
             for (int j = 0; j != kats.size(); j++)

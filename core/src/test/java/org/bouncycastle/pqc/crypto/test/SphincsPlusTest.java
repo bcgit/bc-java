@@ -24,6 +24,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -50,7 +51,7 @@ public class SphincsPlusTest
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
-            InputStream src = SphincsPlusTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sphincs_plus/subset_" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/sphincs_plus", "subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             System.out.println(name);
             String line = null;

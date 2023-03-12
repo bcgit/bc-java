@@ -15,6 +15,7 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -40,7 +41,7 @@ public class FalconTest
         {
             String name = files[fileindex];
             System.out.println("testing: " + name);
-            InputStream src = FalconTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/falcon/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/falcon", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
@@ -90,24 +91,22 @@ public class FalconTest
                         ParametersWithRandom skwrand = new ParametersWithRandom(ackp.getPrivate(), random);
                         signer.init(true, skwrand);
                         byte[] sig = signer.generateSignature(msg);
-                        byte[] ressm = new byte[2 + msg.length + sig.length - 1];
-                        ressm[0] = (byte)((sig.length - 40 - 1) >>> 8);
-                        ressm[1] = (byte)(sig.length - 40 - 1);
+                        // reconstruct test vector signature
+                        byte[] ressm = new byte[2 + msg.length + sig.length];
+                        ressm[0] = (byte)((sig.length - 40) >>> 8);
+                        ressm[1] = (byte)(sig.length - 40);
                         System.arraycopy(sig, 1, ressm, 2, 40);
                         System.arraycopy(msg, 0, ressm, 2 + 40, msg.length);
-                        System.arraycopy(sig, 40 + 1, ressm, 2 + 40 + msg.length, sig.length - 40 - 1);
+                        ressm[2 + 40 + msg.length] = (byte)(0x20 + kparam.getParameters().getLogN());
+                        System.arraycopy(sig, 40 + 1, ressm, 3 + 40 + msg.length, sig.length - 40 - 1);
 
                         // verify
                         FalconSigner verifier = new FalconSigner();
                         FalconPublicKeyParameters pkparam = (FalconPublicKeyParameters)ackp.getPublic();
                         verifier.init(false, pkparam);
-                        byte[] noncesig = new byte[sm_len - m_len - 2 + 1];
-                        noncesig[0] = (byte)(0x30 + parameters[fileindex].getLogN());
-                        System.arraycopy(sm, 2, noncesig, 1, 40);
-                        System.arraycopy(sm, 2 + 40 + m_len, noncesig, 40 + 1, sm_len - 2 - 40 - m_len);
-                        boolean vrfyrespass = verifier.verifySignature(msg, noncesig);
-                        noncesig[42]++; // changing the signature by 1 byte should cause it to fail
-                        boolean vrfyresfail = verifier.verifySignature(msg, noncesig);
+                        boolean vrfyrespass = verifier.verifySignature(msg, sig);
+                        sig[11]++; // changing the signature by 1 byte should cause it to fail
+                        boolean vrfyresfail = verifier.verifySignature(msg, sig);
 
                         //sign
                         assertTrue(name + " " + count + " signature", Arrays.areEqual(ressm, sm));

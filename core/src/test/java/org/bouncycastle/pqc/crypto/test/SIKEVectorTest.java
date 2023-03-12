@@ -8,17 +8,18 @@ import java.util.HashMap;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.sike.SIKEKEMExtractor;
-import org.bouncycastle.pqc.crypto.sike.SIKEKEMGenerator;
-import org.bouncycastle.pqc.crypto.sike.SIKEKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.sike.SIKEKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.sike.SIKEParameters;
-import org.bouncycastle.pqc.crypto.sike.SIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sike.SIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEKEMExtractor;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEKEMGenerator;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEParameters;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPublicKeyParameters;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -83,7 +84,7 @@ public class SIKEVectorTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = SIKEVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/sike/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/sike", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;

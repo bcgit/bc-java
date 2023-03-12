@@ -14,13 +14,14 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class NTRULPRimeTest
     extends TestCase
 {
-    private static final String resourcePath = "/org/bouncycastle/pqc/crypto/test/ntruprime/ntrulpr/";
+    private static final String resourcePath = "pqc/crypto/ntruprime/ntrulpr";
 
     public void testKEM()
             throws Exception
@@ -41,7 +42,7 @@ public class NTRULPRimeTest
         {
             NTRULPRimeParameters paramSpec = paramList[i];
             System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
-            InputStream resource = NTRULPRimeTest.class.getResourceAsStream(resourcePath + paramSpec.getName().toLowerCase() + ".rsp");
+            InputStream resource = TestResourceFinder.findTestResource(resourcePath, paramSpec.getName().toLowerCase() + ".rsp");
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
             String line;

@@ -19,6 +19,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -47,11 +48,35 @@ public class SABERVectorTest
                 SABERParameters.lightsaberkem256r3,
                 SABERParameters.saberkem256r3,
                 SABERParameters.firesaberkem256r3,
+
+                SABERParameters.ulightsaberkemr3,
+                SABERParameters.usaberkemr3,
+                SABERParameters.ufiresaberkemr3,
+
+                SABERParameters.lightsaberkem90sr3,
+                SABERParameters.saberkem90sr3,
+                SABERParameters.firesaberkem90sr3,
+
+                SABERParameters.ulightsaberkem90sr3,
+                SABERParameters.usaberkem90sr3,
+                SABERParameters.ufiresaberkem90sr3,
         };
         String[] files = new String[] {
                 "lightsaber.rsp",
                 "saber.rsp",
-                "firesaber.rsp"
+                "firesaber.rsp",
+
+                "ulightsaber.rsp",
+                "usaber.rsp",
+                "ufiresaber.rsp",
+
+                "lightsaber-90s.rsp",
+                "saber-90s.rsp",
+                "firesaber-90s.rsp",
+
+                "ulightsaber-90s.rsp",
+                "usaber-90s.rsp",
+                "ufiresaber-90s.rsp",
         };
 
         TestSampler sampler = new TestSampler();
@@ -60,7 +85,7 @@ public class SABERVectorTest
         {
             String name = files[fileIndex];
             System.out.println("testing: " + name);
-            InputStream src = SABERVectorTest.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/saber/" + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/saber", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
