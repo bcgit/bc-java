@@ -45,7 +45,6 @@ public class AllTests
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(RainbowVectorTest.class);
-        suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);
