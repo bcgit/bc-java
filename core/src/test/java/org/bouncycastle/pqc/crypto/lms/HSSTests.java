@@ -11,6 +11,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -73,7 +74,7 @@ public class HSSTests
     public void testHSSVector_1()
         throws Exception
     {
-        ArrayList<byte[]> blocks = loadVector("/org/bouncycastle/pqc/crypto/test/lms/testcase_1.txt");
+        ArrayList<byte[]> blocks = loadVector("testcase_1.txt");
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
@@ -91,7 +92,7 @@ public class HSSTests
         throws Exception
     {
 
-        ArrayList<byte[]> blocks = loadVector("/org/bouncycastle/pqc/crypto/test/lms/testcase_2.txt");
+        ArrayList<byte[]> blocks = loadVector("testcase_2.txt");
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
@@ -110,7 +111,7 @@ public class HSSTests
     private ArrayList<byte[]> loadVector(String vector)
         throws Exception
     {
-        InputStream inputStream = HSSTests.class.getResourceAsStream(vector);
+        InputStream inputStream = TestResourceFinder.findTestResource("pqc/crypto/lms", vector);
         BufferedReader bin = new BufferedReader(new InputStreamReader(inputStream));
         String line;
         ArrayList<byte[]> blocks = new ArrayList<byte[]>();
@@ -315,7 +316,7 @@ public class HSSTests
         throws Exception
     {
 
-        String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/depth_1.txt"))).split("\n");
+        String[] lines = new String(Streams.readAll(TestResourceFinder.findTestResource("pqc/crypto/lms", "depth_1.txt"))).split("\n");
 
         int d = 0;
         List<LMSigParameters> lmsParameters = new ArrayList<LMSigParameters>();
@@ -461,7 +462,7 @@ public class HSSTests
         throws Exception
     {
 
-        String[] lines = new String(Streams.readAll(HSSTests.class.getResourceAsStream("/org/bouncycastle/pqc/crypto/test/lms/expansion.txt"))).split("\n");
+        String[] lines = new String(Streams.readAll(TestResourceFinder.findTestResource("pqc/crypto/lms", "expansion.txt"))).split("\n");
 
         int d = 0;
         List<LMSigParameters> lmsParameters = new ArrayList<LMSigParameters>();
