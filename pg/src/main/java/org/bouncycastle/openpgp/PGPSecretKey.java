@@ -14,6 +14,8 @@ import org.bouncycastle.bcpg.BCPGObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
+import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -29,6 +31,8 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.bcpg.X25519SecretBCPGKey;
+import org.bouncycastle.bcpg.X448SecretBCPGKey;
 import org.bouncycastle.gpg.SExprParser;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
@@ -666,6 +670,18 @@ public class PGPSecretKey
                 EdSecretBCPGKey edPriv = new EdSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, edPriv);
+            case PGPPublicKey.X25519:
+                X25519SecretBCPGKey x25519Priv = new X25519SecretBCPGKey(in);
+                return new PGPPrivateKey(this.getKeyID(), pubPk, x25519Priv);
+            case PGPPublicKey.X448:
+                X448SecretBCPGKey x448Priv = new X448SecretBCPGKey(in);
+                return new PGPPrivateKey(this.getKeyID(), pubPk, x448Priv);
+            case PublicKeyAlgorithmTags.Ed25519:
+                Ed25519SecretBCPGKey ed25519Priv = new Ed25519SecretBCPGKey(in);
+                return new PGPPrivateKey(this.getKeyID(), pubPk, ed25519Priv);
+            case PublicKeyAlgorithmTags.Ed448:
+                Ed448SecretBCPGKey ed448Priv = new Ed448SecretBCPGKey(in);
+                return new PGPPrivateKey(this.getKeyID(), pubPk, ed448Priv);
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
