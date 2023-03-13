@@ -7,6 +7,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -44,6 +45,7 @@ import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.DHGroup;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -63,7 +65,6 @@ class ProvTlsServer
      * TODO[jsse] Does this selection override the restriction from 'jdk.tls.ephemeralDHKeySize'?
      * TODO[fips] Probably should be ignored in fips mode?
      */
-    @SuppressWarnings("unused")
     private static final DHGroup[] provServerDefaultDHEParameters = getDefaultDHEParameters();
 
     private static final boolean provServerEnableCA = PropertyUtils
@@ -149,6 +150,14 @@ class ProvTlsServer
             outerComma = closeBrace + 1;
             if (outerComma >= limit)
             {
+                result.sort(new Comparator<DHGroup>()
+                {
+                    @Override
+                    public int compare(DHGroup a, DHGroup b)
+                    {
+                        return a.getP().bitLength() - b.getP().bitLength();
+                    }
+                });
                 return result.toArray(new DHGroup[result.size()]);
             }
         }
@@ -263,6 +272,25 @@ class ProvTlsServer
             this.credentials = cipherSuiteCredentials;
         }
         return result;
+    }
+
+    @Override
+    public TlsDHConfig getDHConfig() throws IOException
+    {
+        if (provServerDefaultDHEParameters != null)
+        {
+            int minimumFiniteFieldBits = Math.max(
+                TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite), provEphemeralDHKeySize);
+
+            for (DHGroup group: provServerDefaultDHEParameters)
+            {
+                if (group.getP().bitLength() >= minimumFiniteFieldBits)
+                {
+                    return new TlsDHConfig(group);
+                }
+            }
+        }
+        return super.getDHConfig();
     }
 
     @Override
