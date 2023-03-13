@@ -30,7 +30,31 @@ public class PublicSubkeyPacket
     {
         super(algorithm, time, key);
     }
-    
+
+    public PublicSubkeyPacket(
+            int version,
+            int algorithm,
+            Date time,
+            BCPGKey key)
+    {
+        super(version, algorithm, time, key);
+    }
+
+    public static PublicSubkeyPacket createV4PublicSubKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicSubkeyPacket(4, algorithm, time, key);
+    }
+
+    public static PublicSubkeyPacket createV5PublicSubKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicSubkeyPacket(5, algorithm, time, key);
+    }
+
+    public static PublicSubkeyPacket createV6PublicSubKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicSubkeyPacket(6, algorithm, time, key);
+    }
+
     public void encode(
         BCPGOutputStream    out)
         throws IOException
