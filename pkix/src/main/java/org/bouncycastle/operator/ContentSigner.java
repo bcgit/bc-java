@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * General interface for an operator that is able to create a signature from
  * a stream of output.
  */
-public interface ContentSigner
+public interface ContentSigner extends AutoCloseable
 {
     /**
      * Return the algorithm identifier describing the signature
