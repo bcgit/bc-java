@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.io.Streams;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -19,6 +21,8 @@ public class SecretKeyPacket
     private byte[] secKeyData;
     private int s2kUsage;
     private int encAlgorithm;
+    private int aeadAlgorithm;
+    private byte[] aeadNonce;
     private S2K s2k;
     private byte[] iv;
 
@@ -39,19 +43,44 @@ public class SecretKeyPacket
             pubKeyPacket = new PublicKeyPacket(in);
         }
 
+        int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
+
+        if (s2kUsage != 0 && (version == 5 || version == 6))
+        {
+            in.read(); // TODO: Use this count to allow parsing unknown S2Ks / key formats
+        }
 
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
         {
             encAlgorithm = in.read();
+            if (version == 5 || version == 6)
+            {
+                in.read();
+            }
             s2k = new S2K(in);
+        }
+        else if (s2kUsage == USAGE_AEAD)
+        {
+            encAlgorithm = in.read();
+            aeadAlgorithm = in.read();
+            if (version == 5 || version == 6)
+            {
+                in.read();
+            }
+            s2k = new S2K(in);
+            aeadNonce = new byte[AEADAlgorithmTags.getIvLength(aeadAlgorithm)];
+            Streams.readFully(in, aeadNonce);
         }
         else
         {
             encAlgorithm = s2kUsage;
         }
 
-        if (!(s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K && s2k.getProtectionMode() == 0x01))
+        boolean isGNUDummyNoPrivateKey = s2k != null &&
+                s2k.getType() == S2K.GNU_DUMMY_S2K &&
+                s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
+        if (!(isGNUDummyNoPrivateKey))
         {
             if (s2kUsage != 0)
             {
