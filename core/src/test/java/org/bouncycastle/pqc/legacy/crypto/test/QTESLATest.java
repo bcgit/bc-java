@@ -255,8 +255,8 @@ public class QTESLATest
         throws Exception
     {
         String[] files = new String[]{
-            "pqc/crypto/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-I.rsp",
-            "pqc/crypto/qTeslaR2/KAT/ref/PQCsignKAT_qTesla-p-III.rsp",
+            "PQCsignKAT_qTesla-p-I.rsp",
+            "PQCsignKAT_qTesla-p-III.rsp",
         };
 
         for (int f = 0; f != files.length; f++)
