@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.engines.HC128Engine;
 import org.bouncycastle.crypto.engines.HC256Engine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -65,7 +66,7 @@ public class HCFamilyVecTest
 
     private void runTests(StreamCipher hc, String fileName) throws IOException
     {
-        Reader resource = new InputStreamReader(getClass().getResourceAsStream(fileName));
+        Reader resource = new InputStreamReader(TestResourceFinder.findTestResource("crypto", fileName));
         PeekableLineReader r = new PeekableLineReader(resource);
         runAllVectors(hc, fileName, r);
     }

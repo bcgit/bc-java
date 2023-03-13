@@ -22,7 +22,7 @@ public class KDFCounterGeneratorTest
 
         CAVPReader cavpReader = new CAVPReader(new KDFCounterTests());
 
-        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFCTR_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto/cavp", "KDFCTR_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFCounter", reader);
 

@@ -34,7 +34,7 @@ public class KDFDoublePipelineIteratorGeneratorTest
 
         CAVPReader cavpReader = new CAVPReader(new KDFDoublePipelineCounterTests());
 
-        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFDblPipelineCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto/cavp", "KDFDblPipelineCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFDoublePipelineIterationCounter", reader);
 
@@ -54,7 +54,7 @@ public class KDFDoublePipelineIteratorGeneratorTest
 
         CAVPReader cavpReader = new CAVPReader(new KDFDoublePipelineIterationNoCounterTests());
 
-        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFDblPipelineNoCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto/cavp", "KDFDblPipelineNoCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFDblPipelineIterationNoCounter", reader);
 

@@ -85,12 +85,6 @@ public class AllTests
         init();
     }
 
-    private byte[] getInput(String name)
-        throws IOException
-    {
-        return Streams.readAll(getClass().getResourceAsStream(name));
-    }
-
     public void testCCPDRequest()
         throws Exception
     {

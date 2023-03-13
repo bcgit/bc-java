@@ -34,7 +34,7 @@ public class KDFFeedbackGeneratorTest
 
         CAVPReader cavpReader = new CAVPReader(new KDFFeedbackCounterTests());
 
-        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFFeedbackCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto/cavp", "KDFFeedbackCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFFeedbackCounter", reader);
 
@@ -54,7 +54,7 @@ public class KDFFeedbackGeneratorTest
 
         CAVPReader cavpReader = new CAVPReader(new KDFFeedbackNoCounterTests());
 
-        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFFeedbackNoCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto/cavp", "KDFFeedbackNoCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFFeedbackNoCounter", reader);
 
