@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -43,7 +44,7 @@ public class XoodyakTest
         throws Exception
     {
         XoodyakDigest xoodyak = new XoodyakDigest();
-        InputStream src = XoodyakTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/xoodyak/LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/xoodyak", "LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;
@@ -85,7 +86,7 @@ public class XoodyakTest
     {
         XoodyakEngine xoodyak = new XoodyakEngine();
         CipherParameters params;
-        InputStream src = XoodyakTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/xoodyak/LWC_AEAD_KAT_128_128.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/xoodyak", "LWC_AEAD_KAT_128_128.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] rv;

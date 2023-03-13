@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.hpke.HPKEContext;
 import org.bouncycastle.crypto.hpke.HPKEContextWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -178,7 +179,7 @@ public class HPKETestVectors
     public void testVectors()
             throws Exception
     {
-        InputStream src = HPKETestVectors.class.getResourceAsStream("hpke.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto", "hpke.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line = null;
         HashMap<String, String> buf = new HashMap<String, String>();

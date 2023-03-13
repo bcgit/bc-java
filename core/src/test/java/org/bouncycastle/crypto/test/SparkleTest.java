@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -58,7 +59,7 @@ public class SparkleTest
     {
         SparkleEngine Sparkle = new SparkleEngine(pbp);
         CipherParameters params;
-        InputStream src = SparkleTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/sparkle/LWC_AEAD_KAT_"
+        InputStream src = TestResourceFinder.findTestResource("crypto/sparkle", "LWC_AEAD_KAT_"
             + filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
@@ -121,7 +122,7 @@ public class SparkleTest
         throws Exception
     {
         SparkleDigest Sparkle = new SparkleDigest(sparkleParameters);
-        InputStream src = SparkleTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/sparkle/LWC_HASH_KAT_" + filename + ".txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/sparkle", "LWC_HASH_KAT_" + filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;

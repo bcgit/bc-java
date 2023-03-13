@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.bouncycastle.crypto.generators.SCrypt;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -165,7 +166,7 @@ public class SCryptTest
         throws Exception
     {
         BufferedReader br = new BufferedReader(new InputStreamReader(
-            getClass().getResourceAsStream("SCryptTestVectors.txt")));
+            TestResourceFinder.findTestResource("crypto", "SCryptTestVectors.txt")));
 
         int count = 0;
         String line = br.readLine();

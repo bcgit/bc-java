@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -57,7 +58,7 @@ public class ISAPTest
     {
         ISAPEngine isap = new ISAPEngine(isapType);
         CipherParameters params;
-        InputStream src = ISAPTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/isap/" + filename + "_LWC_AEAD_KAT_128_128.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/isap", filename + "_LWC_AEAD_KAT_128_128.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] rv;
@@ -119,7 +120,7 @@ public class ISAPTest
         throws Exception
     {
         ISAPDigest isap = new ISAPDigest();
-        InputStream src = ISAPTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/isap/LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/isap", "LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;

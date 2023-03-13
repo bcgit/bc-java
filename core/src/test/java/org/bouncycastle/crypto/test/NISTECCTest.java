@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 import java.io.BufferedReader;
@@ -28,7 +29,7 @@ public class NISTECCTest
 
     public void testVectors() throws IOException
     {
-        BufferedReader br = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("nist_ecc.txt")));
+        BufferedReader br = new BufferedReader(new InputStreamReader(TestResourceFinder.findTestResource("crypto", "nist_ecc.txt")));
         try
         {
             String line = br.readLine();

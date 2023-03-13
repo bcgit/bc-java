@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -141,7 +142,7 @@ public class LEATest
         throws Exception
     {
 
-        BufferedReader bin = new BufferedReader(new InputStreamReader(LEATest.class.getResourceAsStream("/org/bouncycastle/crypto/test/lea.txt")));
+        BufferedReader bin = new BufferedReader(new InputStreamReader(TestResourceFinder.findTestResource("crypto", "lea.txt")));
         String line;
 
         String comment = null;

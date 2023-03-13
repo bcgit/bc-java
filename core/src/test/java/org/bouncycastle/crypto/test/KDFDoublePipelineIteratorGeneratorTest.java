@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,6 +10,7 @@ import java.nio.charset.Charset;
 import org.bouncycastle.crypto.test.cavp.CAVPReader;
 import org.bouncycastle.crypto.test.cavp.KDFDoublePipelineCounterTests;
 import org.bouncycastle.crypto.test.cavp.KDFDoublePipelineIterationNoCounterTests;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class KDFDoublePipelineIteratorGeneratorTest
@@ -27,11 +29,12 @@ public class KDFDoublePipelineIteratorGeneratorTest
     }
 
     private static void testDoublePipelineIterationCounter()
+        throws FileNotFoundException
     {
 
         CAVPReader cavpReader = new CAVPReader(new KDFDoublePipelineCounterTests());
 
-        final InputStream stream = CAVPReader.class.getResourceAsStream("KDFDblPipelineCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFDblPipelineCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFDoublePipelineIterationCounter", reader);
 
@@ -46,11 +49,12 @@ public class KDFDoublePipelineIteratorGeneratorTest
     }
 
     private static void testDoublePipelineIterationNoCounter()
+        throws FileNotFoundException
     {
 
         CAVPReader cavpReader = new CAVPReader(new KDFDoublePipelineIterationNoCounterTests());
 
-        final InputStream stream = CAVPReader.class.getResourceAsStream("KDFDblPipelineNoCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFDblPipelineNoCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFDblPipelineIterationNoCounter", reader);
 

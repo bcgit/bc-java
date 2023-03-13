@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -47,8 +48,7 @@ public class SHA3DigestTest
 
     public void testVectors() throws Exception
     {
-        BufferedReader r = new BufferedReader(new InputStreamReader(
-            getClass().getResourceAsStream("SHA3TestVectors.txt")));
+        BufferedReader r = new BufferedReader(new InputStreamReader(TestResourceFinder.findTestResource("crypto", "SHA3TestVectors.txt")));
 
         String line;
         while (null != (line = readLine(r)))

@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.Grain128AEADEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -36,7 +37,7 @@ public class Grain128AEADTest
     {
         Grain128AEADEngine grain = new Grain128AEADEngine();
         CipherParameters params;
-        InputStream src = Grain128AEADTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/LWC_AEAD_KAT_128_96.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto", "LWC_AEAD_KAT_128_96.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte, adByte;

@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,6 +9,7 @@ import java.nio.charset.Charset;
 
 import org.bouncycastle.crypto.test.cavp.CAVPReader;
 import org.bouncycastle.crypto.test.cavp.KDFCounterTests;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class KDFCounterGeneratorTest
@@ -15,11 +17,12 @@ public class KDFCounterGeneratorTest
 {
 
     private static void testCounter()
+        throws FileNotFoundException
     {
 
         CAVPReader cavpReader = new CAVPReader(new KDFCounterTests());
 
-        final InputStream stream = CAVPReader.class.getResourceAsStream("KDFCTR_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFCTR_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFCounter", reader);
 

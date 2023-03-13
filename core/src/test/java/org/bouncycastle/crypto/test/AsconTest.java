@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -61,7 +62,7 @@ public class AsconTest
     {
         AsconEngine Ascon = new AsconEngine(asconParameters);
         CipherParameters params;
-        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/LWC_AEAD_KAT_" + filename + ".txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/ascon", "LWC_AEAD_KAT_" + filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] rv;
@@ -414,7 +415,7 @@ public class AsconTest
         throws Exception
     {
         AsconDigest Ascon = new AsconDigest(AsconParameters);
-        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/" + filename + "_LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;
@@ -456,7 +457,7 @@ public class AsconTest
         throws Exception
     {
         AsconXof Ascon = new AsconXof(AsconParameters);
-        InputStream src = AsconTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/ascon/" + filename + "_LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte;

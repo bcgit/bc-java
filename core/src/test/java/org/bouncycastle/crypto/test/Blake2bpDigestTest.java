@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.Blake2bpDigest;
 import org.bouncycastle.pqc.crypto.test.CMCEVectorTest;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -18,7 +19,7 @@ public class Blake2bpDigestTest
             throws Exception
     {
         Blake2bpDigest digest;
-        InputStream src = CMCEVectorTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/Blake2KAT.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto", "Blake2KAT.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
         String line = null;

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -48,7 +49,7 @@ public class SHAKEDigestTest
     public void testVectors() throws Exception
     {
         BufferedReader r = new BufferedReader(new InputStreamReader(
-            getClass().getResourceAsStream("SHAKETestVectors.txt")));
+            TestResourceFinder.findTestResource("crypto", "SHAKETestVectors.txt")));
 
         String line;
         while (null != (line = readLine(r)))

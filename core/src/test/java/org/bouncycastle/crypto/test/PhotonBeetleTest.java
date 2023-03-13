@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -46,7 +47,7 @@ public class PhotonBeetleTest
     {
         PhotonBeetleDigest PhotonBeetle = new PhotonBeetleDigest();
         CipherParameters params;
-        InputStream src = PhotonBeetleTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/photonbeetle/LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte, adByte;
@@ -90,8 +91,7 @@ public class PhotonBeetleTest
     {
         PhotonBeetleEngine PhotonBeetle = new PhotonBeetleEngine(pbp);
         CipherParameters params;
-        InputStream src = PhotonBeetleTest.class.getResourceAsStream("/org/bouncycastle/crypto/test/photonbeetle/"
-            + filename + "_LWC_AEAD_KAT_128_128.txt");
+        InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", filename + "_LWC_AEAD_KAT_128_128.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         byte[] ptByte, adByte;

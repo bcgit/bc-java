@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,6 +10,7 @@ import java.nio.charset.Charset;
 import org.bouncycastle.crypto.test.cavp.CAVPReader;
 import org.bouncycastle.crypto.test.cavp.KDFFeedbackCounterTests;
 import org.bouncycastle.crypto.test.cavp.KDFFeedbackNoCounterTests;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class KDFFeedbackGeneratorTest
@@ -27,11 +29,12 @@ public class KDFFeedbackGeneratorTest
     }
 
     private static void testFeedbackCounter()
+        throws FileNotFoundException
     {
 
         CAVPReader cavpReader = new CAVPReader(new KDFFeedbackCounterTests());
 
-        final InputStream stream = CAVPReader.class.getResourceAsStream("KDFFeedbackCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFFeedbackCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFFeedbackCounter", reader);
 
@@ -46,11 +49,12 @@ public class KDFFeedbackGeneratorTest
     }
 
     private static void testFeedbackNoCounter()
+        throws FileNotFoundException
     {
 
         CAVPReader cavpReader = new CAVPReader(new KDFFeedbackNoCounterTests());
 
-        final InputStream stream = CAVPReader.class.getResourceAsStream("KDFFeedbackNoCounter_gen.rsp");
+        final InputStream stream = TestResourceFinder.findTestResource("crypto", "KDFFeedbackNoCounter_gen.rsp");
         final Reader reader = new InputStreamReader(stream, Charset.forName("UTF-8"));
         cavpReader.setInput("KDFFeedbackNoCounter", reader);
 
