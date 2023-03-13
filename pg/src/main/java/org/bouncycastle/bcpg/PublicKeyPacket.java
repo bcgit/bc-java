@@ -74,10 +74,34 @@ public class PublicKeyPacket
         Date       time,
         BCPGKey    key)
     {
-        this.version = 4;
+        this(4, algorithm, time, key);
+    }
+
+    public PublicKeyPacket(
+            int version,
+            int algorithm,
+            Date time,
+            BCPGKey key)
+    {
+        this.version = version;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
+    }
+
+    public static PublicKeyPacket createV4PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(4, algorithm, time, key);
+    }
+
+    public static PublicKeyPacket createV5PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(5, algorithm, time, key);
+    }
+
+    public static PublicKeyPacket createV6PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(6, algorithm, time, key);
     }
     
     public int getVersion()
