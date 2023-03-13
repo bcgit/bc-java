@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -16,6 +17,10 @@ import org.bouncycastle.util.io.Streams;
 public class SignaturePacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;
+    public static final int VERSION_6 = 6;
+
     private int                    version;
     private int                    signatureType;
     private long                   creationTime;
@@ -27,6 +32,7 @@ public class SignaturePacket
     private SignatureSubpacket[]   hashedData;
     private SignatureSubpacket[]   unhashedData;
     private byte[]                 signatureEncoding;
+    private byte[] salt = null; // v6 only
     
     SignaturePacket(
         BCPGInputStream    in)
@@ -34,7 +40,7 @@ public class SignaturePacket
     {
         version = in.read();
         
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == 2) // TODO: Version 2 is not specified. Clarify?
         {
             int    l = in.read();
             
@@ -51,13 +57,13 @@ public class SignaturePacket
             keyAlgorithm = in.read();
             hashAlgorithm = in.read();
         }
-        else if (version == 4)
+        else if (version == VERSION_4 || version == VERSION_6)
         {
             signatureType = in.read();
             keyAlgorithm = in.read();
             hashAlgorithm = in.read();
             
-            int        hashedLength = (in.read() << 8) | in.read();
+            int       hashedLength = readLength(in);
             byte[]    hashed = new byte[hashedLength];
             
             in.readFully(hashed);
@@ -92,7 +98,7 @@ public class SignaturePacket
                 hashedData[i] = p;
             }
             
-            int        unhashedLength = (in.read() << 8) | in.read();
+            int       unhashedLength = readLength(in);
             byte[]    unhashed = new byte[unhashedLength];
             
             in.readFully(unhashed);
@@ -128,6 +134,19 @@ public class SignaturePacket
         
         fingerPrint = new byte[2];
         in.readFully(fingerPrint);
+
+        if (version == VERSION_6)
+        {
+            int saltSize = in.read();
+
+            int expectedSaltSize = getSaltSize(hashAlgorithm);
+            if (expectedSaltSize != -1 && saltSize != getSaltSize(hashAlgorithm)) {
+                throw new IOException("Salt length mismatch. Expected " + expectedSaltSize + " bytes, but signature indicates " + saltSize);
+            }
+
+            salt = new byte[saltSize];
+            in.readFully(salt);
+        }
         
         switch (keyAlgorithm)
         {
@@ -166,6 +185,16 @@ public class SignaturePacket
             signature[0] = ecR;
             signature[1] = ecS;
             break;
+        case Ed25519:
+            signature = null;
+            signatureEncoding = new byte[64];
+            in.readFully(signatureEncoding);
+            break;
+        case Ed448:
+            signature = null;
+            signatureEncoding = new byte[114];
+            in.readFully(signatureEncoding);
+            break;
         default:
             if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)
             {
@@ -178,7 +207,37 @@ public class SignaturePacket
             }
         }
     }
-    
+
+    private int readLength(BCPGInputStream in) throws IOException {
+        int hashedLength;
+        if (version == VERSION_4)
+        {
+            hashedLength = (in.read() << 8) | in.read();
+        }
+        else
+        {
+            hashedLength = (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+        }
+        return hashedLength;
+    }
+
+    static int getSaltSize(int hashAlgorithm)
+    {
+        switch (hashAlgorithm) {
+            case HashAlgorithmTags.SHA256:
+            case HashAlgorithmTags.SHA224:
+            case HashAlgorithmTags.SHA3_256:
+                return 16;
+            case HashAlgorithmTags.SHA384:
+                return 24;
+            case HashAlgorithmTags.SHA512:
+            case HashAlgorithmTags.SHA3_512:
+                return 32;
+            default:
+                return -1;
+        }
+    }
+
     /**
      * Generate a version 4 signature packet.
      * 
@@ -298,7 +357,7 @@ public class SignaturePacket
     {
         byte[]    trailer = null;
         
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == 2)
         {
             trailer = new byte[5];
             
@@ -330,7 +389,12 @@ public class SignaturePacket
                 }
                 
                 byte[]                   data = hOut.toByteArray();
-            
+
+                if (version == VERSION_6)
+                {
+                    sOut.write((byte)(data.length >> 24));
+                    sOut.write((byte)(data.length >> 16));
+                }
                 sOut.write((byte)(data.length >> 8));
                 sOut.write((byte)data.length);
                 sOut.write(data);
@@ -439,7 +503,7 @@ public class SignaturePacket
         
         pOut.write(version);
         
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == 2)
         {
             pOut.write(5); // the length of the next block
             
@@ -463,7 +527,7 @@ public class SignaturePacket
             pOut.write(keyAlgorithm);
             pOut.write(hashAlgorithm);
         }
-        else if (version == 4)
+        else if (version == VERSION_4 || version == VERSION_6)
         {
             pOut.write(signatureType);
             pOut.write(keyAlgorithm);
@@ -477,7 +541,12 @@ public class SignaturePacket
             }
             
             byte[]                   data = sOut.toByteArray();
-    
+
+            if (version == VERSION_6)
+            {
+                pOut.write(data.length >> 24);
+                pOut.write(data.length >> 16);
+            }
             pOut.write(data.length >> 8);
             pOut.write(data.length);
             pOut.write(data);
@@ -490,7 +559,12 @@ public class SignaturePacket
             }
             
             data = sOut.toByteArray();
-      
+
+            if (version == VERSION_6)
+            {
+                pOut.write(data.length >> 24);
+                pOut.write(data.length >> 16);
+            }
             pOut.write(data.length >> 8);
             pOut.write(data.length);
             pOut.write(data);
@@ -501,6 +575,12 @@ public class SignaturePacket
         }
         
         pOut.write(fingerPrint);
+
+        if (version == VERSION_6)
+        {
+            pOut.write(salt.length);
+            pOut.write(salt);
+        }
 
         if (signature != null)
         {
@@ -517,6 +597,10 @@ public class SignaturePacket
         pOut.close();
 
         out.writePacket(SIGNATURE, bOut.toByteArray());
+    }
+
+    public byte[] getSalt() {
+        return Arrays.clone(salt);
     }
 
     private void setCreationTime()
