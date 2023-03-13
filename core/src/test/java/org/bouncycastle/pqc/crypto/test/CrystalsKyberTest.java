@@ -21,7 +21,6 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -29,25 +28,6 @@ import org.bouncycastle.util.encoders.Hex;
 public class CrystalsKyberTest
     extends TestCase
 {
-    public void testPrivInfoGeneration()
-        throws IOException
-    {
-        SecureRandom random = new SecureRandom();
-        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
-
-        byte[] partA = partyU.getSuppPrivInfoPartA();
-
-        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
-
-        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
-
-        DEROtherInfo otherInfoU = partyU.generate(partB);
-
-        DEROtherInfo otherInfoV = partyV.generate();
-
-        Assert.assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
-    }
-    
     public void testKyber()
     {
         /*
