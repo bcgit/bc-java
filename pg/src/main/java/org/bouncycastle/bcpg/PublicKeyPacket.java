@@ -29,6 +29,10 @@ public class PublicKeyPacket
         }
         
         algorithm = (byte)in.read();
+        if (version == 5 || version == 6)
+        {
+            long keyOctets = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+        }
 
         switch (algorithm)
         {
@@ -122,6 +126,15 @@ public class PublicKeyPacket
     
         pOut.write(algorithm);
     
+        if (version == 5 || version == 6)
+        {
+            int keyOctets = key.getEncoded().length;
+            pOut.write(keyOctets >> 24);
+            pOut.write(keyOctets >> 16);
+            pOut.write(keyOctets >> 8);
+            pOut.write(keyOctets);
+        }
+
         pOut.writeObject((BCPGObject)key);
 
         pOut.close();
