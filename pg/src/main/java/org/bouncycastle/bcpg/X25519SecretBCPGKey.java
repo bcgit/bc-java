@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Arrays;
+
 import java.io.IOException;
 
 public class X25519SecretBCPGKey
@@ -45,5 +47,9 @@ public class X25519SecretBCPGKey
             throws IOException
     {
         out.write(key);
+    }
+
+    public byte[] getKey() {
+        return Arrays.clone(key);
     }
 }
