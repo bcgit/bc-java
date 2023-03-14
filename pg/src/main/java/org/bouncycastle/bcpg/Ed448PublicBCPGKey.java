@@ -18,6 +18,15 @@ public class Ed448PublicBCPGKey
         in.readFully(key);
     }
 
+    public Ed448PublicBCPGKey(byte[] key) {
+        if (key.length != LENGTH)
+        {
+            throw new IllegalArgumentException("Unexpected key encoding length. Expected " + LENGTH + " bytes, got " + key.length);
+        }
+        this.key = new byte[LENGTH];
+        System.arraycopy(key, 0, this.key, 0, LENGTH);
+    }
+
     /**
      * return the standard PGP encoding of the key.
      *
