@@ -2,33 +2,23 @@ package org.bouncycastle.pqc.crypto.cmce;
 
 abstract class GF
 {
-    protected final int GFBITS;
-    protected final int GFMASK;//  = ((1 << GFBITS) - 1);
-
-    public GF(int gfbits)
+    GF()
     {
-        GFBITS = gfbits;
-        GFMASK = ((1 << GFBITS) - 1);
-
     }
 
-    short gf_iszero(short a)
+    final short gf_iszero(short a)
     {
-        int t = a;
-
-        t -= 1;
-        t >>>= 19;
-
-        return (short) t;
+        return (short)((a - 1) >> 31);
     }
 
-    short gf_add(short left, short right)
-    {
-        return (short) (left ^ right);
-    }
+    abstract protected void gf_mul_poly(int length, int[] poly, short[] out, short[] left, short[] right, int[] temp);
+    abstract protected void gf_sqr_poly(int length, int[] poly, short[] out, short[] input, int[] temp);
 
-    abstract protected short gf_mul(short left, short right);
     abstract protected short gf_frac(short den, short num);
     abstract protected short gf_inv(short input);
-
+    abstract protected short gf_mul(short left, short right);
+    abstract protected int gf_mul_ext(short left, short right);
+    abstract protected short gf_reduce(int input);
+    abstract protected short gf_sq(short input);
+    abstract protected int gf_sq_ext(short input);
 }

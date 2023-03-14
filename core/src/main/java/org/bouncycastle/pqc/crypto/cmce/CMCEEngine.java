@@ -61,7 +61,7 @@ class CMCEEngine
     //    public int getPublicKeySize(){ return PK_NCOLS*PK_NROWS/8; }
     public int getCipherTextSize()
     {
-        return SYND_BYTES + 32;
+        return SYND_BYTES;
     }
 
     public CMCEEngine(int m, int n, int t, int[] p, boolean usePivots, int defaultKeySize)
@@ -83,18 +83,17 @@ class CMCEEngine
         SYND_BYTES = (PK_NROWS + 7) / 8;
         GFMASK = (1 << GFBITS) - 1;
 
-
         if (GFBITS == 12)
         {
-            gf = new GF12(GFBITS);
+            gf = new GF12();
             benes = new BENES12(SYS_N, SYS_T, GFBITS);
         }
         else
         {
-            gf = new GF13(GFBITS);
+            gf = new GF13();
             benes = new BENES13(SYS_N, SYS_T, GFBITS);
-
         }
+
         usePadding = SYS_T % 8 != 0;
         countErrorIndices = (1 << GFBITS) > SYS_N;
     }
@@ -546,22 +545,11 @@ class CMCEEngine
 
         /*
         2.4.5 Encapsulation
-        3. Compute C1 = H(2,e); Put C = (C0,C1)
-         */
-
-        // C1 = 0x2 || error_vector
-        // C = C0 || SHAKE256(C1, 32)
-        Xof digest = new SHAKEDigest(256);
-        digest.update((byte)0x02);
-        digest.update(error_vector, 0, error_vector.length); // input
-        digest.doFinal(cipher_text, SYND_BYTES, 32);     // output
-
-        /*
-        2.4.5 Encapsulation
         4. Compute K = H(1,e,C)
          */
 
         // K = Hash((0x1 || e || C), 32)
+        Xof digest = new SHAKEDigest(256);
         digest.update((byte)0x01);
         digest.update(error_vector, 0, error_vector.length);
         digest.update(cipher_text, 0, cipher_text.length); // input
@@ -574,7 +562,7 @@ class CMCEEngine
             mask = (byte)padding_ok;
             mask ^= 0xFF;
 
-            for (i = 0; i < SYND_BYTES + 32; i++)
+            for (i = 0; i < SYND_BYTES; i++)
             {
                 cipher_text[i] &= mask;
             }
@@ -592,8 +580,8 @@ class CMCEEngine
     // 2.3.3 Decapsulation
     public int kem_dec(byte[] key, byte[] cipher_text, byte[] sk)
     {
-        byte[] conf = new byte[32];
         byte[] error_vector = new byte[SYS_N / 8];
+        byte[] preimage = new byte[1 + SYS_N/8 + SYND_BYTES];
 
         int i, padding_ok = 0;
         byte mask;
@@ -610,35 +598,16 @@ class CMCEEngine
         // Decrypt
         byte ret_decrypt = (byte)decrypt(error_vector, sk, cipher_text);
 
-
-        /*
-        2.3.3 Decapsulation
-        5. Compute C′1 = H(2,e)
-         */
-
-        // 0x2 || error_vector
-        Xof digest = new SHAKEDigest(256);
-        digest.update((byte)0x02);
-        digest.update(error_vector, 0, error_vector.length); // input
-        digest.doFinal(conf, 0, 32);     // output
-
         /*
         2.3.3 Decapsulation
         6. If C′1 6= C1, set e ←s and b ←0.
          */
-        byte ret_confirm = 0;
-        for (i = 0; i < 32; i++)
-        {
-            ret_confirm |= conf[i] ^ cipher_text[SYND_BYTES + i];
-        }
-        short m;
 
-        m = (short)(ret_decrypt | ret_confirm);
+        short m;
+        m = ret_decrypt;
         m -= 1;
         m >>= 8;
         m &= 0xff;
-
-        byte[] preimage = new byte[1 + SYS_N / 8 + (SYND_BYTES + 32)];
 
         /*
         2.3.3 Decapsulation
@@ -649,7 +618,7 @@ class CMCEEngine
         {
             preimage[1 + i] = (byte)((~m & sk[i + 40 + IRR_BYTES + COND_BYTES]) | (m & error_vector[i]));
         }
-        for (i = 0; i < SYND_BYTES + 32; i++)
+        for (i = 0; i < SYND_BYTES; i++)
         {
             preimage[1 + SYS_N / 8 + i] = cipher_text[i];
         }
@@ -660,7 +629,7 @@ class CMCEEngine
          */
 
         //  = SHAKE256(preimage, 32)
-        digest = new SHAKEDigest(256);
+        Xof digest = new SHAKEDigest(256);
         digest.update(preimage, 0, preimage.length); // input
         digest.doFinal(key, 0, key.length);     // output
 
@@ -794,8 +763,6 @@ class CMCEEngine
     /* output: out, minimal polynomial of s */
     private void bm(short[] out, short[] s)
     {
-        int i;
-
         short N = 0;
         short L = 0;
         short mle;
@@ -808,7 +775,7 @@ class CMCEEngine
         short b = 1, d, f;
         //
 
-        for (i = 0; i < SYS_T + 1; i++)
+        for (int i = 0; i < SYS_T + 1; i++)
         {
             C[i] = B[i] = 0;
         }
@@ -819,12 +786,13 @@ class CMCEEngine
 
         for (N = 0; N < 2 * SYS_T; N++)
         {
-            d = 0;
-
-            for (i = 0; i <= min(N, SYS_T); i++)
+            int d_ext = 0;
+            for (int i = 0; i <= min(N, SYS_T); i++)
             {
-                d ^= gf.gf_mul(C[i], s[N - i]);
+                d_ext ^= gf.gf_mul_ext(C[i], s[N - i]);
             }
+
+            d = gf.gf_reduce(d_ext);
 
             mne = d;
             mne -= 1;
@@ -838,35 +806,29 @@ class CMCEEngine
             mle -= 1;
             mle &= mne;
 
-            for (i = 0; i <= SYS_T; i++)
+            for (int i = 0; i <= SYS_T; i++)
             {
                 T[i] = C[i];
             }
 
             f = gf.gf_frac(b, d);
 
-            for (i = 0; i <= SYS_T; i++)
+            for (int i = 0; i <= SYS_T; i++)
             {
                 C[i] ^= gf.gf_mul(f, B[i]) & mne;
             }
             L = (short)((L & ~mle) | ((N + 1 - L) & mle));
 
-            for (i = 0; i <= SYS_T; i++)
+            for (int i = SYS_T - 1; i >= 0; i--)
             {
-                B[i] = (short)((B[i] & ~mle) | (T[i] & mle));
+                B[i + 1] = (short)((B[i] & ~mle) | (T[i] & mle));
             }
+            B[0] = 0;
 
             b = (short)((b & ~mle) | (d & mle));
-
-            for (i = SYS_T; i >= 1; i--)
-            {
-                B[i] = B[i - 1];
-            }
-
-            B[0] = 0;
         }
 
-        for (i = 0; i <= SYS_T; i++)
+        for (int i = 0; i <= SYS_T; i++)
         {
             out[i] = C[SYS_T - i];
         }
@@ -876,25 +838,37 @@ class CMCEEngine
     /* output: out, the syndrome of length 2t */
     private void synd(short[] out, short[] f, short[] L, byte[] r)
     {
-        int i, j;
-        short e, e_inv, c;
-
-        for (j = 0; j < 2 * SYS_T; j++)
         {
-            out[j] = 0;
-        }
+            short c = (short)(r[0] & 1);
 
-        for (i = 0; i < SYS_N; i++)
-        {
-            c = (short)((r[i / 8] >> (i % 8)) & 1);
+            short L_i = L[0];
+            short e = eval(f, L_i);
+            short e_inv = gf.gf_inv(gf.gf_sq(e));
+            short c_div_e = (short)(e_inv & -c);
 
-            e = eval(f, L[i]);
-            e_inv = gf.gf_inv(gf.gf_mul(e, e));
+            out[0] = c_div_e;
 
-            for (j = 0; j < 2 * SYS_T; j++)
+            for (int j = 1; j < 2 * SYS_T; j++)
             {
-                out[j] = gf.gf_add(out[j], gf.gf_mul(e_inv, c));
-                e_inv = gf.gf_mul(e_inv, L[i]);
+                c_div_e = gf.gf_mul(c_div_e, L_i);
+                out[j] = c_div_e;
+            }
+        }
+        for (int i = 1; i < SYS_N; i++)
+        {
+            short c = (short)((r[i / 8] >> (i % 8)) & 1);
+
+            short L_i = L[i];
+            short e = eval(f, L_i);
+            short e_inv = gf.gf_inv(gf.gf_sq(e));
+            short c_div_e = gf.gf_mul(e_inv, c);
+
+            out[0] ^= c_div_e;
+
+            for (int j = 1; j < 2 * SYS_T; j++)
+            {
+                c_div_e = gf.gf_mul(c_div_e, L_i);
+                out[j] ^= c_div_e;
             }
         }
     }
@@ -1040,16 +1014,38 @@ class CMCEEngine
     /* return number of trailing zeros of the non-zero input in */
     private static int ctz(long in)
     {
-        int i, b, m = 0, r = 0;
+//        int i, b, m = 0, r = 0;
+//
+//        for (i = 0; i < 64; i++)
+//        {
+//            b = (int)((in >> i) & 1);
+//            m |= b;
+//            r += (m ^ 1) & (b ^ 1);
+//        }
+//
+//        return r;
 
-        for (i = 0; i < 64; i++)
+        long m1 = 0x0101010101010101L, r8 = 0, x = ~in;
+        for (int i = 0; i < 8; ++i)
         {
-            b = (int)((in >> i) & 1);
-            m |= b;
-            r += (m ^ 1) & (b ^ 1);
+            m1 &= x >>> i;
+            r8 += m1;
         }
 
-        return r;
+        long m8 = r8 & 0x0808080808080808L;
+        m8 |= m8 >>> 1;
+        m8 |= m8 >>> 2;
+
+        long r = r8;
+        r8 >>>= 8;
+        r += r8 & m8;
+        for (int i = 2; i < 8; ++i)
+        {
+            m8 &= m8 >>> 8;
+            r8 >>>= 8;
+            r += r8 & m8;
+        }
+        return (int)r & 0xFF;
     }
 
     /* Used in mov columns*/
@@ -1477,62 +1473,54 @@ class CMCEEngine
         // gaussian elimination
         int row, c;
         byte mask;
-        for (i = 0; i < (PK_NROWS + 7) / 8; i++)
+        for (row = 0; row < PK_NROWS; row++)
         {
-            for (j = 0; j < 8; j++)
+            i = row >>> 3;
+            j = row & 7;
+
+            if (usePivots)
             {
-                row = i * 8 + j;
-
-                if (row >= PK_NROWS)
+                if (row == PK_NROWS - 32)
                 {
-                    break;
-                }
-
-                if (usePivots)
-                {
-                    if (row == PK_NROWS - 32)
+                    if (mov_columns(mat, pi, pivots) != 0)
                     {
-                        if (mov_columns(mat, pi, pivots) != 0)
-                        {
-//                            System.out.println("failed mov column!");
-                            return -1;
-                        }
+//                        System.out.println("failed mov column!");
+                        return -1;
                     }
                 }
+            }
 
-                for (k = row + 1; k < PK_NROWS; k++)
+            for (k = row + 1; k < PK_NROWS; k++)
+            {
+                mask = (byte)(mat[row][i] ^ mat[k][i]);
+                mask >>= j;
+                mask &= 1;
+                mask = (byte)-mask;
+
+                for (c = 0; c < SYS_N / 8; c++)
                 {
-                    mask = (byte)(mat[row][i] ^ mat[k][i]);
-                    mask >>= j;
+                    mat[row][c] ^= mat[k][c] & mask;
+                }
+            }
+            // 7. Compute (T,cn−k−μ+1,...,cn−k,Γ′) ← MatGen(Γ). If this fails, set δ ← δ′ and
+            // restart the algorithm.
+            if (((mat[row][i] >> j) & 1) == 0) // return if not systematic
+            {
+//                System.out.println("FAIL 2\n");
+                return -1;
+            }
+
+            for (k = 0; k < PK_NROWS; k++)
+            {
+                if (k != row)
+                {
+                    mask = (byte)(mat[k][i] >> j);
                     mask &= 1;
                     mask = (byte)-mask;
 
                     for (c = 0; c < SYS_N / 8; c++)
                     {
-                        mat[row][c] ^= mat[k][c] & mask;
-                    }
-                }
-                // 7. Compute (T,cn−k−μ+1,...,cn−k,Γ′) ← MatGen(Γ). If this fails, set δ ← δ′ and
-                // restart the algorithm.
-                if (((mat[row][i] >> j) & 1) == 0) // return if not systematic
-                {
-//                    System.out.println("FAIL 2\n");
-                    return -1;
-                }
-
-                for (k = 0; k < PK_NROWS; k++)
-                {
-                    if (k != row)
-                    {
-                        mask = (byte)(mat[k][i] >> j);
-                        mask &= 1;
-                        mask = (byte)-mask;
-
-                        for (c = 0; c < SYS_N / 8; c++)
-                        {
-                            mat[k][c] ^= mat[row][c] & mask;
-
-                        }
+                        mat[k][c] ^= mat[row][c] & mask;
                     }
                 }
             }
@@ -1543,8 +1531,7 @@ class CMCEEngine
         {
             if (usePadding)
             {
-                int tail, pk_index = 0;
-                tail = PK_NROWS % 8;
+                int pk_index = 0, tail = PK_NROWS % 8;
                 for (i = 0; i < PK_NROWS; i++)
                 {
                     for (j = (PK_NROWS - 1) / 8; j < SYS_N / 8 - 1; j++)
@@ -1556,14 +1543,19 @@ class CMCEEngine
             }
             else
             {
+//                for (i = 0; i < PK_NROWS; i++)
+//                {
+//                    k = 0;
+//                    for (j = 0; j < (((SYS_N - PK_NROWS) + 7) / 8); j++)
+//                    {
+//                        pk[i * (((SYS_N - PK_NROWS) + 7) / 8) + k] = mat[i][j + PK_NROWS / 8];
+//                        k++;
+//                    }
+//                }
+                int count = (SYS_N - PK_NROWS + 7) / 8;
                 for (i = 0; i < PK_NROWS; i++)
                 {
-                    k = 0;
-                    for (j = 0; j < (((SYS_N - PK_NROWS) + 7) / 8); j++)
-                    {
-                        pk[i * (((SYS_N - PK_NROWS) + 7) / 8) + k] = mat[i][j + PK_NROWS / 8];
-                        k++;
-                    }
+                    System.arraycopy(mat[i], PK_NROWS / 8, pk, count * i, count);
                 }
             }
         }
@@ -1573,14 +1565,11 @@ class CMCEEngine
 
     private short eval(short[] f, short a)
     {
-        short r;
-
-        r = f[SYS_T];
+        short r = f[SYS_T];
 
         for (int i = SYS_T - 1; i >= 0; i--)
         {
-            r = gf.gf_mul(r, a);
-            r = gf.gf_add(r, f[i]);
+            r = (short)(gf.gf_mul(r, a) ^ f[i]);
         }
 
         return r;
@@ -1596,26 +1585,32 @@ class CMCEEngine
 
     private int generate_irr_poly(short[] field)
     {
-
         // Irreducible 2.4.1 - 2. Define β = β0 + β1y + ···+ βt−1yt−1 ∈Fq[y]/F(y).
         // generating poly
         short[][] m = new short[SYS_T + 1][SYS_T];
 
         // filling matrix
-        m[0][0] = 1;
-        for (int i = 1; i < SYS_T; i++)
         {
-            m[0][i] = 0;
-        }
+            m[0][0] = 1;
+//            for (int i = 1; i < SYS_T; i++)
+//            {
+//                m[0][i] = 0;
+//            }
 
-        // System.arraycopy(field, 0, m[1], 0, 64);
-        for (int i = 0; i < SYS_T; i++)
-        {
-            m[1][i] = field[i];
-        }
-        for (int j = 2; j <= SYS_T; j++)
-        {
-            GF_mul(m[j], m[j - 1], field);
+            System.arraycopy(field, 0, m[1], 0, SYS_T);
+
+            int[] temp = new int[SYS_T * 2 - 1];
+            int j = 2;
+            while (j < SYS_T)
+            {
+                gf.gf_sqr_poly(SYS_T, poly, m[j], m[j >>> 1], temp);
+                gf.gf_mul_poly(SYS_T, poly, m[j + 1], m[j], field, temp);
+                j += 2;
+            }
+            if (j == SYS_T)
+            {
+                gf.gf_sqr_poly(SYS_T, poly, m[j], m[j >>> 1], temp);
+            }
         }
 
         // Irreducible 2.4.1 - 3. Compute the minimal polynomial g of β over Fq. (By definition g is monic and irre-
@@ -1629,8 +1624,7 @@ class CMCEEngine
                 short mask = gf.gf_iszero(m[j][j]);
                 for (int c = j; c < SYS_T + 1; c++)
                 {
-                    short temp = (short)(m[c][j] ^ m[c][k] & mask);
-                    m[c][j] = temp;
+                    m[c][j] ^= (short)(m[c][k] & mask);
                 }
             }
 
@@ -1655,58 +1649,15 @@ class CMCEEngine
                 {
                     short t = m[j][k];
 
-                    for (int c = j; c < SYS_T + 1; c++)
+                    for (int c = j; c <= SYS_T; c++)
                     {
                         m[c][k] ^= gf.gf_mul(m[c][j], t);
                     }
                 }
             }
         }
-        for (int i = 0; i < SYS_T; i++)
-        {
-            field[i] = m[SYS_T][i];
-        }
+        System.arraycopy(m[SYS_T], 0, field, 0, SYS_T);
         return 0;
-    }
-
-    private void GF_mul(short[] out, short[] left, short[] right)
-    {
-
-        short[] prod = new short[SYS_T * 2 - 1];
-        for (int i = 0; i < SYS_T * 2 - 1; i++)
-        {
-            prod[i] = 0;
-        }
-        for (int i = 0; i < SYS_T; i++)
-        {
-            for (int j = 0; j < SYS_T; j++)
-            {
-                short temp = gf.gf_mul(left[i], right[j]);
-                prod[i + j] ^= temp;
-            }
-        }
-
-        for (int i = (SYS_T - 1) * 2; i >= SYS_T; i--)
-        {
-            for (int j = 0; j != poly.length; j++)
-            {
-                int polyIndex = poly[j];
-                if (polyIndex == 0 && GFBITS == 12)
-                {
-                    prod[i - SYS_T] ^= (gf.gf_mul(prod[i], (short)2));
-                }
-                else
-                {
-                    prod[i - SYS_T + polyIndex] ^= prod[i];
-                }
-            }
-        }
-
-        System.arraycopy(prod, 0, out, 0, SYS_T);
-        for (int i = 0; i < SYS_T; i++)
-        {
-            out[i] = prod[i];
-        }
     }
 
     /* check if the padding bits of pk are all zero */
