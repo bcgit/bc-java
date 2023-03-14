@@ -8,7 +8,7 @@ public class Ed448PublicBCPGKey
         extends BCPGObject
         implements BCPGKey
 {
-    public static final int LENGTH = 56;
+    public static final int LENGTH = 57;
     private final byte[] key;
 
     public Ed448PublicBCPGKey(BCPGInputStream in)
