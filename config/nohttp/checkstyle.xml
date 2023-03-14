@@ -4,6 +4,10 @@
   <property name="charset" value="UTF-8"/>
   <property name="fileExtensions" value=""/>
 
+  <module name="BeforeExecutionExclusionFileFilter">
+      <property name="fileNamePattern" value="bc\-test\-data[\\/]"/>
+  </module>
+
   <module name="io.spring.nohttp.checkstyle.check.NoHttpCheck">
     <property name="allowlistFileName" value="${nohttp.checkstyle.allowlistFileName}" default=""/>
   </module>

@@ -15,6 +15,10 @@
 
     <property name="fileExtensions" value="java, properties, xml, vm, g, g4, dtd"/>
 
+    <module name="BeforeExecutionExclusionFileFilter">
+         <property name="fileNamePattern" value="bc\-test\-data[\\/]"/>
+    </module>
+
     <!-- Whitespace -->
     <module name="FileTabCharacter">
         <property name="eachLine" value="false"/>
