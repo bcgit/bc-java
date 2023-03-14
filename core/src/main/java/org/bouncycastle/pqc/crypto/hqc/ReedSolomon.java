@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import org.bouncycastle.util.Arrays;
+
 class ReedSolomon
 {
 
@@ -10,14 +12,13 @@ class ReedSolomon
     static int[] expArrays = {1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117, 234, 201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181, 119, 238, 193, 159, 35, 70, 140, 5, 10, 20, 40, 80, 160, 93, 186, 105, 210, 185, 111, 222, 161, 95, 190, 97, 194, 153, 47, 94, 188, 101, 202, 137, 15, 30, 60, 120, 240, 253, 231, 211, 187, 107, 214, 177, 127, 254, 225, 223, 163, 91, 182, 113, 226, 217, 175, 67, 134, 17, 34, 68, 136, 13, 26, 52, 104, 208, 189, 103, 206, 129, 31, 62, 124, 248, 237, 199, 147, 59, 118, 236, 197, 151, 51, 102, 204, 133, 23, 46, 92, 184, 109, 218, 169, 79, 158, 33, 66, 132, 21, 42, 84, 168, 77, 154, 41, 82, 164, 85, 170, 73, 146, 57, 114, 228, 213, 183, 115, 230, 209, 191, 99, 198, 145, 63, 126, 252, 229, 215, 179, 123, 246, 241, 255, 227, 219, 171, 75, 150, 49, 98, 196, 149, 55, 110, 220, 165, 87, 174, 65, 130, 25, 50, 100, 200, 141, 7, 14, 28, 56, 112, 224, 221, 167, 83, 166, 81, 162, 89, 178, 121, 242, 249, 239, 195, 155, 43, 86, 172, 69, 138, 9, 18, 36, 72, 144, 61, 122, 244, 245, 247, 243, 251, 235, 203, 139, 11, 22, 44, 88, 176, 125, 250, 233, 207, 131, 27, 54, 108, 216, 173, 71, 142, 1, 2, 4};
 
     // Encode
-    static void encode(long[] codeWord, long[] message, int mBitSize, int n1, int paramK, int paramG, int[] rsPoly)
+    static void encode(byte[] codeWord, byte[] message, int mBitSize, int n1, int paramK, int paramG, int[] rsPoly)
     {
         int gateValue = 0;
         byte[] encodedBytes = new byte[n1];
         int[] tmp = new int[paramG];
 
-        byte[] msgByte = new byte[mBitSize / 8];
-        Utils.fromLongArrayToByteArray(msgByte, message, mBitSize);
+        byte[] msgByte = Arrays.clone(message);
 
         for (int i = 0; i < paramK; i++)
         {
@@ -37,17 +38,16 @@ class ReedSolomon
         }
 
         System.arraycopy(msgByte, 0, encodedBytes, n1 - paramK, paramK);
-        Utils.fromByteArrayToLongArray(codeWord, encodedBytes);
+        System.arraycopy(encodedBytes, 0, codeWord, 0, codeWord.length);
     }
 
     // Decode
-    static void decode(long[] message, long[] codeWord, int n1, int fft, int delta, int paramK, int paramG)
+    static void decode(byte[] message, byte[] codeWord, int n1, int fft, int delta, int paramK, int paramG)
     {
         int fftSize = 1 << fft;
         int mSize = 1 << (HQCParameters.PARAM_M - 1);
 
-        byte[] codeWordByte = new byte[n1];
-        Utils.fromLongArrayToByteArray(codeWordByte, codeWord, n1 * 8);
+        byte[] codeWordByte = Arrays.clone(codeWord);
 
         int[] syndromes = new int[2 * delta];
         // Step 1: Compute syndromes
@@ -78,8 +78,7 @@ class ReedSolomon
         }
         byte[] mTmp = new byte[paramK];
         System.arraycopy(codeWordByte, paramG - 1, mTmp, 0, paramK);
-
-        Utils.fromByteArrayToLongArray(message, mTmp);
+        System.arraycopy(mTmp, 0, message, 0, message.length);
     }
 
     private static void computeSyndromes(int[] syndromes, byte[] codeWord, int delta, int n1)

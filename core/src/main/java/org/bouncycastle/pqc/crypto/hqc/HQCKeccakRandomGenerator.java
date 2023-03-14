@@ -5,7 +5,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * implementation of Incremental version for Keccak
  */
-class HQCKeccakRandomGenerator
+class KeccakRandomGenerator
 {
     private static long[] KeccakRoundConstants = new long[]{0x0000000000000001L, 0x0000000000008082L,
         0x800000000000808aL, 0x8000000080008000L, 0x000000000000808bL, 0x0000000080000001L, 0x8000000080008081L,
@@ -19,9 +19,13 @@ class HQCKeccakRandomGenerator
     protected int rate;
     protected int bitsInQueue;
     protected int fixedOutputLength;
-    protected boolean squeezing;
 
-    public HQCKeccakRandomGenerator(int bitLength)
+    public KeccakRandomGenerator()
+    {
+        this(288);
+    }
+
+    public KeccakRandomGenerator(int bitLength)
     {
         init(bitLength);
     }
@@ -51,20 +55,15 @@ class HQCKeccakRandomGenerator
         }
 
         this.rate = rate;
-        for (int i = 0; i < state.length; ++i)
-        {
-            state[i] = 0L;
-        }
+        Arrays.fill(state, 0L);
         Arrays.fill(this.dataQueue, (byte)0);
         this.bitsInQueue = 0;
-        this.squeezing = false;
         this.fixedOutputLength = (1600 - rate) / 2;
     }
 
-    private void KeccakPermutation(long[] s)
+    // TODO Somehow just use the one in KeccakDigest
+    private static void keccakPermutation(long[] A)
     {
-        long[] A = state;
-
         long a00 = A[0], a01 = A[1], a02 = A[2], a03 = A[3], a04 = A[4];
         long a05 = A[5], a06 = A[6], a07 = A[7], a08 = A[8], a09 = A[9];
         long a10 = A[10], a11 = A[11], a12 = A[12], a13 = A[13], a14 = A[14];
@@ -211,7 +210,7 @@ class HQCKeccakRandomGenerator
         A[24] = a24;
     }
 
-    private void KeccakIncAbsorb(byte[] input, int inputLen)
+    private void keccakIncAbsorb(byte[] input, int inputLen)
     {
         if (input == null)
         {
@@ -225,34 +224,35 @@ class HQCKeccakRandomGenerator
             for (int i = 0; i < rateBytes - state[25]; i++)
             {
                 int tmp = (int)(state[25] + i) >> 3;
-                state[tmp] ^= (input[i + count] & 0xffL) << (8 * ((state[25] + i) & 0x07));
+                state[tmp] ^= toUnsignedLong(input[i + count] & 0xff) << (8 * ((state[25] + i) & 0x07));
             }
             inputLen -= rateBytes - state[25];
             count += rateBytes - state[25];
             state[25] = 0;
-            KeccakPermutation(state);
+            keccakPermutation(state);
         }
 
         for (int i = 0; i < inputLen; i++)
         {
             int tmp = (int)(state[25] + i) >> 3;
-            state[tmp] ^= (input[i + count] & 0xffL) << (8 * ((state[25] + i) & 0x07));
+            state[tmp] ^= toUnsignedLong(input[i + count] & 0xff) << (8 * ((state[25] + i) & 0x07));
         }
 
         state[25] += inputLen;
     }
 
-    private void KeccakIncFinalize(int p)
+    private void keccakIncFinalize(int p)
     {
         int rateBytes = rate >> 3;
 
-        state[(int)state[25] >> 3] ^= (p & 0xffffffffL) << (8 * ((state[25]) & 0x07));
-        state[(rateBytes - 1) >> 3] ^= 128L << (8 * ((rateBytes - 1) & 0x07));
+        state[(int)state[25] >> 3] ^= toUnsignedLong(p) << (8 * ((state[25]) & 0x07));
+        state[(rateBytes - 1) >> 3] ^= toUnsignedLong(128) << (8 * ((rateBytes - 1) & 0x07));
+
 
         state[25] = 0;
     }
 
-    private void KeccakIncSqueeze(byte[] output, int outLen)
+    private void keccakIncSqueeze(byte[] output, int outLen)
     {
         int rateBytes = rate >> 3;
         int i;
@@ -267,7 +267,7 @@ class HQCKeccakRandomGenerator
 
         while (outLen > 0)
         {
-            KeccakPermutation(state);
+            keccakPermutation(state);
 
             for (i = 0; i < outLen && i < rateBytes; i++)
             {
@@ -281,54 +281,50 @@ class HQCKeccakRandomGenerator
 
     public void squeeze(byte[] output, int outLen)
     {
-        KeccakIncSqueeze(output, outLen);
+        keccakIncSqueeze(output, outLen);
     }
 
     public void randomGeneratorInit(byte[] entropyInput, byte[] personalizationString, int entropyLen, int perLen)
     {
         byte[] domain = new byte[]{1};
-        KeccakIncAbsorb(entropyInput, entropyLen);
-        KeccakIncAbsorb(personalizationString, perLen);
-        KeccakIncAbsorb(domain, domain.length);
-        KeccakIncFinalize(0x1F);
+        keccakIncAbsorb(entropyInput, entropyLen);
+        keccakIncAbsorb(personalizationString, perLen);
+        keccakIncAbsorb(domain, domain.length);
+        keccakIncFinalize(0x1F);
     }
 
     public void seedExpanderInit(byte[] seed, int seedLen)
     {
         byte[] domain = new byte[]{2};
-        KeccakIncAbsorb(seed, seedLen);
-        KeccakIncAbsorb(domain, 1);
-        KeccakIncFinalize(0x1F);
+        keccakIncAbsorb(seed, seedLen);
+        keccakIncAbsorb(domain, 1);
+        keccakIncFinalize(0x1F);
     }
 
     public void expandSeed(byte[] output, int outLen)
     {
-        int bSize = 8;
-        int r = outLen % bSize;
-        byte[] tmp = new byte[bSize];
-        long[] n = state;
-        KeccakIncSqueeze(output, outLen - r);
+        int r = outLen & 7;
+        keccakIncSqueeze(output, outLen - r);
 
         if (r != 0)
         {
-            KeccakIncSqueeze(tmp, bSize);
-            int count = outLen - r;
-            for (int i = 0; i < r; i++)
-            {
-                output[count + i] = tmp[i];
-            }
+            byte[] tmp = new byte[8];
+            keccakIncSqueeze(tmp, 8);
+            System.arraycopy(tmp, 0, output, outLen - r, r);
         }
     }
 
     public void SHAKE256_512_ds(byte[] output, byte[] input, int inLen, byte[] domain)
     {
-        for (int i = 0; i < state.length; i++)
-        {
-            state[i] = 0;
-        }
-        KeccakIncAbsorb(input, inLen);
-        KeccakIncAbsorb(domain, domain.length);
-        KeccakIncFinalize(0x1F);
-        KeccakIncSqueeze(output, 512 / 8);
+        Arrays.fill(state, 0L);
+        keccakIncAbsorb(input, inLen);
+        keccakIncAbsorb(domain, domain.length);
+        keccakIncFinalize(0x1F);
+        keccakIncSqueeze(output, 512 / 8);
+    }
+
+    private static long toUnsignedLong(int x)
+    {
+        return x & 0xffffffffL;
     }
 }
