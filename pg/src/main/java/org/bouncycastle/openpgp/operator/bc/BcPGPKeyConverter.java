@@ -381,7 +381,21 @@ public class BcPGPKeyConverter
             return new RSASecretBCPGKey(rsK.getExponent(), rsK.getP(), rsK.getQ());
         }
 
-        default:
+        case PublicKeyAlgorithmTags.X25519:
+            X25519PrivateKeyParameters x25519K = (X25519PrivateKeyParameters) privKey;
+            return new X25519SecretBCPGKey(x25519K.getEncoded());
+        case PublicKeyAlgorithmTags.X448:
+            X448PrivateKeyParameters x448K = (X448PrivateKeyParameters) privKey;
+            return new X448SecretBCPGKey(x448K.getEncoded());
+        case PublicKeyAlgorithmTags.Ed25519:
+            Ed25519PrivateKeyParameters ed25519K = (Ed25519PrivateKeyParameters) privKey;
+            return new Ed25519SecretBCPGKey(ed25519K.getEncoded());
+        case PublicKeyAlgorithmTags.Ed448:
+            Ed448PrivateKeyParameters ed448K = (Ed448PrivateKeyParameters) privKey;
+            return new Ed448SecretBCPGKey(ed448K.getEncoded());
+
+
+            default:
             throw new PGPException("unknown key class");
         }
     }
