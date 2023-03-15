@@ -15,12 +15,13 @@ import org.bouncycastle.cert.path.validations.BasicConstraintsValidation;
 import org.bouncycastle.cert.path.validations.KeyUsageValidation;
 import org.bouncycastle.cert.path.validations.ParentCertIssuedValidation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class PKITSBasicConstraintsTest
     extends SimpleTest
 {
-    public static final String PKITS_DATA_RESOURCE_PREFIX = "org/bouncycastle/cert/PKITS/certs/";
+    public static final String PKITS_DATA_RESOURCE_PREFIX = "PKITS/certs";
 
     public String getName()
     {
@@ -32,7 +33,7 @@ public class PKITSBasicConstraintsTest
     {
 
         ClassLoader l = PKITSBasicConstraintsTest.class.getClassLoader();
-        ASN1InputStream asn1In = new ASN1InputStream(l.getResourceAsStream(PKITS_DATA_RESOURCE_PREFIX + fileName));
+        ASN1InputStream asn1In = new ASN1InputStream(TestResourceFinder.findTestResource(PKITS_DATA_RESOURCE_PREFIX, fileName));
         return new X509CertificateHolder(Certificate.getInstance(asn1In.readObject()));
     }
 
