@@ -118,7 +118,7 @@ class FalconNIST
         /*
          * Encode public key.
          */
-        srcpk[pk + 0] = (byte)(0x00 + LOGN);                   // old python header
+        srcpk[pk + 0] = (byte)(0x00 + LOGN);
         v = codec.modq_encode(srcpk, pk + 1, CRYPTO_PUBLICKEYBYTES - 1, h, 0, LOGN);
         if (v != CRYPTO_PUBLICKEYBYTES - 1)
         {
@@ -128,7 +128,7 @@ class FalconNIST
         return new byte[][] { Arrays.copyOfRange(srcpk, 1, srcpk.length), fEnc, gEnc, FEnc };
     }
 
-    byte[] crypto_sign(byte[] srcsm,
+    byte[] crypto_sign(boolean attached, byte[] srcsm,
                     byte[] srcm, int m, int mlen,
                     byte[] srcsk, int sk)
     {
@@ -143,7 +143,7 @@ class FalconNIST
         byte[] seed = new byte[48],
             nonce = new byte[NONCELEN];
 
-        byte[] esig = new byte[CRYPTO_BYTES - 2 - NONCELEN];
+
         SHAKE256 sc = new SHAKE256();
         int u, v, sig_len;
         FalconSign sign = new FalconSign();
@@ -232,19 +232,31 @@ class FalconNIST
 
 //        set_fpu_cw(savcw);
 
-        /*
-         * Encode the signature. Format is:
-         *   signature header     1 bytes
-         *   nonce                40 bytes
-         *   signature            slen bytes
-         */
-        esig[0] = (byte)(0x20 + LOGN);
-        sig_len = codec.comp_encode(esig, 1, esig.length - 1, sig, 0, LOGN);
-        if (sig_len == 0)
+        byte[] esig = new byte[CRYPTO_BYTES - 2 - NONCELEN];
+        if (attached)
         {
-            throw new IllegalStateException("signature failed to generate");
+            /*
+             * Encode the signature. Format is:
+             *   signature header     1 bytes
+             *   nonce                40 bytes
+             *   signature            slen bytes
+             */
+            esig[0] = (byte)(0x20 + LOGN);
+            sig_len = codec.comp_encode(esig, 1, esig.length - 1, sig, 0, LOGN);
+            if (sig_len == 0)
+            {
+                throw new IllegalStateException("signature failed to generate");
+            }
+            sig_len++;
         }
-        sig_len++;
+        else
+        {
+            sig_len = codec.comp_encode(esig, 0, esig.length, sig, 0, LOGN);
+            if (sig_len == 0)
+            {
+                throw new IllegalStateException("signature failed to generate");
+            }
+        }
 
         // header
         srcsm[0] = (byte)(0x30 + LOGN);
@@ -257,7 +269,7 @@ class FalconNIST
         return Arrays.copyOfRange(srcsm, 0, 1 + NONCELEN + sig_len);
     }
 
-    int crypto_sign_open(byte[] sig_encoded, byte[] nonce, byte[] msg,
+    int crypto_sign_open(boolean attached, byte[] sig_encoded, byte[] nonce, byte[] msg,
                          byte[] srcpk, int pk)
     {
         short[] h = new short[N],
@@ -300,14 +312,26 @@ class FalconNIST
         /*
          * Decode signature.
          */
-        if (sig_len < 1 || sig_encoded[0] != (byte)(0x20 + LOGN))
+        // Check only required for attached signatures - see 3.11.3 and 3.11.6 in the spec
+        if (attached)
         {
-            return -1;
+            if (sig_len < 1 || sig_encoded[0] != (byte)(0x20 + LOGN))
+            {
+                return -1;
+            }
+            if (codec.comp_decode(sig, 0, LOGN,
+                sig_encoded, 1, sig_len - 1) != sig_len - 1)
+            {
+                return -1;
+            }
         }
-        if (codec.comp_decode(sig, 0, LOGN,
-            sig_encoded, 1, sig_len - 1) != sig_len - 1)
+        else
         {
-            return -1;
+            if (sig_len < 1 || codec.comp_decode(sig, 0, LOGN,
+                sig_encoded, 0, sig_len) != sig_len)
+            {
+                return -1;
+            }
         }
 
         /*
