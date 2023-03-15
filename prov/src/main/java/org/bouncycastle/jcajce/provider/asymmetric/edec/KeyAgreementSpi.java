@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.util.Properties;
 
 public class KeyAgreementSpi
     extends BaseAgreementSpi
@@ -34,12 +35,12 @@ public class KeyAgreementSpi
 
     KeyAgreementSpi(String algorithm)
     {
-        super(algorithm, null);
+        super(Properties.isOverrideSet(Properties.EMULATE_ORACLE) ? "XDH" : algorithm, null);
     }
 
     KeyAgreementSpi(String algorithm, DerivationFunction kdf)
     {
-        super(algorithm, kdf);
+        super(Properties.isOverrideSet(Properties.EMULATE_ORACLE) ? "XDH" : algorithm, kdf);
     }
 
     protected byte[] doCalcSecret()

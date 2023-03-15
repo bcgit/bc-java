@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class BCEdDSAPublicKey
     implements EdDSAPublicKey
@@ -85,6 +86,11 @@ public class BCEdDSAPublicKey
 
     public String getAlgorithm()
     {
+        if (Properties.isOverrideSet(Properties.EMULATE_ORACLE))
+        {
+            return "EdDSA";
+        }
+
         return (eddsaPublicKey instanceof Ed448PublicKeyParameters) ? "Ed448" : "Ed25519";
     }
 

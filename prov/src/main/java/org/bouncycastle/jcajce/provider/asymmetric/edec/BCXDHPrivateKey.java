@@ -85,6 +85,11 @@ public class BCXDHPrivateKey
 
     public String getAlgorithm()
     {
+        if (Properties.isOverrideSet(Properties.EMULATE_ORACLE))
+        {
+            return "XDH";
+        }
+
         return (xdhPrivateKey instanceof X448PrivateKeyParameters) ? "X448" : "X25519";
     }
 

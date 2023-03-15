@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class BCXDHPublicKey
     implements XDHPublicKey
@@ -74,6 +75,10 @@ public class BCXDHPublicKey
 
     public String getAlgorithm()
     {
+        if (Properties.isOverrideSet(Properties.EMULATE_ORACLE))
+        {
+            return "XDH";
+        }
         return (xdhPublicKey instanceof X448PublicKeyParameters) ? "X448" : "X25519";
     }
 

@@ -78,6 +78,11 @@ public class BCEdDSAPrivateKey
 
     public String getAlgorithm()
     {
+        if (Properties.isOverrideSet(Properties.EMULATE_ORACLE))
+        {
+            return "EdDSA";
+        }
+
         return (eddsaPrivateKey instanceof Ed448PrivateKeyParameters) ? "Ed448" : "Ed25519";
     }
 
