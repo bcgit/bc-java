@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * class to produce an X.509 Version 2 CRL.
@@ -444,7 +445,7 @@ public class X509v2CRLBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot add altSignatureAlgorithm extension");
+            throw Exceptions.illegalStateException("cannot add altSignatureAlgorithm extension", e);
         }
 
         tbsGen.setExtensions(extGenerator.generate());
@@ -461,7 +462,7 @@ public class X509v2CRLBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalArgumentException("cannot produce certificate signature");
+            throw Exceptions.illegalArgumentException("cannot produce certificate signature", e);
         }
     }
 
@@ -473,7 +474,7 @@ public class X509v2CRLBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot produce certificate signature");
+            throw Exceptions.illegalStateException("cannot produce certificate signature", e);
         }
     }
 

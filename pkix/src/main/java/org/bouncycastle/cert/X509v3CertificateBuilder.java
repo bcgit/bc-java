@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.util.Exceptions;
 
 
 /**
@@ -382,7 +383,7 @@ public class X509v3CertificateBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalArgumentException("cannot produce certificate signature");
+            throw Exceptions.illegalArgumentException("cannot produce certificate signature", e);
         }
     }
 
@@ -408,7 +409,7 @@ public class X509v3CertificateBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("cannot add altSignatureAlgorithm extension");
+            throw Exceptions.illegalStateException("cannot add altSignatureAlgorithm extension", e);
         }
 
         tbsGen.setExtensions(extGenerator.generate());
@@ -424,7 +425,7 @@ public class X509v3CertificateBuilder
         }
         catch (IOException e)
         {
-            throw new IllegalArgumentException("cannot produce certificate signature");
+            throw Exceptions.illegalArgumentException("cannot produce certificate signature", e);
         }
     }
 
