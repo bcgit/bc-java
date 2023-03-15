@@ -50,7 +50,7 @@ class CTEBase64InputStream
         {
             if (max != null)
             {
-                if (this.read >= this.max)
+                if (this.read > this.max)
                 {
                     return -1;
                 }

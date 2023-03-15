@@ -170,7 +170,7 @@ public class ESTResponse
             }
             else
             {
-                inputStream = new CTEBase64InputStream(inputStream, getContentLength());
+                inputStream = new CTEBase64InputStream(inputStream, contentLength);
             }
         }
     }
