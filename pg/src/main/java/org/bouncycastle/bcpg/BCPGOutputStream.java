@@ -201,8 +201,9 @@ public class BCPGOutputStream
             partialFlush(true);
             partialBuffer = null;
         }
-        
-        if (oldPackets)
+
+        // only tags <= 0xF in value can be written as old packets.
+        if (tag <= 0xF && oldPackets)
         {
             hdr |= tag << 2;
             
