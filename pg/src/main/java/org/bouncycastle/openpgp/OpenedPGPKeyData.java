@@ -899,12 +899,12 @@ public class OpenedPGPKeyData
         if (Strings.toLowerCase(curve).equals("ed25519"))
         {
             EdDSAPublicBCPGKey basePubKey = new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed25519, new BigInteger(1, qoint));
-            publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA, new Date(), basePubKey);
+            publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA_LEGACY, new Date(), basePubKey);
         }
         else if (Strings.toLowerCase(curve).equals("ed448"))
         {
             EdDSAPublicBCPGKey basePubKey = new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, qoint));
-            publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA, new Date(), basePubKey);
+            publicKeyPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA_LEGACY, new Date(), basePubKey);
         }
         else
         {
@@ -1148,7 +1148,7 @@ public class OpenedPGPKeyData
             }
 
 
-            case PublicKeyAlgorithmTags.EDDSA:
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 EdDSAPublicBCPGKey eddsaK = (EdDSAPublicBCPGKey)publicPk.getKey();
                 byte[] pEnc = BigIntegers.asUnsignedByteArray(eddsaK.getEncodedPoint());

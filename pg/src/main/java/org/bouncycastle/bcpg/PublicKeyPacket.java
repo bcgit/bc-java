@@ -50,7 +50,7 @@ public class PublicKeyPacket
         case ECDSA:
             key = new ECDSAPublicBCPGKey(in);
             break;
-        case EDDSA:
+        case EDDSA_LEGACY:
             key = new EdDSAPublicBCPGKey(in);
             break;
         default:

@@ -97,7 +97,7 @@ class BcImplProvider
             return new DSADigestSigner(new DSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
-        case PublicKeyAlgorithmTags.EDDSA:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
             {
                 return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));

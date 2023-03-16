@@ -134,7 +134,7 @@ public class BcPGPKeyConverter
             case PublicKeyAlgorithmTags.ECDSA:
                 return implGetPrivateKeyEC((ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
 
-            case PublicKeyAlgorithmTags.EDDSA:
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 EdSecretBCPGKey eddsaK = (EdSecretBCPGKey)privPk;
                 EdDSAPublicBCPGKey eddsaPub = (EdDSAPublicBCPGKey)pubPk.getKey();
@@ -226,7 +226,7 @@ public class BcPGPKeyConverter
             case PublicKeyAlgorithmTags.ECDSA:
                 return implGetPublicKeyEC((ECDSAPublicBCPGKey)publicPk.getKey());
 
-            case PublicKeyAlgorithmTags.EDDSA:
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 EdDSAPublicBCPGKey eddsaK = (EdDSAPublicBCPGKey)publicPk.getKey();
 
@@ -312,7 +312,7 @@ public class BcPGPKeyConverter
             return new ECSecretBCPGKey(ecK.getD());
         }
 
-        case PublicKeyAlgorithmTags.EDDSA:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
         {
             if (privKey instanceof Ed25519PrivateKeyParameters)
             {

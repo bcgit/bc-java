@@ -263,7 +263,7 @@ public class PGPSignatureGenerator
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));
         }
-        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA)
+        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
         {
             byte[] enc = contentSigner.getSignature();
             sigValues = new MPInteger[]{

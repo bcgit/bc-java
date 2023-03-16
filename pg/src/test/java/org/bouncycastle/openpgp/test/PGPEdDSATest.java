@@ -241,7 +241,7 @@ public class PGPEdDSATest
 
         edKp.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
 
-        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.EDDSA, edKp.generateKeyPair(), new Date());
+        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(PGPPublicKey.EDDSA_LEGACY, edKp.generateKeyPair(), new Date());
 
         KeyPairGenerator dhKp = KeyPairGenerator.getInstance("XDH", "BC");
 
@@ -328,7 +328,7 @@ public class PGPEdDSATest
         Ed25519KeyPairGenerator edKp = new Ed25519KeyPairGenerator();
         edKp.init(new Ed25519KeyGenerationParameters(null));
 
-        PGPKeyPair dsaKeyPair = new BcPGPKeyPair(PGPPublicKey.EDDSA, edKp.generateKeyPair(), new Date());
+        PGPKeyPair dsaKeyPair = new BcPGPKeyPair(PGPPublicKey.EDDSA_LEGACY, edKp.generateKeyPair(), new Date());
 
         X25519KeyPairGenerator dhKp = new X25519KeyPairGenerator();
         dhKp.init(new X25519KeyGenerationParameters(null));
@@ -420,7 +420,7 @@ public class PGPEdDSATest
 
         isTrue(secRing.getSecretKey().isSigningKey());
 
-        PGPSignatureGenerator pgpGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.EDDSA, HashAlgorithmTags.SHA256));
+        PGPSignatureGenerator pgpGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.EDDSA_LEGACY, HashAlgorithmTags.SHA256));
 
         pgpGen.init(PGPSignature.SUBKEY_BINDING, secRing.getSecretKey().extractPrivateKey(null));
 

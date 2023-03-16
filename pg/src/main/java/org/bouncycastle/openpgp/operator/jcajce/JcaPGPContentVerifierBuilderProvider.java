@@ -119,7 +119,7 @@ public class JcaPGPContentVerifierBuilderProvider
                                 return signature.verify(tmp);
                             }
                         }
-                        if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                        if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
                         {
                             signature.update(digestCalculator.getDigest());
                             
@@ -135,7 +135,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
                 public OutputStream getOutputStream()
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
                     {
                          return digestCalculator.getOutputStream();
                     }

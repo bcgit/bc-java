@@ -50,7 +50,7 @@ public class BcPGPEd25519JcaKeyPairConversionTest
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
     {
         Date creationDate = new Date();
-        int algorithm = PublicKeyAlgorithmTags.EDDSA;
+        int algorithm = PublicKeyAlgorithmTags.EDDSA_LEGACY;
 
         KeyPair keyPair = new KeyPair(pubKey, privKey);
 

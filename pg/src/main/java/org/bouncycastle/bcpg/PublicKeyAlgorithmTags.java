@@ -22,6 +22,8 @@ public interface PublicKeyAlgorithmTags
      * @deprecated use Ed25519 or Ed448
      */
     int EDDSA = 22;            // EdDSA - (internet draft, but appearing in use)
+    int EDDSA_LEGACY = 22;     // new name for old EDDSA tag.
+    
     int X25519 = 25;
     int X448 = 26;
     int Ed25519 = 27;

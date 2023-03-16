@@ -136,7 +136,7 @@ public class JcaPGPContentSignerBuilder
 
             public OutputStream getOutputStream()
             {
-                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
                 {
                     return new TeeOutputStream(edDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
                 }
@@ -147,7 +147,7 @@ public class JcaPGPContentSignerBuilder
             {
                 try
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA)
+                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
                     {
                          signature.update(edDigestCalculator.getDigest());
                     }

@@ -204,7 +204,7 @@ public class JcaPGPKeyConverter
             case PublicKeyAlgorithmTags.ECDSA:
                 return implGetPrivateKeyEC("ECDSA", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
 
-            case PublicKeyAlgorithmTags.EDDSA:
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 EdSecretBCPGKey eddsaK = (EdSecretBCPGKey)privPk;
 
@@ -291,7 +291,7 @@ public class JcaPGPKeyConverter
             case PublicKeyAlgorithmTags.ECDSA:
                 return implGetPublicKeyEC("ECDSA", (ECDSAPublicBCPGKey)publicPk.getKey());
 
-            case PublicKeyAlgorithmTags.EDDSA:
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 EdDSAPublicBCPGKey eddsaK = (EdDSAPublicBCPGKey)publicPk.getKey();
 
@@ -396,7 +396,7 @@ public class JcaPGPKeyConverter
             return new ECSecretBCPGKey(ecK.getS());
         }
 
-        case PublicKeyAlgorithmTags.EDDSA:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
         {
             PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
 
