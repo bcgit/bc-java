@@ -701,6 +701,8 @@ class OperatorHelper
                 c.updateAAD(Pack.longToBigEndian(totalBytes));
 
                 out.write(c.doFinal(aaData, 0, 0)); // output final tag
+
+                out.close();
             }
             catch (GeneralSecurityException e)
             {

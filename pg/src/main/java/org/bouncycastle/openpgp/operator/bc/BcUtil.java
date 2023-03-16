@@ -522,6 +522,8 @@ class BcUtil
                 c.doFinal(data, 0);
 
                 out.write(data, 0, 16); // output final tag
+
+                out.close();
             }
             catch (InvalidCipherTextException e)
             {
