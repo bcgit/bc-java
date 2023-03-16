@@ -1,5 +1,14 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.Security;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -33,22 +42,13 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.Security;
-import java.util.Date;
-
 /**
  * Test OpenPGP v6 style AEAD decryption of password-protected test vectors from the cryptographic refresh of rfc4880.
  *
  * @see <a href="https://gitlab.com/openpgp-wg/rfc4880bis/-/tree/main/test-vectors">Sample test vectors</a>
  */
 public class PGPAeadTest
-        extends SimpleTest
+    extends SimpleTest
 {
 
     private static final byte[] PLAINTEXT = "Hello, world!".getBytes(StandardCharsets.UTF_8);
@@ -56,67 +56,74 @@ public class PGPAeadTest
 
     // Homemade test vectors from BC 1.72 to ensure backwards compat with pre-patch BC
     private static final String V5_EAX_PACKET_SEQUENCE = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Generated using BC 1.72\n" +
-            "\n" +
-            "jB4EBwMIoM1rJmpJ+PVglCacbCVQOmFcJcAt84821mfUSQEHAQDGp5sLS9Ttznvd\n" +
-            "gWNKeAVoVfZWtk/HxGkAgKnJBViUbWBhYW0mXA8Mwf29Maz34nnaixFTc5PC/O56\n" +
-            "6fW7DLzJ9J09nkE=\n" +
-            "=vApM\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Generated using BC 1.72\n" +
+        "\n" +
+        "jB4EBwMIoM1rJmpJ+PVglCacbCVQOmFcJcAt84821mfUSQEHAQDGp5sLS9Ttznvd\n" +
+        "gWNKeAVoVfZWtk/HxGkAgKnJBViUbWBhYW0mXA8Mwf29Maz34nnaixFTc5PC/O56\n" +
+        "6fW7DLzJ9J09nkE=\n" +
+        "=vApM\n" +
+        "-----END PGP MESSAGE-----";
     private static final String V5_OCB_PACKET_SEQUENCE = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Generated using BC 1.72\n" +
-            "\n" +
-            "jB4EBwMIZRVl03fl3ABgzCip0L+8pQMZ2AjYcmuAHbnUSAEHAgDCFxZXdafRqogj\n" +
-            "PoUaOyuF3JsQs62nBTeEMaFY0TP8yLLMtina9q7V1OcFgvLvtSugd5PSY2ipAgwT\n" +
-            "NCh2fmu6AA9Q6A==\n" +
-            "=iJEV\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Generated using BC 1.72\n" +
+        "\n" +
+        "jB4EBwMIZRVl03fl3ABgzCip0L+8pQMZ2AjYcmuAHbnUSAEHAgDCFxZXdafRqogj\n" +
+        "PoUaOyuF3JsQs62nBTeEMaFY0TP8yLLMtina9q7V1OcFgvLvtSugd5PSY2ipAgwT\n" +
+        "NCh2fmu6AA9Q6A==\n" +
+        "=iJEV\n" +
+        "-----END PGP MESSAGE-----";
     private static final String V5_GCM_PACKET_SEQUENCE = "-----BEGIN PGP MESSAGE-----\n" +
-            "Comment: Generated using BC 1.72\n" +
-            "\n" +
-            "jB4EBwMIoEl85k52SodgLetOxLRv2QjBLfVzPa9zhErURQEHAwA/UJOYkH5rHr1Z\n" +
-            "BWN8oNhV/mcw45J+1+IfabaDFVlUVjVnBIIKCUYY+BEprJ8r/rtYCiVgw9+QJVfe\n" +
-            "eI3EuSfMqQ==\n" +
-            "=bgWx\n" +
-            "-----END PGP MESSAGE-----";
+        "Comment: Generated using BC 1.72\n" +
+        "\n" +
+        "jB4EBwMIoEl85k52SodgLetOxLRv2QjBLfVzPa9zhErURQEHAwA/UJOYkH5rHr1Z\n" +
+        "BWN8oNhV/mcw45J+1+IfabaDFVlUVjVnBIIKCUYY+BEprJ8r/rtYCiVgw9+QJVfe\n" +
+        "eI3EuSfMqQ==\n" +
+        "=bgWx\n" +
+        "-----END PGP MESSAGE-----";
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return getClass().getSimpleName();
     }
 
     @Override
     public void performTest()
-            throws Exception
+        throws Exception
     {
         knownV5TestVectorDecryptionTests();
 
         roundTripEncryptionDecryptionTests();
     }
 
-    private void roundTripEncryptionDecryptionTests() throws PGPException, IOException {
-        int[] aeadAlgs = new int[] {
-                AEADAlgorithmTags.EAX,
-                AEADAlgorithmTags.OCB,
-                AEADAlgorithmTags.GCM
+    private void roundTripEncryptionDecryptionTests()
+        throws PGPException, IOException
+    {
+        int[] aeadAlgs = new int[]{
+            AEADAlgorithmTags.EAX,
+            AEADAlgorithmTags.OCB,
+            AEADAlgorithmTags.GCM
         };
-        int[] symAlgs = new int[] {
-                SymmetricKeyAlgorithmTags.AES_128,
-                SymmetricKeyAlgorithmTags.AES_192,
-                SymmetricKeyAlgorithmTags.AES_256
+        int[] symAlgs = new int[]{
+            SymmetricKeyAlgorithmTags.AES_128,
+            SymmetricKeyAlgorithmTags.AES_192,
+            SymmetricKeyAlgorithmTags.AES_256
         };
         // Test round-trip encryption
-            for (int aeadAlg : aeadAlgs) {
-                for (int symAlg : symAlgs) {
-                    testBcRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testJceRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testBcJceRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testJceBcRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                }
+        for (int aeadAlg : aeadAlgs)
+        {
+            for (int symAlg : symAlgs)
+            {
+                testBcRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testBcJceRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceBcRoundTrip(aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+            }
         }
     }
 
-    private void knownV5TestVectorDecryptionTests() throws IOException, PGPException {
+    private void knownV5TestVectorDecryptionTests()
+        throws IOException, PGPException
+    {
         // test known-good V5 test vectors
         System.out.println("Test V5 BC Decryption");
         testBcDecryption(V5_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
@@ -128,14 +135,18 @@ public class PGPAeadTest
         testJceDecryption(V5_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
     }
 
-    private void testBcRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
+    private void testBcRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
         System.out.println("Test BC RoundTrip " + algNames(aeadAlg, symAlg));
         String armored = testBcEncryption(aeadAlg, symAlg, plaintext, password);
         System.out.println(armored);
         testBcDecryption(armored, password, plaintext);
     }
 
-    private void testJceRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
+    private void testJceRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
         System.out.println("Test JCE RoundTrip " + algNames(aeadAlg, symAlg));
         String armored = testJceEncryption(aeadAlg, symAlg, plaintext, password);
         System.out.println(armored);
@@ -143,21 +154,26 @@ public class PGPAeadTest
     }
 
     private void testBcJceRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
-            throws PGPException, IOException {
+        throws PGPException, IOException
+    {
         System.out.println("Test BC encrypt, JCE decrypt " + algNames(aeadAlg, symAlg));
         String armored = testBcEncryption(aeadAlg, symAlg, plaintext, password);
         System.out.println(armored);
         testJceDecryption(armored, password, plaintext);
     }
 
-    private void testJceBcRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
+    private void testJceBcRoundTrip(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
         System.out.println("Test JCE encrypt, BC decrypt " + algNames(aeadAlg, symAlg));
         String armored = testJceEncryption(aeadAlg, symAlg, plaintext, password);
         System.out.println(armored);
         testBcDecryption(armored, password, plaintext);
     }
 
-    private String testBcEncryption(int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
+    private String testBcEncryption(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
         ByteArrayOutputStream ciphertextOut = new ByteArrayOutputStream();
         PGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
         PGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(symAlg);
@@ -165,7 +181,7 @@ public class PGPAeadTest
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
         encGen.setForceSessionKey(true);
         PBEKeyEncryptionMethodGenerator encMethodGen = new BcPBEKeyEncryptionMethodGenerator(password,
-                digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
+            digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
         encGen.addMethod(encMethodGen);
         OutputStream encOut = encGen.open(ciphertextOut, new byte[1 << 9]);
 
@@ -189,18 +205,20 @@ public class PGPAeadTest
         return armored;
     }
 
-    private String testJceEncryption(int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
+    private String testJceEncryption(int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
         BouncyCastleProvider provider = new BouncyCastleProvider();
         Security.addProvider(provider);
         ByteArrayOutputStream ciphertextOut = new ByteArrayOutputStream();
         PGPDigestCalculatorProvider digestCalculatorProvider = new JcaPGPDigestCalculatorProviderBuilder()
-                .setProvider(provider).build();
+            .setProvider(provider).build();
         PGPDataEncryptorBuilder encBuilder = new JcePGPDataEncryptorBuilder(symAlg);
         encBuilder.setWithAEAD(aeadAlg, 6);
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
         encGen.setForceSessionKey(true);
         PBEKeyEncryptionMethodGenerator encMethodGen = new JcePBEKeyEncryptionMethodGenerator(password,
-                digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
+            digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
         encGen.addMethod(encMethodGen);
         OutputStream encOut = encGen.open(ciphertextOut, new byte[1 << 9]);
         encOut.flush();
@@ -227,21 +245,21 @@ public class PGPAeadTest
     }
 
     private void testBcDecryption(String armoredMessage, char[] password, byte[] expectedPlaintext)
-            throws IOException
+        throws IOException
     {
         ByteArrayInputStream messageIn = new ByteArrayInputStream(armoredMessage.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream armorIn = new ArmoredInputStream(messageIn);
         PGPObjectFactory objectFactory = new PGPObjectFactory(armorIn, new BcKeyFingerprintCalculator());
 
         Object o = objectFactory.nextObject();
-        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) o;
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)o;
         for (int i = 0; i < encryptedDataList.size(); i++)
         {
             PGPEncryptedData encryptedData = encryptedDataList.get(i);
 
             if (encryptedData instanceof PGPPBEEncryptedData)
             {
-                PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData) encryptedData;
+                PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedData;
 
                 BcPGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
                 PBEDataDecryptorFactory decryptorFactory = new BcPBEDataDecryptorFactory(password, digestCalculatorProvider);
@@ -251,7 +269,7 @@ public class PGPAeadTest
                     objectFactory = new PGPObjectFactory(decryptedIn, new BcKeyFingerprintCalculator());
 
                     o = objectFactory.nextObject();
-                    PGPLiteralData literalData = (PGPLiteralData) o;
+                    PGPLiteralData literalData = (PGPLiteralData)o;
 
                     ByteArrayOutputStream plaintextOut = new ByteArrayOutputStream();
                     Streams.pipeAll(literalData.getDataStream(), plaintextOut);
@@ -274,7 +292,7 @@ public class PGPAeadTest
     }
 
     private void testJceDecryption(String armoredMessage, char[] password, byte[] expectedPlaintext)
-            throws IOException, PGPException
+        throws IOException, PGPException
     {
         BouncyCastleProvider provider = new BouncyCastleProvider();
         Security.addProvider(provider);
@@ -283,17 +301,17 @@ public class PGPAeadTest
         PGPObjectFactory objectFactory = new JcaPGPObjectFactory(armorIn);
 
         Object o = objectFactory.nextObject();
-        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) o;
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)o;
         for (int i = 0; i < encryptedDataList.size(); i++)
         {
             PGPEncryptedData encryptedData = encryptedDataList.get(i);
 
             if (encryptedData instanceof PGPPBEEncryptedData)
             {
-                PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData) encryptedData;
+                PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedData;
 
                 JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder()
-                        .setProvider(provider);
+                    .setProvider(provider);
                 PGPDigestCalculatorProvider digestCalculatorProvider = digestCalculatorProviderBuilder.build();
 
                 PBEDataDecryptorFactory decryptorFactory = new JcePBEDataDecryptorFactoryBuilder(digestCalculatorProvider).build(password);
@@ -303,7 +321,7 @@ public class PGPAeadTest
                     objectFactory = new JcaPGPObjectFactory(decryptedIn);
 
                     o = objectFactory.nextObject();
-                    PGPLiteralData literalData = (PGPLiteralData) o;
+                    PGPLiteralData literalData = (PGPLiteralData)o;
 
                     ByteArrayOutputStream plaintextOut = new ByteArrayOutputStream();
                     Streams.pipeAll(literalData.getDataStream(), plaintextOut);
@@ -325,20 +343,27 @@ public class PGPAeadTest
         }
     }
 
-    public static void printHex(byte[] bytes) {
+    public static void printHex(byte[] bytes)
+    {
         boolean separate = true;
         boolean prefix = true;
         String hex = Hex.toHexString(bytes);
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hex.length() / 2; i++) {
-            if (prefix && i % 8 == 0) {
+        for (int i = 0; i < hex.length() / 2; i++)
+        {
+            if (prefix && i % 8 == 0)
+            {
                 sb.append("0x").append(String.format("%04X", i & 0xFFFFF)).append("   ");
             }
             sb.append(hex.substring(i * 2, i * 2 + 2));
-            if (separate) {
-                if ((i + 1) % 8 == 0) {
+            if (separate)
+            {
+                if ((i + 1) % 8 == 0)
+                {
                     sb.append('\n');
-                } else {
+                }
+                else
+                {
                     sb.append(' ');
                 }
             }
@@ -346,39 +371,43 @@ public class PGPAeadTest
         System.out.println(sb);
     }
 
-    private static String algNames(int aeadAlg, int symAlg) {
+    private static String algNames(int aeadAlg, int symAlg)
+    {
         String out = "";
-        switch (aeadAlg) {
-            case AEADAlgorithmTags.EAX:
-                out = "EAX";
-                break;
-            case AEADAlgorithmTags.OCB:
-                out = "OCB";
-                break;
-            case AEADAlgorithmTags.GCM:
-                out = "GCM";
-                break;
-            default:
-                out = "UNKNOWN(" + aeadAlg + ")";
+        switch (aeadAlg)
+        {
+        case AEADAlgorithmTags.EAX:
+            out = "EAX";
+            break;
+        case AEADAlgorithmTags.OCB:
+            out = "OCB";
+            break;
+        case AEADAlgorithmTags.GCM:
+            out = "GCM";
+            break;
+        default:
+            out = "UNKNOWN(" + aeadAlg + ")";
         }
 
-        switch (symAlg) {
-            case SymmetricKeyAlgorithmTags.AES_128:
-                out += " AES-128";
-                break;
-            case SymmetricKeyAlgorithmTags.AES_192:
-                out += " AES-192";
-                break;
-            case SymmetricKeyAlgorithmTags.AES_256:
-                out += " AES-256";
-                break;
-            default:
-                out += " UNKNOWN(" + symAlg + ")";
+        switch (symAlg)
+        {
+        case SymmetricKeyAlgorithmTags.AES_128:
+            out += " AES-128";
+            break;
+        case SymmetricKeyAlgorithmTags.AES_192:
+            out += " AES-192";
+            break;
+        case SymmetricKeyAlgorithmTags.AES_256:
+            out += " AES-256";
+            break;
+        default:
+            out += " UNKNOWN(" + symAlg + ")";
         }
         return out;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new PGPAeadTest());
     }
 }
