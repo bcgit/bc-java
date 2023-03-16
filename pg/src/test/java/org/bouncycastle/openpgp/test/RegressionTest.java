@@ -49,6 +49,7 @@ public class RegressionTest
         new UnrecognizableSubkeyParserTest(),
         new IgnoreUnknownEncryptedSessionKeys(),
         new PGPEncryptedDataTest(),
+        new PGPAeadTest(),
         new CRC24Test()
     };
 
