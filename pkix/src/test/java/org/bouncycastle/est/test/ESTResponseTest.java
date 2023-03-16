@@ -111,7 +111,7 @@ public class ESTResponseTest
         throws IOException
     {
         String data = "Test message body";
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("Content-Length", String.valueOf(data.length()));
         httpHeader.put("X-BC-EST-Header", "Test");
 
@@ -132,7 +132,7 @@ public class ESTResponseTest
     {
         String data = "Test message body";
 
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("transfer-encoding", "chunked");
 
         InputStream testHttp11ResponseData = buildHttp11Response("200 OK", httpHeader, true, data);
@@ -147,7 +147,7 @@ public class ESTResponseTest
         String data = "Test message body";
         String dataBase64 = Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
 
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("content-transfer-encoding", "base64");
         httpHeader.put("content-length", String.valueOf(dataBase64.length()));
 
@@ -161,7 +161,7 @@ public class ESTResponseTest
     {
         try
         {
-            InputStream testHttp11ResponseData = buildHttp11Response("200 OK", new HashMap<>(), false, "");
+            InputStream testHttp11ResponseData = buildHttp11Response("200 OK", new HashMap<String, String>(), false, "");
             new ESTResponse(null, getMockSource(testHttp11ResponseData));
             fail("ESTResponse should throw on empty content-length and non chunked transfer");
         }
@@ -172,7 +172,7 @@ public class ESTResponseTest
 
     public void testESTResponseThrowsOnNonEmptyContentLengthAndStatus204()
     {
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("Content-Length", String.valueOf(5));
         InputStream testHttp11ResponseData = buildHttp11Response("204 OK", httpHeader, false, "");
 
@@ -188,7 +188,7 @@ public class ESTResponseTest
 
     public void testESTResponseThrowsOnNegativeContentLength()
     {
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("Content-Length", String.valueOf(-1));
         InputStream testHttp11ResponseData = buildHttp11Response("200 OK", httpHeader, false, "");
 
@@ -209,7 +209,7 @@ public class ESTResponseTest
         String data = "Test message body";
         String dataBase64 = Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
 
-        Map<String, String> httpHeader = new HashMap<>();
+        Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("content-transfer-encoding", "base64");
         httpHeader.put("transfer-encoding", "chunked");
 
