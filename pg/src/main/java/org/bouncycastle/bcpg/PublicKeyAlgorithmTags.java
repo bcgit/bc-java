@@ -18,7 +18,14 @@ public interface PublicKeyAlgorithmTags
     int ECDSA = 19;            // Reserved for ECDSA
     int ELGAMAL_GENERAL = 20;  // Elgamal (Encrypt or Sign)
     int DIFFIE_HELLMAN = 21;   // Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
+    /**
+     * @deprecated use Ed25519 or Ed448
+     */
     int EDDSA = 22;            // EdDSA - (internet draft, but appearing in use)
+    int X25519 = 25;
+    int X448 = 26;
+    int Ed25519 = 27;
+    int Ed448 = 28;
 
     int EXPERIMENTAL_1 = 100;
     int EXPERIMENTAL_2 = 101;
