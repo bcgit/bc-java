@@ -22,7 +22,7 @@ public class ESTResponseTest
     extends TestCase
 {
 
-    private static Source<SSLSession> getMockSource(InputStream data)
+    private static Source<SSLSession> getMockSource(final InputStream data)
     {
         return new Source<SSLSession>()
         {
