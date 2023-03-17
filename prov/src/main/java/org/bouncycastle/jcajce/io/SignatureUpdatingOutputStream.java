@@ -24,7 +24,7 @@ class SignatureUpdatingOutputStream
         }
         catch (SignatureException e)
         {
-            throw new IOException(e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -37,7 +37,7 @@ class SignatureUpdatingOutputStream
         }
         catch (SignatureException e)
         {
-            throw new IOException(e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -50,7 +50,7 @@ class SignatureUpdatingOutputStream
         }
         catch (SignatureException e)
         {
-            throw new IOException(e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 }
