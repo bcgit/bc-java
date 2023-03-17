@@ -145,7 +145,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
             keyId = pubKey.getKeyID();
         }
-        return new PublicKeyEncSessionPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
     }
 
     @Override
