@@ -217,64 +217,6 @@ public class SymmetricKeyEncSessionPacket
         this.authTag = authTag;
     }
 
-
-    /**
-     * Create a v4 SKESK packet.
-     *
-     * @param encAlgorithm symmetric encryption algorithm
-     * @param s2k s2k specifier
-     * @param secKeyData encrypted session key
-     */
-    public static SymmetricKeyEncSessionPacket createV4SKESKPacket(
-            int       encAlgorithm,
-        S2K       s2k,
-        byte[]    secKeyData)
-    {
-        return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, secKeyData);
-    }
-
-    /**
-     * Create a v5 SKESK packet.
-     *
-     * @param encAlgorithm symmetric encryption algorithm
-     * @param aeadAlgorithm aead algorithm
-     * @param iv initialization vector
-     * @param s2k s2k specifier
-     * @param secKeyData encrypted session key
-     * @param authTag authentication tag
-     */
-    public static SymmetricKeyEncSessionPacket createV5SKESKPacket(
-            int encAlgorithm,
-            int aeadAlgorithm,
-            byte[] iv,
-            S2K s2k,
-            byte[] secKeyData,
-            byte[] authTag)
-    {
-        return new SymmetricKeyEncSessionPacket(encAlgorithm, aeadAlgorithm, iv, s2k, secKeyData, authTag);
-    }
-
-    /**
-     * Create a v6 SKESK packet.
-     *
-     * @param encAlgorithm symmetric encryption algorithm
-     * @param aeadAlgorithm aead algorithm
-     * @param s2k s2k specifier
-     * @param iv initialization vector
-     * @param secKeyData encrypted session key
-     * @param authTag authentication tag
-     */
-    public static SymmetricKeyEncSessionPacket createV6SKESKPacket(
-            int encAlgorithm,
-            int aeadAlgorithm,
-            byte[] iv,
-            S2K s2k,
-            byte[] secKeyData,
-            byte[] authTag)
-    {
-        return new SymmetricKeyEncSessionPacket(encAlgorithm, aeadAlgorithm, s2k, iv, secKeyData, authTag);
-    }
-
     /**
      * @return int
      */
