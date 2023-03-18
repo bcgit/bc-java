@@ -96,7 +96,7 @@ public class PGPPublicKeyRing
 
         BCPGInputStream pIn = BCPGInputStream.wrap(in);
 
-        int initialTag = pIn.skipMarkerPackets();
+        int initialTag = pIn.skipMarkerAndPaddingPackets();
         if (initialTag != PacketTags.PUBLIC_KEY && initialTag != PacketTags.PUBLIC_SUBKEY)
         {
             throw new IOException(

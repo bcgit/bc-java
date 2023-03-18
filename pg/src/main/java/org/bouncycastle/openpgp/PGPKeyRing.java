@@ -33,7 +33,7 @@ public abstract class PGPKeyRing
         BCPGInputStream pIn)
         throws IOException
     {
-        int tag = pIn.skipMarkerPackets();
+        int tag = pIn.skipMarkerAndPaddingPackets();
 
         return tag == PacketTags.TRUST ? (TrustPacket)pIn.readPacket() : null;
     }
@@ -44,7 +44,7 @@ public abstract class PGPKeyRing
     {
         List<PGPSignature> sigList = new ArrayList<PGPSignature>();
 
-        while (pIn.skipMarkerPackets() == PacketTags.SIGNATURE)
+        while (pIn.skipMarkerAndPaddingPackets() == PacketTags.SIGNATURE)
         {
             try
             {
@@ -72,7 +72,7 @@ public abstract class PGPKeyRing
         List<List<PGPSignature>> idSigs)
         throws IOException
     {
-        while (isUserTag(pIn.skipMarkerPackets()))
+        while (isUserTag(pIn.skipMarkerAndPaddingPackets()))
         {
             Packet obj = pIn.readPacket();
             if (obj instanceof UserIDPacket)

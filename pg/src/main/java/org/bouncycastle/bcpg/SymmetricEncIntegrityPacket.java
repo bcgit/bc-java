@@ -7,6 +7,7 @@ import java.io.IOException;
  */
 public class SymmetricEncIntegrityPacket
     extends InputStreamPacket
+    implements BCPGHeaderObject
 {
     int        version;
 
@@ -19,8 +20,28 @@ public class SymmetricEncIntegrityPacket
         version = in.read();
     }
 
+    public SymmetricEncIntegrityPacket()
+    {
+        super(null);
+
+        version = 1;
+    }
+
     public int getVersion()
     {
         return version;
+    }
+
+    @Override
+    public int getType()
+    {
+        return SYM_ENC_INTEGRITY_PRO;
+    }
+
+    @Override
+    public void encode(BCPGOutputStream bcpgOut)
+        throws IOException
+    {
+        bcpgOut.write(getVersion());
     }
 }

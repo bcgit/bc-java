@@ -12,7 +12,7 @@ import org.bouncycastle.util.Arrays;
  */
 public class AEADEncDataPacket
     extends InputStreamPacket
-    implements AEADAlgorithmTags
+    implements AEADAlgorithmTags, BCPGHeaderObject
 {
     private final byte version;
     private final byte algorithm;
@@ -74,18 +74,46 @@ public class AEADEncDataPacket
         return iv;
     }
 
+    public byte[] getAAData()
+    {
+        return createAAData(getVersion(), getAlgorithm(), getAEADAlgorithm(), getChunkSize());
+    }
+
+    private static byte[] createAAData(int version, int symAlgorithm, int aeadAlgorithm, int chunkSize)
+    {
+        byte[] aaData = new byte[5];
+
+        aaData[0] = (byte)(0xC0 | PacketTags.AEAD_ENC_DATA);
+        aaData[1] = (byte)(version & 0xff);
+        aaData[2] = (byte)(symAlgorithm & 0xff);
+        aaData[3] = (byte)(aeadAlgorithm & 0xff);
+        aaData[4] = (byte)(chunkSize & 0xff);
+
+        return aaData;
+    }
+
+    @Override
+    public int getType()
+    {
+        return AEAD_ENC_DATA;
+    }
+    
+    @Override
+    public void encode(BCPGOutputStream pgOut)
+        throws IOException
+    {
+        pgOut.write(1);           // version
+        pgOut.write(this.getAlgorithm());
+        pgOut.write(this.getAEADAlgorithm());
+        pgOut.write(this.getChunkSize());
+        pgOut.write(iv);
+    }
+
+    /**
+     * @deprecated use AEADUtils.getIVLength()
+     */
     public static int getIVLength(byte aeadAlgorithm)
     {
-        switch (aeadAlgorithm)
-        {
-        case EAX:
-            return 16;
-        case OCB:
-            return 15;
-        case GCM:
-            return 12;
-        default:
-            throw new IllegalArgumentException("unknown mode: " + aeadAlgorithm);
-        }
+        return AEADUtils.getIVLength(aeadAlgorithm);
     }
 }

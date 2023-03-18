@@ -157,6 +157,8 @@ public class PGPObjectFactory
             return new PGPOnePassSignatureList((PGPOnePassSignature[])l.toArray(new PGPOnePassSignature[l.size()]));
         case PacketTags.MARKER:
             return new PGPMarker(in);
+        case PacketTags.PADDING:
+            return new PGPPadding(in);
         case PacketTags.EXPERIMENTAL_1:
         case PacketTags.EXPERIMENTAL_2:
         case PacketTags.EXPERIMENTAL_3:

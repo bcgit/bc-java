@@ -55,6 +55,6 @@ public class UserAttributePacket
             subpackets[i].encode(bOut);
         }
 
-        out.writePacket(USER_ATTRIBUTE, bOut.toByteArray(), false);
+        out.writePacket(USER_ATTRIBUTE, bOut.toByteArray());
     }
 }

@@ -378,7 +378,7 @@ public class BCPGOutputStream
     {
         o.encode(this);
     }
-    
+
     /**
      * Flush the underlying stream.
      */

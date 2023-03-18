@@ -62,7 +62,7 @@ public class PGPPublicKeyRingCollection
         while ((obj = pgpFact.nextObject()) != null)
         {
             // Marker packets must be ignored
-            if (obj instanceof PGPMarker)
+            if (obj instanceof PGPMarker || obj instanceof PGPPadding)
             {
                 continue;
             }

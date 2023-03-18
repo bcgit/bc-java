@@ -301,6 +301,8 @@ public class BCPGInputStream
             return new ModDetectionCodePacket(objStream);
         case AEAD_ENC_DATA:
             return new AEADEncDataPacket(objStream);
+        case PADDING:
+            return new PaddingPacket(objStream);
         case EXPERIMENTAL_1:
         case EXPERIMENTAL_2:
         case EXPERIMENTAL_3:
@@ -311,11 +313,28 @@ public class BCPGInputStream
         }
     }
 
+    /**
+     * @deprecated use skipMarkerAndPaddingPackets
+     * @return the tag for the next non-marker/padding packet
+     * @throws IOException on a parsing issue.
+     */
     public int skipMarkerPackets()
         throws IOException
     {
+        return skipMarkerAndPaddingPackets();
+    }
+
+    /**
+     * skip any marker and padding packets found in the stream.
+     * @return the tag for the next non-marker/padding packet
+     * @throws IOException on a parsing issue.
+     */
+    public int skipMarkerAndPaddingPackets()
+        throws IOException
+    {
         int tag;
-        while ((tag = nextPacketTag()) == PacketTags.MARKER)
+        while ((tag = nextPacketTag()) == PacketTags.MARKER
+             || tag == PacketTags.PADDING)
         {
             readPacket();
         }
