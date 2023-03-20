@@ -531,6 +531,7 @@ class BIKEEngine
     {
         // maximum size of this array is the Hamming weight of the polynomial
         int count = 0;
+        int mask;
         for (int i = 0; i < R_BYTE; i++)
         {
             for (int j = 0; j < 8; j++)
@@ -539,11 +540,13 @@ class BIKEEngine
                 {
                     break;
                 }
-
-                if (((h[i] >> j) & 1) == 1)
-                {
-                    compactVersion[count++] = i * 8 + j;
-                }
+                mask = ((h[i] >> j) & 1);
+                // if mask == 1 compactVersion = (i * 8 + j)
+                // is mask == 0 compactVersion = compactVersion
+                    compactVersion[count] =
+                            (i * 8 + j) & -mask |
+                            compactVersion[count] & ~-mask;
+                count = (count + mask) % hw;
             }
         }
     }
