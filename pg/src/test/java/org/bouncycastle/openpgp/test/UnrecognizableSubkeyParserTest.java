@@ -38,11 +38,14 @@ public class UnrecognizableSubkeyParserTest
         subkeyHasUnknownAlgo_MPIEncoding();
         subkeyHasUnknownAlgoOpaqueEncodingSmall();
         subkeyHasEcdsaUnknownCurveMPIEncoding();
-        subkeyHasEcdsaUnknownCurveOpaqueEncodingSmall();
         subkeyHasEddsaUknownCurveMPIEncoding();
-        subkeyHasEddsaUnknownCurveOpaqueEncodingSmall();
         subkeyHasEcdhUnknownCurveMPIEncoding();
-        subkeyHasEcdhUnknownCurveOpaqueEncodingSmall();
+
+        // The data in these files is actually out of range, they appear to contain MPIs which
+        // result in an EOF exception if parsed. GPG shows this also.
+//        subkeyHasEcdsaUnknownCurveOpaqueEncodingSmall();
+//        subkeyHasEddsaUnknownCurveOpaqueEncodingSmall();
+//        subkeyHasEcdhUnknownCurveOpaqueEncodingSmall();
     }
 
     // base case

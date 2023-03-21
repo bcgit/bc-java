@@ -94,7 +94,7 @@ public class ArmoredInputStreamCRCErrorGetsThrownTest
         }
         catch (IOException e)
         {
-            isEquals("crc check failed in armored message.", e.getMessage());
+            isEquals("crc check failed in armored message", e.getMessage());
         }
     }
 }

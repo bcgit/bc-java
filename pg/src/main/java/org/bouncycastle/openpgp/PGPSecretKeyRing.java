@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -166,6 +168,14 @@ public class PGPSecretKeyRing
 
                     extraPubKeys.add(new PGPPublicKey(sub, subTrust, sigList, fingerPrintCalculator));
                 }
+            }
+            catch (EOFException e)
+            {
+                throw e;
+            }
+            catch (ArmoredInputException e)
+            {
+                throw e;
             }
             catch (IOException e)
             {

@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
@@ -122,17 +124,11 @@ public class PGPPublicKeyRing
             // Read subkeys
             while (pIn.nextPacketTag() == PacketTags.PUBLIC_SUBKEY)
             {
-                try
+                // unrecognizable subkeys, where the packet can be loaded, will be ignored.
+                PGPPublicKey publicKey = readSubkey(pIn, fingerPrintCalculator);
+                if (publicKey != null)
                 {
-                    keys.add(readSubkey(pIn, fingerPrintCalculator));
-                }
-                catch (IOException e)
-                {
-                    // Skip unrecognizable subkey
-                    if (LOG.isLoggable(Level.FINE))
-                    {
-                        LOG.fine("skipping unknown subkey: " + e.getMessage());
-                    }
+                    keys.add(publicKey);
                 }
             }
         }
@@ -399,13 +395,33 @@ public class PGPPublicKeyRing
     static PGPPublicKey readSubkey(BCPGInputStream in, KeyFingerPrintCalculator fingerPrintCalculator)
         throws IOException, PGPException
     {
-        PublicKeyPacket pk = readPublicKeyPacket(in);
-        TrustPacket kTrust = readOptionalTrustPacket(in);
+        try
+        {
+            PublicKeyPacket pk = readPublicKeyPacket(in);
+            TrustPacket kTrust = readOptionalTrustPacket(in);
 
-        // PGP 8 actually leaves out the signature.
-        List<PGPSignature> sigList = readSignaturesAndTrust(in);
+            // PGP 8 actually leaves out the signature.
+            List<PGPSignature> sigList = readSignaturesAndTrust(in);
 
-        return new PGPPublicKey(pk, kTrust, sigList, fingerPrintCalculator);
+            return new PGPPublicKey(pk, kTrust, sigList, fingerPrintCalculator);
+        }
+        catch (EOFException e)
+        {
+            throw e;
+        }
+        catch (ArmoredInputException e)
+        {
+            throw e;
+        }
+        catch (IOException e)
+        {
+            // Skip unrecognizable subkey
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine("skipping unknown subkey: " + e.getMessage());
+            }
+            return null;
+        }
     }
 
     /**

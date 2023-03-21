@@ -79,7 +79,7 @@ public class ArmoredInputStream
 
             if ((b1 | b2) < 0)
             {
-                throw new IOException("invalid armor");
+                throw new ArmoredInputException("invalid armor");
             }
 
             out[2] = (byte)((b1 << 2) | (b2 >> 4));
@@ -94,7 +94,7 @@ public class ArmoredInputStream
 
             if ((b1 | b2 | b3) < 0)
             {
-                throw new IOException("invalid armor");
+                throw new ArmoredInputException("invalid armor");
             }
 
             out[1] = (byte)((b1 << 2) | (b2 >> 4));
@@ -111,7 +111,7 @@ public class ArmoredInputStream
 
             if ((b1 | b2 | b3 | b4) < 0)
             {
-                throw new IOException("invalid armor");
+                throw new ArmoredInputException("invalid armor");
             }
 
             out[0] = (byte)((b1 << 2) | (b2 >> 4));
@@ -254,7 +254,7 @@ public class ArmoredInputStream
                     }
                     if (headerList.size() != 0 && line.indexOf(':') < 0)
                     {
-                        throw new IOException("invalid armor header");
+                        throw new ArmoredInputException("invalid armor header");
                     }
                     headerList.add(line);
                     buf.reset();
@@ -281,7 +281,7 @@ public class ArmoredInputStream
                 int nl = in.read(); // skip last \n
                 if (nl != '\n')
                 {
-                    throw new IOException("inconsistent line endings in headers");
+                    throw new ArmoredInputException("inconsistent line endings in headers");
                 }
             }
         }
@@ -349,7 +349,7 @@ public class ArmoredInputStream
 
         if (c >= 128)
         {
-            throw new IOException("invalid armor");
+            throw new ArmoredInputException("invalid armor");
         }
 
         return c;
@@ -430,7 +430,7 @@ public class ArmoredInputStream
                     bufPtr = decode(readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
                     if (bufPtr != 0)
                     {
-                        throw new IOException("malformed crc in armored message.");
+                        throw new ArmoredInputException("malformed crc in armored message");
                     }
 
                     crcFound = true;
@@ -440,7 +440,7 @@ public class ArmoredInputStream
                           | (outBuf[2] & 0xff);
                     if (i != crc.getValue())
                     {
-                        throw new IOException("crc check failed in armored message.");
+                        throw new ArmoredInputException("crc check failed in armored message");
                     }
 
                     return read();
@@ -458,7 +458,7 @@ public class ArmoredInputStream
 
                     if (!crcFound && detectMissingChecksum)
                     {
-                        throw new IOException("crc check not found");
+                        throw new ArmoredInputException("crc check not found");
                     }
 
                     crcFound = false;
