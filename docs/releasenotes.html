@@ -28,12 +28,20 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The attached signature type byte was still present in Falcon signatures as well as the detached signature byte. This has been fixed.</li>
 <li>There was an off-by-one error in engineGetOutputSize() for ECIES. This has been fixed.</li>
 <li>The method for invoking read() internally in BCPGInputStream could result in inconsistency behaviour if the class was extended. This has been fixed.</li>
+<li>Fixed a rounding issue with FF1 Format Preserving Encryption algorithm for certain radices.</li>
+<li>Fixed RFC3394WrapEngine handling of 64 bit keys.</li>
 </ul>
-<h3>2.1.3 Additional Featues and Functionality</h3>
+<h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>The Rainbow NIST Post Quantum Round-3 Candidate has been added to the low-level API and the BCPQC provider (level 3 and level 5 parameter sets only).</li>
 <li>The GeMSS NIST Post Quantum Round-3 Candidate has been added to the low-level API.</li>
 <li>The org.bouncycastle.rsa.max_mr_tests property check has been added to allow capping of MR tests done on RSA moduli.</li>
+<li>Significant performance improvements in PQC algorithms, especially BIKE, CMCE, Frodo, HQC, Picnic.</li>
+<li>
+    EdDSA verification now conforms to the recommendations of <a href="https://ia.cr/2020/1244">Taming the many EdDSAs</a>, in particular cofactored verification.
+    As a side benefit, <a href="https://ia.cr/2020/454">Pornin's basis reduction</a> is now used for EdDSA verification, giving a significant performance boost.
+</li>
+<li>Major performance improvements for Anomalous Binary (Koblitz) Curves.</li>
 </ul>
 
 <a id="r1rv72.3"><h3>2.2.1 Version</h3></a>
