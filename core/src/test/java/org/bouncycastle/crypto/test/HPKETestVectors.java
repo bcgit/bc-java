@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -242,8 +243,10 @@ public class HPKETestVectors
                     // init aead with key and nonce
                     AEAD aead = new AEAD(aead_id, key, base_nonce);
                     // enumerate encryptions
-                    for (Encryption encryption :encryptions)
+                    for (Iterator it = encryptions.iterator(); it.hasNext();)
                     {
+                        Encryption encryption = (Encryption)it.next();
+
                         // seal with aad and pt and check if output is the same as ct
                         byte[] got_ct = aead.seal(encryption.aad, encryption.pt);
                         assertTrue( "AEAD failed Sealing:", Arrays.areEqual(got_ct, encryption.ct));
@@ -323,8 +326,9 @@ public class HPKETestVectors
                     }
 
                     // enumerate exports
-                    for (Export export : exports)
+                    for (Iterator it = exports.iterator(); it.hasNext();)
                     {
+                        Export export = (Export)it.next();
                         // use context export with exporter context and L
                         byte[] got_val = c.export(export.exporterContext, export.L);
 

@@ -71,18 +71,6 @@
             <fileset dir="mail/src/test/java" includes="**/*.java" />
             <fileset dir="mail/src/test/resources" includes="**/*.*" />
 
-            <fileset dir="core/src/test/data" includes="**/*.message" />
-            <fileset dir="core/src/test/data" includes="**/*.eml" />
-            <fileset dir="core/src/test/data" includes="**/*.sig" />
-            <fileset dir="core/src/test/data" includes="**/*.data" />
-            <fileset dir="core/src/test/data" includes="**/*.pem" />
-            <fileset dir="core/src/test/data" includes="**/*.p7m" />
-            <fileset dir="core/src/test/data" includes="**/*.crt" />
-            <fileset dir="core/src/test/data" includes="**/*.crl" />
-            <fileset dir="core/src/test/data" includes="**/*.der" />
-            <fileset dir="core/src/test/data" includes="**/*.csr" />
-            <fileset dir="core/src/test/data" includes="**/*.cer" />
-            <fileset dir="core/src/test/data" includes="**/*.cvcert" />
         </copy>
         <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
     </target>

@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.bouncycastle.util.Longs;
+
 /**
  * ASN.1 uses an EN locale for its internal formatting. This class finds the nearest equivalent in the
  * current JVM to ensure date formats are always respected.
@@ -70,6 +72,6 @@ public class LocaleUtil
 
     private static Long longValueOf(long v)
     {
-        return Long.valueOf(v);
+        return Longs.valueOf(v);
     }
 }

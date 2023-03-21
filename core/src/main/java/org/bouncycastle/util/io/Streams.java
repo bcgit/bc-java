@@ -154,6 +154,7 @@ public final class Streams
             }
             totalRead += numRead;
         }
+        
         return totalRead;
     }
 

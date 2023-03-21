@@ -1,5 +1,8 @@
 package org.bouncycastle.util;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+
 public class Exceptions
 {
     public static IllegalArgumentException illegalArgumentException(String message, Throwable cause)
@@ -11,4 +14,10 @@ public class Exceptions
     {
         return new IllegalStateException(message, cause);
     }
+
+    public static IOException ioException(String message, Throwable cause)
+    {
+        return new IOException(message, cause);
+    }
+
 }

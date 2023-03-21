@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * A participant in a Password Authenticated Key Exchange by Juggling (J-PAKE) exchange.
@@ -553,7 +554,7 @@ public class JPAKEParticipant
         }
         catch (CryptoException e)
         {
-            throw new IllegalStateException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
 }

@@ -27,6 +27,14 @@
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/sike/*.java"/>
+                <exclude name="**/gemss/*.java"/>
+                <exclude name="**/rainbow/*.java"/>
+                <exclude name="**/Rainbow*.java"/>
+                <exclude name="**/PhotonBeetle*.java"/>
+                <exclude name="**/ISAP*.java"/>
+                <exclude name="**/Xoodyak*.java"/>
+                <exclude name="**/Elephant*.java"/>
+                <exclude name="**/Sparkle*.java"/>
             </fileset>
             <fileset dir="util/src/main/java">
                 <exclude name="**/oer/**/*.java"/>
@@ -69,6 +77,8 @@
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
                 <exclude name="**/SIKE*.java"/>
                 <exclude name="**/sike/*.java"/>
+                <exclude name="**/rainbow/*.java"/>
+                <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/XMS*.java"/>
                 <exclude name="**/LMS*.java"/>
                 <exclude name="**/IndexGenerator.java"/>
@@ -78,6 +88,8 @@
                 <exclude name="**/asymmetric/DSTU*.java"/>
                 <exclude name="**/asymmetric/dstu/*.java"/>
                 <exclude name="**/asymmetric/ecgost12/*.java"/>
+                <exclude name="**/drbg/EntropyDaemon.java"/>
+                <exclude name="**/drbg/EntropyGatherer.java"/>
                 <exclude name="**/provider/config/PKCS12StoreParameter.java"/>
             </fileset>
             <fileset dir="prov/src/main/resources" includes="**/*.properties"/>
@@ -94,6 +106,8 @@
                 <exclude name="**/lms/**/*.java"/>
                 <exclude name="**/pqc/legacy/**/*.java"/>
                 <exclude name="**/pqc/math/**/*.java"/>
+                <exclude name="**/pqc/rainbow/*.java"/>
+                <exclude name="**/pqc/gemss/*.java"/>
                 <exclude name="**/pqc/**/BitStringTest.java"/>
                 <exclude name="**/pqc/**/XMS*.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>
@@ -104,6 +118,11 @@
                 <exclude name="**/GetInstanceTest.java"/>
                 <exclude name="**/SIKE*.java"/>
                 <exclude name="**/EncryptionKeyTest.java"/>
+                <exclude name="**/PhotonBeetle*.java"/>
+                <exclude name="**/ISAP*.java"/>
+                <exclude name="**/Xoodyak*.java"/>
+                <exclude name="**/Elephant*.java"/>
+                <exclude name="**/Sparkle*.java"/>
             </fileset>
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>
@@ -168,19 +187,6 @@
             <fileset dir="core/src/test/resources" includes="**/*.*"/>
             <fileset dir="pg/src/test/resources" includes="**/*.*"/>
             <fileset dir="mail/src/test/resources" includes="**/*.*"/>
-            <fileset dir="core/src/test/data" includes="**/*.pem"/>
-            <fileset dir="core/src/test/data" includes="**/*.properties"/>
-            <fileset dir="core/src/test/data" includes="**/*.eml"/>
-            <fileset dir="core/src/test/data" includes="**/*.sig"/>
-            <fileset dir="core/src/test/data" includes="**/*.p7m"/>
-            <fileset dir="core/src/test/data" includes="**/*.data"/>
-            <fileset dir="core/src/test/data" includes="**/*.crt"/>
-            <fileset dir="core/src/test/data" includes="**/*.crl"/>
-            <fileset dir="core/src/test/data" includes="**/*.message"/>
-            <fileset dir="core/src/test/data" includes="**/*.der"/>
-            <fileset dir="core/src/test/data" includes="**/*.csr"/>
-            <fileset dir="core/src/test/data" includes="**/*.cer"/>
-            <fileset dir="core/src/test/data" includes="**/*.cvcert"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/javadoc"/>

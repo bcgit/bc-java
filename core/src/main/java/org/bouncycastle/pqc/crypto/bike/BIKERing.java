@@ -250,7 +250,7 @@ class BIKERing
     {
         int r = bits;
 
-        int pow_1 = (Integer)halfPowers.get(n);
+        int pow_1 = ((Integer)halfPowers.get(Integers.valueOf(n))).intValue();
         int pow_2 = implModAdd(r, pow_1, pow_1);
         int pow_4 = implModAdd(r, pow_2, pow_2);
         int pow_8 = implModAdd(r, pow_4, pow_4);
@@ -329,17 +329,17 @@ class BIKERing
         for (int i = 1; i < bits; ++i)
         {
             int m = 1 << (i - 1);
-            if (m >= PERMUTATION_CUTOFF && !halfPowers.containsKey(m))
+            if (m >= PERMUTATION_CUTOFF && !halfPowers.containsKey(Integers.valueOf(m)))
             {
-                halfPowers.put(m, generateHalfPower(r, r32, m));
+                halfPowers.put(Integers.valueOf(m), Integers.valueOf(generateHalfPower(r, r32, m)));
             }
 
             if ((rSub2 & (1 << i)) != 0)
             {
                 int n = rSub2 & ((1 << i) - 1);
-                if (n >= PERMUTATION_CUTOFF && !halfPowers.containsKey(n))
+                if (n >= PERMUTATION_CUTOFF && !halfPowers.containsKey(Integers.valueOf(n)))
                 {
-                    halfPowers.put(n, generateHalfPower(r, r32, n));
+                    halfPowers.put(Integers.valueOf(n),  Integers.valueOf(generateHalfPower(r, r32, n)));
                 }
             }
         }

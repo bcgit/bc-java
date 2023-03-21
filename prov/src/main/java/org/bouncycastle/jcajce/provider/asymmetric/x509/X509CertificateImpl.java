@@ -65,6 +65,7 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -374,7 +375,7 @@ abstract class X509CertificateImpl
             }
             catch (Exception e)
             {
-                throw new IllegalStateException("error parsing " + e.toString());
+                throw Exceptions.illegalStateException("error parsing " + e.getMessage(), e);
             }
         }
 
@@ -460,7 +461,7 @@ abstract class X509CertificateImpl
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("failed to recover public key: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("failed to recover public key: " + e.getMessage(), e);
         }
     }
 

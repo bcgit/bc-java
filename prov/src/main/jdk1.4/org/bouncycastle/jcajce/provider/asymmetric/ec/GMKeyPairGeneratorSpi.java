@@ -6,7 +6,6 @@ import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.ECGenParameterSpec;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -17,12 +16,11 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -123,31 +121,13 @@ public abstract class GMKeyPairGeneratorSpi
                 this.ecParams = params;
                 this.param = createKeyGenParamsBC((ECParameterSpec)params, random);
             }
-            else if (params instanceof java.security.spec.ECParameterSpec)
-            {
-                this.ecParams = params;
-                this.param = createKeyGenParamsJCE((java.security.spec.ECParameterSpec)params, random);
-            }
-            else if (params instanceof ECGenParameterSpec)
-            {
-                initializeNamedCurve(((ECGenParameterSpec)params).getName(), random);
-            }
             else if (params instanceof ECNamedCurveGenParameterSpec)
             {
                 initializeNamedCurve(((ECNamedCurveGenParameterSpec)params).getName(), random);
             }
             else
             {
-                String name = ECUtil.getNameFrom(params);
-
-                if (name != null)
-                {
-                    initializeNamedCurve(name, random);
-                }
-                else
-                {
-                    throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + params);
-                }
+                throw new InvalidAlgorithmParameterException("invalid parameterSpec: " + params);
             }
 
             engine.init(param);
@@ -173,45 +153,16 @@ public abstract class GMKeyPairGeneratorSpi
                 return new KeyPair(pubKey,
                                    new BCECPrivateKey(algorithm, priv, pubKey, p, configuration));
             }
-            else if (ecParams == null)
+            else
             {
                return new KeyPair(new BCECPublicKey(algorithm, pub, configuration),
                                    new BCECPrivateKey(algorithm, priv, configuration));
-            }
-            else
-            {
-                java.security.spec.ECParameterSpec p = (java.security.spec.ECParameterSpec)ecParams;
-
-                BCECPublicKey pubKey = new BCECPublicKey(algorithm, pub, p, configuration);
-                
-                return new KeyPair(pubKey, new BCECPrivateKey(algorithm, priv, pubKey, p, configuration));
             }
         }
 
         protected ECKeyGenerationParameters createKeyGenParamsBC(ECParameterSpec p, SecureRandom r)
         {
             return new ECKeyGenerationParameters(new ECDomainParameters(p.getCurve(), p.getG(), p.getN(), p.getH()), r);
-        }
-
-        protected ECKeyGenerationParameters createKeyGenParamsJCE(java.security.spec.ECParameterSpec p, SecureRandom r)
-        {
-            if (p instanceof ECNamedCurveSpec)
-            {
-                String curveName = ((ECNamedCurveSpec)p).getName();
-
-                X9ECParameters x9 = ECUtils.getDomainParametersFromName(curveName, configuration);
-                if (null != x9)
-                {
-                    return createKeyGenParamsJCE(x9, r);
-                }
-            }
-
-            ECCurve curve = EC5Util.convertCurve(p.getCurve());
-            ECPoint g = EC5Util.convertPoint(curve, p.getGenerator());
-            BigInteger n = p.getOrder();
-            BigInteger h = BigInteger.valueOf(p.getCofactor());
-            ECDomainParameters dp = new ECDomainParameters(curve, g, n, h);
-            return new ECKeyGenerationParameters(dp, r);
         }
 
         protected ECKeyGenerationParameters createKeyGenParamsJCE(X9ECParameters x9, SecureRandom r)
@@ -233,8 +184,9 @@ public abstract class GMKeyPairGeneratorSpi
             // Work-around for JDK bug -- it won't look up named curves properly if seed is present
             byte[] seed = null; //p.getSeed();
 
-            this.ecParams = new ECNamedCurveSpec(curveName, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), seed);
-            this.param = createKeyGenParamsJCE(x9, random);
+
+            this.ecParams = new ECNamedCurveParameterSpec(curveName, x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), seed);
+            createKeyGenParamsBC((ECParameterSpec)ecParams, random);
         }
     }
 

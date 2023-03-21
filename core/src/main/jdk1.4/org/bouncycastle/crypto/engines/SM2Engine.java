@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SM3Digest;
