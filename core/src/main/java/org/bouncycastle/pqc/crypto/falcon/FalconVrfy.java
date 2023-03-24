@@ -702,6 +702,7 @@ class FalconVrfy
                          byte[] srcf, int f, byte[] srcg, int g, byte[] srcF, int F,
                          int logn, short[] srctmp, int tmp)
     {
+        int success = 1;
         int u, n;
         int t1, t2;
 
@@ -726,7 +727,7 @@ class FalconVrfy
         {
             if (srctmp[t2 + u] == 0)
             {
-                return 0;
+                success = 0;
             }
             srctmp[t1 + u] = (short)mq_div_12289(srctmp[t1 + u], srctmp[t2 + u]);
         }
@@ -741,11 +742,11 @@ class FalconVrfy
             gi = w; // gi is signed
             if (gi < -127 || gi > +127)
             {
-                return 0;
+                success = 0;
             }
             srcG[G + u] = (byte)gi;
         }
-        return 1;
+        return success;
     }
 
     /* see inner.h */
