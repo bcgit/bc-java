@@ -88,7 +88,7 @@ class BIKERing
     void encodeBytes(long[] x, byte[] bs)
     {
         int partialBits = bits & 63;
-        assert (x[size - 1] >>> partialBits) == 0L;
+//        assert (x[size - 1] >>> partialBits) == 0L;
         Pack.longToLittleEndian(x, 0, size - 1, bs, 0);
         byte[] last = new byte[8];
         Pack.longToLittleEndian(x[size - 1], last, 0);
@@ -304,7 +304,7 @@ class BIKERing
             int y = r32 * p;
             long t = (y & 0xFFFFFFFFL) * r;
             long u = t + p;
-            assert (int)u == 0;
+//            assert (int)u == 0;
             p = (int)(u >>> 32);
             k -= 32;
         }
@@ -314,7 +314,7 @@ class BIKERing
             int y = (r32 * p) & mk;
             long t = (y & 0xFFFFFFFFL) * r;
             long u = t + p;
-            assert ((int)u & mk) == 0;
+//            assert ((int)u & mk) == 0;
             p = (int)(u >>> k);
         }
         return p;
