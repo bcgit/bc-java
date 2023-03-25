@@ -34,7 +34,6 @@ public class TestResourceFinder
             throw new FileNotFoundException("Test data directory " + dataDirName + " not found." + ln + "Test data available from: https://github.com/bcgit/bc-test-data.git");
         }
 
-        homeDir = homeDir.replaceAll("/", separator);
         return new FileInputStream(new File(dataDir, homeDir + separator + fileName));
     }
 }
