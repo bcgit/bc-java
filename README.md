@@ -35,6 +35,8 @@ The build scripts that come with the full distribution allow creation of the dif
 
 If you want to try create a build for yourself, using your own environment, the best way to do it is to start with the build for the distribution you are interested in, make sure that builds, and then modify your build scripts to do the required exclusions and file copies for your setup, otherwise you are likely to get class not found exceptions. The final caveat to this is that as the j2me distribution includes some compatibility classes starting in the java package, you need to use an obfuscator to change the package names before attempting to import a midlet using the BC API.
 
+**Important**: You will also need to check out the [bc-test-data](https://github.com/bcgit/bc-test-data) repository at the same level as the bc-java repository if you want to run the tests.
+
 
 ## Examples and Tests
 
