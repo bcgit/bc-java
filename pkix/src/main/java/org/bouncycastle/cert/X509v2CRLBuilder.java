@@ -437,7 +437,7 @@ public class X509v2CRLBuilder
         boolean isCritical,
         ContentSigner altSigner)
     {
-        tbsGen.setSignature(signer.getAlgorithmIdentifier());
+        tbsGen.setSignature(null);  // no signature field for altSig
 
         try
         {
@@ -452,7 +452,9 @@ public class X509v2CRLBuilder
 
         try
         {
-            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generateTBSCertList())));
+            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generatePreTBSCertList())));
+
+            tbsGen.setSignature(signer.getAlgorithmIdentifier());
 
             tbsGen.setExtensions(extGenerator.generate());
 

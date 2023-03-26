@@ -18,10 +18,12 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AltSignatureAlgorithm;
@@ -349,13 +351,21 @@ public class X509CRLHolder
             ASN1Sequence tbsSeq = ASN1Sequence.getInstance(tbsCrList.toASN1Primitive());
             ASN1EncodableVector v = new ASN1EncodableVector();
 
-            for (int i = 0; i != tbsSeq.size() - 1; i++)
+            int start = 1;    //  want to skip signature field
+            if (tbsSeq.getObjectAt(0) instanceof ASN1Integer)
+            {
+                v.add(tbsSeq.getObjectAt(0));
+                start++;
+            }
+
+            for (int i = start; i != tbsSeq.size() - 1; i++)
             {
                 v.add(tbsSeq.getObjectAt(i));
             }
-            v.add(CertUtils.trimExtensions(tbsCrList.getExtensions()));
+            
+            v.add(CertUtils.trimExtensions(0, tbsCrList.getExtensions()));
 
-            TBSCertList.getInstance(new DERSequence(v)).encodeTo(sOut, ASN1Encoding.DER);
+            new DERSequence(v).encodeTo(sOut, ASN1Encoding.DER);
 
             sOut.close();
         }

@@ -3077,7 +3077,6 @@ public class CertTest
         crlGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(ecKp.getPublic()));
 
         X509CRLHolder crlHolder = crlGen.build(sigGen, false, altSigGen);
-
         X509CRL crl = new JcaX509CRLConverter().setProvider(BC).getCRL(crlHolder);
 
         // verify test
@@ -3086,8 +3085,8 @@ public class CertTest
         // verify with provider
         crl.verify(ecPub, BC);
 
-        isTrue("primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub)));
-        isTrue("secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
+        isTrue("crl primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub)));
+        isTrue("crl secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
