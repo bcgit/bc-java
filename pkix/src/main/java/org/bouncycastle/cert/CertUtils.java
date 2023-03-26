@@ -319,7 +319,7 @@ class CertUtils
         return signer.getSignature();
     }
 
-    static ASN1TaggedObject trimExtensions(Extensions exts)
+    static ASN1TaggedObject trimExtensions(int tagNo, Extensions exts)
     {
         ASN1Sequence extSeq = ASN1Sequence.getInstance(exts.toASN1Primitive());
         ASN1EncodableVector extV = new ASN1EncodableVector();
@@ -333,6 +333,6 @@ class CertUtils
             }
         }
 
-        return new DERTaggedObject(true, 3, new DERSequence(extV));
+        return new DERTaggedObject(true, tagNo, new DERSequence(extV));
     }
 }

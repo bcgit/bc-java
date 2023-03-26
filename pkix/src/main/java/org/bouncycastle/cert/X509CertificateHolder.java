@@ -336,7 +336,7 @@ public class X509CertificateHolder
                 }
             }
 
-            v.add(CertUtils.trimExtensions(tbsCert.getExtensions()));
+            v.add(CertUtils.trimExtensions(3, tbsCert.getExtensions()));
 
             new DERSequence(v).encodeTo(sOut, ASN1Encoding.DER);
 
