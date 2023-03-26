@@ -401,7 +401,7 @@ public class X509v3CertificateBuilder
         boolean isCritical,
         ContentSigner altSigner)
     {
-        tbsGen.setSignature(signer.getAlgorithmIdentifier());
+        tbsGen.setSignature(null);
 
         try
         {
@@ -416,7 +416,9 @@ public class X509v3CertificateBuilder
 
         try
         {
-            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generateTBSCertificate())));
+            extGenerator.addExtension(Extension.altSignatureValue, isCritical, new DERBitString(generateSig(altSigner, tbsGen.generatePreTBSCertificate())));
+
+            tbsGen.setSignature(signer.getAlgorithmIdentifier());
 
             tbsGen.setExtensions(extGenerator.generate());
             

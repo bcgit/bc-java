@@ -2,6 +2,8 @@ package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
@@ -155,20 +157,34 @@ public class V3TBSCertificateGenerator
         }
     }
 
-    public TBSCertificate generateTBSCertificate()
+    public ASN1Sequence generatePreTBSCertificate()
     {
-        if ((serialNumber == null) || (signature == null)
+        if (signature != null)
+        {
+            throw new IllegalStateException("signature field should not be set in PreTBSCertificate");
+        }
+        if ((serialNumber == null)
             || (issuer == null) || (startDate == null) || (endDate == null)
             || (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
 
+        return generateTBSStructure();
+    }
+
+    private ASN1Sequence generateTBSStructure()
+    {
         ASN1EncodableVector v = new ASN1EncodableVector(10);
 
         v.add(version);
         v.add(serialNumber);
-        v.add(signature);
+
+        if (signature != null)
+        {
+            v.add(signature);
+        }
+        
         v.add(issuer);
 
         //
@@ -208,6 +224,18 @@ public class V3TBSCertificateGenerator
             v.add(new DERTaggedObject(true, 3, extensions));
         }
 
-        return TBSCertificate.getInstance(new DERSequence(v));
+        return new DERSequence(v);
+    }
+
+    public TBSCertificate generateTBSCertificate()
+    {
+        if ((serialNumber == null) || (signature == null)
+            || (issuer == null) || (startDate == null) || (endDate == null)
+            || (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
+        {
+            throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
+        }
+
+        return TBSCertificate.getInstance(generateTBSStructure());
     }
 }

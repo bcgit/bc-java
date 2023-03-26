@@ -330,12 +330,15 @@ public class X509CertificateHolder
 
             for (int i = 0; i != tbsSeq.size() - 1; i++)
             {
-                v.add(tbsSeq.getObjectAt(i));
+                if (i != 2) // signature field - must be ver 3 so version always present
+                {
+                    v.add(tbsSeq.getObjectAt(i));
+                }
             }
 
             v.add(CertUtils.trimExtensions(tbsCert.getExtensions()));
 
-            TBSCertificate.getInstance(new DERSequence(v)).encodeTo(sOut, ASN1Encoding.DER);
+            new DERSequence(v).encodeTo(sOut, ASN1Encoding.DER);
 
             sOut.close();
         }
