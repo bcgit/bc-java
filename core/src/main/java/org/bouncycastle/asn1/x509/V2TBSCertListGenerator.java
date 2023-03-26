@@ -211,13 +211,35 @@ public class V2TBSCertListGenerator
     {
         if ((signature == null) || (issuer == null) || (thisUpdate == null))
         {
-            throw new IllegalStateException("Not all mandatory fields set in V2 TBSCertList generator.");
+            throw new IllegalStateException("not all mandatory fields set in V2 TBSCertList generator");
+        }
+        
+        return new TBSCertList(generateTBSCertStructure());
+    }
+
+    public ASN1Sequence generatePreTBSCertList()
+    {
+        if (signature != null)
+        {
+            throw new IllegalStateException("signature should not be set in PreTBSCertList generator");
+        }
+        if ((issuer == null) || (thisUpdate == null))
+        {
+            throw new IllegalStateException("not all mandatory fields set in V2 PreTBSCertList generator");
         }
 
+        return generateTBSCertStructure();
+    }
+
+    private ASN1Sequence generateTBSCertStructure()
+    {
         ASN1EncodableVector  v = new ASN1EncodableVector(7);
 
         v.add(version);
-        v.add(signature);
+        if (signature != null)
+        {
+            v.add(signature);
+        }
         v.add(issuer);
 
         v.add(thisUpdate);
@@ -237,7 +259,7 @@ public class V2TBSCertListGenerator
             v.add(new DERTaggedObject(0, extensions));
         }
 
-        return new TBSCertList(new DERSequence(v));
+        return new DERSequence(v);
     }
 
     private static ASN1Sequence createReasonExtension(int reasonCode)
