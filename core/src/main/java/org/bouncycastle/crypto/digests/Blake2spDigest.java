@@ -36,7 +36,7 @@ public class Blake2spDigest
     public Blake2spDigest(byte[] key)
     {
         param = new byte[32];
-        buffer = new byte[256];
+        buffer = new byte[8 * BLAKE2S_BLOCKBYTES];
         init(key);
     }
 
