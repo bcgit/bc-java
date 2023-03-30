@@ -77,11 +77,11 @@ public class AsconTest
 //                {
 //                    continue;
 //                }
-                byte[] key = Hex.decode(map.get("Key"));
-                byte[] nonce = Hex.decode(map.get("Nonce"));
-                byte[] ad = Hex.decode(map.get("AD"));
-                byte[] pt = Hex.decode(map.get("PT"));
-                byte[] ct = Hex.decode(map.get("CT"));
+                byte[] key = Hex.decode((String)map.get("Key"));
+                byte[] nonce = Hex.decode((String)map.get("Nonce"));
+                byte[] ad = Hex.decode((String)map.get("AD"));
+                byte[] pt = Hex.decode((String)map.get("PT"));
+                byte[] ct = Hex.decode((String)map.get("CT"));
                 params = new ParametersWithIV(new KeyParameter(key), nonce);
                 Ascon.init(true, params);
                 Ascon.processAADBytes(ad, 0, ad.length);

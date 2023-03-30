@@ -198,7 +198,7 @@ public class HPKETestVectors
                 {
                     String count = (String)buf.get("count");
 
-                    byte mode = Byte.parseByte(buf.get("mode"));
+                    byte mode = Byte.parseByte((String)buf.get("mode"));
                     short kem_id = Short.parseShort((String)buf.get("kem_id"));
                     short kdf_id = Short.parseShort((String)buf.get("kdf_id"));
                     short aead_id = (short) Integer.parseInt((String)buf.get("aead_id"));
@@ -308,7 +308,7 @@ public class HPKETestVectors
                     // enumerate encryptions
                     for (int i = 0; i < encryptions.size(); i++)
                     {
-                        Encryption encryption = encryptions.get(i);
+                        Encryption encryption = (Encryption)encryptions.get(i);
 
                         if (i == 0)
                         {
@@ -390,7 +390,7 @@ public class HPKETestVectors
                     if (line.equals("<"))
                     {
                         byte[] exporterContext = Hex.decode((String) expBuf.get("exporter_context"));
-                        int L = Integer.parseInt(expBuf.get("L"));
+                        int L = Integer.parseInt((String)expBuf.get("L"));
                         byte[] exportedValue = Hex.decode((String) expBuf.get("exported_value"));
                         exports.add(new Export(exporterContext, L, exportedValue));
                         expBuf.clear();
