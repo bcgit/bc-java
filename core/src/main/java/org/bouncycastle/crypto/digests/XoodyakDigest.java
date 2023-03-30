@@ -50,7 +50,7 @@ public class XoodyakDigest
     @Override
     public String getAlgorithmName()
     {
-        return "Xoodak Hash";
+        return "Xoodyak Hash";
     }
 
     @Override
