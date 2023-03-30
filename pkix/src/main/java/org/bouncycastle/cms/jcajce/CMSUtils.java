@@ -109,7 +109,7 @@ class CMSUtils
 
     static String getWrapAlgorithmName(ASN1ObjectIdentifier oid)
     {
-        return wrapAlgNames.get(oid);
+        return (String)wrapAlgNames.get(oid);
     }
 
     static PrivateKey cleanPrivateKey(PrivateKey key)

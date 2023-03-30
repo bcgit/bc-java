@@ -26,6 +26,7 @@ import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 class JceCMSKEMKeyWrapper
     extends KEMKeyWrapper
@@ -181,25 +182,25 @@ class JceCMSKEMKeyWrapper
 
     static
     {
-        encLengths.put(KyberParameterSpec.kyber512.getName(), 768);
-        encLengths.put(KyberParameterSpec.kyber768.getName(), 1088);
-        encLengths.put(KyberParameterSpec.kyber1024.getName(), 1568);
+        encLengths.put(KyberParameterSpec.kyber512.getName(), Integers.valueOf(768));
+        encLengths.put(KyberParameterSpec.kyber768.getName(), Integers.valueOf(1088));
+        encLengths.put(KyberParameterSpec.kyber1024.getName(), Integers.valueOf(1568));
 
-        encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), 699);
-        encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), 930);
-        encLengths.put(NTRUParameterSpec.ntruhps4096821.getName(), 1230);
-        encLengths.put(NTRUParameterSpec.ntruhrss701.getName(), 1138);
+        encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), Integers.valueOf(699));
+        encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), Integers.valueOf(930));
+        encLengths.put(NTRUParameterSpec.ntruhps4096821.getName(), Integers.valueOf(1230));
+        encLengths.put(NTRUParameterSpec.ntruhrss701.getName(), Integers.valueOf(1138));
     }
 
     private int getKemEncLength(PublicKey publicKey)
     {
         if (publicKey instanceof KyberPublicKey)
         {
-            return (Integer)encLengths.get(((KyberPublicKey)publicKey).getParameterSpec().getName());
+            return ((Integer)encLengths.get(((KyberPublicKey)publicKey).getParameterSpec().getName())).intValue();
         }
         if (publicKey instanceof NTRUKey)
         {
-            return (Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName());
+            return ((Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName())).intValue();
         }
         return 0;
     }
