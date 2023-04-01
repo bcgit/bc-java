@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Holding class for a PKCS#10 certification request.
@@ -230,6 +231,13 @@ public class PKCS10CertificationRequest
         return verifier.verify(this.getSignature());
     }
 
+    /**
+     * Return any extensions requested in the PKCS#10 request. If none are present, the method
+     * will return null.
+     *
+     * @return the requested extensions, null if none are requested.
+     * @throws IllegalStateException if the extension request is and is somehow invalid.
+     */
     public Extensions getRequestedExtensions()
     {
         Attribute[] attributes = getAttributes();
@@ -239,24 +247,39 @@ public class PKCS10CertificationRequest
             if (PKCSObjectIdentifiers.pkcs_9_at_extensionRequest.equals(encodable.getAttrType()))
             {
                 ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
-                ASN1Sequence extensionSequence = ASN1Sequence.getInstance(encodable.getAttrValues().getObjectAt(0));
-                for (Enumeration en = extensionSequence.getObjects(); en.hasMoreElements();)
-                {
-                    ASN1Sequence itemSeq = ASN1Sequence.getInstance(en.nextElement());
 
-                    boolean critical = itemSeq.size() == 3 && ASN1Boolean.getInstance(itemSeq.getObjectAt(1)).isTrue();
-                    if (itemSeq.size() == 2)
+                ASN1Set attrValues = encodable.getAttrValues();
+                if (attrValues != null)
+                {
+                    throw new IllegalStateException("pkcs_9_at_extensionRequest present but has no value");
+                }
+
+                ASN1Sequence extensionSequence = ASN1Sequence.getInstance(attrValues.getObjectAt(0));
+
+                try
+                {
+                    for (Enumeration en = extensionSequence.getObjects(); en.hasMoreElements(); )
                     {
-                        extensionsGenerator.addExtension(ASN1ObjectIdentifier.getInstance(itemSeq.getObjectAt(0)), false, ASN1OctetString.getInstance(itemSeq.getObjectAt(1)).getOctets());
+                        ASN1Sequence itemSeq = ASN1Sequence.getInstance(en.nextElement());
+
+                        boolean critical = itemSeq.size() == 3 && ASN1Boolean.getInstance(itemSeq.getObjectAt(1)).isTrue();
+                        if (itemSeq.size() == 2)
+                        {
+                            extensionsGenerator.addExtension(ASN1ObjectIdentifier.getInstance(itemSeq.getObjectAt(0)), false, ASN1OctetString.getInstance(itemSeq.getObjectAt(1)).getOctets());
+                        }
+                        else if (itemSeq.size() == 3)
+                        {
+                            extensionsGenerator.addExtension(ASN1ObjectIdentifier.getInstance(itemSeq.getObjectAt(0)), critical, ASN1OctetString.getInstance(itemSeq.getObjectAt(2)).getOctets());
+                        }
+                        else
+                        {
+                            throw new IllegalStateException("incorrect sequence size of Extension get " + itemSeq.size() + " expected 2 or three");
+                        }
                     }
-                    else if (itemSeq.size() == 3)
-                    {
-                        extensionsGenerator.addExtension(ASN1ObjectIdentifier.getInstance(itemSeq.getObjectAt(0)), critical, ASN1OctetString.getInstance(itemSeq.getObjectAt(2)).getOctets());
-                    }
-                    else
-                    {
-                        throw new IllegalArgumentException("incorrect sequence size of Extension get " + itemSeq.size() + " expected 2 or three");
-                    }
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw Exceptions.illegalStateException("asn1 processing issue: " + e.getMessage(), e);
                 }
 
                 return extensionsGenerator.generate();
