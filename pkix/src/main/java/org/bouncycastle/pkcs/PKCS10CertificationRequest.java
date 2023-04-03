@@ -249,7 +249,7 @@ public class PKCS10CertificationRequest
                 ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
 
                 ASN1Set attrValues = encodable.getAttrValues();
-                if (attrValues != null)
+                if (attrValues == null || attrValues.size() == 0)
                 {
                     throw new IllegalStateException("pkcs_9_at_extensionRequest present but has no value");
                 }
