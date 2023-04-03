@@ -68,7 +68,7 @@ jobs:
 
     # - run: |
          echo "Run, Build Application using script"
-         ./gradle clean build
+         ./gradlew clean build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
