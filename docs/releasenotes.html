@@ -20,7 +20,7 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv73"><h3>2.1.1 Version</h3></a>
 Release: 1.73<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, April 8th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>BCJSSE: Instantiating a JSSE provider in some contexts could cause an AccessControl exception. This has been fixed.</li>
@@ -30,6 +30,18 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The method for invoking read() internally in BCPGInputStream could result in inconsistency behaviour if the class was extended. This has been fixed.</li>
 <li>Fixed a rounding issue with FF1 Format Preserving Encryption algorithm for certain radices.</li>
 <li>Fixed RFC3394WrapEngine handling of 64 bit keys.</li>
+<li>Internal buffer for blake2sp was too small and could result in an ArrayIndexOutOfBoundsException. This has been fixed.</li>
+<li>JCA PSS Signatures using SHAKE128 and SHAKE256 now support encoding of algorithm parameters.</li>
+<li>PKCS10CertificationRequest now checks for empty extension parameters.</li>
+<li>Parsing errors in the processing of PGP Armored Data now throw an explicit exception ArmoredInputException.</li>
+<li>PGP AEAD streams could occassionally be truncated. This has been fixed.</li>
+<li>The ESTService class now supports processing of chunked HTTP data.</li>
+<li>A constructed ASN.1 OCTET STRING with a single member would sometimes be re-encoded as a definite-length OCTET STRING. The encoded has been adjusted to preserve the BER status of the object.</li>
+<li>PKIXCertPathReviewer could fail if the trust anchor was also included in the certificate store being used for path analysis. This has been fixed.</li>
+<li>The UTF8 parser could occasionally overread when processing a multi-byte character. This has been fixed.</li>
+<li>IPAddress has been written to provide stricter checking and avoid the use of Integer.parseInt().</li>
+<li>A Java 7 class snuck into the Java 5 to Java 8 build. This has been addressed.</li>
+<li>Rounding errors could occur with large radix values in FF1 leading to incorrect encryptions. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -42,6 +54,30 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
     As a side benefit, <a href="https://ia.cr/2020/454">Pornin's basis reduction</a> is now used for EdDSA verification, giving a significant performance boost.
 </li>
 <li>Major performance improvements for Anomalous Binary (Koblitz) Curves.</li>
+<li>The lightweight Cryptography finalists Ascon, ISAP, Elephant, PhotonBeetle, Sparle, and Xoodyak have been added to the light-weight cryptography API.</li>
+<li>BLAKE2bp and BLAKE2sp have been added to the light-weight cryptography API.</li>
+<li>Support has been added for X.509, Section 9.8, hybrid certificates and CRLs using alternate public keys and alternate signatures.</li>
+<li>The property "org.bouncycastle.emulate.oracle" has been added to signal the provider should return algorithm names on some algorithms in the same manner as the Oracle JCE provider.</li>
+<li>An extra replaceSigners method has been added to CMSSignedData which allows for specifying the digest algorithm IDs to be used in the new CMSSignedData object.</li>
+<li>Parsing and re-encoding of ASN.1 PEM data has been further optimized to prevent unecessary conversions between basic encoding, definite length, and DER.</li>
+<li>Support has been added for KEM ciphers in CMS in accordance with <a href="https://www.ietf.org/id/draft-ietf-lamps-cms-kemri-00.html">draft-ietf-lamps-cms-kemri</a></li>
+<li>Support has been added for certEncr in CRMF to allow issuing of certificates for KEM public keys.</li>
+<li>Further speedups have been made to CRC24.</li>
+<li>GCMParameterSpec constructor caching has been added to improve performance JVMs that have the class available.</li>
+<li>The PGPEncrytedDataGenerator now supports injecting the session key to be used for PGP PBE encrypted data.</li>
+<li>The CRMF CertificateRequestMessageBuilder now supports optional attributes.</li>
+<li>Improvements to the s calculation in JPAKE.</li>
+<li>A general purpose PQCOtherInfoGenerator has been added which supports all Kyber and NTRU.</li>
+<li>An implementation of HPKE (RFC 9180 - Hybrid Public Key Encryption) has been added to the light-weight cryptography API.
+</ul>
+<h3>2.1.4 Security Advisory.</h3>
+<ul>
+<li>The PQC implementations have now been subject formal review for secret leakage and side channels, there were issues in BIKE, Falcon, Frodo, HQC which have now been fixed. Some weak positives also showed up in Rainbow, Picnic, SIKE, and GeMSS - for now this last set has been ignored as the algorithms will either be updated if they reappear in the Signature Round, or deleted, as is already the case for SIKE (it is now in the legacy package). Details on the group responsible for the testing can be found in the <a href="../CONTRIBUTORS.html">CONTRIBUTORS</a> file.</li>
+</ul>
+<h3>2.1.5 Notes.</h3>
+<ul>
+<li>Most test data files have now been migrated to a separate project bc-test-data which is also available on github. If you clone bc-test-data at the same level as the bc-java project the tests will find the test data they require.</li>
+<li>There has been further work to make entropy collection more friendly in container environments. See <a hef="https://github.com/bcgit/bc-java/blob/master/prov/src/main/java/org/bouncycastle/jcajce/provider/drbg/DRBG.java">DRBG.java</a> for details. We would welcome any further feedback on this as we clearly cannot try all situations first hand.</li>
 </ul>
 
 <a id="r1rv72.3"><h3>2.2.1 Version</h3></a>
