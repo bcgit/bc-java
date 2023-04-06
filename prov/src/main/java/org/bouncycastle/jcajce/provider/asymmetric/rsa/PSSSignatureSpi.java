@@ -296,11 +296,6 @@ public class PSSSignatureSpi
         {
             if (paramSpec != null)
             {
-                if (paramSpec.getDigestAlgorithm().equals(paramSpec.getMGFAlgorithm())
-                    && paramSpec.getMGFParameters() == null)
-                {
-                    return null; // must be RFC 8702 SHAKE128 or SHAKE256
-                }
                 try
                 {
                     engineParams = helper.createAlgorithmParameters("PSS");

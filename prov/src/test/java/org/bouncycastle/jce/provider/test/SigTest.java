@@ -1,6 +1,7 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -16,11 +17,13 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -81,7 +84,7 @@ public class SigTest
 
         fact = KeyPairGenerator.getInstance("RSA", "BC");
 
-        fact.initialize(768, new SecureRandom());
+        fact.initialize(2048, new SecureRandom());
 
         keyPair = fact.generateKeyPair();
 
@@ -289,6 +292,29 @@ public class SigTest
         trySig("SHA512(256)WithRSA/X9.31", data, signingKey, verifyKey);
         trySig("WhirlpoolWithRSA/X9.31", data, signingKey, verifyKey);
 
+        tryPssSig("SHA224withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA224withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA512(224)withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA512(224)withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA256withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA256withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA512(256)withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA512(256)withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA384withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA384withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA512withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA512withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHAKE128withRSASSA-PSS", data, signingKey, verifyKey);
+        tryPssSig("SHAKE256withRSASSA-PSS", data, signingKey, verifyKey);
+        tryPssSig("SHA3-224withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA3-224withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA3-256withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA3-256withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA3-384withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA3-384withRSAandSHAKE256", data, signingKey, verifyKey);
+        tryPssSig("SHA3-512withRSAandSHAKE128", data, signingKey, verifyKey);
+        tryPssSig("SHA3-512withRSAandSHAKE256", data, signingKey, verifyKey);
+
         KeyFactory keyFact = KeyFactory.getInstance("RSA", "BC");
 
         BigInteger mod = new BigInteger("f6b18dfb2eb944d8df7e8b8077f8857ffa7a4192ea10cdd87edf7839872d50029ed86fc17c8b90bef725517b7f2f6403559957d0d4220ed8283ebde769d9f7024b84654d7b398d64b582520e6b7a7e07c1aea5eedbfac0474ac239a5ceb6e5e7", 16);
@@ -360,6 +386,38 @@ public class SigTest
         if (!sig.verify(sigBytes))
         {
             fail(algorithm + " verification failed");
+        }
+    }
+
+    private void tryPssSig(String algorithm, byte[] data, PrivateKey signingKey, PublicKey verifyKey)
+        throws Exception
+    {
+        Signature sig;
+        byte[] sigBytes;
+        sig = Signature.getInstance(algorithm, "BC");
+
+        sig.initSign(signingKey);
+
+        sig.update(data);
+
+        sigBytes = sig.sign();
+
+        AlgorithmParameters params = sig.getParameters();
+
+        sig = Signature.getInstance("RSASSA-PSS", "BC");
+
+        AlgorithmParameters vParams = AlgorithmParameters.getInstance(sig.getAlgorithm(), "BC");
+
+        vParams.init(params.getEncoded());
+
+        sig.initVerify(verifyKey);
+        sig.setParameter(vParams.getParameterSpec(AlgorithmParameterSpec.class));
+
+        sig.update(data);
+
+        if (!sig.verify(sigBytes))
+        {
+            TestCase.fail(algorithm + " verification failed");
         }
     }
 

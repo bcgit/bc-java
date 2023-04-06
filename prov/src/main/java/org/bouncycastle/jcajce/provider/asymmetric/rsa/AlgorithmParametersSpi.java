@@ -176,9 +176,18 @@ public abstract class AlgorithmParametersSpi
             throws IOException
         {
             PSSParameterSpec pssSpec = currentSpec;
-            AlgorithmIdentifier hashAlgorithm = new AlgorithmIdentifier(
-                                                DigestFactory.getOID(pssSpec.getDigestAlgorithm()),
-                                                DERNull.INSTANCE);
+            ASN1ObjectIdentifier digOid = DigestFactory.getOID(pssSpec.getDigestAlgorithm());
+            AlgorithmIdentifier hashAlgorithm;
+            // RFC 8072
+            if (NISTObjectIdentifiers.id_shake128.equals(digOid) || NISTObjectIdentifiers.id_shake256.equals(digOid))
+            {
+                hashAlgorithm = new AlgorithmIdentifier(digOid);
+            }
+            else
+            {
+                hashAlgorithm = new AlgorithmIdentifier(DigestFactory.getOID(pssSpec.getDigestAlgorithm()), DERNull.INSTANCE);
+            }
+            
             MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec)pssSpec.getMGFParameters();
             if (mgfSpec != null)
             {
