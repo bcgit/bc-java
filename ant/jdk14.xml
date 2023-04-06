@@ -97,6 +97,8 @@
                 <exclude name="**/speedy/*.java"/>
                 <exclude name="**/cavp/*.java"/>
                 <exclude name="**/i18n/**/*.java"/>
+                <exclude name="**/Rainbow*.java"/>
+                <exclude name="**/GeMSS*.java"/>
                 <exclude name="**/KDFFeed*.java"/>
                 <exclude name="**/KDFDoublePipeline*.java"/>
                 <exclude name="**/KDFCounterGener*.java"/>
@@ -215,7 +217,7 @@
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>
-        <replaceregexp match="(List|Map|Set) >" replace="\1" flags="g" byline="true">
+        <replaceregexp match="(List|Map|Set|Iterator) >" replace="\1" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>
