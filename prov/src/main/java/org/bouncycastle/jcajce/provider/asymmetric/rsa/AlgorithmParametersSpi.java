@@ -185,7 +185,7 @@ public abstract class AlgorithmParametersSpi
             }
             else
             {
-                hashAlgorithm = new AlgorithmIdentifier(DigestFactory.getOID(pssSpec.getDigestAlgorithm()), DERNull.INSTANCE);
+                hashAlgorithm = new AlgorithmIdentifier(digOid, DERNull.INSTANCE);
             }
             
             MGF1ParameterSpec mgfSpec = (MGF1ParameterSpec)pssSpec.getMGFParameters();
