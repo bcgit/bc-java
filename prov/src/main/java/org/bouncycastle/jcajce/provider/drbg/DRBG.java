@@ -44,6 +44,10 @@ import org.bouncycastle.util.Strings;
  * For example, one could be provided which just reads directly from /dev/random and the extra infrastructure used here
  * could be avoided.
  * </p>
+ * <p>
+ * org.bouncycastle.drbg.entropy_thread - if true the provider will start a single daemon thread for handling entropy requests,
+ * rather than starting a thread periodically when samples are required.
+ * </p>
  */
 public class DRBG
 {
