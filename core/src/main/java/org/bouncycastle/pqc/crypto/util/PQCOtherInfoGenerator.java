@@ -25,6 +25,12 @@ import org.bouncycastle.pqc.crypto.newhope.NHAgreement;
 import org.bouncycastle.pqc.crypto.newhope.NHExchangePairGenerator;
 import org.bouncycastle.pqc.crypto.newhope.NHKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 
 /**
  * OtherInfo Generator for which can be used for populating the SuppPrivInfo field used to provide shared
@@ -85,6 +91,16 @@ public class PQCOtherInfoGenerator
 
                 encSE = new KyberKEMExtractor((KyberPrivateKeyParameters)aKp.getPrivate());
             }
+            else if (kemParams instanceof NTRUParameters)
+            {
+                NTRUKeyPairGenerator kPg = new NTRUKeyPairGenerator();
+
+                kPg.init(new NTRUKeyGenerationParameters(random, (NTRUParameters)kemParams));
+
+                aKp = kPg.generateKeyPair();
+
+                encSE = new NTRUKEMExtractor((NTRUPrivateKeyParameters)aKp.getPrivate());
+            }
             else
             {
                 throw new IllegalArgumentException("unknown KEMParameters");
@@ -141,6 +157,10 @@ public class PQCOtherInfoGenerator
             if (kemParams instanceof KyberParameters)
             {
                 encSG = new KyberKEMGenerator(random);
+            }
+            else if (kemParams instanceof NTRUParameters)
+            {
+                encSG = new NTRUKEMGenerator(random);
             }
             else
             {

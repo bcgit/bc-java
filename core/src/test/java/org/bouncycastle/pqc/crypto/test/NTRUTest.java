@@ -1,14 +1,19 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
 import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.util.DEROtherInfo;
+import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
@@ -16,6 +21,7 @@ import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -45,6 +51,25 @@ public class NTRUTest
         "PQCkemKAT_1590.rsp",
         "PQCkemKAT_1450.rsp"
     };
+
+    public void testPrivInfoGeneration()
+        throws IOException
+    {
+        SecureRandom random = new SecureRandom();
+        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(NTRUParameters.ntruhrss701, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partA = partyU.getSuppPrivInfoPartA();
+
+        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(NTRUParameters.ntruhrss701, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+
+        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
+
+        DEROtherInfo otherInfoU = partyU.generate(partB);
+
+        DEROtherInfo otherInfoV = partyV.generate();
+
+        Assert.assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
+    }
 
     public void testPQCgenKAT_kem()
         throws FileNotFoundException
