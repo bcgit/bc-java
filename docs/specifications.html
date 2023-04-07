@@ -210,6 +210,7 @@ used with the above modes.
 <tr><th>Name</th><th>KeySizes (in bits) </th><th>Block Size</th><th>Notes</th></tr>
 <tr><td><b>AESEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>AESWrapEngine</b></td><td>0 .. 256 </td><td>128 bit</td><td>Implements FIPS AES key wrapping</td></tr>
+<tr><td><b>AsconEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>BlowfishEngine</b></td><td>0 .. 448 </b></td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>CamelliaWrapEngine</b></td><td>128, 192, 256</td><td>128 bit</td><td>&nbsp;</td></tr>
@@ -220,11 +221,14 @@ used with the above modes.
 <tr><td><b>DESedeWrapEngine</b></td><td>128, 192</td><td>64 bit</td><td>Implements Draft IETF DESede key wrapping</td></tr>
 <tr><td><b>DSTU7624Engine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 Block Cipher</td></tr>
 <tr><td><b>DSTU7624WrapEngine</b></td><td>128, 256, 512</td><td>128/256/512 bit</td><td>DSTU7624 key wrapper</td></tr>
+<tr><td><b>ElephantEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>GOST28147Engine</b></td><td>256</td><td>64 bit</td><td>Has a range of S-boxes</td></tr>
 <tr><td><b>GOST3412_2015Engine</b></td><td>256</td><td>128 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>IDEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>ISAPEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>LEAEngine</b></td><td>128</td><td>128/192/256 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>NoekeonEngine</b></td><td>128</td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>PhotonBeetleEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>RC2Engine</b></td><td>0 .. 1024 </td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>RC532Engine</b></td><td>0 .. 128 </td><td>64 bit</td><td>Uses a 32 bit word</td></tr>
 <tr><td><b>RC564Engine</b></td><td>0 .. 128 </td><td>128 bit</td><td>Uses a 64 bit word</td></tr>
@@ -239,6 +243,7 @@ used with the above modes.
 <tr><td><b>TEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 <tr><td><b>ThreefishEngine</b></td><td>256/512/1024 </td><td>256 bit/512 bit/1024 bit</td><td>Tweakable block cipher</td></tr>
 <tr><td><b>TwofishEngine</b></td><td>128, 192, 256 </td><td>128 bit</td><td>&nbsp;</td></tr>
+<tr><td><b>XoodyakEngine</b></td><td>128</td><td>128 bit</td><td>AEAD Cipher</td></tr>
 <tr><td><b>XTEAEngine</b></td><td>128</td><td>64 bit</td><td>&nbsp;</td></tr>
 </table>
 
@@ -315,17 +320,20 @@ implementations
 <p>
 <table cellpadding=5 cellspacing=0 border=1 width=80%>
 <tr><th>Name</th><th>Output (in bits)</th><th>Notes</th></tr>
-<tr><td><b>Blake2sDigest</b></td><td>128, 160, 224, 256</td><td></td></tr>
+<tr><td><b>AsconDigest</b></td><td>256</td><td></td></tr>
+<tr><td><b>AsconXof</b></td><td>XOF</td><td></td></tr>
 <tr><td><b>Blake2bDigest</b></td><td>224, 256, 384, 512</td><td></td></tr>
 <tr><td><b>Blake3Digest</b></td><td>224, 256, 384, 512</td><td></td></tr>
 <tr><td><b>CSHAKEDigest</b></td><td>XOF</td><td>SP 800-185, based on SHAKE128/SHAKE256</td></tr>
 <tr><td><b>DSTU7564Digest</b></td><td>256, 384, 512</td><td></td></tr>
+<tr><td><b>ISAPDigest</b></td><td>256</td><td></td></tr>
 <tr><td><b>Kangaroo</b></td><td>XOF</td><td>Built on Keccak-p</td></tr>
 <tr><td><b>KeccakDigest</b></td><td>224, 256, 288, 384, 512</td><td></td></tr>
 <tr><td><b>MD2Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD4Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>MD5Digest</b></td><td>128</td><td>&nbsp;</td></tr>
 <tr><td><b>ParallelHash</b></td><td>XOF</td><td>XOF based on cSHAKE (SP 800-185).</td></tr>
+<tr><td><b>PhotonBeetleDigest</b></td><td>256</td><td></td></tr>
 <tr><td><b>RipeMD128Digest</b></td><td>128</td><td>basic RipeMD</td></tr>
 <tr><td><b>RipeMD160Digest</b></td><td>160</td><td>enhanced version of RipeMD</td></tr>
 <tr><td><b>RipeMD256Digest</b></td><td>256</td><td>expanded version of RipeMD128</td></tr>
@@ -347,6 +355,7 @@ implementations
 <tr><td><b>WhirlpoolDigest</b></td><td>512</td><td>The Whirlpool Digest.</td></tr>
 <tr><td><b>Haraka256Digest</b></td><td>256</td><td>Haraka V2 - 256 bit input version.</td></tr>
 <tr><td><b>Haraka512Digest</b></td><td>256</td><td>Haraka V2 - 512 bit input version.</td></tr>
+<tr><td><b>XoodyakDigest</b></td><td>256</td><td></td></tr>
 </table>
 
 <h4>MAC</h4>
