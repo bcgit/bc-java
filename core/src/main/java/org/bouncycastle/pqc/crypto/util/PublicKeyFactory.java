@@ -214,6 +214,14 @@ public class PublicKeyFactory
     public static AsymmetricKeyParameter createKey(byte[] keyInfoData)
         throws IOException
     {
+        if (keyInfoData == null)
+        {
+            throw new IllegalArgumentException("keyInfoData array null");
+        }
+        if (keyInfoData.length == 0)
+        {
+            throw new IllegalArgumentException("keyInfoData array empty");
+        }
         return createKey(SubjectPublicKeyInfo.getInstance(ASN1Primitive.fromByteArray(keyInfoData)));
     }
 
@@ -240,6 +248,10 @@ public class PublicKeyFactory
     public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
+        if (keyInfo == null)
+        {
+            throw new IllegalArgumentException("keyInfo argument null");
+        }
         return createKey(keyInfo, null);
     }
 
@@ -254,6 +266,11 @@ public class PublicKeyFactory
     public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         throws IOException
     {
+        if (keyInfo == null)
+        {
+            throw new IllegalArgumentException("keyInfo argument null");
+        }
+
         AlgorithmIdentifier algId = keyInfo.getAlgorithm();
         SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter)converters.get(algId.getAlgorithm());
 

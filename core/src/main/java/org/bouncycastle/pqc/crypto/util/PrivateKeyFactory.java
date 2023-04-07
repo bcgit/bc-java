@@ -89,6 +89,14 @@ public class PrivateKeyFactory
     public static AsymmetricKeyParameter createKey(byte[] privateKeyInfoData)
         throws IOException
     {
+        if (privateKeyInfoData == null)
+        {
+            throw new IllegalArgumentException("privateKeyInfoData array null");
+        }
+        if (privateKeyInfoData.length == 0)
+        {
+            throw new IllegalArgumentException("privateKeyInfoData array empty");
+        }
         return createKey(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(privateKeyInfoData)));
     }
 
@@ -116,6 +124,11 @@ public class PrivateKeyFactory
     public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
+        if (keyInfo == null)
+        {
+            throw new IllegalArgumentException("keyInfo array null");
+        }
+
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
