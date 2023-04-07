@@ -92,7 +92,7 @@ public class XoodyakEngine
     @Override
     public String getAlgorithmName()
     {
-        return "Xoodak AEAD";
+        return "Xoodyak AEAD";
     }
 
     @Override
