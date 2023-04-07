@@ -698,11 +698,11 @@ class FalconVrfy
     }
 
     /* see inner.h */
-    int complete_private(byte[] srcG, int G,
+    boolean complete_private(byte[] srcG, int G,
                          byte[] srcf, int f, byte[] srcg, int g, byte[] srcF, int F,
                          int logn, short[] srctmp, int tmp)
     {
-        int success = 1;
+        boolean success = true;
         int u, n;
         int t1, t2;
 
@@ -725,10 +725,7 @@ class FalconVrfy
         mq_NTT(srctmp, t2, logn);
         for (u = 0; u < n; u++)
         {
-            if (srctmp[t2 + u] == 0)
-            {
-                success = 0;
-            }
+            success &= (srctmp[t2 + u] != 0);
             srctmp[t1 + u] = (short)mq_div_12289(srctmp[t1 + u], srctmp[t2 + u]);
         }
         mq_iNTT(srctmp, t1, logn);
@@ -740,10 +737,7 @@ class FalconVrfy
             w = (srctmp[t1 + u] & 0xffff);
             w -= (Q & ~-((w - (Q >> 1)) >>> 31)); // w is unsigned
             gi = w; // gi is signed
-            if (gi < -127 || gi > +127)
-            {
-                success = 0;
-            }
+            success &= !(gi < -127 || gi > +127);
             srcG[G + u] = (byte)gi;
         }
         return success;

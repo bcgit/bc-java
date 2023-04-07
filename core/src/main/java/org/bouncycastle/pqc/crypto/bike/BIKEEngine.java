@@ -321,10 +321,8 @@ class BIKEEngine
         // recompute syndrome
         for (int i = 0; i < 2 * r; i++)
         {
-            if (black[i] != 0)
-            {
-                recomputeSyndrome(s, i, h0Compact, h1Compact);
-            }
+            // constant time - depends on secret value
+            recomputeSyndrome(s, i, h0Compact, h1Compact, (black[i] != 0));
         }
     }
 
@@ -373,10 +371,8 @@ class BIKEEngine
         // recompute syndrome
         for (int i = 0; i < 2 * r; i++)
         {
-            if (updatedIndices[i] == 1)
-            {
-                recomputeSyndrome(s, i, h0Compact, h1Compact);
-            }
+            // constant time - depends on secret value
+            recomputeSyndrome(s, i, h0Compact, h1Compact, updatedIndices[i] == 1);
         }
     }
 
@@ -388,11 +384,11 @@ class BIKEEngine
         {
             if (mask[j] == 1)
             {
-                if (ctr(h0CompactCol, s, j) >= T)
-                {
-                    updateNewErrorIndex(e, j);
-                    updatedIndices[j] = 1;
-                }
+                // constant time - depends on secret value
+                boolean isCtrGtEqT = ctr(h0CompactCol, s, j) >= T;
+
+                updateNewErrorIndex(e, j, isCtrGtEqT);
+                updatedIndices[j] = isCtrGtEqT ? 1 : 0;
             }
         }
 
@@ -400,21 +396,19 @@ class BIKEEngine
         {
             if (mask[r + j] == 1)
             {
-                if (ctr(h1CompactCol, s, j) >= T)
-                {
-                    updateNewErrorIndex(e, r + j);
-                    updatedIndices[r + j] = 1;
-                }
+                // constant time - depends on secret value
+                boolean isCtrGtEqT = ctr(h1CompactCol, s, j) >= T;
+
+                updateNewErrorIndex(e, r + j, isCtrGtEqT);
+                updatedIndices[r + j] = isCtrGtEqT ? 1 : 0;
             }
         }
 
         // recompute syndrome
         for (int i = 0; i < 2 * r; i++)
         {
-            if (updatedIndices[i] == 1)
-            {
-                recomputeSyndrome(s, i, h0Compact, h1Compact);
-            }
+            // constant time - depends on secret value
+            recomputeSyndrome(s, i, h0Compact, h1Compact, updatedIndices[i] == 1);
         }
     }
 
@@ -541,9 +535,10 @@ class BIKEEngine
                     break;
                 }
                 mask = ((h[i] >> j) & 1);
+                // constant time - depends on secret value
                 // if mask == 1 compactVersion = (i * 8 + j)
                 // is mask == 0 compactVersion = compactVersion
-                    compactVersion[count] =
+                compactVersion[count] =
                             (i * 8 + j) & -mask |
                             compactVersion[count] & ~-mask;
                 count = (count + mask) % hw;
@@ -572,19 +567,21 @@ class BIKEEngine
         return hCompactColumn;
     }
 
-    private void recomputeSyndrome(byte[] syndrome, int index, int[] h0Compact, int[] h1Compact)
+    private void recomputeSyndrome(byte[] syndrome, int index, int[] h0Compact, int[] h1Compact, boolean isOne)
     {
+        int bit = isOne ? 1 : 0;
+
         if (index < r)
         {
             for (int i = 0; i < hw; i++)
             {
                 if (h0Compact[i] <= index)
                 {
-                    syndrome[index - h0Compact[i]] ^= 1;
+                    syndrome[index - h0Compact[i]] ^= bit;
                 }
                 else
                 {
-                    syndrome[r + index - h0Compact[i]] ^= 1;
+                    syndrome[r + index - h0Compact[i]] ^= bit;
                 }
             }
         }
@@ -594,11 +591,11 @@ class BIKEEngine
             {
                 if (h1Compact[i] <= (index - r))
                 {
-                    syndrome[(index - r) - h1Compact[i]] ^= 1;
+                    syndrome[(index - r) - h1Compact[i]] ^= bit;
                 }
                 else
                 {
-                    syndrome[r - h1Compact[i] + (index - r)] ^= 1;
+                    syndrome[r - h1Compact[i] + (index - r)] ^= bit;
                 }
             }
         }
@@ -621,7 +618,7 @@ class BIKEEngine
         }
     }    
 
-    private void updateNewErrorIndex(byte[] e, int index)
+    private void updateNewErrorIndex(byte[] e, int index, boolean isOne)
     {
         int newIndex = index;
         if (index != 0 && index != r)
@@ -635,6 +632,6 @@ class BIKEEngine
                 newIndex = r - index;
             }
         }
-        e[newIndex] ^= 1;
+        e[newIndex] ^= isOne ? 1 : 0;
     }
 }

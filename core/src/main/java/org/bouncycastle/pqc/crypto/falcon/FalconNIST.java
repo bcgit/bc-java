@@ -184,7 +184,7 @@ class FalconNIST
             throw new IllegalStateException("full key not used");
         }
 
-        if (vrfy.complete_private(G, 0, f, 0, g, 0, F, 0, LOGN, new short[2 * N], 0) == 0)
+        if (!vrfy.complete_private(G, 0, f, 0, g, 0, F, 0, LOGN, new short[2 * N], 0))
         {
             throw new IllegalStateException("complete_private failed");
         }
