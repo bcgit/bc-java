@@ -166,6 +166,7 @@
 		<exclude name="**/jce/provider/test/nist/NistCertPathTest2.java"/>
                 <exclude name="**/jce/provider/test/JceTestUtil.java"/>
                 <exclude name="**/SIKE*.java"/>
+		<exclude name="**/CertLocaleTest.java"/>
             </fileset>
 
             <fileset dir="tls/src/main/java" includes="**/*.java">

@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.util.Vector;
 
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.DefaultTlsClient;

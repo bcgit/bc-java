@@ -32,6 +32,7 @@ import javax.mail.internet.MimeMultipart;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.Extension;
@@ -524,7 +525,7 @@ public class SignedMailValidatorTest extends TestCase
     
     public static void main(String[] args) throws Exception
     {
-        PrintTestResilt.printResult( junit.textui.TestRunner.run(suite()));
+        PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite() throws Exception

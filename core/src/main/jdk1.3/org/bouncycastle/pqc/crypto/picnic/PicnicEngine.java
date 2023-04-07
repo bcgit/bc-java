@@ -1,16 +1,15 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
 import java.security.SecureRandom;
-//import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.math.raw.Bits;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 class PicnicEngine
 {
-//    private static final Logger LOG = Logger.getLogger(PicnicEngine.class.getName());
 
     // same for all parameter sets
     protected static final int saltSizeBytes = 32;
@@ -25,15 +24,15 @@ class PicnicEngine
 
     /* Maximum lengths in bytes */
     private static final int PICNIC_MAX_LOWMC_BLOCK_SIZE = 32;
-    private static final int PICNIC_MAX_PUBLICKEY_SIZE = (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);
+//    private static final int PICNIC_MAX_PUBLICKEY_SIZE = (2 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 1);
     /**
      * < Largest serialized public key size, in bytes
      */
-    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);
+//    private static final int PICNIC_MAX_PRIVATEKEY_SIZE = (3 * PICNIC_MAX_LOWMC_BLOCK_SIZE + 2);
     /**
      * < Largest serialized private key size, in bytes
      */
-    private static final int PICNIC_MAX_SIGNATURE_SIZE = 209522;
+//    private static final int PICNIC_MAX_SIGNATURE_SIZE = 209522;
     /**
      * < Largest signature size, in bytes
      */
@@ -88,9 +87,12 @@ class PicnicEngine
     {
         return signatureLength;
     }
+
+    protected final LowmcConstants lowmcConstants;
     
-    PicnicEngine(int picnicParams)
+    PicnicEngine(int picnicParams, LowmcConstants lowmcConstants)
     {
+        this.lowmcConstants = lowmcConstants;
         parameters = picnicParams;
         switch (parameters)
         {
@@ -358,7 +360,6 @@ class PicnicEngine
             int ret = deserializeSignature(sig, signature, sigLen, message.length + 4);
             if (ret != 0)
             {
-                // LOG.fine("Error couldn't deserialize signature!");
                 return -1;
             }
 
@@ -424,7 +425,6 @@ class PicnicEngine
 
         if (!subarrayEquals(received_challengebits, computed_challengebits, Utils.numBytes(2 * numMPCRounds)))
         {
-            // LOG.fine(("Invalid signature. Did not verify"));
             status = -1;
         }
 
@@ -497,13 +497,11 @@ class PicnicEngine
                 break;
 
             default:
-                // LOG.fine("Invalid Challenge!");
                 break;
         }
 
         if (!status)
         {
-            // LOG.fine("Failed to generate random tapes, signature verification will fail (but signature may actually be valid)");
             return false;
         }
         /* When input shares are read from the tapes, and the length is not a whole number of bytes, the trailing bits must be zero */
@@ -530,7 +528,7 @@ class PicnicEngine
 
         mpc_xor_constant_verify(tmp, plaintext, 0, stateSizeWords, challenge);
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this, 0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this, 0);
         matrix_mul_offset(tmp, 0,
                 view1.inputShare, 0,
                 current.getData(), current.getMatrixPointer());
@@ -542,7 +540,7 @@ class PicnicEngine
 
         for (int r = 1; r <= numRounds; ++r)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul_offset(tmp, 0,
                     view1.inputShare, 0,
                     current.getData(), current.getMatrixPointer());
@@ -552,12 +550,12 @@ class PicnicEngine
 
             mpc_substitution_verify(tmp, tapes, view1, view2);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             mpc_matrix_mul(tmp, 2*stateSizeWords,
                     tmp, 2*stateSizeWords,
                     current.getData(), current.getMatrixPointer(), 2);
 
-            current = LowmcConstants.RConstant(this, r - 1);
+            current = lowmcConstants.RConstant(this, r - 1);
             mpc_xor_constant_verify(tmp, current.getData(), current.getMatrixPointer(), stateSizeWords, challenge);
             mpc_xor(tmp, tmp, stateSizeWords, 2);
         }
@@ -799,7 +797,6 @@ class PicnicEngine
                         sig.salt, t);
                 if (ret != 0)
                 {
-                    // LOG.fine("Failed to reconstruct seeds for round " + t);
                     return -1;
                 }
             }
@@ -870,7 +867,7 @@ class PicnicEngine
                  * We simulate the MPC with one fewer party; the unopned party's values are all set to zero. */
                 int unopened = sig.challengeP[indexOf(sig.challengeC, numOpenedRounds, t)];
 
-                int tapeLengthBytes = 2 * andSizeBytes;
+//                int tapeLengthBytes = 2 * andSizeBytes;
                 if(unopened != last)
                 {  // sig.proofs[t].aux is only set when P_t != N
                     tapes[t].setAuxBits(sig.proofs[t].aux);
@@ -889,7 +886,6 @@ class PicnicEngine
                 int rv = simulateOnline(temp, tapes[t], tmp_shares, msgs[t], plaintext, pubKey);
                 if (rv != 0)
                 {
-                    // LOG.fine("MPC simulation failed for round " + t + ", signature invalid");
                     return -1;
                 }
                 commit_v(Cv[t], sig.proofs[t].input, msgs[t]);
@@ -920,7 +916,6 @@ class PicnicEngine
         /* Compare to challenge from signature */
         if (!subarrayEquals(sig.challengeHash, challengeHash, digestSizeBytes))
         {
-            // LOG.fine("Challenge does not match, signature invalid");
             return -1;
         }
         return ret;
@@ -980,7 +975,6 @@ class PicnicEngine
         /* Fail if the signature does not have the exact number of bytes we expect */
         if (sigLen != bytesRequired)
         {
-            // LOG.fine("sigBytesLen = " + sigBytes.length + ", expected bytesRequired = " + bytesRequired);
             return -1;
         }
 
@@ -1011,7 +1005,6 @@ class PicnicEngine
                     sigBytesOffset += andSizeBytes;
                     if (!arePaddingBitsZero(sig.proofs[t].aux, 3 * numRounds * numSboxes))
                     {
-                        // LOG.fine("failed while deserializing aux bits");
                         return -1;
                     }
                 }
@@ -1024,7 +1017,6 @@ class PicnicEngine
                 int msgsBitLength =  3 * numRounds * numSboxes;
                 if (!arePaddingBitsZero(sig.proofs[t].msgs, msgsBitLength))
                 {
-                    // LOG.fine("failed while deserializing msgs bits");
                     return -1;
                 }
 
@@ -1087,14 +1079,12 @@ class PicnicEngine
             int ret = sign_picnic1(data, ciphertext, plaintext, message, sig);
             if (ret != 0)
             {
-                // LOG.fine("Failed to create signature");
                 return false;
             }
 
             int len = serializeSignature(sig, signature, message.length + 4);
             if (len == -1)
             {
-                // LOG.fine("Failed to serialize signature");
                 return false;
             }
             signatureLength = len;
@@ -1107,14 +1097,12 @@ class PicnicEngine
             boolean ret = sign_picnic3(data, ciphertext, plaintext, message, sig);
             if (!ret)
             {
-                // LOG.fine("Failed to create signature");
                 return false;
             }
 
             int len = serializeSignature2(sig, signature, message.length + 4);
             if (len == -1)
             {
-                // LOG.fine("Failed to serialize signature");
                 return false;
             }
 
@@ -1299,7 +1287,6 @@ class PicnicEngine
                         sig.salt, k, j, tmp, stateSizeBytes + andSizeBytes);
                 if (!status) 
                 {
-                    // LOG.fine("createRandomTape failed");
                     return -1;
                 }
                 System.arraycopy(tmp, 0, view_byte, 0, stateSizeBytes);
@@ -1314,7 +1301,6 @@ class PicnicEngine
                     sig.salt, k, 2, tape.tapes[2], andSizeBytes);
             if (!status)
             {
-                // LOG.fine("createRandomTape failed");
                 return -1;
             }
 
@@ -1332,7 +1318,6 @@ class PicnicEngine
 
             if(!subarrayEquals(temp, pubKey, stateSizeWords))
             {
-                // LOG.fine("Simulation failed; output does not match public key (round = " + k + ")");
                 return -1;
             }
 
@@ -1394,7 +1379,7 @@ class PicnicEngine
         }
         else 
         {
-            // LOG.fine("Invalid challenge");
+// ignore
         }
 
         if (challenge == 1 || challenge == 2)
@@ -1540,7 +1525,7 @@ class PicnicEngine
 
         mpc_xor_constant(slab, 3*stateSizeWords, plaintext, 0, stateSizeWords);
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this, 0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this, 0);
         for (int player = 0; player < 3; player++)
         {
             matrix_mul_offset(slab, player  * stateSizeWords, views[player].inputShare, 0,
@@ -1551,7 +1536,7 @@ class PicnicEngine
 
         for (int r = 1; r <= numRounds; r++)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             for (int player = 0; player < 3; player++)
             {
                 matrix_mul_offset(slab, player  * stateSizeWords,
@@ -1561,12 +1546,12 @@ class PicnicEngine
 
             mpc_substitution(slab, tapes, views);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             mpc_matrix_mul(slab, 3*stateSizeWords,
                            slab, 3*stateSizeWords,
                            current.getData(), current.getMatrixPointer(), 3);
 
-            current = LowmcConstants.RConstant(this, r - 1);
+            current = lowmcConstants.RConstant(this, r - 1);
             mpc_xor_constant(slab, 3*stateSizeWords,
                              current.getData(), current.getMatrixPointer(), stateSizeWords);
 
@@ -1781,7 +1766,6 @@ class PicnicEngine
             int rv = simulateOnline(maskedKey, tapes[t], tmp_shares, msgs[t], plaintext, pubKey);
             if (rv != 0)
             {
-                // LOG.fine("MPC simulation failed, aborting signature");
                 return false;
             }
             Pack.intToLittleEndian(maskedKey, inputs[t], 0);
@@ -2031,7 +2015,7 @@ class PicnicEngine
         int[] roundKey = new int[LOWMC_MAX_WORDS];
         int[] state = new int[LOWMC_MAX_WORDS];
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this,0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer()); // roundKey = maskedKey * KMatrix[0]
         xor_array(state, roundKey, plaintext,0, stateSizeWords);      // state = plaintext + roundKey
 
@@ -2040,13 +2024,13 @@ class PicnicEngine
             tapesToWords(tmp_shares, tape);
             mpc_sbox(state, tmp_shares, tape, msg);
 
-            current = LowmcConstants.LMatrix(this, r - 1);
+            current = lowmcConstants.LMatrix(this, r - 1);
             matrix_mul(state, state, current.getData(), current.getMatrixPointer()); // state = state * LMatrix (r-1)
 
-            current = LowmcConstants.RConstant(this,r - 1);
+            current = lowmcConstants.RConstant(this,r - 1);
             xor_array(state, state, current.getData(), current.getMatrixPointer(), stateSizeWords);  // state += RConstant
 
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer());
             xor_array(state, roundKey, state, 0, stateSizeWords);      // state += roundKey
         }
@@ -2107,8 +2091,8 @@ class PicnicEngine
     {
         for (int i = 0; i < numMPCParties; i++)
         {
-            int w_i = Utils.getBit(Pack.intToLittleEndian(w), i);
-            Utils.setBit(msg.msgs[i], msg.pos, (byte) (w_i & 0xff));
+            int w_i = Utils.getBit(w, i);
+            Utils.setBit(msg.msgs[i], msg.pos, (byte)w_i);            
         }
         msg.pos++;
     }
@@ -2118,13 +2102,10 @@ class PicnicEngine
         int and_helper = tape.tapesToWord();   // The special mask value setup during preprocessing for each AND gate
         int s_shares = (extend(a) & mask_b) ^ (extend(b) & mask_a) ^ and_helper;
 
-        byte[] temp = Pack.intToLittleEndian(s_shares);
-
         if (msg.unopened >= 0)
         {
             int unopenedPartyBit = Utils.getBit(msg.msgs[msg.unopened], msg.pos);
-            Utils.setBit(temp, msg.unopened, (byte) (unopenedPartyBit & 0xff));
-            s_shares = Pack.littleEndianToInt(temp, 0);
+            s_shares = Utils.setBit(s_shares, msg.unopened, unopenedPartyBit);
         }
 
         // Broadcast each share of s
@@ -2293,7 +2274,6 @@ class PicnicEngine
         int bytesRequired = 1 + 3 * stateSizeBytes;
         if (buf.length < bytesRequired)
         {
-            // LOG.fine("Failed writing private key!");
             return -1;
         }
         buf[0] = (byte) parameters;
@@ -2308,7 +2288,6 @@ class PicnicEngine
         int bytesRequired = 1 + 2 * stateSizeBytes;
         if (buf.length < bytesRequired)
         {
-            // LOG.fine("Failed writing public key!");
             return -1;
         }
         buf[0] = (byte) parameters;
@@ -2367,22 +2346,22 @@ class PicnicEngine
             System.arraycopy(plaintext, 0, output, 0, stateSizeWords);
         }
 
-        KMatricesWithPointer current = LowmcConstants.KMatrix(this,0);
+        KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());
 
         xor_array(output, output, roundKey, 0,  stateSizeWords);
 
         for (int r = 1; r <= numRounds; r++)
         {
-            current = LowmcConstants.KMatrix(this, r);
+            current = lowmcConstants.KMatrix(this, r);
             matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());
 
             substitution(output);
 
-            current = LowmcConstants.LMatrix(this,r-1);
+            current = lowmcConstants.LMatrix(this,r-1);
             matrix_mul(output, output, current.getData(), current.getMatrixPointer());
 
-            current = LowmcConstants.RConstant(this,r-1);
+            current = lowmcConstants.RConstant(this,r-1);
             xor_array(output, output, current.getData(), current.getMatrixPointer(), stateSizeWords);
             xor_array(output, output, roundKey, 0, stateSizeWords);
         }
@@ -2434,6 +2413,13 @@ class PicnicEngine
         int[] temp = new int[LOWMC_MAX_WORDS];
         temp[stateSizeWords-1] = 0;
         int wholeWords = stateSizeBits/WORD_SIZE_BITS;
+        int unusedStateBits = stateSizeWords * WORD_SIZE_BITS - stateSizeBits;
+
+        // The final word mask, with bits reversed within each byte
+        int partialWordMask = -1 >>> unusedStateBits;
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x55555555, 1);
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x33333333, 2);
+        partialWordMask = Bits.bitPermuteStepSimple(partialWordMask, 0x0F0F0F0F, 4);
 
         for (int i = 0; i < stateSizeBits; i++)
         {
@@ -2441,16 +2427,17 @@ class PicnicEngine
             for (int j = 0; j < wholeWords; j++)
             {
                 int index = i * stateSizeWords + j;
-                prod ^= (state[j + stateOffset] & matrix[matrixOffset + index]);
+                prod ^= state[stateOffset + j] &
+                        matrix[matrixOffset + index];
             }
-            for(int j = wholeWords*WORD_SIZE_BITS; j < stateSizeBits; j++)
+            if (unusedStateBits > 0)
             {
-                int index = i * stateSizeWords*WORD_SIZE_BITS + j;
-                int bit = (Utils.getBitFromWordArray(state,j + stateOffset*32) & Utils.getBitFromWordArray(matrix, matrixOffset*32 + index));
-                prod ^= bit;
+                int index = i * stateSizeWords + wholeWords;
+                prod ^= state[stateOffset + wholeWords] &
+                        matrix[matrixOffset + index] &
+                        partialWordMask;
             }
             Utils.setBit(temp, i, Utils.parity32(prod));
-
         }
 
         System.arraycopy(temp, 0, output, outputOffset, stateSizeWords);

@@ -7,14 +7,14 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
     extends TestCase
 {
     public static void main (String[] args)
     {
-       PrintTestResilt.printResult( junit.textui.TestRunner.run(suite()));
+       PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
     
     public static Test suite()

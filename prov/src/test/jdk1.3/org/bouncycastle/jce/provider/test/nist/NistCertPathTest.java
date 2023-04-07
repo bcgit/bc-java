@@ -36,7 +36,8 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
+import org.bouncycastle.test.TestResourceFinder;
 
 
 /**

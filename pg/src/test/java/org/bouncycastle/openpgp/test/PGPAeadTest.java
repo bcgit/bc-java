@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.Security;
 
@@ -32,6 +30,8 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
@@ -45,7 +45,7 @@ public class PGPAeadTest
     extends SimpleTest
 {
 
-    private static final byte[] PLAINTEXT = "Hello, world!".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] PLAINTEXT = Strings.toByteArray("Hello, world!");
     private static final char[] PASSWORD = "password".toCharArray();
 
     // Official Test Vectors
@@ -99,7 +99,7 @@ public class PGPAeadTest
     @Override
     public String getName()
     {
-        return getClass().getSimpleName();
+        return "PGPAeadTest";
     }
 
     @Override
@@ -276,7 +276,7 @@ public class PGPAeadTest
     private void testBcDecryption(String armoredMessage, char[] password, byte[] expectedPlaintext)
         throws IOException
     {
-        ByteArrayInputStream messageIn = new ByteArrayInputStream(armoredMessage.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream messageIn = new ByteArrayInputStream(Strings.toByteArray(armoredMessage));
         ArmoredInputStream armorIn = new ArmoredInputStream(messageIn);
         PGPObjectFactory objectFactory = new PGPObjectFactory(armorIn, new BcKeyFingerprintCalculator());
 
@@ -330,7 +330,7 @@ public class PGPAeadTest
     {
         BouncyCastleProvider provider = new BouncyCastleProvider();
         Security.addProvider(provider);
-        ByteArrayInputStream messageIn = new ByteArrayInputStream(armoredMessage.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream messageIn = new ByteArrayInputStream(Strings.toByteArray(armoredMessage));
         ArmoredInputStream armorIn = new ArmoredInputStream(messageIn);
         PGPObjectFactory objectFactory = new JcaPGPObjectFactory(armorIn);
 
@@ -386,12 +386,12 @@ public class PGPAeadTest
         boolean separate = true;
         boolean prefix = true;
         String hex = Hex.toHexString(bytes);
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         for (int i = 0; i < hex.length() / 2; i++)
         {
             if (prefix && i % 8 == 0)
             {
-                sb.append("0x").append(String.format("%04X", i & 0xFFFFF)).append("   ");
+                sb.append("0x").append(Hex.toHexString(Pack.intToBigEndian(i & 0xFFFFF))).append("   ");
             }
             sb.append(hex.substring(i * 2, i * 2 + 2));
             if (separate)
@@ -454,7 +454,7 @@ public class PGPAeadTest
 
     private void testKnownPaddingBytes()
     {
-        byte[] known = "thisIsKnownPadding".getBytes(Charset.forName("UTF8"));
+        byte[] known = Strings.toByteArray("thisIsKnownPadding");
         PaddingPacket packet = new PaddingPacket(known);
         isTrue(Arrays.areEqual(known, packet.getPadding()));
     }

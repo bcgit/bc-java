@@ -5,7 +5,7 @@ import junit.framework.TestSuite;
 
 import javax.crypto.Cipher;
 import java.security.Security;
-import org.bouncycastle.PrintTestResult;
+import org.bouncycastle.test.PrintTestResult;
 
 
 public class AllTests 
