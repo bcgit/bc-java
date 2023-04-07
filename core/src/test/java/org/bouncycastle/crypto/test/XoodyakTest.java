@@ -26,7 +26,7 @@ public class XoodyakTest
 {
     public String getName()
     {
-        return "xoodyak";
+        return "Xoodyak";
     }
 
     public void performTest()
