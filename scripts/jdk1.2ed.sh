@@ -1,7 +1,7 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/test/*.java
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java 
 do
 ed $i <<%%
 g/.Override/d
@@ -9,6 +9,12 @@ w
 q
 %%
 done
+
+ed org/bouncycastle/cert/crmf/jcajce/JcaCertificateRepMessageBuilder.java <<%
+g/\.\.\./s//[]/
+w
+q
+%
 
 ed org/bouncycastle/crypto/util/DERMacData.java <<%
 g/private final String enc;/s/final//

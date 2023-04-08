@@ -32,7 +32,19 @@ g/new MiscTest()/s//\/\/ &/
 w
 q
 %%
+)
 
+(
+cd  org/bouncycastle/crypto/; 
+for i in engines/*.java digests/*.java
+do
+ed $i <<%%
+g/final .* contents/s/final//
+g/final .* start/s/final//
+w
+q
+%%
+done
 )
 
 ed org/bouncycastle/asn1/ASN1TaggedObject.java <<%

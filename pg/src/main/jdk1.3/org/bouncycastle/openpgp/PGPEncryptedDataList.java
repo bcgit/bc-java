@@ -14,6 +14,7 @@ import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.util.Iterable;
@@ -35,10 +36,10 @@ import org.bouncycastle.util.Iterable;
 public class PGPEncryptedDataList
     implements Iterable<PGPEncryptedData>
 {
-    //private static final Logger LOG = Logger.getLogger(PGPEncryptedDataList.class.getName());
+//    private static final Logger LOG = Logger.getLogger(PGPEncryptedDataList.class.getName());
 
     List<PGPEncryptedData> methods = new ArrayList<PGPEncryptedData>();
-    InputStreamPacket      data;
+    InputStreamPacket data;
 
     /**
      * Construct an encrypted data packet holder, reading PGP encrypted method packets and an
@@ -47,6 +48,7 @@ public class PGPEncryptedDataList
      * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param encData a byte array containing an encrypted stream.
      * @throws IOException if an error occurs reading from the PGP input.
      */
@@ -64,6 +66,7 @@ public class PGPEncryptedDataList
      * The first packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param inStream the input stream being read.
      * @throws IOException if an error occurs reading from the PGP input.
      */
@@ -81,11 +84,12 @@ public class PGPEncryptedDataList
      * The next packet in the stream should be one of {@link PacketTags#SYMMETRIC_KEY_ENC_SESSION}
      * or {@link PacketTags#PUBLIC_KEY_ENC_SESSION}.
      * </p>
+     *
      * @param pIn the PGP object stream being read.
      * @throws IOException if an error occurs reading from the PGP input.
      */
     public PGPEncryptedDataList(
-        BCPGInputStream    pIn)
+        BCPGInputStream pIn)
         throws IOException
     {
         List list = new ArrayList();
@@ -100,10 +104,10 @@ public class PGPEncryptedDataList
             catch (UnsupportedPacketVersionException e)
             {
                 // Skip unknown packet versions
-                //if (LOG.isLoggable(Level.FINE))
-                //{
-                    //LOG.fine("skipping unknown session packet: " + e.getMessage());
-                //}
+//                if (LOG.isLoggable(Level.FINE))
+//                {
+//                    LOG.fine("skipping unknown session packet: " + e.getMessage());
+//                }
             }
         }
 
@@ -129,12 +133,23 @@ public class PGPEncryptedDataList
     }
 
     /**
+     * Checks whether the packet is integrity protected.
+     *
+     * @return <code>true</code> if there is a modification detection code package associated with
+     * this stream
+     */
+    public boolean isIntegrityProtected()
+    {
+        return data instanceof SymmetricEncIntegrityPacket;
+    }
+
+    /**
      * Gets the encryption method object at the specified index.
      *
      * @param index the encryption method to obtain (0 based).
      */
     public PGPEncryptedData get(
-        int    index)
+        int index)
     {
         return (PGPEncryptedData)methods.get(index);
     }
@@ -170,5 +185,16 @@ public class PGPEncryptedDataList
     public Iterator<PGPEncryptedData> iterator()
     {
         return getEncryptedDataObjects();
+    }
+
+    /**
+     * Create a decryption method using a {@link PGPSessionKey}. This method can be used to decrypt messages which do not
+     * contain a SKESK or PKESK packet using a session key.
+     *
+     * @return session key encrypted data
+     */
+    public PGPSessionKeyEncryptedData extractSessionKeyEncryptedData()
+    {
+        return new PGPSessionKeyEncryptedData(data);
     }
 }

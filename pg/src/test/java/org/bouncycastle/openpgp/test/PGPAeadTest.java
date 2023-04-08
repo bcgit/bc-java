@@ -30,6 +30,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -319,7 +320,7 @@ public class PGPAeadTest
                 }
                 catch (PGPException e)
                 {
-                    throw new RuntimeException(e);
+                    throw Exceptions.illegalStateException(e.getMessage(), e);
                 }
             }
         }
@@ -375,7 +376,7 @@ public class PGPAeadTest
                 }
                 catch (PGPException e)
                 {
-                    throw new RuntimeException(e);
+                    throw Exceptions.illegalStateException(e.getMessage(), e);
                 }
             }
         }
