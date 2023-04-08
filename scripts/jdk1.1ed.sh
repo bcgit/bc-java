@@ -15,6 +15,12 @@ q
 %
 
 
+ed org/bouncycastle/cert/cmp/CMSProcessableCMPCertificate.java <<%
+g/private final .*/s/final//
+w
+q
+%
+
 (
 cd  org/bouncycastle/asn1/; 
 for i in *.java
@@ -35,17 +41,40 @@ q
 )
 
 (
-cd  org/bouncycastle/crypto/; 
-for i in engines/*.java digests/*.java
+cd  org/bouncycastle/crypto 
+for i in engines/*.java digests/*.java hpke/*.java params/*.java
 do
+echo $i
 ed $i <<%%
 g/final .* contents/s/final//
 g/final .* start/s/final//
+g/private final .*/s/final//
 w
 q
 %%
 done
 )
+
+ed org/bouncycastle/crypto/generators/ECKeyPairGenerator.java <<%
+g/private final .*/s/final//
+w
+w
+q
+%
+
+ed org/bouncycastle/asn1/x509/AltSignatureAlgorithm.java <<%
+g/private final .*/s/final//
+w
+w
+q
+%
+
+ed org/bouncycastle/asn1/cms/CMSORIforKEMOtherInfo.java <<%
+g/private final .*/s/final//
+w
+w
+q
+%
 
 ed org/bouncycastle/asn1/ASN1TaggedObject.java <<%
 g/final .* explicitness;/s/final//

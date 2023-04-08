@@ -17,6 +17,11 @@ public class GcmSpecUtil
 	return null;
     }
 
+    public static boolean gcmSpecExtractable()
+    {
+        return false;
+    }
+
     public static boolean gcmSpecExists()
     {
         return false;
