@@ -2,6 +2,7 @@
 
 <project name="crypto.bcbuild" default="build" basedir=".">
 
+    <property file="bc-build.user.properties" />
     <property file="bc-build.properties" />
     <property environment="env" />
 
@@ -192,6 +193,7 @@
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.txt" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.rsp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.gpg" />
+                     <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pgp" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.pub" />
                      <fileset dir="${artifacts.dir}/@{target}/src" includes="**/*.sec" />
                 </copy>
@@ -224,6 +226,7 @@
                             <include name="**/*.rsp" />
                             <include name="**/*.key" />
                             <include name="**/*.gpg" />
+                            <include name="**/*.pgp" />
                             <include name="**/*.pub" />
                             <include name="**/*.sec" />
                             <include name="**/*.ers" />
@@ -298,6 +301,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/internal/**/*.java" />
+                 <include name="org/bouncycastle/test/*.java" />
                  <include name="org/bouncycastle/pqc/legacy/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />
                  <include name="org/bouncycastle/pqc/math/**/*.java" />
@@ -340,11 +344,13 @@
                  <exclude name="rfc4134/**" />
                  <exclude name="pgpdata/**" />
                  <exclude name="org/bouncycastle/**/AllTests.java" />
+                 <exclude name="org/bouncycastle/test/*.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
                  <exclude name="org/bouncycastle/crypto/*/*Test.java" />
                  <exclude name="org/bouncycastle/asn1/*/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/pqc/**/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
@@ -908,6 +914,7 @@
         <copyStandardFiles toDir="${test.target.dir}" />
 
         <copy todir="${test.target.src.dir}">
+             <fileset dir="${src.dir}" includes="/org/bouncycastle/test/*.java" />
              <fileset dir="${src.dir}" includes="**/*AllTests.java" />
              <fileset dir="${src.dir}" includes="**/math/**/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
@@ -935,6 +942,7 @@
              <fileset dir="${src.dir}" includes="**/*.txt" />
              <fileset dir="${src.dir}" includes="**/*.rsp" />
              <fileset dir="${src.dir}" includes="**/*.gpg" />
+             <fileset dir="${src.dir}" includes="**/*.pgp" />
              <fileset dir="${src.dir}" includes="**/*.pub" />
              <fileset dir="${src.dir}" includes="**/*.sec" />
              <fileset dir="${src.dir}" includes="**/*.cvcert" />
@@ -971,7 +979,7 @@
         <property name="test.target.src.dir" value="${test.target.dir}/src" />
 
         <mkdir dir="${basedir}/${build.dir}/${target.prefix}" />
-        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed">
+        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed" printsummary="${junit.printsummary}">
             <classpath>
                 <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">
@@ -986,6 +994,7 @@
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
                 <fileset dir="${test.target.src.dir}">
                     <include name="**/AllTests.java" />
+                    <exclude name="${env.JUNIT_EXCLUDE_TESTS}" if="env.JUNIT_EXCLUDE_TESTS" />
                 </fileset>
             </batchtest>
         </junit>
@@ -1035,14 +1044,6 @@
     <target name="javadoc-provider" depends="initMacros">
         <copy todir="${provider.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/pqc/**/test/*.java" />
-                 <include name="org/bouncycastle/jce/**/test/*.java" />
-                 <include name="org/bouncycastle/jce/**/test/*/*.java" />
-                 <include name="org/bouncycastle/x509/**/test/*.java" />
-                 <include name="org/bouncycastle/ocsp/**/test/*.java" />
-                 <include name="org/bouncycastle/crypto/**/test/*.java" />
-                 <include name="org/bouncycastle/crypto/**/test/cavp/*.java" />
-                 <include name="org/bouncycastle/asn1/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.html" />
                  <include name="org/bouncycastle/math/**/*.html" />
                  <include name="org/bouncycastle/asn1/**/*.html" />
@@ -1082,10 +1083,11 @@
     <target name="javadoc-jce" depends="initMacros">
         <copy todir="${jce.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/jce/**/test/*.java" />
-                 <include name="org/bouncycastle/jce/**/test/*/*.java" />
-                 <include name="org/bouncycastle/x509/**/test/*.java" />
-                 <include name="org/bouncycastle/ocsp/**/test/*.java" />
+                 <include name="org/bouncycastle/crypto/**/*.html" />
+                 <include name="org/bouncycastle/math/**/*.html" />
+                 <include name="org/bouncycastle/asn1/**/*.html" />
+                 <include name="org/bouncycastle/pqc/**/*.html" />
+                 <include name="org/bouncycastle/util/**/*.html" />
              </fileset>
         </copy>
 
@@ -1120,7 +1122,6 @@
     <target name="javadoc-mail" depends="initMacros">
         <copy todir="${mail.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/mail/**/test/*.java" />
                  <include name="org/bouncycastle/mail/**/*.html" />
              </fileset>
         </copy>
@@ -1143,9 +1144,7 @@
     <target name="javadoc-tls" depends="initMacros">
         <copy todir="${tls.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/jsse/**/test/*.java" />
                  <include name="org/bouncycastle/jsse/**/*.html" />
-                 <include name="org/bouncycastle/tls/**/test/*.java" />
                  <include name="org/bouncycastle/tls/**/*.html" />
              </fileset>
         </copy>
@@ -1225,18 +1224,6 @@
     <target name="javadoc-pkix" depends="initMacros">
         <copy todir="${pkix.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/cms/**/test/*.java" />
-                 <include name="org/bouncycastle/pkix/**/test/*.java" />
-                 <include name="org/bouncycastle/dvcs/**/test/*.java" />
-                 <include name="org/bouncycastle/eac/**/test/*.java" />
-                 <include name="org/bouncycastle/est/**/test/*.java" />
-                 <include name="org/bouncycastle/cmc/**/test/*.java" />
-                 <include name="org/bouncycastle/cert/**/test/*.java" />
-                 <include name="org/bouncycastle/mime/**/test/*.java" />
-                 <include name="org/bouncycastle/pkcs/**/test/*.java" />
-                 <include name="org/bouncycastle/openssl/**/test/*.java" />
-                 <include name="org/bouncycastle/mozilla/**/test/*.java" />
-                 <include name="org/bouncycastle/operator/**/test/*.java" />
                  <include name="org/bouncycastle/mime/**/*.html" />
                  <include name="org/bouncycastle/cms/**/*.html" />
                  <include name="org/bouncycastle/pkix/**/*.html" />
@@ -1249,7 +1236,6 @@
                  <include name="org/bouncycastle/openssl/**/*.html" />
                  <include name="org/bouncycastle/operator/**/*.html" />
                  <include name="org/bouncycastle/mozilla/**/*.html" />
-                 <include name="org/bouncycastle/tsp/**/test/*.java" />
                  <include name="org/bouncycastle/tsp/**/*.html" />
              </fileset>
         </copy>
@@ -1277,7 +1263,6 @@
                 <group title="MIME Packages" packages="org.bouncycastle.mime*" />
                 <group title="OpenSSL and PEM Support Packages" packages="org.bouncycastle.openssl*" />
                 <group title="TSP Packages" packages="org.bouncycastle.tsp*" />
-                <group title="Test and Example Packages" packages="org.bouncycastle.openssl.test*,org.bouncycastle.mozilla.test*,org.bouncycastle.pkcs.test*,org.bouncycastle.cert.test*,org.bouncycastle.cert.path.test*,org.bouncycastle.cert.ocsp.test*,org.bouncycastle.cert.crmf.test*,org.bouncycastle.cert.cmp.test*,org.bouncycastle.eac.test*,org.bouncycastle.dvcs.test*,org.bouncycastle.est.test*,org.bouncycastle.cms.test*,org.bouncycastle.mime.test*,org.bouncycastle.tsp.test*,org.bouncycastle.operator.test*" />
             </docElements>
         </compile-doc>
 
@@ -1292,7 +1277,6 @@
     <target name="javadoc-pg" depends="initMacros">
         <copy todir="${pg.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/openpgp/**/test/*.java" />
                  <include name="org/bouncycastle/gpg/**/test/*.java" />
                  <include name="org/bouncycastle/bcpg/**/test/*.java" />
                  <include name="org/bouncycastle/apache/**/*.html" />
@@ -1309,7 +1293,7 @@
                 <package name="org.bouncycastle.bcpg.*" />
                 <group title="BCPG Support Packages" packages="org.bouncycastle.bcpg*" />
                 <group title="OpenPGP Packages" packages="org.bouncycastle.gpg,org.bouncycastle.gpg.keybox,org.bouncycastle.openpgp*" />
-                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.gpg.test,org.bouncycastle.openpgp.test*,org.bouncycastle.openpgp.examples*" />
+                <group title="OpenPGP Test and Example Packages" packages="org.bouncycastle.openpgp.examples*" />
             </docElements>
         </compile-doc>
 
@@ -1324,9 +1308,6 @@
     <target name="javadoc-lw" depends="initMacros">
         <copy todir="${lcrypto.target.src.dir}">
              <fileset dir="${src.dir}">
-                 <include name="org/bouncycastle/crypto/**/test/*.java" />
-                 <include name="org/bouncycastle/crypto/**/test/cavp/*.java" />
-                 <include name="org/bouncycastle/asn1/**/test/*.java" />
                  <include name="org/bouncycastle/crypto/**/*.html" />
                  <include name="org/bouncycastle/math/**/*.html" />
                  <include name="org/bouncycastle/asn1/**/*.html" />
@@ -1347,7 +1328,6 @@
                 <group title="Lightweight Crypto Packages" packages="org.bouncycastle.crypto*" />
                 <group title="ASN.1 Support Packages" packages="org.bouncycastle.asn1*" />
                 <group title="Utility Packages" packages="org.bouncycastle.util*:org.bouncycastle.math*" />
-                <group title="Test Packages" packages="org.bouncycastle.crypto.test*,org.bouncycastle.util.utiltest,org.bouncycastle.asn1.test*,org.bouncycastle.util.encoders.test*,org.bouncycastle.util.io.test*,org.bouncycastle.util.io.pem.test*,org.bouncycastle.math.ec.test*,org.bouncycastle.crypto.ec.test*,org.bouncycastle.crypto.prng.test*,org.bouncycastle.crypto.tls.test*,org.bouncycastle.crypto.agreement.test*" />
                 <group title="Post-Quantum Lightweight Crypto Packages" packages="org.bouncycastle.pqc.crypto*" />
                 <group title="Post-Quantum Lightweight Math Packages" packages="org.bouncycastle.pqc.math*" />
                 <group title="Post-Quantum ASN.1 Packages" packages="org.bouncycastle.pqc.asn1*" />
