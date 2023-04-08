@@ -23,7 +23,6 @@ import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -417,7 +416,7 @@ public class SigTest
 
         if (!sig.verify(sigBytes))
         {
-            TestCase.fail(algorithm + " verification failed");
+             fail(algorithm + " verification failed");
         }
     }
 
