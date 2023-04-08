@@ -362,7 +362,8 @@ public abstract class ASN1Set
     {
         if (sortedElements == null)
         {
-            sortedElements = (ASN1Encodable[])elements.clone();
+            sortedElements = new ASN1Encodable[elements.length];
+            System.arraycopy(elements, 0, sortedElements, 0, elements.length);
             sort(sortedElements);
         }
 
