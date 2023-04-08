@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.crypto.gemss;
 
 class SecretKeyHFE
 {
-    class complete_sparse_monic_gf2nx
+    static class complete_sparse_monic_gf2nx
     {
         public Pointer poly;
         /* List of the successive differences of the exponents of the monomials of
