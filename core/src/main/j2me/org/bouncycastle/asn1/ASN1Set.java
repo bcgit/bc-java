@@ -105,9 +105,6 @@ public abstract class ASN1Set
             return sequence.toASN1Set();
         }
     };
-    
-    protected final ASN1Encodable[] elements;
-    protected final boolean isSorted;
 
     /**
      * return an ASN1Set from the given object.
@@ -116,39 +113,34 @@ public abstract class ASN1Set
      * @exception IllegalArgumentException if the object cannot be converted.
      * @return an ASN1Set instance, or null.
      */
-    public static ASN1Set getInstance(
-        Object  obj)
+    public static ASN1Set getInstance(Object obj)
     {
         if (obj == null || obj instanceof ASN1Set)
         {
             return (ASN1Set)obj;
         }
-        else if (obj instanceof ASN1SetParser)
+//      else if (obj instanceof ASN1SetParser)
+        else if (obj instanceof ASN1Encodable)
         {
-            return ASN1Set.getInstance(((ASN1SetParser)obj).toASN1Primitive());
+            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
+            if (primitive instanceof ASN1Set)
+            {
+                return (ASN1Set)primitive;
+            }
         }
         else if (obj instanceof byte[])
         {
             try
             {
-                return ASN1Set.getInstance(ASN1Primitive.fromByteArray((byte[])obj));
+                return (ASN1Set)TYPE.fromByteArray((byte[])obj);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException("failed to construct set from byte[]: " + e.getMessage());
             }
         }
-        else if (obj instanceof ASN1Encodable)
-        {
-            ASN1Primitive primitive = ((ASN1Encodable)obj).toASN1Primitive();
 
-            if (primitive instanceof ASN1Set)
-            {
-                return (ASN1Set)primitive;
-            }
-        }
-
-        throw new IllegalArgumentException("unknown object in getInstance: " + obj.getClass().getName());
+        throw new IllegalArgumentException("unknown object in getInstance");
     }
 
     /**
@@ -168,73 +160,19 @@ public abstract class ASN1Set
      *          be converted.
      * @return an ASN1Set instance.
      */
-    public static ASN1Set getInstance(
-        ASN1TaggedObject    taggedObject,
-        boolean             explicit)
+    public static ASN1Set getInstance(ASN1TaggedObject taggedObject, boolean explicit)
     {
-        if (explicit)
-        {
-            if (!taggedObject.isExplicit())
-            {
-                throw new IllegalArgumentException("object implicit - explicit expected.");
-            }
-
-            return getInstance(taggedObject.getObject());
-        }
-
-        ASN1Primitive o = taggedObject.getObject();
-
-        /*
-         * constructed object which appears to be explicitly tagged and it's really implicit means
-         * we have to add the surrounding set.
-         */
-        if (taggedObject.isExplicit())
-        {
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return new BERSet(o);
-            }
-
-            return new DLSet(o);
-        }
-
-        if (o instanceof ASN1Set)
-        {
-            ASN1Set s = (ASN1Set)o;
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return s;
-            }
-
-            return (ASN1Set)s.toDLObject();
-        }
-
-        /*
-         * in this case the parser returns a sequence, convert it into a set.
-         */
-        if (o instanceof ASN1Sequence)
-        {
-            ASN1Sequence s = (ASN1Sequence)o;
-
-            // NOTE: Will force() a LazyEncodedSequence
-            ASN1Encodable[] elements = s.toArrayInternal();
-
-            if (taggedObject instanceof BERTaggedObject)
-            {
-                return new BERSet(false, elements);
-            }
-
-            return new DLSet(false, elements);
-        }
-
-        throw new IllegalArgumentException("unknown object in getInstance: " + taggedObject.getClass().getName());
+        return (ASN1Set)TYPE.getContextInstance(taggedObject, explicit);
     }
+
+    protected final ASN1Encodable[] elements;
+
+    protected ASN1Encodable[] sortedElements;
 
     protected ASN1Set()
     {
         this.elements = ASN1EncodableVector.EMPTY_ELEMENTS;
-        this.isSorted = true;
+        this.sortedElements = elements;
     }
 
     /**
@@ -249,7 +187,7 @@ public abstract class ASN1Set
         }
 
         this.elements = new ASN1Encodable[]{ element };
-        this.isSorted = true;
+        this.sortedElements = elements;
     }
 
     /**
@@ -276,7 +214,7 @@ public abstract class ASN1Set
         }
 
         this.elements = tmp;
-        this.isSorted = doSort || tmp.length < 2;
+        this.sortedElements = (doSort || tmp.length < 2) ? elements : null;
     }
 
     /**
@@ -298,13 +236,19 @@ public abstract class ASN1Set
         }
 
         this.elements = tmp;
-        this.isSorted = doSort || tmp.length < 2;
+        this.sortedElements = (doSort || tmp.length < 2) ? elements : null;
     }
 
     ASN1Set(boolean isSorted, ASN1Encodable[] elements)
     {
         this.elements = elements;
-        this.isSorted = isSorted || elements.length < 2;
+        this.sortedElements = (isSorted || elements.length < 2) ? elements : null;
+    }
+
+    ASN1Set(ASN1Encodable[] elements, ASN1Encodable[] sortedElements)
+    {
+        this.elements = elements;
+        this.sortedElements = sortedElements;
     }
 
     public Enumeration getObjects()
@@ -416,19 +360,13 @@ public abstract class ASN1Set
      */
     ASN1Primitive toDERObject()
     {
-        ASN1Encodable[] tmp;
-        if (isSorted)
+        if (sortedElements == null)
         {
-            tmp = elements;
-        }
-        else
-        {
-            tmp = new ASN1Encodable[elements.length];
-            System.arraycopy(elements, 0, tmp, 0, tmp.length);
-            sort(tmp);
+            sortedElements = (ASN1Encodable[])elements.clone();
+            sort(sortedElements);
         }
 
-        return new DERSet(true, tmp);
+        return new DERSet(true, sortedElements);
     }
 
     /**
@@ -437,7 +375,7 @@ public abstract class ASN1Set
      */
     ASN1Primitive toDLObject()
     {
-        return new DLSet(isSorted, elements);
+        return new DLSet(elements, sortedElements);
     }
 
     boolean asn1Equals(ASN1Primitive other)
@@ -536,8 +474,8 @@ public abstract class ASN1Set
          * primitive form accordingly. Failing to ignore the CONSTRUCTED bit could therefore lead to
          * ordering inversions.
          */
-        int a0 = a[0] & ~BERTags.CONSTRUCTED;
-        int b0 = b[0] & ~BERTags.CONSTRUCTED;
+        int a0 = a[0] & (~BERTags.CONSTRUCTED & 0xff);
+        int b0 = b[0] & (~BERTags.CONSTRUCTED & 0xff);
         if (a0 != b0)
         {
             return a0 < b0;

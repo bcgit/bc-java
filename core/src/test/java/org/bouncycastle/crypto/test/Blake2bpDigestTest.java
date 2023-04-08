@@ -1,15 +1,14 @@
 package org.bouncycastle.crypto.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.crypto.digests.Blake2bpDigest;
-import org.bouncycastle.pqc.crypto.test.CMCEVectorTest;
-import org.bouncycastle.test.TestResourceFinder;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.digests.Blake2bpDigest;
+import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class Blake2bpDigestTest
         extends TestCase
