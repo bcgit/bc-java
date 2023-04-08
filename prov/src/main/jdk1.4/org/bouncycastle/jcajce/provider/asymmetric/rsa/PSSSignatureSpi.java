@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -97,6 +98,35 @@ public class PSSSignatureSpi
         setupContentDigest();
     }
 
+    protected PSSSignatureSpi(
+        String name,
+        AsymmetricBlockCipher signer,
+        Digest digest,
+        Digest mgfDigest)
+    {
+        super(name);
+
+        this.signer = signer;
+
+        if (digest != null)
+        {
+            this.saltLength = digest.getDigestSize();
+            this.mgfDigest = mgfDigest;
+        }
+        else
+        {
+            this.saltLength = 20;
+        }
+
+        if (paramSpec != null)
+        {
+            this.saltLength = paramSpec.getSaltLength();
+        }
+        this.isRaw = false;
+
+        setupContentDigest();
+    }
+    
     // care - this constructor is actually used by outside organisations
     protected PSSSignatureSpi(
         String name,
@@ -372,6 +402,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA1withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA1withRSAandSHAKE128()
+        {
+            super("SHA1withRSAandSHAKE128", new RSABlindedEngine(), new SHA1Digest(), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA1withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA1withRSAandSHAKE256()
+        {
+            super("SHA1withRSAandSHAKE256", new RSABlindedEngine(), new SHA1Digest(), new SHAKEDigest(256));
+        }
+    }
+
     static public class SHA224withRSA
         extends PSSSignatureSpi
     {
@@ -381,6 +429,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA224withRSAandSHAKE128()
+        {
+            super("SHA224withRSAandSHAKE128",  new RSABlindedEngine(), new SHA224Digest(), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA224withRSAandSHAKE256()
+        {
+            super("SHA224withRSAandSHAKE256", new RSABlindedEngine(), new SHA224Digest(), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA256withRSA
         extends PSSSignatureSpi
     {
@@ -390,6 +456,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA256withRSAandSHAKE128()
+        {
+            super("SHA256withRSAandSHAKE128",  new RSABlindedEngine(), new SHA256Digest(), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA256withRSAandSHAKE256()
+        {
+            super("SHA256withRSAandSHAKE256", new RSABlindedEngine(), new SHA256Digest(), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA384withRSA
         extends PSSSignatureSpi
     {
@@ -398,7 +482,25 @@ public class PSSSignatureSpi
             super("SHA384withRSAandMGF1", new RSABlindedEngine(), new SHA384Digest());
         }
     }
+         
+    static public class SHA384withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA384withRSAandSHAKE128()
+        {
+            super("SHA384withRSAandSHAKE128",  new RSABlindedEngine(), new SHA384Digest(), new SHAKEDigest(128));
+        }
+    }
 
+    static public class SHA384withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA384withRSAandSHAKE256()
+        {
+            super("SHA384withRSAandSHAKE256", new RSABlindedEngine(), new SHA384Digest(), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA512withRSA
         extends PSSSignatureSpi
     {
@@ -407,13 +509,49 @@ public class PSSSignatureSpi
             super("SHA512withRSAandMGF1", new RSABlindedEngine(), new SHA512Digest());
         }
     }
+    
+    static public class SHA512withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512withRSAandSHAKE128()
+        {
+            super("SHA512withRSAandSHAKE128",  new RSABlindedEngine(), new SHA512Digest(), new SHAKEDigest(128));
+        }
+    }
 
+    static public class SHA512withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512withRSAandSHAKE256()
+        {
+            super("SHA512withRSAandSHAKE256", new RSABlindedEngine(), new SHA512Digest(), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA512_224withRSA
         extends PSSSignatureSpi
     {
         public SHA512_224withRSA()
         {
             super("SHA512(224)withRSAandMGF1", new RSABlindedEngine(), new SHA512tDigest(224));
+        }
+    }
+    
+    static public class SHA512_224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSAandSHAKE128()
+        {
+            super("SHA512(224)withRSAandSHAKE128",  new RSABlindedEngine(), new SHA512tDigest(224), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA512_224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512_224withRSAandSHAKE256()
+        {
+            super("SHA512(224)withRSAandSHAKE256", new RSABlindedEngine(), new SHA512tDigest(224), new SHAKEDigest(256));
         }
     }
 
@@ -426,6 +564,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA512_256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSAandSHAKE128()
+        {
+            super("SHA512(256)withRSAandSHAKE128",  new RSABlindedEngine(), new SHA512tDigest(256), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA512_256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA512_256withRSAandSHAKE256()
+        {
+            super("SHA512(256)withRSAandSHAKE256", new RSABlindedEngine(), new SHA512tDigest(256), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA3_224withRSA
         extends PSSSignatureSpi
     {
@@ -435,6 +591,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_224withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSAandSHAKE128()
+        {
+            super("SHA3-224withRSAandSHAKE128",  new RSABlindedEngine(), new SHA3Digest(224), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA3_224withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_224withRSAandSHAKE256()
+        {
+            super("SHA3-224withRSAandSHAKE256", new RSABlindedEngine(), new SHA3Digest(224), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA3_256withRSA
         extends PSSSignatureSpi
     {
@@ -444,6 +618,24 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_256withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSAandSHAKE128()
+        {
+            super("SHA3-256withRSAandSHAKE128",  new RSABlindedEngine(), new SHA3Digest(256), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA3_256withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_256withRSAandSHAKE256()
+        {
+            super("SHA3-256withRSAandSHAKE256", new RSABlindedEngine(), new SHA3Digest(256), new SHAKEDigest(256));
+        }
+    }
+    
     static public class SHA3_384withRSA
         extends PSSSignatureSpi
     {
@@ -452,6 +644,25 @@ public class PSSSignatureSpi
             super("SHA3-384withRSAandMGF1", new RSABlindedEngine(), new SHA3Digest(384));
         }
     }
+    
+    static public class SHA3_384withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSAandSHAKE128()
+        {
+            super("SHA3-384withRSAandSHAKE128",  new RSABlindedEngine(), new SHA3Digest(384), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA3_384withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_384withRSAandSHAKE256()
+        {
+            super("SHA3-384withRSAandSHAKE256", new RSABlindedEngine(), new SHA3Digest(384), new SHAKEDigest(256));
+        }
+    }
+    
 
     static public class SHA3_512withRSA
         extends PSSSignatureSpi
@@ -462,6 +673,42 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class SHA3_512withRSAandSHAKE128
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSAandSHAKE128()
+        {
+            super("SHA3-512withRSAandSHAKE128",  new RSABlindedEngine(), new SHA3Digest(512), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHA3_512withRSAandSHAKE256
+        extends PSSSignatureSpi
+    {
+        public SHA3_512withRSAandSHAKE256()
+        {
+            super("SHA3-512withRSAandSHAKE256", new RSABlindedEngine(), new SHA3Digest(512), new SHAKEDigest(256));
+        }
+    }
+
+    static public class SHAKE128WithRSAPSS
+        extends PSSSignatureSpi
+    {
+        public SHAKE128WithRSAPSS()
+        {
+            super("SHAKE128withRSASSA-PSS", new RSABlindedEngine(), new SHAKEDigest(128), new SHAKEDigest(128));
+        }
+    }
+
+    static public class SHAKE256WithRSAPSS
+        extends PSSSignatureSpi
+    {
+        public SHAKE256WithRSAPSS()
+        {
+            super("SHAKE256withRSASSA-PSS", new RSABlindedEngine(), new SHAKEDigest(256), new SHAKEDigest(256));
+        }
+    }
+    
     private class NullPssDigest
         implements Digest
     {

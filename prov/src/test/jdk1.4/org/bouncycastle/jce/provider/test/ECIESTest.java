@@ -1,32 +1,61 @@
 package org.bouncycastle.jce.provider.test;
 
-import java.math.BigInteger;
-import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.engines.DESEngine;
+import org.bouncycastle.crypto.engines.IESEngine;
+import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
+import org.bouncycastle.jcajce.spec.IESKEMParameterSpec;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jce.spec.ECParameterSpec;
-import org.bouncycastle.jce.spec.IEKeySpec;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTestResult;
-import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
+import org.bouncycastle.util.test.FixedSecureRandom;
+import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * test for ECIES - Elliptic Curve Integrated Encryption Scheme
+ * Test for ECIES - Elliptic Curve Integrated Encryption Scheme
  */
 public class ECIESTest
-    implements Test
+    extends SimpleTest
 {
+    private static final String[] streamCiphers = new String[]{
+            "ECIES", "ECIESwithSHA1", "ECIESwithSHA256", "ECIESwithSHA384", "ECIESwithSHA512"};
+
+    private static final String[] aesCiphers = new String[]{
+            "ECIESwithAES-CBC", "ECIESwithSHA1andAES-CBC", "ECIESwithSHA256andAES-CBC",
+            "ECIESwithSHA384andAES-CBC", "ECIESwithSHA512andAES-CBC"};
+
+    private static final String[] desedeCiphers = new String[]{
+            "ECIESwithDESEDE-CBC", "ECIESwithSHA1andDESEDE-CBC", "ECIESwithSHA256andDESEDE-CBC",
+            "ECIESwithSHA384andDESEDE-CBC", "ECIESwithSHA512andDESEDE-CBC"};
+
     ECIESTest()
     {
     }
@@ -36,203 +65,352 @@ public class ECIESTest
         return "ECIES";
     }
 
-    private boolean sameAs(
-        byte[]  a,
-        byte[]  b)
+    public void performTest()
+        throws Exception
     {
-        if (a.length != b.length)
+        etsiEciesTest();
+        etsiEciesRandomTest();
+        etsiEciesUncompressedRandomTest();
+
+        byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
+        byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
+
+        IESCipher c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIES();
+        IESCipher c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIES();
+
+        c1 = new IESCipher(new IESEngine(new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));
+
+        c2 = new IESCipher(new IESEngine(new ECDHBasicAgreement(),
+                new KDF2BytesGenerator(new SHA1Digest()),
+                new HMac(new SHA1Digest()),
+                new PaddedBufferedBlockCipher(new DESEngine())));
+
+        c1 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+        c2 = new org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher.ECIESwithAESCBC();
+
+        // Testing ECIES with default curve in streaming mode
+        KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
+        for (int i = 0; i != streamCiphers.length; i++)
         {
-            return false;
-        }
+            String cipher = streamCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(derivation, encoding,128);
+            doTest(cipher + " with default", g, cipher, params);
 
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public TestResult perform()
-    {
-        TestResult  res;
-
-        try 
-        {
-            KeyPairGenerator    g = KeyPairGenerator.getInstance("ECIES", "BC");
-
-            ECCurve curve = new ECCurve.Fp(
-                    new BigInteger("883423532389192164791648750360308885314476597252960362792450860609699839"), // q
-                    new BigInteger("7fffffffffffffffffffffff7fffffffffff8000000000007ffffffffffc", 16), // a
-                    new BigInteger("6b016c3bdcf18941d0d654921475ca71a9db2fb27d1d37796185c2942c0a", 16)); // b
-
-            ECParameterSpec ecSpec = new ECParameterSpec(
-                    curve,
-                    curve.decodePoint(Hex.decode("020ffa963cdca8816ccc33b8642bedf905c3d358573d3f27fbbd3b3cb9aaaf")), // G
-                    new BigInteger("883423532389192164791648750360308884807550341691627752275345424702807307")); // n
-
-            g.initialize(ecSpec, new SecureRandom());
-
-            res = performTest(g);
-            if (!res.isSuccessful())
-            {
-                return res;
-            }
-
-            g = KeyPairGenerator.getInstance("ECIES", "BC");
-
+            // Testing ECIES with 192-bit curve in streaming mode
             g.initialize(192, new SecureRandom());
+            doTest(cipher + " with 192-bit", g, cipher, params);
 
-            res = performTest(g);
-            if (!res.isSuccessful())
-            {
-                return res;
-            }
-
-            g = KeyPairGenerator.getInstance("ECIES", "BC");
-
-            g.initialize(239, new SecureRandom());
-
-            res = performTest(g);
-            if (!res.isSuccessful())
-            {
-                return res;
-            }
-
-            g = KeyPairGenerator.getInstance("ECIES", "BC");
-
+            // Testing ECIES with 256-bit curve in streaming mode
             g.initialize(256, new SecureRandom());
-
-            res = performTest(g);
-            if (!res.isSuccessful())
-            {
-                return res;
-            }
-
-            res = performDefTest(g);
-            if (!res.isSuccessful())
-            {
-                return res;
-            }
+            doTest(cipher + " with 256-bit", g, cipher, params);
         }
-        catch (Exception ex)
+
+        // Testing ECIES with default curve using DES
+        g = KeyPairGenerator.getInstance("EC", "BC");
+
+        // Testing ECIES with 256-bit curve using DES-CBC
+        for (int i = 0; i != desedeCiphers.length; i++)
         {
-            return new SimpleTestResult(false, this.getName() + ": stream cipher test exception " + ex.toString());
+            String cipher = desedeCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("0001020304050607"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            try
+            {
+                params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+                g.initialize(256, new SecureRandom());
+                doTest(cipher + " with 256-bit", g, cipher, params);
+                fail("DESEDE no exception!");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 8 bytes long"))
+                {
+                    fail("DESEDE wrong message!");
+                }
+            }
         }
 
-        return new SimpleTestResult(true, this.getName() + ": Okay");
+        // Testing ECIES with 256-bit curve using AES-CBC
+        for (int i = 0; i != aesCiphers.length; i++)
+        {
+            String cipher = aesCiphers[i];
+            IESParameterSpec params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            params = new IESParameterSpec(
+                    derivation, encoding, 128, 128, Hex.decode("000102030405060708090a0b0c0d0e0f"));
+            g.initialize(256, new SecureRandom());
+            doTest(cipher + " with 256-bit", g, cipher, params);
+
+            try
+            {
+                params = new IESParameterSpec(derivation, encoding, 128, 128, new byte[10]);
+                g.initialize(256, new SecureRandom());
+                doTest(cipher + " with 256-bit", g, cipher, params);
+                fail("AES no exception!");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                if (!e.getMessage().equals("NONCE in IES Parameters needs to be 16 bytes long"))
+                {
+                    fail("AES wrong message!");
+                }
+            }
+
+            KeyPair keyPair = g.generateKeyPair();
+            ECPublicKey pub = (ECPublicKey) keyPair.getPublic();
+            ECPrivateKey priv = (ECPrivateKey) keyPair.getPrivate();
+
+            Cipher c = Cipher.getInstance("ECIESwithAES-CBC", "BC");
+            try
+            {
+                c.init(Cipher.ENCRYPT_MODE, pub, new IESParameterSpec(derivation, encoding, 128, 128, null));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            }
+
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, priv);
+                fail("no exception");
+            }
+            catch (IllegalArgumentException e)
+            {
+//                isTrue("message ", "cannot handle supplied parameter spec: NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+                isTrue("message ", "cannot handle supplied parameter spec: must be passed IES parameters".equals(e.getMessage()));
+            }
+
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, priv, new IESParameterSpec(derivation, encoding, 128, 128, null));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                isTrue("message ", "NONCE in IES Parameters needs to be 16 bytes long".equals(e.getMessage()));
+            }
+        }
+
+        sealedObjectTest();
     }
 
-    public TestResult performTest(
-        KeyPairGenerator    g)
+    private void etsiEciesTest()
+        throws Exception
     {
-        try 
-        {
-            //
-            // a side
-            //
-            KeyPair     aKeyPair = g.generateKeyPair();
-            PublicKey   aPub = aKeyPair.getPublic();
-            PrivateKey  aPriv = aKeyPair.getPrivate();
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
 
-            //
-            // b side
-            //
-            KeyPair     bKeyPair = g.generateKeyPair();
-            PublicKey   bPub = bKeyPair.getPublic();
-            PrivateKey  bPriv = bKeyPair.getPrivate();
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new FixedSecureRandom(Hex.decode("06EB0D8314ADC4C3564A8E721DF1372FF54B5C725D09E2E353F2D0A46003AB86")));
 
-            //
-            // stream test
-            //
-            Cipher c1 = Cipher.getInstance("ECIES", "BC");
-            Cipher c2 = Cipher.getInstance("ECIES", "BC");
+        KeyPair kp = kpGen.generateKeyPair();
 
-            IEKeySpec   c1Key = new IEKeySpec(aPriv, bPub);
-            IEKeySpec   c2Key = new IEKeySpec(bPriv, aPub);
+        KeyFactory kFact = KeyFactory.getInstance("EC", "BC");
 
-            byte[]  d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            byte[]  e = new byte[] { 8, 7, 6, 5, 4, 3, 2, 1 };
+        X9ECParameters x9ECParameters = ECNamedCurveTable.getByName("P-256");
+        ECCurve curve = x9ECParameters.getCurve();
+        PublicKey pKey = kFact.generatePublic(
+            new ECPublicKeySpec(curve.decodePoint(Hex.decode("03996da81b76fbdcaae0289abddfaf2b7198456dbe5495e58c7c61e32a2c2610ca")),
+                new ECNamedCurveParameterSpec("P-256", curve, x9ECParameters.getG(), x9ECParameters.getN())));
 
-            IESParameterSpec param = new IESParameterSpec(d, e, 128);
+        Cipher etsiKem = Cipher.getInstance("ETSIKEMwithSHA256", "BC");
 
-            c1.init(Cipher.ENCRYPT_MODE, c1Key, param);
+        etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E")));
 
-            c2.init(Cipher.DECRYPT_MODE, c2Key, param);
+        SecretKey k = (SecretKey)etsiKem.unwrap(Hex.decode("03996da81b76fbdcaae0289abddfaf2b7198456dbe5495e58c7c61e32a2c2610ca49a6e39470e44e37f302da99da444426f368211d919a06c57b574647b97ccc51"), "AES", Cipher.SECRET_KEY);
+        // check the decryption
+        Cipher ccm = Cipher.getInstance("CCM", "BC");
 
-            byte[] message = Hex.decode("1234567890abcdef");
+        ccm.init(Cipher.DECRYPT_MODE, k, new AEADParameterSpec(
+             Hex.decode("eaf3a6736b866446b1501313"), 128));
 
-            byte[]   out1 = c1.doFinal(message, 0, message.length);
-
-            byte[]   out2 = c2.doFinal(out1, 0, out1.length);
-
-            if (!sameAs(out2, message))
-            {
-                return new SimpleTestResult(false, this.getName() + ": stream cipher test failed");
-            }
-        }
-        catch (Exception ex)
-        {
-            return new SimpleTestResult(false, this.getName() + ": stream cipher test exception " + ex.toString());
-        }
-
-        return new SimpleTestResult(true, this.getName() + ": Okay");
+        byte[] pt = ccm.doFinal(Hex.decode("1e56af1083537123946957844cc5906698a777dddc317966a3920e16cfad39c6977f28156bd849b57e33b2a9abd1caa8a08520084214b865a355f6d274c3a64694b81b605b729c2a6fbe88c561e591a055713698d40cabe196b1c96fefccc05f977beef6ce3528950c0e05f1c43749fd06114641c0442d0c952eb2eb0fa6b6f0b3142c6a7e170c2520edf79076c0b6000d4216af50a72955a28e48b0d5ba14b05e3ed4e5220c8bcc207070f6738b3b6ecabe056584b971df2a515bccd129bb614d2666a461542fa4c4d25a67a91bacda14fba0310cb937fa9d5d3351f17272eef2b6e492c3d7a02df81befed05139ce58a9c7f5d2f24f8acd99c4f8a8adbdd6a535f89a8a406430d3a335caa563b35bbb0733379d58f9056d017fdd7"));
     }
 
-    public TestResult performDefTest(
-        KeyPairGenerator    g)
+    private void etsiEciesRandomTest()
+        throws Exception
     {
-        try 
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        SecretKey k = new SecretKeySpec(Hex.decode("d311371e8373bea1027e6ae573d6f1dd"), "AES");
+
+        Cipher etsiKem = Cipher.getInstance("ETSIKEMwithSHA256", "BC");
+
+        etsiKem.init(Cipher.WRAP_MODE, kp.getPublic(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E"), true));
+
+        byte[] enc = etsiKem.wrap(k);
+
+        etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B5115003E"), true));
+
+        SecretKey decK = (SecretKey)etsiKem.unwrap(enc, "AES", Cipher.SECRET_KEY);
+
+        isTrue(Arrays.areEqual(k.getEncoded(), decK.getEncoded()));
+    }
+
+    private void etsiEciesUncompressedRandomTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        SecretKey k = new SecretKeySpec(Hex.decode("d311371e8373bea1027e6ae573d6f1dd"), "AES");
+
+        Cipher etsiKem = Cipher.getInstance("ETSIKEMwithSHA256", "BC");
+
+        etsiKem.init(Cipher.WRAP_MODE, kp.getPublic(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B511500"), false));
+
+        byte[] enc = etsiKem.wrap(k);
+
+        etsiKem.init(Cipher.UNWRAP_MODE, kp.getPrivate(), new IESKEMParameterSpec(Hex.decode("843BA5DC059A5DD3A6BF81842991608C4CB980456B9DA26F6CC2023B511500"), false));
+
+        SecretKey decK = (SecretKey)etsiKem.unwrap(enc, "AES", Cipher.SECRET_KEY);
+
+        isTrue(Arrays.areEqual(k.getEncoded(), decK.getEncoded()));
+    }
+
+    private void sealedObjectTest()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECIES");
+        kpg.initialize(new ECNamedCurveGenParameterSpec("secp256r1"));
+        KeyPair keyPair = kpg.generateKeyPair();
+
+        byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
+        byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
+        IESParameterSpec params = new IESParameterSpec(derivation, encoding, 128);
+
+        Cipher cipher = Cipher.getInstance("ECIES");
+        cipher.init(Cipher.ENCRYPT_MODE, keyPair.getPublic(), params);
+
+        String toEncrypt = "Hello";
+
+        // Check that cipher works ok
+        cipher.doFinal(toEncrypt.getBytes());
+
+        // Using a SealedObject to encrypt the same string fails with a NullPointerException
+        SealedObject sealedObject = new SealedObject(toEncrypt, cipher);
+
+        cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate(), params);
+
+        String result = (String)sealedObject.getObject(cipher);
+
+        isTrue("result wrong", result.equals(toEncrypt));
+
+        result = (String)sealedObject.getObject(keyPair.getPrivate());
+
+        isTrue("result wrong", result.equals(toEncrypt));
+    }
+
+    public void doTest(
+        String              testname,
+        KeyPairGenerator    g,
+        String              cipher,
+        IESParameterSpec    p)
+        throws Exception
+    {
+        byte[] message = Hex.decode("0102030405060708090a0b0c0d0e0f10111213141516");
+        byte[] out1, out2;
+
+        // Generate static key pair
+        KeyPair     KeyPair = g.generateKeyPair();
+        ECPublicKey   Pub = (ECPublicKey) KeyPair.getPublic();
+        ECPrivateKey  Priv = (ECPrivateKey) KeyPair.getPrivate();
+
+        Cipher c1 = Cipher.getInstance(cipher);
+        Cipher c2 = Cipher.getInstance(cipher);
+
+        // Null parameters no longer supported
+//        c1.init(Cipher.ENCRYPT_MODE, Pub, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, Priv, c1.getParameters());
+//
+//        isTrue("nonce mismatch", Arrays.areEqual(c1.getIV(), c2.getIV()));
+//
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//        {
+//            fail(testname + " test failed with null parameters, DHAES mode false.");
+//        }
+
+        // Testing with given parameters and DHAES mode off
+        c1.init(Cipher.ENCRYPT_MODE, Pub, p, new SecureRandom());
+        c2.init(Cipher.DECRYPT_MODE, Priv, p);
+        out1 = c1.doFinal(message, 0, message.length);
+        out2 = c2.doFinal(out1, 0, out1.length);
+        if (!areEqual(out2, message))
         {
-            //
-            // a side
-            //
-            KeyPair     aKeyPair = g.generateKeyPair();
-            PublicKey   aPub = aKeyPair.getPublic();
-            PrivateKey  aPriv = aKeyPair.getPrivate();
+            fail(testname + " test failed with non-null parameters, DHAES mode false.");
+        }
 
-            //
-            // b side
-            //
-            KeyPair     bKeyPair = g.generateKeyPair();
-            PublicKey   bPub = bKeyPair.getPublic();
-            PrivateKey  bPriv = bKeyPair.getPrivate();
+        isTrue(c1.getOutputSize(message.length) == out1.length);
+        isTrue(c2.getOutputSize(out1.length) >= out2.length);
+        
+        //
+        // corrupted data test
+        //
+        int offset = out1.length - (message.length + 8);
+        byte[] tmp = new byte[out1.length];
+        for (int i = offset; i != out1.length; i++)
+        {
+            System.arraycopy(out1, 0, tmp, 0, tmp.length);
+            tmp[i] = (byte)~tmp[i];
 
-            //
-            // stream test
-            //
-            Cipher c1 = Cipher.getInstance("ECIES", "BC");
-            Cipher c2 = Cipher.getInstance("ECIES", "BC");
-
-            IEKeySpec   c1Key = new IEKeySpec(aPriv, bPub);
-            IEKeySpec   c2Key = new IEKeySpec(bPriv, aPub);
-
-            c1.init(Cipher.ENCRYPT_MODE, c1Key);
-
-            AlgorithmParameters param = c1.getParameters();
-
-            c2.init(Cipher.DECRYPT_MODE, c2Key, param);
-
-            byte[] message = Hex.decode("1234567890abcdef");
-
-            byte[]   out1 = c1.doFinal(message, 0, message.length);
-
-            byte[]   out2 = c2.doFinal(out1, 0, out1.length);
-
-            if (!sameAs(out2, message))
+            try
             {
-                return new SimpleTestResult(false, this.getName() + ": stream cipher test failed");
+                c2.doFinal(tmp, 0, tmp.length);
+                fail("decrypted corrupted data");
+            }
+            catch (BadPaddingException e)
+            {
+                isTrue("wrong message: " + e.getMessage(), "unable to process block".equals(e.getMessage()));
             }
         }
-        catch (Exception ex)
-        {
-            return new SimpleTestResult(false, this.getName() + ": stream cipher test exception " + ex.toString());
-        }
-
-        return new SimpleTestResult(true, this.getName() + ": Okay");
+// TODO: DHAES mode is not currently implemented, perhaps it shouldn't be...
+//        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
+//        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding","BC");
+//
+//        // Testing with null parameters and DHAES mode on
+//        c1.init(Cipher.ENCRYPT_MODE, Pub, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, Priv, new SecureRandom());
+//
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//            fail(testname + " test failed with null parameters, DHAES mode true.");
+//
+//        c1 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding");
+//        c2 = Cipher.getInstance(cipher + "/DHAES/PKCS7Padding");
+//
+//        // Testing with given parameters and DHAES mode on
+//        c1.init(Cipher.ENCRYPT_MODE, Pub, p, new SecureRandom());
+//        c2.init(Cipher.DECRYPT_MODE, Priv, p, new SecureRandom());
+//
+//        out1 = c1.doFinal(message, 0, message.length);
+//        out2 = c2.doFinal(out1, 0, out1.length);
+//        if (!areEqual(out2, message))
+//            fail(testname + " test failed with non-null parameters, DHAES mode true.");
+        
     }
 
     public static void main(
@@ -240,9 +418,6 @@ public class ECIESTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        ECIESTest    test = new ECIESTest();
-        TestResult   result = test.perform();
-
-        System.out.println(result);
+        runTest(new ECIESTest());
     }
 }
