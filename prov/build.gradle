@@ -5,6 +5,14 @@ dependencies {
 jar.archiveBaseName = "bcprov-$vmrange"
 
 
+sourceSets {
+    main {
+        java {
+            srcDirs '../core/src/main/java'
+        }
+    }
+}
+
 task sourcesJar(type: Jar) {
   archiveBaseName = jar.archiveBaseName
   classifier = 'sources'

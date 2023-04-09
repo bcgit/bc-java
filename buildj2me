@@ -50,11 +50,14 @@ then
     ((cd pg/src/test/j2me; tar cf - * ) | (cd $target/src && tar xf -))
 
     (cd $target;
+        rm src/org/bouncycastle/test/*.java
+        rm src/org/bouncycastle/asn1/LocaleUtil.java
         rm src/org/bouncycastle/crypto/test/AllTests.java
         rm src/org/bouncycastle/crypto/test/SHA3DigestTest.java
         rm src/org/bouncycastle/crypto/test/SHAKEDigestTest.java
 	rm src/org/bouncycastle/crypto/test/NISTECCTest.java
 	rm src/org/bouncycastle/crypto/test/LEATest.java
+	rm src/org/bouncycastle/crypto/test/AsconTest.java
 	rm src/org/bouncycastle/crypto/test/Grain128AEADTest.java
 	rm src/org/bouncycastle/crypto/test/RadixConverterTest.java
 	rm src/org/bouncycastle/crypto/test/DigestConstraintsTest.java
@@ -102,12 +105,15 @@ then
         rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/NTRU*
         rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/BitStringTest*
         rm -rf src/org/bouncycastle/pqc/legacy/crypto/*/IndexGenerator*
+        rm -rf src/org/bouncycastle/pqc/crypto/util/PQCOtherInfo*.java
         rm -rf src/org/bouncycastle/pqc/crypto/sphincsplus
         rm -rf src/org/bouncycastle/pqc/crypto/xmss
         rm -rf src/org/bouncycastle/pqc/crypto/lms
         rm -rf src/org/bouncycastle/pqc/crypto/test
         rm -rf src/org/bouncycastle/pqc/crypto/sike
         rm -rf src/org/bouncycastle/pqc/crypto/picnic
+        rm -rf src/org/bouncycastle/pqc/crypto/rainbow
+        rm -rf src/org/bouncycastle/pqc/crypto/gemss
         rm src/org/bouncycastle/pqc/crypto/legacy/qtesla/QTeslaKeyEncodingTests.java
         rm -rf src/org/bouncycastle/gpg/keybox
         rm -rf src/org/bouncycastle/gpg/test
@@ -128,6 +134,7 @@ then
         rm src/org/bouncycastle/asn1/test/TypeOfBiometricDataUnitTest.java
         rm src/org/bouncycastle/asn1/test/UTCTimeTest.java
         rm src/org/bouncycastle/crypto/test/SimpleTestTest.java
+        rm src/org/bouncycastle/crypto/test/HPKETest*.java
         rm src/org/bouncycastle/crypto/test/Argon2Test.java
         rm src/org/bouncycastle/crypto/test/AESVectorFileTest.java
         rm src/org/bouncycastle/crypto/test/GCMReorderTest.java
@@ -135,6 +142,12 @@ then
         rm src/org/bouncycastle/crypto/test/RSABlindedTest.java
         rm src/org/bouncycastle/crypto/test/SP80038GTest.java
         rm src/org/bouncycastle/crypto/digests/Blake3Digest.java
+        rm src/org/bouncycastle/crypto/digests/Blake2sxDigest.java
+        rm src/org/bouncycastle/crypto/digests/Blake2spDigest.java
+        rm src/org/bouncycastle/crypto/digests/Blake2bpDigest.java
+        rm src/org/bouncycastle/crypto/test/Blake2bp*.java
+        rm src/org/bouncycastle/crypto/test/Blake2sx*.java
+        rm src/org/bouncycastle/crypto/test/Blake2sp*.java
         rm src/org/bouncycastle/crypto/macs/Blake3Mac.java
         rm src/org/bouncycastle/crypto/test/Blake3*.java
         rm src/org/bouncycastle/crypto/params/Blake3*.java
@@ -183,10 +196,15 @@ then
         rm -r src/org/bouncycastle/apache
         rm -r src/org/bouncycastle/voms
         rm -r src/org/bouncycastle/math/ec/tools
+        rm -f src/org/bouncycastle/crypto/*/PhotonB*
+        rm -f src/org/bouncycastle/crypto/*/Elephant*
+        rm -f src/org/bouncycastle/crypto/*/ISAP*
+        rm -f src/org/bouncycastle/crypto/*/Sparkle*
+        rm -f src/org/bouncycastle/crypto/*/Xoo*
         rm src/org/bouncycastle/cert/test/ExternalKeyTest.java
         rm src/org/bouncycastle/mozilla/SignedPublicKeyAndChallenge.java
 
-        for i in src/org/bouncycastle/pqc/crypto/*/*.java src/org/bouncycastle/pqc/crypto/*/*/*.java src/org/bouncycastle/pqc/math/*/*.java src/org/bouncycastle/pqc/math/*/*/*.java src/org/bouncycastle/crypto/engines/*.java
+        for i in src/org/bouncycastle/pqc/crypto/*/*.java src/org/bouncycastle/pqc/crypto/*/*/*.java src/org/bouncycastle/pqc/math/*/*.java src/org/bouncycastle/pqc/math/*/*/*.java src/org/bouncycastle/crypto/digests/*.java src/org/bouncycastle/crypto/engines/*.java src/org/bouncycastle/bcpg/*.java src/org/bouncycastle/openpgp/*.java
         do
             ed $i <<%%
 g/ .Override/d
@@ -260,6 +278,20 @@ q
 	ed src/org/bouncycastle/cms/CMSEncryptedDataGenerator.java <<%
 g/java.util.Collections/s//java.util.HashMap/
 g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+	ed src/org/bouncycastle/cert/cmp/CMSProcessableCMPCertificate.java <<%
+g/\.\.\. /s//[]/g
+g/^ *.Override/s///
+w
+q
+%
+
+        ed src/org/bouncycastle/cert/crmf/CertificateRepMessageBuilder.java <<%
+g/\.\.\. /s//[]/g
+g/^ *.Override/s///
 w
 q
 %
@@ -359,7 +391,6 @@ q
     org.bouncycastle.pqc.legacy.crypto.rainbow \
     org.bouncycastle.pqc.legacy.crypto.mceliece \
     org.bouncycastle.pqc.legacy.crypto.gmss \
-    org.bouncycastle.pqc.math.linearalgebra \
     org.bouncycastle.util \
     org.bouncycastle.util.encoders \
     org.bouncycastle.util.test > /dev/null \
