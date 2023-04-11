@@ -38,7 +38,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, April 8th
 <li>The ESTService class now supports processing of chunked HTTP data.</li>
 <li>A constructed ASN.1 OCTET STRING with a single member would sometimes be re-encoded as a definite-length OCTET STRING. The encoding has been adjusted to preserve the BER status of the object.</li>
 <li>PKIXCertPathReviewer could fail if the trust anchor was also included in the certificate store being used for path analysis. This has been fixed.</li>
-<li>The UTF8 parser could occasionally overread when processing a multi-byte character. This has been fixed.</li>
+<li>UTF8 parsing of an array range ignored the provided length. This has been fixed.</li>
 <li>IPAddress has been written to provide stricter checking and avoid the use of Integer.parseInt().</li>
 <li>A Java 7 class snuck into the Java 5 to Java 8 build. This has been addressed.</li>
 </ul>
