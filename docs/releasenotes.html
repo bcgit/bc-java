@@ -38,7 +38,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, April 8th
 <li>The ESTService class now supports processing of chunked HTTP data.</li>
 <li>A constructed ASN.1 OCTET STRING with a single member would sometimes be re-encoded as a definite-length OCTET STRING. The encoding has been adjusted to preserve the BER status of the object.</li>
 <li>PKIXCertPathReviewer could fail if the trust anchor was also included in the certificate store being used for path analysis. This has been fixed.</li>
-<li>UTF8 parsing of an array range ignored the provided length. This has been fixed.</li>
+<li>UTF-8 parsing of an array range ignored the provided length. This has been fixed.</li>
 <li>IPAddress has been written to provide stricter checking and avoid the use of Integer.parseInt().</li>
 <li>A Java 7 class snuck into the Java 5 to Java 8 build. This has been addressed.</li>
 </ul>
@@ -154,7 +154,7 @@ Release: 1.71<br/>
 Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2022, March 31st.
 <h3>2.5.2 Defects Fixed</h3>
 <ul>
-<li>In line with GPG the PGP API now attempts to preserve comments containing non-ascii UTF8 characters.</li>
+<li>In line with GPG the PGP API now attempts to preserve comments containing non-ascii UTF-8 characters.</li>
 <li>An accidental partial dependency on Java 1.7 has been removed from the TLS API.</li>
 <li>JcaPKIXIdentityBuilder would fail to process File objects correctly. This is now fixed.</li>
 <li>Some byte[] parameters to the CMP API were not being defensively cloned to prevent accidental changes. Extra defensive cloning has been added.</li>
@@ -386,7 +386,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2020, November 1st.
 <li>PGP clear signed signatures now support SHA-224.</li>
 <li>Treating absent vs NULL as equivalent can now be configured by a system property. By default this is not enabled.</li>
 <li>Mode name checks in Cipher strings should now make sure an improper mode name always results in a NoSuchAlgorithmException.</li>
-<li>In line with changes in OpenSSL, the OpenSSLPBKDF now uses UTF8 encoding.</li>
+<li>In line with changes in OpenSSL, the OpenSSLPBKDF now uses UTF-8 encoding.</li>
 </ul>
 <h3>2.9.4 Security Advisory</h3>
 <ul>
@@ -1414,7 +1414,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2008, October 1
 <li>Camellia is now 12.5% faster than previously.</li>
 <li>A smaller version (around 8k compiled) of Camellia, CamelliaLightEngine has also been added.</li>
 <li>CMSSignedData generation now supports SubjectKeyIdentifier as well as use of issuer/serial.</li>
-<li>A CMSPBE key holder for UTF8 keys has been added to the CMS API.</li>
+<li>A CMSPBE key holder for UTF-8 keys has been added to the CMS API.</li>
 <li>Salt and iteration count can now be recovered from PasswordRecipientInformation.</li>
 <li>Methods in the OpenPGP, CMS, and S/MIME APIs which previously could only take provider names can now take providers objects as well (JDK1.4 and greater).</li>
 <li>Support for reading and extracting personalised certificates in PGP Secret Key rings has been added.</li>
@@ -1562,7 +1562,7 @@ regression for processing some messages with embedded multiparts that contained 
 <li>SharedFileInputStream compatibility issues with JavaMail 1.4 have been addressed.</li>
 <li>JDK 1.5 and later KeyFactory now accepts ECPublicKey/ECPrivateKey to translateKey.</li>
 <li>JDK 1.5 and later KeyFactory now produces ECPublicKeySpec/ECPrivateKeySpec on getKeySpec.</li>
-<li>Some surrogate pairs were not assembled correctly by the UTF8 decoder. This has been fixed.</li>
+<li>Some surrogate pairs were not assembled correctly by the UTF-8 decoder. This has been fixed.</li>
 <li>Alias resolution in PKCS#12 is now case insensitive.</li>
 </ul>
 <h3>2.40.3 Additional Features and Functionality</h3>
@@ -1633,7 +1633,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2006, October 2
 <li>SMIMESignedParser now avoids JavaMail quoted-printable recoding issue.
 <li>Verification of RSA signatures done with keys with public exponents of 3 was vunerable to
 Bleichenbacher's RSA signature forgery attack. This has been fixed.
-<li>PGP Identity strings were only being interpreted as ASCII rather than UTF8. This has been fixed.
+<li>PGP Identity strings were only being interpreted as ASCII rather than UTF-8. This has been fixed.
 <li>CertificateFactory.generateCRLs now returns a Collection rather than null.
 </ul>
 <h3>2.42.3 Additional Features and Functionality</h3>
@@ -2237,7 +2237,7 @@ had it's own AuthorityKeyExtension the PKCS12 key store would drop the root
 certificate from the certificate chain. This has been fixed.
 <li>The PKCS10 CertificationRequestInfo class always expected at least one
 attribute. This has been fixed.
-<li>UTF8 strings are now correctly recognised.
+<li>UTF-8 strings are now correctly recognised.
 <li>The Tiger implementation was producing results in reverse byte
 order for each of the 3 words making up the digest. This has been fixed.
 <li>asn1.x509.ExtendedKeyUsage used to throw a null pointer exception
