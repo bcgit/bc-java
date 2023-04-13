@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -13,6 +14,7 @@ import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -396,15 +398,15 @@ public class AESTest
         engine.init(true, params);
 
         SecureRandom rand = new SecureRandom();
-        byte[]       cipher = new byte[256 * 16];
-        byte[]       plain = new byte[255 * 16];
+        byte[]       cipher = new byte[256 * 16 + 1];
+        byte[]       plain = new byte[256 * 16];
 
         rand.nextBytes(plain);
         engine.processBytes(plain, 0, plain.length, cipher, 0);
 
         engine.init(true, params);
 
-        plain = new byte[256 * 16];
+        plain = new byte[256 * 16 + 1];
         engine.init(true, params);
 
         try
@@ -418,6 +420,44 @@ public class AESTest
             {
                 fail("wrong exception");
             }
+        }
+    }
+
+    private void testLastByte()
+        throws Exception
+    {
+        SICBlockCipher cipher = new SICBlockCipher(new AESEngine());
+        byte[] iv = new byte[15];
+        byte[] key = new byte[16];
+
+        Arrays.fill(iv, (byte)0x0a);
+        cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+
+        int lastBlock = 255; // the last block
+        cipher.seekTo((lastBlock * 16));
+
+
+        for (int t = 0; t < 15; t++)     // the last byte
+        {
+            cipher.returnByte((byte)0x00);
+        }
+
+        //
+        // This should return the last byte
+        //
+        cipher.returnByte((byte)0);
+
+        //
+        // This should fail.
+        //
+        try
+        {
+            cipher.returnByte((byte)0);
+            fail("should not succed");
+        }
+        catch (Exception ex)
+        {
+            isEquals(ex.getMessage(), "Counter in CTR/SIC mode out of range.");
         }
     }
 
@@ -497,6 +537,7 @@ public class AESTest
         skipTest();
         ctrCounterTest();
         ctrFragmentedTest();
+        testLastByte();
     }
 
     public static void main(
