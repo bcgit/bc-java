@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.io.CipherOutputStream;
@@ -155,7 +156,7 @@ public class BcPGPDataEncryptorBuilder
     {
         if (aeadAlgorithm > 0)
         {
-            return new MyAeadDataEncryptor(isV5StyleAEAD, keyBytes);
+            return new MyAeadDataEncryptor(keyBytes);
         }
 
         return new MyPGPDataEncryptor(keyBytes);
@@ -216,14 +217,13 @@ public class BcPGPDataEncryptorBuilder
          * If however the flavour is {@link PGPAEADFlavour#OPENPGP_V6}, keyBytes contains M+N-8 bytes.
          * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
          *
-         * @param isV5StyleAEAD if true, the encryptor will use OpenPGP v5 style AEAD, otherwise v6 style.
          * @param keyBytes key or key and iv
          * @throws PGPException
          */
-        MyAeadDataEncryptor(boolean isV5StyleAEAD, byte[] keyBytes)
+        MyAeadDataEncryptor(byte[] keyBytes)
             throws PGPException
         {
-            this.isV5StyleAEAD = isV5StyleAEAD;
+            this.isV5StyleAEAD = keyBytes.length == SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
             if (isV5StyleAEAD)
             {
                 this.keyBytes = keyBytes;
@@ -231,6 +231,7 @@ public class BcPGPDataEncryptorBuilder
                 this.iv = new byte[AEADUtils.getIVLength((byte)aeadAlgorithm)];
                 getSecureRandom().nextBytes(iv);
             }
+            // V6 passes in concatenated key and N-8 bytes of IV.
             else
             {
                 // V6 has the IV appended to the message key, so we need to split it.
