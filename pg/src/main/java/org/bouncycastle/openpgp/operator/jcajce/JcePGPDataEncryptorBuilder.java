@@ -11,6 +11,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -188,7 +189,7 @@ public class JcePGPDataEncryptorBuilder
     {
         if (aeadAlgorithm > 0)
         {
-            return new MyAeadDataEncryptor(isV5StyleAEAD, keyBytes);
+            return new MyAeadDataEncryptor(keyBytes);
         }
         return new MyPGPDataEncryptor(keyBytes);
     }
@@ -261,14 +262,13 @@ public class JcePGPDataEncryptorBuilder
          * If however the flavour is {@link PGPAEADFlavour#OPENPGP_V6}, keyBytes contains M+N-8 bytes.
          * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
          *
-         * @param isV5StyleAEAD whether the encryptor will use v5 or v6 style AEAD
          * @param keyBytes key or key and iv
          * @throws PGPException
          */
-        MyAeadDataEncryptor(boolean isV5StyleAEAD, byte[] keyBytes)
+        MyAeadDataEncryptor(byte[] keyBytes)
             throws PGPException
         {
-            this.isV5StyleAEAD = isV5StyleAEAD;
+            this.isV5StyleAEAD = keyBytes.length == SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
             if (isV5StyleAEAD)
             {
                 this.keyBytes = keyBytes;
