@@ -1,11 +1,9 @@
 package org.bouncycastle.jcajce.provider.util;
 
-import java.security.KeyFactorySpi;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
-import org.bouncycastle.jcajce.provider.symmetric.AES;
 
 public abstract class AsymmetricAlgorithmProvider
     extends AlgorithmProvider
