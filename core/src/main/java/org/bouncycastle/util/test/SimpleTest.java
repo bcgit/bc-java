@@ -233,7 +233,6 @@ public abstract class SimpleTest
         {
             TestResult result = tests[i].perform();
 
-
             if (!result.isSuccessful())
             {
                 failures.addElement(result);
@@ -266,8 +265,5 @@ public abstract class SimpleTest
                 System.out.println("=>  " + (TestResult)e.nextElement());
             }
         }
-
-
-
     }
 }

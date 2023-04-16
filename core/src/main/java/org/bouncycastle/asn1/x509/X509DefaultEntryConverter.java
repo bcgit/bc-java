@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 
 /**
  * The default converter for X509 DN entries when going from their
@@ -45,16 +46,16 @@ public class X509DefaultEntryConverter
             {
                 value = value.substring(1);
             }
-            if (oid.equals(X509Name.EmailAddress) || oid.equals(X509Name.DC))
+            if (oid.equals(BCStyle.EmailAddress) || oid.equals(BCStyle.DC))
             {
                 return new DERIA5String(value);
             }
-            else if (oid.equals(X509Name.DATE_OF_BIRTH))  // accept time string as well as # (for compatibility)
+            else if (oid.equals(BCStyle.DATE_OF_BIRTH))  // accept time string as well as # (for compatibility)
             {
                 return new DERGeneralizedTime(value);
             }
-            else if (oid.equals(X509Name.C) || oid.equals(X509Name.SN) || oid.equals(X509Name.DN_QUALIFIER)
-                || oid.equals(X509Name.TELEPHONE_NUMBER))
+            else if (oid.equals(BCStyle.C) || oid.equals(BCStyle.SERIALNUMBER) || oid.equals(BCStyle.DN_QUALIFIER)
+                || oid.equals(BCStyle.TELEPHONE_NUMBER))
             {
                  return new DERPrintableString(value);
             }

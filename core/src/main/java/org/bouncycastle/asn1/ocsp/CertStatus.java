@@ -84,7 +84,7 @@ public class CertStatus
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(obj.getObject()); // must be explicitly tagged
+        return getInstance(obj.getExplicitBaseTagged()); // must be explicitly tagged
     }
     
     public int getTagNo()

@@ -115,7 +115,7 @@ public class SCrypt
 
     private static byte[] SingleIterationPBKDF2(byte[] P, byte[] S, int dkLen)
     {
-        PBEParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA256Digest());
+        PBEParametersGenerator pGen = new PKCS5S2ParametersGenerator(SHA256Digest.newInstance());
         pGen.init(P, S, 1);
         KeyParameter key = (KeyParameter)pGen.generateDerivedMacParameters(dkLen * 8);
         return key.getKey();

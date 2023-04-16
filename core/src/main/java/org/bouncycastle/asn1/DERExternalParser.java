@@ -63,7 +63,7 @@ public class DERExternalParser
     {
         try
         {
-            return new DLExternal(sp.readVector());
+            return new DLExternal(new DLSequence(sp.readVector()));
         }
         catch (IllegalArgumentException e)
         {

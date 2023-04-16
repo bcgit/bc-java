@@ -80,7 +80,7 @@ public class CMac implements Mac
                     + (cipher.getBlockSize() * 8));
         }
 
-        this.cipher = new CBCBlockCipher(cipher);
+        this.cipher = CBCBlockCipher.newInstance(cipher);
         this.macSize = macSizeInBits / 8;
         this.poly = lookupPoly(cipher.getBlockSize());
 

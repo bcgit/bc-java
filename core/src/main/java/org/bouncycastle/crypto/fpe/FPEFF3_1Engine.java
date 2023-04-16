@@ -20,7 +20,7 @@ public class FPEFF3_1Engine
      */
     public FPEFF3_1Engine()
     {
-        this(new AESEngine());
+        this(AESEngine.newInstance());
     }
 
     /**

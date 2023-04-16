@@ -64,7 +64,7 @@ public class DirectoryString
             throw new IllegalArgumentException("choice item must be explicitly tagged");
         }
 
-        return getInstance(o.getObject());
+        return getInstance(o.getExplicitBaseObject());
     }
 
     private DirectoryString(

@@ -194,7 +194,7 @@ public class JPAKEParticipant
             participantId,
             password,
             group,
-            new SHA256Digest(),
+            SHA256Digest.newInstance(),
             CryptoServicesRegistrar.getSecureRandom());
     }
 

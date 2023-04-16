@@ -72,11 +72,11 @@ public class OtherInfo
 
             if (o.getTagNo() == 0)
             {
-                partyAInfo = (ASN1OctetString)o.getObject();
+                partyAInfo = (ASN1OctetString)o.getExplicitBaseObject();
             }
             else if (o.getTagNo() == 2)
             {
-                suppPubInfo = (ASN1OctetString)o.getObject();
+                suppPubInfo = (ASN1OctetString)o.getExplicitBaseObject();
             }
         }
     }

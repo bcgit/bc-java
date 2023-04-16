@@ -217,6 +217,18 @@ public class Properties
         });
     }
 
+    public static String getPropertyValue(final String propertyName,  String defValue)
+    {
+        String rv = getPropertyValue(propertyName);
+
+        if (rv == null)
+        {
+            return defValue;
+        }
+
+        return rv;
+    }
+
     private static boolean isSetFalse(String p)
     {
         if (p == null || p.length() != 5)

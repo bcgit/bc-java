@@ -26,7 +26,12 @@ public class Time
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(obj.getObject()); // must be explicitly tagged
+        if (!explicit)
+        {
+            throw new IllegalArgumentException("choice item must be explicitly tagged");
+        }
+
+        return getInstance(obj.getExplicitBaseObject());
     }
 
     public Time(

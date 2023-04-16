@@ -48,7 +48,7 @@ public class ObjectStoreIntegrityCheck
         else if (obj instanceof ASN1TaggedObject)
         {
             this.type = SIG_CHECK;
-            this.integrityCheck = SignatureCheck.getInstance(((ASN1TaggedObject)obj).getObject());
+            this.integrityCheck = SignatureCheck.getInstance(((ASN1TaggedObject)obj).getExplicitBaseObject());
         }
         else
         {

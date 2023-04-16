@@ -228,6 +228,11 @@ public class GeneralName
         ASN1TaggedObject tagObj,
         boolean          explicit)
     {
+        if (!explicit)
+        {
+            throw new IllegalArgumentException("choice item must be explicitly tagged");
+        }
+
         return GeneralName.getInstance(ASN1TaggedObject.getInstance(tagObj, true));
     }
 

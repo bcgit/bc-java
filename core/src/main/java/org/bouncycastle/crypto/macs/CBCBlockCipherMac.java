@@ -92,7 +92,7 @@ public class CBCBlockCipherMac
             throw new IllegalArgumentException("MAC size must be multiple of 8");
         }
 
-        this.cipher = new CBCBlockCipher(cipher);
+        this.cipher = CBCBlockCipher.newInstance(cipher);
         this.padding = padding;
         this.macSize = macSizeInBits / 8;
 

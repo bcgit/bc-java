@@ -107,7 +107,7 @@ public class ISO9797Alg3Mac
             throw new IllegalArgumentException("cipher must be instance of DESEngine");
         }
 
-        this.cipher = new CBCBlockCipher(cipher);
+        this.cipher = CBCBlockCipher.newInstance(cipher);
         this.padding = padding;
         this.macSize = macSizeInBits / 8;
 

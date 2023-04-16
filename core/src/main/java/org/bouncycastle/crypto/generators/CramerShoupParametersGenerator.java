@@ -56,7 +56,7 @@ public class CramerShoupParametersGenerator
             g2 = ParametersHelper.selectGenerator(q, random);
         }
 
-        return new CramerShoupParameters(q, g1, g2, new SHA256Digest());
+        return new CramerShoupParameters(q, g1, g2, SHA256Digest.newInstance());
     }
 
     public CramerShoupParameters generateParameters(DHParameters dhParams)
@@ -71,7 +71,7 @@ public class CramerShoupParametersGenerator
             g2 = ParametersHelper.selectGenerator(p, random);
         }
 
-        return new CramerShoupParameters(p, g1, g2, new SHA256Digest());
+        return new CramerShoupParameters(p, g1, g2, SHA256Digest.newInstance());
     }
 
     private static class ParametersHelper

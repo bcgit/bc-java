@@ -20,7 +20,7 @@ public class CertBag
         ASN1Sequence    seq)
     {
         this.certId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
-        this.certValue = ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getObject();
+        this.certValue = ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getExplicitBaseObject();
     }
 
     public static CertBag getInstance(Object o)

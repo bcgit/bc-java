@@ -22,8 +22,8 @@ public class CRLBag
     private CRLBag(
         ASN1Sequence seq)
     {
-        this.crlId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        this.crlValue = ((ASN1TaggedObject)seq.getObjectAt(1)).getObject();
+        this.crlId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        this.crlValue = ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getExplicitBaseObject();
     }
 
     public static CRLBag getInstance(Object o)

@@ -4,10 +4,11 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
-import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.GCMModeCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+
 
 /**
  * The GMAC specialisation of Galois/Counter mode (GCM) detailed in NIST Special Publication
@@ -18,7 +19,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  */
 public class GMac implements Mac
 {
-    private final GCMBlockCipher cipher;
+    private final GCMModeCipher cipher;
     private final int macSizeBits;
 
     /**
@@ -29,7 +30,7 @@ public class GMac implements Mac
      * @param cipher
      *            the cipher to be used in GCM mode to generate the MAC.
      */
-    public GMac(final GCMBlockCipher cipher)
+    public GMac(final GCMModeCipher cipher)
     {
         // use of this confused flow analyser in some earlier JDKs
         this.cipher = cipher;
@@ -45,7 +46,7 @@ public class GMac implements Mac
      * @param cipher
      *            the cipher to be used in GCM mode to generate the MAC.
      */
-    public GMac(final GCMBlockCipher cipher, final int macSizeBits)
+    public GMac(final GCMModeCipher cipher, final int macSizeBits)
     {
         this.cipher = cipher;
         this.macSizeBits = macSizeBits;

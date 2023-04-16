@@ -484,7 +484,7 @@ public class PublicKeyFactory
                 }
                 BigInteger b = new BigInteger(1, b_bytes);
                 DSTU4145BinaryField field = binary.getField();
-                ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), b);
+                ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), b, null, null);
                 byte[] g_bytes = binary.getG();
                 if (algOid.equals(UAObjectIdentifiers.dstu4145le))
                 {
