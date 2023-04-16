@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 
@@ -84,7 +85,7 @@ public class OriginatorIdentifierOrKey
                     "Can't implicitly tag OriginatorIdentifierOrKey");
         }
 
-        return getInstance(o.getObject());
+        return getInstance(o.getExplicitBaseObject());
     }
     
     /**
@@ -116,7 +117,7 @@ public class OriginatorIdentifierOrKey
 
         if (o instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject tagged = (ASN1TaggedObject)o;
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC);
 
             if (tagged.getTagNo() == 0)
             {

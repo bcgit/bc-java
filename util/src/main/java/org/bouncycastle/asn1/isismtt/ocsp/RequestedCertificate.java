@@ -84,7 +84,7 @@ public class RequestedCertificate
             throw new IllegalArgumentException("choice item must be explicitly tagged");
         }
 
-        return getInstance(obj.getObject());
+        return getInstance(obj.getExplicitBaseObject());
     }
 
     private RequestedCertificate(ASN1TaggedObject tagged)

@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -37,7 +38,7 @@ public class SymmetricEncryptionKey
         this.choice = instance.getTagNo();
         if (choice == aes128ccm)
         {
-            ASN1OctetString str = DEROctetString.getInstance(instance.getObject());
+            ASN1OctetString str = DEROctetString.getInstance(instance.getExplicitBaseObject());
             if (str.getOctets().length != 16)
             {
                 throw new IllegalArgumentException("aes128ccm string not 16 bytes");
@@ -58,7 +59,7 @@ public class SymmetricEncryptionKey
         }
         if (o != null)
         {
-            return new SymmetricEncryptionKey(ASN1TaggedObject.getInstance(o));
+            return new SymmetricEncryptionKey(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

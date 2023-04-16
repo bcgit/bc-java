@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -37,18 +38,18 @@ public class KeyRecRepContent
 
         while (en.hasMoreElements())
         {
-            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement());
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.CONTEXT_SPECIFIC);
 
             switch (tObj.getTagNo())
             {
             case 0:
-                newSigCert = CMPCertificate.getInstance(tObj.getObject());
+                newSigCert = CMPCertificate.getInstance(tObj.getExplicitBaseObject());
                 break;
             case 1:
-                caCerts = ASN1Sequence.getInstance(tObj.getObject());
+                caCerts = ASN1Sequence.getInstance(tObj.getExplicitBaseObject());
                 break;
             case 2:
-                keyPairHist = ASN1Sequence.getInstance(tObj.getObject());
+                keyPairHist = ASN1Sequence.getInstance(tObj.getExplicitBaseObject());
                 break;
             default:
                 throw new IllegalArgumentException("unknown tag number: " + tObj.getTagNo());

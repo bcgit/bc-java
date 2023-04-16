@@ -34,7 +34,7 @@ public class PolygonalRegion
         ArrayList<TwoDLocation> l = new ArrayList<TwoDLocation>();
         for (Iterator<ASN1Encodable> it = s.iterator(); it.hasNext(); )
         {
-            l.add(TwoDLocation.getInstance(s));
+            l.add(TwoDLocation.getInstance(it.next()));
         }
         twoDLocations = Collections.unmodifiableList(l);
     }
@@ -48,7 +48,7 @@ public class PolygonalRegion
         }
         else if (o != null)
         {
-            return new PolygonalRegion(ItsUtils.fillList(TwoDLocation.class, ASN1Sequence.getInstance(o)));
+            return new PolygonalRegion(ASN1Sequence.getInstance(o));
         }
         return null;
     }

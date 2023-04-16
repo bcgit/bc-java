@@ -1,15 +1,18 @@
 package org.bouncycastle.asn1.eac;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -27,9 +30,8 @@ import org.bouncycastle.util.Integers;
 public class CertificateHolderAuthorization
     extends ASN1Object
 {
-    ASN1ObjectIdentifier oid;
-    ASN1ApplicationSpecific accessRights;
     public static final ASN1ObjectIdentifier id_role_EAC = EACObjectIdentifiers.bsi_de.branch("3.1.2.1");
+
     public static final int CVCA = 0xC0;
     public static final int DV_DOMESTIC = 0x80;
     public static final int DV_FOREIGN = 0x40;
@@ -37,9 +39,8 @@ public class CertificateHolderAuthorization
     public static final int RADG4 = 0x02;//Read Access to DG4 (Iris)
     public static final int RADG3 = 0x01;//Read Access to DG3 (fingerprint)
 
-    static Hashtable RightsDecodeMap = new Hashtable();
+    static Map RightsDecodeMap = new HashMap();
     static BidirectionalMap AuthorizationRole = new BidirectionalMap();
-    static Hashtable ReverseMap = new Hashtable();
 
     static
     {
@@ -50,15 +51,10 @@ public class CertificateHolderAuthorization
         AuthorizationRole.put(Integers.valueOf(DV_DOMESTIC), "DV_DOMESTIC");
         AuthorizationRole.put(Integers.valueOf(DV_FOREIGN), "DV_FOREIGN");
         AuthorizationRole.put(Integers.valueOf(IS), "IS");
-
-        /*
-          for (int i : RightsDecodeMap.keySet())
-              ReverseMap.put(RightsDecodeMap.get(i), i);
-
-          for (int i : AuthorizationRole.keySet())
-              ReverseMap.put(AuthorizationRole.get(i), i);
-          */
     }
+
+    private ASN1ObjectIdentifier oid;
+    private byte accessRights;
 
     public static String getRoleDescription(int i)
     {
@@ -76,11 +72,10 @@ public class CertificateHolderAuthorization
         return i.intValue();
     }
 
-    private void setPrivateData(ASN1InputStream cha)
-        throws IOException
+    private void setPrivateData(ASN1Sequence seq)
     {
         ASN1Primitive obj;
-        obj = cha.readObject();
+        obj = (ASN1Primitive)seq.getObjectAt(0);
         if (obj instanceof ASN1ObjectIdentifier)
         {
             this.oid = (ASN1ObjectIdentifier)obj;
@@ -89,10 +84,11 @@ public class CertificateHolderAuthorization
         {
             throw new IllegalArgumentException("no Oid in CerticateHolderAuthorization");
         }
-        obj = cha.readObject();
-        if (obj instanceof ASN1ApplicationSpecific)
+        obj = (ASN1Primitive)seq.getObjectAt(1);
+        if (obj instanceof ASN1TaggedObject)
         {
-            this.accessRights = (ASN1ApplicationSpecific)obj;
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(obj, BERTags.APPLICATION, EACTags.DISCRETIONARY_DATA);
+            this.accessRights = ASN1OctetString.getInstance(tObj.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets()[0];
         }
         else
         {
@@ -117,17 +113,21 @@ public class CertificateHolderAuthorization
     }
 
     /**
-     * create an Iso7816CertificateHolderAuthorization according to the {@link ASN1ApplicationSpecific}
+     * create an Iso7816CertificateHolderAuthorization according to the {@link ASN1TaggedObject}
      *
      * @param aSpe the DERApplicationSpecific containing the data
      * @throws IOException
      */
-    public CertificateHolderAuthorization(ASN1ApplicationSpecific aSpe)
+    public CertificateHolderAuthorization(ASN1TaggedObject aSpe)
         throws IOException
     {
-        if (aSpe.getApplicationTag() == EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE)
+        if (aSpe.hasTag(BERTags.APPLICATION, EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE))
         {
-            setPrivateData(new ASN1InputStream(aSpe.getContents()));
+            setPrivateData(ASN1Sequence.getInstance(aSpe.getBaseUniversal(false, BERTags.SEQUENCE)));
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unrecognized object in CerticateHolderAuthorization");
         }
     }
 
@@ -136,7 +136,7 @@ public class CertificateHolderAuthorization
      */
     public int getAccessRights()
     {
-        return accessRights.getContents()[0] & 0xff;
+        return accessRights & 0xff;
     }
 
     /**
@@ -146,9 +146,7 @@ public class CertificateHolderAuthorization
      */
     private void setAccessRights(byte rights)
     {
-        byte[] accessRights = new byte[1];
-        accessRights[0] = rights;
-        this.accessRights = new DERApplicationSpecific(EACTags.DISCRETIONARY_DATA, accessRights);
+        this.accessRights = rights;
     }
 
     /**
@@ -177,8 +175,8 @@ public class CertificateHolderAuthorization
         ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(oid);
-        v.add(accessRights);
+        v.add(EACTagged.create(EACTags.DISCRETIONARY_DATA, new byte[] { accessRights }));
 
-        return new DERApplicationSpecific(EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE, v);
+        return EACTagged.create(EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE, new DERSequence(v));
     }
 }

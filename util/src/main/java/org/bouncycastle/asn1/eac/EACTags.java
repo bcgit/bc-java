@@ -1,10 +1,12 @@
 package org.bouncycastle.asn1.eac;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
-import org.bouncycastle.asn1.BERTags;
-
 public class EACTags
 {
+    private EACTags()
+    {
+
+    }
+
     public static final int COUNTRY_CODE_NATIONAL_DATA = 0x01;
     public static final int ISSUER_IDENTIFICATION_NUMBER = 0x02; //0x42;
     public static final int CARD_SERVICE_DATA = 0x03;
@@ -113,97 +115,4 @@ public class EACTags
     public static final int CERTIFICATE_BODY = 0x4E;                          // 0x7F4E;
     public static final int BIOMETRIC_INFORMATION_TEMPLATE = 0x00;            // 0x60
     public static final int BIOMETRIC_INFORMATION_GROUP_TEMPLATE = 0x01;      // 0x61
-
-    public static int getTag(int encodedTag)
-    {
-        /*
-        int i;
-        for (i = 24; i>=0; i-=8) {
-            if (((0xFF<<i) & tag) != 0)
-                return (((0xFF<<i) & tag) >> i);
-        }
-        return 0;
-        */
-        return decodeTag(encodedTag);
-    }
-
-    public static int getTagNo(int tag)
-    {
-        int i;
-        for (i = 24; i >= 0; i -= 8)
-        {
-            if (((0xFF << i) & tag) != 0)
-            {
-                return ((~(0xFF << i)) & tag);
-            }
-        }
-        return 0;
-    }
-
-    public static int encodeTag(ASN1ApplicationSpecific spec)
-    {
-        int retValue = BERTags.APPLICATION;
-        boolean constructed = spec.isConstructed();
-        if (constructed)
-        {
-            retValue |= BERTags.CONSTRUCTED;
-        }
-
-        int tag = spec.getApplicationTag();
-
-        if (tag > 31)
-        {
-            retValue |= 0x1F;
-            retValue <<= 8;
-
-            int currentByte = tag & 0x7F;
-            retValue |= currentByte;
-            tag >>= 7;
-
-            while (tag > 0)
-            {
-                retValue |= 0x80;
-                retValue <<= 8;
-
-                currentByte = tag & 0x7F;
-                retValue |= currentByte;
-                tag >>= 7;
-            }
-        }
-        else
-        {
-            retValue |= tag;
-        }
-
-        return retValue;
-    }
-
-    public static int decodeTag(int tag)
-    {
-        int retValue = 0;
-        boolean multiBytes = false;
-        for (int i = 24; i >= 0; i -= 8)
-        {
-            int currentByte = tag >> i & 0xFF;
-            if (currentByte == 0)
-            {
-                continue;
-            }
-
-            if (multiBytes)
-            {
-                retValue <<= 7;
-                retValue |= currentByte & 0x7F;
-            }
-            else if ((currentByte & 0x1F) == 0x1F)
-            {
-                multiBytes = true;
-            }
-            else
-            {
-                return currentByte & 0x1F; // higher order bit are for DER.Constructed and type
-            }
-        }
-        return retValue;
-    }
 }

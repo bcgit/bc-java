@@ -3,9 +3,9 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -43,10 +43,10 @@ public class PublicVerificationKey
         {
         case ecdsaNistP256:
         case ecdsaBrainpoolP256r1:
-            publicVerificationKey = EccP256CurvePoint.getInstance(taggedObject.getObject());
+            publicVerificationKey = EccP256CurvePoint.getInstance(taggedObject.getExplicitBaseObject());
             return;
         case ecdsaBrainpoolP384r1:
-            publicVerificationKey = EccP384CurvePoint.getInstance(taggedObject.getObject());
+            publicVerificationKey = EccP384CurvePoint.getInstance(taggedObject.getExplicitBaseObject());
             return;
         }
         throw new IllegalArgumentException("invalid choice value " + taggedObject.getTagNo());
@@ -79,7 +79,7 @@ public class PublicVerificationKey
 
         if (object != null)
         {
-            return new PublicVerificationKey(ASN1TaggedObject.getInstance(object));
+            return new PublicVerificationKey(ASN1TaggedObject.getInstance(object, BERTags.CONTEXT_SPECIFIC));
         }
         return null;
     }

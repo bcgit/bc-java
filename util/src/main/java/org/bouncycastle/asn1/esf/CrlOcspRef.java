@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -46,17 +47,17 @@ public class CrlOcspRef
         Enumeration e = seq.getObjects();
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = (ASN1TaggedObject)e.nextElement();
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
             switch (o.getTagNo())
             {
                 case 0:
-                    this.crlids = CrlListID.getInstance(o.getObject());
+                    this.crlids = CrlListID.getInstance(o.getExplicitBaseObject());
                     break;
                 case 1:
-                    this.ocspids = OcspListID.getInstance(o.getObject());
+                    this.ocspids = OcspListID.getInstance(o.getExplicitBaseObject());
                     break;
                 case 2:
-                    this.otherRev = OtherRevRefs.getInstance(o.getObject());
+                    this.otherRev = OtherRevRefs.getInstance(o.getExplicitBaseObject());
                     break;
                 default:
                     throw new IllegalArgumentException("illegal tag");

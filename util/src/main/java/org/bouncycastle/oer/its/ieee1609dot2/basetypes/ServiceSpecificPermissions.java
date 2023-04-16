@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.ieee1609dot2.Opaque;
@@ -40,10 +41,10 @@ public class ServiceSpecificPermissions
         switch (choice)
         {
         case opaque:
-            serviceSpecificPermissions = Opaque.getInstance(sto.getObject());
+            serviceSpecificPermissions = Opaque.getInstance(sto.getExplicitBaseObject());
             return;
         case bitmapSsp:
-            serviceSpecificPermissions = BitmapSsp.getInstance(sto.getObject());
+            serviceSpecificPermissions = BitmapSsp.getInstance(sto.getExplicitBaseObject());
             return;
         }
         throw new IllegalArgumentException("invalid choice value " + choice);
@@ -60,7 +61,7 @@ public class ServiceSpecificPermissions
 
         if (o != null)
         {
-            return new ServiceSpecificPermissions(ASN1TaggedObject.getInstance(o));
+            return new ServiceSpecificPermissions(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

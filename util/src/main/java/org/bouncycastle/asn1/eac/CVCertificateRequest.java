@@ -3,21 +3,21 @@ package org.bouncycastle.asn1.eac;
 import java.io.IOException;
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERApplicationSpecific;
-import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
 
 public class CVCertificateRequest
     extends ASN1Object
 {
-    private final ASN1ApplicationSpecific original;
+    private final ASN1TaggedObject original;
 
     private CertificateBody certificateBody;
 
@@ -27,18 +27,19 @@ public class CVCertificateRequest
     private static final int bodyValid = 0x01;
     private static final int signValid = 0x02;
 
-    private CVCertificateRequest(ASN1ApplicationSpecific request)
+    private CVCertificateRequest(ASN1TaggedObject request)
         throws IOException
     {
         this.original = request;
 
-        if (request.isConstructed() && request.getApplicationTag() == EACTags.AUTHENTIFICATION_DATA)
+        if (request.hasTag(BERTags.APPLICATION, EACTags.AUTHENTIFICATION_DATA))
         {
-            ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
+            ASN1Sequence seq = ASN1Sequence.getInstance(request.getBaseUniversal(false, BERTags.SEQUENCE));
 
-            initCertBody((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(seq.getObjectAt(0)));
+            initCertBody(ASN1TaggedObject.getInstance(seq.getObjectAt(0), BERTags.APPLICATION));
 
-            outerSignature = ((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(seq.getObjectAt(seq.size() - 1))).getContents();
+            outerSignature = ASN1OctetString.getInstance(
+                ASN1TaggedObject.getInstance(seq.getObjectAt(seq.size() - 1)).getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
         }
         else
         {
@@ -46,38 +47,39 @@ public class CVCertificateRequest
         }
     }
 
-    private void initCertBody(ASN1ApplicationSpecific request)
+    private void initCertBody(ASN1TaggedObject request)
         throws IOException
     {
-        if (request.getApplicationTag() == EACTags.CARDHOLDER_CERTIFICATE)
+        if (request.hasTag(BERTags.APPLICATION, EACTags.CARDHOLDER_CERTIFICATE))
         {
             int valid = 0;
-            ASN1Sequence seq = ASN1Sequence.getInstance(request.getObject(BERTags.SEQUENCE));
+            ASN1Sequence seq = ASN1Sequence.getInstance(request.getBaseUniversal(false, BERTags.SEQUENCE));
             for (Enumeration en = seq.getObjects(); en.hasMoreElements();)
             {
-                ASN1ApplicationSpecific obj = (ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(en.nextElement());
-                switch (obj.getApplicationTag())
+                ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.APPLICATION);
+                switch (tObj.getTagNo())
                 {
                 case EACTags.CERTIFICATE_CONTENT_TEMPLATE:
-                    certificateBody = CertificateBody.getInstance(obj);
+                    certificateBody = CertificateBody.getInstance(tObj);
                     valid |= bodyValid;
                     break;
                 case EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP:
-                    innerSignature = obj.getContents();
+                    innerSignature = ASN1OctetString.getInstance(
+                                            tObj.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
                     valid |= signValid;
                     break;
                 default:
-                    throw new IOException("Invalid tag, not an CV Certificate Request element:" + obj.getApplicationTag());
+                    throw new IOException("Invalid tag, not an CV Certificate Request element:" + tObj.getTagNo());
                 }
             }
             if ((valid & (bodyValid | signValid)) == 0)
             {
-                throw new IOException("Invalid CARDHOLDER_CERTIFICATE in request:" + request.getApplicationTag());
+                throw new IOException("Invalid CARDHOLDER_CERTIFICATE in request:" + request.getTagNo());
             }
         }
         else
         {
-            throw new IOException("not a CARDHOLDER_CERTIFICATE in request:" + request.getApplicationTag());
+            throw new IOException("not a CARDHOLDER_CERTIFICATE in request:" + request.getTagNo());
         }
     }
 
@@ -91,7 +93,7 @@ public class CVCertificateRequest
         {
             try
             {
-                return new CVCertificateRequest((ASN1ApplicationSpecific)ASN1ApplicationSpecific.getInstance(obj));
+                return new CVCertificateRequest(ASN1TaggedObject.getInstance(obj, BERTags.APPLICATION));
             }
             catch (IOException e)
             {
@@ -147,17 +149,9 @@ public class CVCertificateRequest
             ASN1EncodableVector v = new ASN1EncodableVector(2);
 
             v.add(certificateBody);
+            v.add(EACTagged.create(EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, innerSignature));
 
-            try
-            {
-                v.add(new DERApplicationSpecific(false, EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, new DEROctetString(innerSignature)));
-            }
-            catch (IOException e)
-            {
-                throw new IllegalStateException("unable to convert signature!");
-            }
-
-            return new DERApplicationSpecific(EACTags.CARDHOLDER_CERTIFICATE, v);
+            return EACTagged.create(EACTags.CARDHOLDER_CERTIFICATE, new DERSequence(v));
         }
     }
 }

@@ -43,7 +43,7 @@ public class CertAnnContent
         {
             if (isExplicit)
             {
-                return CertAnnContent.getInstance(ato.getObject());
+                return CertAnnContent.getInstance(ato.getExplicitBaseObject());
             }
             else
             {
@@ -93,7 +93,7 @@ public class CertAnnContent
         {
             ASN1TaggedObject taggedObject = (ASN1TaggedObject)o;
 
-            return new CertAnnContent(taggedObject.getTagNo(), taggedObject.getObject());
+            return new CertAnnContent(taggedObject.getTagNo(), taggedObject.getExplicitBaseObject());
         }
 
         throw new IllegalArgumentException("Invalid object: " + o.getClass().getName());

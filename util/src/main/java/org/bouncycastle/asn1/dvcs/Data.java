@@ -85,7 +85,7 @@ public class Data
         ASN1TaggedObject obj,
         boolean explicit)
     {
-        return getInstance(obj.getObject());
+        return getInstance(obj.getExplicitBaseObject());
     }
 
     public ASN1Primitive toASN1Primitive()

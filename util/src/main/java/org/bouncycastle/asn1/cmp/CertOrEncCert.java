@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.EncryptedKey;
 import org.bouncycastle.asn1.crmf.EncryptedValue;
@@ -25,11 +26,11 @@ public class CertOrEncCert
     {
         if (tagged.getTagNo() == 0)
         {
-            certificate = CMPCertificate.getInstance(tagged.getObject());
+            certificate = CMPCertificate.getInstance(tagged.getExplicitBaseObject());
         }
         else if (tagged.getTagNo() == 1)
         {
-            encryptedCert = EncryptedKey.getInstance(tagged.getObject());
+            encryptedCert = EncryptedKey.getInstance(tagged.getExplicitBaseObject());
         }
         else
         {
@@ -76,7 +77,7 @@ public class CertOrEncCert
 
         if (o instanceof ASN1TaggedObject)
         {
-            return new CertOrEncCert((ASN1TaggedObject)o);
+            return new CertOrEncCert(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -104,7 +105,7 @@ public class ProcurationSyntax
 
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
             switch (o.getTagNo())
             {
                 case 1:
@@ -114,7 +115,7 @@ public class ProcurationSyntax
                     typeOfSubstitution = DirectoryString.getInstance(o, true);
                     break;
                 case 3:
-                    ASN1Encodable signingFor = o.getObject();
+                    ASN1Encodable signingFor = o.getExplicitBaseObject();
                     if (signingFor instanceof ASN1TaggedObject)
                     {
                         thirdPerson = GeneralName.getInstance(signingFor);

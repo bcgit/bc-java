@@ -78,7 +78,7 @@ public class PKIBody
     private PKIBody(ASN1TaggedObject tagged)
     {
         tagNo = tagged.getTagNo();
-        body = getBodyForType(tagNo, tagged.getObject());
+        body = getBodyForType(tagNo, tagged.getExplicitBaseObject());
     }
 
     /**

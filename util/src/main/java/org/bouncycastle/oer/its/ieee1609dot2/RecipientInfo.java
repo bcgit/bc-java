@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -45,15 +46,15 @@ public class RecipientInfo
         switch (choice)
         {
         case pskRecipInfo:
-            recipientInfo = PreSharedKeyRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = PreSharedKeyRecipientInfo.getInstance(instance.getExplicitBaseObject());
             break;
         case symmRecipInfo:
-            recipientInfo = SymmRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = SymmRecipientInfo.getInstance(instance.getExplicitBaseObject());
             break;
         case certRecipInfo:
         case signedDataRecipInfo:
         case rekRecipInfo:
-            recipientInfo = PKRecipientInfo.getInstance(instance.getObject());
+            recipientInfo = PKRecipientInfo.getInstance(instance.getExplicitBaseObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
@@ -69,7 +70,7 @@ public class RecipientInfo
 
         if (object != null)
         {
-            return new RecipientInfo(ASN1TaggedObject.getInstance(object));
+            return new RecipientInfo(ASN1TaggedObject.getInstance(object, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;
