@@ -169,20 +169,11 @@ public class X9Test
     {
         return "X9";
     }
-                                                      
+
     public static void main(
         String[]    args)
         throws Exception
     {
         runTest(new X9Test());
-
-        byte[] data = Base64.decode(Streams.readAll(new FileInputStream("/tmp/x")));
-
-        System.err.println(Strings.fromByteArray(data));
-
-        data = Base64.decode(Streams.readAll(new FileInputStream("/tmp/y")));
-
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(data)));
-
     }
 }
