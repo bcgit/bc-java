@@ -79,7 +79,7 @@ public class NISTCTSTest
 
     private void testExceptions() throws InvalidCipherTextException
     {
-        BufferedBlockCipher engine = new NISTCTSBlockCipher(NISTCTSBlockCipher.CS1, new AESEngine());
+        BufferedBlockCipher engine = new NISTCTSBlockCipher(NISTCTSBlockCipher.CS1, AESEngine.newInstance());
         CipherParameters params = new KeyParameter(new byte[engine.getBlockSize()]);
         engine.init(true, params);
 
@@ -136,28 +136,28 @@ public class NISTCTSTest
     public void performTest() 
         throws Exception
     {
-        testCTS(1, NISTCTSBlockCipher.CS1, new AESEngine(), new ParametersWithIV(key, iv), singleBlock, singleOut);
-        testCTS(2, NISTCTSBlockCipher.CS2, new AESEngine(), new ParametersWithIV(key, iv), singleBlock, singleOut);
-        testCTS(3, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(key, iv), singleBlock, singleOut);
+        testCTS(1, NISTCTSBlockCipher.CS1, AESEngine.newInstance(), new ParametersWithIV(key, iv), singleBlock, singleOut);
+        testCTS(2, NISTCTSBlockCipher.CS2, AESEngine.newInstance(), new ParametersWithIV(key, iv), singleBlock, singleOut);
+        testCTS(3, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(key, iv), singleBlock, singleOut);
 
-        testCTS(4, NISTCTSBlockCipher.CS1, new AESEngine(), new ParametersWithIV(key, iv), twoBlock, cs1TwoBlockOut);
-        testCTS(5, NISTCTSBlockCipher.CS2, new AESEngine(), new ParametersWithIV(key, iv), twoBlock, cs2TwoBlockOut);
-        testCTS(6, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(key, iv), twoBlock, cs3TwoBlockOut);
+        testCTS(4, NISTCTSBlockCipher.CS1, AESEngine.newInstance(), new ParametersWithIV(key, iv), twoBlock, cs1TwoBlockOut);
+        testCTS(5, NISTCTSBlockCipher.CS2, AESEngine.newInstance(), new ParametersWithIV(key, iv), twoBlock, cs2TwoBlockOut);
+        testCTS(6, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(key, iv), twoBlock, cs3TwoBlockOut);
 
-        testCTS(7, NISTCTSBlockCipher.CS1, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs1NotQuiteTwoBlockOut);
-        testCTS(8, NISTCTSBlockCipher.CS2, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs2NotQuiteTwoBlockOut);
-        testCTS(9, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(key, iv), notQuiteTwo, cs3NotQuiteTwoBlockOut);
+        testCTS(7, NISTCTSBlockCipher.CS1, AESEngine.newInstance(), new ParametersWithIV(key, iv), notQuiteTwo, cs1NotQuiteTwoBlockOut);
+        testCTS(8, NISTCTSBlockCipher.CS2, AESEngine.newInstance(), new ParametersWithIV(key, iv), notQuiteTwo, cs2NotQuiteTwoBlockOut);
+        testCTS(9, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(key, iv), notQuiteTwo, cs3NotQuiteTwoBlockOut);
 
         byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
         byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
         byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
 
-        testCTS(10, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
+        testCTS(10, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
 
         byte[] aes128c = Hex.decode("aafd12f659cae63489b479e5076ddec2");
         byte[] aesOut1c = Hex.decode("0af33c005a337af55a5149effc5108eaa1ea87de8a8556e8786b8f230da64e56");
 
-        testCTS(11, NISTCTSBlockCipher.CS3, new AESEngine(), new ParametersWithIV(new KeyParameter(aes128c), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1c);
+        testCTS(11, NISTCTSBlockCipher.CS3, AESEngine.newInstance(), new ParametersWithIV(new KeyParameter(aes128c), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1c);
 
         testExceptions();
     }

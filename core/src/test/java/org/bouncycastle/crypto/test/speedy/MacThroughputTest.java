@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.NullEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
@@ -59,11 +59,11 @@ public class MacThroughputTest
         testMac(new HMac(new SHA1Digest()), new KeyParameter(generateNonce(20)), 3);
         testMac(new SkeinMac(SkeinMac.SKEIN_512, 128), new KeyParameter(generateNonce(64)), 2);
         testMac(new SipHash(), new KeyParameter(generateNonce(16)), 1);
-        testMac(new CMac(new AESFastEngine()), new KeyParameter(generateNonce(16)), 3);
-        testMac(new GMac(new GCMBlockCipher(new AESFastEngine())), new ParametersWithIV(new KeyParameter(
+        testMac(new CMac(AESEngine.newInstance()), new KeyParameter(generateNonce(16)), 3);
+        testMac(new GMac(new GCMBlockCipher(AESEngine.newInstance())), new ParametersWithIV(new KeyParameter(
                 generateNonce(16)), generateNonce(16)), 5);
         testMac(new Poly1305(new NullEngine(16)), new ParametersWithIV(generatePoly1305Key(), generateNonce(16)), 1);
-        testMac(new Poly1305(new AESFastEngine()), new ParametersWithIV(generatePoly1305Key(), generateNonce(16)), 1);
+        testMac(new Poly1305(AESEngine.newInstance()), new ParametersWithIV(generatePoly1305Key(), generateNonce(16)), 1);
         testMac(new Poly1305Reference(new NullEngine(16)), new ParametersWithIV(generatePoly1305Key(),
                 generateNonce(16)), 1);
     }

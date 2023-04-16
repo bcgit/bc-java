@@ -133,7 +133,7 @@ public class Poly1305Test
         }
         else
         {
-            mac = new Poly1305(new AESEngine());
+            mac = new Poly1305(AESEngine.newInstance());
             mac.init(new ParametersWithIV(new KeyParameter(tc.key), tc.nonce));
         }
         mac.update(tc.message, 0, tc.message.length);
@@ -155,7 +155,7 @@ public class Poly1305Test
         byte[] out = new byte[16];
 
         int c = 0;
-        final Mac mac = new Poly1305(new AESEngine());
+        final Mac mac = new Poly1305(AESEngine.newInstance());
         for (int loop = 0; loop < 13; loop++)
         {
             len = 0;
@@ -234,7 +234,7 @@ public class Poly1305Test
         byte[] out = new byte[16];
 
         // Generate baseline
-        Mac poly = new Poly1305(new AESEngine());
+        Mac poly = new Poly1305(AESEngine.newInstance());
         poly.init(new ParametersWithIV(new KeyParameter(k), new byte[16]));
 
         poly.update(m, 0, m.length);
@@ -280,7 +280,7 @@ public class Poly1305Test
         gen.init(new KeyGenerationParameters(new SecureRandom(), 256));
         byte[] k = gen.generateKey();
 
-        Mac poly = new Poly1305(new AESEngine());
+        Mac poly = new Poly1305(AESEngine.newInstance());
         poly.init(new ParametersWithIV(new KeyParameter(k), new byte[16]));
 
         try
