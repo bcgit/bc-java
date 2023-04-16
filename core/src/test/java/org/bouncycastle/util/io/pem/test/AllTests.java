@@ -75,7 +75,7 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight PQ Crypto Tests");
+        TestSuite suite = new TestSuite("PEM Tests");
         suite.addTestSuite(AllTests.class);
         return suite;
     }

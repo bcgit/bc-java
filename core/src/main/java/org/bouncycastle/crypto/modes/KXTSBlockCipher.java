@@ -126,13 +126,13 @@ public class KXTSBlockCipher
 
         for (int pos = 0; pos < len; pos += blockSize)
         {
-            processBlock(input, inOff + pos, output, outOff + pos);
+            processBlocks(input, inOff + pos, output, outOff + pos);
         }
 
         return len;
     }
 
-    private void processBlock(byte[] input, int inOff, byte[] output, int outOff)
+    private void processBlocks(byte[] input, int inOff, byte[] output, int outOff)
     {
         /*
          * A somewhat arbitrary limit of 2^32 - 1 blocks

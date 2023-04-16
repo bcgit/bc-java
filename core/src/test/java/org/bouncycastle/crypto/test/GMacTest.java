@@ -104,13 +104,13 @@ public class GMacTest extends SimpleTest
         {
             TestCase testCase = TEST_VECTORS[i];
 
-            Mac mac = new GMac(new GCMBlockCipher(new AESEngine()), testCase.getTag().length * 8);
+            Mac mac = new GMac(GCMBlockCipher.newInstance(AESEngine.newInstance()), testCase.getTag().length * 8);
             CipherParameters key = new KeyParameter(testCase.getKey());
             mac.init(new ParametersWithIV(key, testCase.getIv()));
 
             testSingleByte(mac, testCase);
 
-            mac = new GMac(new GCMBlockCipher(new AESEngine()), testCase.getTag().length * 8);
+            mac = new GMac(GCMBlockCipher.newInstance(AESEngine.newInstance()), testCase.getTag().length * 8);
             mac.init(new ParametersWithIV(key, testCase.getIv()));
             testMultibyte(mac, testCase);
         }
@@ -125,13 +125,13 @@ public class GMacTest extends SimpleTest
     {
         try
         {
-            GMac mac = new GMac(new GCMBlockCipher(new AESEngine()), size);
+            GMac mac = new GMac(GCMBlockCipher.newInstance(AESEngine.newInstance()), size);
             mac.init(new ParametersWithIV(null, new byte[16]));
             fail("Expected failure for illegal mac size " + size);
         }
         catch (IllegalArgumentException e)
         {
-            if (!e.getMessage().startsWith("Invalid value for MAC size"))
+            if (!e.getMessage().toLowerCase().startsWith("invalid value for mac size"))
             {
                 fail("Illegal mac size failed with unexpected message");
             }

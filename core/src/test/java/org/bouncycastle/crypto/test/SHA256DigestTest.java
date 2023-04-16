@@ -32,7 +32,7 @@ public class SHA256DigestTest
 
     SHA256DigestTest()
     {
-        super(new SHA256Digest(), messages, digests);
+        super(SHA256Digest.newInstance(), messages, digests);
     }
 
     public void performTest()
@@ -44,12 +44,12 @@ public class SHA256DigestTest
 
     protected Digest cloneDigest(Digest digest)
     {
-        return new SHA256Digest((SHA256Digest)digest);
+        return SHA256Digest.newInstance(digest);
     }
 
     protected Digest cloneDigest(byte[] encodedState)
     {
-        return new SHA256Digest(encodedState);
+        return SHA256Digest.newInstance(encodedState);
     }
 
     public static void main(

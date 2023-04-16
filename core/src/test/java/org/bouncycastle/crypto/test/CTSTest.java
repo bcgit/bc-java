@@ -148,7 +148,7 @@ public class CTSTest
 
         try 
         {
-            new CTSBlockCipher(new SICBlockCipher(new AESEngine()));
+            new CTSBlockCipher(new SICBlockCipher(AESEngine.newInstance()));
             fail("Expected CTS construction error - only ECB/CBC supported.");
         } catch(IllegalArgumentException e)
         {
@@ -184,28 +184,28 @@ public class CTSTest
         byte[] aesIn3  = Hex.decode("4920776f756c64206c696b65207468652047656e6572616c2047617527732043");
         byte[] aesOut3 = Hex.decode("39312523a78662d5be7fcbcc98ebf5a897687268d6ecccc0c07b25e25ecfe584");
 
-        testCTS(4, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
-        testCTS(5, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
-        testCTS(6, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
+        testCTS(4, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
+        testCTS(5, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
+        testCTS(6, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
 
-        testOldCTS(4, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
-        testOldCTS(5, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
-        testOldCTS(6, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
+        testOldCTS(4, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn1, aesOut1);
+        testOldCTS(5, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn2, aesOut2);
+        testOldCTS(6, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aesIn3, aesOut3);
 
         byte[] aes1Block = Hex.decode("4920776f756c64206c696b6520746865");
         byte[] preErrata = Hex.decode("e7664c13ff28c965b0d2a0e7ec353706");   // CTS style one block
         byte[] pstErrata = Hex.decode("97687268d6ecccc0c07b25e25ecfe584");   // CBC style one block
         byte[] pstErrataNonZeroIV = Hex.decode("571f5108c53fe95ab52df783df933fa3");
 
-        testCTS(7, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, pstErrata);
-        testCTS(8, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), aes1Block), aes1Block, pstErrataNonZeroIV);
-        testOldCTS(9, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
+        testCTS(7, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, pstErrata);
+        testCTS(8, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), aes1Block), aes1Block, pstErrataNonZeroIV);
+        testOldCTS(9, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128), new byte[16]), aes1Block, preErrata);
 
         byte[] aes128b = Hex.decode("aafd12f659cae63489b479e5076ddec2f06cb58faafd12f6");
         byte[] aesIn1b  = Hex.decode("000102030405060708090a0b0c0d0e0fff0102030405060708090a0b0c0d0e0f");
         byte[] aesOut1b = Hex.decode("6db2f802d99e1ef0a5940f306079e083cf87f4d8bb9d1abb36cdd9f44ead7d04");
 
-        testCTS(10, new CBCBlockCipher(new AESEngine()), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
+        testCTS(10, new CBCBlockCipher(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(aes128b), Hex.decode("aafd12f659cae63489b479e5076ddec2")), aesIn1b, aesOut1b);
 
         testExceptions();
     }

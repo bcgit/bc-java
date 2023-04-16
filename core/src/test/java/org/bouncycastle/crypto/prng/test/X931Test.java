@@ -32,7 +32,7 @@ public class X931Test
         return new X931TestVector[]
             {
                 new X931TestVector(
-                    new AESEngine(),
+                    AESEngine.newInstance(),
                     new AES128EntropyProvider(),
                     "f7d36762b9915f1ed585eb8e91700eb2",
                     "259e67249288597a4d61e7c0e690afae",

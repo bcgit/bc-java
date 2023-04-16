@@ -443,7 +443,7 @@ public class DSATest
     {
         byte[] seed = Hex.decode("4783081972865EA95D43318AB2EAF9C61A2FC7BBF1B772A09017BDF5A58F4FF0");
 
-        DSAParametersGenerator pGen = new DSAParametersGenerator(new SHA256Digest());
+        DSAParametersGenerator pGen = new DSAParametersGenerator(SHA256Digest.newInstance());
 
         pGen.init(new DSAParameterGenerationParameters(2048, 256, 80, new DSATestSecureRandom(seed)));
 
@@ -563,7 +563,7 @@ public class DSATest
     {
         byte[] seed = Hex.decode("193AFCA7C1E77B3C1ECC618C81322E47B8B8B997C9C83515C59CC446C2D9BD47");
 
-        DSAParametersGenerator pGen = new DSAParametersGenerator(new SHA256Digest());
+        DSAParametersGenerator pGen = new DSAParametersGenerator(SHA256Digest.newInstance());
 
         pGen.init(new DSAParameterGenerationParameters(3072, 256, 80, new DSATestSecureRandom(seed)));
 

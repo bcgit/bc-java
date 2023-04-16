@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.MultiBlockCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
@@ -117,7 +118,7 @@ public class EAXTest
         checkVectors(10, K10, 128, N10, A10, P10, T10, C10);
         checkVectors(11, K11, 32, N11, A11, P11, T11, C11);
 
-        EAXBlockCipher eax = new EAXBlockCipher(new AESEngine());
+        EAXBlockCipher eax = new EAXBlockCipher(AESEngine.newInstance());
         ivParamTest(1, eax, K1, N1);
 
         //
@@ -152,11 +153,11 @@ public class EAXTest
         }
 
         randomTests();
-        AEADTestUtil.testReset(this, new EAXBlockCipher(new AESEngine()), new EAXBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testReset(this, new EAXBlockCipher(AESEngine.newInstance()), new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testTampering(this, eax, new AEADParameters(new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
+        AEADTestUtil.testOutputSizes(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(new AESEngine()), new AEADParameters(
+        AEADTestUtil.testBufferSizeChecks(this, new EAXBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
     }
 
@@ -194,8 +195,8 @@ public class EAXTest
         byte[] c)
         throws InvalidCipherTextException
     {
-        EAXBlockCipher encEax = new EAXBlockCipher(new AESEngine());
-        EAXBlockCipher decEax = new EAXBlockCipher(new AESEngine());
+        EAXBlockCipher encEax = new EAXBlockCipher(AESEngine.newInstance());
+        EAXBlockCipher decEax = new EAXBlockCipher(AESEngine.newInstance());
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(k), macSize, n, a);
         encEax.init(true, parameters);
@@ -325,7 +326,7 @@ public class EAXTest
         srng.nextBytes(datIn);
         srng.nextBytes(key);
 
-        AESEngine engine = new AESEngine();
+        MultiBlockCipher engine = AESEngine.newInstance();
         KeyParameter sessKey = new KeyParameter(key);
         EAXBlockCipher eaxCipher = new EAXBlockCipher(engine);
 

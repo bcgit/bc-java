@@ -88,7 +88,7 @@ public class JPAKEUtilTest
         JPAKEPrimeOrderGroup pg1 = JPAKEPrimeOrderGroups.SUN_JCE_1024;
 
         SecureRandom random = new SecureRandom();
-        Digest digest = new SHA256Digest();
+        Digest digest = SHA256Digest.newInstance();
 
         BigInteger x1 = JPAKEUtil.generateX1(pg1.getQ(), random);
         BigInteger x2 = JPAKEUtil.generateX2(pg1.getQ(), random);
@@ -159,7 +159,7 @@ public class JPAKEUtilTest
         JPAKEPrimeOrderGroup pg1 = JPAKEPrimeOrderGroups.SUN_JCE_1024;
 
         SecureRandom random = new SecureRandom();
-        Digest digest1 = new SHA256Digest();
+        Digest digest1 = SHA256Digest.newInstance();
 
         BigInteger x1 = JPAKEUtil.generateX1(pg1.getQ(), random);
         BigInteger gx1 = JPAKEUtil.calculateGx(pg1.getP(), pg1.getG(), x1);

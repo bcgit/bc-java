@@ -5,9 +5,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.SavableDigest;
+import org.bouncycastle.crypto.agreement.jpake.JPAKEParticipant;
 import org.bouncycastle.crypto.agreement.jpake.JPAKEPrimeOrderGroup;
 import org.bouncycastle.crypto.agreement.jpake.JPAKEPrimeOrderGroups;
-import org.bouncycastle.crypto.agreement.jpake.JPAKEParticipant;
 import org.bouncycastle.crypto.agreement.jpake.JPAKERound1Payload;
 import org.bouncycastle.crypto.agreement.jpake.JPAKERound2Payload;
 import org.bouncycastle.crypto.agreement.jpake.JPAKERound3Payload;
@@ -57,7 +58,7 @@ public class JPAKEExample
         /*
          * Both participants must use the same hashing algorithm.
          */
-        Digest digest = new SHA256Digest();
+        Digest digest = SHA256Digest.newInstance();
         SecureRandom random = new SecureRandom();
 
         JPAKEParticipant alice = new JPAKEParticipant("alice", alicePassword.toCharArray(), group, digest, random);
@@ -201,7 +202,7 @@ public class JPAKEExample
          * 
          * For the purposes of this example, I'm just going to use a hash of the keying material.
          */
-        SHA256Digest digest = new SHA256Digest();
+        SavableDigest digest = SHA256Digest.newInstance();
         
         byte[] keyByteArray = keyingMaterial.toByteArray();
         

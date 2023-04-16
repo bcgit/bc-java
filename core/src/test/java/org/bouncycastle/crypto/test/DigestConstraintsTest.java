@@ -4,7 +4,39 @@ import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint;
-import org.bouncycastle.crypto.digests.*;
+import org.bouncycastle.crypto.digests.Blake2bDigest;
+import org.bouncycastle.crypto.digests.Blake2sDigest;
+import org.bouncycastle.crypto.digests.Blake2xsDigest;
+import org.bouncycastle.crypto.digests.Blake3Digest;
+import org.bouncycastle.crypto.digests.CSHAKEDigest;
+import org.bouncycastle.crypto.digests.DSTU7564Digest;
+import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
+import org.bouncycastle.crypto.digests.GOST3411_2012_512Digest;
+import org.bouncycastle.crypto.digests.Haraka256Digest;
+import org.bouncycastle.crypto.digests.Haraka512Digest;
+import org.bouncycastle.crypto.digests.Kangaroo;
+import org.bouncycastle.crypto.digests.KeccakDigest;
+import org.bouncycastle.crypto.digests.MD2Digest;
+import org.bouncycastle.crypto.digests.MD4Digest;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.ParallelHash;
+import org.bouncycastle.crypto.digests.RIPEMD128Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.RIPEMD256Digest;
+import org.bouncycastle.crypto.digests.RIPEMD320Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.crypto.digests.SkeinDigest;
+import org.bouncycastle.crypto.digests.TigerDigest;
+import org.bouncycastle.crypto.digests.TupleHash;
+import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -139,7 +171,7 @@ public class DigestConstraintsTest
 
         try
         {
-            new SHA256Digest();
+            SHA256Digest.newInstance();
             fail("no exception");
         }
         catch (CryptoServiceConstraintsException e)

@@ -258,15 +258,15 @@ public class SP800RandomTest
 
         isEquals("CTR-DRBG-3KEY-TDES", rBuild.buildCTR(new DESedeEngine(), 168, Hex.decode("20212223242526"), false).getAlgorithm());
 
-        isEquals("CTR-DRBG-AES128", rBuild.buildCTR(new AESEngine(), 128, Hex.decode("20212223242526"), false).getAlgorithm());
-        isEquals("CTR-DRBG-AES192", rBuild.buildCTR(new AESEngine(), 192, Hex.decode("20212223242526"), false).getAlgorithm());
-        isEquals("CTR-DRBG-AES256", rBuild.buildCTR(new AESEngine(), 256, Hex.decode("20212223242526"), false).getAlgorithm());
+        isEquals("CTR-DRBG-AES128", rBuild.buildCTR(AESEngine.newInstance(), 128, Hex.decode("20212223242526"), false).getAlgorithm());
+        isEquals("CTR-DRBG-AES192", rBuild.buildCTR(AESEngine.newInstance(), 192, Hex.decode("20212223242526"), false).getAlgorithm());
+        isEquals("CTR-DRBG-AES256", rBuild.buildCTR(AESEngine.newInstance(), 256, Hex.decode("20212223242526"), false).getAlgorithm());
 
-        isEquals("HASH-DRBG-SHA256", rBuild.buildHash(new SHA256Digest(), Hex.decode("20212223242526"), false).getAlgorithm());
+        isEquals("HASH-DRBG-SHA256", rBuild.buildHash(SHA256Digest.newInstance(), Hex.decode("20212223242526"), false).getAlgorithm());
         isEquals("HASH-DRBG-SHA384", rBuild.buildHash(new SHA384Digest(), Hex.decode("20212223242526"), false).getAlgorithm());
         isEquals("HASH-DRBG-SHA512", rBuild.buildHash(new SHA512Digest(), Hex.decode("20212223242526"), false).getAlgorithm());
 
-        isEquals("HMAC-DRBG-SHA256", rBuild.buildHMAC(new HMac(new SHA256Digest()), Hex.decode("20212223242526"), false).getAlgorithm());
+        isEquals("HMAC-DRBG-SHA256", rBuild.buildHMAC(new HMac(SHA256Digest.newInstance()), Hex.decode("20212223242526"), false).getAlgorithm());
         isEquals("HMAC-DRBG-SHA384", rBuild.buildHMAC(new HMac(new SHA384Digest()), Hex.decode("20212223242526"), false).getAlgorithm());
         isEquals("HMAC-DRBG-SHA512", rBuild.buildHMAC(new HMac(new SHA512Digest()), Hex.decode("20212223242526"), false).getAlgorithm());
     }

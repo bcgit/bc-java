@@ -794,7 +794,7 @@ public class ISO9796Test
         RSAKeyParameters privParams = new RSAKeyParameters(true, modulus, privExp);
 
         AsymmetricBlockCipher rsaEngine = new RSABlindedEngine();
-        Digest digest = new SHA256Digest();
+        Digest digest = SHA256Digest.newInstance();
 
         // set challenge to all zero's for verification
         byte[] challenge = new byte[8];
@@ -842,7 +842,7 @@ public class ISO9796Test
 
         signer.reset();
 
-        digest = new SHA256Digest();
+        digest = SHA256Digest.newInstance();
 
         // NOTE setting implit to false does not actually do anything for verification !!!
         signer = new ISO9796d2Signer(rsaEngine, digest, false);
@@ -975,7 +975,7 @@ public class ISO9796Test
         // set challenge to all zero's for verification
         byte[] challenge = new byte[8];
 
-        ISO9796d2PSSSigner pssSign = new ISO9796d2PSSSigner(new RSAEngine(), new SHA256Digest(), 20, true);
+        ISO9796d2PSSSigner pssSign = new ISO9796d2PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), 20, true);
 
         pssSign.init(true, privParams);
 

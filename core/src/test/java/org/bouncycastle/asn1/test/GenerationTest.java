@@ -129,7 +129,7 @@ public class GenerationTest
         v.add(genName);
 
         return new AuthorityKeyIdentifier(
-            info, GeneralNames.getInstance(new DERSequence(v)), BigInteger.valueOf(sNumber));
+            getDigest(info), GeneralNames.getInstance(new DERSequence(v)), BigInteger.valueOf(sNumber));
     }
 
     private void tbsV3CertGen()

@@ -5,6 +5,6 @@ public class AESWrapPadEngine
 {
     public AESWrapPadEngine()
     {
-        super(new AESEngine());
+        super(AESEngine.newInstance());
     }
 }

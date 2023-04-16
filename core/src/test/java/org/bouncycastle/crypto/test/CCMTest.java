@@ -55,7 +55,7 @@ public class CCMTest
     public void performTest()
         throws Exception
     {
-        CCMBlockCipher ccm = new CCMBlockCipher(new AESEngine());
+        CCMBlockCipher ccm = new CCMBlockCipher(AESEngine.newInstance());
 
         checkVectors(0, ccm, K1, 32, N1, A1, P1, T1, C1);
         checkVectors(1, ccm, K2, 48, N2, A2, P2, T2, C2);
@@ -150,11 +150,11 @@ public class CCMTest
             // expected
         }
 
-        AEADTestUtil.testReset(this, new CCMBlockCipher(new AESEngine()), new CCMBlockCipher(new AESEngine()), new AEADParameters(new KeyParameter(K1), 32, N2));
+        AEADTestUtil.testReset(this, new CCMBlockCipher(AESEngine.newInstance()), new CCMBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));
         AEADTestUtil.testTampering(this, ccm, new AEADParameters(new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testOutputSizes(this, new CCMBlockCipher(new AESEngine()), new AEADParameters(
+        AEADTestUtil.testOutputSizes(this, new CCMBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
-        AEADTestUtil.testBufferSizeChecks(this, new CCMBlockCipher(new AESEngine()), new AEADParameters(
+        AEADTestUtil.testBufferSizeChecks(this, new CCMBlockCipher(AESEngine.newInstance()), new AEADParameters(
                 new KeyParameter(K1), 32, N2));
     }
 

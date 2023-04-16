@@ -55,9 +55,9 @@ public class KDF2GeneratorTest
     
     public void performTest()
     {
-        checkMask(1, new KDF2BytesGenerator(new ShortenedDigest(new SHA256Digest(), 20)), seed1, mask1);
-        checkMask(2, new KDF2BytesGenerator(new ShortenedDigest(new SHA256Digest(), 20)), seed2, mask2);
-        checkMask(3, new KDF2BytesGenerator(new SHA256Digest()), seed2, adjustedMask2);
+        checkMask(1, new KDF2BytesGenerator(new ShortenedDigest(SHA256Digest.newInstance(), 20)), seed1, mask1);
+        checkMask(2, new KDF2BytesGenerator(new ShortenedDigest(SHA256Digest.newInstance(), 20)), seed2, mask2);
+        checkMask(3, new KDF2BytesGenerator(SHA256Digest.newInstance()), seed2, adjustedMask2);
         checkMask(4, new KDF2BytesGenerator(new SHA1Digest()), seed2, sha1Mask);
         checkMask(5, new KDF2BytesGenerator(new SHA1Digest()), seed3, mask3);
         checkMask(6, new KDF2BytesGenerator(new SHA1Digest()), seed4, mask4);

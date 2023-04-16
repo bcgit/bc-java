@@ -26,11 +26,11 @@ public class HashCommitmentTest
     {
         byte[] data = Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20");
 
-        Committer committer = new HashCommitter(new SHA256Digest(), new SecureRandom());
+        Committer committer = new HashCommitter(SHA256Digest.newInstance(), new SecureRandom());
 
         Commitment c = committer.commit(data);
 
-        committer = new HashCommitter(new SHA256Digest(), new SecureRandom());
+        committer = new HashCommitter(SHA256Digest.newInstance(), new SecureRandom());
 
         if (!committer.isRevealed(c, data))
         {
@@ -76,11 +76,11 @@ public class HashCommitmentTest
     {
         byte[] data = Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20");
 
-        Committer committer = new GeneralHashCommitter(new SHA256Digest(), new SecureRandom());
+        Committer committer = new GeneralHashCommitter(SHA256Digest.newInstance(), new SecureRandom());
 
         Commitment c = committer.commit(data);
 
-        committer = new GeneralHashCommitter(new SHA256Digest(), new SecureRandom());
+        committer = new GeneralHashCommitter(SHA256Digest.newInstance(), new SecureRandom());
 
         if (!committer.isRevealed(c, data))
         {

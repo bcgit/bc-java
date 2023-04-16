@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
@@ -67,7 +66,7 @@ public class CMacTest
 
     public void performTest()
     {
-        BlockCipher cipher = new AESFastEngine();
+        BlockCipher cipher = AESEngine.newInstance();
         Mac mac = new CMac(cipher, 128);
 
         //128 bytes key
@@ -264,7 +263,7 @@ public class CMacTest
 
         // CMAC with IV
         // 16 bytes message - 256 bytes key
-        mac = new CMacWithIV(new AESFastEngine());
+        mac = new CMacWithIV(AESEngine.newInstance());
 
         mac.init(key);
 
@@ -282,7 +281,7 @@ public class CMacTest
 
                 // CMAC with IV
         // 16 bytes message - 256 bytes key
-        mac = new CMacWithIV(new AESFastEngine());
+        mac = new CMacWithIV(AESEngine.newInstance());
 
         mac.init(new ParametersWithIV(key, Hex.decode("000102030405060708090a0b0c0d0e0f")));
 
@@ -344,7 +343,7 @@ public class CMacTest
     {
         try 
         {
-            CMac mac = new CMac(new AESEngine());
+            CMac mac = new CMac(AESEngine.newInstance());
             mac.init(new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
             fail("CMac does not accept IV");
         } catch(IllegalArgumentException e)

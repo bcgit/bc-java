@@ -103,7 +103,7 @@ public class HMacDRBGTest
                     .addAdditionalInput("606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F90919293949596")
                     .addAdditionalInput("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6"),
                 new DRBGTestVector(
-                    new SHA256Digest(),
+                    SHA256Digest.newInstance(),
                     new SHA256EntropyProvider().get(440),
                     false,
                     "2021222324252627",
@@ -118,7 +118,7 @@ public class HMacDRBGTest
                                 "4D33CD070CA7CD0C5608DBA8B885654639DE2187B74CB263"
                         }),
                 new DRBGTestVector(
-                    new SHA256Digest(),
+                    SHA256Digest.newInstance(),
                     new SHA256EntropyProvider().get(440),
                     true,
                     "2021222324252627",
@@ -417,7 +417,7 @@ public class HMacDRBGTest
         SP80090DRBG d;
         try
         {
-            d = new HMacSP800DRBG(new HMac(new SHA256Digest()), 256, new SHA256EntropyProvider().get(128), null, null);
+            d = new HMacSP800DRBG(new HMac(SHA256Digest.newInstance()), 256, new SHA256EntropyProvider().get(128), null, null);
             fail("no exception thrown");
         }
         catch (IllegalArgumentException e)

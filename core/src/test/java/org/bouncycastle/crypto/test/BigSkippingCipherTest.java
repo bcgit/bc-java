@@ -23,8 +23,8 @@ public class BigSkippingCipherTest
     {
         CipherParameters externalCounterParams = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
         CipherParameters internalCounterParams = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000"));
-        SICBlockCipher linearEngine = new SICBlockCipher(new AESEngine());
-        SICBlockCipher skippingEngine = new SICBlockCipher(new AESEngine());
+        SICBlockCipher linearEngine = new SICBlockCipher(AESEngine.newInstance());
+        SICBlockCipher skippingEngine = new SICBlockCipher(AESEngine.newInstance());
         Random random = new Random();
 
         linearEngine.init(true, externalCounterParams);

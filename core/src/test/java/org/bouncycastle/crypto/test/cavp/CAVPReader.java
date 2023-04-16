@@ -109,7 +109,7 @@ public class CAVPReader
         final Mac prf;
         if (config.getProperty("PRF").matches("CMAC_AES\\d\\d\\d"))
         {
-            BlockCipher blockCipher = new AESEngine();
+            BlockCipher blockCipher = AESEngine.newInstance();
             prf = new CMac(blockCipher);
         }
         else if (config.getProperty("PRF").matches("CMAC_TDES\\d"))
@@ -129,7 +129,7 @@ public class CAVPReader
         }
         else if (config.getProperty("PRF").matches("HMAC_SHA256"))
         {
-            Digest digest = new SHA256Digest();
+            Digest digest = SHA256Digest.newInstance();
             prf = new HMac(digest);
         }
         else if (config.getProperty("PRF").matches("HMAC_SHA384"))

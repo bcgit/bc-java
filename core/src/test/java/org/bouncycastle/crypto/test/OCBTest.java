@@ -201,7 +201,7 @@ public class OCBTest
 
     private BlockCipher createUnderlyingCipher()
     {
-        return new AESEngine();
+        return AESEngine.newInstance();
     }
 
     private AEADBlockCipher createOCBCipher()

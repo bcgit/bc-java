@@ -20,7 +20,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
- * GOST R 34.10-2001 Signature Algorithm
+ * GOST R 34.10-2001 and GOST R 34.10-2012 Signature Algorithm
  */
 public class ECGOST3410Signer
     implements DSAExt

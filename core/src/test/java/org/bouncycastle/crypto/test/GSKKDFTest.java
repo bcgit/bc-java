@@ -18,7 +18,7 @@ public class GSKKDFTest
     public void performTest()
         throws Exception
     {
-        GSKKFDGenerator gen = new GSKKFDGenerator(new SHA256Digest());
+        GSKKFDGenerator gen = new GSKKFDGenerator(SHA256Digest.newInstance());
 
         byte[] key = new byte[16];
 
@@ -30,7 +30,7 @@ public class GSKKDFTest
         gen.generateBytes(key, 0, key.length);
         areEqual(Hex.decode("d5934f681ad1e860981eb1792af68e20"), key);
 
-        gen = new GSKKFDGenerator(new SHA256Digest());
+        gen = new GSKKFDGenerator( SHA256Digest.newInstance());
         
         gen.init(new GSKKDFParameters(Hex.decode("0102030405060708090a"), 2, Hex.decode("27252622")));
 

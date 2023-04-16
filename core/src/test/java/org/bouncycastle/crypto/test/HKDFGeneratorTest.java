@@ -33,7 +33,7 @@ public class HKDFGeneratorTest
         {
             // === A.1. Test Case 1 - Basic test case with SHA-256 ===
 
-            Digest hash = new SHA256Digest();
+            Digest hash = SHA256Digest.newInstance();
             byte[] ikm = Hex
                 .decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
             byte[] salt = Hex.decode("000102030405060708090a0b0c");
@@ -56,7 +56,7 @@ public class HKDFGeneratorTest
         // === A.2. Test Case 2 - Test with SHA-256 and longer inputs/outputs
         // ===
         {
-            Digest hash = new SHA256Digest();
+            Digest hash = SHA256Digest.newInstance();
             byte[] ikm = Hex.decode("000102030405060708090a0b0c0d0e0f"
                 + "101112131415161718191a1b1c1d1e1f"
                 + "202122232425262728292a2b2c2d2e2f"
@@ -99,7 +99,7 @@ public class HKDFGeneratorTest
             // setting info to null generates an empty byte array as info
             // structure
 
-            Digest hash = new SHA256Digest();
+            Digest hash = SHA256Digest.newInstance();
             byte[] ikm = Hex
                 .decode("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
             byte[] salt = new byte[0];

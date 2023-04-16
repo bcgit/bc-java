@@ -251,7 +251,7 @@ public class EthereumIESEngine
         // Ethereum change:
         // Instead of initializing the mac with the bytes, we initialize with the hash of the bytes.
         // Old code: mac.init(new KeyParameter(K2));
-        Digest hash = new SHA256Digest();
+        Digest hash = SHA256Digest.newInstance();
         byte[] K2hash = new byte[hash.getDigestSize()];
         hash.reset();
         hash.update(K2, 0, K2.length);
@@ -367,7 +367,7 @@ public class EthereumIESEngine
         // Ethereum change:
         // Instead of initializing the mac with the bytes, we initialize with the hash of the bytes.
         // Old code: mac.init(new KeyParameter(K2));
-        Digest hash = new SHA256Digest();
+        Digest hash = SHA256Digest.newInstance();
         byte[] K2hash = new byte[hash.getDigestSize()];
         hash.reset();
         hash.update(K2, 0, K2.length);

@@ -115,12 +115,12 @@ public class BiometricDataUnitTest
         
         if (sourceDataURI != null)
         {
-            if (!bd.getSourceDataUri().equals(sourceDataURI))
+            if (!bd.getSourceDataUriIA5().equals(sourceDataURI))
             {
                 fail("data uris don't match.");
             }
         }
-        else if (bd.getSourceDataUri() != null)
+        else if (bd.getSourceDataUriIA5() != null)
         {
             fail("data uri found when none expected.");
         }

@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -20,7 +21,8 @@ import org.bouncycastle.crypto.engines.TwofishEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
-import org.bouncycastle.crypto.kems.ECIESKeyEncapsulation;
+import org.bouncycastle.crypto.kems.ECIESKEMExtractor;
+import org.bouncycastle.crypto.kems.ECIESKEMGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
@@ -523,14 +525,16 @@ public class ECIESTest
         int myKeyLen = 256 / 8;
 
         /* Create agreement */
-        ECIESKeyEncapsulation myAgreement = new ECIESKeyEncapsulation(new KDF2BytesGenerator(new SHA512Digest()), myRandom, newCofactorMode, oldCofactorMode, false);
-        myAgreement.init(myPair.getPublic());
-        KeyParameter mySender = (KeyParameter) myAgreement.encrypt(myMessage, myKeyLen);
+        ECIESKEMGenerator kemGen = new ECIESKEMGenerator(myKeyLen, new KDF2BytesGenerator(new SHA512Digest()), myRandom, newCofactorMode, oldCofactorMode, false);
+
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(myPair.getPublic());
+        KeyParameter mySender = new KeyParameter(secEnc.getSecret());
         byte[] mySenderKey = mySender.getKey();
 
         /* Accept agreement */
-        myAgreement.init(myPair.getPrivate());
-        KeyParameter myReceiver = (KeyParameter) myAgreement.decrypt(myMessage, myKeyLen);
+        ECIESKEMExtractor kemExt = new ECIESKEMExtractor((ECPrivateKeyParameters)myPair.getPrivate(), myKeyLen, new KDF2BytesGenerator(new SHA512Digest()), newCofactorMode, oldCofactorMode, false);
+
+        KeyParameter myReceiver = new KeyParameter(kemExt.extractSecret(secEnc.getEncapsulation()));
         byte[] myReceiverKey = myReceiver.getKey();
 
         /* Check that keys match  */

@@ -142,7 +142,7 @@ public class GCMSIVBlockCipher
       */
      public GCMSIVBlockCipher()
      {
-         this(new AESEngine());
+         this(AESEngine.newInstance());
      }
 
      /**

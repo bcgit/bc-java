@@ -24,7 +24,7 @@ public class JPAKEParticipantTest
     {
         JPAKEPrimeOrderGroup group = JPAKEPrimeOrderGroups.SUN_JCE_1024;
         SecureRandom random = new SecureRandom();
-        Digest digest = new SHA256Digest();
+        Digest digest = SHA256Digest.newInstance();
         String participantId = "participantId";
         char[] password = "password".toCharArray();
 

@@ -35,7 +35,7 @@ public class AESVectorFileTest
 
     protected BlockCipher createNewEngineForTest()
     {
-        return new AESEngine();
+        return AESEngine.newInstance();
     }
 
     private Test[] readTestVectors(InputStream inStream)

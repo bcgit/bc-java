@@ -14,7 +14,7 @@ public class AESWrapEngine
      */
     public AESWrapEngine()
     {
-        super(new AESEngine());
+        super(AESEngine.newInstance());
     }
 
     /**
@@ -24,6 +24,6 @@ public class AESWrapEngine
      */
     public AESWrapEngine(boolean useReverseDirection)
     {
-        super(new AESEngine(), useReverseDirection);
+        super(AESEngine.newInstance(), useReverseDirection);
     }
 }

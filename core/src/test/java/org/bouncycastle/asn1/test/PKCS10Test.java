@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTestResult;
@@ -46,7 +45,7 @@ public class PKCS10Test
             ByteArrayInputStream    bIn = new ByteArrayInputStream(req);
             ASN1InputStream         aIn = new ASN1InputStream(bIn);
 
-            CertificationRequest    r = new CertificationRequest((ASN1Sequence)aIn.readObject());
+            CertificationRequest    r = CertificationRequest.getInstance(aIn.readObject());
 
             byte[] bytes = r.getEncoded(ASN1Encoding.DER);
 

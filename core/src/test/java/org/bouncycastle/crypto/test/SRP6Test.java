@@ -168,14 +168,14 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
-        gen.init(group, new SHA256Digest());
+        gen.init(group, SHA256Digest.newInstance());
         BigInteger v = gen.generateVerifier(s, I, P);
 
         SRP6Client client = new SRP6Client();
-        client.init(group, new SHA256Digest(), random);
+        client.init(group, SHA256Digest.newInstance(), random);
 
         SRP6Server server = new SRP6Server();
-        server.init(group, v, new SHA256Digest(), random);
+        server.init(group, v, SHA256Digest.newInstance(), random);
 
         BigInteger A = client.generateClientCredentials(s, I, P);
         BigInteger B = server.generateServerCredentials();
@@ -197,7 +197,7 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6Client client = new SRP6Client();
-        client.init(group, new SHA256Digest(), random);
+        client.init(group, SHA256Digest.newInstance(), random);
 
         client.generateClientCredentials(s, I, P);
 
@@ -230,11 +230,11 @@ public class SRP6Test extends SimpleTest
         random.nextBytes(s);
 
         SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
-        gen.init(group, new SHA256Digest());
+        gen.init(group, SHA256Digest.newInstance());
         BigInteger v = gen.generateVerifier(s, I, P);
 
         SRP6Server server = new SRP6Server();
-        server.init(group, v, new SHA256Digest(), random);
+        server.init(group, v, SHA256Digest.newInstance(), random);
 
         server.generateServerCredentials();
 

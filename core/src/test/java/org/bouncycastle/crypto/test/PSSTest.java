@@ -297,7 +297,7 @@ public class PSSTest
         //
         // loop test - sha-256 and sha-1
         //
-        eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), 20);
+        eng = new PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), new SHA1Digest(), 20);
         failed = 0;
         data = new byte[DATA_LENGTH];
 
@@ -335,7 +335,7 @@ public class PSSTest
     {
         byte[] data = Hex.decode("010203040506070809101112131415");
 
-        PSSSigner eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), Hex.decode("deadbeef"));
+        PSSSigner eng = new PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), new SHA1Digest(), Hex.decode("deadbeef"));
 
         eng.init(true, prv8);
 
@@ -354,7 +354,7 @@ public class PSSTest
         }
 
         // test failure
-        eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHA1Digest(), Hex.decode("beefbeef"));
+        eng = new PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), new SHA1Digest(), Hex.decode("beefbeef"));
 
         eng.init(false, pub8);
 
@@ -371,7 +371,7 @@ public class PSSTest
     {
         byte[] data = Hex.decode("010203040506070809101112131415");
 
-        PSSSigner eng = new PSSSigner(new RSAEngine(), new SHA256Digest(), new SHAKEDigest(128), Hex.decode("deadbeef"));
+        PSSSigner eng = new PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), new SHAKEDigest(128), Hex.decode("deadbeef"));
 
         eng.init(true, new ParametersWithRandom(prv8, new FixedSecureRandom(data)));
 
