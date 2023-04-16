@@ -291,6 +291,11 @@ public class ECUtil
     {
         if (order == null)     // implicitly CA
         {
+            if (configuration == null)
+            {
+                return privateValue.bitLength();   // a guess but better than an exception!
+            }
+
             ECParameterSpec implicitCA = configuration.getEcImplicitlyCa();
 
             if (implicitCA == null)
