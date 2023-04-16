@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.test;
 
-import java.io.FileInputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -8,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
@@ -19,9 +17,7 @@ import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class X9Test
@@ -169,10 +165,9 @@ public class X9Test
     {
         return "X9";
     }
-
+    
     public static void main(
         String[]    args)
-        throws Exception
     {
         runTest(new X9Test());
     }
