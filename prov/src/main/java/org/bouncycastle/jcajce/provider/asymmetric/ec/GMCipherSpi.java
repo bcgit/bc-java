@@ -381,7 +381,7 @@ public class GMCipherSpi
     {
         public SM2withSha256()
         {
-            super(new SM2Engine(new SHA256Digest()));
+            super(new SM2Engine(SHA256Digest.newInstance()));
         }
     }
 

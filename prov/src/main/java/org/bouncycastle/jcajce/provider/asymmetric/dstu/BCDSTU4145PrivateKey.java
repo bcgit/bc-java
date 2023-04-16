@@ -259,7 +259,7 @@ public class BCDSTU4145PrivateKey
                         reverseBytes(b_bytes);
                     }
                     DSTU4145BinaryField field = binary.getField();
-                    ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), new BigInteger(1, b_bytes));
+                    ECCurve curve = new ECCurve.F2m(field.getM(), field.getK1(), field.getK2(), field.getK3(), binary.getA(), new BigInteger(1, b_bytes), null, null);
                     byte[] g_bytes = binary.getG();
                     if (info.getPrivateKeyAlgorithm().getAlgorithm().equals(UAObjectIdentifiers.dstu4145le))
                     {

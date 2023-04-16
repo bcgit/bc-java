@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.DHDomainParameters;
+import org.bouncycastle.asn1.x9.DomainParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
@@ -76,8 +76,8 @@ public class JCEDHPublicKey
 
         this.y = derY.getValue();
 
-        ASN1Sequence seq = ASN1Sequence.getInstance(info.getAlgorithmId().getParameters());
-        ASN1ObjectIdentifier id = info.getAlgorithmId().getAlgorithm();
+        ASN1Sequence seq = ASN1Sequence.getInstance(info.getAlgorithm().getParameters());
+        ASN1ObjectIdentifier id = info.getAlgorithm().getAlgorithm();
 
         // we need the PKCS check to handle older keys marked with the X9 oid.
         if (id.equals(PKCSObjectIdentifiers.dhKeyAgreement) || isPKCSParam(seq))
@@ -95,9 +95,9 @@ public class JCEDHPublicKey
         }
         else if (id.equals(X9ObjectIdentifiers.dhpublicnumber))
         {
-            DHDomainParameters params = DHDomainParameters.getInstance(seq);
+            DomainParameters params = DomainParameters.getInstance(seq);
 
-            this.dhSpec = new DHParameterSpec(params.getP().getValue(), params.getG().getValue());
+            this.dhSpec = new DHParameterSpec(params.getP(), params.getG());
         }
         else
         {

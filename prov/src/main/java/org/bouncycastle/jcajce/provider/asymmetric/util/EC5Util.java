@@ -278,14 +278,14 @@ public class EC5Util
 
         if (field instanceof ECFieldFp)
         {
-            return CustomCurves.substitute(new ECCurve.Fp(((ECFieldFp)field).getP(), a, b));
+            return CustomCurves.substitute(new ECCurve.Fp(((ECFieldFp)field).getP(), a, b, null, null));
         }
         else
         {
             ECFieldF2m fieldF2m = (ECFieldF2m)field;
             int m = fieldF2m.getM();
             int ks[] = ECUtil.convertMidTerms(fieldF2m.getMidTermsOfReductionPolynomial());
-            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b); 
+            return new ECCurve.F2m(m, ks[0], ks[1], ks[2], a, b, null, null);
         }
     }
 

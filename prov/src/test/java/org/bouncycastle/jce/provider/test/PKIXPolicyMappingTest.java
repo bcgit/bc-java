@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
@@ -19,30 +20,27 @@ import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CertPolicyId;
 import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.PolicyMappings;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class PKIXPolicyMappingTest
     extends SimpleTest
 {
-    static X509V3CertificateGenerator  v3CertGen = new X509V3CertificateGenerator();
-    
     public String getName()
     {
         return "PKIXPolicyMapping";
@@ -56,45 +54,28 @@ public class PKIXPolicyMappingTest
         PrivateKey      privKey)
         throws Exception
     {
-        String  issuer  = "C=JP, O=policyMappingAdditionalTest, OU=trustAnchor";
-        String  subject = "C=JP, O=policyMappingAdditionalTest, OU=trustAnchor";
-        v3CertGen.setSerialNumber(BigInteger.valueOf(10));
-        v3CertGen.setIssuerDN(new X509Principal(issuer));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        v3CertGen.setSubjectDN(new X509Principal(subject));
-        v3CertGen.setPublicKey(pubKey);
-        v3CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
-        X509Certificate cert = v3CertGen.generate(privKey);
-        return cert;
+        return TestCertificateGen.createSelfSignedCert("C=JP, O=policyMappingAdditionalTest, OU=trustAnchor", "SHA1withRSA", new KeyPair(pubKey, privKey));
     }
-    
+
     /**
      * intermediate cert
      */
     private X509Certificate createIntmedCert(
         PublicKey           pubKey,
         PrivateKey          caPrivKey,
-        PublicKey           caPubKey,
         CertificatePolicies policies,
-        Hashtable           policyMap)
+        PolicyMappings      policyMap)
         throws Exception
     {
         String  issuer  = "C=JP, O=policyMappingAdditionalTest, OU=trustAnchor";
         String  subject = "C=JP, O=policyMappingAdditionalTest, OU=intmedCA";
-        v3CertGen.reset();
-        v3CertGen.setSerialNumber(BigInteger.valueOf(20));
-        v3CertGen.setIssuerDN(new X509Principal(issuer));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        v3CertGen.setSubjectDN(new X509Principal(subject));
-        v3CertGen.setPublicKey(pubKey);
-        v3CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
-        v3CertGen.addExtension(X509Extensions.CertificatePolicies, true, policies);
-        v3CertGen.addExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(true));
-        v3CertGen.addExtension(X509Extensions.PolicyMappings, true, new PolicyMappings(policyMap));
-        X509Certificate cert = v3CertGen.generate(caPrivKey);
-        return cert;
+
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.certificatePolicies, true, policies);
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+        extGen.addExtension(Extension.policyMappings, true, policyMap);
+
+        return TestCertificateGen.createCert(new X500Name(issuer), caPrivKey, subject, "SHA1withRSA", extGen.generate(), pubKey);
     }
     
     /**
@@ -103,23 +84,17 @@ public class PKIXPolicyMappingTest
     private X509Certificate createEndEntityCert(
         PublicKey           pubKey,
         PrivateKey          caPrivKey,
-        PublicKey           caPubKey,
         ASN1EncodableVector policies)
         throws Exception
     {
         String  issuer  = "C=JP, O=policyMappingAdditionalTest, OU=intMedCA";
         String  subject = "C=JP, O=policyMappingAdditionalTest, OU=endEntity";
-        v3CertGen.reset();
-        v3CertGen.setSerialNumber(BigInteger.valueOf(20));
-        v3CertGen.setIssuerDN(new X509Principal(issuer));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 30)));
-        v3CertGen.setSubjectDN(new X509Principal(subject));
-        v3CertGen.setPublicKey(pubKey);
-        v3CertGen.setSignatureAlgorithm("SHA1WithRSAEncryption");
-        v3CertGen.addExtension(X509Extensions.CertificatePolicies,true,new DERSequence(policies));
-        X509Certificate cert = v3CertGen.generate(caPrivKey);
-        return cert;
+
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.certificatePolicies, true, new DERSequence(policies));
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+
+        return TestCertificateGen.createCert(new X500Name(issuer), caPrivKey, subject, "SHA1withRSA", extGen.generate(), pubKey);
     }
     
     private String testPolicies(
@@ -264,7 +239,6 @@ public class PKIXPolicyMappingTest
         
         X509Certificate     trustCert       = createTrustCert(caPubKey, caPrivKey);
         CertificatePolicies intPolicies     = null;
-        Hashtable           map             = null;
         ASN1EncodableVector policies        = null;
         Set                 requirePolicies = null;
         X509Certificate     intCert         = null;
@@ -274,9 +248,8 @@ public class PKIXPolicyMappingTest
          * valid test_00
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies,
+            createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2"));
 
         if (!"CertificatePolicies: [Policy information: 2.5.29.32.0]".equals(intPolicies.toString()))
         {
@@ -285,7 +258,7 @@ public class PKIXPolicyMappingTest
 
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = null;
         String msg = testPolicies(0, trustCert, intCert, endCert, requirePolicies, true);
@@ -295,13 +268,12 @@ public class PKIXPolicyMappingTest
          * test_01
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        PolicyMappings map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.1");
@@ -312,13 +284,12 @@ public class PKIXPolicyMappingTest
          * test_02
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey,  policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.5.29.32.0");
@@ -336,14 +307,13 @@ public class PKIXPolicyMappingTest
         {
             fail("2nd toString() test");
         }
-
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1","2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.1");
@@ -356,13 +326,12 @@ public class PKIXPolicyMappingTest
         intPolicies = new CertificatePolicies(new PolicyInformation[]
             { new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.3")),
               new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")) } );
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.3")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.3");
@@ -373,13 +342,12 @@ public class PKIXPolicyMappingTest
          * test_05
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.2");
@@ -390,13 +358,12 @@ public class PKIXPolicyMappingTest
          * test_06
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.1")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey,  policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.1");
@@ -407,13 +374,12 @@ public class PKIXPolicyMappingTest
          * test_07
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.2")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.3");
@@ -424,13 +390,12 @@ public class PKIXPolicyMappingTest
          * test_08
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
-        map = new Hashtable();
-        map.put("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
-        intCert = createIntmedCert(intPubKey, caPrivKey, caPubKey, intPolicies, map);
+        map = createPolicyMappings("2.16.840.1.101.3.2.1.48.1", "2.16.840.1.101.3.2.1.48.2");
+        intCert = createIntmedCert(intPubKey, caPrivKey, intPolicies, map);
         
         policies   = new ASN1EncodableVector();
         policies.add(new PolicyInformation(new ASN1ObjectIdentifier("2.16.840.1.101.3.2.1.48.3")));
-        endCert = createEndEntityCert(pubKey, intPrivKey, intPubKey, policies);
+        endCert = createEndEntityCert(pubKey, intPrivKey, policies);
         
         requirePolicies = new HashSet();
         requirePolicies.add("2.16.840.1.101.3.2.1.48.1");
@@ -450,6 +415,11 @@ public class PKIXPolicyMappingTest
         } 
     }
 
+    private PolicyMappings createPolicyMappings(String idp, String sdp)
+    {
+        return new PolicyMappings(CertPolicyId.getInstance(new ASN1ObjectIdentifier(idp)),CertPolicyId.getInstance(new ASN1ObjectIdentifier(sdp)));
+    }
+    
     public static void main(
         String[]    args)
     {

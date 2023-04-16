@@ -603,7 +603,7 @@ public class IESCipher
     {
         public XIESwithAESCBC()
         {
-            super(new CBCBlockCipher(new AESEngine()), 16);
+            super(new CBCBlockCipher(AESEngine.newInstance()), 16);
         }
     }
 
@@ -612,7 +612,7 @@ public class IESCipher
     {
         public XIESwithSHA256andAESCBC()
         {
-            super(new CBCBlockCipher(new AESEngine()), 16, DigestFactory.createSHA256(), DigestFactory.createSHA256());
+            super(new CBCBlockCipher(AESEngine.newInstance()), 16, DigestFactory.createSHA256(), DigestFactory.createSHA256());
         }
     }
 
@@ -621,7 +621,7 @@ public class IESCipher
     {
         public XIESwithSHA384andAESCBC()
         {
-            super(new CBCBlockCipher(new AESEngine()), 16, DigestFactory.createSHA384(), DigestFactory.createSHA384());
+            super(new CBCBlockCipher(AESEngine.newInstance()), 16, DigestFactory.createSHA384(), DigestFactory.createSHA384());
         }
     }
 
@@ -630,7 +630,7 @@ public class IESCipher
     {
         public XIESwithSHA512andAESCBC()
         {
-            super(new CBCBlockCipher(new AESEngine()), 16, DigestFactory.createSHA512(), DigestFactory.createSHA512());
+            super(new CBCBlockCipher(AESEngine.newInstance()), 16, DigestFactory.createSHA512(), DigestFactory.createSHA512());
         }
     }
 }

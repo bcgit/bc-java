@@ -403,7 +403,6 @@ class PKITSTest
                 crlBuffer.put(crlName, crl);
             }
 
-
             return crl;
         }
         catch (Exception e)

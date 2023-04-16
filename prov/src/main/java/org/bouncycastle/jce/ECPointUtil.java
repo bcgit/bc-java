@@ -32,7 +32,7 @@ public class ECPointUtil
         if (curve.getField() instanceof ECFieldFp)
         {
             c = new ECCurve.Fp(
-                    ((ECFieldFp)curve.getField()).getP(), curve.getA(), curve.getB());
+                    ((ECFieldFp)curve.getField()).getP(), curve.getA(), curve.getB(), null, null);
         }
         else
         {
@@ -41,12 +41,12 @@ public class ECPointUtil
             if (k.length == 3)
             {
                 c = new ECCurve.F2m(
-                        ((ECFieldF2m)curve.getField()).getM(), k[2], k[1], k[0], curve.getA(), curve.getB());
+                        ((ECFieldF2m)curve.getField()).getM(), k[2], k[1], k[0], curve.getA(), curve.getB(), null, null);
             }
             else
             {
                 c = new ECCurve.F2m(
-                        ((ECFieldF2m)curve.getField()).getM(), k[0], curve.getA(), curve.getB());
+                        ((ECFieldF2m)curve.getField()).getM(), k[0], curve.getA(), curve.getB(), null, null);
             }
         }
 

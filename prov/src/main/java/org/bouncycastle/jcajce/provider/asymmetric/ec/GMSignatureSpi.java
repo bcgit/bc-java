@@ -197,7 +197,7 @@ public class GMSignatureSpi
     {
         public sha256WithSM2()
         {
-            super(new SM2Signer(new SHA256Digest()));
+            super(new SM2Signer(SHA256Digest.newInstance()));
         }
     }
 

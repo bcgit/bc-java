@@ -105,7 +105,7 @@ public class AEADTest extends SimpleTest
             {
                 if (!e.getClass().getName().equals("javax.crypto.AEADBadTagException"))
                 {
-                    fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available.");
+                    fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available, got: "+e.getClass().getName());
                 }
             }
         }

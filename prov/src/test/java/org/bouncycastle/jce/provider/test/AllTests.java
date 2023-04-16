@@ -14,7 +14,7 @@ public class AllTests
 {
     public static void main(String[] args)
     {
-        PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()

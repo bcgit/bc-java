@@ -63,7 +63,7 @@ public class AlgorithmParameterGeneratorSpi
         }
         else
         {
-            pGen = new DSAParametersGenerator(new SHA256Digest());
+            pGen = new DSAParametersGenerator(SHA256Digest.newInstance());
         }
 
         if (random == null)

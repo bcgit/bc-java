@@ -133,7 +133,7 @@ public class KeyPairGeneratorSpi
                         else if (strength > 1024)
                         {
                             dsaParams = new DSAParameterGenerationParameters(strength, 256, certainty, random);
-                            pGen = new DSAParametersGenerator(new SHA256Digest());
+                            pGen = new DSAParametersGenerator(SHA256Digest.newInstance());
                             pGen.init(dsaParams);
                         }
                         else
