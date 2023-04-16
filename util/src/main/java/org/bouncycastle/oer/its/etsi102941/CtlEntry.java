@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -43,19 +44,19 @@ public class CtlEntry
         switch (choice)
         {
         case rca:
-            ctlEntry = RootCaEntry.getInstance(ato.getObject());
+            ctlEntry = RootCaEntry.getInstance(ato.getExplicitBaseObject());
             return;
         case ea:
-            ctlEntry = EaEntry.getInstance(ato.getObject());
+            ctlEntry = EaEntry.getInstance(ato.getExplicitBaseObject());
             return;
         case aa:
-            ctlEntry = AaEntry.getInstance(ato.getObject());
+            ctlEntry = AaEntry.getInstance(ato.getExplicitBaseObject());
             return;
         case dc:
-            ctlEntry = DcEntry.getInstance(ato.getObject());
+            ctlEntry = DcEntry.getInstance(ato.getExplicitBaseObject());
             return;
         case tlm:
-            ctlEntry = TlmEntry.getInstance(ato.getObject());
+            ctlEntry = TlmEntry.getInstance(ato.getExplicitBaseObject());
             return;
         }
 
@@ -73,7 +74,7 @@ public class CtlEntry
 
         if (o != null)
         {
-            return new CtlEntry(ASN1TaggedObject.getInstance(o));
+            return new CtlEntry(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
         return null;
     }

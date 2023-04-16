@@ -3,11 +3,10 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 
@@ -97,13 +96,13 @@ public class SignerIdentifier
         switch (choice)
         {
         case digest:
-            signerIdentifier = HashedId8.getInstance(ato.getObject());
+            signerIdentifier = HashedId8.getInstance(ato.getExplicitBaseObject());
             break;
         case certificate:
-            signerIdentifier = SequenceOfCertificate.getInstance(ato.getObject());
+            signerIdentifier = SequenceOfCertificate.getInstance(ato.getExplicitBaseObject());
             break;
         case self:
-            signerIdentifier = DERNull.getInstance(ato.getObject());
+            signerIdentifier = DERNull.getInstance(ato.getExplicitBaseObject());
             break;
 
         default:
@@ -122,7 +121,7 @@ public class SignerIdentifier
 
         if (src != null)
         {
-            return new SignerIdentifier(ASN1TaggedObject.getInstance(src));
+            return new SignerIdentifier(ASN1TaggedObject.getInstance(src, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

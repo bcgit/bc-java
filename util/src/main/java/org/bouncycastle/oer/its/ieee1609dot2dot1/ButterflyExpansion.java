@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -38,7 +39,7 @@ public class ButterflyExpansion
         {
 
         case aes128:
-            this.butterflyExpansion = DEROctetString.getInstance(ato.getObject());
+            this.butterflyExpansion = DEROctetString.getInstance(ato.getExplicitBaseObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + choice);
@@ -54,7 +55,7 @@ public class ButterflyExpansion
 
         if (o != null)
         {
-            return new ButterflyExpansion(ASN1TaggedObject.getInstance(o));
+            return new ButterflyExpansion(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

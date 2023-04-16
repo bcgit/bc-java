@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -37,10 +38,10 @@ public class CtlCommand
         switch (choice)
         {
         case add:
-            ctlCommand = CtlEntry.getInstance(ato.getObject());
+            ctlCommand = CtlEntry.getInstance(ato.getExplicitBaseObject());
             return;
         case delete:
-            ctlCommand = CtlDelete.getInstance(ato.getObject());
+            ctlCommand = CtlDelete.getInstance(ato.getExplicitBaseObject());
             return;
         }
 
@@ -56,7 +57,7 @@ public class CtlCommand
 
         if (o != null)
         {
-            return new CtlCommand(ASN1TaggedObject.getInstance(o));
+            return new CtlCommand(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

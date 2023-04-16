@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -64,31 +65,31 @@ public class EtsiTs102941DataContent
         switch (choice)
         {
         case enrolmentRequest:
-            etsiTs102941DataContent = InnerEcRequestSignedForPop.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = InnerEcRequestSignedForPop.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case enrolmentResponse:
-            etsiTs102941DataContent = InnerEcResponse.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = InnerEcResponse.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case authorizationRequest:
-            etsiTs102941DataContent = InnerAtRequest.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = InnerAtRequest.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case authorizationResponse:
-            etsiTs102941DataContent = InnerAtResponse.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = InnerAtResponse.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case certificateTrustListTlm:
-            etsiTs102941DataContent = ToBeSignedTlmCtl.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = ToBeSignedTlmCtl.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case certificateTrustListRca:
-            etsiTs102941DataContent = ToBeSignedRcaCtl.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = ToBeSignedRcaCtl.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case authorizationValidationRequest:
-            etsiTs102941DataContent = AuthorizationValidationRequest.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = AuthorizationValidationRequest.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case authorizationValidationResponse:
-            etsiTs102941DataContent = AuthorizationValidationResponse.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = AuthorizationValidationResponse.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         case caCertificateRequest:
-            etsiTs102941DataContent = CaCertificateRequest.getInstance(asn1TaggedObject.getObject());
+            etsiTs102941DataContent = CaCertificateRequest.getInstance(asn1TaggedObject.getExplicitBaseObject());
             return;
         //
         // This is incomplete
@@ -119,7 +120,7 @@ public class EtsiTs102941DataContent
 
         if (o != null)
         {
-            return new EtsiTs102941DataContent(DERTaggedObject.getInstance(o));
+            return new EtsiTs102941DataContent(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.Arrays;
@@ -46,7 +47,7 @@ public class HashedData
         case sha384HashedData:
         case reserved:
             this.choice = dto.getTagNo();
-            this.hashedData = DEROctetString.getInstance(dto.getObject());
+            this.hashedData = DEROctetString.getInstance(dto.getExplicitBaseObject());
             break;
         default:
             throw new IllegalArgumentException("invalid choice value " + dto.getTagNo());
@@ -92,7 +93,7 @@ public class HashedData
 
         if (o != null)
         {
-            return new HashedData(ASN1TaggedObject.getInstance(o));
+            return new HashedData(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;

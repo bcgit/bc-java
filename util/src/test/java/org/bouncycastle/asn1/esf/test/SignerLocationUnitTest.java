@@ -156,24 +156,24 @@ public class SignerLocationUnitTest
     {
         if (countryName != null)
         {
-            if (!countryName.equals(sl.getCountryName()))
+            if (!countryName.equals(sl.getCountry()))
             {
                 fail("countryNames don't match.");
             }
         }
-        else if (sl.getCountryName() != null)
+        else if (sl.getCountry() != null)
         {
             fail("countryName found when none expected.");
         }
         
         if (localityName != null)
         {
-            if (!localityName.equals(sl.getLocalityName()))
+            if (!localityName.equals(sl.getLocality()))
             {
                 fail("localityNames don't match.");
             }
         }
-        else if (sl.getLocalityName() != null)
+        else if (sl.getLocality() != null)
         {
             fail("localityName found when none expected.");
         }

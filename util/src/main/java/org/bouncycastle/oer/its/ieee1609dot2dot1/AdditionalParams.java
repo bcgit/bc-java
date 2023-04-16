@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 
@@ -55,7 +56,7 @@ public class AdditionalParams
 
     private AdditionalParams(ASN1TaggedObject ato)
     {
-        this(ato.getTagNo(), ato.getObject());
+        this(ato.getTagNo(), ato.getExplicitBaseObject());
     }
 
     public static AdditionalParams getInstance(Object o)
@@ -67,8 +68,7 @@ public class AdditionalParams
 
         if (o != null)
         {
-            ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(o);
-            return new AdditionalParams(taggedObject.getTagNo(), taggedObject.getObject());
+            return new AdditionalParams(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC));
         }
 
         return null;
