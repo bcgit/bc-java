@@ -46,7 +46,7 @@ public final class IDEA
     {
         public CBC()
         {
-            super(new CBCBlockCipher(new IDEAEngine()), 64);
+            super(CBCBlockCipher.newInstance(new IDEAEngine()), 64);
         }
     }
 
@@ -73,7 +73,7 @@ public final class IDEA
     {
         public PBEWithSHAAndIDEA()
         {
-            super(new CBCBlockCipher(new IDEAEngine()));
+            super(CBCBlockCipher.newInstance(new IDEAEngine()));
         }
     }
 

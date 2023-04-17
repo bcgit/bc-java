@@ -16,11 +16,9 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.sec.ECPrivateKeyStructure;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -230,7 +228,7 @@ public class JCEECPrivateKey
         }
         else
         {
-            ECPrivateKeyStructure ec = new ECPrivateKeyStructure((ASN1Sequence)privKey);
+            org.bouncycastle.asn1.sec.ECPrivateKey ec = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(privKey);
 
             this.d = ec.getKey();
             this.publicKey = ec.getPublicKey();
@@ -290,15 +288,25 @@ public class JCEECPrivateKey
         }
         
         PrivateKeyInfo          info;
-        ECPrivateKeyStructure keyStructure;
+        org.bouncycastle.asn1.sec.ECPrivateKey keyStructure;
 
-        if (publicKey != null)
+        int orderBitLength;
+        if (ecSpec == null)
         {
-            keyStructure = new ECPrivateKeyStructure(this.getS(), publicKey, params);
+            orderBitLength = ECUtil.getOrderBitLength(null, null, this.getS());
         }
         else
         {
-            keyStructure = new ECPrivateKeyStructure(this.getS(), params);
+            orderBitLength = ECUtil.getOrderBitLength(null, ecSpec.getOrder(), this.getS());
+        }
+
+        if (publicKey != null)
+        {
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getS(), publicKey, params);
+        }
+        else
+        {
+            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getS(), params);
         }
 
         try

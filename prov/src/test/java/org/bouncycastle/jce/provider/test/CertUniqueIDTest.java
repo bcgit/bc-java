@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
@@ -10,13 +11,12 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 import java.util.Set;
-import java.util.Vector;
 
-import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class CertUniqueIDTest
     extends SimpleTest
@@ -68,20 +68,13 @@ public class CertUniqueIDTest
       //
       // distinguished name table.
       //
-      Vector                      ord = new Vector();
-      Vector                      values = new Vector();
+      X500NameBuilder nBldr = new X500NameBuilder();
 
-      ord.addElement(X509Principal.C);
-      ord.addElement(X509Principal.O);
-      ord.addElement(X509Principal.L);
-      ord.addElement(X509Principal.ST);
-      ord.addElement(X509Principal.E);
-
-      values.addElement("AU");
-      values.addElement("The Legion of the Bouncy Castle");
-      values.addElement("Melbourne");
-      values.addElement("Victoria");
-      values.addElement("feedback-crypto@bouncycastle.org");
+      nBldr.addRDN(BCStyle.C, "AU");
+      nBldr.addRDN(BCStyle.O,"The Legion of the Bouncy Castle");
+      nBldr.addRDN(BCStyle.L, "Melbourne");
+      nBldr.addRDN(BCStyle.ST,"Victoria");
+      nBldr.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
 
       //
       // extensions
@@ -90,17 +83,7 @@ public class CertUniqueIDTest
       //
       // create the certificate - version 3 - without subject unique ID
       //
-      X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
-
-      certGen.setSerialNumber(BigInteger.valueOf(1));
-      certGen.setIssuerDN(new X509Principal(ord, values));
-      certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-      certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-      certGen.setSubjectDN(new X509Principal(ord, values));
-      certGen.setPublicKey(pubKey);
-      certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
-      X509Certificate cert = certGen.generate(privKey);
+      X509Certificate cert = TestCertificateGen.createCertWithIDs(nBldr.build(), "SHA256withRSA", new KeyPair(pubKey, privKey), null, null);
 
       cert.checkValidity(new Date());
 
@@ -120,25 +103,12 @@ public class CertUniqueIDTest
       //
       // create the certificate - version 3 - with subject unique ID
       //
-      certGen = new X509V3CertificateGenerator();
-
-      certGen.setSerialNumber(BigInteger.valueOf(1));
-      certGen.setIssuerDN(new X509Principal(ord, values));
-      certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-      certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-      certGen.setSubjectDN(new X509Principal(ord, values));
-      certGen.setPublicKey(pubKey);
-      certGen.setSignatureAlgorithm("MD5WithRSAEncryption");
 
       boolean[] subjectUniqID = {true, false, false, false, true, false, false, true, false, true, true};
 
-      certGen.setSubjectUniqueID(subjectUniqID);
-
       boolean[] issuerUniqID = {false, false, true, false, true, false, false, false, true, false, false, true, false, true, true};
-
-      certGen.setIssuerUniqueID(issuerUniqID);
-
-      cert = certGen.generate(privKey);
+      
+      cert = TestCertificateGen.createCertWithIDs(nBldr.build(), "SHA256withRSA", new KeyPair(pubKey, privKey), subjectUniqID, issuerUniqID);
 
       cert.checkValidity(new Date());
 

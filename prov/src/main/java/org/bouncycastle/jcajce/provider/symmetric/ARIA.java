@@ -9,8 +9,6 @@ import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.internal.asn1.cms.CCMParameters;
-import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -27,6 +25,8 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
+import org.bouncycastle.internal.asn1.cms.CCMParameters;
+import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
@@ -45,7 +45,7 @@ public final class ARIA
     private ARIA()
     {
     }
-    
+
     public static class ECB
         extends BaseBlockCipher
     {
@@ -62,7 +62,7 @@ public final class ARIA
     }
 
     public static class CBC
-       extends BaseBlockCipher
+        extends BaseBlockCipher
     {
         public CBC()
         {
@@ -89,7 +89,7 @@ public final class ARIA
     }
 
     static public class CCM
-            extends BaseBlockCipher
+        extends BaseBlockCipher
     {
         public CCM()
         {
@@ -98,7 +98,7 @@ public final class ARIA
     }
 
     static public class GCM
-            extends BaseBlockCipher
+        extends BaseBlockCipher
     {
         public GCM()
         {
@@ -123,7 +123,7 @@ public final class ARIA
             super(new ARIAWrapPadEngine());
         }
     }
-    
+
     public static class RFC3211Wrap
         extends BaseWrapCipher
     {
@@ -143,13 +143,14 @@ public final class ARIA
     }
 
     static public class KeyFactory
-         extends BaseSecretKeyFactory
+        extends BaseSecretKeyFactory
     {
         public KeyFactory()
         {
             super("ARIA", null);
         }
     }
+
     public static class Poly1305
         extends BaseMac
     {
@@ -425,7 +426,7 @@ public final class ARIA
             throw new InvalidParameterSpecException("AlgorithmParameterSpec not recognized: " + paramSpec.getName());
         }
     }
-    
+
     public static class Mappings
         extends SymmetricAlgorithmProvider
     {
@@ -460,7 +461,7 @@ public final class ARIA
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria128_ecb, PREFIX + "$ECB");
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria192_ecb, PREFIX + "$ECB");
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria256_ecb, PREFIX + "$ECB");
-            
+
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria128_cbc, PREFIX + "$CBC");
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria192_cbc, PREFIX + "$CBC");
             provider.addAlgorithm("Cipher", NSRIObjectIdentifiers.id_aria256_cbc, PREFIX + "$CBC");
@@ -486,7 +487,7 @@ public final class ARIA
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria192_kwp, "ARIAWRAPPAD");
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria256_kwp, "ARIAWRAPPAD");
             provider.addAlgorithm("Alg.Alias.Cipher.ARIAKWP", "ARIAWRAPPAD");
-            
+
             provider.addAlgorithm("KeyGenerator.ARIA", PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator", NSRIObjectIdentifiers.id_aria128_kw, PREFIX + "$KeyGen128");
             provider.addAlgorithm("KeyGenerator", NSRIObjectIdentifiers.id_aria192_kw, PREFIX + "$KeyGen192");
@@ -537,7 +538,7 @@ public final class ARIA
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria128_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria192_gcm, "ARIAGCM");
             provider.addAlgorithm("Alg.Alias.Cipher", NSRIObjectIdentifiers.id_aria256_gcm, "ARIAGCM");
-            
+
             addGMacAlgorithm(provider, "ARIA", PREFIX + "$GMAC", PREFIX + "$KeyGen");
             addPoly1305Algorithm(provider, "ARIA", PREFIX + "$Poly1305", PREFIX + "$Poly1305KeyGen");
         }

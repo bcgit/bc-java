@@ -42,23 +42,31 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.misc.NetscapeCertType;
 import org.bouncycastle.asn1.misc.NetscapeRevocationURL;
@@ -71,13 +79,12 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -583,9 +590,9 @@ public class CertPathValidatorTest
     private void checkInvalidPath(byte[] root, byte[] inter, byte[] ee, String expected)
         throws Exception
     {
-        X509Certificate rootCert = new X509CertificateObject(X509CertificateStructure.getInstance(root));
-        X509Certificate interCert = new X509CertificateObject(X509CertificateStructure.getInstance(inter));
-        X509Certificate finalCert = new X509CertificateObject(X509CertificateStructure.getInstance(ee));
+        X509Certificate rootCert = new X509CertificateObject(new DodgyCertificate(root));
+        X509Certificate interCert = new X509CertificateObject(new DodgyCertificate(inter));
+        X509Certificate finalCert = new X509CertificateObject(new DodgyCertificate(ee));
         List list = new ArrayList();
         list.add(rootCert);
         list.add(interCert);
@@ -696,14 +703,14 @@ public class CertPathValidatorTest
         static final String CRL_NUMBER = Extension.cRLNumber.getId();
         static final String ANY_POLICY = "2.5.29.32.0";
 
-        private org.bouncycastle.asn1.x509.X509CertificateStructure c;
+        private DodgyCertificate c;
         private BasicConstraints basicConstraints;
         private boolean[] keyUsage;
         private boolean hashValueSet;
         private int hashValue;
 
         public X509CertificateObject(
-            org.bouncycastle.asn1.x509.X509CertificateStructure c)
+            DodgyCertificate c)
             throws CertificateParsingException
         {
             this.c = c;
@@ -773,7 +780,7 @@ public class CertPathValidatorTest
 
         public int getVersion()
         {
-            return c.getVersion();
+            return c.getVersion().intValueExact();
         }
 
         public BigInteger getSerialNumber()
@@ -783,14 +790,7 @@ public class CertPathValidatorTest
 
         public Principal getIssuerDN()
         {
-            try
-            {
-                return new X509Principal(X500Name.getInstance(c.getIssuer().getEncoded()));
-            }
-            catch (IOException e)
-            {
-                return null;
-            }
+            return getIssuerX500Principal();
         }
 
         public X500Principal getIssuerX500Principal()
@@ -807,7 +807,7 @@ public class CertPathValidatorTest
 
         public Principal getSubjectDN()
         {
-            return new X509Principal(X500Name.getInstance(c.getSubject().toASN1Primitive()));
+            return getSubjectX500Principal();
         }
 
         public X500Principal getSubjectX500Principal()
@@ -1030,7 +1030,7 @@ public class CertPathValidatorTest
             if (this.getVersion() == 3)
             {
                 Set set = new HashSet();
-                X509Extensions extensions = c.getTBSCertificate().getExtensions();
+                DodgyExtensions extensions = c.getTBSCertificate().getExtensions();
 
                 if (extensions != null)
                 {
@@ -1039,7 +1039,7 @@ public class CertPathValidatorTest
                     while (e.hasMoreElements())
                     {
                         ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                        X509Extension ext = extensions.getExtension(oid);
+                        Extension ext = extensions.getExtension(oid);
 
                         if (ext.isCritical())
                         {
@@ -1056,14 +1056,14 @@ public class CertPathValidatorTest
 
         private byte[] getExtensionBytes(String oid)
         {
-            X509Extensions exts = c.getTBSCertificate().getExtensions();
+            DodgyExtensions exts = c.getTBSCertificate().getExtensions();
 
             if (exts != null)
             {
-                X509Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
+                Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
                 if (ext != null)
                 {
-                    return ext.getValue().getOctets();
+                    return ext.getExtnValue().getOctets();
                 }
             }
 
@@ -1072,17 +1072,17 @@ public class CertPathValidatorTest
 
         public byte[] getExtensionValue(String oid)
         {
-            X509Extensions exts = c.getTBSCertificate().getExtensions();
+            DodgyExtensions  exts = c.getTBSCertificate().getExtensions();
 
             if (exts != null)
             {
-                X509Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
+                Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
 
                 if (ext != null)
                 {
                     try
                     {
-                        return ext.getValue().getEncoded();
+                        return ext.getExtnValue().getEncoded();
                     }
                     catch (Exception e)
                     {
@@ -1099,7 +1099,7 @@ public class CertPathValidatorTest
             if (this.getVersion() == 3)
             {
                 Set set = new HashSet();
-                X509Extensions extensions = c.getTBSCertificate().getExtensions();
+                DodgyExtensions  extensions = c.getTBSCertificate().getExtensions();
 
                 if (extensions != null)
                 {
@@ -1108,7 +1108,7 @@ public class CertPathValidatorTest
                     while (e.hasMoreElements())
                     {
                         ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                        X509Extension ext = extensions.getExtension(oid);
+                        Extension ext = extensions.getExtension(oid);
 
                         if (!ext.isCritical())
                         {
@@ -1127,7 +1127,7 @@ public class CertPathValidatorTest
         {
             if (this.getVersion() == 3)
             {
-                X509Extensions extensions = c.getTBSCertificate().getExtensions();
+                DodgyExtensions  extensions = c.getTBSCertificate().getExtensions();
 
                 if (extensions != null)
                 {
@@ -1153,7 +1153,7 @@ public class CertPathValidatorTest
                             continue;
                         }
 
-                        X509Extension ext = extensions.getExtension(oid);
+                        Extension ext = extensions.getExtension(oid);
 
                         if (ext.isCritical())
                         {
@@ -1277,7 +1277,7 @@ public class CertPathValidatorTest
                 }
             }
 
-            X509Extensions extensions = c.getTBSCertificate().getExtensions();
+            DodgyExtensions extensions = c.getTBSCertificate().getExtensions();
 
             if (extensions != null)
             {
@@ -1291,11 +1291,11 @@ public class CertPathValidatorTest
                 while (e.hasMoreElements())
                 {
                     ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-                    X509Extension ext = extensions.getExtension(oid);
+                    Extension ext = ((DodgyExtensions)extensions).getExtension(oid);
 
-                    if (ext.getValue() != null)
+                    if (ext.getExtnValue() != null)
                     {
-                        byte[] octs = ext.getValue().getOctets();
+                        byte[] octs = ext.getExtnValue().getOctets();
                         ASN1InputStream dIn = new ASN1InputStream(octs);
                         buf.append("                       critical(").append(ext.isCritical()).append(") ");
                         try
@@ -1522,6 +1522,486 @@ public class CertPathValidatorTest
             {
                 throw new CertificateParsingException(e.getMessage());
             }
+        }
+    }
+
+    private class DodgyCertificate
+        extends ASN1Object
+    {
+        ASN1Sequence  seq;
+        DodgyTBSCertificate tbsCert;
+        AlgorithmIdentifier     sigAlgId;
+        ASN1BitString            sig;
+
+        DodgyCertificate(
+            byte[] encoding)
+        {
+            this.seq = ASN1Sequence.getInstance(encoding);
+
+            //
+            // correct x509 certficate
+            //
+            if (seq.size() == 3)
+            {
+                tbsCert = new DodgyTBSCertificate(ASN1Sequence.getInstance(seq.getObjectAt(0)));
+                sigAlgId = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
+
+                sig = ASN1BitString.getInstance(seq.getObjectAt(2));
+            }
+            else
+            {
+                throw new IllegalArgumentException("sequence wrong size for a certificate");
+            }
+        }
+
+        public DodgyTBSCertificate getTBSCertificate()
+        {
+            return tbsCert;
+        }
+
+        public ASN1Integer getVersion()
+        {
+            return tbsCert.getVersion();
+        }
+
+        public int getVersionNumber()
+        {
+            return tbsCert.getVersionNumber();
+        }
+
+        public ASN1Integer getSerialNumber()
+        {
+            return tbsCert.getSerialNumber();
+        }
+
+        public X500Name getIssuer()
+        {
+            return tbsCert.getIssuer();
+        }
+
+        public Time getStartDate()
+        {
+            return tbsCert.getStartDate();
+        }
+
+        public Time getEndDate()
+        {
+            return tbsCert.getEndDate();
+        }
+
+        public X500Name getSubject()
+        {
+            return tbsCert.getSubject();
+        }
+
+        public SubjectPublicKeyInfo getSubjectPublicKeyInfo()
+        {
+            return tbsCert.getSubjectPublicKeyInfo();
+        }
+
+        public AlgorithmIdentifier getSignatureAlgorithm()
+        {
+            return sigAlgId;
+        }
+
+        public ASN1BitString getSignature()
+        {
+            return sig;
+        }
+
+        public ASN1Primitive toASN1Primitive()
+        {
+            return seq;
+        }
+    }
+
+    private class DodgyTBSCertificate
+        extends ASN1Object
+    {
+        ASN1Sequence            seq;
+
+        ASN1Integer             version;
+        ASN1Integer             serialNumber;
+        AlgorithmIdentifier     signature;
+        X500Name                issuer;
+        Time                    startDate, endDate;
+        X500Name                subject;
+        SubjectPublicKeyInfo    subjectPublicKeyInfo;
+        ASN1BitString           issuerUniqueId;
+        ASN1BitString           subjectUniqueId;
+        DodgyExtensions         extensions;
+
+        private DodgyTBSCertificate(
+            ASN1Sequence seq)
+        {
+            int         seqStart = 0;
+
+            this.seq = seq;
+
+            //
+            // some certficates don't include a version number - we assume v1
+            //
+            if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
+            {
+                version = ASN1Integer.getInstance((ASN1TaggedObject)seq.getObjectAt(0), true);
+            }
+            else
+            {
+                seqStart = -1;          // field 0 is missing!
+                version = new ASN1Integer(0);
+            }
+
+            boolean isV1 = false;
+            boolean isV2 = false;
+
+            if (version.hasValue(0))
+            {
+                isV1 = true;
+            }
+            else if (version.hasValue(1))
+            {
+                isV2 = true;
+            }
+//            else if (!version.hasValue(2))
+//            {
+//                throw new IllegalArgumentException("version number not recognised");
+//            }
+
+            serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));
+
+            signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqStart + 2));
+            issuer = X500Name.getInstance(seq.getObjectAt(seqStart + 3));
+
+            //
+            // before and after dates
+            //
+            ASN1Sequence  dates = (ASN1Sequence)seq.getObjectAt(seqStart + 4);
+
+            startDate = Time.getInstance(dates.getObjectAt(0));
+            endDate = Time.getInstance(dates.getObjectAt(1));
+
+            subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
+
+            //
+            // public key info.
+            //
+            subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
+
+            int extras = seq.size() - (seqStart + 6) - 1;
+//            if (extras != 0 && isV1)
+//            {
+//                throw new IllegalArgumentException("version 1 certificate contains extra data");
+//            }
+
+            while (extras > 0)
+            {
+                ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
+
+                switch (extra.getTagNo())
+                {
+                case 1:
+                    issuerUniqueId = DERBitString.getInstance(extra, false);
+                    break;
+                case 2:
+                    subjectUniqueId = DERBitString.getInstance(extra, false);
+                    break;
+                case 3:
+//                    if (isV2)
+//                    {
+//                        throw new IllegalArgumentException("version 2 certificate cannot contain extensions");
+//                    }
+                    extensions = new DodgyExtensions(ASN1Sequence.getInstance(extra, true));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown tag encountered in structure: " + extra.getTagNo());
+                }
+                extras--;
+            }
+        }
+
+        public int getVersionNumber()
+        {
+            return version.intValueExact() + 1;
+        }
+
+        public ASN1Integer getVersion()
+        {
+            return version;
+        }
+
+        public ASN1Integer getSerialNumber()
+        {
+            return serialNumber;
+        }
+
+        public AlgorithmIdentifier getSignature()
+        {
+            return signature;
+        }
+
+        public X500Name getIssuer()
+        {
+            return issuer;
+        }
+
+        public Time getStartDate()
+        {
+            return startDate;
+        }
+
+        public Time getEndDate()
+        {
+            return endDate;
+        }
+
+        public X500Name getSubject()
+        {
+            return subject;
+        }
+
+        public SubjectPublicKeyInfo getSubjectPublicKeyInfo()
+        {
+            return subjectPublicKeyInfo;
+        }
+
+        public ASN1BitString getIssuerUniqueId()
+        {
+            return issuerUniqueId;
+        }
+
+        public ASN1BitString getSubjectUniqueId()
+        {
+            return subjectUniqueId;
+        }
+
+        public DodgyExtensions getExtensions()
+        {
+            return extensions;
+        }
+
+        public ASN1Primitive toASN1Primitive()
+        {
+            if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)
+            {
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_non-der_tbscert"))
+                {
+                    return seq;
+                }
+            }
+            else
+            {
+                return seq;
+            }
+
+            ASN1EncodableVector v = new ASN1EncodableVector();
+
+            // DEFAULT Zero
+            if (!version.hasValue(0))
+            {
+                v.add(new DERTaggedObject(true, 0, version));
+            }
+
+            v.add(serialNumber);
+            v.add(signature);
+            v.add(issuer);
+
+            //
+            // before and after dates
+            //
+            {
+                ASN1EncodableVector validity = new ASN1EncodableVector(2);
+                validity.add(startDate);
+                validity.add(endDate);
+
+                v.add(new DERSequence(validity));
+            }
+
+            if (subject != null)
+            {
+                v.add(subject);
+            }
+            else
+            {
+                v.add(new DERSequence());
+            }
+
+            v.add(subjectPublicKeyInfo);
+
+            // Note: implicit tag
+            if (issuerUniqueId != null)
+            {
+                v.add(new DERTaggedObject(false, 1, issuerUniqueId));
+            }
+
+            // Note: implicit tag
+            if (subjectUniqueId != null)
+            {
+                v.add(new DERTaggedObject(false, 2, subjectUniqueId));
+            }
+
+            if (extensions != null)
+            {
+                v.add(new DERTaggedObject(true, 3, extensions));
+            }
+
+            return new DERSequence(v);
+        }
+    }
+
+    public class DodgyExtensions
+        extends ASN1Object
+    {
+        private Hashtable extensions = new Hashtable();
+        private Vector ordering = new Vector();
+
+        /**
+         * Constructor from ASN1Sequence.
+         * <p>
+         * The extensions are a list of constructed sequences, either with (OID, OctetString) or (OID, Boolean, OctetString)
+         * </p>
+         */
+        DodgyExtensions(
+            ASN1Sequence seq)
+        {
+            Enumeration e = seq.getObjects();
+
+            while (e.hasMoreElements())
+            {
+                Extension ext = Extension.getInstance(e.nextElement());
+
+                extensions.put(ext.getExtnId(), ext);
+                ordering.addElement(ext.getExtnId());
+            }
+        }
+
+        /**
+         * return an Enumeration of the extension field's object ids.
+         */
+        public Enumeration oids()
+        {
+            return ordering.elements();
+        }
+
+        /**
+         * return the extension represented by the object identifier
+         * passed in.
+         *
+         * @return the extension if it's present, null otherwise.
+         */
+        public Extension getExtension(
+            ASN1ObjectIdentifier oid)
+        {
+            return (Extension)extensions.get(oid);
+        }
+
+        /**
+         * return the parsed value of the extension represented by the object identifier
+         * passed in.
+         *
+         * @return the parsed value of the extension if it's present, null otherwise.
+         */
+        public ASN1Encodable getExtensionParsedValue(ASN1ObjectIdentifier oid)
+        {
+            Extension ext = this.getExtension(oid);
+
+            if (ext != null)
+            {
+                return ext.getParsedValue();
+            }
+
+            return null;
+        }
+
+        /**
+         * <pre>
+         *     Extensions        ::=   SEQUENCE SIZE (1..MAX) OF Extension
+         *
+         *     Extension         ::=   SEQUENCE {
+         *        extnId            EXTENSION.&amp;id ({ExtensionSet}),
+         *        critical          BOOLEAN DEFAULT FALSE,
+         *        extnValue         OCTET STRING }
+         * </pre>
+         */
+        public ASN1Primitive toASN1Primitive()
+        {
+            ASN1EncodableVector vec = new ASN1EncodableVector(ordering.size());
+
+            Enumeration e = ordering.elements();
+            while (e.hasMoreElements())
+            {
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
+                Extension ext = (Extension)extensions.get(oid);
+
+                vec.add(ext);
+            }
+
+            return new DERSequence(vec);
+        }
+
+        public boolean equivalent(
+            DodgyExtensions other)
+        {
+            if (extensions.size() != other.extensions.size())
+            {
+                return false;
+            }
+
+            Enumeration e1 = extensions.keys();
+
+            while (e1.hasMoreElements())
+            {
+                Object key = e1.nextElement();
+
+                if (!extensions.get(key).equals(other.extensions.get(key)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public ASN1ObjectIdentifier[] getExtensionOIDs()
+        {
+            return toOidArray(ordering);
+        }
+
+        public ASN1ObjectIdentifier[] getNonCriticalExtensionOIDs()
+        {
+            return getExtensionOIDs(false);
+        }
+
+        public ASN1ObjectIdentifier[] getCriticalExtensionOIDs()
+        {
+            return getExtensionOIDs(true);
+        }
+
+        private ASN1ObjectIdentifier[] getExtensionOIDs(boolean isCritical)
+        {
+            Vector oidVec = new Vector();
+
+            for (int i = 0; i != ordering.size(); i++)
+            {
+                Object oid = ordering.elementAt(i);
+
+                if (((Extension)extensions.get(oid)).isCritical() == isCritical)
+                {
+                    oidVec.addElement(oid);
+                }
+            }
+
+            return toOidArray(oidVec);
+        }
+
+        private ASN1ObjectIdentifier[] toOidArray(Vector oidVec)
+        {
+            ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[oidVec.size()];
+
+            for (int i = 0; i != oids.length; i++)
+            {
+                oids[i] = (ASN1ObjectIdentifier)oidVec.elementAt(i);
+            }
+            return oids;
         }
     }
 }

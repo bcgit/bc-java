@@ -21,18 +21,16 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Vector;
 
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 /**
  * Exercise the various key stores, making sure we at least get back what we put in!
@@ -93,39 +91,19 @@ public class KeyStoreTest
         //
         // distinguished name table.
         //
-        Hashtable                 attrs = new Hashtable();
-        Vector                    order = new Vector();
+        X500NameBuilder nBldr = new X500NameBuilder();
 
-        attrs.put(X509Principal.C, "AU");
-        attrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        attrs.put(X509Principal.L, "Melbourne");
-        attrs.put(X509Principal.ST, "Victoria");
-        attrs.put(X509Principal.E, "feedback-crypto@bouncycastle.org");
-
-        order.addElement(X509Principal.C);
-        order.addElement(X509Principal.O);
-        order.addElement(X509Principal.L);
-        order.addElement(X509Principal.ST);
-        order.addElement(X509Principal.E);
-
-        //
-        // create the certificate - version 3
-        //
-        X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
-
-        certGen.setSerialNumber(BigInteger.valueOf(1));
-        certGen.setIssuerDN(new X509Principal(order, attrs));
-        certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-        certGen.setSubjectDN(new X509Principal(order, attrs));
-        certGen.setPublicKey(pubKey);
-        certGen.setSignatureAlgorithm("ECDSAwithSHA1");
-
+        nBldr.addRDN(BCStyle.C, "AU");
+        nBldr.addRDN(BCStyle.O,"The Legion of the Bouncy Castle");
+        nBldr.addRDN(BCStyle.L, "Melbourne");
+        nBldr.addRDN(BCStyle.ST,"Victoria");
+        nBldr.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
+        
         Certificate[]    chain = new Certificate[1];
 
         try
         {
-            X509Certificate cert = certGen.generate(privKey);
+            X509Certificate cert = TestCertificateGen.createSelfSignedCert(nBldr.build(), "SHA1withECDSA", new KeyPair(pubKey, privKey));
 
             cert.checkValidity(new Date());
 
@@ -222,20 +200,13 @@ public class KeyStoreTest
         //
         // distinguished name table.
         //
-        Hashtable                   attrs = new Hashtable();
-        Vector                      order = new Vector();
+        X500NameBuilder nBldr = new X500NameBuilder();
 
-        attrs.put(X509Principal.C, "AU");
-        attrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        attrs.put(X509Principal.L, "Melbourne");
-        attrs.put(X509Principal.ST, "Victoria");
-        attrs.put(X509Principal.EmailAddress, "feedback-crypto@bouncycastle.org");
-
-        order.addElement(X509Principal.C);
-        order.addElement(X509Principal.O);
-        order.addElement(X509Principal.L);
-        order.addElement(X509Principal.ST);
-        order.addElement(X509Principal.EmailAddress);
+        nBldr.addRDN(BCStyle.C, "AU");
+        nBldr.addRDN(BCStyle.O,"The Legion of the Bouncy Castle");
+        nBldr.addRDN(BCStyle.L, "Melbourne");
+        nBldr.addRDN(BCStyle.ST,"Victoria");
+        nBldr.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
 
         //
         // extensions
@@ -244,21 +215,11 @@ public class KeyStoreTest
         //
         // create the certificate.
         //
-        X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
-
-        certGen.setSerialNumber(BigInteger.valueOf(1));
-        certGen.setIssuerDN(new X509Principal(order, attrs));
-        certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-        certGen.setSubjectDN(new X509Principal(order, attrs));
-        certGen.setPublicKey(pubKey);
-        certGen.setSignatureAlgorithm("MD5WithRSAEncryption");
-
         Certificate[]   chain = new Certificate[1];
 
         try
         {
-            X509Certificate cert = certGen.generate(privKey);
+            X509Certificate cert = TestCertificateGen.createSelfSignedCert(nBldr.build(), "MD5WithRSAEncryption", new KeyPair(pubKey, privKey));
 
             cert.checkValidity(new Date());
 
@@ -408,37 +369,20 @@ public class KeyStoreTest
         //
         // distinguished name table.
         //
-        Hashtable                 attrs = new Hashtable();
-        Vector                    order = new Vector();
+        X500NameBuilder nBldr = new X500NameBuilder();
 
-        attrs.put(X509Principal.C, "AU");
-        attrs.put(X509Principal.O, "The Legion of the Bouncy Castle");
-        attrs.put(X509Principal.L, "Melbourne");
-        attrs.put(X509Principal.ST, "Victoria");
-        attrs.put(X509Principal.E, "feedback-crypto@bouncycastle.org");
-
-        order.addElement(X509Principal.C);
-        order.addElement(X509Principal.O);
-        order.addElement(X509Principal.L);
-        order.addElement(X509Principal.ST);
-        order.addElement(X509Principal.E);
+        nBldr.addRDN(BCStyle.C, "AU");
+        nBldr.addRDN(BCStyle.O,"The Legion of the Bouncy Castle");
+        nBldr.addRDN(BCStyle.L, "Melbourne");
+        nBldr.addRDN(BCStyle.ST,"Victoria");
+        nBldr.addRDN(BCStyle.E, "feedback-crypto@bouncycastle.org");
 
         //
         // create the certificate - version 3
         //
-        X509V3CertificateGenerator  certGen = new X509V3CertificateGenerator();
-
-        certGen.setSerialNumber(BigInteger.valueOf(1));
-        certGen.setIssuerDN(new X509Principal(order, attrs));
-        certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-        certGen.setNotAfter(new Date(System.currentTimeMillis() + 50000));
-        certGen.setSubjectDN(new X509Principal(order, attrs));
-        certGen.setPublicKey(pubKey);
-        certGen.setSignatureAlgorithm("ECDSAwithSHA1");
-
         Certificate[]    dummyChain = new Certificate[1];
 
-        dummyChain[0] = certGen.generate(privKey);
+        dummyChain[0] = TestCertificateGen.createSelfSignedCert(nBldr.build(), "SHA1withECDSA", new KeyPair(pubKey, privKey));
 
         ks = KeyStore.getInstance("BKS", "BC");
 

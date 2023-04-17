@@ -40,7 +40,7 @@ import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * test out the various PBE modes, making sure the JCE implementations
- * are compatible woth the light weight ones.
+ * are compatible with the light weight ones.
  */
 public class PBETest
     extends SimpleTest

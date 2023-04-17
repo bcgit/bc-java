@@ -1,28 +1,23 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -37,32 +32,29 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLNumber;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
+import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 
-/**
- * Test Utils
- */
-class TestUtils
+public class TestCertificateGen
 {
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
-    private static Map algIds = new HashMap();
+    private static Map<String, AlgorithmIdentifier> algIds = new HashMap<String, AlgorithmIdentifier>();
 
     static
     {
@@ -70,7 +62,8 @@ class TestUtils
         algIds.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
         algIds.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
         algIds.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
-        algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
+        algIds.put("MD5WithRSAEncryption", new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
+        algIds.put("LMS", new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig));
         algIds.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
     }
 
@@ -92,7 +85,7 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         Signature sig = Signature.getInstance(sigName, "BC");
@@ -106,7 +99,7 @@ class TestUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -130,23 +123,67 @@ class TestUtils
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
+        Signature sig = Signature.getInstance(sigName, "BC");
+
+        sig.initSign(signerKey);
+
+        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
+
         TBSCertificate tbsCert = certGen.generateTBSCertificate();
 
-        Signature sig = Signature.getInstance(sigName, "BC");
-        sig.initSign(signerKey);
-        sig.update(tbsCert.getEncoded(ASN1Encoding.DER));
-
         ASN1EncodableVector v = new ASN1EncodableVector();
+
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC")
-            .generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+    }
+
+    public static X509Certificate createCertWithIDs(X500Name signerName, String sigName, KeyPair keyPair, boolean[] subjectUniqID, boolean[] issuerUniqID)
+        throws Exception
+    {
+        V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
+
+        long time = System.currentTimeMillis();
+
+        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setIssuer(signerName);
+        certGen.setSubject(signerName);
+        certGen.setStartDate(new Time(new Date(time - 5000)));
+        certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
+        certGen.setSignature(algIds.get(sigName));
+        certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
+
+        if (issuerUniqID != null)
+        {
+            certGen.setIssuerUniqueID(booleanToBitString(issuerUniqID));
+        }
+
+        if (subjectUniqID != null)
+        {
+            certGen.setSubjectUniqueID(booleanToBitString(subjectUniqID));
+        }
+
+        Signature sig = Signature.getInstance(sigName, "BC");
+
+        sig.initSign(keyPair.getPrivate());
+
+        sig.update(certGen.generateTBSCertificate().getEncoded(ASN1Encoding.DER));
+
+        TBSCertificate tbsCert = certGen.generateTBSCertificate();
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsCert);
+        v.add(algIds.get(sigName));
+        v.add(new DERBitString(sig.sign()));
+
+        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     /**
@@ -226,236 +263,84 @@ class TestUtils
             caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
     }
 
-    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, KeyPurposeId keyPurpose, PrivateKey caKey, X509Certificate caCert)
-            throws Exception
-    {
-         return generateEndEntityCert(entityKey, subject, keyPurpose, null, caKey, caCert);
-    }
-
-    public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, KeyPurposeId keyPurpose1, KeyPurposeId keyPurpose2, PrivateKey caKey, X509Certificate caCert)
+    public static X509CRL createCRL(
+        X509Certificate caCert,
+        PrivateKey caKey,
+        BigInteger revokedSerialNumber)
         throws Exception
     {
-        Certificate caCertLw = Certificate.getInstance(caCert.getEncoded());
+        V2TBSCertListGenerator crlGen = new V2TBSCertListGenerator();
+        Date now = new Date();
+
+        X500Name issuer = new X500Name(caCert.getSubjectDN().getName());
+        crlGen.setIssuer(issuer);
+
+        crlGen.setThisUpdate(new Time(now));
+        crlGen.setNextUpdate(new Time(new Date(now.getTime() + 100000)));
+        crlGen.setSignature(algIds.get("SHA256withRSA"));
+
+        crlGen.addCRLEntry(new ASN1Integer(revokedSerialNumber), new Time(now), CRLReason.privilegeWithdrawn);
 
         ExtensionsGenerator extGen = new ExtensionsGenerator();
 
-        extGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(getDigest(caCertLw.getSubjectPublicKeyInfo()),
-            new GeneralNames(new GeneralName(caCertLw.getIssuer())),
-            caCertLw.getSerialNumber().getValue()));
-        extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
-        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
-        if (keyPurpose2 == null)
-        {
-            extGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(keyPurpose1));
-        }
-        else
-        {
-            extGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(new KeyPurposeId[] { keyPurpose1, keyPurpose2 }));
-        }
+        extGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(new GeneralNames(new GeneralName(issuer)), caCert.getSerialNumber()));
+        extGen.addExtension(Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(1)));
 
-        return createCert(
-            caCertLw.getSubject(),
-            caKey, subject, "SHA256withRSA", extGen.generate(), entityKey);
-    }
+        crlGen.setExtensions(extGen.generate());
 
-    public static X509Certificate createExceptionCertificate(boolean exceptionOnEncode)
-    {
-        return new ExceptionCertificate(exceptionOnEncode);
-    }
+        Signature sig = Signature.getInstance("SHA256withRSA", "BC");
 
-    public static X500Name getCertIssuer(X509Certificate x509Certificate)
-        throws CertificateEncodingException
-    {
-        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getIssuer();
-    }
+        sig.initSign(caKey);
 
-    public static X500Name getCertSubject(X509Certificate x509Certificate)
-        throws CertificateEncodingException
-    {
-        return TBSCertificate.getInstance(x509Certificate.getTBSCertificate()).getSubject();
-    }
+        sig.update(crlGen.generateTBSCertList().getEncoded(ASN1Encoding.DER));
 
-    private static class ExceptionCertificate
-        extends X509Certificate
-    {
-        private boolean _exceptionOnEncode;
+        TBSCertList tbsCrl = crlGen.generateTBSCertList();
 
-        public ExceptionCertificate(boolean exceptionOnEncode)
-        {
-            _exceptionOnEncode = exceptionOnEncode;
-        }
+        ASN1EncodableVector v = new ASN1EncodableVector();
 
-        public void checkValidity()
-            throws CertificateExpiredException, CertificateNotYetValidException
-        {
-            throw new CertificateNotYetValidException();
-        }
+        v.add(tbsCrl);
+        v.add(algIds.get("SHA256withRSA"));
+        v.add(new DERBitString(sig.sign()));
 
-        public void checkValidity(Date date)
-            throws CertificateExpiredException, CertificateNotYetValidException
-        {
-            throw new CertificateExpiredException();
-        }
-
-        public int getVersion()
-        {
-            return 0;
-        }
-
-        public BigInteger getSerialNumber()
-        {
-            return null;
-        }
-
-        public Principal getIssuerDN()
-        {
-            return null;
-        }
-
-        public Principal getSubjectDN()
-        {
-            return null;
-        }
-
-        public Date getNotBefore()
-        {
-            return null;
-        }
-
-        public Date getNotAfter()
-        {
-            return null;
-        }
-
-        public byte[] getTBSCertificate()
-            throws CertificateEncodingException
-        {
-            throw new CertificateEncodingException();
-        }
-
-        public byte[] getSignature()
-        {
-            return new byte[0];
-        }
-
-        public String getSigAlgName()
-        {
-            return null;
-        }
-
-        public String getSigAlgOID()
-        {
-            return null;
-        }
-
-        public byte[] getSigAlgParams()
-        {
-            return new byte[0];
-        }
-
-        public boolean[] getIssuerUniqueID()
-        {
-            return new boolean[0];
-        }
-
-        public boolean[] getSubjectUniqueID()
-        {
-            return new boolean[0];
-        }
-
-        public boolean[] getKeyUsage()
-        {
-            return new boolean[0];
-        }
-
-        public int getBasicConstraints()
-        {
-            return 0;
-        }
-
-        public byte[] getEncoded()
-            throws CertificateEncodingException
-        {
-            if (_exceptionOnEncode)
-            {
-                throw new CertificateEncodingException();
-            }
-
-            return new byte[0];
-        }
-
-        public void verify(PublicKey key)
-            throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException
-        {
-            throw new CertificateException();
-        }
-
-        public void verify(PublicKey key, String sigProvider)
-            throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException
-        {
-            throw new CertificateException();
-        }
-
-        public String toString()
-        {
-            return "";
-        }
-
-        public PublicKey getPublicKey()
-        {
-            return null;
-        }
-
-        public boolean hasUnsupportedCriticalExtension()
-        {
-            return false;
-        }
-
-        public Set getCriticalExtensionOIDs()
-        {
-            return null;
-        }
-
-        public Set getNonCriticalExtensionOIDs()
-        {
-            return null;
-        }
-
-        public byte[] getExtensionValue(String oid)
-        {
-            return new byte[0];
-        }
-
+        return (X509CRL)CertificateFactory.getInstance("X.509", "BC").generateCRL(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
     private static byte[] getDigest(SubjectPublicKeyInfo spki)
+        throws IOException
     {
         return getDigest(spki.getPublicKeyData().getBytes());
     }
 
     private static byte[] getDigest(byte[] bytes)
     {
-        Digest digest = new SHA1Digest();
-        byte[] resBuf = new byte[digest.getDigestSize()];
-
-        digest.update(bytes, 0, bytes.length);
-        digest.doFinal(resBuf, 0);
-        return resBuf;
+        try
+        {
+            return MessageDigest.getInstance("SHA1").digest(bytes);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            return null;
+        }
     }
 
-    private static class AtomicLong
+    private static DERBitString booleanToBitString(boolean[] id)
     {
-        private long value;
+        byte[] bytes = new byte[(id.length + 7) / 8];
 
-        public AtomicLong(long value)
+        for (int i = 0; i != id.length; i++)
         {
-            this.value = value;
+            bytes[i / 8] |= (id[i]) ? (1 << ((7 - (i % 8)))) : 0;
         }
 
-        public synchronized long getAndIncrement()
+        int pad = id.length % 8;
+
+        if (pad == 0)
         {
-            return value++;
+            return new DERBitString(bytes);
+        }
+        else
+        {
+            return new DERBitString(bytes, 8 - pad);
         }
     }
 }

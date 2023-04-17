@@ -104,7 +104,7 @@ public class ECNRTest
         KeyFactory          f = KeyFactory.getInstance("ECDSA", "BC");
 
         byte[] message = new byte[] { (byte)'a', (byte)'b', (byte)'c' };
-        
+
         checkSignature(192, priKey, pubKey, sgr, k, message, r, s);
     }
     

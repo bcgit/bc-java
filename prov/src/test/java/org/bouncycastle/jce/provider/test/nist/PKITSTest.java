@@ -426,7 +426,7 @@ class PKITSTest
 
         return new TrustAnchor(cert, null);
     }
-
+    
     public PKITSTest withEndEntity(String endCert)
     {
         endCert = endCert.replace(" ", "").replace("-", "");

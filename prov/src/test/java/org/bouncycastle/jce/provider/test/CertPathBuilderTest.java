@@ -81,9 +81,9 @@ public class CertPathBuilderTest
         X509Certificate interCert = TestUtils.generateIntermediateCert(interPair.getPublic(), rootPair.getPrivate(), rootCert);
         X509Certificate endCert = TestUtils.generateEndEntityCert(endPair.getPublic(), interPair.getPrivate(), interCert);
 
-        BigInteger      revokedSerialNumber = BigInteger.valueOf(2);
-        X509CRL         rootCRL = TestUtils.createCRL(rootCert, rootPair.getPrivate(), revokedSerialNumber);
-        X509CRL         interCRL = TestUtils.createCRL(interCert, interPair.getPrivate(), revokedSerialNumber);
+        BigInteger revokedSerialNumber = BigInteger.valueOf(2);
+        X509CRL         rootCRL = TestCertificateGen.createCRL(rootCert, rootPair.getPrivate(), revokedSerialNumber);
+        X509CRL         interCRL = TestCertificateGen.createCRL(interCert, interPair.getPrivate(), revokedSerialNumber);
 
         // create CertStore to support path building
         List list = new ArrayList();
