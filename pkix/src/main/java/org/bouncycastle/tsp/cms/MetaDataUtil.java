@@ -48,7 +48,7 @@ class MetaDataUtil
     {
         if (metaData != null)
         {
-            return convertString(metaData.getMediaType());
+            return convertString(metaData.getMediaTypeIA5());
         }
 
         return null;

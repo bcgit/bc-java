@@ -23,8 +23,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
@@ -34,30 +33,29 @@ import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class OCSPTestUtil
 {
     private static final String BC = "BC";
 
-    public static SecureRandom     rand;
+    public static SecureRandom rand;
     public static KeyPairGenerator kpg, eckpg;
-    public static KeyGenerator     desede128kg;
-    public static KeyGenerator     desede192kg;
-    public static KeyGenerator     rc240kg;
-    public static KeyGenerator     rc264kg;
-    public static KeyGenerator     rc2128kg;
-    public static BigInteger       serialNumber;
-    
+    public static KeyGenerator desede128kg;
+    public static KeyGenerator desede192kg;
+    public static KeyGenerator rc240kg;
+    public static KeyGenerator rc264kg;
+    public static KeyGenerator rc2128kg;
+    public static BigInteger serialNumber;
+
     public static final boolean DEBUG = true;
-    
+
     static
     {
         try
         {
             rand = new SecureRandom();
 
-            kpg  = KeyPairGenerator.getInstance("RSA", "BC");
+            kpg = KeyPairGenerator.getInstance("RSA", "BC");
             kpg.initialize(1024, rand);
 
             serialNumber = new BigInteger("1");
@@ -65,12 +63,12 @@ public class OCSPTestUtil
             eckpg = KeyPairGenerator.getInstance("ECDSA", "BC");
             eckpg.initialize(192, rand);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             throw new RuntimeException(ex.toString());
         }
     }
-    
+
     public static KeyPair makeKeyPair()
     {
         return kpg.generateKeyPair();
@@ -102,7 +100,7 @@ public class OCSPTestUtil
     public static X509Certificate makeCertificate(KeyPair _subKP, String _subDN, KeyPair _issKP, X509Certificate _issCert, boolean _ca)
         throws Exception
     {
-        org.bouncycastle.asn1.x509.Certificate cert =  org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
+        org.bouncycastle.asn1.x509.Certificate cert = org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(_issKP.getPrivate());
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
@@ -127,7 +125,7 @@ public class OCSPTestUtil
     public static X509Certificate makeCertificateWithOCSP(KeyPair _subKP, String _subDN, KeyPair _issKP, X509Certificate _issCert, boolean _ca, String uri)
         throws Exception
     {
-        org.bouncycastle.asn1.x509.Certificate cert =  org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
+        org.bouncycastle.asn1.x509.Certificate cert = org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(_issKP.getPrivate());
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
@@ -148,7 +146,7 @@ public class OCSPTestUtil
 
         certGen.addExtension(
             Extension.authorityInfoAccess, false, new AuthorityInformationAccess(new AccessDescription(AccessDescription.id_ad_ocsp,
-                                                        new GeneralName(GeneralName.uniformResourceIdentifier, uri))));
+                new GeneralName(GeneralName.uniformResourceIdentifier, uri))));
 
         return new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
     }
@@ -156,7 +154,7 @@ public class OCSPTestUtil
     public static X509Certificate makeCertificate(KeyPair _subKP, String _subDN, KeyPair _issKP, X509Certificate _issCert, KeyPurposeId keyPurpose)
         throws Exception
     {
-        org.bouncycastle.asn1.x509.Certificate cert =  org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
+        org.bouncycastle.asn1.x509.Certificate cert = org.bouncycastle.asn1.x509.Certificate.getInstance(_issCert.getEncoded());
 
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(_issKP.getPrivate());
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
@@ -182,96 +180,86 @@ public class OCSPTestUtil
     }
 
     public static X509Certificate makeECDSACertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN)
-            throws Exception
+                                                       String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
-
         return makeECDSACertificate(_subKP, _subDN, _issKP, _issDN, false);
     }
 
     public static X509Certificate makeCACertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN)
-            throws Exception
+                                                    String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
 
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, true);
     }
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
-            throws Exception
+                                                  String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
+        throws Exception
     {
-        return makeCertificate(_subKP,_subDN, _issKP, _issDN, "SHA1withRSA", _ca);
+        return makeCertificate(_subKP, _subDN, _issKP, _issDN, "SHA1withRSA", _ca);
     }
 
     public static X509Certificate makeECDSACertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
-            throws Exception
+                                                       String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
+        throws Exception
     {
-        return makeCertificate(_subKP,_subDN, _issKP, _issDN, "SHA1WithECDSA", _ca);
+        return makeCertificate(_subKP, _subDN, _issKP, _issDN, "SHA1WithECDSA", _ca);
     }
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN)
-            throws Exception
+                                                  String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, "SHA1withRSA", false);
     }
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN, String algorithm, boolean _ca)
-            throws Exception
+                                                  String _subDN, KeyPair _issKP, String _issDN, String algorithm, boolean _ca)
+        throws Exception
     {
 
         PublicKey _subPub = _subKP.getPublic();
         PrivateKey _issPriv = _issKP.getPrivate();
         PublicKey _issPub = _issKP.getPublic();
 
-        X509V3CertificateGenerator _v3CertGen = new X509V3CertificateGenerator();
+        JcaX509ExtensionUtils x509Utils = new JcaX509ExtensionUtils();
 
-        _v3CertGen.reset();
-        _v3CertGen.setSerialNumber(allocateSerialNumber());
-        _v3CertGen.setIssuerDN(new X509Name(_issDN));
-        _v3CertGen.setNotBefore(new Date(System.currentTimeMillis()));
-        _v3CertGen.setNotAfter(new Date(System.currentTimeMillis()
-                + (1000L * 60 * 60 * 24 * 100)));
-        _v3CertGen.setSubjectDN(new X509Name(_subDN));
-        _v3CertGen.setPublicKey(_subPub);
-        _v3CertGen.setSignatureAlgorithm(algorithm);
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis()
+                + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            _subPub
+        )
+            .addExtension(Extension.subjectKeyIdentifier, false, x509Utils.createSubjectKeyIdentifier(_subPub))
+            .addExtension(Extension.authorityKeyIdentifier, false, x509Utils.createAuthorityKeyIdentifier(_issPub))
+            .addExtension(Extension.basicConstraints, false, new BasicConstraints(_ca));
 
-        _v3CertGen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
-                createSubjectKeyId(_subPub));
+        X509CertificateHolder ch = builder.build(new JcaContentSignerBuilder(algorithm).setProvider(BC).build(_issPriv));
 
-        _v3CertGen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
-                createAuthorityKeyId(_issPub));
-
-        _v3CertGen.addExtension(X509Extensions.BasicConstraints, false,
-                new BasicConstraints(_ca));
-
-        X509Certificate _cert = _v3CertGen.generate(_issPriv);
-
-        _cert.checkValidity(new Date());
-        _cert.verify(_issPub);
-
-        return _cert;
+        return new JcaX509CertificateConverter().setProvider(BC).getCertificate(ch);
     }
 
     /*
-     * 
+     *
      * INTERNAL METHODS
-     * 
+     *
      */
 
     private static AuthorityKeyIdentifier createAuthorityKeyId(PublicKey _pubKey)
-            throws IOException
+        throws IOException
     {
         SubjectPublicKeyInfo _info = SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded());
 
-        return new AuthorityKeyIdentifier(_info);
+        return new BcX509ExtensionUtils().createAuthorityKeyIdentifier(_info);
     }
 
     private static SubjectKeyIdentifier createSubjectKeyId(PublicKey _pubKey)
-            throws IOException
+        throws IOException
     {
         return new BcX509ExtensionUtils().createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded()));
     }

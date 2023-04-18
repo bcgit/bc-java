@@ -194,7 +194,7 @@ class PEMUtilities
                 throw new EncryptionException("unknown AES encryption with private key: " + dekAlgName);
             }
             sKey = getKey(password, keyBits / 8, salt);
-            engine = new AESEngine();
+            engine = AESEngine.newInstance();
         }
         else
         {
@@ -203,11 +203,11 @@ class PEMUtilities
 
         if (blockMode.equals("CBC"))
         {
-            engine = new CBCBlockCipher(engine);
+            engine = CBCBlockCipher.newInstance(engine);
         }
         else if (blockMode.equals("CFB"))
         {
-            engine = new CFBBlockCipher(engine, engine.getBlockSize() * 8);
+            engine = CFBBlockCipher.newInstance(engine, engine.getBlockSize() * 8);
         }
         else if (blockMode.equals("OFB"))
         {

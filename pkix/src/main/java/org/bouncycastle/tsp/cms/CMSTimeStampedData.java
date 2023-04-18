@@ -92,7 +92,7 @@ public class CMSTimeStampedData
 
         newTimeStamps[timeStamps.length] = new TimeStampAndCRL(token.toCMSSignedData().toASN1Structure());
 
-        return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(timeStampedData.getDataUri(), timeStampedData.getMetaData(), timeStampedData.getContent(), new Evidence(new TimeStampTokenEvidence(newTimeStamps)))));
+        return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(timeStampedData.getDataUriIA5(), timeStampedData.getMetaData(), timeStampedData.getContent(), new Evidence(new TimeStampTokenEvidence(newTimeStamps)))));
     }
 
     public byte[] getContent()
@@ -108,7 +108,7 @@ public class CMSTimeStampedData
     public URI getDataUri()
         throws URISyntaxException
     {
-        ASN1IA5String dataURI = this.timeStampedData.getDataUri();
+        ASN1IA5String dataURI = this.timeStampedData.getDataUriIA5();
 
         if (dataURI != null)
         {

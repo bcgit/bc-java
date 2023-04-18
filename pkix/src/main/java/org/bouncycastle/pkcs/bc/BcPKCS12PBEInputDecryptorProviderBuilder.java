@@ -56,7 +56,7 @@ public class BcPKCS12PBEInputDecryptorProviderBuilder
 
                     public GenericKey getKey()
                     {
-                        return new GenericKey(PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
+                        return new GenericKey(algorithmIdentifier, PKCS12ParametersGenerator.PKCS12PasswordToBytes(password));
                     }
                 };
             }

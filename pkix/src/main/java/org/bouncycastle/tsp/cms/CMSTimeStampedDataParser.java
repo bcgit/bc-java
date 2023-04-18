@@ -79,7 +79,7 @@ public class CMSTimeStampedDataParser
     public URI getDataUri()
         throws URISyntaxException
     {
-        ASN1IA5String dataURI = this.timeStampedData.getDataUri();
+        ASN1IA5String dataURI = this.timeStampedData.getDataUriIA5();
 
         if (dataURI != null)
         {
