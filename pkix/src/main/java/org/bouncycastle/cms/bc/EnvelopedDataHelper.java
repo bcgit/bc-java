@@ -65,7 +65,7 @@ class EnvelopedDataHelper
         {
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
             {
-                return new SHA256Digest();
+                return SHA256Digest.newInstance();
             }
         });
         table.put(PKCSObjectIdentifiers.id_hmacWithSHA384, new BcDigestProvider()
@@ -124,7 +124,7 @@ class EnvelopedDataHelper
             || NISTObjectIdentifiers.id_aes192_CBC.equals(algorithm)
             || NISTObjectIdentifiers.id_aes256_CBC.equals(algorithm))
         {
-            return new RFC3211WrapEngine(new AESEngine());
+            return new RFC3211WrapEngine(AESEngine.newInstance());
         }
         else if (PKCSObjectIdentifiers.des_EDE3_CBC.equals(algorithm))
         {

@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -190,7 +191,7 @@ class CMSSignedHelper
                     //     other [3] IMPLICIT OtherCertificateFormat }
                     if (tObj.getTagNo() == 1 || tObj.getTagNo() == 2)
                     {
-                        certList.add(new X509AttributeCertificateHolder(AttributeCertificate.getInstance(tObj.getObject())));
+                        certList.add(new X509AttributeCertificateHolder(AttributeCertificate.getInstance(tObj.getBaseUniversal(false, BERTags.SEQUENCE))));
                     }
                 }
             }

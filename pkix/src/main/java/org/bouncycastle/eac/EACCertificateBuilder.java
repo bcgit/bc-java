@@ -3,7 +3,10 @@ package org.bouncycastle.eac;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.eac.CVCertificate;
 import org.bouncycastle.asn1.eac.CertificateBody;
 import org.bouncycastle.asn1.eac.CertificateHolderAuthorization;
@@ -43,10 +46,10 @@ public class EACCertificateBuilder
 
     private CertificateBody buildBody()
     {
-        DERApplicationSpecific  certificateProfileIdentifier;
+        ASN1TaggedObject certificateProfileIdentifier;
 
-        certificateProfileIdentifier = new DERApplicationSpecific(
-                EACTags.INTERCHANGE_PROFILE, ZeroArray);
+        certificateProfileIdentifier = new DERTaggedObject(false, BERTags.APPLICATION,
+                EACTags.INTERCHANGE_PROFILE, new DEROctetString(ZeroArray));
 
         CertificateBody body = new CertificateBody(
                 certificateProfileIdentifier,

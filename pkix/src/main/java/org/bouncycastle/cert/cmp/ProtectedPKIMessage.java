@@ -83,7 +83,7 @@ public class ProtectedPKIMessage
     }
 
     /**
-     * Determine whether the message is protected by a the CMP password based MAC. Use verify(PBEMacCalculatorProvider, char[])
+     * Determine whether the message is protected by a CMP password based MAC. Use verify(PBEMacCalculatorProvider, char[])
      * to verify the message if this method returns true.
      *
      * @return true if protection MAC PBE based, false otherwise.
