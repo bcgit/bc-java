@@ -321,11 +321,14 @@ public class GCMTest
         GCMBlockCipher gcm = new GCMBlockCipher(createAESEngine());
         SecureRandom rnd = new SecureRandom();
 
-        for (int ivLen: new int[]{10,12,16})
+        int[] ivLens = new int[]{10,12,16};
+        for (int i = 0; i != ivLens.length; i++)
         {
-            for (int ks : new int[]{16, 24, 32})
+            int ivLen = ivLens[i];
+            int[] kss = new int[]{16, 24, 32};
+            for (int j = 0; j != kss.length; j++)
             {
-
+                int ks = kss[j];
                 byte[] key = new byte[ks];
                 byte[] iv = new byte[ivLen];
 

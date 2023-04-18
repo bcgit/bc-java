@@ -49,7 +49,7 @@ public class SHA256Digest
             return new SHA256Digest((SHA256Digest) digest);
         }
 
-        throw new IllegalArgumentException("receiver digest not available for input type " + (digest != null ? digest.getClass() : "null"));
+        throw new IllegalArgumentException("receiver digest not available for input type " + (digest != null ? digest.getClass().getName() : "null"));
     }
 
     public static SavableDigest newInstance(byte[] encoded)
