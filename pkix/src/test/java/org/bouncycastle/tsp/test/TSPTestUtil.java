@@ -2,7 +2,6 @@ package org.bouncycastle.tsp.test;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -15,19 +14,24 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class TSPTestUtil
 {
+    private static final String BC = "BC";
 
     public static SecureRandom rand = new SecureRandom();
 
@@ -48,7 +52,7 @@ public class TSPTestUtil
     public static final boolean DEBUG = true;
 
     public static ASN1ObjectIdentifier EuroPKI_TSA_Test_Policy = new ASN1ObjectIdentifier(
-            "1.3.6.1.4.1.5255.5.1");
+        "1.3.6.1.4.1.5255.5.1");
 
     public static JcaX509ExtensionUtils extUtils;
 
@@ -140,82 +144,71 @@ public class TSPTestUtil
     }
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN)
-            throws GeneralSecurityException, IOException
+                                                  String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
-
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, false);
     }
 
     public static X509Certificate makeCACertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN)
-            throws GeneralSecurityException, IOException
+                                                    String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
 
         return makeCertificate(_subKP, _subDN, _issKP, _issDN, true);
     }
 
     public static X509Certificate makeCertificate(KeyPair _subKP,
-            String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
-            throws GeneralSecurityException, IOException
+                                                  String _subDN, KeyPair _issKP, String _issDN, boolean _ca)
+        throws Exception
     {
 
         PublicKey _subPub = _subKP.getPublic();
         PrivateKey _issPriv = _issKP.getPrivate();
         PublicKey _issPub = _issKP.getPublic();
 
-        X509V3CertificateGenerator _v3CertGen = new X509V3CertificateGenerator();
-
-        _v3CertGen.reset();
-        _v3CertGen.setSerialNumber(allocateSerialNumber());
-        _v3CertGen.setIssuerDN(new X509Name(_issDN));
-        _v3CertGen.setNotBefore(new Date(System.currentTimeMillis()));
-        _v3CertGen.setNotAfter(new Date(System.currentTimeMillis()
-                + (1000L * 60 * 60 * 24 * 100)));
-        _v3CertGen.setSubjectDN(new X509Name(_subDN));
-        _v3CertGen.setPublicKey(_subPub);
-        _v3CertGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
-        _v3CertGen.addExtension(Extension.subjectKeyIdentifier, false,
-                createSubjectKeyId(_subPub));
-
-        _v3CertGen.addExtension(Extension.authorityKeyIdentifier, false,
+        X509v3CertificateBuilder _v3CertGen = new JcaX509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            _subPub)
+            .addExtension(Extension.subjectKeyIdentifier, false,
+                createSubjectKeyId(_subPub))
+            .addExtension(Extension.authorityKeyIdentifier, false,
                 createAuthorityKeyId(_issPub));
 
         if (_ca)
         {
             _v3CertGen.addExtension(Extension.basicConstraints, false,
-                    new BasicConstraints(_ca));
+                new BasicConstraints(_ca));
         }
         else
         {
             _v3CertGen.addExtension(Extension.extendedKeyUsage, true,
-                    new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+                new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
         }
 
-        X509Certificate _cert = _v3CertGen.generate(_issPriv);
+        X509CertificateHolder _cert = _v3CertGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(_issPriv));
 
-        _cert.checkValidity(new Date());
-        _cert.verify(_issPub);
-
-        return _cert;
+        return new JcaX509CertificateConverter().setProvider(BC).getCertificate(_cert);
     }
-
-    /*  
-     *  
+    /*
+     *
      *  INTERNAL METHODS
-     *  
+     *
      */
 
 
     private static AuthorityKeyIdentifier createAuthorityKeyId(PublicKey _pubKey)
-            throws IOException
+        throws IOException
     {
         return extUtils.createAuthorityKeyIdentifier(_pubKey);
     }
 
     private static SubjectKeyIdentifier createSubjectKeyId(PublicKey _pubKey)
-            throws IOException
+        throws IOException
     {
         return extUtils.createSubjectKeyIdentifier(_pubKey);
     }

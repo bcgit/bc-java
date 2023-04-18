@@ -2,10 +2,8 @@ package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -29,9 +27,11 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSProcessableByteArray;
@@ -57,7 +57,6 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 public class SunProviderTest
     extends TestCase
@@ -66,9 +65,12 @@ public class SunProviderTest
     static X509Certificate keyCert;
     private static final String TEST_MESSAGE = "Hello World!";
     private static final JcaX509CertSelectorConverter selectorConverter = new JcaX509CertSelectorConverter();
+    private static BigInteger       serialNumber;
 
     static
     {
+        serialNumber = BigInteger.valueOf(System.currentTimeMillis());
+
         try
         {
         keyPair = generateKeyPair();
@@ -248,32 +250,32 @@ public class SunProviderTest
         return kpg.generateKeyPair();
     }
 
-    private static X509Certificate makeCertificate(KeyPair subKP, String _subDN, KeyPair issKP, String _issDN)
-        throws GeneralSecurityException, IOException
+    public static X509Certificate makeCertificate(KeyPair _subKP,
+                                                  String _subDN, KeyPair _issKP, String _issDN)
+        throws Exception
     {
+        PublicKey _subPub = _subKP.getPublic();
+        PrivateKey _issPriv = _issKP.getPrivate();
+        PublicKey _issPub = _issKP.getPublic();
 
-        PublicKey subPub  = subKP.getPublic();
-        PrivateKey issPriv = issKP.getPrivate();
-        PublicKey  issPub  = issKP.getPublic();
+        X509v3CertificateBuilder _v3CertGen = new JcaX509v3CertificateBuilder(
+            new X500Name(_issDN),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Name(_subDN),
+            _subPub);
 
-        X509V3CertificateGenerator v3CertGen = new X509V3CertificateGenerator();
+        X509CertificateHolder _cert = _v3CertGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider("BC").build(_issPriv));
 
-        v3CertGen.reset();
-        v3CertGen.setSerialNumber(BigInteger.valueOf(1));
-        v3CertGen.setIssuerDN(new X509Name(_issDN));
-        v3CertGen.setNotBefore(new Date(System.currentTimeMillis()));
-        v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)));
-        v3CertGen.setSubjectDN(new X509Name(_subDN));
-        v3CertGen.setPublicKey(subPub);
+        return new JcaX509CertificateConverter().setProvider("BC").getCertificate(_cert);
+    }
 
-        v3CertGen.setSignatureAlgorithm("SHA1WithRSA");
-
-        X509Certificate _cert = v3CertGen.generate(issPriv, "SunRsaSign");
-
-        _cert.checkValidity(new Date());
-        _cert.verify(issPub);
-
-        return _cert;
+    private static BigInteger allocateSerialNumber()
+    {
+        BigInteger _tmp = serialNumber;
+        serialNumber = serialNumber.add(BigInteger.valueOf(1));
+        return _tmp;
     }
 
     public static Test suite()

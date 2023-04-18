@@ -97,7 +97,7 @@ public class ITSJcaJceBasicTest
 
 
         byte[] parentData = caCert.getEncoded();
-        Digest digest = new SHA256Digest();
+        Digest digest = SHA256Digest.newInstance();
         byte[] parentDigest = new byte[digest.getDigestSize()];
 
         digest.update(parentData, 0, parentData.length);

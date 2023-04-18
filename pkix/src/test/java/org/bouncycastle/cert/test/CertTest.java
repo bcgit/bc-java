@@ -104,7 +104,6 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -1461,7 +1460,6 @@ public class CertTest
 
     }
 
-
     public void checkSelfSignedCertificate(
         int id,
         byte[] bytes)
@@ -2092,14 +2090,14 @@ public class CertTest
             fail("error setting generating cert - " + e);
         }
 
-        X509Principal pr = new X509Principal("O=\"The Bouncy Castle, The Legion of\",E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU");
+        X500Name pr = new X500Name("O=\"The Bouncy Castle, The Legion of\",E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU");
 
         if (!pr.toString().equals("O=The Bouncy Castle\\, The Legion of,E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU"))
         {
             fail("string based X509Principal test failed.");
         }
 
-        pr = new X509Principal("O=The Bouncy Castle\\, The Legion of,E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU");
+        pr = new X500Name("O=The Bouncy Castle\\, The Legion of,E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU");
 
         if (!pr.toString().equals("O=The Bouncy Castle\\, The Legion of,E=feedback-crypto@bouncycastle.org,ST=Victoria,L=Melbourne,C=AU"))
         {
@@ -4224,7 +4222,7 @@ public class CertTest
 
         isTrue("oid wrong", BCObjectIdentifiers.dilithium2.getId().equals(baseCert.getSigAlgOID()));
         isTrue("params wrong", null == baseCert.getSigAlgParams());
-        
+
         //
         // copy certificate
         //
@@ -4354,7 +4352,7 @@ public class CertTest
         cert.verify(cert.getPublicKey());
 
         isEquals("name mismatch: " + cert.getSigAlgName(), "SHA256WITHECDSA", cert.getSigAlgName());
-        
+
         // check encoded works
         cert.getEncoded();
 

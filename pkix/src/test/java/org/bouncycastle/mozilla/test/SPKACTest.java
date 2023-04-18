@@ -6,11 +6,9 @@ import java.security.Security;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.mozilla.SignedPublicKeyAndChallenge;
 import org.bouncycastle.mozilla.jcajce.JcaSignedPublicKeyAndChallenge;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.util.encoders.Base64;
@@ -37,19 +35,17 @@ public class SPKACTest
     public void spkacTest(String testName, byte[] req)
         throws Exception
     {
-        SignedPublicKeyAndChallenge spkac;
-
-        spkac = new SignedPublicKeyAndChallenge(req);
+        JcaSignedPublicKeyAndChallenge spkac = new JcaSignedPublicKeyAndChallenge(req).setProvider("BC");
 
         PublicKeyAndChallenge pkac = spkac.getPublicKeyAndChallenge();
-        PublicKey pubKey = spkac.getPublicKey("BC");
+        PublicKey pubKey = spkac.getPublicKey();
         ASN1Primitive obj = pkac.toASN1Primitive();
         if (obj == null)
         {
             fail("Error - " + testName + " PKAC ASN1Primitive was null.");
         }
 
-        obj = spkac.toASN1Primitive();
+        obj = spkac.toASN1Structure().toASN1Primitive();
         if (obj == null)
         {
             fail("Error - " + testName + " SPKAC ASN1Primitive was null.");
@@ -68,7 +64,7 @@ public class SPKACTest
             fail("Error - " + testName + " challenge was null.");
         }
 
-        byte[] bytes = spkac.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        byte[] bytes = spkac.toASN1Structure().getEncoded(ASN1Encoding.DER);
 
         if (bytes.length != req.length)
         {
@@ -83,7 +79,7 @@ public class SPKACTest
             }
         }
 
-        if (!spkac.verify("BC"))
+        if (!spkac.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(pubKey)))
         {
             fail(testName + " verification failed");
         }
@@ -92,12 +88,12 @@ public class SPKACTest
     public void spkacNewTest(String testName, byte[] req)
         throws Exception
     {
-        SignedPublicKeyAndChallenge spkac;
+        JcaSignedPublicKeyAndChallenge spkac;
 
-        spkac = new SignedPublicKeyAndChallenge(req);
+        spkac = new JcaSignedPublicKeyAndChallenge(req);
 
         PublicKeyAndChallenge pkac = spkac.getPublicKeyAndChallenge();
-        PublicKey pubKey = spkac.getPublicKey("BC");
+        PublicKey pubKey = spkac.getPublicKey();
         ASN1Primitive obj = pkac.toASN1Primitive();
         if (obj == null)
         {

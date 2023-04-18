@@ -14,10 +14,10 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.Target;
 import org.bouncycastle.asn1.x509.TargetInformation;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.cert.AttributeCertificateHolder;
 import org.bouncycastle.cert.AttributeCertificateIssuer;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
@@ -152,7 +152,7 @@ public class AttrCertSelectorTest
         targets[1] = targetGroup;
         TargetInformation targetInformation = new TargetInformation(targets);
 
-        gen.addExtension(X509Extension.targetInformation, true, targetInformation);
+        gen.addExtension(Extension.targetInformation, true, targetInformation);
 
         return gen.build(sigGen);
     }

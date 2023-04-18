@@ -31,7 +31,7 @@ class SHA256DigestCalculator
 
         bOut.reset();
 
-        Digest sha256 = new SHA256Digest();
+        Digest sha256 = SHA256Digest.newInstance();
 
         sha256.update(bytes, 0, bytes.length);
 
