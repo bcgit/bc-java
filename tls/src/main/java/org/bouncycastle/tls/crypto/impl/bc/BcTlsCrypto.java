@@ -483,7 +483,7 @@ public class BcTlsCrypto
         case CryptoHashAlgorithm.sha224:
             return new SHA224Digest((SHA224Digest)digest);
         case CryptoHashAlgorithm.sha256:
-            return new SHA256Digest((SHA256Digest)digest);
+            return SHA256Digest.newInstance(digest);
         case CryptoHashAlgorithm.sha384:
             return new SHA384Digest((SHA384Digest)digest);
         case CryptoHashAlgorithm.sha512:
@@ -550,7 +550,7 @@ public class BcTlsCrypto
 
     protected BlockCipher createCBCBlockCipher(BlockCipher blockCipher)
     {
-        return new CBCBlockCipher(blockCipher);
+        return CBCBlockCipher.newInstance(blockCipher);
     }
 
     protected BlockCipher createCBCBlockCipher(int encryptionAlgorithm)
@@ -640,7 +640,7 @@ public class BcTlsCrypto
 
     protected BlockCipher createAESEngine()
     {
-        return new AESEngine();
+        return AESEngine.newInstance();
     }
 
     protected BlockCipher createARIAEngine()
@@ -676,7 +676,7 @@ public class BcTlsCrypto
     protected AEADBlockCipher createGCMMode(BlockCipher engine)
     {
         // TODO Consider allowing custom configuration of multiplier
-        return new GCMBlockCipher(engine);
+        return GCMBlockCipher.newInstance(engine);
     }
 
     protected AEADBlockCipher createAEADBlockCipher_AES_CCM()
