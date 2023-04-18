@@ -73,9 +73,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, April 8th
 <li>A general purpose PQCOtherInfoGenerator has been added which supports all Kyber and NTRU.</li>
 <li>An implementation of HPKE (RFC 9180 - Hybrid Public Key Encryption) has been added to the light-weight cryptography API.
 </ul>
-<h3>2.2.4 Security Advisory.</h3>
+<h3>2.2.4 Security Advisories.</h3>
 <ul>
 <li>The PQC implementations have now been subject to formal review for secret leakage and side channels, there were issues in BIKE, Falcon, Frodo, HQC which have now been fixed. Some weak positives also showed up in Rainbow, Picnic, SIKE, and GeMSS - for now this last set has been ignored as the algorithms will either be updated if they reappear in the Signature Round, or deleted, as is already the case for SIKE (it is now in the legacy package). Details on the group responsible for the testing can be found in the <a href="../CONTRIBUTORS.html">CONTRIBUTORS</a> file.</li>
+<li>For at least some ECIES variants (e.g. when using CBC) there is an issue with potential malleability of a nonce (implying silent malleability of the plaintext) that must be sent alongside the ciphertext but is outside the IES integrity check. For this reason the automatic generation of nonces with IED is now disabled and they have to be passed in using an IESParameterSpec. The current advice is to agree on a nonce between parties and then rely on the use of the ephemeral key component to allow the nonce (rather the so called nonce) usage to be extended.</li>
 </ul>
 <h3>2.2.5 Notes.</h3>
 <ul>
