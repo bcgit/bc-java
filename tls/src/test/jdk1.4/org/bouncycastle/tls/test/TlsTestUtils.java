@@ -103,7 +103,7 @@ public class TlsTestUtils
 
     static byte[] sha256DigestOf(byte[] input)
     {
-        SHA256Digest d = new SHA256Digest();
+        SHA256Digest d = SHA256Digest.newInstance();
         d.update(input, 0, input.length);
         byte[] result = new byte[d.getDigestSize()];
         d.doFinal(result, 0);

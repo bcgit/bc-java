@@ -885,7 +885,7 @@ public class JcaTlsCrypto
     protected TlsHash createHash(String digestName)
         throws GeneralSecurityException
     {
-        return new JcaTlsHash(helper.createDigest(digestName));
+        return new JcaTlsHash(helper.createMessageDigest(digestName));
     }
 
     /**

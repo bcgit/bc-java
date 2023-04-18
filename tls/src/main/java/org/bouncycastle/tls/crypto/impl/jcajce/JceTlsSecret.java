@@ -226,8 +226,8 @@ public class JceTlsSecret
     protected byte[] prf_SSL(byte[] seed, int length)
         throws GeneralSecurityException
     {
-        MessageDigest md5 = crypto.getHelper().createDigest("MD5");
-        MessageDigest sha1 = crypto.getHelper().createDigest("SHA-1");
+        MessageDigest md5 = crypto.getHelper().createMessageDigest("MD5");
+        MessageDigest sha1 = crypto.getHelper().createMessageDigest("SHA-1");
 
         int md5Size = md5.getDigestLength();
         int sha1Size = sha1.getDigestLength();

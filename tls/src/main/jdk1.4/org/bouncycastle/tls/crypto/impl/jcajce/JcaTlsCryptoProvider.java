@@ -70,7 +70,7 @@ public class JcaTlsCryptoProvider
                 }
                 else
                 {
-                    random = SecureRandom.getInstance("DEFAULT", helper.createDigest("SHA-512").getProvider());
+                    random = SecureRandom.getInstance("DEFAULT", helper.createMessageDigest("SHA-512").getProvider());
                 }
             }
 
@@ -106,7 +106,7 @@ public class JcaTlsCryptoProvider
         NonceEntropySource(JcaJceHelper helper, SecureRandom random)
             throws GeneralSecurityException
         {
-            super(new NonceEntropySourceSpi(random, helper.createDigest("SHA-512")), random.getProvider());
+            super(new NonceEntropySourceSpi(random, helper.createMessageDigest("SHA-512")), random.getProvider());
         }
 
         private static class NonceEntropySourceSpi
