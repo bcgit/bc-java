@@ -409,7 +409,7 @@ public class TlsTestUtils
         if (pem.getType().equals("EC PRIVATE KEY"))
         {
             ECPrivateKey pKey = ECPrivateKey.getInstance(pem.getContent());
-            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParameters());
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParametersObject());
             PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
             return PrivateKeyFactory.createKey(privInfo);
         }
