@@ -31,7 +31,7 @@ import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.smime.SMIMEEncryptionKeyPreferenceAttribute;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.X509Extension;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -71,12 +71,12 @@ public class CreateSignedMultipartMail
         X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(new X500Name(issDN), BigInteger.valueOf(serialNo++), new Date(System.currentTimeMillis()), new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)), new X500Name(subDN), subPub);
 
         v3CertGen.addExtension(
-            X509Extension.subjectKeyIdentifier,
+            Extension.subjectKeyIdentifier,
             false,
             extUtils.createSubjectKeyIdentifier(subPub));
 
         v3CertGen.addExtension(
-            X509Extension.authorityKeyIdentifier,
+            Extension.authorityKeyIdentifier,
             false,
             extUtils.createAuthorityKeyIdentifier(issPub));
 

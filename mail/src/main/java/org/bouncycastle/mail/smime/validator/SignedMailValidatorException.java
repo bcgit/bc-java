@@ -1,7 +1,7 @@
 package org.bouncycastle.mail.smime.validator;
 
-import org.bouncycastle.i18n.ErrorBundle;
-import org.bouncycastle.i18n.LocalizedException;
+import org.bouncycastle.pkix.util.ErrorBundle;
+import org.bouncycastle.pkix.util.LocalizedException;
 
 public class SignedMailValidatorException extends LocalizedException
 {

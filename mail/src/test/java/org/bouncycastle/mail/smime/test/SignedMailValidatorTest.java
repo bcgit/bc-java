@@ -39,12 +39,12 @@ import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
-import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.validator.SignedMailValidator;
+import org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer;
+import org.bouncycastle.pkix.util.ErrorBundle;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.x509.PKIXCertPathReviewer;
 
 public class SignedMailValidatorTest extends TestCase
 {
@@ -317,7 +317,7 @@ public class SignedMailValidatorTest extends TestCase
 
         SignedMailValidator.ValidationResult res = validator.getValidationResult(signer);
 
-//        assertTrue(res.isVerifiedSignature());
+        assertTrue(res.isVerifiedSignature());
         assertTrue(res.isValidSignature());
     }
 

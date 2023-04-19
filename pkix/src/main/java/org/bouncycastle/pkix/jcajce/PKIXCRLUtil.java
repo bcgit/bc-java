@@ -2,6 +2,7 @@ package org.bouncycastle.pkix.jcajce;
 
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
+import java.security.cert.PKIXParameters;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -16,6 +17,30 @@ import org.bouncycastle.util.StoreException;
 
 abstract class PKIXCRLUtil
 {
+    static Set findCRLs(X509CRLStoreSelector crlselect, PKIXParameters paramsPKIX)
+        throws AnnotatedException
+    {
+        return findCRLs(new PKIXCRLStoreSelector.Builder(crlselect).build(), paramsPKIX);
+    }
+
+    static Set findCRLs(PKIXCRLStoreSelector crlselect, PKIXParameters paramsPKIX)
+        throws AnnotatedException
+    {
+        HashSet completeSet = new HashSet();
+
+        // get complete CRL(s)
+        try
+        {
+            findCRLs(completeSet, crlselect, paramsPKIX.getCertStores());
+        }
+        catch (AnnotatedException e)
+        {
+            throw new AnnotatedException("Exception obtaining complete CRLs.", e);
+        }
+
+        return completeSet;
+    }
+
     static Set findCRLs(PKIXCRLStoreSelector crlselect, Date validityDate, List certStores, List pkixCrlStores)
         throws AnnotatedException
     {

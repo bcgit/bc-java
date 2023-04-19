@@ -32,9 +32,9 @@ import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.smime.SMIMEEncryptionKeyPreferenceAttribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
@@ -62,7 +62,7 @@ public class CreateSignedMail
     {
         SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(pub.getEncoded());
 
-        return new AuthorityKeyIdentifier(info);
+        return  new BcX509ExtensionUtils().createAuthorityKeyIdentifier(info);
     }
 
     static SubjectKeyIdentifier createSubjectKeyId(
@@ -91,12 +91,12 @@ public class CreateSignedMail
         X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(new X500Name(issDN), BigInteger.valueOf(serialNo++), new Date(System.currentTimeMillis()), new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)), new X500Name(subDN), subPub);
 
         v3CertGen.addExtension(
-            X509Extension.subjectKeyIdentifier,
+            Extension.subjectKeyIdentifier,
             false,
             createSubjectKeyId(subPub));
 
         v3CertGen.addExtension(
-            X509Extension.authorityKeyIdentifier,
+            Extension.authorityKeyIdentifier,
             false,
             createAuthorityKeyId(issPub));
 

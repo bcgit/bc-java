@@ -59,13 +59,13 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaX509CertSelectorConverter;
-import org.bouncycastle.i18n.ErrorBundle;
-import org.bouncycastle.i18n.filter.TrustedInput;
-import org.bouncycastle.i18n.filter.UntrustedInput;
 import org.bouncycastle.mail.smime.SMIMESigned;
+import org.bouncycastle.pkix.jcajce.CertPathReviewerException;
+import org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer;
+import org.bouncycastle.pkix.util.ErrorBundle;
+import org.bouncycastle.pkix.util.filter.TrustedInput;
+import org.bouncycastle.pkix.util.filter.UntrustedInput;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.x509.CertPathReviewerException;
-import org.bouncycastle.x509.PKIXCertPathReviewer;
 
 public class SignedMailValidator
 {
