@@ -81,6 +81,7 @@ import org.bouncycastle.util.Objects;
 /**
  * PKIXCertPathReviewer<br>
  * Validation of X.509 Certificate Paths. Tries to find as much errors in the Path as possible.
+ * @deprecated use org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer in the bcpkix package
  */
 public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 {
