@@ -52,9 +52,8 @@ public class PGPSignature
     private SignaturePacket sigPck;
     private int signatureType;
     private TrustPacket trustPck;
-    private PGPContentVerifier verifier;
-    private byte lastb;
-    private OutputStream sigOut;
+
+    private Verification verification;
 
     private static SignaturePacket cast(Packet packet)
         throws IOException
@@ -140,135 +139,110 @@ public class PGPSignature
         return isCertification(getSignatureType());
     }
 
+    /**
+     * Initialize the signature for verification.
+     *
+     * @param verifierBuilderProvider verifier builder provider
+     * @param pubKey issuing key
+     * @throws PGPException exception
+     *
+     * @deprecated use {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)} instead and make
+     * subsequent {@link #verify()} calls on the returned {@link Verification} instance instead.
+     */
+    @Deprecated
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
+        this.verification = safeInit(verifierBuilderProvider, pubKey);
+    }
+
+    /**
+     * Initialize the signature in a thread-safe manner.
+     * Since {@link #init(PGPContentVerifierBuilderProvider, PGPPublicKey)} is not thread safe,
+     * use this method instead, to get a handle to a dedicated per-thread {@link Verification} object.
+     *
+     * @param verifierBuilderProvider verifier builder provider
+     * @param pubKey issuing key
+     * @return verification handle
+     * @throws PGPException exception
+     */
+    public Verification safeInit(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
+            throws PGPException
+    {
         PGPContentVerifierBuilder verifierBuilder = verifierBuilderProvider.get(sigPck.getKeyAlgorithm(), sigPck.getHashAlgorithm());
 
-        verifier = verifierBuilder.build(pubKey);
+        PGPContentVerifier verifier = verifierBuilder.build(pubKey);
 
-        lastb = 0;
-        sigOut = verifier.getOutputStream();
+        return new Verification(this, verifier);
     }
 
-    public void update(
-        byte b)
+    private Verification getVerification()
     {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
+        if (verification == null)
         {
-            if (b == '\r')
-            {
-                byteUpdate((byte)'\r');
-                byteUpdate((byte)'\n');
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
-            }
-            else
-            {
-                byteUpdate(b);
-            }
-
-            lastb = b;
+            throw new RuntimeException("PGPSignature not initialised - call init().");
         }
-        else
-        {
-            byteUpdate(b);
-        }
+        return verification;
     }
 
-    public void update(
-        byte[] bytes)
+    /**
+     * Update the verification process with a single byte.
+     *
+     * @deprecated instead call {@link Verification#update(byte)} on the instance returned by a prior call to
+     * {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
+     *
+     * @param b byte
+     */
+    @Deprecated
+    public void update(byte b)
     {
-        this.update(bytes, 0, bytes.length);
+        getVerification().update(b);
     }
 
-    public void update(
-        byte[] bytes,
-        int off,
-        int length)
+    /**
+     * Update the verification process with an array of bytes.
+     *
+     * @deprecated instead call {@link Verification#update(byte[])} on the instance returned by a prior call to
+     * {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
+     *
+     * @param bytes bytes
+     */
+    @Deprecated
+    public void update(byte[] bytes)
     {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            int finish = off + length;
-
-            for (int i = off; i != finish; i++)
-            {
-                this.update(bytes[i]);
-            }
-        }
-        else
-        {
-            blockUpdate(bytes, off, length);
-        }
+        getVerification().update(bytes);
     }
 
-    private void byteUpdate(byte b)
+    /**
+     * Update the verification process with a portion of an array of bytes.
+     *
+     * @deprecated instead call {@link Verification#update(byte[], int, int)} on the instance returned by a prior call to
+     * {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
+     *
+     * @param bytes bytes
+     * @param offset offset
+     * @param length length
+     */
+    @Deprecated
+    public void update(byte[] bytes, int offset, int length)
     {
-        try
-        {
-            sigOut.write(b);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
+        getVerification().update(bytes, offset, length);
     }
 
-    private void blockUpdate(byte[] block, int off, int len)
-    {
-        try
-        {
-            sigOut.write(block, off, len);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
-    }
-
+    /**
+     * Verify correctness of the signature.
+     * This method needs to be called after the signature has been updated with the signed data.
+     *
+     * @deprecated instead call {@link Verification#verify()} on the instance returned by a prior call to
+     * {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
+     * @return true if signature is correct
+     * @throws PGPException exception
+     */
+    @Deprecated
     public boolean verify()
-        throws PGPException
+            throws PGPException
     {
-        try
-        {
-            sigOut.write(this.getSignatureTrailer());
-
-            sigOut.close();
-        }
-        catch (IOException e)
-        {
-            throw new PGPException(e.getMessage(), e);
-        }
-
-        return verifier.verify(this.getSignature());
-    }
-
-
-    private void updateWithIdData(int header, byte[] idBytes)
-    {
-        this.update((byte)header);
-        this.update((byte)(idBytes.length >> 24));
-        this.update((byte)(idBytes.length >> 16));
-        this.update((byte)(idBytes.length >> 8));
-        this.update((byte)(idBytes.length));
-        this.update(idBytes);
-    }
-
-    private void updateWithPublicKey(PGPPublicKey key)
-        throws PGPException
-    {
-        byte[] keyBytes = getEncodedPublicKey(key);
-
-        this.update((byte)0x99);
-        this.update((byte)(keyBytes.length >> 8));
-        this.update((byte)(keyBytes.length));
-        this.update(keyBytes);
+        return getVerification().verify();
     }
 
     /**
@@ -279,40 +253,17 @@ public class PGPSignature
      * @param key            the key to be verified.
      * @return true if the signature matches, false otherwise.
      * @throws PGPException
+     *
+     * @deprecated instead call {@link Verification#verifyCertification(PGPUserAttributeSubpacketVector, PGPPublicKey)}
+     * on the instance returned by a prior call to {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
      */
+    @Deprecated
     public boolean verifyCertification(
-        PGPUserAttributeSubpacketVector userAttributes,
-        PGPPublicKey key)
-        throws PGPException
+            PGPUserAttributeSubpacketVector userAttributes,
+            PGPPublicKey key)
+            throws PGPException
     {
-        if (verifier == null)
-        {
-            throw new PGPException("PGPSignature not initialised - call init().");
-        }
-
-        updateWithPublicKey(key);
-
-        //
-        // hash in the userAttributes
-        //
-        try
-        {
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            UserAttributeSubpacket[] packets = userAttributes.toSubpacketArray();
-            for (int i = 0; i != packets.length; i++)
-            {
-                packets[i].encode(bOut);
-            }
-            updateWithIdData(0xd1, bOut.toByteArray());
-        }
-        catch (IOException e)
-        {
-            throw new PGPException("cannot encode subpacket array", e);
-        }
-
-        addTrailer();
-
-        return verifier.verify(this.getSignature());
+        return getVerification().verifyCertification(userAttributes, key);
     }
 
     /**
@@ -323,27 +274,16 @@ public class PGPSignature
      * @param key the key to be verified.
      * @return true if the signature matches, false otherwise.
      * @throws PGPException
+     * @deprecated instead call {@link Verification#verifyCertification(String, PGPPublicKey)} on the instance returned
+     * by a prior call to {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
      */
+    @Deprecated
     public boolean verifyCertification(
-        String id,
-        PGPPublicKey key)
-        throws PGPException
+            String id,
+            PGPPublicKey key)
+            throws PGPException
     {
-        if (verifier == null)
-        {
-            throw new PGPException("PGPSignature not initialised - call init().");
-        }
-
-        updateWithPublicKey(key);
-
-        //
-        // hash in the id
-        //
-        updateWithIdData(0xb4, Strings.toUTF8ByteArray(id));
-
-        addTrailer();
-
-        return verifier.verify(this.getSignature());
+        return getVerification().verifyCertification(id, key);
     }
 
     /**
@@ -354,27 +294,16 @@ public class PGPSignature
      * @param key   the key to be verified.
      * @return true if the signature matches, false otherwise.
      * @throws PGPException
+     * @deprecated instead call {@link Verification#verifyCertification(byte[], PGPPublicKey)} on the instance
+     * returned by a prior call to {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
      */
+    @Deprecated
     public boolean verifyCertification(
-        byte[] rawID,
-        PGPPublicKey key)
-        throws PGPException
+            byte[] rawID,
+            PGPPublicKey key)
+            throws PGPException
     {
-        if (verifier == null)
-        {
-            throw new PGPException("PGPSignature not initialised - call init().");
-        }
-
-        updateWithPublicKey(key);
-
-        //
-        // hash in the rawID
-        //
-        updateWithIdData(0xb4, rawID);
-
-        addTrailer();
-
-        return verifier.verify(this.getSignature());
+        return getVerification().verifyCertification(rawID, key);
     }
 
     /**
@@ -385,37 +314,16 @@ public class PGPSignature
      * @param pubKey    the key we are verifying.
      * @return true if the certification is valid, false otherwise.
      * @throws PGPException
+     * @deprecated instead call {@link Verification#verifyCertification(PGPPublicKey, PGPPublicKey)} on the instance
+     * returned by a prior call to {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
      */
+    @Deprecated
     public boolean verifyCertification(
-        PGPPublicKey masterKey,
-        PGPPublicKey pubKey)
-        throws PGPException
+            PGPPublicKey masterKey,
+            PGPPublicKey pubKey)
+            throws PGPException
     {
-        if (verifier == null)
-        {
-            throw new PGPException("PGPSignature not initialised - call init().");
-        }
-
-        updateWithPublicKey(masterKey);
-        updateWithPublicKey(pubKey);
-
-        addTrailer();
-
-        return verifier.verify(this.getSignature());
-    }
-
-    private void addTrailer()
-    {
-        try
-        {
-            sigOut.write(sigPck.getSignatureTrailer());
-
-            sigOut.close();
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
+        return getVerification().verifyCertification(masterKey, pubKey);
     }
 
     /**
@@ -424,28 +332,15 @@ public class PGPSignature
      * @param pubKey the key we are checking.
      * @return true if the certification is valid, false otherwise.
      * @throws PGPException
+     * @deprecated instead call {@link Verification#verifyCertification(PGPPublicKey)} on the instance returned by a
+     * prior call to {@link #safeInit(PGPContentVerifierBuilderProvider, PGPPublicKey)}.
      */
+    @Deprecated
     public boolean verifyCertification(
-        PGPPublicKey pubKey)
-        throws PGPException
+            PGPPublicKey pubKey)
+            throws PGPException
     {
-        if (verifier == null)
-        {
-            throw new PGPException("PGPSignature not initialised - call init().");
-        }
-
-        if (this.getSignatureType() != KEY_REVOCATION
-            && this.getSignatureType() != SUBKEY_REVOCATION
-            && this.getSignatureType() != DIRECT_KEY)
-        {
-            throw new PGPException("signature is not a key signature");
-        }
-
-        updateWithPublicKey(pubKey);
-
-        addTrailer();
-
-        return verifier.verify(this.getSignature());
+        return getVerification().verifyCertification(pubKey);
     }
 
     public int getSignatureType()
@@ -696,5 +591,334 @@ public class PGPSignature
                 sig1.sigPck.getSignature()
             )
         );
+    }
+
+    /**
+     * Encapsulate the state of a signature verification.
+     */
+    public static class Verification {
+
+        private final PGPSignature signature;
+        private final PGPContentVerifier verifier;
+        private final OutputStream sigOut;
+        private byte lastb;
+
+        private Verification(PGPSignature signature, PGPContentVerifier verifier) {
+            this.signature = signature;
+            this.verifier = verifier;
+            lastb = 0;
+            sigOut = verifier.getOutputStream();
+        }
+
+
+        /**
+         * Update the signature verification with a single bytes.
+         *
+         * @param b byte
+         */
+        public void update(
+                byte b)
+        {
+            if (signature.getSignatureType() == PGPSignature.CANONICAL_TEXT_DOCUMENT)
+            {
+                if (b == '\r')
+                {
+                    byteUpdate((byte)'\r');
+                    byteUpdate((byte)'\n');
+                }
+                else if (b == '\n')
+                {
+                    if (lastb != '\r')
+                    {
+                        byteUpdate((byte)'\r');
+                        byteUpdate((byte)'\n');
+                    }
+                }
+                else
+                {
+                    byteUpdate(b);
+                }
+
+                lastb = b;
+            }
+            else
+            {
+                byteUpdate(b);
+            }
+        }
+
+        /**
+         * Update the signature verification with an array of bytes.
+         *
+         * @param bytes bytes
+         */
+        public void update(
+                byte[] bytes)
+        {
+            this.update(bytes, 0, bytes.length);
+        }
+
+        /**
+         * Update the signature verification with a portion of bytes from an array.
+         *
+         * @param bytes bytes
+         * @param off offset
+         * @param length length
+         */
+        public void update(
+                byte[] bytes,
+                int off,
+                int length)
+        {
+            if (signature.getSignatureType() == PGPSignature.CANONICAL_TEXT_DOCUMENT)
+            {
+                int finish = off + length;
+
+                for (int i = off; i != finish; i++)
+                {
+                    this.update(bytes[i]);
+                }
+            }
+            else
+            {
+                blockUpdate(bytes, off, length);
+            }
+        }
+
+        private void byteUpdate(byte b)
+        {
+            try
+            {
+                sigOut.write(b);
+            }
+            catch (IOException e)
+            {
+                throw new PGPRuntimeOperationException(e.getMessage(), e);
+            }
+        }
+
+        private void blockUpdate(byte[] block, int off, int len)
+        {
+            try
+            {
+                sigOut.write(block, off, len);
+            }
+            catch (IOException e)
+            {
+                throw new PGPRuntimeOperationException(e.getMessage(), e);
+            }
+        }
+
+        /**
+         * Finalize the verification and return the result.
+         *
+         * @return <pre>true</pre> if the signature is valid, <pre>false</pre> otherwise
+         * @throws PGPException
+         */
+        public boolean verify()
+                throws PGPException
+        {
+            try
+            {
+                sigOut.write(signature.getSignatureTrailer());
+
+                sigOut.close();
+            }
+            catch (IOException e)
+            {
+                throw new PGPException(e.getMessage(), e);
+            }
+
+            return verifier.verify(signature.getSignature());
+        }
+
+
+        private void updateWithIdData(int header, byte[] idBytes)
+        {
+            this.update((byte)header);
+            this.update((byte)(idBytes.length >> 24));
+            this.update((byte)(idBytes.length >> 16));
+            this.update((byte)(idBytes.length >> 8));
+            this.update((byte)(idBytes.length));
+            this.update(idBytes);
+        }
+
+        private void updateWithPublicKey(PGPPublicKey key)
+                throws PGPException
+        {
+            byte[] keyBytes = signature.getEncodedPublicKey(key);
+
+            this.update((byte)0x99);
+            this.update((byte)(keyBytes.length >> 8));
+            this.update((byte)(keyBytes.length));
+            this.update(keyBytes);
+        }
+
+        /**
+         * Verify the signature as certifying the passed in public key as associated
+         * with the passed in user attributes.
+         *
+         * @param userAttributes user attributes the key was stored under
+         * @param key            the key to be verified.
+         * @return true if the signature matches, false otherwise.
+         * @throws PGPException
+         */
+        public boolean verifyCertification(
+                PGPUserAttributeSubpacketVector userAttributes,
+                PGPPublicKey key)
+                throws PGPException
+        {
+            updateWithPublicKey(key);
+
+            //
+            // hash in the userAttributes
+            //
+            try
+            {
+                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                UserAttributeSubpacket[] packets = userAttributes.toSubpacketArray();
+                for (int i = 0; i != packets.length; i++)
+                {
+                    packets[i].encode(bOut);
+                }
+                updateWithIdData(0xd1, bOut.toByteArray());
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("cannot encode subpacket array", e);
+            }
+
+            addTrailer();
+
+            return verifier.verify(signature.getSignature());
+        }
+
+        /**
+         * Verify the signature as certifying the passed in public key as associated
+         * with the passed in id.
+         *
+         * @param id  id the key was stored under
+         * @param key the key to be verified.
+         * @return true if the signature matches, false otherwise.
+         * @throws PGPException
+         */
+        public boolean verifyCertification(
+                String id,
+                PGPPublicKey key)
+                throws PGPException
+        {
+            if (verifier == null)
+            {
+                throw new PGPException("PGPSignature not initialised - call init().");
+            }
+
+            updateWithPublicKey(key);
+
+            //
+            // hash in the id
+            //
+            updateWithIdData(0xb4, Strings.toUTF8ByteArray(id));
+
+            addTrailer();
+
+            return verifier.verify(signature.getSignature());
+        }
+
+        /**
+         * Verify the signature as certifying the passed in public key as associated
+         * with the passed in rawID.
+         *
+         * @param rawID id the key was stored under in its raw byte form.
+         * @param key   the key to be verified.
+         * @return true if the signature matches, false otherwise.
+         * @throws PGPException
+         */
+        public boolean verifyCertification(
+                byte[] rawID,
+                PGPPublicKey key)
+                throws PGPException
+        {
+            if (verifier == null)
+            {
+                throw new PGPException("PGPSignature not initialised - call init().");
+            }
+
+            updateWithPublicKey(key);
+
+            //
+            // hash in the rawID
+            //
+            updateWithIdData(0xb4, rawID);
+
+            addTrailer();
+
+            return verifier.verify(signature.getSignature());
+        }
+
+        /**
+         * Verify a certification for the passed in key against the passed in
+         * master key.
+         *
+         * @param masterKey the key we are verifying against.
+         * @param pubKey    the key we are verifying.
+         * @return true if the certification is valid, false otherwise.
+         * @throws PGPException
+         */
+        public boolean verifyCertification(
+                PGPPublicKey masterKey,
+                PGPPublicKey pubKey)
+                throws PGPException
+        {
+            if (verifier == null)
+            {
+                throw new PGPException("PGPSignature not initialised - call init().");
+            }
+
+            updateWithPublicKey(masterKey);
+            updateWithPublicKey(pubKey);
+
+            addTrailer();
+
+            return verifier.verify(signature.getSignature());
+        }
+
+        private void addTrailer()
+        {
+            try
+            {
+                sigOut.write(signature.sigPck.getSignatureTrailer());
+
+                sigOut.close();
+            }
+            catch (IOException e)
+            {
+                throw new PGPRuntimeOperationException(e.getMessage(), e);
+            }
+        }
+
+        /**
+         * Verify a key certification, such as a revocation, for the passed in key.
+         *
+         * @param pubKey the key we are checking.
+         * @return true if the certification is valid, false otherwise.
+         * @throws PGPException
+         */
+        public boolean verifyCertification(
+                PGPPublicKey pubKey)
+                throws PGPException
+        {
+            if (signature.getSignatureType() != KEY_REVOCATION
+                    && signature.getSignatureType() != SUBKEY_REVOCATION
+                    && signature.getSignatureType() != DIRECT_KEY)
+            {
+                throw new PGPException("signature is not a key signature");
+            }
+
+            updateWithPublicKey(pubKey);
+
+            addTrailer();
+
+            return verifier.verify(signature.getSignature());
+        }
     }
 }
