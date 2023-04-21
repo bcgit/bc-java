@@ -1,12 +1,28 @@
 package org.bouncycastle.mls.crypto;
 
-import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.hpke.HPKE;
-import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.params.*;
+import org.bouncycastle.crypto.signers.DSADigestSigner;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
+import org.bouncycastle.crypto.signers.Ed448Signer;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
+import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
+import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.util.encoders.Hex;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.interfaces.ECPublicKey;
 
 public class CipherSuite {
     public static final short MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519  = 0x0001 ;
@@ -21,6 +37,32 @@ public class CipherSuite {
         int getHashLength();
         byte[] extract(byte[] salt, byte[] ikm);
         byte[] expand(byte [] prk, byte[] info, int length);
+        byte[] expand(byte [] prk, int length);
+
+        default byte[] expandWithLabel(byte[] secret, String label, byte[] context, int length) throws IOException
+        {
+            Secret.KDFLabel kdfLabelStr = new Secret.KDFLabel((short) length, label, context);
+            byte[] kdfLabel = MLSOutputStream.encode(kdfLabelStr);
+            return expand(secret, kdfLabel, length);
+        }
+
+    }
+    public static class RefHash implements MLSOutputStream.Writable {
+        public byte[] label;
+        public byte[] value;
+
+        public RefHash(byte[] label, byte[] value)
+        {
+            this.label = label;
+            this.value = value;
+        }
+
+        @Override
+        public void writeTo(MLSOutputStream stream) throws IOException
+        {
+            stream.writeOpaque(label);
+            stream.writeOpaque(value);
+        }
     }
 
     public interface AEAD {
@@ -28,6 +70,31 @@ public class CipherSuite {
         int getNonceSize();
     }
 
+    //SignContent
+    //EncryptContent
+    public static class GenericContent implements MLSOutputStream.Writable {
+
+        private byte[] label;
+        private byte[] content;
+
+        public GenericContent(String label, byte[] content)
+        {
+            this.label = ("MLS 1.0 " + label).getBytes(StandardCharsets.UTF_8);
+            this.content = content;
+        }
+
+        @Override
+        public void writeTo(MLSOutputStream stream) throws IOException
+        {
+            stream.writeOpaque(label);
+            stream.writeOpaque(content);
+        }
+    }
+
+
+
+        //TODO get from HKDF instead of defining it here.
+    // might need to change the KDF functionalities
     static class HKDF implements KDF {
         private final HKDFBytesGenerator kdf;
 
@@ -52,6 +119,15 @@ public class CipherSuite {
             kdf.generateBytes(okm, 0, okm.length);
             return okm;
         }
+        @Override
+        public byte[] expand(byte[] prk, int length) {
+            byte[] okm = new byte[length];
+            kdf.init(HKDFParameters.defaultParameters(prk));
+            kdf.generateBytes(okm, 0, okm.length);
+            return okm;
+        }
+
+
     }
 
     static class AES128GCM implements AEAD {
@@ -97,49 +173,127 @@ public class CipherSuite {
     final AEAD aead;
     final HPKE hpke;
 
+    final Signer signer;
+
+    final Digest digest;
+
+    final int sigAlgo;
+    ECDomainParameters domainParams;
+
+    public static final int ecdsa = 3;
+    public static final int ed25519 = 7;
+    public static final int ed448 = 8;
     public CipherSuite(short suite) {
         // TODO Configure digest
         // TODO Configure KEM
         // TODO Configure Signature
+//        new DSAPublicKeyParameters(y, dsaParams),
+//                new DSAPrivateKeyParameters(x, dsaParams));
+        ECCurve curve;
+
         switch (suite) {
             case MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
                 kdf = new HKDF(new SHA256Digest());
+                digest = new SHA256Digest();
+                signer = new Ed25519Signer();
+                sigAlgo = ed25519;
+
                 aead = new AES128GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
                 break;
 
             case MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
                 kdf = new HKDF(new SHA256Digest());
+                digest = new SHA256Digest();
+                signer = new DSADigestSigner(new ECDSASigner(), digest);
+                sigAlgo = ecdsa;
+
+                curve = new SecP256R1Curve();
+                domainParams = new ECDomainParameters(
+                        curve,
+                        curve.createPoint(
+                                new BigInteger(1, Hex.decode("6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296")),
+                                new BigInteger(1, Hex.decode("4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5"))
+                        ),
+                        curve.getOrder(),
+                        curve.getCofactor(),
+                        Hex.decode("c49d360886e704936a6678e1139d26b7819f7e90")
+                );
+
                 aead = new AES128GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
                 break;
 
             case MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
                 kdf = new HKDF(new SHA256Digest());
+                digest = new SHA256Digest();
+                signer = new Ed25519Signer();
+                sigAlgo = ed25519;
+
                 aead = new ChaCha20Poly1305();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_CHACHA20_POLY1305);
                 break;
 
             case MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
                 kdf = new HKDF(new SHA384Digest());
+                digest = new SHA384Digest();
+                signer = new DSADigestSigner(new ECDSASigner(), digest);
+                sigAlgo = ecdsa;
+
+                curve = new SecP384R1Curve();
+                domainParams = new ECDomainParameters(
+                        curve,
+                        curve.createPoint(
+                                new BigInteger(1, Hex.decode("aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7")),
+                                new BigInteger(1, Hex.decode("3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5f"))
+                        ),
+                        curve.getOrder(),
+                        curve.getCofactor(),
+                        Hex.decode("a335926aa319a27a1d00896a6773a4827acdac73")
+                );
+
                 aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256);
                 break;
 
             case MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
                 kdf = new HKDF(new SHA512Digest());
+                digest = new SHA512Digest();
+                signer = new Ed448Signer(new byte[0]);
+                sigAlgo = ed448;
+
                 aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
                 break;
 
             case MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
                 kdf = new HKDF(new SHA512Digest());
+                digest = new SHA512Digest();
+                signer = new DSADigestSigner(new ECDSASigner(), digest);
+                sigAlgo = ecdsa;
+
+                curve = new SecP521R1Curve();
+                domainParams = new ECDomainParameters(
+                        curve,
+                        curve.createPoint(
+                                new BigInteger("c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66", 16),
+                                new BigInteger("11839296a789a3bc0045c8a5fb42c7d1bd998f54449579b446817afbd17273e662c97ee72995ef42640c550b9013fad0761353c7086a272c24088be94769fd16650", 16)
+                        ),
+                        curve.getOrder(),
+                        curve.getCofactor(),
+                        Hex.decode("d09e8800291cb85396cc6717393284aaa0da64ba")
+                );
+
                 aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P521_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
                 break;
 
             case MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
                 kdf = new HKDF(new SHA512Digest());
+                digest = new SHA512Digest();
+                signer = new Ed448Signer(new byte[0]);
+                sigAlgo = ed448;
+
                 aead = new ChaCha20Poly1305();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305);
                 break;
@@ -147,6 +301,110 @@ public class CipherSuite {
             default:
                 throw new IllegalArgumentException("Unsupported ciphersuite: " + suite);
         }
+    }
+
+    public byte[] signWithLabel(byte[] priv, String label, byte[] content) throws IOException, CryptoException
+    {
+        GenericContent signContent = new GenericContent(label, content);
+        byte[] signContentBytes = MLSOutputStream.encode(signContent);
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                BigInteger d = new BigInteger(1, priv);
+                signer.init(true, new ECPrivateKeyParameters(d, domainParams));
+                break;
+            case ed25519:
+                signer.init(true, new Ed25519PrivateKeyParameters(priv));
+                break;
+            case ed448:
+                signer.init(true, new Ed448PrivateKeyParameters(priv));
+                break;
+        }
+        signer.update(signContentBytes, 0, signContentBytes.length);
+        return signer.generateSignature();
+
+    }
+    public boolean verifyWithLabel(byte[] pub, String label, byte[] content, byte[] signature) throws IOException
+    {
+        GenericContent signContent = new GenericContent(label, content);
+        byte[] signContentBytes = MLSOutputStream.encode(signContent);
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                ECPoint G = domainParams.getCurve().decodePoint(pub);
+                signer.init(false, new ECPublicKeyParameters(G, domainParams));
+                break;
+            case ed25519:
+                signer.init(false, new Ed25519PublicKeyParameters(pub));
+                break;
+            case ed448:
+                signer.init(false, new Ed448PublicKeyParameters(pub));
+                break;
+        }
+        signer.update(signContentBytes, 0, signContentBytes.length);
+        return signer.verifySignature(signature);
+    }
+    public byte[] refHash(byte[] value, String label) throws IOException
+    {
+        RefHash refhash = new RefHash(label.getBytes(StandardCharsets.UTF_8), value);
+        byte[] refhashBytes = MLSOutputStream.encode(refhash);
+//            return expand(out, getHashLength());
+        byte[] out = new byte[getKDF().getHashLength()];
+        digest.update(refhashBytes, 0, refhashBytes.length);
+        digest.doFinal(out, 0);
+        return out;
+    }
+
+    public byte[] decryptWithLabel(byte[] priv, String label, byte[] context, byte[] kem_output, byte[] ciphertext) throws IOException, InvalidCipherTextException
+    {
+        GenericContent encryptContext = new GenericContent(label, context);
+        byte[] encryptContextBytes = MLSOutputStream.encode(encryptContext);
+        AsymmetricKeyParameter privKey;
+        AsymmetricKeyParameter pubKey;
+        AsymmetricCipherKeyPair kp;
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                BigInteger d = new BigInteger(1, priv);
+                privKey = new ECPrivateKeyParameters(d, domainParams);
+                pubKey = new ECPublicKeyParameters(domainParams.getG().multiply(d), domainParams);
+                break;
+            case ed25519:
+                privKey = new X25519PrivateKeyParameters(priv);
+                pubKey = ((X25519PrivateKeyParameters)privKey).generatePublicKey();
+                break;
+            case ed448:
+                privKey = new X448PrivateKeyParameters(priv);
+                pubKey = ((X448PrivateKeyParameters)privKey).generatePublicKey();
+                break;
+            default:
+                throw new IllegalStateException("Unknown mode");
+        }
+        kp = new AsymmetricCipherKeyPair(pubKey, privKey);
+        return hpke.open(kem_output, kp, encryptContextBytes, "".getBytes(), ciphertext, null, null, null);
+    }
+    public byte[][] encryptWithLabel(byte[] pub, String label, byte[] context, byte[] plaintext) throws IOException, InvalidCipherTextException
+    {
+        GenericContent encryptContext = new GenericContent(label, context);
+        byte[] encryptContextBytes = MLSOutputStream.encode(encryptContext);
+
+        AsymmetricKeyParameter pubKey;
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                ECPoint G = domainParams.getCurve().decodePoint(pub);
+                pubKey = new ECPublicKeyParameters(G, domainParams);
+                break;
+            case ed25519:
+                pubKey = new X25519PublicKeyParameters(pub);
+                break;
+            case ed448:
+                pubKey = new X448PublicKeyParameters(pub);
+                break;
+            default:
+                throw new IllegalStateException("Unknown mode");
+        }
+        return hpke.seal(pubKey, encryptContextBytes, "".getBytes(), plaintext, null, null, null);
     }
 
     public KDF getKDF() {

@@ -6,8 +6,14 @@ import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.NodeIndex;
 import org.bouncycastle.mls.LeafIndex;
+import org.bouncycastle.util.encoders.Hex;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -193,6 +199,98 @@ public class TreeMathTest
         }
     }
 
+    public void testVectors()
+        throws Exception
+    {
+        InputStream src = TreeMathTest.class.getResourceAsStream("tree-math.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        ArrayList<Long> left = new ArrayList<Long>();
+        ArrayList<Long> right = new ArrayList<Long>();
+        ArrayList<Long> parent = new ArrayList<Long>();
+        ArrayList<Long> sibling = new ArrayList<Long>();
+        ArrayList<Long> temp = new ArrayList<Long>();
+        int arrCount = 0;
+
+
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    System.out.println("test case: " + count);
+                    long n_leaves = Long.parseLong((String)buf.get("n_leaves"));
+                    long n_nodes = Long.parseLong((String)buf.get("n_nodes"));
+                    long root = Long.parseLong((String)buf.get("root"));
+                    TreeSize treeSize = TreeSize.forLeaves(n_leaves);
+
+                    assertEquals(root, NodeIndex.root(treeSize).value());
+                    assertEquals(n_nodes, treeSize.width());
+                    for (int i = 0; i < treeSize.width(); i++)
+                    {
+                        NodeIndex n = new NodeIndex(i);
+
+                        // ignoring null value checks
+                        assertEquals(left.get(i) == -1 ? i : left.get(i), n.left().value());
+                        assertEquals(right.get(i) == -1 ? i : right.get(i), n.right().value());
+                        assertEquals(parent.get(i) == -1 ? n.parent().value() : parent.get(i), n.parent().value());
+                        assertEquals(sibling.get(i) == -1 ? n.sibling().value() : sibling.get(i), n.sibling().value());
+                    }
+
+
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+            if (line.endsWith("START"))
+            {
+                while ((line = bin.readLine()) != null)
+                {
+                    line = line.trim();
+                    if (line.endsWith("STOP"))
+                    {
+                        switch (arrCount)
+                        {
+                            case 0:
+                                left = (ArrayList<Long>) temp.clone();
+                                break;
+                            case 1:
+                                right = (ArrayList<Long>) temp.clone();
+                                break;
+                            case 2:
+                                parent = (ArrayList<Long>) temp.clone();
+                                break;
+                            case 3:
+                                sibling = (ArrayList<Long>) temp.clone();
+                                break;
+                        }
+                        arrCount = (++arrCount % 4);
+                        temp.clear();
+                        break;
+                    }
+                    long val;
+                    if(line.equals("null"))
+                    {
+                        val = -1;
+                    }
+                    else
+                    {
+                        val = Long.parseLong((String)line);
+                    }
+                    temp.add(val);
+                }
+            }
+        }
+    }
     public static TestSuite suite()
     {
         return new TestSuite(TreeMathTest.class);

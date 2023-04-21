@@ -17,7 +17,7 @@ public class GroupKeySet {
     // for  purposes of equivalence checking without violating forward secrecy.
     final Secret encryptionSecretCommit;
 
-    SecretTree secretTree;
+    public SecretTree secretTree;
     Map<LeafIndex, HashRatchet> handshakeRatchets;
     Map<LeafIndex, HashRatchet> applicationRatchets;
 
@@ -68,7 +68,7 @@ public class GroupKeySet {
 
     public class SecretTree {
         final TreeSize treeSize;
-        Map<NodeIndex, Secret> secrets;
+        public Map<NodeIndex, Secret> secrets;
 
         public SecretTree(TreeSize treeSizeIn, Secret encryptionSecret) {
             treeSize = treeSizeIn;
