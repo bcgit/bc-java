@@ -3,7 +3,7 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 
-import org.bouncycastle.bcpg.AEADEncDataPacket;
+import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -173,7 +173,7 @@ public class BcPGPDataEncryptorBuilder
         {
             this.keyBytes = keyBytes;
             this.c = BcUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
-            this.iv = new byte[AEADEncDataPacket.getIVLength((byte)aeadAlgorithm)];
+            this.iv = new byte[AEADUtils.   getIVLength((byte)aeadAlgorithm)];
 
             getSecureRandom().nextBytes(iv);
         }

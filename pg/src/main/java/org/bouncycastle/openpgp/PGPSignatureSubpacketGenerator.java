@@ -238,7 +238,25 @@ public class PGPSignatureSubpacketGenerator
         packets.add(new SignerUserID(isCritical, userID));
     }
 
+    /**
+     * Add a signer user-id to the signature.
+     *
+     * @param isCritical true if should be treated as critical, false otherwise.
+     * @param rawUserID     signer user-id
+     * @deprecated use {@link #addSignerUserID(boolean, byte[])} instead.
+     */
     public void setSignerUserID(boolean isCritical, byte[] rawUserID)
+    {
+        addSignerUserID(isCritical, rawUserID);
+    }
+
+    /**
+     * Add a signer user-id to the signature.
+     *
+     * @param isCritical true if should be treated as critical, false otherwise.
+     * @param rawUserID     signer user-id
+     */
+    public void addSignerUserID(boolean isCritical, byte[] rawUserID)
     {
         if (rawUserID == null)
         {

@@ -9,7 +9,7 @@ import java.security.SecureRandom;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.bcpg.AEADEncDataPacket;
+import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -223,7 +223,7 @@ public class JcePGPDataEncryptorBuilder
         {
             this.keyBytes = keyBytes;
             this.c = helper.createAEADCipher(encAlgorithm, aeadAlgorithm);
-            this.iv = new byte[AEADEncDataPacket.getIVLength((byte)aeadAlgorithm)];
+            this.iv = new byte[AEADUtils.getIVLength((byte)aeadAlgorithm)];
 
             getSecureRandom().nextBytes(iv);
         }

@@ -13,7 +13,7 @@ public class AEADUtils
      * @param aeadAlgorithmTag AEAD algorithm identifier
      * @return length of the IV
      */
-    static int getIVLength(int aeadAlgorithmTag)
+    public static int getIVLength(int aeadAlgorithmTag)
     {
         switch (aeadAlgorithmTag)
         {
