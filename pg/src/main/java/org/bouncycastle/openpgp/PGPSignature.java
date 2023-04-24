@@ -50,7 +50,6 @@ public class PGPSignature
     public static final int THIRD_PARTY_CONFIRMATION = 0x50;
 
     private SignaturePacket sigPck;
-    private int signatureType;
     private TrustPacket trustPck;
 
     private Verification verification;
@@ -76,7 +75,6 @@ public class PGPSignature
         SignaturePacket sigPacket)
     {
         sigPck = sigPacket;
-        signatureType = sigPck.getSignatureType();
         trustPck = null;
     }
 
