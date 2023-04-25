@@ -1,39 +1,19 @@
 package org.bouncycastle.jce.provider;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.cert.CRL;
-import java.security.cert.CRLSelector;
-import java.security.cert.CertSelector;
-import java.security.cert.CertStoreException;
-import java.security.cert.CertStoreParameters;
-import java.security.cert.CertStoreSpi;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509CRLSelector;
-import java.security.cert.X509CertSelector;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.x509.CertificatePair;
+import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
+import javax.naming.directory.*;
 import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.x509.CertificatePair;
-import org.bouncycastle.jce.X509LDAPCertStoreParameters;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.cert.*;
+import java.util.*;
 
 /**
  * 
