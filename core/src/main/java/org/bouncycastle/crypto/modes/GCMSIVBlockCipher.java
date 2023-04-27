@@ -217,8 +217,8 @@ public class GCMSIVBlockCipher
 
          /* Check keysize */
          if (myKey == null
-             || (myKey.getKey().length != BUFLEN
-                 && myKey.getKey().length != (BUFLEN << 1)))
+             || (myKey.getKeyLength() != BUFLEN
+                 && myKey.getKeyLength() != (BUFLEN << 1)))
          {
              throw new IllegalArgumentException("Invalid key");
          }
@@ -766,7 +766,7 @@ public class GCMSIVBlockCipher
          final byte[] myIn = new byte[BUFLEN];
          final byte[] myOut = new byte[BUFLEN];
          final byte[] myResult = new byte[BUFLEN];
-         final byte[] myEncKey = new byte[pKey.getKey().length];
+         final byte[] myEncKey = new byte[pKey.getKeyLength()];
 
          /* Prepare for encryption */
          System.arraycopy(theNonce, 0, myIn, BUFLEN - NONCELEN, NONCELEN);

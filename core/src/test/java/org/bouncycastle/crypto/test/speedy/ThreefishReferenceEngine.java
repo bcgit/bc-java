@@ -69,7 +69,7 @@ public class ThreefishReferenceEngine
         // TODO: Remove some of the NPEs that can be avoided in the Params
         // classes
         if ((params.getKey() == null) || (params.getKey().getKey() == null)
-            || (params.getKey().getKey().length != blocksize))
+            || (params.getKey().getKeyLength() != blocksize))
         {
             throw new IllegalArgumentException("Threefish key must be same size as block (%d bytes)" + blocksize);
         }

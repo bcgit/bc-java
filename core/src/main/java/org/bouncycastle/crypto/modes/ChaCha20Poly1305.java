@@ -125,7 +125,7 @@ public class ChaCha20Poly1305
         }
         else
         {
-            if (KEY_SIZE != initKeyParam.getKey().length)
+            if (KEY_SIZE != initKeyParam.getKeyLength())
             {
                 throw new IllegalArgumentException("Key must be 256 bits");
             }
@@ -148,7 +148,7 @@ public class ChaCha20Poly1305
 
         if (null != initKeyParam)
         {
-            System.arraycopy(initKeyParam.getKey(), 0, key, 0, KEY_SIZE);
+        	initKeyParam.copyTo(key, 0, KEY_SIZE);
         }
 
         System.arraycopy(initNonce, 0, nonce, 0, NONCE_SIZE);

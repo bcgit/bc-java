@@ -4,8 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.params.FPEParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 
 /**
@@ -49,7 +47,7 @@ public class FPEFF3_1Engine
 
         this.fpeParameters = (FPEParameters)parameters;
 
-        baseCipher.init(!fpeParameters.isUsingInverseFunction(), new KeyParameter(Arrays.reverse(fpeParameters.getKey().getKey())));
+        baseCipher.init(!fpeParameters.isUsingInverseFunction(), fpeParameters.getKey().reverse());
 
         if (fpeParameters.getTweak().length != 7)
         {

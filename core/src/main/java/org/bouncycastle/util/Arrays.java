@@ -1072,6 +1072,15 @@ public final class Arrays
         return result;
     }
 
+    public static void reverse(byte[] input, byte[] output)
+    {
+        int last = input.length - 1;
+        for (int i = 0; i <= last; ++i)
+        {
+            output[i] = input[last - i];
+        }
+    }
+
     public static byte[] reverseInPlace(byte[] a)
     {
         if (null == a)
