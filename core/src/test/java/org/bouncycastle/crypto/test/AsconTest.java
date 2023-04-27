@@ -35,9 +35,9 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
-    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon128);
-    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon128a);
-    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon80pq);
+        implTestBufferingEngine(AsconEngine.AsconParameters.ascon128);
+        implTestBufferingEngine(AsconEngine.AsconParameters.ascon128a);
+        implTestBufferingEngine(AsconEngine.AsconParameters.ascon80pq);
 
         testVectorsHash(AsconDigest.AsconParameters.AsconHashA, "asconhasha");
         testVectorsHash(AsconDigest.AsconParameters.AsconHash, "asconhash");
@@ -90,6 +90,12 @@ public class AsconTest
             random.nextBytes(output);
 
             int length = ascon.processBytes(plaintext, 0, split, output, 0);
+
+            if (0 != ascon.getUpdateOutputSize(0))
+            {
+                fail("");
+            }
+            
             length += ascon.processBytes(plaintext, split, plaintextLength - split, output, length);
             length += ascon.doFinal(output, length);
 
@@ -108,6 +114,12 @@ public class AsconTest
             random.nextBytes(output);
 
             int length = ascon.processBytes(ciphertext, 0, split, output, 0);
+
+            if (0 != ascon.getUpdateOutputSize(0))
+            {
+                fail("");
+            }
+
             length += ascon.processBytes(ciphertext, split, ciphertextLength - split, output, length);
             length += ascon.doFinal(output, length);
 
@@ -409,9 +421,7 @@ public class AsconTest
         {
             fail("The encryption and decryption does not recover the plaintext");
         }
-        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
         c2[c2.length - 1] ^= 1;
-        aeadBlockCipher.reset();
         aeadBlockCipher.init(false, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(c2, 0, c2.length, m4, 0);
@@ -426,10 +436,8 @@ public class AsconTest
         }
 
         byte[] m7 = new byte[blocksize * 2];
-        for (int i = 0; i < m7.length; ++i)
-        {
-            m7[i] = (byte)rand.nextInt();
-        }
+        rand.nextBytes(m7);
+
         aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
@@ -453,6 +461,7 @@ public class AsconTest
             fail("Splitting input of plaintext should output the same ciphertext");
         }
 
+        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testParameters(AsconEngine ascon, int keySize, int ivSize, int macSize)
