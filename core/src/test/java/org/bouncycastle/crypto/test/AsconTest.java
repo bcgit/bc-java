@@ -136,7 +136,7 @@ public class AsconTest
             aeadBlockCipher.processBytes(m, 0, m.length, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processBytes");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -146,7 +146,7 @@ public class AsconTest
             aeadBlockCipher.processByte((byte)0, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processByte");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -156,7 +156,7 @@ public class AsconTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -166,7 +166,7 @@ public class AsconTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -178,7 +178,7 @@ public class AsconTest
             aeadBlockCipher.getOutputSize(0);
             aeadBlockCipher.getUpdateOutputSize(0);
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
             fail(aeadBlockCipher.getAlgorithmName() + " functions can be called before initialisation");
@@ -251,7 +251,7 @@ public class AsconTest
             aeadBlockCipher.processAADByte((byte)0);
             fail("processAADByte(s) cannot be called after encryption/decryption");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -260,7 +260,7 @@ public class AsconTest
             aeadBlockCipher.processAADBytes(new byte[]{0}, 0, 1);
             fail("processAADByte(s) cannot be called once only");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
