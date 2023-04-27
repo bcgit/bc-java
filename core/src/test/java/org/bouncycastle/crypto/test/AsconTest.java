@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -34,6 +35,10 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon128);
+    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon128a);
+    	implTestBufferingEngine(AsconEngine.AsconParameters.ascon80pq);
+
         testVectorsHash(AsconDigest.AsconParameters.AsconHashA, "asconhasha");
         testVectorsHash(AsconDigest.AsconParameters.AsconHash, "asconhash");
         testVectorsHash(AsconXof.AsconParameters.AsconXof, "asconxof");
@@ -56,6 +61,62 @@ public class AsconTest
         testVectors(AsconEngine.AsconParameters.ascon128, "128_128");
     }
 
+    private void implTestBufferingEngine(AsconEngine.AsconParameters asconParameters)
+        throws Exception
+    {
+        Random random = new Random();
+
+        int plaintextLength = 256;
+        byte[] plaintext = new byte[plaintextLength];
+        random.nextBytes(plaintext);
+
+        AsconEngine ascon0 = new AsconEngine(asconParameters);
+        initEngine(ascon0, true);
+
+        byte[] ciphertext = new byte[ascon0.getOutputSize(plaintextLength)];
+        random.nextBytes(ciphertext);
+
+        int ciphertextLength = ascon0.processBytes(plaintext, 0, plaintextLength, ciphertext, 0);
+        ciphertextLength += ascon0.doFinal(ciphertext, ciphertextLength);
+
+        byte[] output = new byte[ciphertextLength];
+
+        // Encryption
+        for (int split = 1; split < plaintextLength; ++split)
+        {
+            AsconEngine ascon = new AsconEngine(asconParameters);
+            initEngine(ascon, true);
+
+            random.nextBytes(output);
+
+            int length = ascon.processBytes(plaintext, 0, split, output, 0);
+            length += ascon.processBytes(plaintext, split, plaintextLength - split, output, length);
+            length += ascon.doFinal(output, length);
+
+            if (!Arrays.areEqual(ciphertext, 0, ciphertextLength, output, 0, length))
+            {
+                fail("encryption failed with split: " + split);
+            }
+        }
+
+        // Decryption
+        for (int split = 1; split < ciphertextLength; ++split)
+        {
+            AsconEngine ascon = new AsconEngine(asconParameters);
+            initEngine(ascon, false);
+
+            random.nextBytes(output);
+
+            int length = ascon.processBytes(ciphertext, 0, split, output, 0);
+            length += ascon.processBytes(ciphertext, split, ciphertextLength - split, output, length);
+            length += ascon.doFinal(output, length);
+
+            if (!Arrays.areEqual(plaintext, 0, plaintextLength, output, 0, length))
+            {
+                fail("decryption failed with split: " + split);
+            }
+        }
+    }
 
     private void testVectors(AsconEngine.AsconParameters asconParameters, String filename)
         throws Exception
@@ -551,6 +612,15 @@ public class AsconTest
         System.out.println(xof.getAlgorithmName() + " test Exceptions pass");
     }
 
+    private static void initEngine(AsconEngine ascon, boolean forEncryption)
+    {
+        int keySize = ascon.getKeyBytesSize();
+        int ivSize = ascon.getIVBytesSize();
+        int macSize = ivSize * 8;
+
+        AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize, new byte[ivSize], null);
+        ascon.init(forEncryption, parameters);
+    }
 
     private void mismatch(String name, String expected, byte[] found)
     {
