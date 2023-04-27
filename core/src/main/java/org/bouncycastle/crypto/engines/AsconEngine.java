@@ -126,13 +126,13 @@ public class AsconEngine
     {
         if (nr >= 8)
         {
-	        if (nr == 12)
-	        {
-	            ROUND(0xf0L);
-	            ROUND(0xe1L);
-	            ROUND(0xd2L);
-	            ROUND(0xc3L);
-	        }
+            if (nr == 12)
+            {
+                ROUND(0xf0L);
+                ROUND(0xe1L);
+                ROUND(0xd2L);
+                ROUND(0xc3L);
+            }
             ROUND(0xb4L);
             ROUND(0xa5L);
         }
@@ -238,7 +238,7 @@ public class AsconEngine
             P(nr);
             break;
         default:
-        	break;
+            break;
         }
         // domain separation
         x4 ^= 1L;

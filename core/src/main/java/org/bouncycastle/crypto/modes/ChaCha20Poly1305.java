@@ -148,7 +148,7 @@ public class ChaCha20Poly1305
 
         if (null != initKeyParam)
         {
-        	initKeyParam.copyTo(key, 0, KEY_SIZE);
+            initKeyParam.copyTo(key, 0, KEY_SIZE);
         }
 
         System.arraycopy(initNonce, 0, nonce, 0, NONCE_SIZE);

@@ -19,7 +19,7 @@ public class KeyParameter
         int     keyOff,
         int     keyLen)
     {
-    	this(keyLen);
+        this(keyLen);
 
         System.arraycopy(key, keyOff, this.key, 0, keyLen);
     }
@@ -44,7 +44,7 @@ public class KeyParameter
 
     public int getKeyLength()
     {
-    	return key.length;
+        return key.length;
     }
 
     public KeyParameter reverse()
