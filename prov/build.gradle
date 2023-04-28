@@ -1,5 +1,6 @@
 dependencies {
     implementation project(':core')
+    testImplementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
 }
 
 jar.archiveBaseName = "bcprov-$vmrange"
