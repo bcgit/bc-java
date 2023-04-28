@@ -12,22 +12,23 @@ class SIDH_Compressed
     {
         this.engine = engine;
     }
+
     protected void init_basis(long[] gen, long[][] XP, long[][] XQ, long[][] XR)
     { // Initialization of basis points
 
         engine.fpx.fpcopy(gen, 0, XP[0]);
-        engine.fpx.fpcopy(gen,   engine.params.NWORDS_FIELD, XP[1]);
-        engine.fpx.fpcopy(gen, 2*engine.params.NWORDS_FIELD, XQ[0]);
-        engine.fpx.fpcopy(gen, 3*engine.params.NWORDS_FIELD, XQ[1]);
-        engine.fpx.fpcopy(gen, 4*engine.params.NWORDS_FIELD, XR[0]);
-        engine.fpx.fpcopy(gen, 5*engine.params.NWORDS_FIELD, XR[1]);
+        engine.fpx.fpcopy(gen, engine.params.NWORDS_FIELD, XP[1]);
+        engine.fpx.fpcopy(gen, 2 * engine.params.NWORDS_FIELD, XQ[0]);
+        engine.fpx.fpcopy(gen, 3 * engine.params.NWORDS_FIELD, XQ[1]);
+        engine.fpx.fpcopy(gen, 4 * engine.params.NWORDS_FIELD, XR[0]);
+        engine.fpx.fpcopy(gen, 5 * engine.params.NWORDS_FIELD, XR[1]);
     }
 
 
     protected void FormatPrivKey_B(byte[] skB)
     {
-        skB[engine.params.SECRETKEY_B_BYTES-2] &= engine.params.MASK3_BOB;
-        skB[engine.params.SECRETKEY_B_BYTES-1] &= engine.params.MASK2_BOB;    // Clear necessary bits so that 3*ephemeralsk is still less than Bob_order
+        skB[engine.params.SECRETKEY_B_BYTES - 2] &= engine.params.MASK3_BOB;
+        skB[engine.params.SECRETKEY_B_BYTES - 1] &= engine.params.MASK2_BOB;    // Clear necessary bits so that 3*ephemeralsk is still less than Bob_order
         engine.fpx.mul3(skB);       // Multiply ephemeralsk by 3
     }
 
@@ -39,7 +40,7 @@ class SIDH_Compressed
         random.nextBytes(temp);
         System.arraycopy(temp, 0, random_digits, 0, engine.params.SECRETKEY_A_BYTES);
         random_digits[0] &= 0xFE;                            // Make private scalar even
-        random_digits[engine.params.SECRETKEY_A_BYTES-1] &= engine.params.MASK_ALICE;    // Masking last byte
+        random_digits[engine.params.SECRETKEY_A_BYTES - 1] &= engine.params.MASK_ALICE;    // Masking last byte
     }
 
     // Generation of Bob's secret key
@@ -56,14 +57,15 @@ class SIDH_Compressed
     protected void Ladder3pt_dual(PointProj[] Rs, long[] m, int AliceOrBob, PointProj R, long[][] A24)
     {
         PointProj R0 = new PointProj(engine.params.NWORDS_FIELD),
-                  R2 = new PointProj(engine.params.NWORDS_FIELD);
+            R2 = new PointProj(engine.params.NWORDS_FIELD);
         long mask;
         int i, nbits, bit, swap, prevbit = 0;
 
         if (AliceOrBob == engine.params.ALICE)
         {
             nbits = engine.params.OALICE_BITS;
-        } else
+        }
+        else
         {
             nbits = engine.params.OBOB_BITS;
         }
@@ -78,7 +80,7 @@ class SIDH_Compressed
         // Main loop
         for (i = 0; i < nbits; i++)
         {
-            bit = (int) ((m[i >>> Internal.LOG2RADIX] >>> (i & (Internal.RADIX-1))) & 1);
+            bit = (int)((m[i >>> Internal.LOG2RADIX] >>> (i & (Internal.RADIX - 1))) & 1);
             swap = bit ^ prevbit;
             prevbit = bit;
             mask = 0 - (long)swap;
@@ -93,19 +95,18 @@ class SIDH_Compressed
     }
 
 
-
     protected void Elligator2(long[][] a24, int[] r, int rIndex, long[][] x, byte[] bit, int bitOffset, int COMPorDEC)
     { // Generate an x-coordinate of a point on curve with (affine) coefficient a24 
         // Use the counter r
         int i;
         long[] one_fp = new long[engine.params.NWORDS_FIELD],
-                a2 = new long[engine.params.NWORDS_FIELD],
-                b2 = new long[engine.params.NWORDS_FIELD],
-                N = new long[engine.params.NWORDS_FIELD],
-                temp0 = new long[engine.params.NWORDS_FIELD],
-                temp1 = new long[engine.params.NWORDS_FIELD];
+            a2 = new long[engine.params.NWORDS_FIELD],
+            b2 = new long[engine.params.NWORDS_FIELD],
+            N = new long[engine.params.NWORDS_FIELD],
+            temp0 = new long[engine.params.NWORDS_FIELD],
+            temp1 = new long[engine.params.NWORDS_FIELD];
         long[][] A = new long[2][engine.params.NWORDS_FIELD],
-                 y2 = new long[2][engine.params.NWORDS_FIELD];
+            y2 = new long[2][engine.params.NWORDS_FIELD];
 
         int t_ptr = 0;
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one_fp);
@@ -121,26 +122,26 @@ class SIDH_Compressed
         if (COMPorDEC == 0) //COMPRESSION
         {
             engine.fpx.fp2add(A, x, y2);                      // y2 = x + A
-            engine.fpx.fp2mul_mont(y2,  x,  y2);              // y2 = x*(x + A)
-            engine.fpx.fpaddPRIME(y2[0],  one_fp,  y2[0]);         // y2 = x(x + A) + 1
+            engine.fpx.fp2mul_mont(y2, x, y2);              // y2 = x*(x + A)
+            engine.fpx.fpaddPRIME(y2[0], one_fp, y2[0]);         // y2 = x(x + A) + 1
             engine.fpx.fp2mul_mont(x, y2, y2);                // y2 = x*(x^2 + Ax + 1);
             engine.fpx.fpsqr_mont(y2[0], a2);
             engine.fpx.fpsqr_mont(y2[1], b2);
             engine.fpx.fpaddPRIME(a2, b2, N);                      // N := norm(y2);
-            engine.fpx.fpcopy(N,0, temp0);
+            engine.fpx.fpcopy(N, 0, temp0);
             for (i = 0; i < engine.params.OALICE_BITS - 2; i++)
             {
-                engine.fpx.fpsqr_mont(temp0,  temp0);
+                engine.fpx.fpsqr_mont(temp0, temp0);
             }
             for (i = 0; i < engine.params.OBOB_EXPON; i++)
             {
-                engine.fpx.fpsqr_mont(temp0,  temp1);
-                engine.fpx.fpmul_mont(temp0,  temp1,  temp0);
+                engine.fpx.fpsqr_mont(temp0, temp1);
+                engine.fpx.fpmul_mont(temp0, temp1, temp0);
             }
             engine.fpx.fpsqr_mont(temp0, temp1);              // z = N^((p + 1) div 4);
             engine.fpx.fpcorrectionPRIME(temp1);
             engine.fpx.fpcorrectionPRIME(N);
-            if(!Fpx.subarrayEquals(temp1, N, engine.params.NWORDS_FIELD))
+            if (!Fpx.subarrayEquals(temp1, N, engine.params.NWORDS_FIELD))
             {
                 engine.fpx.fp2neg(x);
                 engine.fpx.fp2sub(x, A, x);     // x = -x - A;
@@ -155,7 +156,7 @@ class SIDH_Compressed
             if (bit[bitOffset] == 1)
             {
                 engine.fpx.fp2neg(x);
-                engine.fpx.fp2sub(x,A,x);       // x = -x - A;
+                engine.fpx.fp2sub(x, A, x);       // x = -x - A;
             }
         }
     }
@@ -188,11 +189,11 @@ class SIDH_Compressed
     protected void BiQuad_affine(long[][] a24, long[][] x0, long[][] x1, PointProj R)
     {
         long[][] Ap2 = new long[2][engine.params.NWORDS_FIELD],
-                 aa = new long[2][engine.params.NWORDS_FIELD],
-                 bb = new long[2][engine.params.NWORDS_FIELD],
-                 cc = new long[2][engine.params.NWORDS_FIELD],
-                 t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD];
+            aa = new long[2][engine.params.NWORDS_FIELD],
+            bb = new long[2][engine.params.NWORDS_FIELD],
+            cc = new long[2][engine.params.NWORDS_FIELD],
+            t0 = new long[2][engine.params.NWORDS_FIELD],
+            t1 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2add(a24, a24, Ap2);
         engine.fpx.fp2add(Ap2, Ap2, Ap2);    // Ap2 = a+2 = 4*a24
@@ -260,7 +261,7 @@ class SIDH_Compressed
     protected void eval_final_dual_2_isog(PointProj P)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD];
+            t1 = new long[2][engine.params.NWORDS_FIELD];
         long[] t2 = new long[engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2add(P.X, P.Z, t0);
@@ -287,9 +288,9 @@ class SIDH_Compressed
     protected void eval_dual_4_isog(long[][] A24, long[][] C24, long[][][] coeff, int coeffOffset, PointProj P)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD],
-                 t2 = new long[2][engine.params.NWORDS_FIELD],
-                 t3 = new long[2][engine.params.NWORDS_FIELD];
+            t1 = new long[2][engine.params.NWORDS_FIELD],
+            t2 = new long[2][engine.params.NWORDS_FIELD],
+            t3 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2add(P.X, P.Z, t0);
         engine.fpx.fp2sub(P.X, P.Z, t1);
@@ -311,12 +312,12 @@ class SIDH_Compressed
 
     protected void eval_full_dual_4_isog(long[][][][] As, PointProj P)
     {
-        for(int i = 0; i < engine.params.MAX_Alice; i++)
+        for (int i = 0; i < engine.params.MAX_Alice; i++)
         {
-            eval_dual_4_isog(As[engine.params.MAX_Alice-i][0],
-                    As[engine.params.MAX_Alice-i][1],
-                    As[engine.params.MAX_Alice-i-1], 2,
-                    P);
+            eval_dual_4_isog(As[engine.params.MAX_Alice - i][0],
+                As[engine.params.MAX_Alice - i][1],
+                As[engine.params.MAX_Alice - i - 1], 2,
+                P);
         }
         if (engine.params.OALICE_BITS % 2 == 1)
         {
@@ -339,7 +340,7 @@ class SIDH_Compressed
     protected void Tate3_proj(PointProjFull P, PointProjFull Q, long[][] gX, long[][] gZ)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-                 l1x = new long[2][engine.params.NWORDS_FIELD];
+            l1x = new long[2][engine.params.NWORDS_FIELD];
 
         TripleAndParabola_proj(P, l1x, gZ);
         engine.fpx.fp2sub(Q.X, P.X, gX);
@@ -360,13 +361,13 @@ class SIDH_Compressed
         engine.fpx.fp2mul_mont(gX, f_, f_);
         engine.fpx.fp2inv_mont_bingcd(f_);
         engine.fpx.fpnegPRIME(gX[1]);
-        engine.fpx.fp2mul_mont(gX,gZ, gX);
-        engine.fpx.fp2mul_mont(gX,f_, gX);
-        for(i = 0; i < engine.params.OALICE_BITS; i++)
+        engine.fpx.fp2mul_mont(gX, gZ, gX);
+        engine.fpx.fp2mul_mont(gX, f_, gX);
+        for (i = 0; i < engine.params.OALICE_BITS; i++)
         {
             engine.fpx.fp2sqr_mont(gX, gX);
         }
-        for(i = 0; i < engine.params.OBOB_EXPON-1; i++)
+        for (i = 0; i < engine.params.OBOB_EXPON - 1; i++)
         {
             engine.fpx.cube_Fp2_cycl(gX, engine.params.Montgomery_one);
         }
@@ -377,25 +378,25 @@ class SIDH_Compressed
     {
         int i, j;
         long[][][] f_ = new long[2][2][engine.params.NWORDS_FIELD],
-                 finv = new long[2][2][engine.params.NWORDS_FIELD];
+            finv = new long[2][2][engine.params.NWORDS_FIELD];
 
-        for(i = 0; i < 2; i++)
+        for (i = 0; i < 2; i++)
         {
             engine.fpx.fp2copy(gZ[i], f_[i]);
             engine.fpx.fpnegPRIME(f_[i][1]);    // Conjugate
             engine.fpx.fp2mul_mont(gX[i], f_[i], f_[i]);
         }
         engine.fpx.mont_n_way_inv(f_, 2, finv);
-        for(i = 0; i < 2; i++)
+        for (i = 0; i < 2; i++)
         {
             engine.fpx.fpnegPRIME(gX[i][1]);
             engine.fpx.fp2mul_mont(gX[i], gZ[i], gX[i]);
             engine.fpx.fp2mul_mont(gX[i], finv[i], gX[i]);
-            for(j = 0; j < engine.params.OALICE_BITS; j++)
+            for (j = 0; j < engine.params.OALICE_BITS; j++)
             {
                 engine.fpx.fp2sqr_mont(gX[i], gX[i]);
             }
-            for(j = 0; j < engine.params.OBOB_EXPON-1; j++)
+            for (j = 0; j < engine.params.OBOB_EXPON - 1; j++)
             {
                 engine.fpx.cube_Fp2_cycl(gX[i], engine.params.Montgomery_one);
             }
@@ -406,27 +407,27 @@ class SIDH_Compressed
     private boolean FirstPoint_dual(PointProj P, PointProjFull R, byte[] ind)
     {
         PointProjFull R3 = new PointProjFull(engine.params.NWORDS_FIELD),
-                      S3 = new PointProjFull(engine.params.NWORDS_FIELD);
+            S3 = new PointProjFull(engine.params.NWORDS_FIELD);
         long[][][] gX = new long[2][2][engine.params.NWORDS_FIELD],
-                   gZ = new long[2][2][engine.params.NWORDS_FIELD];
+            gZ = new long[2][2][engine.params.NWORDS_FIELD];
         long[] zero = new long[engine.params.NWORDS_FIELD];
         int nbytes = engine.params.NWORDS_FIELD;
-        int alpha,beta;
+        int alpha, beta;
 
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 0*engine.params.NWORDS_FIELD, (R3.X)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 1*engine.params.NWORDS_FIELD, (R3.X)[1]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 2*engine.params.NWORDS_FIELD, (R3.Y)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 3*engine.params.NWORDS_FIELD, (R3.Y)[1]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 4*engine.params.NWORDS_FIELD, (S3.X)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 5*engine.params.NWORDS_FIELD, (S3.X)[1]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 6*engine.params.NWORDS_FIELD, (S3.Y)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 7*engine.params.NWORDS_FIELD, (S3.Y)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 0 * engine.params.NWORDS_FIELD, (R3.X)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 1 * engine.params.NWORDS_FIELD, (R3.X)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 2 * engine.params.NWORDS_FIELD, (R3.Y)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 3 * engine.params.NWORDS_FIELD, (R3.Y)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 4 * engine.params.NWORDS_FIELD, (S3.X)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 5 * engine.params.NWORDS_FIELD, (S3.X)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 6 * engine.params.NWORDS_FIELD, (S3.Y)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, 7 * engine.params.NWORDS_FIELD, (S3.Y)[1]);
 
-        engine.isogeny.CompletePoint(P,R);
+        engine.isogeny.CompletePoint(P, R);
 
-        Tate3_proj(R3,R,gX[0],gZ[0]);
-        Tate3_proj(S3,R,gX[1],gZ[1]);
-        FinalExpo3_2way(gX,gZ);
+        Tate3_proj(R3, R, gX[0], gZ[0]);
+        Tate3_proj(S3, R, gX[1], gZ[1]);
+        FinalExpo3_2way(gX, gZ);
 
         // Do small DLog with respect to g_R3_S3
         engine.fpx.fp2correction(gX[0]);
@@ -489,16 +490,16 @@ class SIDH_Compressed
     {
         PointProjFull RS3 = new PointProjFull(engine.params.NWORDS_FIELD);
         long[][] gX = new long[2][engine.params.NWORDS_FIELD],
-                 gZ = new long[2][engine.params.NWORDS_FIELD];
+            gZ = new long[2][engine.params.NWORDS_FIELD];
 
         long[] zero = new long[engine.params.NWORDS_FIELD];
         int nbytes = engine.params.NWORDS_FIELD;
 
         // Pair with 3-torsion point determined by first point
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4*ind[0] + 0)*engine.params.NWORDS_FIELD, (RS3.X)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4*ind[0] + 1)*engine.params.NWORDS_FIELD, (RS3.X)[1]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4*ind[0] + 2)*engine.params.NWORDS_FIELD, (RS3.Y)[0]);
-        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4*ind[0] + 3)*engine.params.NWORDS_FIELD, (RS3.Y)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4 * ind[0] + 0) * engine.params.NWORDS_FIELD, (RS3.X)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4 * ind[0] + 1) * engine.params.NWORDS_FIELD, (RS3.X)[1]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4 * ind[0] + 2) * engine.params.NWORDS_FIELD, (RS3.Y)[0]);
+        engine.fpx.fpcopy(engine.params.B_gen_3_tors, (4 * ind[0] + 3) * engine.params.NWORDS_FIELD, (RS3.Y)[1]);
 
         engine.isogeny.CompletePoint(P, R);
         Tate3_proj(RS3, R, gX, gZ);
@@ -526,7 +527,7 @@ class SIDH_Compressed
         while (!b)
         {
             bitEll[0] = 0;
-            Elligator2(a24, r, 0, x, bitEll,0, 0);    // Get x-coordinate on curve a24
+            Elligator2(a24, r, 0, x, bitEll, 0, 0);    // Get x-coordinate on curve a24
             engine.fpx.fp2copy(x, P.X);
             engine.fpx.fpcopy(engine.params.Montgomery_one, 0, P.Z[0]);
             engine.fpx.fpcopy(zero, 0, P.Z[1]);
@@ -560,8 +561,8 @@ class SIDH_Compressed
     protected void makeDiff(PointProjFull R, PointProjFull S, PointProj D)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD],
-                 t2 = new long[2][engine.params.NWORDS_FIELD];
+            t1 = new long[2][engine.params.NWORDS_FIELD],
+            t2 = new long[2][engine.params.NWORDS_FIELD];
         int nbytes = engine.params.NWORDS_FIELD;
 
         engine.fpx.fp2sub(R.X, S.X, t0);
@@ -587,7 +588,7 @@ class SIDH_Compressed
         PointProj D = new PointProj(engine.params.NWORDS_FIELD);
         long[][][] xs = new long[2][2][engine.params.NWORDS_FIELD];
         byte[] ind = new byte[1],
-               bit = new byte[1];
+            bit = new byte[1];
 
         FirstPoint3n(a24, As, xs[0], R[0], r, ind, bit);
         bitsEll[bitsEllOffset] = bit[0];
@@ -609,11 +610,11 @@ class SIDH_Compressed
         PointProj R = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_ALICE];
         long[][] XPA = new long[2][engine.params.NWORDS_FIELD],
-                 XQA = new long[2][engine.params.NWORDS_FIELD],
-                 XRA = new long[2][engine.params.NWORDS_FIELD],
-                A24 = new long[2][engine.params.NWORDS_FIELD],
-                C24 = new long[2][engine.params.NWORDS_FIELD],
-                A = new long[2][engine.params.NWORDS_FIELD];
+            XQA = new long[2][engine.params.NWORDS_FIELD],
+            XRA = new long[2][engine.params.NWORDS_FIELD],
+            A24 = new long[2][engine.params.NWORDS_FIELD],
+            C24 = new long[2][engine.params.NWORDS_FIELD],
+            A = new long[2][engine.params.NWORDS_FIELD];
         long[][][] coeff = new long[5][2][engine.params.NWORDS_FIELD];
 
         int i, row, m, index = 0, npts = 0, ii = 0;
@@ -634,7 +635,7 @@ class SIDH_Compressed
         engine.fpx.decode_to_digits(PrivateKeyA, engine.params.MSG_BYTES, SecretKeyA, engine.params.SECRETKEY_A_BYTES, engine.params.NWORDS_ORDER);
         engine.isogeny.LADDER3PT(XPA, XQA, XRA, SecretKeyA, engine.params.ALICE, R, A);
         engine.fpx.fp2inv_mont(R.Z);
-        engine.fpx.fp2mul_mont(R.X,R.Z,R.X);
+        engine.fpx.fp2mul_mont(R.X, R.Z, R.X);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, R.Z[0]);
         engine.fpx.fpzero(R.Z[1]);
         if (sike == 1)
@@ -645,7 +646,7 @@ class SIDH_Compressed
         {
             PointProj S = new PointProj(engine.params.NWORDS_FIELD);
 
-            engine.isogeny.xDBLe(R, S, A24, C24, (int) (engine.params.OALICE_BITS - 1));
+            engine.isogeny.xDBLe(R, S, A24, C24, (int)(engine.params.OALICE_BITS - 1));
             engine.isogeny.get_2_isog(S, A24, C24);
             engine.isogeny.eval_2_isog(R, S);
             engine.fpx.fp2copy(S.X, As[engine.params.MAX_Alice][2]);
@@ -656,35 +657,35 @@ class SIDH_Compressed
         index = 0;
         for (row = 1; row < engine.params.MAX_Alice; row++)
         {
-            while (index < engine.params.MAX_Alice-row)
+            while (index < engine.params.MAX_Alice - row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
                 engine.fpx.fp2copy(R.Z, pts[npts].Z);
                 pts_index[npts++] = index;
                 m = engine.params.strat_Alice[ii++];
-                engine.isogeny.xDBLe(R, R, A24, C24, (int)(2*m));
+                engine.isogeny.xDBLe(R, R, A24, C24, (int)(2 * m));
                 index += m;
             }
 
-            engine.fpx.fp2copy(A24, As[row-1][0]);
-            engine.fpx.fp2copy(C24, As[row-1][1]);
+            engine.fpx.fp2copy(A24, As[row - 1][0]);
+            engine.fpx.fp2copy(C24, As[row - 1][1]);
             get_4_isog_dual(R, A24, C24, coeff);
             for (i = 0; i < npts; i++)
             {
                 engine.isogeny.eval_4_isog(pts[i], coeff);
             }
-            eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[row-1], 2);
-            engine.fpx.fp2copy(pts[npts-1].X, R.X);
-            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-            index = pts_index[npts-1];
+            eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[row - 1], 2);
+            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
+            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
+            index = pts_index[npts - 1];
             npts -= 1;
         }
-        engine.fpx.fp2copy(A24, As[engine.params.MAX_Alice-1][0]);
-        engine.fpx.fp2copy(C24, As[engine.params.MAX_Alice-1][1]);
+        engine.fpx.fp2copy(A24, As[engine.params.MAX_Alice - 1][0]);
+        engine.fpx.fp2copy(C24, As[engine.params.MAX_Alice - 1][1]);
 
         get_4_isog_dual(R, A24, C24, coeff);
-        eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[engine.params.MAX_Alice-1], 2);
+        eval_dual_4_isog_shared(coeff[2], coeff[3], coeff[4], As[engine.params.MAX_Alice - 1], 2);
         engine.fpx.fp2copy(A24, As[engine.params.MAX_Alice][0]);
         engine.fpx.fp2copy(C24, As[engine.params.MAX_Alice][1]);
         engine.fpx.fp2inv_mont_bingcd(C24);
@@ -707,8 +708,8 @@ class SIDH_Compressed
     {
         byte[] bitEll = new byte[2];
 
-        bitEll[0] = (byte) (bitsEll[bitsEllIndex] & 0x1);
-        bitEll[1] = (byte) ((bitsEll[bitsEllIndex] >>> 1) & 0x1);
+        bitEll[0] = (byte)(bitsEll[bitsEllIndex] & 0x1);
+        bitEll[1] = (byte)((bitsEll[bitsEllIndex] >>> 1) & 0x1);
 
         // Elligator2 both x-coordinates
         r[0] -= 1;
@@ -732,21 +733,21 @@ class SIDH_Compressed
 
 
         long[] t1 = new long[engine.params.NWORDS_ORDER],
-               t2 = new long[engine.params.NWORDS_ORDER],
-               t3 = new long[engine.params.NWORDS_ORDER],
-               t4 = new long[engine.params.NWORDS_ORDER],
-               vone = new long[engine.params.NWORDS_ORDER],
-               temp = new long[engine.params.NWORDS_ORDER],
-               SKin = new long[engine.params.NWORDS_ORDER];
+            t2 = new long[engine.params.NWORDS_ORDER],
+            t3 = new long[engine.params.NWORDS_ORDER],
+            t4 = new long[engine.params.NWORDS_ORDER],
+            vone = new long[engine.params.NWORDS_ORDER],
+            temp = new long[engine.params.NWORDS_ORDER],
+            SKin = new long[engine.params.NWORDS_ORDER];
 
 
-        engine.fpx.fp2_decode(CompressedPKA, A, 3*engine.params.ORDER_B_ENCODED_BYTES);
+        engine.fpx.fp2_decode(CompressedPKA, A, 3 * engine.params.ORDER_B_ENCODED_BYTES);
         vone[0] = 1;
         engine.fpx.to_Montgomery_mod_order(vone, vone, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);  // Converting to Montgomery representation
-        bit = (byte) ((CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0xff) >> 7);
+        bit = (byte)((CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0xff) >> 7);
 
         byte[] rs_temp = new byte[3];
-        System.arraycopy(CompressedPKA, 3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES, rs_temp, 0, 3);
+        System.arraycopy(CompressedPKA, 3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES, rs_temp, 0, 3);
         rs[0] = rs_temp[0] & 0xffff;
         rs[1] = rs_temp[1] & 0xffff;
         rs[2] = rs_temp[2] & 0xffff;
@@ -763,14 +764,14 @@ class SIDH_Compressed
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[0].Z[0]);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[1].Z[0]);
 
-        engine.isogeny.swap_points(Rs[0], Rs[1], -(long) bit);
+        engine.isogeny.swap_points(Rs[0], Rs[1], -(long)bit);
         engine.fpx.decode_to_digits(SecretKeyB, 0, SKin, engine.params.SECRETKEY_B_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.to_Montgomery_mod_order(SKin, t1, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);    // Converting to Montgomery representation
         engine.fpx.decode_to_digits(CompressedPKA, 0, temp, engine.params.ORDER_B_ENCODED_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.to_Montgomery_mod_order(temp, t2, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
         engine.fpx.decode_to_digits(CompressedPKA, engine.params.ORDER_B_ENCODED_BYTES, temp, engine.params.ORDER_B_ENCODED_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.to_Montgomery_mod_order(temp, t3, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
-        engine.fpx.decode_to_digits(CompressedPKA, 2*engine.params.ORDER_B_ENCODED_BYTES, temp, engine.params.ORDER_B_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+        engine.fpx.decode_to_digits(CompressedPKA, 2 * engine.params.ORDER_B_ENCODED_BYTES, temp, engine.params.ORDER_B_ENCODED_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.to_Montgomery_mod_order(temp, t4, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);
 
         if (bit == 0)
@@ -793,7 +794,7 @@ class SIDH_Compressed
             engine.fpx.mp_add(t2, t3, t3, engine.params.NWORDS_ORDER);
             engine.fpx.Montgomery_multiply_mod_order(t3, t4, t3, engine.params.Bob_order, engine.params.Montgomery_RB2);
             engine.fpx.from_Montgomery_mod_order(t3, t3, engine.params.Bob_order, engine.params.Montgomery_RB2);    // Converting back from Montgomery representation
-            Ladder3pt_dual(Rs,t3,engine.params.BOB, R, A24);
+            Ladder3pt_dual(Rs, t3, engine.params.BOB, R, A24);
         }
         engine.isogeny.Double(R, R, A24, engine.params.OALICE_BITS);    // x, z := Double(A24, x, 1, eA);
     }
@@ -803,13 +804,13 @@ class SIDH_Compressed
     {
         int bit;
         long[] temp = new long[engine.params.NWORDS_ORDER],
-               inv = new long[engine.params.NWORDS_ORDER];
+            inv = new long[engine.params.NWORDS_ORDER];
         long[][] A = new long[2][engine.params.NWORDS_FIELD];
 
-        engine.fpx.fp2add(a24,a24,A);
-        engine.fpx.fp2add(A,A,A);
-        engine.fpx.fpsubPRIME(A[0],engine.params.Montgomery_one,A[0]);
-        engine.fpx.fpsubPRIME(A[0],engine.params.Montgomery_one,A[0]);    // 4*a24-2
+        engine.fpx.fp2add(a24, a24, A);
+        engine.fpx.fp2add(A, A, A);
+        engine.fpx.fpsubPRIME(A[0], engine.params.Montgomery_one, A[0]);
+        engine.fpx.fpsubPRIME(A[0], engine.params.Montgomery_one, A[0]);    // 4*a24-2
 
         bit = engine.fpx.mod3(d1);
         engine.fpx.to_Montgomery_mod_order(c0, c0, engine.params.Bob_order, engine.params.Montgomery_RB2, engine.params.Montgomery_RB1);   // Converting to Montgomery representation
@@ -830,8 +831,8 @@ class SIDH_Compressed
             engine.fpx.encode_to_bytes(temp, CompressedPKA, engine.params.ORDER_B_ENCODED_BYTES, engine.params.ORDER_B_ENCODED_BYTES);
             engine.fpx.Montgomery_multiply_mod_order(c0, inv, temp, engine.params.Bob_order, engine.params.Montgomery_RB2);
             engine.fpx.from_Montgomery_mod_order(temp, temp, engine.params.Bob_order, engine.params.Montgomery_RB2);
-            engine.fpx.encode_to_bytes(temp, CompressedPKA, 2*engine.params.ORDER_B_ENCODED_BYTES, engine.params.ORDER_B_ENCODED_BYTES);
-            CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = 0x00;
+            engine.fpx.encode_to_bytes(temp, CompressedPKA, 2 * engine.params.ORDER_B_ENCODED_BYTES, engine.params.ORDER_B_ENCODED_BYTES);
+            CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = 0x00;
         }
         else
         {  // Storing [d1*d0inv, c1*d0inv, c0*d0inv] and setting bit "NBITS_ORDER" to 1
@@ -846,14 +847,14 @@ class SIDH_Compressed
             engine.fpx.Montgomery_neg(c0, engine.params.Bob_order);
             engine.fpx.Montgomery_multiply_mod_order(c0, inv, temp, engine.params.Bob_order, engine.params.Montgomery_RB2);
             engine.fpx.from_Montgomery_mod_order(temp, temp, engine.params.Bob_order, engine.params.Montgomery_RB2);
-            engine.fpx.encode_to_bytes(temp, CompressedPKA, 2*engine.params.ORDER_B_ENCODED_BYTES, engine.params.ORDER_B_ENCODED_BYTES);
-            CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = (byte) 0x80;
+            engine.fpx.encode_to_bytes(temp, CompressedPKA, 2 * engine.params.ORDER_B_ENCODED_BYTES, engine.params.ORDER_B_ENCODED_BYTES);
+            CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = (byte)0x80;
         }
 
-        engine.fpx.fp2_encode(A, CompressedPKA, 3*engine.params.ORDER_B_ENCODED_BYTES);
-        CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] |= (byte)rs[0];
-        CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = (byte) rs[1];
-        CompressedPKA[3*engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 2] = (byte) rs[2];
+        engine.fpx.fp2_encode(A, CompressedPKA, 3 * engine.params.ORDER_B_ENCODED_BYTES);
+        CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] |= (byte)rs[0];
+        CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = (byte)rs[1];
+        CompressedPKA[3 * engine.params.ORDER_B_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 2] = (byte)rs[2];
     }
 
     // Alice's ephemeral public key generation using compression -- SIKE protocol
@@ -861,14 +862,14 @@ class SIDH_Compressed
     protected int EphemeralKeyGeneration_A_extended(byte[] PrivateKeyA, byte[] CompressedPKA)
     {
         int[] rs = new int[3],
-              D = new int[engine.params.DLEN_3];
+            D = new int[engine.params.DLEN_3];
         long[][] a24 = new long[2][engine.params.NWORDS_FIELD];
-        long[][][][] As = new long[engine.params.MAX_Alice+1][5][2][engine.params.NWORDS_FIELD];
+        long[][][][] As = new long[engine.params.MAX_Alice + 1][5][2][engine.params.NWORDS_FIELD];
         long[][][] f = new long[4][2][engine.params.NWORDS_FIELD];
         long[] c0 = new long[engine.params.NWORDS_ORDER],
-               d0 = new long[engine.params.NWORDS_ORDER],
-               c1 = new long[engine.params.NWORDS_ORDER],
-               d1 = new long[engine.params.NWORDS_ORDER];
+            d0 = new long[engine.params.NWORDS_ORDER],
+            c1 = new long[engine.params.NWORDS_ORDER],
+            d1 = new long[engine.params.NWORDS_ORDER];
         PointProjFull[] Rs = new PointProjFull[2];
         Rs[0] = new PointProjFull(engine.params.NWORDS_FIELD);
         Rs[1] = new PointProjFull(engine.params.NWORDS_FIELD);
@@ -914,7 +915,7 @@ class SIDH_Compressed
         int i, ii = 0, row, m, index = 0, npts = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_BOB];
         long[][] A24plus = new long[2][engine.params.NWORDS_FIELD],
-                A24minus = new long[2][engine.params.NWORDS_FIELD];
+            A24minus = new long[2][engine.params.NWORDS_FIELD];
         PointProj R = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
         long[][] jinv = new long[2][engine.params.NWORDS_FIELD], A = new long[2][engine.params.NWORDS_FIELD];
@@ -931,7 +932,7 @@ class SIDH_Compressed
         index = 0;
         for (row = 1; row < engine.params.MAX_Bob; row++)
         {
-            while (index < engine.params.MAX_Bob-row)
+            while (index < engine.params.MAX_Bob - row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
@@ -948,9 +949,9 @@ class SIDH_Compressed
                 engine.isogeny.eval_3_isog(pts[i], coeff);
             }
 
-            engine.fpx.fp2copy(pts[npts-1].X, R.X);
-            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-            index = pts_index[npts-1];
+            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
+            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
+            index = pts_index[npts - 1];
             npts -= 1;
         }
 
@@ -969,11 +970,11 @@ class SIDH_Compressed
     {
         long[] s = new long[engine.params.NWORDS_FIELD];
         long[][] t_ptr, r = new long[2][engine.params.NWORDS_FIELD],
-                t = new long[2][engine.params.NWORDS_FIELD];
+            t = new long[2][engine.params.NWORDS_FIELD];
         int t_ptrOffset = 0;
 
         // Select the correct table
-        if (engine.fpx.is_sqr_fp2(A,  s))
+        if (engine.fpx.is_sqr_fp2(A, s))
         {
             t_ptr = engine.params.table_v_qnr;
             qnr[0] = 1;
@@ -988,15 +989,16 @@ class SIDH_Compressed
         ind[0] = 0;
         do
         {
-            engine.fpx.fp2mul_mont(A,  t_ptr, t_ptrOffset,  R[0].X);    // R[0].X =  A*v
+            engine.fpx.fp2mul_mont(A, t_ptr, t_ptrOffset, R[0].X);    // R[0].X =  A*v
             t_ptrOffset += 2;
             engine.fpx.fp2neg(R[0].X);                                  // R[0].X = -A*v
-            engine.fpx.fp2add(R[0].X,  A,  t);
-            engine.fpx.fp2mul_mont(R[0].X,  t,  t);
-            engine.fpx.fpaddPRIME(t[0],  engine.params.Montgomery_one, t[0]);
-            engine.fpx.fp2mul_mont(R[0].X,  t,  t);                     // t = R[0].X^3 + A*R[0].X^2 + R[0].X
+            engine.fpx.fp2add(R[0].X, A, t);
+            engine.fpx.fp2mul_mont(R[0].X, t, t);
+            engine.fpx.fpaddPRIME(t[0], engine.params.Montgomery_one, t[0]);
+            engine.fpx.fp2mul_mont(R[0].X, t, t);                     // t = R[0].X^3 + A*R[0].X^2 + R[0].X
             ind[0] += 1;
-        } while (!engine.fpx.is_sqr_fp2(t,  s));
+        }
+        while (!engine.fpx.is_sqr_fp2(t, s));
         ind[0] -= 1;
 
         if (qnr[0] == 1)
@@ -1026,10 +1028,10 @@ class SIDH_Compressed
     protected void RecoverY(long[][] A, PointProj[] xs, PointProjFull[] Rs)
     {
         long[][] t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD],
-                 t2 = new long[2][engine.params.NWORDS_FIELD],
-                 t3 = new long[2][engine.params.NWORDS_FIELD],
-                 t4 = new long[2][engine.params.NWORDS_FIELD];
+            t1 = new long[2][engine.params.NWORDS_FIELD],
+            t2 = new long[2][engine.params.NWORDS_FIELD],
+            t3 = new long[2][engine.params.NWORDS_FIELD],
+            t4 = new long[2][engine.params.NWORDS_FIELD];
 
         engine.fpx.fp2mul_mont(xs[2].X, xs[1].Z, t0);
         engine.fpx.fp2mul_mont(xs[1].X, xs[2].Z, t1);
@@ -1076,19 +1078,19 @@ class SIDH_Compressed
 
         // Generate x-only entangled basis 
         BuildEntangledXonly(A, xs, qnr, ind);
-        engine.fpx.fpcopy(engine.params.Montgomery_one,0, (xs[0].Z)[0]);
-        engine.fpx.fpcopy(engine.params.Montgomery_one,0, (xs[1].Z)[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, (xs[0].Z)[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, (xs[1].Z)[0]);
 
         // Move them back to A = 6 
-        for(i = 0; i < engine.params.MAX_Bob; i++)
+        for (i = 0; i < engine.params.MAX_Bob; i++)
         {
-            engine.isogeny.eval_3_isog(xs[0], Ds[engine.params.MAX_Bob-1-i]);
-            engine.isogeny.eval_3_isog(xs[1], Ds[engine.params.MAX_Bob-1-i]);
-            engine.isogeny.eval_3_isog(xs[2], Ds[engine.params.MAX_Bob-1-i]);
+            engine.isogeny.eval_3_isog(xs[0], Ds[engine.params.MAX_Bob - 1 - i]);
+            engine.isogeny.eval_3_isog(xs[1], Ds[engine.params.MAX_Bob - 1 - i]);
+            engine.isogeny.eval_3_isog(xs[2], Ds[engine.params.MAX_Bob - 1 - i]);
         }
 
         // Recover y-coordinates with a single sqrt on A = 6
-        engine.fpx.fpcopy(engine.params.Montgomery_one,0, A6[0]);
+        engine.fpx.fpcopy(engine.params.Montgomery_one, 0, A6[0]);
         engine.fpx.fpaddPRIME(A6[0], A6[0], t0);
         engine.fpx.fpaddPRIME(t0, t0, A6[0]);
         engine.fpx.fpaddPRIME(A6[0], t0, A6[0]);    // A6 = 6 
@@ -1103,14 +1105,14 @@ class SIDH_Compressed
     protected void FullIsogeny_B_dual(byte[] PrivateKeyB, long[][][][] Ds, long[][] A)
     {
         PointProj R = new PointProj(engine.params.NWORDS_FIELD),
-        Q3 = new PointProj(engine.params.NWORDS_FIELD);
+            Q3 = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
 
         long[][] XPB = new long[2][engine.params.NWORDS_FIELD],
-        XQB = new long[2][engine.params.NWORDS_FIELD],
-        XRB = new long[2][engine.params.NWORDS_FIELD],
-        A24plus  = new long[2][engine.params.NWORDS_FIELD],
-        A24minus  = new long[2][engine.params.NWORDS_FIELD];
+            XQB = new long[2][engine.params.NWORDS_FIELD],
+            XRB = new long[2][engine.params.NWORDS_FIELD],
+            A24plus = new long[2][engine.params.NWORDS_FIELD],
+            A24minus = new long[2][engine.params.NWORDS_FIELD];
         long[][][] coeff = new long[3][2][engine.params.NWORDS_FIELD];
         int i, row, m, index = 0, npts = 0, ii = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_BOB];
@@ -1137,7 +1139,7 @@ class SIDH_Compressed
         index = 0;
         for (row = 1; row < engine.params.MAX_Bob; row++)
         {
-            while (index < engine.params.MAX_Bob-row)
+            while (index < engine.params.MAX_Bob - row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
@@ -1153,18 +1155,18 @@ class SIDH_Compressed
                 engine.isogeny.eval_3_isog(pts[i], coeff);
             }
             engine.isogeny.eval_3_isog(Q3, coeff);    // Kernel of dual 
-            engine.fpx.fp2sub(Q3.X,Q3.Z,Ds[row-1][0]);
-            engine.fpx.fp2add(Q3.X,Q3.Z,Ds[row-1][1]);
+            engine.fpx.fp2sub(Q3.X, Q3.Z, Ds[row - 1][0]);
+            engine.fpx.fp2add(Q3.X, Q3.Z, Ds[row - 1][1]);
 
-            engine.fpx.fp2copy(pts[npts-1].X, R.X);
-            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-            index = pts_index[npts-1];
+            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
+            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
+            index = pts_index[npts - 1];
             npts -= 1;
         }
         engine.isogeny.get_3_isog(R, A24minus, A24plus, coeff);
         engine.isogeny.eval_3_isog(Q3, coeff);    // Kernel of dual 
-        engine.fpx.fp2sub(Q3.X, Q3.Z, Ds[engine.params.MAX_Bob-1][0]);
-        engine.fpx.fp2add(Q3.X, Q3.Z, Ds[engine.params.MAX_Bob-1][1]);
+        engine.fpx.fp2sub(Q3.X, Q3.Z, Ds[engine.params.MAX_Bob - 1][0]);
+        engine.fpx.fp2add(Q3.X, Q3.Z, Ds[engine.params.MAX_Bob - 1][1]);
 
         engine.fpx.fp2add(A24plus, A24minus, A);
         engine.fpx.fp2sub(A24plus, A24minus, A24plus);
@@ -1190,7 +1192,7 @@ class SIDH_Compressed
         long[][] t_ptr, r = new long[2][engine.params.NWORDS_FIELD], t = new long[2][engine.params.NWORDS_FIELD];
 
         // Select the correct table
-        if ( qnr == 1 )
+        if (qnr == 1)
         {
             t_ptr = engine.params.table_v_qnr;
         }
@@ -1199,7 +1201,7 @@ class SIDH_Compressed
             t_ptr = engine.params.table_v_qr;
         }
 
-        if (ind >= engine.params.TABLE_V_LEN/2)
+        if (ind >= engine.params.TABLE_V_LEN / 2)
         {
             ind = 0;
         }
@@ -1236,20 +1238,20 @@ class SIDH_Compressed
 
     // Bob's PK decompression -- SIKE protocol
     protected void PKBDecompression_extended(byte[] SecretKeyA, int SecretKeyAOffset, byte[] CompressedPKB, PointProj R, long[][] A, byte[] tphiBKA_t, int tphiBKA_tOffset)
-    { 
+    {
         long mask = -1L;
         int qnr, ind;
         long[][] A24 = new long[2][engine.params.NWORDS_FIELD],
-                 Adiv2 = new long[2][engine.params.NWORDS_FIELD];
-        long[] tmp1 = new long[2*engine.params.NWORDS_ORDER],
-                tmp2 = new long[2*engine.params.NWORDS_ORDER],
-                inv = new long[engine.params.NWORDS_ORDER],
-                scal = new long[2*engine.params.NWORDS_ORDER],
-                SKin = new long[engine.params.NWORDS_ORDER],
-                a0 = new long[engine.params.NWORDS_ORDER],
-                a1 = new long[engine.params.NWORDS_ORDER],
-                b0 = new long[engine.params.NWORDS_ORDER],
-                b1 = new long[engine.params.NWORDS_ORDER];
+            Adiv2 = new long[2][engine.params.NWORDS_FIELD];
+        long[] tmp1 = new long[2 * engine.params.NWORDS_ORDER],
+            tmp2 = new long[2 * engine.params.NWORDS_ORDER],
+            inv = new long[engine.params.NWORDS_ORDER],
+            scal = new long[2 * engine.params.NWORDS_ORDER],
+            SKin = new long[engine.params.NWORDS_ORDER],
+            a0 = new long[engine.params.NWORDS_ORDER],
+            a1 = new long[engine.params.NWORDS_ORDER],
+            b0 = new long[engine.params.NWORDS_ORDER],
+            b1 = new long[engine.params.NWORDS_ORDER];
         PointProj[] Rs = new PointProj[3];
         Rs[0] = new PointProj(engine.params.NWORDS_FIELD);
         Rs[1] = new PointProj(engine.params.NWORDS_FIELD);
@@ -1257,9 +1259,9 @@ class SIDH_Compressed
 
         mask >>>= (engine.params.MAXBITS_ORDER - engine.params.OALICE_BITS);
 
-        engine.fpx.fp2_decode(CompressedPKB, A, 4*engine.params.ORDER_A_ENCODED_BYTES);
-        qnr = CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0x01;
-        ind = CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1];
+        engine.fpx.fp2_decode(CompressedPKB, A, 4 * engine.params.ORDER_A_ENCODED_BYTES);
+        qnr = CompressedPKB[4 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0x01;
+        ind = CompressedPKB[4 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1];
         BuildEntangledXonly_Decomp(A, Rs, qnr, ind);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[0].Z[0]);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[1].Z[0]);
@@ -1273,51 +1275,51 @@ class SIDH_Compressed
         engine.fpx.decode_to_digits(SecretKeyA, SecretKeyAOffset, SKin, engine.params.SECRETKEY_A_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.decode_to_digits(CompressedPKB, 0, a0, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
         engine.fpx.decode_to_digits(CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, b0, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
-        engine.fpx.decode_to_digits(CompressedPKB, 2*engine.params.ORDER_A_ENCODED_BYTES, a1, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
-        engine.fpx.decode_to_digits(CompressedPKB, 3*engine.params.ORDER_A_ENCODED_BYTES, b1, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+        engine.fpx.decode_to_digits(CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, a1, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+        engine.fpx.decode_to_digits(CompressedPKB, 3 * engine.params.ORDER_A_ENCODED_BYTES, b1, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
 
-        if ( (a0[0] & 1) == 1)
+        if ((a0[0] & 1) == 1)
         {
             engine.fpx.multiply(SKin, b1, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp1, b0, tmp1, engine.params.NWORDS_ORDER);
-            tmp1[engine.params.NWORDS_ORDER-1] &= mask;
+            tmp1[engine.params.NWORDS_ORDER - 1] &= mask;
             engine.fpx.multiply(SKin, a1, tmp2, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp2, a0, tmp2, engine.params.NWORDS_ORDER);
-            tmp2[engine.params.NWORDS_ORDER-1] &= mask;
+            tmp2[engine.params.NWORDS_ORDER - 1] &= mask;
             engine.fpx.inv_mod_orderA(tmp2, inv);
             engine.fpx.multiply(tmp1, inv, scal, engine.params.NWORDS_ORDER);
-            scal[engine.params.NWORDS_ORDER-1] &= mask;
+            scal[engine.params.NWORDS_ORDER - 1] &= mask;
             Ladder3pt_dual(Rs, scal, engine.params.ALICE, R, A24);
         }
         else
         {
             engine.fpx.multiply(SKin, a1, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp1, a0, tmp1, engine.params.NWORDS_ORDER);
-            tmp1[engine.params.NWORDS_ORDER-1] &= (long)mask;
+            tmp1[engine.params.NWORDS_ORDER - 1] &= (long)mask;
             engine.fpx.multiply(SKin, b1, tmp2, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp2, b0, tmp2, engine.params.NWORDS_ORDER);
-            tmp2[engine.params.NWORDS_ORDER-1] &= (long)mask;
+            tmp2[engine.params.NWORDS_ORDER - 1] &= (long)mask;
             engine.fpx.inv_mod_orderA(tmp2, inv);
             engine.fpx.multiply(inv, tmp1, scal, engine.params.NWORDS_ORDER);
-            scal[engine.params.NWORDS_ORDER-1] &= (long)mask;
+            scal[engine.params.NWORDS_ORDER - 1] &= (long)mask;
             engine.isogeny.swap_points(Rs[0], Rs[1], -1L);
             Ladder3pt_dual(Rs, scal, engine.params.ALICE, R, A24);
         }
 
-        engine.fpx.fp2div2(A,Adiv2);
+        engine.fpx.fp2div2(A, Adiv2);
         engine.isogeny.xTPLe_fast(R, R, Adiv2, engine.params.OBOB_EXPON);
 
         engine.fpx.fp2_encode(R.X, tphiBKA_t, tphiBKA_tOffset);
         engine.fpx.fp2_encode(R.Z, tphiBKA_t, tphiBKA_tOffset + engine.params.FP2_ENCODED_BYTES);
-        engine.fpx.encode_to_bytes(inv, tphiBKA_t, tphiBKA_tOffset + 2*engine.params.FP2_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+        engine.fpx.encode_to_bytes(inv, tphiBKA_t, tphiBKA_tOffset + 2 * engine.params.FP2_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
     }
 
     // Bob's PK compression -- SIKE protocol
     protected void Compress_PKB_dual_extended(long[] d0, long[] c0, long[] d1, long[] c1, long[][] A, byte[] qnr, byte[] ind, byte[] CompressedPKB)
     {
         long mask = -1L;
-        long[] tmp = new long[2*engine.params.NWORDS_ORDER],
-        D = new long[2*engine.params.NWORDS_ORDER], Dinv = new long[2*engine.params.NWORDS_ORDER];
+        long[] tmp = new long[2 * engine.params.NWORDS_ORDER],
+            D = new long[2 * engine.params.NWORDS_ORDER], Dinv = new long[2 * engine.params.NWORDS_ORDER];
 
         mask >>>= (engine.params.MAXBITS_ORDER - engine.params.OALICE_BITS);
 
@@ -1325,54 +1327,54 @@ class SIDH_Compressed
         engine.fpx.multiply(c1, d0, D, engine.params.NWORDS_ORDER);
         engine.fpx.Montgomery_neg(D, engine.params.Alice_order);
         engine.fpx.mp_add(tmp, D, D, engine.params.NWORDS_ORDER);
-        D[engine.params.NWORDS_ORDER-1] &= (long)mask;
+        D[engine.params.NWORDS_ORDER - 1] &= (long)mask;
         engine.fpx.inv_mod_orderA(D, Dinv);
         engine.fpx.multiply(d1, Dinv, tmp, engine.params.NWORDS_ORDER); // a0' = 3^n * d1 / D
-        tmp[engine.params.NWORDS_ORDER-1] &= mask;
+        tmp[engine.params.NWORDS_ORDER - 1] &= mask;
         engine.fpx.encode_to_bytes(tmp, CompressedPKB, 0, engine.params.ORDER_A_ENCODED_BYTES);
 
         engine.fpx.Montgomery_neg(d0, engine.params.Alice_order);
         engine.fpx.multiply(d0, Dinv, tmp, engine.params.NWORDS_ORDER); // b0' = 3^n * (- d0 / D)
-        tmp[engine.params.NWORDS_ORDER-1] &= (long)mask;
-        engine.fpx.encode_to_bytes(tmp,CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+        tmp[engine.params.NWORDS_ORDER - 1] &= (long)mask;
+        engine.fpx.encode_to_bytes(tmp, CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
 
         engine.fpx.Montgomery_neg(c1, engine.params.Alice_order);
         engine.fpx.multiply(c1, Dinv, tmp, engine.params.NWORDS_ORDER); // a1' = 3^n * (- c1 / D)
-        tmp[engine.params.NWORDS_ORDER-1] &= (long)mask;
-        engine.fpx.encode_to_bytes(tmp, CompressedPKB, 2*engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+        tmp[engine.params.NWORDS_ORDER - 1] &= (long)mask;
+        engine.fpx.encode_to_bytes(tmp, CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
 
         engine.fpx.multiply(c0, Dinv, tmp, engine.params.NWORDS_ORDER); // b1' = 3^n * (c0 / D)
-        tmp[engine.params.NWORDS_ORDER-1] &= (long)mask;
-        engine.fpx.encode_to_bytes(tmp, CompressedPKB, 3*engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+        tmp[engine.params.NWORDS_ORDER - 1] &= (long)mask;
+        engine.fpx.encode_to_bytes(tmp, CompressedPKB, 3 * engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
 
-        engine.fpx.fp2_encode(A, CompressedPKB, 4*engine.params.ORDER_A_ENCODED_BYTES);
-        CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = qnr[0];
-        CompressedPKB[4*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = ind[0];
+        engine.fpx.fp2_encode(A, CompressedPKB, 4 * engine.params.ORDER_A_ENCODED_BYTES);
+        CompressedPKB[4 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = qnr[0];
+        CompressedPKB[4 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = ind[0];
     }
 
     // Bob's PK decompression -- SIDH protocol
     protected void PKBDecompression(byte[] SecretKeyA, int SecretKeyAOffset, byte[] CompressedPKB, PointProj R, long[][] A)
     {
         long mask = -1L;
-        int bit,qnr,ind;
+        int bit, qnr, ind;
         long[][] A24 = new long[2][engine.params.NWORDS_FIELD];
-        long[] tmp1 = new long[2*engine.params.NWORDS_ORDER],
-               tmp2 = new long[2*engine.params.NWORDS_ORDER],
-               vone = new long[2*engine.params.NWORDS_ORDER],
-               SKin = new long[engine.params.NWORDS_ORDER],
-               comp_temp = new long[engine.params.NWORDS_ORDER];
+        long[] tmp1 = new long[2 * engine.params.NWORDS_ORDER],
+            tmp2 = new long[2 * engine.params.NWORDS_ORDER],
+            vone = new long[2 * engine.params.NWORDS_ORDER],
+            SKin = new long[engine.params.NWORDS_ORDER],
+            comp_temp = new long[engine.params.NWORDS_ORDER];
         PointProj[] Rs = new PointProj[3];
 
         mask >>>= (engine.params.MAXBITS_ORDER - engine.params.OALICE_BITS);
         vone[0] = 1;
 
-        engine.fpx.fp2_decode(CompressedPKB, A, 3*engine.params.ORDER_A_ENCODED_BYTES);
-        bit = CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] >>> 7;
-        qnr = CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0x1;
-        ind = CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1];
+        engine.fpx.fp2_decode(CompressedPKB, A, 3 * engine.params.ORDER_A_ENCODED_BYTES);
+        bit = CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] >>> 7;
+        qnr = CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] & 0x1;
+        ind = CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1];
 
         // Rebuild the basis 
-        BuildEntangledXonly_Decomp(A,Rs,qnr,ind);
+        BuildEntangledXonly_Decomp(A, Rs, qnr, ind);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[0].Z[0]);
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, Rs[1].Z[0]);
 
@@ -1383,35 +1385,35 @@ class SIDH_Compressed
         engine.fpx.fp2div2(A24, A24);
 
         engine.fpx.decode_to_digits(SecretKeyA, SecretKeyAOffset, SKin, engine.params.SECRETKEY_A_BYTES, engine.params.NWORDS_ORDER);
-        engine.isogeny.swap_points(Rs[0], Rs[1], 0-(long)bit);
+        engine.isogeny.swap_points(Rs[0], Rs[1], 0 - (long)bit);
         if (bit == 0)
         {
             engine.fpx.decode_to_digits(CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(SKin, comp_temp, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp1, vone, tmp1, engine.params.NWORDS_ORDER);
-            tmp1[engine.params.NWORDS_ORDER-1] &= (long)mask;
+            tmp1[engine.params.NWORDS_ORDER - 1] &= (long)mask;
             engine.fpx.inv_mod_orderA(tmp1, tmp2);
-            engine.fpx.decode_to_digits(CompressedPKB, 2*engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+            engine.fpx.decode_to_digits(CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(SKin, comp_temp, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.decode_to_digits(CompressedPKB, 0, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(comp_temp, tmp1, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(tmp1, tmp2, vone, engine.params.NWORDS_ORDER);
-            vone[engine.params.NWORDS_ORDER-1] &= mask;
+            vone[engine.params.NWORDS_ORDER - 1] &= mask;
             Ladder3pt_dual(Rs, vone, engine.params.ALICE, R, A24);
         }
         else
         {
-            engine.fpx.decode_to_digits(CompressedPKB, 2*engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+            engine.fpx.decode_to_digits(CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(SKin, comp_temp, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(tmp1, vone, tmp1, engine.params.NWORDS_ORDER);
-            tmp1[engine.params.NWORDS_ORDER-1] &= mask;
+            tmp1[engine.params.NWORDS_ORDER - 1] &= mask;
             engine.fpx.inv_mod_orderA(tmp1, tmp2);
             engine.fpx.decode_to_digits(CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(SKin, comp_temp, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.decode_to_digits(CompressedPKB, 0, comp_temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
             engine.fpx.mp_add(comp_temp, tmp1, tmp1, engine.params.NWORDS_ORDER);
             engine.fpx.multiply(tmp1, tmp2, vone, engine.params.NWORDS_ORDER);
-            vone[engine.params.NWORDS_ORDER-1] &= mask;
+            vone[engine.params.NWORDS_ORDER - 1] &= mask;
             Ladder3pt_dual(Rs, vone, engine.params.ALICE, R, A24);
         }
         engine.fpx.fp2div2(A, A24);
@@ -1421,45 +1423,45 @@ class SIDH_Compressed
     // Bob's PK compression -- SIDH protocol
     protected void Compress_PKB_dual(long[] d0, long[] c0, long[] d1, long[] c1, long[][] A, byte qnr[], byte ind[], byte[] CompressedPKB)
     {
-        long[] tmp = new long[2*engine.params.NWORDS_ORDER],
-               inv = new long[engine.params.NWORDS_ORDER];
+        long[] tmp = new long[2 * engine.params.NWORDS_ORDER],
+            inv = new long[engine.params.NWORDS_ORDER];
         if ((d1[0] & 1) == 1)
         {  // Storing [-d0*d1^-1 = b1*a0^-1, -c1*d1^-1 = a1*a0^-1, c0*d1^-1 = b0*a0^-1] and setting bit384 to 0
             engine.fpx.inv_mod_orderA(d1, inv);
             engine.fpx.Montgomery_neg(d0, engine.params.Alice_order);
             engine.fpx.multiply(d0, inv, tmp, engine.params.NWORDS_ORDER);
             engine.fpx.encode_to_bytes(tmp, CompressedPKB, 0, engine.params.ORDER_A_ENCODED_BYTES);
-            CompressedPKB[engine.params.ORDER_A_ENCODED_BYTES-1] &= engine.params.MASK_ALICE;
+            CompressedPKB[engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
             engine.fpx.Montgomery_neg(c1, engine.params.Alice_order);
             engine.fpx.multiply(c1, inv, tmp, engine.params.NWORDS_ORDER);
-            engine.fpx.encode_to_bytes(tmp, CompressedPKB,engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
-            CompressedPKB[2*engine.params.ORDER_A_ENCODED_BYTES-1] &= engine.params.MASK_ALICE;
+            engine.fpx.encode_to_bytes(tmp, CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+            CompressedPKB[2 * engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
             engine.fpx.multiply(c0, inv, tmp, engine.params.NWORDS_ORDER);
-            engine.fpx.encode_to_bytes(tmp, CompressedPKB, 2*engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
-            CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES-1] &= engine.params.MASK_ALICE;
-            CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = 0x00;
+            engine.fpx.encode_to_bytes(tmp, CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+            CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
+            CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = 0x00;
         }
         else
         {  // Storing [ -d1*d0^-1 = b1*b0inv, c1*d0^-1 = a1*b0inv, -c0*d0^-1 = a0*b0inv] and setting bit384 to 1
             engine.fpx.inv_mod_orderA(d0, inv);
             engine.fpx.Montgomery_neg(d1, engine.params.Alice_order);
             engine.fpx.multiply(d1, inv, tmp, engine.params.NWORDS_ORDER);
-            engine.fpx.encode_to_bytes(tmp, CompressedPKB,0, engine.params.ORDER_A_ENCODED_BYTES);
+            engine.fpx.encode_to_bytes(tmp, CompressedPKB, 0, engine.params.ORDER_A_ENCODED_BYTES);
             CompressedPKB[engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
             engine.fpx.multiply(c1, inv, tmp, engine.params.NWORDS_ORDER);
             engine.fpx.encode_to_bytes(tmp, CompressedPKB, engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
-            CompressedPKB[2*engine.params.ORDER_A_ENCODED_BYTES-1] &= engine.params.MASK_ALICE;
+            CompressedPKB[2 * engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
             engine.fpx.Montgomery_neg(c0, engine.params.Alice_order);
             engine.fpx.multiply(c0, inv, tmp, engine.params.NWORDS_ORDER);
-            engine.fpx.encode_to_bytes(tmp, CompressedPKB,2*engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
-            CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES-1] &= engine.params.MASK_ALICE;
-            CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = (byte) 0x80;
+            engine.fpx.encode_to_bytes(tmp, CompressedPKB, 2 * engine.params.ORDER_A_ENCODED_BYTES, engine.params.ORDER_A_ENCODED_BYTES);
+            CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES - 1] &= engine.params.MASK_ALICE;
+            CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] = (byte)0x80;
         }
 
-        engine.fpx.fp2_encode(A, CompressedPKB,3*engine.params.ORDER_A_ENCODED_BYTES);
-        CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] |= qnr[0];
-        CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = ind[0];
-        CompressedPKB[3*engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 2] = 0;
+        engine.fpx.fp2_encode(A, CompressedPKB, 3 * engine.params.ORDER_A_ENCODED_BYTES);
+        CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES] |= qnr[0];
+        CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 1] = ind[0];
+        CompressedPKB[3 * engine.params.ORDER_A_ENCODED_BYTES + engine.params.FP2_ENCODED_BYTES + 2] = 0;
     }
 
     // Bob's ephemeral public key generation using compression -- SIKE protocol
@@ -1468,9 +1470,9 @@ class SIDH_Compressed
         byte[] qnr = new byte[1], ind = new byte[1];
         int[] D = new int[engine.params.DLEN_2];
         long[] c0 = new long[engine.params.NWORDS_ORDER],
-               d0 = new long[engine.params.NWORDS_ORDER],
-               c1 = new long[engine.params.NWORDS_ORDER],
-               d1 = new long[engine.params.NWORDS_ORDER];
+            d0 = new long[engine.params.NWORDS_ORDER],
+            c1 = new long[engine.params.NWORDS_ORDER],
+            d1 = new long[engine.params.NWORDS_ORDER];
         long[][][][] Ds = new long[engine.params.MAX_Bob][2][2][engine.params.NWORDS_FIELD];
         long[][][] f = new long[4][2][engine.params.NWORDS_FIELD];
         long[][] A = new long[2][engine.params.NWORDS_FIELD];
@@ -1480,7 +1482,7 @@ class SIDH_Compressed
         Rs[1] = new PointProjFull(engine.params.NWORDS_FIELD);
 
         PointProj Pw = new PointProj(engine.params.NWORDS_FIELD),
-                  Qw = new PointProj(engine.params.NWORDS_FIELD);
+            Qw = new PointProj(engine.params.NWORDS_FIELD);
 
         FullIsogeny_B_dual(PrivateKeyB, Ds, A);
         BuildOrdinary2nBasis_dual(A, Ds, Rs, qnr, ind);  // Generate a basis in E_A and pulls it back to E_A6. Rs[0] and Rs[1] affinized.
@@ -1491,14 +1493,14 @@ class SIDH_Compressed
         engine.fpx.fpaddPRIME(engine.params.Montgomery_one, Rs[1].X[0], Rs[1].X[0]);
         engine.fpx.fpaddPRIME(engine.params.Montgomery_one, Rs[1].X[0], Rs[1].X[0]);  // Weierstrass form
 
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 0*engine.params.NWORDS_FIELD, Pw.X[0]);
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 1*engine.params.NWORDS_FIELD, Pw.X[1]);
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 2*engine.params.NWORDS_FIELD, Pw.Z[0]);//y
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 3*engine.params.NWORDS_FIELD, Pw.Z[1]);//y
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 4*engine.params.NWORDS_FIELD, Qw.X[0]);
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 5*engine.params.NWORDS_FIELD, Qw.X[1]);
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 6*engine.params.NWORDS_FIELD, Qw.Z[0]);//y
-        engine.fpx.fpcopy(engine.params.A_basis_zero, 7*engine.params.NWORDS_FIELD, Qw.Z[1]);//y
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 0 * engine.params.NWORDS_FIELD, Pw.X[0]);
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 1 * engine.params.NWORDS_FIELD, Pw.X[1]);
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 2 * engine.params.NWORDS_FIELD, Pw.Z[0]);//y
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 3 * engine.params.NWORDS_FIELD, Pw.Z[1]);//y
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 4 * engine.params.NWORDS_FIELD, Qw.X[0]);
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 5 * engine.params.NWORDS_FIELD, Qw.X[1]);
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 6 * engine.params.NWORDS_FIELD, Qw.Z[0]);//y
+        engine.fpx.fpcopy(engine.params.A_basis_zero, 7 * engine.params.NWORDS_FIELD, Qw.Z[1]);//y
 
         Tate2_pairings(Pw, Qw, Rs, f);
         engine.fpx.fp2correction(f[0]);
@@ -1531,13 +1533,13 @@ class SIDH_Compressed
         int i, ii = 0, row, m, index = 0, npts = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_ALICE];
         long[][] A24plus = new long[2][engine.params.NWORDS_FIELD],
-                C24 = new long[2][engine.params.NWORDS_FIELD];
-        
+            C24 = new long[2][engine.params.NWORDS_FIELD];
+
         PointProj R = new PointProj(engine.params.NWORDS_FIELD);
         PointProj[] pts = new PointProj[engine.params.MAX_INT_POINTS_ALICE];
         long[][] jinv = new long[2][engine.params.NWORDS_FIELD],
-                A = new long[2][engine.params.NWORDS_FIELD],
-                param_A = new long[2][engine.params.NWORDS_FIELD];
+            A = new long[2][engine.params.NWORDS_FIELD],
+            param_A = new long[2][engine.params.NWORDS_FIELD];
         long[][][] coeff = new long[5][2][engine.params.NWORDS_FIELD];
 
 
@@ -1553,7 +1555,7 @@ class SIDH_Compressed
         engine.fpx.fp2copy(param_A, A);
         engine.fpx.fpaddPRIME(engine.params.Montgomery_one, engine.params.Montgomery_one, C24[0]);
         engine.fpx.fp2add(A, C24, A24plus);
-        engine.fpx.fpaddPRIME(C24[0], C24[0], C24[0]);    
+        engine.fpx.fpaddPRIME(C24[0], C24[0], C24[0]);
 
         if (engine.params.OALICE_BITS % 2 == 1)
         {
@@ -1568,14 +1570,14 @@ class SIDH_Compressed
         index = 0;
         for (row = 1; row < engine.params.MAX_Alice; row++)
         {
-            while (index < engine.params.MAX_Alice-row)
+            while (index < engine.params.MAX_Alice - row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
                 engine.fpx.fp2copy(R.Z, pts[npts].Z);
                 pts_index[npts++] = index;
                 m = engine.params.strat_Alice[ii++];
-                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2*m));
+                engine.isogeny.xDBLe(R, R, A24plus, C24, (int)(2 * m));
                 index += m;
             }
             engine.isogeny.get_4_isog(R, A24plus, C24, coeff);
@@ -1585,9 +1587,9 @@ class SIDH_Compressed
                 engine.isogeny.eval_4_isog(pts[i], coeff);
             }
 
-            engine.fpx.fp2copy(pts[npts-1].X, R.X);
-            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-            index = pts_index[npts-1];
+            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
+            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
+            index = pts_index[npts - 1];
             npts -= 1;
         }
 
@@ -1615,30 +1617,30 @@ class SIDH_Compressed
     protected byte validate_ciphertext(byte[] ephemeralsk_, byte[] CompressedPKB, byte[] xKA, int xKAOffset, byte[] tphiBKA_t, int tphiBKA_tOffset)
     { // If ct validation passes returns 0, otherwise returns -1.
         PointProj[] phis = new PointProj[3],
-                    pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
+            pts = new PointProj[engine.params.MAX_INT_POINTS_BOB];
 
         phis[0] = new PointProj(engine.params.NWORDS_FIELD);
         phis[1] = new PointProj(engine.params.NWORDS_FIELD);
         phis[2] = new PointProj(engine.params.NWORDS_FIELD);
 
         PointProj R = new PointProj(engine.params.NWORDS_FIELD),
-                  S = new PointProj(engine.params.NWORDS_FIELD);
+            S = new PointProj(engine.params.NWORDS_FIELD);
 
         long[][] XPB = new long[2][engine.params.NWORDS_FIELD],
-                 XQB = new long[2][engine.params.NWORDS_FIELD],
-                 XRB = new long[2][engine.params.NWORDS_FIELD],
-                 A24plus = new long[2][engine.params.NWORDS_FIELD],
-                 A24minus = new long[2][engine.params.NWORDS_FIELD],
-                 A = new long[2][engine.params.NWORDS_FIELD],
-                 comp1 = new long[2][engine.params.NWORDS_FIELD],
-                 comp2  = new long[2][engine.params.NWORDS_FIELD],
-                 one = new long[2][engine.params.NWORDS_FIELD];
+            XQB = new long[2][engine.params.NWORDS_FIELD],
+            XRB = new long[2][engine.params.NWORDS_FIELD],
+            A24plus = new long[2][engine.params.NWORDS_FIELD],
+            A24minus = new long[2][engine.params.NWORDS_FIELD],
+            A = new long[2][engine.params.NWORDS_FIELD],
+            comp1 = new long[2][engine.params.NWORDS_FIELD],
+            comp2 = new long[2][engine.params.NWORDS_FIELD],
+            one = new long[2][engine.params.NWORDS_FIELD];
         long[][][] coeff = new long[3][2][engine.params.NWORDS_FIELD];
 
         int i, row, m, index = 0, npts = 0, ii = 0;
         int[] pts_index = new int[engine.params.MAX_INT_POINTS_BOB];
         long[] temp = new long[engine.params.NWORDS_ORDER],
-               sk = new long[engine.params.NWORDS_ORDER];
+            sk = new long[engine.params.NWORDS_ORDER];
 
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one[0]);
 
@@ -1663,7 +1665,7 @@ class SIDH_Compressed
         index = 0;
         for (row = 1; row < engine.params.MAX_Bob; row++)
         {
-            while (index < engine.params.MAX_Bob-row)
+            while (index < engine.params.MAX_Bob - row)
             {
                 pts[npts] = new PointProj(engine.params.NWORDS_FIELD);
                 engine.fpx.fp2copy(R.X, pts[npts].X);
@@ -1680,28 +1682,27 @@ class SIDH_Compressed
             }
             engine.isogeny.eval_3_isog(phis[0], coeff);
 
-            engine.fpx.fp2copy(pts[npts-1].X, R.X);
-            engine.fpx.fp2copy(pts[npts-1].Z, R.Z);
-            index = pts_index[npts-1];
+            engine.fpx.fp2copy(pts[npts - 1].X, R.X);
+            engine.fpx.fp2copy(pts[npts - 1].Z, R.Z);
+            index = pts_index[npts - 1];
             npts -= 1;
         }
         engine.isogeny.get_3_isog(R, A24minus, A24plus, coeff);
         engine.isogeny.eval_3_isog(phis[0], coeff);  // phis[0] <- phiB(PA + skA*QA)
 
-        engine.fpx.fp2_decode(CompressedPKB, A, 4*engine.params.ORDER_A_ENCODED_BYTES);
+        engine.fpx.fp2_decode(CompressedPKB, A, 4 * engine.params.ORDER_A_ENCODED_BYTES);
 
         // Single equation check: t*(phiP + skA*phiQ) =? t*3^n*((a0+skA*a1)*S1 + (b0+skA*b1)*S2) for t in {(a0+skA*a1)^-1, (b0+skA*b1)^-1}
 
         engine.fpx.fp2_decode(tphiBKA_t, S.X, tphiBKA_tOffset);
         engine.fpx.fp2_decode(tphiBKA_t, S.Z, tphiBKA_tOffset + engine.params.FP2_ENCODED_BYTES);  // Recover t*3^n*((a0+skA*a1)*S1 + (b0+skA*b1)*S2)
-        engine.fpx.decode_to_digits(tphiBKA_t, tphiBKA_tOffset + 2*engine.params.FP2_ENCODED_BYTES, temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
+        engine.fpx.decode_to_digits(tphiBKA_t, tphiBKA_tOffset + 2 * engine.params.FP2_ENCODED_BYTES, temp, engine.params.ORDER_A_ENCODED_BYTES, engine.params.NWORDS_ORDER);
         engine.isogeny.Ladder(phis[0], temp, A, engine.params.OALICE_BITS, R);         // t*(phiP + skA*phiQ)
 
         engine.fpx.fp2mul_mont(R.X, S.Z, comp1);
         engine.fpx.fp2mul_mont(R.Z, S.X, comp2);
         return (engine.fpx.cmp_f2elm(comp1, comp2));
     }
-
 
 
     /// DLOG
@@ -1715,13 +1716,13 @@ class SIDH_Compressed
             if (engine.params.OALICE_BITS % engine.params.W_2 == 0)
             {
                 Traverse_w_div_e_fullsigned(r, 0, 0, engine.params.PLEN_2 - 1, engine.params.ph2_path,
-                        engine.params.ph2_T, D, engine.params.DLEN_2, engine.params.ELL2_W, engine.params.W_2);
+                    engine.params.ph2_T, D, engine.params.DLEN_2, engine.params.ELL2_W, engine.params.W_2);
             }
             else
             {
                 Traverse_w_notdiv_e_fullsigned(r, 0, 0, engine.params.PLEN_2 - 1, engine.params.ph2_path,
-                        engine.params.ph2_T1, engine.params.ph2_T2, D, engine.params.DLEN_2, ell, engine.params.ELL2_W,
-                        engine.params.ELL2_EMODW, engine.params.W_2, engine.params.OALICE_BITS);
+                    engine.params.ph2_T1, engine.params.ph2_T2, D, engine.params.DLEN_2, ell, engine.params.ELL2_W,
+                    engine.params.ELL2_EMODW, engine.params.W_2, engine.params.OALICE_BITS);
             }
             from_base(D, d, engine.params.DLEN_2, engine.params.ELL2_W);
         }
@@ -1730,13 +1731,13 @@ class SIDH_Compressed
             if (engine.params.OBOB_EXPON % engine.params.W_3 == 0)
             {
                 Traverse_w_div_e_fullsigned(r, 0, 0, engine.params.PLEN_3 - 1, engine.params.ph3_path,
-                        engine.params.ph3_T, D, engine.params.DLEN_3, engine.params.ELL3_W, engine.params.W_3);
+                    engine.params.ph3_T, D, engine.params.DLEN_3, engine.params.ELL3_W, engine.params.W_3);
             }
             else
             {
                 Traverse_w_notdiv_e_fullsigned(r, 0, 0, engine.params.PLEN_3 - 1, engine.params.ph3_path,
-                        engine.params.ph3_T1, engine.params.ph3_T2, D, engine.params.DLEN_3, ell, engine.params.ELL3_W,
-                        engine.params.ELL3_EMODW, engine.params.W_3, engine.params.OBOB_EXPON);
+                    engine.params.ph3_T1, engine.params.ph3_T2, D, engine.params.DLEN_3, ell, engine.params.ELL3_W,
+                    engine.params.ELL3_EMODW, engine.params.W_3, engine.params.OBOB_EXPON);
             }
             from_base(D, d, engine.params.DLEN_3, engine.params.ELL3_W);
         }
@@ -1747,14 +1748,14 @@ class SIDH_Compressed
     private void from_base(int[] D, long[] r, int Dlen, int base)
     {
         long[] ell = new long[engine.params.NWORDS_ORDER],
-               digit = new long[engine.params.NWORDS_ORDER],
-               temp = new long[engine.params.NWORDS_ORDER];
+            digit = new long[engine.params.NWORDS_ORDER],
+            temp = new long[engine.params.NWORDS_ORDER];
         int ellw;
 
         ell[0] = base;
-        if (D[Dlen-1] < 0)
+        if (D[Dlen - 1] < 0)
         {
-            digit[0] = (((int)-D[Dlen-1])*ell[0]);
+            digit[0] = (((int)-D[Dlen - 1]) * ell[0]);
             if ((base & 1) == 0)
             {
                 engine.fpx.Montgomery_neg(digit, engine.params.Alice_order);
@@ -1767,10 +1768,10 @@ class SIDH_Compressed
         }
         else
         {
-            r[0] = (D[Dlen-1]*ell[0]);
+            r[0] = (D[Dlen - 1] * ell[0]);
         }
 
-        for (int i = Dlen-2; i >= 1; i--)
+        for (int i = Dlen - 2; i >= 1; i--)
         {
             ellw = base;
             Arrays.fill(digit, 0);
@@ -1856,7 +1857,6 @@ class SIDH_Compressed
     }
 
 
-
     // Traverse a Pohlig-Hellman optimal strategy to solve a discrete log in a group of order ell^e
     // Leaves are used to recover the digits which are numbers from 0 to ell^w-1 except by the last leaf that gives a digit between 0 and ell^(e mod w)
     // Assume w does not divide the exponent e
@@ -1864,14 +1864,14 @@ class SIDH_Compressed
                                         int[] D, int Dlen, int ell, int ellw, int ell_emodw, int w, int e)
     {
         long[][] rp = new long[2][engine.params.NWORDS_FIELD],
-                 alpha = new long[2][engine.params.NWORDS_FIELD];
+            alpha = new long[2][engine.params.NWORDS_FIELD];
 
 
         if (z > 1)
         {
             int t = P[z], goleft;
             engine.fpx.fp2copy(r, rp);
-            goleft = (j > 0) ? w*(z-t) : (e % w) + w*(z-t-1);
+            goleft = (j > 0) ? w * (z - t) : (e % w) + w * (z - t - 1);
             for (int i = 0; i < goleft; i++)
             {
                 if ((ell & 1) == 0)
@@ -1896,26 +1896,26 @@ class SIDH_Compressed
                     {
                         if (D[h] < 0)
                         {
-                            engine.fpx.fp2copy(CT2, engine.params.NWORDS_FIELD * (2*(j + h)*(ellw/2)+2*(-D[h]-1)), alpha);
+                            engine.fpx.fp2copy(CT2, engine.params.NWORDS_FIELD * (2 * (j + h) * (ellw / 2) + 2 * (-D[h] - 1)), alpha);
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fp2mul_mont(rp, alpha, rp);
                         }
                         else
                         {
-                            engine.fpx.fp2mul_mont(rp, CT2, engine.params.NWORDS_FIELD * (2*((j + h)*(ellw/2) + (D[h]-1))), rp);
+                            engine.fpx.fp2mul_mont(rp, CT2, engine.params.NWORDS_FIELD * (2 * ((j + h) * (ellw / 2) + (D[h] - 1))), rp);
                         }
                     }
                     else
                     {
                         if (D[h] < 0)
                         {
-                            engine.fpx.fp2copy(CT1, engine.params.NWORDS_FIELD * (2*((j + h)*(ellw/2) + (-D[h]-1))), alpha);
+                            engine.fpx.fp2copy(CT1, engine.params.NWORDS_FIELD * (2 * ((j + h) * (ellw / 2) + (-D[h] - 1))), alpha);
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fp2mul_mont(rp, alpha, rp);
                         }
                         else
                         {
-                            engine.fpx.fp2mul_mont(rp, CT1, engine.params.NWORDS_FIELD * (2*((j + h)*(ellw/2) + (D[h]-1))), rp);
+                            engine.fpx.fp2mul_mont(rp, CT1, engine.params.NWORDS_FIELD * (2 * ((j + h) * (ellw / 2) + (D[h] - 1))), rp);
                         }
                     }
                 }
@@ -1929,7 +1929,7 @@ class SIDH_Compressed
             engine.fpx.fp2correction(rp);
 
 
-            if (engine.fpx.is_felm_zero(rp[1]) && Fpx.subarrayEquals(rp[0],engine.params.Montgomery_one, engine.params.NWORDS_FIELD))
+            if (engine.fpx.is_felm_zero(rp[1]) && Fpx.subarrayEquals(rp[0], engine.params.Montgomery_one, engine.params.NWORDS_FIELD))
             {
                 D[k] = 0;
             }
@@ -1939,19 +1939,19 @@ class SIDH_Compressed
                 if (!(j == 0 && k == Dlen - 1))
                 {
 
-                    for (int t = 1; t <= (ellw/2); t++)
+                    for (int t = 1; t <= (ellw / 2); t++)
                     {
-                        if (Fpx.subarrayEquals(rp, CT2, engine.params.NWORDS_FIELD * (2 *(ellw/2)*(Dlen-1) + 2*(t-1)), 2*engine.params.NWORDS_FIELD))
+                        if (Fpx.subarrayEquals(rp, CT2, engine.params.NWORDS_FIELD * (2 * (ellw / 2) * (Dlen - 1) + 2 * (t - 1)), 2 * engine.params.NWORDS_FIELD))
                         {
                             D[k] = -t;
                             break;
                         }
                         else
                         {
-                            engine.fpx.fp2copy(CT2, engine.params.NWORDS_FIELD *(2*((ellw/2)*(Dlen-1) + (t-1))), alpha);
+                            engine.fpx.fp2copy(CT2, engine.params.NWORDS_FIELD * (2 * ((ellw / 2) * (Dlen - 1) + (t - 1))), alpha);
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fpcorrectionPRIME(alpha[1]);
-                            if (Fpx.subarrayEquals(rp, alpha, 2*engine.params.NWORDS_FIELD))
+                            if (Fpx.subarrayEquals(rp, alpha, 2 * engine.params.NWORDS_FIELD))
                             {
                                 D[k] = t;
                                 break;
@@ -1961,19 +1961,19 @@ class SIDH_Compressed
                 }
                 else
                 {
-                    for (int t = 1; t <= ell_emodw/2; t++)
+                    for (int t = 1; t <= ell_emodw / 2; t++)
                     {
-                        if (Fpx.subarrayEquals(rp, CT1,engine.params.NWORDS_FIELD * (2*(ellw/2)*(Dlen - 1) + 2*(t-1)), 2*engine.params.NWORDS_FIELD))
+                        if (Fpx.subarrayEquals(rp, CT1, engine.params.NWORDS_FIELD * (2 * (ellw / 2) * (Dlen - 1) + 2 * (t - 1)), 2 * engine.params.NWORDS_FIELD))
                         {
                             D[k] = -t;
                             break;
                         }
                         else
                         {
-                            engine.fpx.fp2copy(CT1, engine.params.NWORDS_FIELD * (2*((ellw/2)*(Dlen-1) + (t-1))), alpha);
+                            engine.fpx.fp2copy(CT1, engine.params.NWORDS_FIELD * (2 * ((ellw / 2) * (Dlen - 1) + (t - 1))), alpha);
                             engine.fpx.fpnegPRIME(alpha[1]);
                             engine.fpx.fpcorrectionPRIME(alpha[1]);
-                            if (Fpx.subarrayEquals(rp, alpha, 2*engine.params.NWORDS_FIELD))
+                            if (Fpx.subarrayEquals(rp, alpha, 2 * engine.params.NWORDS_FIELD))
                             {
                                 D[k] = t;
                                 break;
@@ -1984,7 +1984,6 @@ class SIDH_Compressed
             }
         }
     }
-
 
 
     // Traverse a Pohlig-Hellman optimal strategy to solve a discrete log in a group of order ell^e
@@ -1998,7 +1997,7 @@ class SIDH_Compressed
         {
             int t = P[z];
             engine.fpx.fp2copy(r, rp);
-            for (int i = 0; i < z-t; i++)
+            for (int i = 0; i < z - t; i++)
             {
                 if ((ellw & 1) == 0)
                 {
@@ -2023,15 +2022,15 @@ class SIDH_Compressed
             {
                 if (D[h] != 0)
                 {
-                    if(D[h] < 0)
+                    if (D[h] < 0)
                     {
-                        engine.fpx.fp2copy(CT,  engine.params.NWORDS_FIELD * (2*((j + h)*(ellw/2) + (-D[h]-1))), alpha);
+                        engine.fpx.fp2copy(CT, engine.params.NWORDS_FIELD * (2 * ((j + h) * (ellw / 2) + (-D[h] - 1))), alpha);
                         engine.fpx.fpnegPRIME(alpha[1]);
                         engine.fpx.fp2mul_mont(rp, alpha, rp);
                     }
                     else
                     {
-                        engine.fpx.fp2mul_mont(rp, CT,  engine.params.NWORDS_FIELD * (2*((j + h)*(ellw/2) + (D[h]-1))), rp);
+                        engine.fpx.fp2mul_mont(rp, CT, engine.params.NWORDS_FIELD * (2 * ((j + h) * (ellw / 2) + (D[h] - 1))), rp);
                     }
                 }
             }
@@ -2048,19 +2047,19 @@ class SIDH_Compressed
             }
             else
             {
-                for (int t = 1; t <= ellw/2; t++)
+                for (int t = 1; t <= ellw / 2; t++)
                 {
-                    if (Fpx.subarrayEquals(rp, CT, engine.params.NWORDS_FIELD * (2*((Dlen - 1)*(ellw/2) + (t-1))), 2*engine.params.NWORDS_FIELD))
+                    if (Fpx.subarrayEquals(rp, CT, engine.params.NWORDS_FIELD * (2 * ((Dlen - 1) * (ellw / 2) + (t - 1))), 2 * engine.params.NWORDS_FIELD))
                     {
                         D[k] = -t;
                         break;
                     }
                     else
                     {
-                        engine.fpx.fp2copy(CT, engine.params.NWORDS_FIELD * (2*((Dlen - 1)*(ellw/2) + (t-1))), alpha);
+                        engine.fpx.fp2copy(CT, engine.params.NWORDS_FIELD * (2 * ((Dlen - 1) * (ellw / 2) + (t - 1))), alpha);
                         engine.fpx.fpnegPRIME(alpha[1]);
                         engine.fpx.fpcorrectionPRIME(alpha[1]);
-                        if (Fpx.subarrayEquals(rp, alpha, 2*engine.params.NWORDS_FIELD ))
+                        if (Fpx.subarrayEquals(rp, alpha, 2 * engine.params.NWORDS_FIELD))
                         {
                             D[k] = t;
                             break;
@@ -2074,48 +2073,49 @@ class SIDH_Compressed
 
     //Pairing
     private static final int t_points = 2;
+
     private void Tate3_pairings(PointProjFull[] Qj, long[][][] f)
     {
         long[] x = new long[engine.params.NWORDS_FIELD],
-                y = new long[engine.params.NWORDS_FIELD],
-                l1 = new long[engine.params.NWORDS_FIELD],
-                l2 = new long[engine.params.NWORDS_FIELD],
-                n1 = new long[engine.params.NWORDS_FIELD],
-                n2 = new long[engine.params.NWORDS_FIELD],
-                x2 = new long[engine.params.NWORDS_FIELD],
-                x23 = new long[engine.params.NWORDS_FIELD],
-                x2p3 = new long[engine.params.NWORDS_FIELD];
+            y = new long[engine.params.NWORDS_FIELD],
+            l1 = new long[engine.params.NWORDS_FIELD],
+            l2 = new long[engine.params.NWORDS_FIELD],
+            n1 = new long[engine.params.NWORDS_FIELD],
+            n2 = new long[engine.params.NWORDS_FIELD],
+            x2 = new long[engine.params.NWORDS_FIELD],
+            x23 = new long[engine.params.NWORDS_FIELD],
+            x2p3 = new long[engine.params.NWORDS_FIELD];
 
         long[][][] xQ2s = new long[t_points][2][engine.params.NWORDS_FIELD],
-                   finv = new long[2*t_points][2][engine.params.NWORDS_FIELD];
+            finv = new long[2 * t_points][2][engine.params.NWORDS_FIELD];
         long[][] one = new long[2][engine.params.NWORDS_FIELD],
-                t0 = new long[2][engine.params.NWORDS_FIELD],
-                t1 = new long[2][engine.params.NWORDS_FIELD],
-                t2 = new long[2][engine.params.NWORDS_FIELD],
-                t3 = new long[2][engine.params.NWORDS_FIELD],
-                t4 = new long[2][engine.params.NWORDS_FIELD],
-                t5 = new long[2][engine.params.NWORDS_FIELD],
-                g = new long[2][engine.params.NWORDS_FIELD],
-                h = new long[2][engine.params.NWORDS_FIELD],
-                tf = new long[2][engine.params.NWORDS_FIELD];
+            t0 = new long[2][engine.params.NWORDS_FIELD],
+            t1 = new long[2][engine.params.NWORDS_FIELD],
+            t2 = new long[2][engine.params.NWORDS_FIELD],
+            t3 = new long[2][engine.params.NWORDS_FIELD],
+            t4 = new long[2][engine.params.NWORDS_FIELD],
+            t5 = new long[2][engine.params.NWORDS_FIELD],
+            g = new long[2][engine.params.NWORDS_FIELD],
+            h = new long[2][engine.params.NWORDS_FIELD],
+            tf = new long[2][engine.params.NWORDS_FIELD];
 
 
         engine.fpx.fpcopy(engine.params.Montgomery_one, 0, one[0]);
 
-        for (int j = 0; j < t_points; j++) 
+        for (int j = 0; j < t_points; j++)
         {
             engine.fpx.fp2copy(one, f[j]);
-            engine.fpx.fp2copy(one, f[j+t_points]);
+            engine.fpx.fp2copy(one, f[j + t_points]);
             engine.fpx.fp2sqr_mont(Qj[j].X, xQ2s[j]);
         }
         for (int k = 0; k < engine.params.OBOB_EXPON - 1; k++)
         {
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 0), l1, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 1), l2, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 2), n1, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 3), n2, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 4), x23, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6*k + 5), x2p3, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 0), l1, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 1), l2, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 2), n1, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 3), n2, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 4), x23, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * k + 5), x2p3, 0, engine.params.NWORDS_FIELD);
             for (int j = 0; j < t_points; j++)
             {
                 engine.fpx.fpmul_mont(Qj[j].X[0], l1, t0[0]);
@@ -2153,17 +2153,17 @@ class SIDH_Compressed
                 engine.fpx.fp2_conj(h, h);
                 engine.fpx.fp2mul_mont(g, h, g);
 
-                engine.fpx.fp2sqr_mont(f[j+t_points], tf);
-                engine.fpx.fp2mul_mont(f[j+t_points], tf, f[j+t_points]);
-                engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
+                engine.fpx.fp2sqr_mont(f[j + t_points], tf);
+                engine.fpx.fp2mul_mont(f[j + t_points], tf, f[j + t_points]);
+                engine.fpx.fp2mul_mont(f[j + t_points], g, f[j + t_points]);
             }
         }
         for (int j = 0; j < t_points; j++)
         {
-            System.arraycopy(engine.params.T_tate3,  engine.params.NWORDS_FIELD * (6*(engine.params.OBOB_EXPON-1) + 0), x, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3,  engine.params.NWORDS_FIELD * (6*(engine.params.OBOB_EXPON-1) + 1), y, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3,  engine.params.NWORDS_FIELD * (6*(engine.params.OBOB_EXPON-1) + 2), l1, 0, engine.params.NWORDS_FIELD);
-            System.arraycopy(engine.params.T_tate3,  engine.params.NWORDS_FIELD * (6*(engine.params.OBOB_EXPON-1) + 3), x2, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * (engine.params.OBOB_EXPON - 1) + 0), x, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * (engine.params.OBOB_EXPON - 1) + 1), y, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * (engine.params.OBOB_EXPON - 1) + 2), l1, 0, engine.params.NWORDS_FIELD);
+            System.arraycopy(engine.params.T_tate3, engine.params.NWORDS_FIELD * (6 * (engine.params.OBOB_EXPON - 1) + 3), x2, 0, engine.params.NWORDS_FIELD);
 
             engine.fpx.fpsubPRIME(Qj[j].X[0], x, t0[0]);
             engine.fpx.fpcopy(Qj[j].X[1], 0, t0[1]);
@@ -2173,7 +2173,7 @@ class SIDH_Compressed
             engine.fpx.fpaddPRIME(t2[0], y, t2[0]);
             engine.fpx.fp2mul_mont(t0, t2, g);
             engine.fpx.fpsubPRIME(Qj[j].X[0], x2, h[0]);
-            engine.fpx.fpcopy(Qj[j].X[1],0, h[1]);
+            engine.fpx.fpcopy(Qj[j].X[1], 0, h[1]);
             engine.fpx.fpnegPRIME(h[1]);
             engine.fpx.fp2mul_mont(g, h, g);
 
@@ -2190,14 +2190,14 @@ class SIDH_Compressed
             engine.fpx.fpaddPRIME(Qj[j].X[0], x2, h[0]);
             engine.fpx.fp2mul_mont(g, h, g);
 
-            engine.fpx.fp2sqr_mont(f[j+t_points], tf);
-            engine.fpx.fp2mul_mont(f[j+t_points], tf, f[j+t_points]);
-            engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
+            engine.fpx.fp2sqr_mont(f[j + t_points], tf);
+            engine.fpx.fp2mul_mont(f[j + t_points], tf, f[j + t_points]);
+            engine.fpx.fp2mul_mont(f[j + t_points], g, f[j + t_points]);
         }
 
         // Final exponentiation:
-        engine.fpx.mont_n_way_inv(f, 2*t_points, finv);
-        for (int j = 0; j < 2*t_points; j++)
+        engine.fpx.mont_n_way_inv(f, 2 * t_points, finv);
+        for (int j = 0; j < 2 * t_points; j++)
         {
             final_exponentiation_3_torsion(f[j], finv[j], f[j]);
         }
@@ -2226,15 +2226,15 @@ class SIDH_Compressed
     private void Tate2_pairings(PointProj P, PointProj Q, PointProjFull[] Qj, long[][][] f)
     {
         long[] x, y, x_, y_, l1;
-        long[][][] finv = new long[2*t_points][2][engine.params.NWORDS_FIELD];
+        long[][][] finv = new long[2 * t_points][2][engine.params.NWORDS_FIELD];
 
         long[][] x_first, y_first,
-                 one = new long[2][engine.params.NWORDS_FIELD],
-                 l1_first = new long[2][engine.params.NWORDS_FIELD],
-                 t0 = new long[2][engine.params.NWORDS_FIELD],
-                 t1 = new long[2][engine.params.NWORDS_FIELD],
-                 g = new long[2][engine.params.NWORDS_FIELD],
-                 h = new long[2][engine.params.NWORDS_FIELD];
+            one = new long[2][engine.params.NWORDS_FIELD],
+            l1_first = new long[2][engine.params.NWORDS_FIELD],
+            t0 = new long[2][engine.params.NWORDS_FIELD],
+            t1 = new long[2][engine.params.NWORDS_FIELD],
+            g = new long[2][engine.params.NWORDS_FIELD],
+            h = new long[2][engine.params.NWORDS_FIELD];
 
         int x_Offset, y_Offset, l1Offset, xOffset, yOffset;
 
@@ -2244,7 +2244,7 @@ class SIDH_Compressed
         for (int j = 0; j < t_points; j++)
         {
             engine.fpx.fp2copy(one, f[j]);
-            engine.fpx.fp2copy(one, f[j+t_points]);
+            engine.fpx.fp2copy(one, f[j + t_points]);
         }
 
         // Pairings with P
@@ -2256,8 +2256,8 @@ class SIDH_Compressed
         x_ = engine.params.T_tate2_firststep_P;
         y_ = engine.params.T_tate2_firststep_P;
 
-        engine.fpx.fpcopy(engine.params.T_tate2_firststep_P, 2*engine.params.NWORDS_FIELD, l1_first[0]);
-        engine.fpx.fpcopy(engine.params.T_tate2_firststep_P, 3*engine.params.NWORDS_FIELD, l1_first[1]);
+        engine.fpx.fpcopy(engine.params.T_tate2_firststep_P, 2 * engine.params.NWORDS_FIELD, l1_first[0]);
+        engine.fpx.fpcopy(engine.params.T_tate2_firststep_P, 3 * engine.params.NWORDS_FIELD, l1_first[1]);
 
 
         for (int j = 0; j < t_points; j++)
@@ -2342,8 +2342,8 @@ class SIDH_Compressed
             engine.fpx.fpnegPRIME(h[1]);
             engine.fpx.fp2mul_mont(g, h, g);
 
-            engine.fpx.fp2sqr_mont(f[j+t_points], f[j+t_points]);
-            engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
+            engine.fpx.fp2sqr_mont(f[j + t_points], f[j + t_points]);
+            engine.fpx.fp2mul_mont(f[j + t_points], g, f[j + t_points]);
         }
         x = x_;
         y = y_;
@@ -2356,9 +2356,9 @@ class SIDH_Compressed
             y_ = engine.params.T_tate2_Q;
             l1 = engine.params.T_tate2_Q;
 
-            x_Offset = engine.params.NWORDS_FIELD * (3*k + 0);
-            y_Offset = engine.params.NWORDS_FIELD * (3*k + 1);
-            l1Offset = engine.params.NWORDS_FIELD * (3*k + 2);
+            x_Offset = engine.params.NWORDS_FIELD * (3 * k + 0);
+            y_Offset = engine.params.NWORDS_FIELD * (3 * k + 1);
+            l1Offset = engine.params.NWORDS_FIELD * (3 * k + 2);
             for (int j = 0; j < t_points; j++)
             {
                 engine.fpx.fpsubPRIME(Qj[j].X[0], x, xOffset, t0[0]);
@@ -2373,8 +2373,8 @@ class SIDH_Compressed
                 engine.fpx.fpnegPRIME(h[1]);
                 engine.fpx.fp2mul_mont(g, h, g);
 
-                engine.fpx.fp2sqr_mont(f[j+t_points], f[j+t_points]);
-                engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
+                engine.fpx.fp2sqr_mont(f[j + t_points], f[j + t_points]);
+                engine.fpx.fp2mul_mont(f[j + t_points], g, f[j + t_points]);
             }
             x = x_;
             y = y_;
@@ -2387,13 +2387,13 @@ class SIDH_Compressed
             engine.fpx.fpsubPRIME(Qj[j].X[0], x, xOffset, g[0]);
             engine.fpx.fpcopy(Qj[j].X[1], 0, g[1]);
 
-            engine.fpx.fp2sqr_mont(f[j+t_points], f[j+t_points]);
-            engine.fpx.fp2mul_mont(f[j+t_points], g, f[j+t_points]);
+            engine.fpx.fp2sqr_mont(f[j + t_points], f[j + t_points]);
+            engine.fpx.fp2mul_mont(f[j + t_points], g, f[j + t_points]);
         }
 
         // Final exponentiation:
-        engine.fpx.mont_n_way_inv(f, 2*t_points, finv);
-        for (int j = 0; j < 2*t_points; j++)
+        engine.fpx.mont_n_way_inv(f, 2 * t_points, finv);
+        for (int j = 0; j < 2 * t_points; j++)
         {
             final_exponentiation_2_torsion(f[j], finv[j], f[j]);
         }
