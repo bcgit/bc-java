@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 
 /**
@@ -43,7 +44,8 @@ public abstract class PBEDataDecryptorFactory
     }
 
     /**
-     * Decrypts session data from an encrypted data packet.
+     * Decrypts session data from a {@link SymmetricKeyEncSessionPacket#VERSION_4 v4 SKESK} packet.
+     * These are used in OpenPGP v4.
      *
      * @param keyAlgorithm the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
      *            encrypt the session data.
@@ -54,4 +56,17 @@ public abstract class PBEDataDecryptorFactory
      */
     public abstract byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] seckKeyData)
         throws PGPException;
+
+    /**
+     * Recover the session data of a {@link SymmetricKeyEncSessionPacket#VERSION_5 v5 SKESK} or
+     * {@link SymmetricKeyEncSessionPacket#VERSION_6 v6 SKESK} packet.
+     * These are used in OpenPGP v5 and v6.
+     *
+     * @param keyData v5 or v6 SKESK packet
+     * @param ikm initial keying material (e.g. S2K result)
+     * @return session key
+     * @throws PGPException
+     */
+    public abstract byte[] recoverAEADEncryptedSessionData(SymmetricKeyEncSessionPacket keyData, byte[] ikm)
+            throws PGPException;
 }

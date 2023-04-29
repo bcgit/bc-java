@@ -1,7 +1,10 @@
 package org.bouncycastle.openpgp.operator;
 
+import org.bouncycastle.bcpg.AEADEncDataPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPSessionKey;
 
 /**
  * Base interface of factories for {@link PGPDataDecryptor}.
@@ -9,7 +12,8 @@ import org.bouncycastle.openpgp.PGPException;
 public interface PGPDataDecryptorFactory
 {
     /**
-     * Constructs a data decryptor.
+     * Constructs a data decryptor for {@link org.bouncycastle.bcpg.SymmetricEncDataPacket SED} or
+     * {@link SymmetricEncIntegrityPacket#VERSION_1 v1 SEIPD} packets.
      *
      * @param withIntegrityPacket <code>true</code> if the packet to be decrypted has integrity
      *            checking enabled.
@@ -24,18 +28,28 @@ public interface PGPDataDecryptorFactory
         throws PGPException;
 
     /**
-     * Constructs an AEAD data decryptor.
+     * Constructs a data decryptor for {@link AEADEncDataPacket AEAD Encrypted Data} packets.
+     * This method is used with OpenPGP v5 AEAD.
      *
-     * @param aeadAlgorithm the identifier of the {@link org.bouncycastle.bcpg.AEADAlgorithmTags encryption algorithm} to use.
-     * @param iv the initialization vector to build the AEAD nonces from.
-     * @param chunkSize the chunksize value for the AEAD encrypted chunks.
-     * @param encAlgorithm the identifier of the {@link org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags encryption
-     *            algorithm} to decrypt with.
-     * @param key the bytes of the key for the cipher.
+     * @param aeadEncDataPacket AEAD encrypted data packet
+     * @param sessionKey decrypted session key
      * @return a data decryptor that can decrypt (and verify) streams of encrypted data.
      * @throws PGPException if an error occurs initialising the decryption and integrity checking
      *             functions.
      */
-    PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+    PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
+        throws PGPException;
+
+    /**
+     * Constructs a data decryptor for {@link SymmetricEncIntegrityPacket#VERSION_2 v2 SEIPD} packets.
+     * This method is used with OpenPGP v6 AEAD.
+     *
+     * @param seipd version 2 symmetrically encrypted integrity-protected data packet using AEAD.
+     * @param sessionKey decrypted session key
+     * @return a data decryptor that can decrypt (and verify) streams of encrypted data.
+     * @throws PGPException if an error occurs initialising the decryption and integrity checking
+     *             functions.
+     */
+    PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
         throws PGPException;
 }

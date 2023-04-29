@@ -144,7 +144,7 @@ public class PGPPublicKeyEncryptedData
                         throw new PGPException("session key and AEAD algorithm mismatch");
                     }
 
-                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData.getAEADAlgorithm(), aeadData.getIV(), aeadData.getChunkSize(), sessionKey.getAlgorithm(), sessionKey.getKey());
+                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(aeadData, sessionKey);
 
                     BCPGInputStream encIn = encData.getInputStream();
 

@@ -14,6 +14,8 @@ public class AEADEncDataPacket
     extends InputStreamPacket
     implements AEADAlgorithmTags, BCPGHeaderObject
 {
+    public static final int VERSION_1 = 1;
+
     private final byte version;
     private final byte algorithm;
     private final byte aeadAlgorithm;
@@ -26,7 +28,7 @@ public class AEADEncDataPacket
         super(in);
 
         version = (byte)in.read();
-        if (version != 1)
+        if (version != VERSION_1)
         {
             throw new IllegalArgumentException("wrong AEAD packet version: " + version);
         }
@@ -42,7 +44,7 @@ public class AEADEncDataPacket
     public AEADEncDataPacket(int algorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
     {
         super(null);
-        this.version = 1;
+        this.version = VERSION_1;
         this.algorithm = (byte)algorithm;
         this.aeadAlgorithm = (byte)aeadAlgorithm;
         this.chunkSize = (byte)chunkSize;
@@ -79,7 +81,7 @@ public class AEADEncDataPacket
         return createAAData(getVersion(), getAlgorithm(), getAEADAlgorithm(), getChunkSize());
     }
 
-    private static byte[] createAAData(int version, int symAlgorithm, int aeadAlgorithm, int chunkSize)
+    public static byte[] createAAData(int version, int symAlgorithm, int aeadAlgorithm, int chunkSize)
     {
         byte[] aaData = new byte[5];
 
