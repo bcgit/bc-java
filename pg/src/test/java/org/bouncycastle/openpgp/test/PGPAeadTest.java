@@ -165,14 +165,14 @@ public class PGPAeadTest
         throws IOException, PGPException
     {
         // Test known-good V6 test vectors    TODO: decryption tests should be working...
-//        System.out.println("Test V6 BC Decryption");
-//        testBcDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-//        testBcDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-//        testBcDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-//        System.out.println("Test V6 JCA Decryption");
-//        testJceDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-//        testJceDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-//        testJceDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        System.out.println("Test V6 BC Decryption");
+        testBcDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        testBcDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        testBcDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        System.out.println("Test V6 JCA Decryption");
+        testJceDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        testJceDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
+        testJceDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
     }
 
 //    private void testBcRoundTrip(PGPAEADFlavour flavour, int aeadAlg, int symAlg, byte[] plaintext, char[] password) throws PGPException, IOException {
@@ -309,7 +309,6 @@ public class PGPAeadTest
                     o = objectFactory.nextObject();
                     if (o instanceof PGPPadding)
                     {
-                        System.err.println("hrer");
                         o = objectFactory.nextObject();
                     }
 
