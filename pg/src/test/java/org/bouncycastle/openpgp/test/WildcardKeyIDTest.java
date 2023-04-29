@@ -1,5 +1,11 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -23,15 +29,9 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.util.Date;
 
 public class WildcardKeyIDTest
     extends SimpleTest
@@ -71,8 +71,7 @@ public class WildcardKeyIDTest
     public void performTest()
             throws Exception
     {
-        Charset utf8 = Charset.forName("UTF8");
-        ByteArrayInputStream keyBytesIn = new ByteArrayInputStream(KEY.getBytes(utf8));
+        ByteArrayInputStream keyBytesIn = new ByteArrayInputStream(Strings.toByteArray(KEY));
         ArmoredInputStream keyArmorIn = new ArmoredInputStream(keyBytesIn);
         PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(keyArmorIn, new BcKeyFingerprintCalculator());
         long encryptionKeyId = 7405306990825650521L;
@@ -90,7 +89,7 @@ public class WildcardKeyIDTest
         PGPLiteralDataGenerator litDataGen = new PGPLiteralDataGenerator();
         OutputStream litOut = litDataGen.open(encOut, PGPLiteralDataGenerator.TEXT, "", new Date(0L), new byte[512]);
 
-        litOut.write(PLAINTEXT.getBytes(utf8));
+        litOut.write(Strings.toByteArray(PLAINTEXT));
         litOut.flush();
         litOut.close();
 
