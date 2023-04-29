@@ -50,7 +50,8 @@ public class RegressionTest
         new IgnoreUnknownEncryptedSessionKeys(),
         new PGPEncryptedDataTest(),
         new PGPAeadTest(),
-        new CRC24Test()
+        new CRC24Test(),
+        new WildcardKeyIDTest()
     };
 
     public static void main(String[] args)
