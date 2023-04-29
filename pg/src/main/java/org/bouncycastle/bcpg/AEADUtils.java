@@ -34,7 +34,7 @@ public class AEADUtils
      * @param aeadAlgorithmTag AEAD algorithm identifier
      * @return length of the auth tag
      */
-    static int getAuthTagLength(int aeadAlgorithmTag)
+    public static int getAuthTagLength(int aeadAlgorithmTag)
     {
         switch (aeadAlgorithmTag)
         {

@@ -23,9 +23,11 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -34,6 +36,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
@@ -46,6 +49,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
+    private JceAEADUtil aeadHelper = new JceAEADUtil(contentHelper);
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
     private JcaKeyFingerprintCalculator fingerprintCalculator = new JcaKeyFingerprintCalculator();
 
@@ -64,6 +68,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
         keyConverter.setProvider(provider);
         this.contentHelper = helper;
+        this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
     }
@@ -79,6 +84,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
         keyConverter.setProvider(providerName);
         this.contentHelper = helper;
+        this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
     }
@@ -86,6 +92,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     public JcePublicKeyDataDecryptorFactoryBuilder setContentProvider(Provider provider)
     {
         this.contentHelper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
     }
@@ -93,6 +100,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     public JcePublicKeyDataDecryptorFactoryBuilder setContentProvider(String providerName)
     {
         this.contentHelper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
     }
@@ -123,6 +131,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
          {
              final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
 
+             @Override
              public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                  throws PGPException
              {
@@ -133,16 +142,28 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                  return decryptSessionData(keyAlgorithm, privKey, expectedPayLoadSize, secKeyData);
              }
 
+             // OpenPGP v4
+             @Override
              public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
                  throws PGPException
              {
                  return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
              }
 
-             public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+             // OpenPGP v5
+             @Override
+             public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
                  throws PGPException
              {
-                 return contentHelper.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
+                 return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
+             }
+
+             // OpenPGP v6
+             @Override
+             public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
+                     throws PGPException
+             {
+                 return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
              }
          };
     }
@@ -151,6 +172,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
          return new PublicKeyDataDecryptorFactory()
          {
+             @Override
              public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                  throws PGPException
              {
@@ -164,16 +186,28 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                  return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
              }
 
+             // OpenPGP v4
+             @Override
              public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
                  throws PGPException
              {
                  return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
              }
 
-             public PGPDataDecryptor createDataDecryptor(int aeadAlgorithm, byte[] iv, int chunkSize, int encAlgorithm, byte[] key)
+             // OpenPGP v5
+             @Override
+             public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
                  throws PGPException
              {
-                 return contentHelper.createDataDecryptor(aeadAlgorithm, iv, chunkSize, encAlgorithm, key);
+                 return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
+             }
+
+             // OpenPGP v6
+             @Override
+             public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
+                     throws PGPException
+             {
+                 return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
              }
          };
     }
