@@ -74,6 +74,7 @@
         <pathelement location="${jmail.jar.home}" />
         <pathelement location="${jactivation.jar.home}" />
         <pathelement location="${junit.jar.home}" />
+        <pathelement location="${ldap.jar.home}" />
     </path> 
 
     <target name="pack200-on" if="pack200.enabled">
@@ -815,6 +816,7 @@
                  <include name="org/bouncycastle/pkcs/**/*.java" />
                  <include name="org/bouncycastle/tsp/**/*.java" />
                  <include name="org/bouncycastle/voms/**/*.java" />
+                 <include name="org/bouncycastle/pkix/**/*.properties"/>
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
                  <exclude name="**/test/*.*" />
@@ -1036,7 +1038,7 @@
         </junitreport>
     </target>
 
-    <target name="javadoc-libraries" depends="javadoc-util, javadoc-pkix, javadoc-mail, javadoc-pg" />
+    <target name="javadoc-libraries" depends="javadoc-util, javadoc-pkix, javadoc-mail, javadoc-jmail, javadoc-pg" />
 
     <!--
           Provider JavaDoc
@@ -1135,6 +1137,30 @@
 
         <copy todir="${mail.target.docs.dir}">
              <fileset dir="${artifacts.docs.dir}/bcmail" />
+        </copy>
+    </target>
+
+    <!--
+          jMail JavaDoc
+    -->
+    <target name="javadoc-jmail" depends="initMacros">
+	<mkdir dir="${jmail.target.src.dir}" />
+
+        <copy todir="${jmail.target.src.dir}">
+             <fileset dir="${src.dir}">
+                 <include name="org/bouncycastle/jmail/**/*.html" />
+             </fileset>
+        </copy>
+
+        <compile-doc srcDir="${jmail.target.src.dir}" docsDir="${artifacts.docs.dir}/bcjmail">
+            <docElements>
+                <package name="org.bouncycastle.mail.*" />
+                <group title="S/MIME Packages" packages="org.bouncycastle.mail.smime*" />
+            </docElements>
+        </compile-doc>
+
+        <copy todir="${jmail.target.docs.dir}">
+             <fileset dir="${artifacts.docs.dir}/bcjmail" />
         </copy>
     </target>
 
