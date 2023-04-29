@@ -30,6 +30,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -72,6 +73,9 @@ class TestUtils
         algIds.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
         algIds.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
+        algIds.put("Dilithium3", new AlgorithmIdentifier(BCObjectIdentifiers.dilithium3));
+        algIds.put("Falcon-512", new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512));
+        algIds.put("SPHINCS+", new AlgorithmIdentifier(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3));
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)

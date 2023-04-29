@@ -3,11 +3,13 @@ package org.bouncycastle.pqc.jcajce.provider.test;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
+import java.security.Security;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
 /**
- * KeyFactory/KeyPairGenerator tests for Dilithium with BCPQC provider.
+ * KeyFactory/KeyPairGenerator tests for Dilithium with BC provider.
  */
 public class DilithiumKeyPairGeneratorTest
     extends KeyPairGeneratorTest
@@ -15,12 +17,16 @@ public class DilithiumKeyPairGeneratorTest
     protected void setUp()
     {
         super.setUp();
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
     }
 
     public void testKeyFactory()
         throws Exception
     {
-        kf = KeyFactory.getInstance("Dilithium", "BCPQC");
+        kf = KeyFactory.getInstance("Dilithium", "BC");
     }
 
     public void testKeyPairEncoding()
@@ -36,9 +42,9 @@ public class DilithiumKeyPairGeneratorTest
                         DilithiumParameterSpec.dilithium3_aes,
                         DilithiumParameterSpec.dilithium5_aes,
                 };
-        kf = KeyFactory.getInstance("Dilithium", "BCPQC");
+        kf = KeyFactory.getInstance("Dilithium", "BC");
 
-        kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
 
         for (int i = 0; i != specs.length; i++)
         {

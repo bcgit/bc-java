@@ -16,15 +16,13 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconPrivateKey;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -37,22 +35,22 @@ public class FalconTest
 
     public void setUp()
     {
-        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastlePQCProvider());
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
     public void testPrivateKeyRecovery()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_512, new FalconTest.RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyFactory kFact = KeyFactory.getInstance("Falcon", "BCPQC");
+        KeyFactory kFact = KeyFactory.getInstance("Falcon", "BC");
 
         FalconKey privKey = (FalconKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
 
@@ -84,13 +82,13 @@ public class FalconTest
     public void testPublicKeyRecovery()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_1024, new FalconTest.RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        KeyFactory kFact = KeyFactory.getInstance("Falcon", "BCPQC");
+        KeyFactory kFact = KeyFactory.getInstance("Falcon", "BC");
 
         FalconKey pubKey = (FalconKey)kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
 
@@ -117,13 +115,13 @@ public class FalconTest
     public void testFalcon512()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("Falcon-512", "BCPQC");
+        Signature sig = Signature.getInstance("Falcon-512", "BC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -131,7 +129,7 @@ public class FalconTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("Falcon-512", "BCPQC");
+        sig = Signature.getInstance("Falcon-512", "BC");
 
         assertEquals("Falcon-512", sig.getAlgorithm());
 
@@ -141,7 +139,7 @@ public class FalconTest
 
         assertTrue(sig.verify(s));
 
-        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
 
@@ -161,13 +159,13 @@ public class FalconTest
     public void testFalcon1024()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_1024, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("Falcon-1024", "BCPQC");
+        Signature sig = Signature.getInstance("Falcon-1024", "BC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -175,7 +173,7 @@ public class FalconTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("Falcon-1024", "BCPQC");
+        sig = Signature.getInstance("Falcon-1024", "BC");
 
         assertEquals("Falcon-1024", sig.getAlgorithm());
 
@@ -185,7 +183,7 @@ public class FalconTest
 
         assertTrue(sig.verify(s));
 
-        kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
 
@@ -212,7 +210,7 @@ public class FalconTest
     private void doTestRestrictedKeyPairGen(FalconParameterSpec spec, FalconParameterSpec altSpec)
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(spec.getName(), "BC");
 
         kpg.initialize(spec, new SecureRandom());
 
@@ -221,7 +219,7 @@ public class FalconTest
         assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
         assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
 
-        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BC");
 
         try
         {
@@ -237,13 +235,13 @@ public class FalconTest
     public void testFalconRandomSig()
             throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
 
         kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Signature sig = Signature.getInstance("Falcon", "BCPQC");
+        Signature sig = Signature.getInstance("Falcon", "BC");
 
         sig.initSign(kp.getPrivate(), new SecureRandom());
 
@@ -251,7 +249,7 @@ public class FalconTest
 
         byte[] s = sig.sign();
 
-        sig = Signature.getInstance("Falcon", "BCPQC");
+        sig = Signature.getInstance("Falcon", "BC");
 
         sig.initVerify(kp.getPublic());
 
@@ -279,7 +277,7 @@ public class FalconTest
         byte[] s = Hex.decode("3933b3c07507e4201748494d832b6ee2a6c93bff9b0ee343b550d1f85a3d0de0d704c6d17842951309290765843d1e460d17a527d2bca405bd55bbc7da09a8c620be0af4a767d9db96b80f55e466676751eaaba7b93b86d71132daa0eb376782b9eee37519ce10fdd33fe9f29312c31d8736206d165cf4c528aa3ddc017845e1f0dd5b0a44ff961c42d874a95533e5b438982f524ca954d87533bfbe42c63ff2abc77a34c79db55a99171bbcb72c842a6530af2f753f0c34ac632f9f1e7949f0bf6c67665b27722a8857d626b6ff1a136d923a39f4069b7477ff946e5247a6627791d49b59edc9e2525a860e6e9828d18f64a9f17222e8166a02453859bbda0b8186d8c9928bb571e4146401d7430e225904673ad21ccac54c146c248a1dd69ab6491e901d6d71b152155be97de057f3916a3f1b4273308c29b2f4d9697167b90681b1583ed930a71e990467dea368134beceebd597f9bec922e816f1b0570d728f4ae0464c1f797657f87a4e52dcdcaeb9272662ea66d7c6cd8781b31af555ad93f5f65e75816cb8dc306bb67e592b5261baca7c509629ea2af8abb80cba89ee535b76dfd9ccbbe3bf48f2bc8aa34b26e1103291053f5cb8de3a45afa5a76df8b2122ed2c82fbcf2259290d41a14f86b12f35f5d49762b34cff13ee7e42edec70201d7f37c33316288fa3078e36e58108865c3cfe263d563692043decc62f3426f86061285b7b1b336f56ff41bb65e9cd6d9b92fd90f864aa1c923cb8c755f5cde1770d862595427149d7721aaab5d194aea9acdeca15be43cba6a62b5a33909e9fc4da1c5814fbd7cd6a2fa572e318b42c6c319140b86e66392580a11a2b431f44c1f9270e4f7b2490f3b325a9977a71a575915636635b9969dbd6d220b24c3d99cebbbd834b88222bd08c3abe124e80");
         byte[] detachedSig = Arrays.concatenate(Arrays.copyOfRange(s, 0, 41), Arrays.copyOfRange(s, 42, s.length));
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BCPQC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
         SecureRandom katRandom = new NISTSecureRandom(Hex.decode("061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1"), null);
 
         kpg.initialize(FalconParameterSpec.falcon_512, katRandom);
@@ -303,7 +301,7 @@ public class FalconTest
 
         assertTrue(Arrays.areEqual(privCat, privK));
 
-        Signature sig = Signature.getInstance("Falcon", "BCPQC");
+        Signature sig = Signature.getInstance("Falcon", "BC");
 
         sig.initSign(kp.getPrivate(), katRandom);
 
@@ -313,7 +311,7 @@ public class FalconTest
 
         assertTrue(Arrays.areEqual(detachedSig, genS));
 
-        sig = Signature.getInstance("Falcon", "BCPQC");
+        sig = Signature.getInstance("Falcon", "BC");
 
         sig.initVerify(kp.getPublic());
 
