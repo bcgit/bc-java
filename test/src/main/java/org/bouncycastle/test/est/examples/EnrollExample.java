@@ -155,7 +155,8 @@ public class EnrollExample
                 {
                     keyFile = ExampleUtils.nextArgAsString("Load keys from file", args, t);
                     t += 1;
-                } else if (arg.equals("--sl"))
+                }
+                else if (arg.equals("--sl"))
                 {
                     suffixList = ExampleUtils.nextArgAsString("Suffix List", args, t);
                     t += 1;
