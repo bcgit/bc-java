@@ -31,7 +31,6 @@ import org.bouncycastle.util.io.Streams;
 
 class JceAEADUtil
 {
-
     private final OperatorHelper helper;
 
     public JceAEADUtil(OperatorHelper helper)
@@ -87,41 +86,18 @@ class JceAEADUtil
     }
 
     /**
-     * Derived a message key and IV from the given session key.
-     *
-     * @param aeadAlgo   AEAD algorithm
-     * @param cipherAlgo symmetric cipher algorithm
-     * @param sessionKey session key
-     * @param salt       salt
-     * @param hkdfInfo   HKDF info
-     * @return an array of byte arrays, the message key is at index 0, the IV at index 1.
-     * @throws PGPException
-     */
-    public static byte[][] deriveAndSplitMessageKeyAndIv(int aeadAlgo,
-                                                         int cipherAlgo,
-                                                         byte[] sessionKey,
-                                                         byte[] salt,
-                                                         byte[] hkdfInfo)
-        throws PGPException
-    {
-        byte[] messageKeyAndIv = deriveMessageKeyAndIv(aeadAlgo, cipherAlgo, sessionKey, salt, hkdfInfo);
-        return splitMessageKeyAndIv(messageKeyAndIv, cipherAlgo, aeadAlgo);
-    }
-
-    /**
      * Derive a message key and IV from the given session key.
-     * The result is a byte array containing the key bytes followed by the IV.
-     * To split them, use {@link #splitMessageKeyAndIv(byte[], int, int)}.
+     * The result is two byte arrays containing the key bytes and the IV.
      *
      * @param aeadAlgo   AEAD algorithm
      * @param cipherAlgo symmetric cipher algorithm
      * @param sessionKey session key
      * @param salt       salt
      * @param hkdfInfo   HKDF info
-     * @return message key and appended IV
+     * @return message key and separate IV
      * @throws PGPException
      */
-    public static byte[] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
+    static byte[][] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
         throws PGPException
     {
         // TODO: needs to be JCA based. KeyGenerator?
@@ -133,33 +109,8 @@ class JceAEADUtil
         int ivLen = AEADUtils.getIVLength(aeadAlgo);
         byte[] messageKeyAndIv = new byte[keyLen + ivLen - 8];
         hkdfGen.generateBytes(messageKeyAndIv, 0, messageKeyAndIv.length);
-        return messageKeyAndIv;
-    }
 
-    /**
-     * Split a given byte array containing <pre>m</pre> bytes of key and <pre>n-8</pre> bytes of IV into
-     * two separate byte arrays.
-     * <pre>m</pre> is the key length of the cipher algorithm, while <pre>n</pre> is the IV length of the AEAD algorithm.
-     * Note, that the IV is filled with <pre>n-8</pre> bytes only, the remainder is left as 0s.
-     * Return an array of both arrays with the key and index 0 and the IV at index 1.
-     *
-     * @param messageKeyAndIv <pre>m+n-8</pre> bytes of concatenated message key and IV
-     * @param cipherAlgo      symmetric cipher algorithm
-     * @param aeadAlgo        AEAD algorithm
-     * @return array of arrays containing message key and IV
-     * @throws PGPException
-     */
-    public static byte[][] splitMessageKeyAndIv(byte[] messageKeyAndIv, int cipherAlgo, int aeadAlgo)
-        throws PGPException
-    {
-        int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(cipherAlgo);
-        int ivLen = AEADUtils.getIVLength(aeadAlgo);
-        byte[] messageKey = new byte[keyLen];
-        byte[] iv = new byte[ivLen];
-        System.arraycopy(messageKeyAndIv, 0, messageKey, 0, messageKey.length);
-        System.arraycopy(messageKeyAndIv, messageKey.length, iv, 0, ivLen - 8);
-
-        return new byte[][]{messageKey, iv};
+        return new byte[][] { Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen) };
     }
     
     /**
@@ -240,7 +191,7 @@ class JceAEADUtil
         final byte[] aaData = seipd.getAAData();
 
 
-        final byte[][] messageKeyAndIv = deriveAndSplitMessageKeyAndIv(aeadAlgo, cipherAlgo, sessionKey.getKey(), salt, aaData);
+        final byte[][] messageKeyAndIv = deriveMessageKeyAndIv(aeadAlgo, cipherAlgo, sessionKey.getKey(), salt, aaData);
         final byte[] messageKey = messageKeyAndIv[0];
         final byte[] iv = messageKeyAndIv[1];
 
