@@ -31,6 +31,10 @@
             <property name="option" value="nl"/>
         </module>
 
+        <module name="RightCurly">
+            <property name="option" value="alone"/>
+        </module>
+
         <module name="org.bouncycastle.checkstyle.DebugMethodChecker">
             <property name="contains" value="(org\.bouncycastle\.util\.encoders\.)*Hex\.toHexString$"/>
             <property name="ignorePackages" value="(org\.bouncycastle\.(mail\.smime|openpgp)\.examples\.).*|(org\.bouncycastle\.test\.est\.examples\.).*|(org\.bouncycastle\.util\.encoders\.Hex)"/>
