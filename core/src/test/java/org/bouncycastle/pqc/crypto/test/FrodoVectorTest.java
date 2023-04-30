@@ -15,6 +15,10 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -100,8 +104,10 @@ public class FrodoVectorTest
                         kpGen.init(genParams);
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-                        FrodoPublicKeyParameters pubParams = (FrodoPublicKeyParameters) kp.getPublic();
-                        FrodoPrivateKeyParameters privParams = (FrodoPrivateKeyParameters) kp.getPrivate();
+                        FrodoPublicKeyParameters pubParams = (FrodoPublicKeyParameters)PublicKeyFactory.createKey(
+                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((FrodoPublicKeyParameters)kp.getPublic()));
+                        FrodoPrivateKeyParameters privParams = (FrodoPrivateKeyParameters)PrivateKeyFactory.createKey(
+                            PrivateKeyInfoFactory.createPrivateKeyInfo((FrodoPrivateKeyParameters)kp.getPrivate()));
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getPublicKey()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getPrivateKey()));
