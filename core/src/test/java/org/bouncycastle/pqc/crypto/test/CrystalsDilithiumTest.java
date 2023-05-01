@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyGenerationParameters;
@@ -15,10 +14,16 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
 
 public class CrystalsDilithiumTest
     extends TestCase
@@ -133,20 +138,19 @@ public class CrystalsDilithiumTest
                         DilithiumKeyPairGenerator kpg = new DilithiumKeyPairGenerator();
                         kpg.init(kparam);
 
-                        AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
-                        DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)ackp.getPublic();
-                        byte[] respk = dPub.getEncoded();
-                        // System.out.println("pk = ");
-                        // Helper.printByteArray(pk);
-                        byte[] ressk = ((DilithiumPrivateKeyParameters)ackp.getPrivate()).getEncoded();
+                        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
 
-                        //keygen
-                        assertTrue(name + " " + count + " public key", Arrays.areEqual(respk, pk));
-                        assertTrue(name + " " + count + " secret key", Arrays.areEqual(ressk, sk));
+                        DilithiumPublicKeyParameters pubParams = (DilithiumPublicKeyParameters)PublicKeyFactory.createKey(
+                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((DilithiumPublicKeyParameters)kp.getPublic()));
+                        DilithiumPrivateKeyParameters privParams = (DilithiumPrivateKeyParameters)PrivateKeyFactory.createKey(
+                            PrivateKeyInfoFactory.createPrivateKeyInfo((DilithiumPrivateKeyParameters)kp.getPrivate()));
+
+                        assertTrue(name + " " + count + " public key", Arrays.areEqual(pk, pubParams.getEncoded()));
+                        assertTrue(name + " " + count + " secret key", Arrays.areEqual(sk, privParams.getEncoded()));
 
                         // sign
                         DilithiumSigner signer = new DilithiumSigner();
-                        DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)ackp.getPrivate();
+                        DilithiumPrivateKeyParameters skparam = (DilithiumPrivateKeyParameters)kp.getPrivate();
 
                         signer.init(true, skparam);
 
@@ -155,7 +159,7 @@ public class CrystalsDilithiumTest
 
                         // verify
                         DilithiumSigner verifier = new DilithiumSigner();
-                        DilithiumPublicKeyParameters pkparam = dPub;
+                        DilithiumPublicKeyParameters pkparam = pubParams;
                         verifier.init(false, pkparam);
 
                         boolean vrfyrespass = verifier.verifySignature(msg, sigGenerated);
