@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.selector.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.cert.X509CertSelector;
 
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -18,14 +19,17 @@ public class JcaSelectorConverter
     {
         try
         {
-            if (certSelector.getSubjectKeyIdentifier() != null)
+            X500Name issuer = X500Name.getInstance(certSelector.getIssuerAsBytes());
+            BigInteger serialNumber = certSelector.getSerialNumber();
+            byte[] subjectKeyId = null;
+
+            byte[] subjectKeyIdentifier = certSelector.getSubjectKeyIdentifier();
+            if (subjectKeyIdentifier != null)
             {
-                return new X509CertificateHolderSelector(X500Name.getInstance(certSelector.getIssuerAsBytes()), certSelector.getSerialNumber(), ASN1OctetString.getInstance(certSelector.getSubjectKeyIdentifier()).getOctets());
+                subjectKeyId = ASN1OctetString.getInstance(subjectKeyIdentifier).getOctets();
             }
-            else
-            {
-                return new X509CertificateHolderSelector(X500Name.getInstance(certSelector.getIssuerAsBytes()), certSelector.getSerialNumber());
-            }
+
+            return new X509CertificateHolderSelector(issuer, serialNumber, subjectKeyId);
         }
         catch (IOException e)
         {
