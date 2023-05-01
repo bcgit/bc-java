@@ -100,7 +100,7 @@ public class BCKyberPrivateKey
 
     public KyberPublicKey getPublicKey()
     {
-        return new BCKyberPublicKey(new KyberPublicKeyParameters(params.getParameters(), params.getPublicKey()));
+        return new BCKyberPublicKey(params.getPublicKeyParameters());
     }
 
     public KyberParameterSpec getParameterSpec()

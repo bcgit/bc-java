@@ -14,11 +14,6 @@ public class DilithiumPrivateKeyParameters
 
     private final byte[] t1;
 
-    public byte[] getPrivateKey()
-    {
-        return getEncoded();
-    }
-
     public DilithiumPrivateKeyParameters(DilithiumParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1)
     {
         super(true, params);
@@ -31,9 +26,9 @@ public class DilithiumPrivateKeyParameters
         this.t1 = Arrays.clone(t1);
     }
 
-    public byte[] getRho()
+    public byte[] getEncoded()
     {
-        return Arrays.clone(rho);
+        return Arrays.concatenate(new byte[][]{ rho, k, tr, s1, s2, t0 });
     }
 
     public byte[] getK()
@@ -41,9 +36,25 @@ public class DilithiumPrivateKeyParameters
         return Arrays.clone(k);
     }
 
-    public byte[] getTr()
+    /** @deprecated Use {@link #getEncoded()} instead. */
+    public byte[] getPrivateKey()
     {
-        return Arrays.clone(tr);
+        return getEncoded();
+    }
+
+    public byte[] getPublicKey()
+    {
+        return DilithiumPublicKeyParameters.getEncoded(rho, t1);
+    }
+
+    public DilithiumPublicKeyParameters getPublicKeyParameters()
+    {
+        return new DilithiumPublicKeyParameters(getParameters(), rho, t1);
+    }
+
+    public byte[] getRho()
+    {
+        return Arrays.clone(rho);
     }
 
     public byte[] getS1()
@@ -63,11 +74,11 @@ public class DilithiumPrivateKeyParameters
 
     public byte[] getT1()
     {
-        return t1;
+        return Arrays.clone(t1);
     }
 
-    public byte[] getEncoded()
+    public byte[] getTr()
     {
-        return Arrays.concatenate(new byte[][] { rho, k, tr, s1, s2, t0 });
+        return Arrays.clone(tr);
     }
 }
