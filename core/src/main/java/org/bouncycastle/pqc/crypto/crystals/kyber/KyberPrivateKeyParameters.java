@@ -21,34 +21,9 @@ public class KyberPrivateKeyParameters
         this.rho = Arrays.clone(rho);
     }
 
-    public byte[] getT()
-    {
-        return Arrays.clone(t);
-    }
-
-    public byte[] getRho()
-    {
-        return Arrays.clone(rho);
-    }
-
-    public byte[] getPrivateKey()
-    {
-        return Arrays.concatenate(s, getPublicKey(), hpk, nonce);
-    }
-
     public byte[] getEncoded()
     {
-        return getPrivateKey();
-    }
-
-    public byte[] getPublicKey()
-    {
-        return Arrays.concatenate(t, rho);
-    }
-
-    public byte[] getS()
-    {
-        return Arrays.clone(s);
+        return Arrays.concatenate(new byte[][]{ s, t, rho, hpk, nonce });
     }
 
     public byte[] getHPK()
@@ -59,5 +34,36 @@ public class KyberPrivateKeyParameters
     public byte[] getNonce()
     {
         return Arrays.clone(nonce);
+    }
+
+    /** @deprecated Use {@link #getEncoded()} instead. */
+    public byte[] getPrivateKey()
+    {
+        return getEncoded();
+    }
+
+    public byte[] getPublicKey()
+    {
+        return KyberPublicKeyParameters.getEncoded(t, rho);
+    }
+
+    public KyberPublicKeyParameters getPublicKeyParameters()
+    {
+        return new KyberPublicKeyParameters(getParameters(), t, rho);
+    }
+
+    public byte[] getRho()
+    {
+        return Arrays.clone(rho);
+    }
+
+    public byte[] getS()
+    {
+        return Arrays.clone(s);
+    }
+
+    public byte[] getT()
+    {
+        return Arrays.clone(t);
     }
 }

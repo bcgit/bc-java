@@ -101,7 +101,7 @@ public class BCDilithiumPrivateKey
 
     public DilithiumPublicKey getPublicKey()
     {
-        return new BCDilithiumPublicKey(new DilithiumPublicKeyParameters(params.getParameters(), params.getRho(), params.getT1()));
+        return new BCDilithiumPublicKey(params.getPublicKeyParameters());
     }
 
     public DilithiumParameterSpec getParameterSpec()

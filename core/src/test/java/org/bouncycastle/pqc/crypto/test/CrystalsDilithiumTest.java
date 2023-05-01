@@ -48,7 +48,7 @@ public class CrystalsDilithiumTest
 
         AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
 
-        assertTrue(Arrays.areEqual(Hex.decode(sk), ((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getPrivateKey()));
+        assertTrue(Arrays.areEqual(Hex.decode(sk), ((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
         DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)keyPair.getPublic();
         assertTrue(Arrays.areEqual(Hex.decode(pk), dPub.getEncoded()));
     }

@@ -5,18 +5,13 @@ import org.bouncycastle.util.Arrays;
 public class KyberPublicKeyParameters
     extends KyberKeyParameters
 {
-    final byte[] t;
-    final byte[] rho;
-
-    public byte[] getPublicKey()
+    static byte[] getEncoded(byte[] t, byte[] rho)
     {
         return Arrays.concatenate(t, rho);
     }
 
-    public byte[] getEncoded()
-    {
-        return getPublicKey();
-    }
+    final byte[] t;
+    final byte[] rho;
 
     public KyberPublicKeyParameters(KyberParameters params, byte[] t, byte[] rho)
     {
@@ -32,13 +27,24 @@ public class KyberPublicKeyParameters
         this.rho = Arrays.copyOfRange(encoding, encoding.length - KyberEngine.KyberSymBytes, encoding.length);
     }
 
-    public byte[] getT()
+    public byte[] getEncoded()
     {
-        return Arrays.clone(t);
+        return getEncoded(t, rho);
+    }
+
+    /** @deprecated Use {@link #getEncoded()} instead. */
+    public byte[] getPublicKey()
+    {
+        return getEncoded();
     }
 
     public byte[] getRho()
     {
         return Arrays.clone(rho);
+    }
+
+    public byte[] getT()
+    {
+        return Arrays.clone(t);
     }
 }
