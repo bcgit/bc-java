@@ -21,7 +21,7 @@ public class DEROtherInfo
     public static final class Builder
     {
         private final AlgorithmIdentifier algorithmID;
-        private final ASN1OctetString partyUVInfo;
+        private final ASN1OctetString partyUInfo;
         private final ASN1OctetString partyVInfo;
 
         private ASN1TaggedObject suppPubInfo;
@@ -37,7 +37,7 @@ public class DEROtherInfo
         public Builder(AlgorithmIdentifier algorithmID, byte[] partyUInfo, byte[] partyVInfo)
         {
             this.algorithmID = algorithmID;
-            this.partyUVInfo = DerUtil.getOctetString(partyUInfo);
+            this.partyUInfo = DerUtil.getOctetString(partyUInfo);
             this.partyVInfo = DerUtil.getOctetString(partyVInfo);
         }
 
@@ -77,7 +77,7 @@ public class DEROtherInfo
             ASN1EncodableVector v = new ASN1EncodableVector();
 
             v.add(algorithmID);
-            v.add(partyUVInfo);
+            v.add(partyUInfo);
             v.add(partyVInfo);
 
             if (suppPubInfo != null)
