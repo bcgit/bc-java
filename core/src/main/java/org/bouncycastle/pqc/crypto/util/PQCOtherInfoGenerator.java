@@ -66,8 +66,6 @@ public class PQCOtherInfoGenerator
         private AsymmetricCipherKeyPair aKp;
         private EncapsulatedSecretExtractor encSE;
 
-        private NHAgreement agreement = new NHAgreement();
-
         /**
          * Create a basic builder with just the compulsory fields for the initiator.
          *

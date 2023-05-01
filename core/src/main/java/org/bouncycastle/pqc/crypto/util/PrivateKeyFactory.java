@@ -230,11 +230,11 @@ public class PrivateKeyFactory
             KyberPublicKey pubKey = kyberKey.getPublicKey();
             if(pubKey != null)
             {
-                return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(), kyberKey.getNonce(),
-                        kyberKey.getPublicKey().getT(), kyberKey.getPublicKey().getRho());
+                return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(),
+                    kyberKey.getNonce(), pubKey.getT(), pubKey.getRho());
             }
             return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(), kyberKey.getNonce(),
-                     null, null);
+                null, null);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
