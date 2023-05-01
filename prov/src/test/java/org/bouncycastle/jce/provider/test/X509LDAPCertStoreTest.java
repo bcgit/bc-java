@@ -1,7 +1,30 @@
 package org.bouncycastle.jce.provider.test;
 
+import com.unboundid.ldap.listener.InMemoryDirectoryServer;
+import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
+import com.unboundid.ldap.listener.InMemoryListenerConfig;
+import com.unboundid.ldap.listener.interceptor.InMemoryInterceptedSearchResult;
+import com.unboundid.ldap.listener.interceptor.InMemoryOperationInterceptor;
+import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.LDAPResult;
+import com.unboundid.ldap.sdk.ResultCode;
+import com.unboundid.ldif.LDIFException;
+import junit.framework.TestCase;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.jce.X509LDAPCertStoreParameters;
+import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.test.TestResourceFinder;
+
+import javax.net.ServerSocketFactory;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -12,28 +35,8 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-
-import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-
-import com.unboundid.ldap.listener.InMemoryDirectoryServer;
-import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig;
-import com.unboundid.ldap.listener.InMemoryListenerConfig;
-import com.unboundid.ldap.listener.interceptor.InMemoryInterceptedSearchResult;
-import com.unboundid.ldap.listener.interceptor.InMemoryOperationInterceptor;
-import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.LDAPResult;
-import com.unboundid.ldap.sdk.ResultCode;
-import com.unboundid.ldap.sdk.schema.ObjectClassDefinition;
-import com.unboundid.ldap.sdk.schema.ObjectClassType;
-import com.unboundid.ldif.LDIFException;
-import junit.framework.TestCase;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.jce.X509LDAPCertStoreParameters;
-import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.util.ArrayList;
+import java.util.List;
 
 public class X509LDAPCertStoreTest
     extends TestCase
@@ -47,7 +50,7 @@ public class X509LDAPCertStoreTest
     }
 
     public void testLdapFilter()
-        throws Exception
+            throws Exception
     {
         BcFilterCheck filterCheck = new BcFilterCheck();
 
@@ -84,8 +87,8 @@ public class X509LDAPCertStoreTest
 //          new Attribute("cn", "chars[*()\\\0]")
 //        };
 //        result = ds.add("uid=john.doe,dc=test", attributes);
-
-        testMemberOf(ds);
+        readEntriesFromFile(ds);
+//        testMemberOf(ds);
 
         //trigger the exploit
         verifyCert(cert);
@@ -97,40 +100,73 @@ public class X509LDAPCertStoreTest
     }
 
     private static InMemoryDirectoryServer mockLdapServer(BcFilterCheck filterCheck)
-        throws Exception
+            throws Exception
     {
         InMemoryDirectoryServerConfig serverConfig = new InMemoryDirectoryServerConfig("dc=test");
         serverConfig.setListenerConfigs(new InMemoryListenerConfig(
-            "listen",
-            InetAddress.getByName("0.0.0.0"),
-            1389,
-            ServerSocketFactory.getDefault(),
-            SocketFactory.getDefault(),
-            (SSLSocketFactory)SSLSocketFactory.getDefault()));
+                "listen",
+                InetAddress.getByName("0.0.0.0"),
+                1389,
+                ServerSocketFactory.getDefault(),
+                SocketFactory.getDefault(),
+                (SSLSocketFactory) SSLSocketFactory.getDefault()));
 
         serverConfig.addInMemoryOperationInterceptor(filterCheck);
 
         return new InMemoryDirectoryServer(serverConfig);
     }
 
-    public static void testMemberOf(InMemoryDirectoryServer ds)
-        throws Exception
+    public static void readEntriesFromFile(InMemoryDirectoryServer ds) throws IOException, LDAPException, LDIFException
     {
+        InputStream src = TestResourceFinder.findTestResource("ldap/", "X509LDAPCertTest.ldif");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line = null;
+        List<String> entry = new ArrayList<>();
+        while ((line = bin.readLine()) != null)
+        {
+            if (line.isEmpty())
+            {
+                // End of entry, add to list and reset
+                if (entry.size() > 0)
+                {
+                    addEntry(ds, entry.toArray(new String[0]));
+                    entry.clear();
+                }
+            }
+            else
+            {
+                // Add entry line and attributes
+                line = line.replaceAll("\\\\0", "\0");
+                entry.add(line);
+            }
+        }
+        bin.close();
+        if (entry.size() > 0)
+        {
+            addEntry(ds, entry.toArray(new String[0]));
+            entry.clear();
+        }
 
-        addEntry(ds, "dn: dc=test", "objectClass: top", "objectClass: domain", "dc: test");
-
-        ObjectClassDefinition oc = new ObjectClassDefinition("10.19.19.78", new String[]{"user"}, "", false, new String[]{"TOP"},
-            ObjectClassType.STRUCTURAL, new String[]{"memberOf"},
-            new String[]{}, new HashMap());
-        addEntry(ds, "dn: cn=schema2,dc=test", "objectClass: top", "objectClass: ldapSubEntry", "objectClass: subschema", "cn: schema2",
-            "objectClasses:  " + oc.toString());
-
-        addEntry(ds, "dn: dc=people,dc=test", "objectClass: top", "objectClass: domain", "dc: people");
-        addEntry(ds, "dn: dc=groups,dc=test", "objectClass: top", "objectClass: domain", "dc: groups");
-        addEntry(ds, "dn: cn=test-group,dc=groups,dc=test", "objectClass: groupOfUniqueNames", "cn: test group");
-        addEntry(ds, "dn: cn=Testy Tester,dc=people,dc=test", "objectClass: Person", "objectClass: organizationalPerson", "sn: Tester", "cn: Testy Tester");
-        addEntry(ds, "dn: cn=chars[*()\\\0],dc=people,dc=test", "objectClass: Person", "objectClass: organizationalPerson", "sn: chars", "cn: chars[*()\\\0]");
     }
+
+//    public static void testMemberOf(InMemoryDirectoryServer ds)
+//        throws Exception
+//    {
+//
+//        addEntry(ds, "dn: dc=test", "objectClass: top", "objectClass: domain", "dc: test");
+//
+//        ObjectClassDefinition oc = new ObjectClassDefinition("10.19.19.78", new String[]{"user"}, "", false, new String[]{"TOP"},
+//            ObjectClassType.STRUCTURAL, new String[]{"memberOf"},
+//            new String[]{}, new HashMap());
+//        addEntry(ds, "dn: cn=schema2,dc=test", "objectClass: top", "objectClass: ldapSubEntry", "objectClass: subschema", "cn: schema2",
+//            "objectClasses:  " + oc.toString());
+//
+//        addEntry(ds, "dn: dc=people,dc=test", "objectClass: top", "objectClass: domain", "dc: people");
+//        addEntry(ds, "dn: dc=groups,dc=test", "objectClass: top", "objectClass: domain", "dc: groups");
+//        addEntry(ds, "dn: cn=test-group,dc=groups,dc=test", "objectClass: groupOfUniqueNames", "cn: test group");
+//        addEntry(ds, "dn: cn=Testy Tester,dc=people,dc=test", "objectClass: Person", "objectClass: organizationalPerson", "sn: Tester", "cn: Testy Tester");
+//        addEntry(ds, "dn: cn=chars[*()\\\0],dc=people,dc=test", "objectClass: Person", "objectClass: organizationalPerson", "sn: chars", "cn: chars[*()\\\0]");
+//    }
 
     public static void addEntry(InMemoryDirectoryServer ds, String... args)
         throws LDIFException, LDAPException
