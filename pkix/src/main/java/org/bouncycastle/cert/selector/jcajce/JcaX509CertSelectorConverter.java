@@ -26,7 +26,7 @@ public class JcaX509CertSelectorConverter
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("unable to convert issuer: " + e.getMessage());
+                throw new IllegalArgumentException("unable to convert issuer: " + e.getMessage(), e);
             }
         }
 
@@ -43,7 +43,7 @@ public class JcaX509CertSelectorConverter
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException("unable to convert issuer: " + e.getMessage());
+                throw new IllegalArgumentException("unable to convert subjectKeyIdentifier: " + e.getMessage(), e);
             }
         }
 
