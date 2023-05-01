@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  *
@@ -76,20 +75,18 @@ public class KyberPrivateKey
 
     private KyberPrivateKey(ASN1Sequence seq)
     {
-        int skipPubKey = 1;
-        if (seq.size() == 5)
-            skipPubKey = 0; // dont skip
-
-        version = BigIntegers.intValueExact(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());
+        version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();
         if (version != 0)
         {
             throw new IllegalArgumentException("unrecognized version");
         }
+
         s = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
 
-        // todo optional publickey
+        int skipPubKey = 1;
         if (seq.size() == 5)
         {
+            skipPubKey = 0; 
             publicKey = KyberPublicKey.getInstance(seq.getObjectAt(2));
         }
 

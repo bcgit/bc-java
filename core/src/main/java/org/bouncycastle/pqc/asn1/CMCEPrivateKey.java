@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * ASN.1 Encoding for a
@@ -60,11 +59,12 @@ public class CMCEPrivateKey
 
     private CMCEPrivateKey(ASN1Sequence seq)
     {
-        version = BigIntegers.intValueExact(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());
+        version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();
         if (version != 0)
         {
              throw new IllegalArgumentException("unrecognized version");
         }
+
         delta = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
 
         C = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets());
@@ -75,7 +75,6 @@ public class CMCEPrivateKey
 
         s = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(5)).getOctets());
 
-        // todo optional publickey
         if(seq.size() == 7)
         {
             PublicKey = CMCEPublicKey.getInstance(seq.getObjectAt(6));

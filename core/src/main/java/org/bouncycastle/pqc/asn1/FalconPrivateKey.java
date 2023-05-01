@@ -1,9 +1,14 @@
 package org.bouncycastle.pqc.asn1;
 
-
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * ASN.1 Encoding for a
@@ -69,18 +74,18 @@ public class FalconPrivateKey
 
     private FalconPrivateKey(ASN1Sequence seq)
     {
-        version = BigIntegers.intValueExact(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());
+        version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();
         if (version != 0)
         {
             throw new IllegalArgumentException("unrecognized version");
         }
+
         f = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
 
         g = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets());
 
         F = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(3)).getOctets());
 
-        // todo optional publickey
         if(seq.size() == 5)
         {
             publicKey = FalconPublicKey.getInstance(seq.getObjectAt(4));

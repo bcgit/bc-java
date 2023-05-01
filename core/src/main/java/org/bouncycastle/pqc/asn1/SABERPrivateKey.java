@@ -1,9 +1,14 @@
 package org.bouncycastle.pqc.asn1;
 
-
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  *    Expires 13 May 2022
@@ -55,16 +60,16 @@ public class SABERPrivateKey
 
     private SABERPrivateKey(ASN1Sequence seq)
     {
-        version = BigIntegers.intValueExact(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());
+        version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();
         if (version != 0)
         {
             throw new IllegalArgumentException("unrecognized version");
         }
+
         z = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());
 
         s = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets());
 
-        //todo check if public key is supplied
         PublicKey = SABERPublicKey.getInstance(seq.getObjectAt(3));
 
         hpk = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(4)).getOctets());
