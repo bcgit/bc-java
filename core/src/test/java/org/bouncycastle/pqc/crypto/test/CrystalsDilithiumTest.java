@@ -50,7 +50,7 @@ public class CrystalsDilithiumTest
 
         assertTrue(Arrays.areEqual(Hex.decode(sk), ((DilithiumPrivateKeyParameters)keyPair.getPrivate()).getPrivateKey()));
         DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)keyPair.getPublic();
-        assertTrue(Arrays.areEqual(Hex.decode(pk), Arrays.concatenate(dPub.getRho(), dPub.getT1())));
+        assertTrue(Arrays.areEqual(Hex.decode(pk), dPub.getEncoded()));
     }
 
     public void testRNG()
@@ -135,7 +135,7 @@ public class CrystalsDilithiumTest
 
                         AsymmetricCipherKeyPair ackp = kpg.generateKeyPair();
                         DilithiumPublicKeyParameters dPub = (DilithiumPublicKeyParameters)ackp.getPublic();
-                        byte[] respk = Arrays.concatenate(dPub.getRho(), dPub.getT1());
+                        byte[] respk = dPub.getEncoded();
                         // System.out.println("pk = ");
                         // Helper.printByteArray(pk);
                         byte[] ressk = ((DilithiumPrivateKeyParameters)ackp.getPrivate()).getEncoded();

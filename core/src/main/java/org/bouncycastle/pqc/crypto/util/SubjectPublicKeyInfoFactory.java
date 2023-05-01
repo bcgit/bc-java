@@ -266,7 +266,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(params.getRho(), params.getT1()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {
