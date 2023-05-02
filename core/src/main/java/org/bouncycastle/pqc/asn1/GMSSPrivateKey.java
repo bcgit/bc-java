@@ -20,6 +20,20 @@ import org.bouncycastle.pqc.legacy.crypto.gmss.Treehash;
 public class GMSSPrivateKey
     extends ASN1Object
 {
+    public static GMSSPrivateKey getInstance(Object o)
+    {
+        if (o instanceof GMSSPrivateKey)
+        {
+            return (GMSSPrivateKey)o;
+        }
+        else if (o != null)
+        {
+            return new GMSSPrivateKey(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
+    }
+
     private ASN1Primitive primitive;
 
     private GMSSPrivateKey(ASN1Sequence mtsPrivateKey)

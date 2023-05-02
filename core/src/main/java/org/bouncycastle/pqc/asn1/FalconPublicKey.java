@@ -29,6 +29,9 @@ public class FalconPublicKey
         return h;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public FalconPublicKey(ASN1Sequence seq)
     {
         h = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());

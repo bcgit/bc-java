@@ -31,6 +31,9 @@ public class CMCEPublicKey
         this.T = t;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public CMCEPublicKey(ASN1Sequence seq)
     {
         T = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());

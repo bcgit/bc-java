@@ -26,6 +26,9 @@ public class SPHINCSPLUSPublicKey
         this.pkroot = pkroot;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public SPHINCSPLUSPublicKey(ASN1Sequence seq)
     {
         pkseed = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
