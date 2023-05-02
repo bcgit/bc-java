@@ -111,11 +111,11 @@ public interface PQCObjectIdentifiers
     /**
      * @deprecated use xmss_mt_SHAKE128ph
      */
-    final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = xmss_mt_SHAKE128;
+    final ASN1ObjectIdentifier xmss_mt_with_SHAKE128        = xmss_mt_SHAKE128ph;
     /**
      * @deprecated use xmss_mt_SHAKE256ph
      */
-    final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = xmss_mt_SHAKE256;
+    final ASN1ObjectIdentifier xmss_mt_with_SHAKE256        = xmss_mt_SHAKE256ph;
 
     /**
      * qTESLA

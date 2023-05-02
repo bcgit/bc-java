@@ -134,41 +134,6 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier xmss_mt_SHAKE128 = xmss_mt.branch("7");
     ASN1ObjectIdentifier xmss_mt_SHAKE256 = xmss_mt.branch("8");
 
-    // old OIDs.
-    /**
-     * @deprecated use xmss_SHA256ph
-     */
-    ASN1ObjectIdentifier xmss_with_SHA256 = xmss_SHA256ph;
-    /**
-     * @deprecated use xmss_SHA512ph
-     */
-    ASN1ObjectIdentifier xmss_with_SHA512 = xmss_SHA512ph;
-    /**
-     * @deprecated use xmss_SHAKE128ph
-     */
-    ASN1ObjectIdentifier xmss_with_SHAKE128 = xmss_SHAKE128ph;
-    /**
-     * @deprecated use xmss_SHAKE256ph
-     */
-    ASN1ObjectIdentifier xmss_with_SHAKE256 = xmss_SHAKE256ph;
-
-    /**
-     * @deprecated use xmss_mt_SHA256ph
-     */
-    ASN1ObjectIdentifier xmss_mt_with_SHA256 = xmss_mt_SHA256ph;
-    /**
-     * @deprecated use xmss_mt_SHA512ph
-     */
-    ASN1ObjectIdentifier xmss_mt_with_SHA512 = xmss_mt_SHA512ph;
-    /**
-     * @deprecated use xmss_mt_SHAKE128ph
-     */
-    ASN1ObjectIdentifier xmss_mt_with_SHAKE128 = xmss_mt_SHAKE128;
-    /**
-     * @deprecated use xmss_mt_SHAKE256ph
-     */
-    ASN1ObjectIdentifier xmss_mt_with_SHAKE256 = xmss_mt_SHAKE256;
-
     /**
      * qTESLA
      */

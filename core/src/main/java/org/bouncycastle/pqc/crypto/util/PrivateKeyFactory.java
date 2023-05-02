@@ -132,18 +132,18 @@ public class PrivateKeyFactory
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
-        if (algOID.on(BCObjectIdentifiers.qTESLA))
+        if (algOID.on(PQCObjectIdentifiers.qTESLA))
         {
             ASN1OctetString qTESLAPriv = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
 
             return new QTESLAPrivateKeyParameters(Utils.qTeslaLookupSecurityCategory(keyInfo.getPrivateKeyAlgorithm()), qTESLAPriv.getOctets());
         }
-        else if (algOID.equals(BCObjectIdentifiers.sphincs256))
+        else if (algOID.equals(PQCObjectIdentifiers.sphincs256))
         {
             return new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets(),
                 Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters())));
         }
-        else if (algOID.equals(BCObjectIdentifiers.newHope))
+        else if (algOID.equals(PQCObjectIdentifiers.newHope))
         {
             return new NHPrivateKeyParameters(convert(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets()));
         }
@@ -348,7 +348,7 @@ public class PrivateKeyFactory
 
             return new RainbowPrivateKeyParameters(rainbowParams, keyEnc);
         }
-        else if (algOID.equals(BCObjectIdentifiers.xmss))
+        else if (algOID.equals(PQCObjectIdentifiers.xmss))
         {
             XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
             ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
