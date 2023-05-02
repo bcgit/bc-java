@@ -121,7 +121,7 @@ public class X509LDAPCertStoreTest
         InputStream src = TestResourceFinder.findTestResource("ldap/", "X509LDAPCertTest.ldif");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line = null;
-        List<String> entry = new ArrayList<>();
+        List<String> entry = new ArrayList<String>();
         while ((line = bin.readLine()) != null)
         {
             if (line.isEmpty())
