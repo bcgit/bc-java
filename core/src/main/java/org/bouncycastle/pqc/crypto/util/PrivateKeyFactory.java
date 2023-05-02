@@ -24,6 +24,7 @@ import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.asn1.SPHINCSPLUSPrivateKey;
+import org.bouncycastle.pqc.asn1.SPHINCSPLUSPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
@@ -136,12 +137,12 @@ public class PrivateKeyFactory
         {
             ASN1OctetString qTESLAPriv = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
 
-            return new QTESLAPrivateKeyParameters(Utils.qTeslaLookupSecurityCategory(keyInfo.getPrivateKeyAlgorithm()), qTESLAPriv.getOctets());
+            return new QTESLAPrivateKeyParameters(Utils.qTeslaLookupSecurityCategory(algId), qTESLAPriv.getOctets());
         }
         else if (algOID.equals(PQCObjectIdentifiers.sphincs256))
         {
             return new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets(),
-                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters())));
+                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(algId.getParameters())));
         }
         else if (algOID.equals(PQCObjectIdentifiers.newHope))
         {
@@ -176,56 +177,57 @@ public class PrivateKeyFactory
         else if (algOID.on(BCObjectIdentifiers.sphincsPlus))
         {
             SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(keyInfo.parsePrivateKey());
-            SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
-
-            return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(), spKey.getPublicKey().getPkseed(), spKey.getPublicKey().getPkroot());
+            SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
+            SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
+            return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
+                publicKey.getPkseed(), publicKey.getPkroot());
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            PicnicParameters pParams = Utils.picnicParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            PicnicParameters pParams = Utils.picnicParamsLookup(algOID);
 
             return new PicnicPrivateKeyParameters(pParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
         {
             CMCEPrivateKey cmceKey = CMCEPrivateKey.getInstance(keyInfo.parsePrivateKey());
-            CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            CMCEParameters spParams = Utils.mcElieceParamsLookup(algOID);
 
             return new CMCEPrivateKeyParameters(spParams, cmceKey.getDelta(), cmceKey.getC(), cmceKey.getG(), cmceKey.getAlpha(), cmceKey.getS());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_frodo))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            FrodoParameters spParams = Utils.frodoParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            FrodoParameters spParams = Utils.frodoParamsLookup(algOID);
 
             return new FrodoPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_saber))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            SABERParameters spParams = Utils.saberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            SABERParameters spParams = Utils.saberParamsLookup(algOID);
 
             return new SABERPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_sike))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            SIKEParameters spParams = Utils.sikeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            SIKEParameters spParams = Utils.sikeParamsLookup(algOID);
 
             return new SIKEPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntru))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            NTRUParameters spParams = Utils.ntruParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            NTRUParameters spParams = Utils.ntruParamsLookup(algOID);
 
             return new NTRUPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
         {
             KyberPrivateKey kyberKey = KyberPrivateKey.getInstance(keyInfo.parsePrivateKey());
-            KyberParameters kyberParams = Utils.kyberParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            KyberParameters kyberParams = Utils.kyberParamsLookup(algOID);
 
             KyberPublicKey pubKey = kyberKey.getPublicKey();
             if(pubKey != null)
@@ -240,7 +242,7 @@ public class PrivateKeyFactory
         {
             ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
-            NTRULPRimeParameters spParams = Utils.ntrulprimeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            NTRULPRimeParameters spParams = Utils.ntrulprimeParamsLookup(algOID);
 
             return new NTRULPRimePrivateKeyParameters(spParams,
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
@@ -252,7 +254,7 @@ public class PrivateKeyFactory
         {
             ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
-            SNTRUPrimeParameters spParams = Utils.sntruprimeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            SNTRUPrimeParameters spParams = Utils.sntruprimeParamsLookup(algOID);
 
             return new SNTRUPrimePrivateKeyParameters(spParams,
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
@@ -267,7 +269,7 @@ public class PrivateKeyFactory
             || algOID.equals(BCObjectIdentifiers.dilithium3_aes) || algOID.equals(BCObjectIdentifiers.dilithium5_aes))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
-            DilithiumParameters spParams = Utils.dilithiumParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            DilithiumParameters spParams = Utils.dilithiumParamsLookup(algOID);
 
             if (keyObj instanceof ASN1Sequence)
             {
@@ -320,14 +322,14 @@ public class PrivateKeyFactory
         else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))
         {
             FalconPrivateKey falconKey = FalconPrivateKey.getInstance(keyInfo.parsePrivateKey());
-            FalconParameters falconParams = Utils.falconParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            FalconParameters falconParams = Utils.falconParamsLookup(algOID);
 
             return new FalconPrivateKeyParameters(falconParams, falconKey.getf(), falconKey.getG(), falconKey.getF(), falconKey.getPublicKey().getH());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            BIKEParameters bikeParams = Utils.bikeParamsLookup(algOID);
 
             byte[] h0 = Arrays.copyOfRange(keyEnc, 0, bikeParams.getRByte());
             byte[] h1 = Arrays.copyOfRange(keyEnc, bikeParams.getRByte(), 2 * bikeParams.getRByte());
@@ -337,20 +339,20 @@ public class PrivateKeyFactory
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_hqc))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            HQCParameters hqcParams = Utils.hqcParamsLookup(algOID);
 
             return new HQCPrivateKeyParameters(hqcParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.rainbow))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+            RainbowParameters rainbowParams = Utils.rainbowParamsLookup(algOID);
 
             return new RainbowPrivateKeyParameters(rainbowParams, keyEnc);
         }
         else if (algOID.equals(PQCObjectIdentifiers.xmss))
         {
-            XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            XMSSKeyParams keyParams = XMSSKeyParams.getInstance(algId.getParameters());
             ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
 
             XMSSPrivateKey xmssPrivateKey = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
@@ -385,7 +387,7 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(PQCObjectIdentifiers.xmss_mt))
         {
-            XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getPrivateKeyAlgorithm().getParameters());
+            XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(algId.getParameters());
             ASN1ObjectIdentifier treeDigest = keyParams.getTreeDigest().getAlgorithm();
 
             try
