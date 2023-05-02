@@ -65,6 +65,9 @@ public class SPHINCSPLUSPrivateKey
         this.PublicKey = publicKey;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public SPHINCSPLUSPrivateKey(ASN1Sequence seq)
     {
         version = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();

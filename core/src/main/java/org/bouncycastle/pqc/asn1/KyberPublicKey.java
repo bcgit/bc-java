@@ -33,6 +33,9 @@ public class KyberPublicKey
         this.rho = rho;
     }
 
+    /**
+     * @deprecated use getInstance()
+     */
     public KyberPublicKey(ASN1Sequence seq)
     {
         t = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets());
