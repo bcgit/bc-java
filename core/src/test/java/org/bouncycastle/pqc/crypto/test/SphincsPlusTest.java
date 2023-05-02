@@ -154,6 +154,15 @@ public class SphincsPlusTest
                         SPHINCSPlusPublicKeyParameters pubParams = (SPHINCSPlusPublicKeyParameters)kp.getPublic();
                         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
+                        // FIXME No OIDs for simple variants of SPHINCS+
+                        if (!name.contains("-simple"))
+                        {
+                            pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));
+                            privParams = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
+                        }
+
 //                            System.err.println(Hex.toHexString(pubParams.getEncoded()));
 //                            System.err.println(Hex.toHexString(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk)));
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk), pubParams.getEncoded()));
