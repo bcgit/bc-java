@@ -51,7 +51,6 @@ class DHKEM
 
     ECDomainParameters domainParams;
 
-
     protected DHKEM(short kemid)
     {
         this.kemId = kemid;
@@ -246,10 +245,10 @@ class DHKEM
 
     public AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
     {
-        if (ikm.length < Nsk)
-        {
-            throw new IllegalArgumentException("input keying material should have length at least " + Nsk + " bytes");
-        }
+//        if (ikm.length < Nsk)
+//        {
+//            throw new IllegalArgumentException("input keying material should have length at least " + Nsk + " bytes");
+//        }
         byte[] suiteID = Arrays.concatenate(Strings.toByteArray("KEM"), Pack.shortToBigEndian(kemId));
         switch (kemId)
         {

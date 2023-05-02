@@ -7,14 +7,76 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import java.io.IOException;
 
 public class MLSMessage
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
+    WireFormat wireFormat;
+    PublicMessage publicMessage;
+    PrivateMessage privateMessage;
+    Welcome welcome;
+    GroupInfo groupInfo;
+    KeyPackage keyPackage;
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        switch (wireFormat)
+        {
 
+            case RESERVED:
+                break;
+            case mls_public_message:
+
+                //FramedContent
+                stream.writeOpaque(publicMessage.content.group_id);
+                stream.write(publicMessage.content.epoch);
+                    //Sender
+//                stream.writeOpaque(publicMessage.content.sender);
+                //FramedContentAuthData
+//                switch (publicMessage.)
+                //membership_tag
+
+                break;
+            case mls_private_message:
+                break;
+            case mls_welcome:
+                break;
+            case mls_group_info:
+                break;
+            case mls_key_package:
+                break;
+        }
+    }
 }
 
 class PublicMessage
 //        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
+    FramedContent content;
+    FramedContentAuthData auth;
+    byte[] membership_tag;
 
+    public PublicMessage(FramedContent content, FramedContentAuthData auth, byte[] membership_tag)
+    {
+        this.content = content;
+        this.auth = auth;
+        switch (content.sender.senderType)
+        {
+
+            case RESERVED:
+            case NEW_MEMBER_COMMIT:
+            case EXTERNAL:
+            case NEW_MEMBER_PROPOSAL:
+                break;
+            case MEMBER:
+                this.membership_tag = membership_tag;
+                break;
+        }
+    }
+
+//    @Override
+//    public void writeTo(MLSOutputStream stream) throws IOException
+//    {
+//
+//    }
 }
 
 
@@ -31,8 +93,33 @@ class Sender
     }
 }
 
+class FramedContentAuthData
+    extends FramedContent
+//        implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    byte[] signature;
+    byte[] confirmation_tag;
+
+    public FramedContentAuthData(byte[] data, ContentType contentType, byte[] signature, byte[] confirmation_tag)
+    {
+        super(data, contentType);
+        this.signature = signature;
+        switch (contentType)
+        {
+
+            case RESERVED:
+            case APPLICATION:
+            case PROPOSAL:
+                break;
+            case COMMIT:
+                this.confirmation_tag = confirmation_tag;
+                break;
+        }
+    }
+}
+
 class FramedContent
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+//        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] group_id;
     long epoch;
@@ -57,12 +144,6 @@ class FramedContent
                 Commit commit;
                 break;
         }
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        //TODO
     }
 }
 class Proposal
@@ -284,6 +365,29 @@ class Capabilities
         this.credentials = credentials;
     }
 }
+enum WireFormat implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    RESERVED((short) 0),
+    mls_public_message((short) 1),
+    mls_private_message((short) 2),
+    mls_welcome((short) 3),
+    mls_group_info((short) 4),
+    mls_key_package((short) 5);
+
+    final short value;
+
+    WireFormat(short value)
+    {
+        this.value = value;
+    }
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(value);
+    }
+}
+
 enum CredentialType implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((byte) 0),

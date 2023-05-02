@@ -1,11 +1,14 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.*;
+import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.GroupContext;
+import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -13,8 +16,11 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class VectorTest
@@ -23,7 +29,7 @@ public class VectorTest
     public void testTreeMath()
             throws Exception
     {
-        InputStream src = TreeMathTest.class.getResourceAsStream("tree-math.txt");
+        InputStream src = VectorTest.class.getResourceAsStream("tree-math.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -116,7 +122,7 @@ public class VectorTest
     public void testCryptoBasics()
             throws Exception
     {
-        InputStream src = TreeMathTest.class.getResourceAsStream("crypto-basics.txt");
+        InputStream src = VectorTest.class.getResourceAsStream("crypto-basics.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -258,7 +264,7 @@ public class VectorTest
                 this.handshake_nonce = handshake_nonce;
             }
         }
-        InputStream src = TreeMathTest.class.getResourceAsStream("secret-tree.txt");
+        InputStream src = VectorTest.class.getResourceAsStream("secret-tree.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -376,7 +382,7 @@ public class VectorTest
     public void testMessageProtection()
             throws Exception
     {
-        InputStream src = TreeMathTest.class.getResourceAsStream("message-protection.txt");
+        InputStream src = VectorTest.class.getResourceAsStream("message-protection.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -413,7 +419,7 @@ public class VectorTest
 
                     // Construct a GroupContext object with the provided cipher_suite, group_id, epoch, tree_hash,
                     // and confirmed_transcript_hash values, and empty extensions
-                    GroupContext groupContext = new GroupContext(group_id, epoch, tree_hash, confirmed_transcript_hash);
+                    GroupContext groupContext = new GroupContext(cipher_suite, group_id, epoch, tree_hash, confirmed_transcript_hash, new byte[0]);
 
                     // Initialize a secret tree for 2 members with the specified encryption_secret
                     TreeSize treeSize = TreeSize.forLeaves(2);
@@ -441,4 +447,230 @@ public class VectorTest
             }
         }
     }
+
+    public void testKeySchedule()
+            throws Exception
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("key-schedule.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        HashMap<String, String> bufEpoch = new HashMap<String, String>();
+        Secret prevEpochSecret = null;
+        int count = 0;
+        int epochCount = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    System.out.println("test case: " + count);
+                    buf.clear();
+                    bufEpoch.clear();
+                    count++;
+                    epochCount = 0;
+
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+            if (line.endsWith("START"))
+            {
+                while ((line = bin.readLine()) != null)
+                {
+                    line = line.trim();
+                    if(line.endsWith("STOP"))
+                    {
+
+                        break;
+                    }
+                    if (line.length() == 0)
+                    {
+                        if (bufEpoch.size() > 0)
+                        {
+//                            System.out.println("test case: " + count + " epoch: " + epochCount );
+                            byte[] commit_secret = Hex.decode(bufEpoch.get("commit_secret"));
+                            byte[] confirmation_key = Hex.decode(bufEpoch.get("confirmation_key"));
+                            byte[] confirmed_transcript_hash = Hex.decode(bufEpoch.get("confirmed_transcript_hash"));
+                            byte[] encryption_secret = Hex.decode(bufEpoch.get("encryption_secret"));
+                            byte[] epoch_authenticator = Hex.decode(bufEpoch.get("epoch_authenticator"));
+                            byte[] exporterContext = Hex.decode(bufEpoch.get("exporterContext"));
+                            String exporterLabel = bufEpoch.get("exporterLabel");
+                            int exporterLength = Integer.parseInt(bufEpoch.get("exporterLength"));
+                            byte[] exporterSecret = Hex.decode(bufEpoch.get("exporterSecret"));
+                            byte[] exporter_secret = Hex.decode(bufEpoch.get("exporter_secret"));
+                            byte[] external_pub = Hex.decode(bufEpoch.get("external_pub"));
+                            byte[] external_secret = Hex.decode(bufEpoch.get("external_secret"));
+                            byte[] group_context = Hex.decode(bufEpoch.get("group_context"));
+                            byte[] init_secret = Hex.decode(bufEpoch.get("init_secret"));
+                            byte[] joiner_secret = Hex.decode(bufEpoch.get("joiner_secret"));
+                            byte[] membership_key = Hex.decode(bufEpoch.get("membership_key"));
+                            byte[] psk_secret = Hex.decode(bufEpoch.get("psk_secret"));
+                            byte[] resumption_psk = Hex.decode(bufEpoch.get("resumption_psk"));
+                            byte[] sender_data_secret = Hex.decode(bufEpoch.get("sender_data_secret"));
+                            byte[] tree_hash = Hex.decode(bufEpoch.get("tree_hash"));
+                            byte[] welcome_secret = Hex.decode(bufEpoch.get("welcome_secret"));
+
+                            short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
+                            byte[] group_id = Hex.decode(buf.get("group_id"));
+                            byte[] initial_init_secret = Hex.decode(buf.get("initial_init_secret"));
+                            CipherSuite suite = new CipherSuite(cipher_suite);
+
+                            GroupContext groupContext = new GroupContext(
+                                    cipher_suite,
+                                    group_id,
+                                    epochCount,
+                                    tree_hash,
+                                    confirmed_transcript_hash,
+                                    new byte[0]
+                            );
+                            // Verify that group context matches the provided group_context value
+                            byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
+                            assertTrue(Arrays.areEqual(group_context, groupContextBytes));
+
+                            // Initialize the creator's key schedule
+                            TreeSize treeSize = TreeSize.forLeaves(1+epochCount);
+                            KeyScheduleEpoch.JoinSecrets joinSecrets;
+                            if(epochCount == 0)
+                            {
+                                prevEpochSecret = new Secret(initial_init_secret);
+                            }
+
+                            joinSecrets = KeyScheduleEpoch.JoinSecrets.forMember(suite, prevEpochSecret, new Secret(commit_secret), null, group_context);
+                            joinSecrets.injectPskSecret(new Secret(psk_secret));
+                            assertTrue(Arrays.areEqual(joiner_secret, joinSecrets.joinerSecret.value()));
+                            assertTrue(Arrays.areEqual(welcome_secret, joinSecrets.welcomeSecret.value()));
+
+                            KeyScheduleEpoch epoch = joinSecrets.complete(treeSize, group_context);
+                            prevEpochSecret = epoch.initSecret;
+                            assertTrue(Arrays.areEqual(init_secret, epoch.initSecret.value()));
+                            assertTrue(Arrays.areEqual(sender_data_secret, epoch.senderDataSecret.value()));
+                            assertTrue(Arrays.areEqual(encryption_secret, epoch.encryptionSecret.value()));
+                            assertTrue(Arrays.areEqual(exporter_secret, epoch.exporterSecret.value()));
+                            assertTrue(Arrays.areEqual(epoch_authenticator, epoch.epochAuthenticator.value()));
+                            assertTrue(Arrays.areEqual(external_secret, epoch.externalSecret.value()));
+                            assertTrue(Arrays.areEqual(confirmation_key, epoch.confirmationKey.value()));
+                            assertTrue(Arrays.areEqual(membership_key, epoch.membershipKey.value()));
+                            assertTrue(Arrays.areEqual(resumption_psk, epoch.resumptionPSK.value()));
+
+                            byte[] externalPubBytes = suite.getHPKE().serializePublicKey(epoch.getExternalPublicKey());
+                            assertTrue(Arrays.areEqual(external_pub, externalPubBytes));
+
+                            byte[] exporterSecretBytes = epoch.MLSExporter(exporterLabel, exporterContext, exporterLength);
+                            assertTrue(Arrays.areEqual(exporterSecret, exporterSecretBytes));
+
+
+
+
+                            epochCount++;
+                            bufEpoch.clear();
+                        }
+                    }
+                    int b = line.indexOf("=");
+                    if (b > -1)
+                    {
+                        bufEpoch.put(line.substring(0, b).trim(), line.substring(b + 1).trim());
+                    }
+                }
+            }
+        }
+    }
+
+    public void testPskSecret()
+            throws Exception
+    {
+        class PSK
+        {
+            final byte[] psk_id;
+            final byte[] psk;
+            final byte[] psk_nonce;
+
+            public PSK(byte[] psk_id, byte[] psk, byte[] psk_nonce)
+            {
+                this.psk_id = psk_id;
+                this.psk = psk;
+                this.psk_nonce = psk_nonce;
+            }
+        }
+        InputStream src = VectorTest.class.getResourceAsStream("psk_secret.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        HashMap<String, String> bufpsk = new HashMap<String, String>();
+        ArrayList<PSK> psks = new ArrayList<PSK>();
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    System.out.println("test case: " + count);
+                    short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
+                    byte[] psk_secret = Hex.decode(buf.get("psk_secret"));
+                    CipherSuite suite = new CipherSuite(cipher_suite);
+
+                    List<KeyScheduleEpoch.PSKWithSecret> pskList = new ArrayList<>();
+                    for (PSK psk : psks)
+                    {
+                        PreSharedKeyID external = PreSharedKeyID.external(psk.psk_id, psk.psk_nonce);
+                        KeyScheduleEpoch.PSKWithSecret temp = new KeyScheduleEpoch.PSKWithSecret(external, new Secret(psk.psk));
+                        pskList.add(temp);
+                    }
+
+                    Secret pskOutput = KeyScheduleEpoch.JoinSecrets.pskSecret(suite, pskList);
+                    assertTrue(Arrays.areEqual(psk_secret, pskOutput.value()));
+
+                    buf.clear();
+                    psks.clear();
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+            if (line.endsWith("START"))
+            {
+                while ((line = bin.readLine()) != null)
+                {
+                    line = line.trim();
+                    if(line.endsWith("STOP"))
+                    {
+                        break;
+                    }
+                    if (line.length() == 0)
+                    {
+                        if (bufpsk.size() > 0)
+                        {
+
+                            byte[] psk_id = Hex.decode(bufpsk.get("psk_id"));
+                            byte[] psk = Hex.decode(bufpsk.get("psk"));
+                            byte[] psk_nonce = Hex.decode(bufpsk.get("psk_nonce"));
+
+                            psks.add(new PSK(psk_id, psk, psk_nonce));
+                            bufpsk.clear();
+                        }
+                    }
+                    int b = line.indexOf("=");
+                    if (b > -1)
+                    {
+                        bufpsk.put(line.substring(0, b).trim(), line.substring(b + 1).trim());
+                    }
+                }
+            }
+        }
+    }
+
+
+
 }

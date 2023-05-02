@@ -8,6 +8,7 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,9 +31,11 @@ public class KeyScheduleEpoch {
         private final CipherSuite suite;
         // Public values
         public final Secret joinerSecret;
-        public final Secret welcomeKey;
-        public final Secret welcomeNonce;
-        private final Secret memberSecret; // Held to derive further secrets
+
+        public Secret welcomeSecret;
+        public Secret welcomeKey;
+        public Secret welcomeNonce;
+        private Secret memberSecret; // Held to derive further secrets
 
         static class PSKLabel implements MLSOutputStream.Writable {
             PreSharedKeyID id;
@@ -69,7 +72,7 @@ public class KeyScheduleEpoch {
                          V                               V
         psk_[n-1] --> Extract --> ExpandWithLabel --> Extract = psk_secret_[n]
          */
-        static Secret pskSecret(CipherSuite suite, List<PSKWithSecret> psks) throws IOException {
+        public static Secret pskSecret(CipherSuite suite, List<PSKWithSecret> psks) throws IOException {
             Secret pskSecret = Secret.zero(suite);
             if (psks == null || psks.isEmpty()) {
                 return pskSecret;
@@ -106,11 +109,18 @@ public class KeyScheduleEpoch {
                     joiner_secret
 
         */
-        static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException {
+        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException
+        {
             Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
-            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite,"joiner", context, suite.getKDF().getHashLength());
+            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
             return new JoinSecrets(suite, joinerSecret, psks);
         }
+        // todo change to
+//        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, Secret pskSecret, byte[] context) throws IOException {
+//            Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
+//            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite,"joiner", context, suite.getKDF().getHashLength());
+//            return new JoinSecrets(suite, joinerSecret, pskSecret);
+//        }
 
         /*
                      joiner_secret
@@ -136,7 +146,24 @@ psk_secret (or 0) --> KDF.Extract
             this.memberSecret = Secret.extract(suite, joinerSecret, pskSecret(suite, psks));
             // Carry-forward values
             // Held to avoid consuming joinerSecret
-            Secret welcomeSecret = memberSecret.deriveSecret(suite, "welcome");
+            this.welcomeSecret = memberSecret.deriveSecret(suite, "welcome");
+            this.welcomeKey = welcomeSecret.expand(suite, "key", suite.getAEAD().getKeySize());
+            this.welcomeNonce = welcomeSecret.expand(suite, "nonce", suite.getAEAD().getNonceSize());
+        }
+        public JoinSecrets(CipherSuite suite, Secret joinerSecret, Secret pskSecret) throws IOException {
+            this.suite = suite;
+            this.joinerSecret = joinerSecret;
+            this.memberSecret = Secret.extract(suite, joinerSecret, pskSecret);
+            // Carry-forward values
+            // Held to avoid consuming joinerSecret
+            this.welcomeSecret = memberSecret.deriveSecret(suite, "welcome");
+            this.welcomeKey = welcomeSecret.expand(suite, "key", suite.getAEAD().getKeySize());
+            this.welcomeNonce = welcomeSecret.expand(suite, "nonce", suite.getAEAD().getNonceSize());
+        }
+        public void injectPskSecret(Secret pskSecret) throws IOException
+        {
+            this.memberSecret = Secret.extract(suite, joinerSecret, pskSecret);
+            this.welcomeSecret = memberSecret.deriveSecret(suite, "welcome");
             this.welcomeKey = welcomeSecret.expand(suite, "key", suite.getAEAD().getKeySize());
             this.welcomeNonce = welcomeSecret.expand(suite, "nonce", suite.getAEAD().getNonceSize());
         }
@@ -165,26 +192,39 @@ psk_secret (or 0) --> KDF.Extract
         }
     }
 
+
+
+
     final CipherSuite suite;
 
     // Secrets derived from the epoch secret
-    final Secret initSecret;
-    final Secret senderDataSecret;
-    final Secret exporterSecret;
-    final Secret confirmationKey;
-    final Secret membershipKey;
-    final Secret resumptionPSK;
-    final Secret epochAuthenticator;
+    public final Secret initSecret;
+    public final Secret senderDataSecret;
+    public final Secret exporterSecret;
+    public final Secret confirmationKey;
+    public final Secret membershipKey;
+    public final Secret resumptionPSK;
+    public final Secret epochAuthenticator;
+    public final Secret encryptionSecret;
+    public final Secret externalSecret;
 
     // Further dervied products
     final AsymmetricCipherKeyPair externalKeyPair;
     final GroupKeySet groupKeySet;
 
     public static KeyScheduleEpoch forCreator(CipherSuite suite) throws IOException, IllegalAccessException {
-        byte[] epochSecret = new byte[suite.getKDF().getHashLength()];
         SecureRandom rng = new SecureRandom();
+        return forCreator(suite, rng);
+    }
+    public static KeyScheduleEpoch forCreator(CipherSuite suite, SecureRandom rng)
+            throws IOException, IllegalAccessException {
+        byte[] epochSecret = new byte[suite.getKDF().getHashLength()];
         rng.nextBytes(epochSecret);
-
+        TreeSize treeSize = TreeSize.forLeaves(1);
+        return new KeyScheduleEpoch(suite, treeSize, new Secret(epochSecret));
+    }
+    public static KeyScheduleEpoch forCreator(CipherSuite suite, byte[] epochSecret)
+            throws IOException, IllegalAccessException {
         TreeSize treeSize = TreeSize.forLeaves(1);
         return new KeyScheduleEpoch(suite, treeSize, new Secret(epochSecret));
     }
@@ -211,7 +251,8 @@ psk_secret (or 0) --> KDF.Extract
                           V
                     init_secret_[n]
      */
-    KeyScheduleEpoch(CipherSuite suite, TreeSize treeSize, Secret epochSecret) throws IOException, IllegalAccessException {
+
+    public KeyScheduleEpoch(CipherSuite suite, TreeSize treeSize, Secret epochSecret) throws IOException, IllegalAccessException {
         this.suite = suite;
         this.initSecret = epochSecret.deriveSecret(suite, "init");
         this.senderDataSecret = epochSecret.deriveSecret(suite, "sender data");
@@ -221,10 +262,10 @@ psk_secret (or 0) --> KDF.Extract
         this.resumptionPSK = epochSecret.deriveSecret(suite, "resumption");
         this.epochAuthenticator = epochSecret.deriveSecret(suite, "authentication");
 
-        Secret externalSecret = epochSecret.deriveSecret(suite, "external");
+        this.externalSecret = epochSecret.deriveSecret(suite, "external");
         this.externalKeyPair = suite.getHPKE().deriveKeyPair(externalSecret.value());
 
-        Secret encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
+        this.encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
         this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
     }
 
@@ -239,6 +280,11 @@ psk_secret (or 0) --> KDF.Extract
 
         JoinSecrets joinSecrets = JoinSecrets.forMember(suite, currInitSecret, commitSecret, psks, context);
         return joinSecrets.complete(treeSize, context);
+    }
+
+    public byte[] MLSExporter(String label, byte[] context, int length) throws IOException
+    {
+        return exporterSecret.deriveSecret(suite, label).expandWithLabel(suite,  "exported", suite.hash(context), length).value();
     }
 
     @Override

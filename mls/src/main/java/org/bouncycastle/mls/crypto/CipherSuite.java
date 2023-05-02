@@ -16,13 +16,16 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP384R1Curve;
 import org.bouncycastle.math.ec.custom.sec.SecP521R1Curve;
+import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.ECPublicKey;
+import java.util.List;
 
 public class CipherSuite {
     public static final short MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519  = 0x0001 ;
@@ -351,6 +354,13 @@ public class CipherSuite {
 //            return expand(out, getHashLength());
         byte[] out = new byte[getKDF().getHashLength()];
         digest.update(refhashBytes, 0, refhashBytes.length);
+        digest.doFinal(out, 0);
+        return out;
+    }
+    public byte[] hash(byte[] value) throws IOException
+    {
+        byte[] out = new byte[getKDF().getHashLength()];
+        digest.update(value, 0, value.length);
         digest.doFinal(out, 0);
         return out;
     }
