@@ -46,6 +46,6 @@ public class BIKEPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(Arrays.concatenate(h0, h1), sigma);
+        return Arrays.concatenate(h0, h1, sigma);
     }
 }

@@ -63,7 +63,6 @@ public class PrivateKeyInfoFactory
 {
     private PrivateKeyInfoFactory()
     {
-
     }
 
     /**
@@ -100,7 +99,7 @@ public class PrivateKeyInfoFactory
         {
             SPHINCSPrivateKeyParameters params = (SPHINCSPrivateKeyParameters)privateKey;
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256,
-                                    new SPHINCS256KeyParams(Utils.sphincs256LookupTreeAlgID(params.getTreeDigest())));
+                new SPHINCS256KeyParams(Utils.sphincs256LookupTreeAlgID(params.getTreeDigest())));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getKeyData()));
         }
@@ -152,7 +151,6 @@ public class PrivateKeyInfoFactory
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
-
             PicnicPrivateKeyParameters params = (PicnicPrivateKeyParameters)privateKey;
 
             byte[] encoding = params.getEncoded();
@@ -164,7 +162,6 @@ public class PrivateKeyInfoFactory
         {
             CMCEPrivateKeyParameters params = (CMCEPrivateKeyParameters)privateKey;
 
-            byte[] encoding = params.getEncoded();
             //todo either make CMCEPrivateKey split the parameters from the private key or
             // (current) Make CMCEPrivateKey take parts of the private key splitted in the params
 
