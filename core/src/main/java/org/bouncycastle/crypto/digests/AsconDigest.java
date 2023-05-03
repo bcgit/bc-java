@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.digests;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 
 /* ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
@@ -13,7 +13,7 @@ import org.bouncycastle.crypto.OutputLengthException;
  * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
 public class AsconDigest
-    implements Digest
+    implements ExtendedDigest
 {
     public enum AsconParameters
     {
@@ -126,6 +126,12 @@ public class AsconDigest
     public int getDigestSize()
     {
         return CRYPTO_BYTES;
+    }
+
+    @Override
+    public int getByteLength()
+    {
+        return 8;
     }
 
     @Override
