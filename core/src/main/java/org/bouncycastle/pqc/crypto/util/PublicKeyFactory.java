@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -582,7 +583,7 @@ public class PublicKeyFactory
         }
     }
     
-    private static class DilithiumConverter
+    static class DilithiumConverter
         extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
@@ -590,9 +591,14 @@ public class PublicKeyFactory
         {
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
+            return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
+        }
+
+        static DilithiumPublicKeyParameters getPublicKeyParams(DilithiumParameters dilithiumParams, ASN1BitString publicKeyData)
+        {
             try
             {
-                ASN1Primitive obj = keyInfo.parsePublicKey();
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
                 if (obj instanceof ASN1Sequence)
                 {
                     ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
@@ -611,7 +617,7 @@ public class PublicKeyFactory
             catch (IOException e)
             {
                 // we're a raw encoding
-                return new DilithiumPublicKeyParameters(dilithiumParams, keyInfo.getPublicKeyData().getOctets());
+                return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
             }
         }
     }
