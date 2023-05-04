@@ -35,6 +35,7 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -283,7 +284,8 @@ public class PrivateKeyFactory
 
                 if (keyInfo.getPublicKeyData() != null)
                 {
-                    ASN1Sequence pubKey = ASN1Sequence.getInstance(keyInfo.getPublicKeyData().getOctets());
+                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+
                     return new DilithiumPrivateKeyParameters(spParams,
                         ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
@@ -291,7 +293,7 @@ public class PrivateKeyFactory
                         ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                        ASN1OctetString.getInstance(pubKey.getObjectAt(1)).getOctets()); // encT1
+                        pubParams.getT1()); // encT1
                 }
                 else
                 {

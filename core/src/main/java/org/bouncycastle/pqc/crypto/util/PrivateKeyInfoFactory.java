@@ -30,6 +30,7 @@ import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
@@ -306,11 +307,9 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
 
-            ASN1EncodableVector vPub = new ASN1EncodableVector();
-            vPub.add(new DEROctetString(params.getRho()));
-            vPub.add(new DEROctetString(params.getT1()));
+            DilithiumPublicKeyParameters pubParams = params.getPublicKeyParameters();
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, new DERSequence(vPub).getEncoded());
+            return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes, pubParams.getEncoded());
         }
         else if (privateKey instanceof BIKEPrivateKeyParameters)
         {
