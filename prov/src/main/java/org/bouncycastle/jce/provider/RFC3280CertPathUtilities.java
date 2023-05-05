@@ -2095,7 +2095,7 @@ class RFC3280CertPathUtilities
             throw new ExtCertPathValidatorException("Basic constraints extension cannot be decoded.", e, certPath,
                 index);
         }
-        if (bc != null)
+        if (bc != null && bc.isCA())  // if there is a path len constraint and we're not a CA, ignore it! (yes, it happens).
         {
             BigInteger _pathLengthConstraint = bc.getPathLenConstraint();
 
