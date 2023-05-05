@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 
 /**
  * An implementation of <a href="https://tools.ietf.org/html/rfc7253">RFC 7253 on The OCB
@@ -570,18 +571,7 @@ public class OCBBlockCipher
 
     protected static int OCB_ntz(long x)
     {
-        if (x == 0)
-        {
-            return 64;
-        }
-
-        int n = 0;
-        while ((x & 1L) == 0L)
-        {
-            ++n;
-            x >>>= 1;
-        }
-        return n;
+        return Longs.numberOfTrailingZeros(x);
     }
 
     protected static int shiftLeft(byte[] block, byte[] output)
