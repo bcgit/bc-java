@@ -36,6 +36,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -361,26 +362,18 @@ public class X509CertificateObject
     
     public int getBasicConstraints()
     {
-        if (basicConstraints != null)
+        if (basicConstraints == null || !basicConstraints.isCA())
         {
-            if (basicConstraints.isCA())
-            {
-                if (basicConstraints.getPathLenConstraint() == null)
-                {
-                    return Integer.MAX_VALUE;
-                }
-                else
-                {
-                    return basicConstraints.getPathLenConstraint().intValue();
-                }
-            }
-            else
-            {
-                return -1;
-            }
+            return -1;
         }
 
-        return -1;
+        ASN1Integer pathLenConstraint = basicConstraints.getPathLenConstraintInteger();
+        if (pathLenConstraint == null)
+        {
+            return Integer.MAX_VALUE;
+        }
+
+        return pathLenConstraint.intPositiveValueExact();
     }
 
     public Collection getSubjectAlternativeNames()
