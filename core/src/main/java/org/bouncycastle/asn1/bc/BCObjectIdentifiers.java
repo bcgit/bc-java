@@ -58,7 +58,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier bc_pbe_sha1_pkcs12 = bc_pbe_sha1.branch("2");
 
     /**
-     * SHA-256.PKCS12; 1.3.6.1.4.1.22554.1.2.1.1
+     * SHA-256.PKCS5; 1.3.6.1.4.1.22554.1.2.1.1
      */
     ASN1ObjectIdentifier bc_pbe_sha256_pkcs5 = bc_pbe_sha256.branch("1");
     /**
