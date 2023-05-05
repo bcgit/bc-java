@@ -991,26 +991,18 @@ public class CertPathValidatorTest
 
         public int getBasicConstraints()
         {
-            if (basicConstraints != null)
+            if (basicConstraints == null || !basicConstraints.isCA())
             {
-                if (basicConstraints.isCA())
-                {
-                    if (basicConstraints.getPathLenConstraint() == null)
-                    {
-                        return Integer.MAX_VALUE;
-                    }
-                    else
-                    {
-                        return basicConstraints.getPathLenConstraint().intValue();
-                    }
-                }
-                else
-                {
-                    return -1;
-                }
+                return -1;
             }
 
-            return -1;
+            ASN1Integer pathLenConstraint = basicConstraints.getPathLenConstraintInteger();
+            if (pathLenConstraint == null)
+            {
+                return Integer.MAX_VALUE;
+            }
+
+            return pathLenConstraint.intPositiveValueExact();
         }
 
         public Collection getSubjectAlternativeNames()

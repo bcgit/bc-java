@@ -122,6 +122,11 @@ public class BasicConstraints
         return null;
     }
 
+    public ASN1Integer getPathLenConstraintInteger()
+    {
+        return pathLenConstraint;
+    }
+
     /**
      * Produce an object suitable for an ASN1OutputStream.
      * <pre>

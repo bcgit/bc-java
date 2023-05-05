@@ -1,7 +1,6 @@
 package org.bouncycastle.jce.provider;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
@@ -2097,16 +2096,10 @@ class RFC3280CertPathUtilities
         }
         if (bc != null && bc.isCA())  // if there is a path len constraint and we're not a CA, ignore it! (yes, it happens).
         {
-            BigInteger _pathLengthConstraint = bc.getPathLenConstraint();
-
-            if (_pathLengthConstraint != null)
+            ASN1Integer pathLenConstraint = bc.getPathLenConstraintInteger();
+            if (pathLenConstraint != null)
             {
-                int _plc = _pathLengthConstraint.intValue();
-
-                if (_plc < maxPathLength)
-                {
-                    return _plc;
-                }
+                maxPathLength = Math.min(maxPathLength, pathLenConstraint.intPositiveValueExact());
             }
         }
         return maxPathLength;

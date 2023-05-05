@@ -1,17 +1,14 @@
 package org.bouncycastle.cert.path.validations;
 
-import java.math.BigInteger;
-
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Memoable;
-
 
 public class BasicConstraintsValidation
     implements CertPathValidation
@@ -34,7 +31,6 @@ public class BasicConstraintsValidation
     public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
-
         context.addHandledExtension(Extension.basicConstraints);
 
         // verify that the issuing certificate is in fact a CA
@@ -62,17 +58,18 @@ public class BasicConstraintsValidation
 
         // § 6.1.4 (m)
         // Update maxPathLength if appropriate
-        if (bc != null)
+        if (bc != null && bc.isCA())
         {
-            BigInteger bigPathLen = bc.getPathLenConstraint();
-            if (bigPathLen != null)
+            ASN1Integer pathLenConstraint = bc.getPathLenConstraintInteger();
+            if (pathLenConstraint != null)
             {
-                // use intValueExact to prevent issues with weird certificates that include ridiculous path lengths
-                int newPathLength = BigIntegers.intValueExact(bigPathLen);
-                maxPathLength = maxPathLength == null ? Integers.valueOf(newPathLength) : Integers.valueOf(Math.min(newPathLength, maxPathLength.intValue()));
+                int newPathLength = pathLenConstraint.intPositiveValueExact();
+                if (maxPathLength == null || newPathLength < maxPathLength.intValue())
+                {
+                    maxPathLength = Integers.valueOf(newPathLength);
+                }
             }
         }
-
     }
 
     public Memoable copy()

@@ -668,11 +668,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
         X509Certificate cert = null;
 
-        int i;
         for (int index = certs.size() - 1; index > 0; index--)
         {
-            i = n - index;
-
             cert = (X509Certificate) certs.get(index);
 
             // l)
@@ -693,8 +690,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             BasicConstraints bc;
             try
             {
-                bc = BasicConstraints.getInstance(getExtensionValue(cert,
-                        BASIC_CONSTRAINTS));
+                bc = BasicConstraints.getInstance(getExtensionValue(cert, BASIC_CONSTRAINTS));
             }
             catch (AnnotatedException ae)
             {
@@ -703,21 +699,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 bc = null;
             }
 
-            if (bc != null)
+            if (bc != null && bc.isCA())
             {
-                BigInteger _pathLengthConstraint = bc.getPathLenConstraint();
-
-                if (_pathLengthConstraint != null)
+                ASN1Integer pathLenConstraint = bc.getPathLenConstraintInteger();
+                if (pathLenConstraint != null)
                 {
-                    int _plc = _pathLengthConstraint.intValue();
-
-                    if (_plc < maxPathLength)
-                    {
-                        maxPathLength = _plc;
-                    }
+                    maxPathLength = Math.min(maxPathLength, pathLenConstraint.intPositiveValueExact());
                 }
             }
-
         }
 
         ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.totalPathLength",
