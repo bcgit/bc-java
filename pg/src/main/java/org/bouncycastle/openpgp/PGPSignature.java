@@ -31,6 +31,11 @@ import org.bouncycastle.util.Strings;
  */
 public class PGPSignature
 {
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;
+    public static final int VERSION_5 = 5;
+    public static final int VERSION_6 = 6;
+
     public static final int BINARY_DOCUMENT = 0x00;
     public static final int CANONICAL_TEXT_DOCUMENT = 0x01;
     public static final int STAND_ALONE = 0x02;
@@ -85,6 +90,10 @@ public class PGPSignature
         this(sigPacket);
 
         this.trustPck = trustPacket;
+    }
+
+    public SignaturePacket getSignaturePacket() {
+        return sigPck;
     }
 
     /**
