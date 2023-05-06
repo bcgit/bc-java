@@ -561,7 +561,7 @@ public class PGPSignatureTest
         //
         sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1).setProvider("BC"));
 
-        sGen.init(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
+        sGen.init(PGPSignature.DEFAULT_CERTIFICATION, pgpPrivDSAKey);
 
         sGen.setHashedSubpackets(null);
         sGen.setUnhashedSubpackets(null);
@@ -572,7 +572,7 @@ public class PGPSignatureTest
 
         if (!sig.verifyCertification(TEST_USER_ID, secretKey.getPublicKey()))
         {
-            fail("subkey binding verification failed.");
+            fail("user-id verification failed.");
         }
 
         hashedPcks = sig.getHashedSubPackets();
@@ -605,7 +605,7 @@ public class PGPSignatureTest
         //
         sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1).setProvider("BC"));
 
-        sGen.init(PGPSignature.SUBKEY_BINDING, pgpPrivDSAKey);
+        sGen.init(PGPSignature.DEFAULT_CERTIFICATION, pgpPrivDSAKey);
 
         hashedGen = new PGPSignatureSubpacketGenerator();
 
@@ -625,7 +625,7 @@ public class PGPSignatureTest
 
         if (!sig.verifyCertification(TEST_USER_ID, secretKey.getPublicKey()))
         {
-            fail("subkey binding verification failed.");
+            fail("user-id verification failed.");
         }
 
         hashedPcks = sig.getHashedSubPackets();
