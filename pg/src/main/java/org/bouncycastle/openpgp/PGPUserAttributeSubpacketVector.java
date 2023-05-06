@@ -53,7 +53,7 @@ public class PGPUserAttributeSubpacketVector implements UserDataPacket
         return (ImageAttribute)p;
     }
     
-    UserAttributeSubpacket[] toSubpacketArray()
+    public UserAttributeSubpacket[] toSubpacketArray()
     {
         return packets;
     }
