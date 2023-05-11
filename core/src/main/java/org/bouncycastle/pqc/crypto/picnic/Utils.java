@@ -93,6 +93,14 @@ class Utils
         return (byte)((array[arrayPos] >>> bitPos) & 1);
     }
 
+    /* Get a crumb (i.e. two bits) from a byte array. */
+    protected static byte getCrumbAligned(byte[] array, int crumbNumber)
+    {
+        int arrayPos = crumbNumber >>> 2, bitPos = ((crumbNumber << 1) & 6) ^ 6;
+        int b = (int)array[arrayPos] >>> bitPos;
+        return (byte)((b & 1) << 1 | (b & 2) >> 1);
+    }
+
     protected static int getBit(int word, int bitNumber)
     {
         int bitPos = bitNumber ^ 7;
@@ -132,4 +140,27 @@ class Utils
         t |= val << bitPos;
         array[arrayPos] = t;
     }
+
+    protected static void zeroTrailingBits(int[] data, int bitLength)
+    {
+        int partialWord = bitLength & 31;
+        if (partialWord != 0)
+        {
+            data[bitLength >>> 5] &= getTrailingBitsMask(bitLength);
+        }
+    }
+
+    protected static int getTrailingBitsMask(int bitLength)
+    {
+        int partialShift = bitLength & ~7;
+        int mask = ~(0xFFFFFFFF << partialShift);
+
+        int partialByte = bitLength & 7;
+        if (partialByte != 0)
+        {
+            mask ^= ((0xFF00 >>> partialByte) & 0xFF) << partialShift;
+        }
+
+        return mask;
+    }    
 }

@@ -174,6 +174,25 @@ public abstract class Pack
         return n;
     }
 
+    public static int littleEndianToInt_High(byte[] bs, int off, int len)
+    {
+        return littleEndianToInt_Low(bs, off, len) << ((4 - len) << 3);
+    }
+
+    public static int littleEndianToInt_Low(byte[] bs, int off, int len)
+    {
+//        assert 1 <= len && len <= 4;
+
+        int result = bs[off] & 0xff;
+        int pos = 0;
+        for (int i = 1; i < len; ++i)
+        {
+            pos += 8;
+            result |= (bs[off + i] & 0xff) << pos;
+        }
+        return result;
+    }
+
     public static void littleEndianToInt(byte[] bs, int off, int[] ns)
     {
         for (int i = 0; i < ns.length; ++i)

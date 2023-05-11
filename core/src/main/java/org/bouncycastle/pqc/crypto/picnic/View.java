@@ -2,13 +2,13 @@ package org.bouncycastle.pqc.crypto.picnic;
 
 class View
 {
-    int[] inputShare;
-    byte[] communicatedBits;
-    int[] outputShare;
+    final int[] inputShare;
+    final byte[] communicatedBits;
+    final int[] outputShare;
     public View(PicnicEngine engine)
     {
-        inputShare = new int[engine.stateSizeBytes] ;
+        inputShare = new int[engine.stateSizeWords] ;
         communicatedBits = new byte[engine.andSizeBytes];
-        outputShare = new int[engine.stateSizeBytes] ;
+        outputShare = new int[engine.stateSizeWords] ;
     }
 }
