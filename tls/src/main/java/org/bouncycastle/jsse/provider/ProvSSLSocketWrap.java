@@ -396,6 +396,11 @@ class ProvSSLSocketWrap
         return wrapSocket.getTrafficClass();
     }
 
+    public int getTransportID()
+    {
+        return System.identityHashCode(this);
+    }
+
     @Override
     public synchronized boolean getUseClientMode()
     {

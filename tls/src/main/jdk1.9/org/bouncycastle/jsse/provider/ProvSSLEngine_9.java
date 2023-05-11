@@ -8,8 +8,8 @@ class ProvSSLEngine_9
         super(contextData);
     }
 
-    protected ProvSSLEngine_9(ContextData contextData, String host, int port)
+    protected ProvSSLEngine_9(ContextData contextData, String peerHost, int peerPort)
     {
-        super(contextData, host, port);
+        super(contextData, peerHost, peerPort);
     }
 }

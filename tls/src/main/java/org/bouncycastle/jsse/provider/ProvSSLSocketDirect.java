@@ -308,6 +308,11 @@ class ProvSSLSocketDirect
         return contextData.getContext().getSupportedProtocols();
     }
 
+    public int getTransportID()
+    {
+        return System.identityHashCode(this);
+    }
+
     @Override
     public synchronized boolean getUseClientMode()
     {
