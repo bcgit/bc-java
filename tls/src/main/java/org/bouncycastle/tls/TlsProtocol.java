@@ -299,6 +299,8 @@ public abstract class TlsProtocol
             raiseAlertWarning(AlertDescription.close_notify, "Connection closed");
 
             closeConnection();
+
+            getPeer().notifyConnectionClosed();
         }
     }
 
