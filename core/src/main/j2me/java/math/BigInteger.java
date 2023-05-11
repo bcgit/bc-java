@@ -426,13 +426,13 @@ public class BigInteger
 
             // strip leading -1's
             for (firstSignificant = 0; firstSignificant < bval.length - 1
-                    && bval[firstSignificant] == 0xff; firstSignificant++);
+                && bval[firstSignificant] == (byte)0xff; firstSignificant++);
 
             int nBytes = bval.length;
             boolean leadingByte = false;
 
             // check for -2^(n-1)
-            if (bval[firstSignificant] == 0x80) {
+            if (bval[firstSignificant] == (byte)0x80) {
                 for (i = firstSignificant + 1; i < bval.length; i++) {
                     if (bval[i] != 0) {
                         break;
