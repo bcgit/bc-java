@@ -140,6 +140,11 @@ public interface TlsPeer
     void notifyAlertReceived(short alertLevel, short alertDescription);
 
     /**
+     * Notifies the peer that the connection has been closed.
+     */
+    void notifyConnectionClosed();
+
+    /**
      * Notifies the peer that the handshake has been successfully completed.
      */
     void notifyHandshakeComplete() throws IOException;

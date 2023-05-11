@@ -139,6 +139,10 @@ public abstract class AbstractTlsPeer
     {
     }
 
+    public void notifyConnectionClosed()
+    {
+    }
+
     public void notifyHandshakeComplete() throws IOException
     {
     }
