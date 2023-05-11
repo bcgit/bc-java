@@ -2,9 +2,9 @@ package org.bouncycastle.pqc.crypto.picnic;
 
 class Signature
 {
-    byte[] challengeBits;
-    byte[] salt;
-    Proof[] proofs;
+    final byte[] challengeBits;
+    final byte[] salt;
+    final Proof[] proofs;
     Signature(PicnicEngine engine)
     {
         salt = new byte[PicnicEngine.saltSizeBytes];
@@ -18,18 +18,18 @@ class Signature
 
     public static class Proof
     {
-        byte[] seed1;
-        byte[] seed2;
-        int[] inputShare;     // Input share of the party which does not derive it from the seed (not included if challenge is 0)
-        byte[] communicatedBits;
-        byte[] view3Commitment;
-        byte[] view3UnruhG;     // we include the max length, but we will only serialize the bytes we use
+        final byte[] seed1;
+        final byte[] seed2;
+        final int[] inputShare;     // Input share of the party which does not derive it from the seed (not included if challenge is 0)
+        final byte[] communicatedBits;
+        final byte[] view3Commitment;
+        final byte[] view3UnruhG;     // we include the max length, but we will only serialize the bytes we use
 
         Proof(PicnicEngine engine)
         {
             seed1 = new byte[engine.seedSizeBytes];
             seed2 = new byte[engine.seedSizeBytes];
-            inputShare = new int[engine.stateSizeBytes];
+            inputShare = new int[engine.stateSizeWords];
             communicatedBits = new byte[engine.andSizeBytes];
             view3Commitment = new byte[engine.digestSizeBytes];
             if (engine.UnruhGWithInputBytes > 0)

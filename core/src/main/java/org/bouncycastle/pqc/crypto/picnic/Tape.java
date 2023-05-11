@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 class Tape
@@ -61,19 +60,17 @@ class Tape
 //        for (int i = 0; i < key0.length; i++)
 //        {System.out.printf("%08x ", key[i]);}System.out.println();
 
-
-        if(inputs != null)
+        if (inputs != null)
         {
-            Pack.intToLittleEndian(Arrays.copyOf(key, engine.stateSizeWords), inputs, 0);
+            Pack.intToLittleEndian(key, 0, engine.stateSizeWords, inputs, 0);
         }
-
 
         for (int r = engine.numRounds; r > 0; r--)
         {
             current = engine.lowmcConstants.KMatrix(engine, r);
             engine.matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());    // roundKey = key * KMatrix(r)
 
-            engine.xor_array(x, x, roundKey, 0, engine.stateSizeWords);
+            engine.xor_array(x, x, roundKey, 0);
 
             current = engine.lowmcConstants.LMatrixInv(engine, r-1);
             engine.matrix_mul(y, x, current.getData(), current.getMatrixPointer());
