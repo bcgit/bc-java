@@ -47,17 +47,17 @@ class PropertyUtils
         {
             if ("true".equalsIgnoreCase(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean security property [" + propertyName + "]: " + true);
+                LOG.info("Found boolean security property [" + propertyName + "]: " + true);
                 return true;
             }
             if ("false".equalsIgnoreCase(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean security property [" + propertyName + "]: " + false);
+                LOG.info("Found boolean security property [" + propertyName + "]: " + false);
                 return false;
             }
-            LOG.log(Level.WARNING, "Unrecognized value for boolean security property [" + propertyName + "]: " + propertyValue);
+            LOG.warning("Unrecognized value for boolean security property [" + propertyName + "]: " + propertyValue);
         }
-        LOG.log(Level.FINE, "Boolean security property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.fine("Boolean security property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -68,17 +68,17 @@ class PropertyUtils
         {
             if ("true".equalsIgnoreCase(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + true);
+                LOG.info("Found boolean system property [" + propertyName + "]: " + true);
                 return true;
             }
             if ("false".equalsIgnoreCase(propertyValue))
             {
-                LOG.log(Level.INFO, "Found boolean system property [" + propertyName + "]: " + false);
+                LOG.info("Found boolean system property [" + propertyName + "]: " + false);
                 return false;
             }
-            LOG.log(Level.WARNING, "Unrecognized value for boolean system property [" + propertyName + "]: " + propertyValue);
+            LOG.warning("Unrecognized value for boolean system property [" + propertyName + "]: " + propertyValue);
         }
-        LOG.log(Level.FINE, "Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.fine("Boolean system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -92,21 +92,21 @@ class PropertyUtils
                  int parsedValue = Integer.parseInt(propertyValue);
                  if (parsedValue >= minimumValue && parsedValue <= maximumValue)
                  {
-                     LOG.log(Level. INFO, "Found integer system property [" + propertyName + "]: " + parsedValue);
+                     LOG.info("Found integer system property [" + propertyName + "]: " + parsedValue);
                      return parsedValue;
                  }
                  if (LOG.isLoggable(Level.WARNING))
                  {
                      String range = getRangeString(minimumValue, maximumValue);
-                     LOG.log(Level.WARNING, "Out-of-range (" + range + ") integer system property [" + propertyName + "]: " + propertyValue);
+                     LOG.warning("Out-of-range (" + range + ") integer system property [" + propertyName + "]: " + propertyValue);
                  }
             }
             catch (Exception e)
             {
-                LOG.log(Level.WARNING, "Unrecognized value for integer system property [" + propertyName + "]: " + propertyValue);
+                LOG.warning("Unrecognized value for integer system property [" + propertyName + "]: " + propertyValue);
             }
         }
-        LOG.log(Level.FINE, "Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.fine("Integer system property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -126,7 +126,7 @@ class PropertyUtils
         String propertyValue = getSecurityProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level.INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
+            LOG.info("Found string security property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
         return null;
@@ -137,10 +137,10 @@ class PropertyUtils
         String propertyValue = getSecurityProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level.INFO, "Found string security property [" + propertyName + "]: " + propertyValue);
+            LOG.info("Found string security property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
-        LOG.log(Level.WARNING, "String security property [" + propertyName + "] defaulted to: " + defaultValue);
+        LOG.warning("String security property [" + propertyName + "] defaulted to: " + defaultValue);
         return defaultValue;
     }
 
@@ -149,7 +149,7 @@ class PropertyUtils
         String propertyValue = getSystemProperty(propertyName);
         if (null != propertyValue)
         {
-            LOG.log(Level.INFO, "Found string system property [" + propertyName + "]: " + propertyValue);
+            LOG.info("Found string system property [" + propertyName + "]: " + propertyValue);
             return propertyValue;
         }
         return null;
