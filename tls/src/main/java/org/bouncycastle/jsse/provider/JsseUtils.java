@@ -107,6 +107,28 @@ abstract class JsseUtils
         return provTlsAllowLegacyResumption;
     }
 
+    static String getPeerID(String root, ProvTlsManager manager)
+    {
+        long connectionID = ProvSSLConnection.allocateConnectionID();
+        int transportID = manager.getTransportID();
+
+        return "[" + root + " #" + connectionID + " @" + Integer.toHexString(transportID) + "]";
+    }
+
+    static String getPeerReport(ProvTlsManager manager)
+    {
+        String peerHost = manager.getPeerHost();
+        if (peerHost == null)
+        {
+            peerHost = "(unknown)";
+        }
+
+        int peerPort = manager.getPeerPort();
+        String peerPortStr = peerPort < 0 ? "(unknown)" : Integer.toString(peerPort);
+
+        return peerHost + ":" + peerPortStr;
+    }
+
     static String getSignatureAlgorithmsReport(String title, List<SignatureSchemeInfo> signatureSchemes)
     {
         String[] names = SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(signatureSchemes);
@@ -609,9 +631,14 @@ abstract class JsseUtils
         }
     }
 
-    static String getAlertLogMessage(String root, short alertLevel, short alertDescription)
+    static String getAlertRaisedLogMessage(String id, short alertLevel, short alertDescription)
     {
-        return root + " " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
+        return id + " raised " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
+    }
+
+    static String getAlertReceivedLogMessage(String id, short alertLevel, short alertDescription)
+    {
+        return id + " received " + AlertLevel.getText(alertLevel) + " " + AlertDescription.getText(alertDescription) + " alert";
     }
 
     static String getKeyAlgorithm(Key key)

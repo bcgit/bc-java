@@ -13,9 +13,9 @@ class ProvSSLEngine_8
         super(contextData);
     }
 
-    protected ProvSSLEngine_8(ContextData contextData, String host, int port)
+    protected ProvSSLEngine_8(ContextData contextData, String peerHost, int peerPort)
     {
-        super(contextData, host, port);
+        super(contextData, peerHost, peerPort);
     }
 
     // An SSLEngine method from JDK 9 (and then 8u251)

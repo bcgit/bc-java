@@ -66,9 +66,9 @@ class ProvSSLEngine
         this(contextData, null, -1);
     }
 
-    protected ProvSSLEngine(ContextData contextData, String host, int port)
+    protected ProvSSLEngine(ContextData contextData, String peerHost, int peerPort)
     {
-        super(host, port);
+        super(peerHost, peerPort);
 
         this.contextData = contextData;
         this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
@@ -326,6 +326,11 @@ class ProvSSLEngine
     public synchronized String[] getSupportedProtocols()
     {
         return contextData.getContext().getSupportedProtocols();
+    }
+
+    public int getTransportID()
+    {
+        return System.identityHashCode(this);
     }
 
     @Override

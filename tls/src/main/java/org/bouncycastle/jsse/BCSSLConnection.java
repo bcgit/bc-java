@@ -27,6 +27,13 @@ public interface BCSSLConnection
     byte[] getChannelBinding(String channelBinding);
 
     /**
+     * Return a String that uniquely identifies this connection during its lifetime within the current process. It
+     * can be used e.g. for logging but its contents and format are subject to change and should not be relied upon.
+     * @return A String identifying this connection.
+     */
+    String getID();
+
+    /**
      * Returns the SSL session in use by this connection
      * @return The {@link BCExtendedSSLSession}.
      */

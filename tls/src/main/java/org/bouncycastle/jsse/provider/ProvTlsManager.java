@@ -28,6 +28,8 @@ interface ProvTlsManager
 
     int getPeerPort();
 
+    int getTransportID();
+
     void notifyHandshakeComplete(ProvSSLConnection connection);
 
     void notifyHandshakeSession(ProvSSLSessionContext sslSessionContext, SecurityParameters securityParameters,

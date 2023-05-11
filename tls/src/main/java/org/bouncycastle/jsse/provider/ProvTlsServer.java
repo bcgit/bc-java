@@ -36,6 +36,7 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.ServerName;
 import org.bouncycastle.tls.SessionParameters;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsDHUtils;
 import org.bouncycastle.tls.TlsExtensionsUtils;
@@ -164,6 +165,7 @@ class ProvTlsServer
         return new BigInteger(s.substring(beginIndex, endIndex), 16);
     }
 
+    protected final String serverID;
     protected final ProvTlsManager manager;
     protected final ProvSSLParameters sslParameters;
     protected final JsseSecurityParameters jsseSecurityParameters = new JsseSecurityParameters();
@@ -178,8 +180,24 @@ class ProvTlsServer
     {
         super(manager.getContextData().getCrypto());
 
+        this.serverID = JsseUtils.getPeerID("server", manager);
         this.manager = manager;
         this.sslParameters = sslParameters.copyForConnection();
+    }
+
+    public String getID()
+    {
+        return serverID;
+    }
+
+    public ProvSSLSession getSession()
+    {
+        return sslSession;
+    }
+
+    public TlsContext getTlsContext()
+    {
+        return context;
     }
 
     @Override
@@ -252,7 +270,10 @@ class ProvTlsServer
             if (null == cipherSuiteCredentials)
             {
                 String cipherSuiteName = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
-                LOG.finer("Server found no credentials for cipher suite: " + cipherSuiteName);
+                if (LOG.isLoggable(Level.FINER))
+                {
+                    LOG.finer(serverID + " found no credentials for cipher suite: " + cipherSuiteName);
+                }
                 return false;
             }
         }
@@ -528,12 +549,12 @@ class ProvTlsServer
 
             if (LOG.isLoggable(Level.FINEST))
             {
-                LOG.finest(JsseUtils.getSignatureAlgorithmsReport("Peer signature_algorithms",
+                LOG.finest(JsseUtils.getSignatureAlgorithmsReport(serverID + " peer signature_algorithms",
                     jsseSecurityParameters.peerSigSchemes));
 
                 if (jsseSecurityParameters.peerSigSchemesCert != jsseSecurityParameters.peerSigSchemes)
                 {
-                    LOG.finest(JsseUtils.getSignatureAlgorithmsReport("Peer signature_algorithms_cert",
+                    LOG.finest(JsseUtils.getSignatureAlgorithmsReport(serverID + " peer signature_algorithms_cert",
                         jsseSecurityParameters.peerSigSchemesCert));
                 }
             }
@@ -554,7 +575,10 @@ class ProvTlsServer
         String selectedCipherSuiteName = manager.getContextData().getContext()
             .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
-        LOG.fine("Server selected cipher suite: " + selectedCipherSuiteName);
+        if (LOG.isLoggable(Level.FINE))
+        {
+            LOG.fine(serverID + " selected cipher suite: " + selectedCipherSuiteName);
+        }
 
         return selectedCipherSuite;
     }
@@ -624,21 +648,27 @@ class ProvTlsServer
         boolean isResumed = (null != sslSession && sslSession.getTlsSession() == session);
         if (isResumed)
         {
-            // -DM Hex.toHexString
-            LOG.fine("Server resumed session: " + Hex.toHexString(sessionID));
+            if (LOG.isLoggable(Level.FINE))
+            {
+                // -DM Hex.toHexString
+                LOG.fine(serverID + " resumed session: " + Hex.toHexString(sessionID));
+            }
         }
         else
         {
             this.sslSession = null;
 
-            if (TlsUtils.isNullOrEmpty(sessionID))
+            if (LOG.isLoggable(Level.FINE))
             {
-                LOG.fine("Server did not specify a session ID");
-            }
-            else
-            {
-                // -DM Hex.toHexString
-                LOG.fine("Server specified new session: " + Hex.toHexString(sessionID));
+                if (TlsUtils.isNullOrEmpty(sessionID))
+                {
+                    LOG.fine(serverID + " did not specify a session ID");
+                }
+                else
+                {
+                    // -DM Hex.toHexString
+                    LOG.fine(serverID + " specified new session: " + Hex.toHexString(sessionID));
+                }
             }
 
             JsseUtils.checkSessionCreationEnabled(manager);
@@ -657,7 +687,7 @@ class ProvTlsServer
 
         if (LOG.isLoggable(level))
         {
-            String msg = JsseUtils.getAlertLogMessage("Server raised", alertLevel, alertDescription);
+            String msg = JsseUtils.getAlertRaisedLogMessage(serverID, alertLevel, alertDescription);
             if (message != null)
             {
                 msg = msg + ": " + message;
@@ -677,7 +707,7 @@ class ProvTlsServer
 
         if (LOG.isLoggable(level))
         {
-            String msg = JsseUtils.getAlertLogMessage("Server received", alertLevel, alertDescription);
+            String msg = JsseUtils.getAlertReceivedLogMessage(serverID, alertLevel, alertDescription);
 
             LOG.log(level, msg);
         }
@@ -691,7 +721,10 @@ class ProvTlsServer
         String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
             serverVersion);
 
-        LOG.fine("Server selected protocol version: " + serverVersionName);
+        if (LOG.isLoggable(Level.FINE))
+        {
+            LOG.fine(serverID + " selected protocol version: " + serverVersionName);
+        }
 
         return serverVersion;
     }
@@ -731,11 +764,38 @@ class ProvTlsServer
     }
 
     @Override
+    public void notifyConnectionClosed()
+    {
+        super.notifyConnectionClosed();
+
+        if (LOG.isLoggable(Level.INFO))
+        {
+            LOG.info(serverID + " disconnected from " + JsseUtils.getPeerReport(manager));
+        }
+    }
+
+    @Override
+    public void notifyHandshakeBeginning() throws IOException
+    {
+        super.notifyHandshakeBeginning();
+
+        if (LOG.isLoggable(Level.INFO))
+        {
+            LOG.info(serverID + " accepting connection from " + JsseUtils.getPeerReport(manager));
+        }
+    }
+
+    @Override
     public synchronized void notifyHandshakeComplete() throws IOException
     {
         super.notifyHandshakeComplete();
 
         this.handshakeComplete = true;
+
+        if (LOG.isLoggable(Level.INFO))
+        {
+            LOG.info(serverID + " established connection with " + JsseUtils.getPeerReport(manager));
+        }
 
         TlsSession connectionTlsSession = context.getSession();
 
@@ -753,7 +813,7 @@ class ProvTlsServer
                 jsseSessionParameters, addToCache);
         }
 
-        manager.notifyHandshakeComplete(new ProvSSLConnection(context, sslSession));
+        manager.notifyHandshakeComplete(new ProvSSLConnection(this));
     }
 
     @Override
@@ -788,7 +848,10 @@ class ProvTlsServer
             Collection<BCSNIMatcher> sniMatchers = sslParameters.getSNIMatchers();
             if (null == sniMatchers || sniMatchers.isEmpty())
             {
-                LOG.fine("Server ignored SNI (no matchers specified)");
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine(serverID + " ignored SNI (no matchers specified)");
+                }
             }
             else
             {
@@ -798,7 +861,10 @@ class ProvTlsServer
                     throw new TlsFatalAlert(AlertDescription.unrecognized_name);
                 }
 
-                LOG.fine("Server accepted SNI: " + matchedSNIServerName);
+                if (LOG.isLoggable(Level.FINE))
+                {
+                    LOG.fine(serverID + " accepted SNI: " + matchedSNIServerName);
+                }
             }
         }
 
@@ -899,8 +965,11 @@ class ProvTlsServer
 
             if (!JsseUtils.equals(connectionSNI, sessionSNI))
             {
-                LOG.finest(
-                    "Session not resumable - SNI mismatch; connection: " + connectionSNI + ", session: " + sessionSNI);
+                if (LOG.isLoggable(Level.FINEST))
+                {
+                    LOG.finest(serverID + ": Session not resumable - SNI mismatch; connection: " + connectionSNI
+                        + ", session: " + sessionSNI);
+                }
                 return false;
             }
         }
@@ -980,7 +1049,10 @@ class ProvTlsServer
 
         if (keyTypeMap.isEmpty())
         {
-            LOG.fine("Server (1.2) has no key types to try for KeyExchangeAlgorithm " + keyExchangeAlgorithm);
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(serverID + " (1.2) has no key types to try for KeyExchangeAlgorithm " + keyExchangeAlgorithm);
+            }
             return null;
         }
 
@@ -990,7 +1062,10 @@ class ProvTlsServer
         if (null == x509Key)
         {
             handleKeyManagerMisses(keyTypeMap, null);
-            LOG.fine("Server (1.2) did not select any credentials for KeyExchangeAlgorithm " + keyExchangeAlgorithm);
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(serverID + " (1.2) did not select any credentials for KeyExchangeAlgorithm " + keyExchangeAlgorithm);
+            }
             return null;
         }
 
@@ -1005,7 +1080,7 @@ class ProvTlsServer
 
         if (LOG.isLoggable(Level.FINE))
         {
-            LOG.fine("Server (1.2) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
+            LOG.fine(serverID + " (1.2) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
                 + "' (keyType '" + selectedKeyType + "'), with private key algorithm '"
                 + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
         }
@@ -1043,7 +1118,10 @@ class ProvTlsServer
 
         if (keyTypeMap.isEmpty())
         {
-            LOG.fine("Server (1.3) found no usable signature schemes");
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(serverID + " (1.3) found no usable signature schemes");
+            }
             return null;
         }
 
@@ -1053,7 +1131,10 @@ class ProvTlsServer
         if (null == x509Key)
         {
             handleKeyManagerMisses(keyTypeMap, null);
-            LOG.fine("Server (1.3) did not select any credentials");
+            if (LOG.isLoggable(Level.FINE))
+            {
+                LOG.fine(serverID + " (1.3) did not select any credentials");
+            }
             return null;
         }
 
@@ -1068,7 +1149,7 @@ class ProvTlsServer
 
         if (LOG.isLoggable(Level.FINE))
         {
-            LOG.fine("Server (1.3) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
+            LOG.fine(serverID + " (1.3) selected credentials for signature scheme '" + selectedSignatureSchemeInfo
                 + "' (keyType '" + selectedKeyType + "'), with private key algorithm '"
                 + JsseUtils.getPrivateKeyAlgorithm(x509Key.getPrivateKey()) + "'");
         }
@@ -1117,7 +1198,7 @@ class ProvTlsServer
             {
                 SignatureSchemeInfo signatureSchemeInfo = entry.getValue();
 
-                LOG.finer("Server found no credentials for signature scheme '" + signatureSchemeInfo
+                LOG.finer(serverID + " found no credentials for signature scheme '" + signatureSchemeInfo
                     + "' (keyType '" + keyType + "')");
             }
         }
