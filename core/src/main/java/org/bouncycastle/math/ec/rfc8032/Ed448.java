@@ -607,16 +607,6 @@ public abstract class Ed448
         F.copy(u, 0, points[0].z, 0);
     }
 
-//    private static boolean isNeutralElementVar(int[] x, int[] y)
-//    {
-//        return F.isZeroVar(x) && F.isOneVar(y);
-//    }
-
-    private static boolean isNeutralElementVar(int[] x, int[] y, int[] z)
-    {
-        return F.isZeroVar(x) && F.areEqualVar(y, z);
-    }
-
     private static void normalizeToAffine(PointProjective p, PointAffine r)
     {
         F.inv(p.z, r.y);
@@ -632,7 +622,7 @@ public abstract class Ed448
         F.normalize(p.y);
         F.normalize(p.z);
 
-        return isNeutralElementVar(p.x, p.y, p.z);
+        return F.isZeroVar(p.x) && F.areEqualVar(p.y, p.z);
     }
 
     private static void pointAdd(PointAffine p, PointProjective r, PointTemp t)
