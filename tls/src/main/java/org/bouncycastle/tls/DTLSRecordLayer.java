@@ -283,7 +283,7 @@ class DTLSRecordLayer
                     heartbeat.generatePayload());
                 this.heartbeatTimeout = new Timeout(heartbeat.getTimeoutMillis(), currentTimeMillis);
 
-                this.heartbeatResendMillis = DTLSReliableHandshake.INITIAL_RESEND_MILLIS;
+                this.heartbeatResendMillis = peer.getHandshakeResendTimeMillis();
                 this.heartbeatResendTimeout = new Timeout(heartbeatResendMillis, currentTimeMillis);
 
                 sendHeartbeatMessage(heartbeatInFlight);

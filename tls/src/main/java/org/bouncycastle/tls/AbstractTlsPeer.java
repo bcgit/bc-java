@@ -62,6 +62,11 @@ public abstract class AbstractTlsPeer
         return 0;
     }
 
+    public int getHandshakeResendTimeMillis()
+    {
+        return 1000;
+    }
+
     public boolean allowLegacyResumption()
     {
         return false;
