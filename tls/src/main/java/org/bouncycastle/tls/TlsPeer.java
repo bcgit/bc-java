@@ -39,6 +39,18 @@ public interface TlsPeer
      */
     int getHandshakeTimeoutMillis();
 
+    /**
+     * <p>
+     * NOTE: Currently only respected by DTLS protocols.
+     * </p>
+     * <p>
+     * Specify the time, in milliseconds, after which a handshake packet is resent.
+     * </p>
+     * 
+     * @return the handshake resend time, in milliseconds.
+     */
+    int getHandshakeResendTimeMillis();
+
     boolean allowLegacyResumption();
 
     int getMaxCertificateChainLength();
