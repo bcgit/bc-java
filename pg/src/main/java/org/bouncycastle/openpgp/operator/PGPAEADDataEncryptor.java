@@ -1,10 +1,10 @@
 package org.bouncycastle.openpgp.operator;
 
-import org.bouncycastle.openpgp.PGPAEADFlavour;
 
 /**
  * A data encryptor, using AEAD.
- * There are two different flavours of AEAD encryption used with OpenPGP. See {@link PGPAEADFlavour} for more details.
+ * There are two different flavours of AEAD encryption used with OpenPGP.
+ * OpenPGP v5 AEAD is slightly different from v6 AEAD.
  * <p>
  * {@link PGPAEADDataEncryptor} instances are generally not constructed directly, but obtained from a
  * {@link PGPDataEncryptorBuilder}.

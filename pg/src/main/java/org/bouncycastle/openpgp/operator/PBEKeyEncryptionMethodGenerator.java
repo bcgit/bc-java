@@ -1,7 +1,5 @@
 package org.bouncycastle.openpgp.operator;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.S2K;
@@ -15,10 +13,11 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.bc.BcAEADUtil;
 import org.bouncycastle.util.Arrays;
+
+import java.security.SecureRandom;
 
 /**
  * PGP style PBE encryption method.
@@ -172,20 +171,19 @@ public abstract class PBEKeyEncryptionMethodGenerator
     }
 
     @Override
-    public ContainedPacket generate(PGPAEADFlavour aeadFlavour, int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    public ContainedPacket generateV5(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
             throws PGPException
     {
-        switch (aeadFlavour)
-        {
-            case OPENPGP_V5:
-                return generate(kekAlgorithm, sessionInfo);
-                // TODO: Implement v5 SKESK creation properly.
-                // return generateV5ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
-            case OPENPGP_V6:
-                return generateV6ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
-            default:
-                throw new IllegalArgumentException("Unknown AEAD flavour: " + aeadFlavour);
-        }
+        return generate(kekAlgorithm, sessionInfo);
+        // TODO: Implement v5 SKESK creation properly.
+        // return generateV5ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
+    }
+
+    @Override
+    public ContainedPacket generateV6(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+        throws PGPException
+    {
+        return generateV6ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
     }
 
     // If we use this method, roundtripping v5 AEAD is broken.
