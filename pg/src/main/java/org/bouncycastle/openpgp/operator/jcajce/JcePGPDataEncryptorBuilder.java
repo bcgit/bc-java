@@ -17,7 +17,6 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.AEADUtil;
-import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -80,13 +79,33 @@ public class JcePGPDataEncryptorBuilder
     @Deprecated
     public JcePGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        return setWithAEAD(PGPAEADFlavour.OPENPGP_V5, aeadAlgorithm, chunkSize);
+        return setWithV5AEAD(aeadAlgorithm, chunkSize);
     }
 
     @Override
-    public JcePGPDataEncryptorBuilder setWithAEAD(PGPAEADFlavour flavour, int aeadAlgorithm, int chunkSize)
-    {
-        this.isV5StyleAEAD = flavour == PGPAEADFlavour.OPENPGP_V5;
+    public JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize) {
+        this.isV5StyleAEAD = true;
+        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+        {
+            throw new IllegalStateException("AEAD algorithms can only be used with AES");
+        }
+
+        if (chunkSize < 6)
+        {
+            throw new IllegalArgumentException("minimum chunkSize is 6");
+        }
+
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.chunkSize = chunkSize - 6;
+
+        return this;
+    }
+
+    @Override
+    public JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize) {
+        this.isV5StyleAEAD = false;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
                 && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
                 && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
@@ -258,8 +277,8 @@ public class JcePGPDataEncryptorBuilder
 
         /**
          * Create a new data decryptor using AEAD.
-         * If the flavour is {@link PGPAEADFlavour#OPENPGP_V5}, keyBytes contains the key. The IV is randomly generated.
-         * If however the flavour is {@link PGPAEADFlavour#OPENPGP_V6}, keyBytes contains M+N-8 bytes.
+         * If OpenPGP v5 style AEAD is used, keyBytes contains the key. The IV is randomly generated.
+         * If however OpenPGP v6 style AEAD is used, keyBytes contains M+N-8 bytes.
          * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
          *
          * @param keyBytes key or key and iv

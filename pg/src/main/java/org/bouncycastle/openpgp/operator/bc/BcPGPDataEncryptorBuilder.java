@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.AEADUtil;
-import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -70,19 +69,41 @@ public class BcPGPDataEncryptorBuilder
      * @param aeadAlgorithm the AEAD mode to use.
      * @param chunkSize the size of the chunks to be processed with each nonce.
      * @return builder
-     * @deprecated use {@link #setWithAEAD(PGPAEADFlavour, int, int)} instead.
+     * @deprecated use {@link #setWithV5AEAD(int, int)} or {@link #setWithV6AEAD(int, int)} instead.
      */
     @Deprecated
     @Override
     public BcPGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        return setWithAEAD(PGPAEADFlavour.OPENPGP_V5, aeadAlgorithm, chunkSize);
+        return setWithV5AEAD(aeadAlgorithm, chunkSize);
     }
 
     @Override
-    public BcPGPDataEncryptorBuilder setWithAEAD(PGPAEADFlavour flavour, int aeadAlgorithm, int chunkSize)
+    public BcPGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
     {
-        this.isV5StyleAEAD = flavour == PGPAEADFlavour.OPENPGP_V5;
+        this.isV5StyleAEAD = true;
+        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+        {
+            throw new IllegalStateException("AEAD algorithms can only be used with AES");
+        }
+
+        if (chunkSize < 6)
+        {
+            throw new IllegalArgumentException("minimum chunkSize is 6");
+        }
+
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.chunkSize = chunkSize - 6;
+
+        return this;
+    }
+
+    @Override
+    public BcPGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
+    {
+        this.isV5StyleAEAD = false; // v6
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
@@ -213,8 +234,8 @@ public class BcPGPDataEncryptorBuilder
 
         /**
          * Create a new data decryptor using AEAD.
-         * If the flavour is {@link PGPAEADFlavour#OPENPGP_V5}, keyBytes contains the key. The IV is randomly generated.
-         * If however the flavour is {@link PGPAEADFlavour#OPENPGP_V6}, keyBytes contains M+N-8 bytes.
+         * If the OpenPGP v5 style AEAD is used, keyBytes contains the key. The IV is randomly generated.
+         * If however OpenPGP v6 style AEAD is used, keyBytes contains M+N-8 bytes.
          * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
          *
          * @param keyBytes key or key and iv
