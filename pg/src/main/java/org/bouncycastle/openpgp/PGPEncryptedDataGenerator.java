@@ -429,8 +429,7 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator) m;
-            ContainedPacket esk = m.generate(
-                    PGPAEADFlavour.OPENPGP_V5,
+            ContainedPacket esk = m.generateV5(
                     mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                     dataEncryptorBuilder.getAeadAlgorithm(),
                     sessionInfo);
@@ -459,8 +458,7 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator) m;
-            ContainedPacket esk = m.generate(
-                    PGPAEADFlavour.OPENPGP_V6,
+            ContainedPacket esk = m.generateV6(
                     mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                     aeadAlgorithm,
                     sessionInfo);

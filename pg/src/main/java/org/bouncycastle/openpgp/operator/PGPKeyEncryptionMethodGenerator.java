@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.bcpg.ContainedPacket;
-import org.bouncycastle.openpgp.PGPAEADFlavour;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 
@@ -13,6 +12,9 @@ public abstract class PGPKeyEncryptionMethodGenerator
     public abstract ContainedPacket generate(int encAlgorithm, byte[] sessionInfo)
         throws PGPException;
 
-    public abstract ContainedPacket generate(PGPAEADFlavour aeadFlavour, int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    public abstract ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+        throws PGPException;
+
+    public abstract ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
         throws PGPException;
 }
