@@ -15,7 +15,6 @@ class DTLSReliableHandshake
     private static final int MAX_RECEIVE_AHEAD = 16;
     private static final int MESSAGE_HEADER_LENGTH = 12;
 
-    static final int INITIAL_RESEND_MILLIS = 1000;
     private static final int MAX_RESEND_MILLIS = 60000;
 
     static DTLSRequest readClientRequest(byte[] data, int dataOff, int dataLen, OutputStream dtlsOutput)
@@ -99,20 +98,23 @@ class DTLSReliableHandshake
     private Hashtable previousInboundFlight = null;
     private Vector outboundFlight = new Vector();
 
+    private int initialResendMillis;
     private int resendMillis = -1;
     private Timeout resendTimeout = null;
 
     private int next_send_seq = 0, next_receive_seq = 0;
 
-    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, int timeoutMillis, DTLSRequest request)
+    DTLSReliableHandshake(TlsContext context, DTLSRecordLayer transport, int timeoutMillis, int initialResendMillis,
+        DTLSRequest request)
     {
         this.recordLayer = transport;
         this.handshakeHash = new DeferredHash(context);
         this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis);
+        this.initialResendMillis = initialResendMillis;
 
         if (null != request)
         {
-            resendMillis = INITIAL_RESEND_MILLIS;
+            resendMillis = initialResendMillis;
             resendTimeout = new Timeout(resendMillis);
 
             long recordSeq = request.getRecordSeq();
@@ -322,7 +324,7 @@ class DTLSReliableHandshake
 
         if (null == resendTimeout)
         {
-            resendMillis = INITIAL_RESEND_MILLIS;
+            resendMillis = initialResendMillis;
             resendTimeout = new Timeout(resendMillis, currentTimeMillis);
 
             prepareInboundFlight(new Hashtable());

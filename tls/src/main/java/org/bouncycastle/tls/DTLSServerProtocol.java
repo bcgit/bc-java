@@ -95,7 +95,7 @@ public class DTLSServerProtocol
     {
         SecurityParameters securityParameters = state.serverContext.getSecurityParametersHandshake();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.serverContext, recordLayer,
-            state.server.getHandshakeTimeoutMillis(), request);
+            state.server.getHandshakeTimeoutMillis(), state.server.getHandshakeResendTimeMillis(), request);
 
         DTLSReliableHandshake.Message clientMessage = null;
 
