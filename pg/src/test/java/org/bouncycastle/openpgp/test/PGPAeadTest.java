@@ -142,14 +142,19 @@ public class PGPAeadTest
                 SymmetricKeyAlgorithmTags.AES_256
         };
         // Test round-trip encryption
-        for (boolean aeadStyle : new boolean[] {true, false}) {
-            for (int aeadAlg : aeadAlgs) {
-                for (int symAlg : symAlgs) {
-                    testBcRoundTrip(aeadStyle, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testJceRoundTrip(aeadStyle, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testBcJceRoundTrip(aeadStyle, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                    testJceBcRoundTrip(aeadStyle, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
-                }
+        for (int aeadAlg : aeadAlgs) {
+            for (int symAlg : symAlgs) {
+                // OpenPGP v5
+                testBcRoundTrip(true, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceRoundTrip(true, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testBcJceRoundTrip(true, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceBcRoundTrip(true, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+
+                // OpenPGP v6
+                testBcRoundTrip(false, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceRoundTrip(false, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testBcJceRoundTrip(false, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
+                testJceBcRoundTrip(false, aeadAlg, symAlg, PLAINTEXT, PASSWORD);
             }
         }
     }
