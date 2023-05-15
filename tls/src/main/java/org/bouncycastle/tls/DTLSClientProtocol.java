@@ -106,7 +106,7 @@ public class DTLSClientProtocol
     {
         SecurityParameters securityParameters = state.clientContext.getSecurityParametersHandshake();
         DTLSReliableHandshake handshake = new DTLSReliableHandshake(state.clientContext, recordLayer,
-            state.client.getHandshakeTimeoutMillis(), null);
+            state.client.getHandshakeTimeoutMillis(), state.client.getHandshakeResendTimeMillis(), null);
 
         byte[] clientHelloBody = generateClientHello(state);
 
