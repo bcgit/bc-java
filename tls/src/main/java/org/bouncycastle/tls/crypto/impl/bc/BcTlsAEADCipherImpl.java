@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
+import org.bouncycastle.util.Arrays;
 
 final class BcTlsAEADCipherImpl
     implements TlsAEADCipherImpl
@@ -29,9 +30,9 @@ final class BcTlsAEADCipherImpl
         this.key = new KeyParameter(key, keyOff, keyLen);
     }
 
-    public void init(byte[] nonce, int macSize, byte[] additionalData)
+    public void init(byte[] nonce, int macSize)
     {
-        cipher.init(isEncrypting, new AEADParameters(key, macSize * 8, nonce, additionalData));
+        cipher.init(isEncrypting, new AEADParameters(key, macSize * 8, nonce, null));
     }
 
     public int getOutputSize(int inputLength)
@@ -39,9 +40,14 @@ final class BcTlsAEADCipherImpl
         return cipher.getOutputSize(inputLength);
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+    public int doFinal(byte[] additionalData, byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         throws IOException
     {
+        if (!Arrays.isNullOrEmpty(additionalData))
+        {
+            cipher.processAADBytes(additionalData, 0, additionalData.length);
+        }
+
         int len = cipher.processBytes(input, inputOffset, inputLength, output, outputOffset);
 
         try

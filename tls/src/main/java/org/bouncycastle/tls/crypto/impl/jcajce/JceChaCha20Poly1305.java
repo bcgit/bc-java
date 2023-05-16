@@ -15,6 +15,7 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
@@ -26,7 +27,6 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
     protected final int cipherMode;
 
     protected SecretKey cipherKey;
-    protected byte[] additionalData;
 
     public JceChaCha20Poly1305(JcaJceHelper helper, boolean isEncrypting) throws GeneralSecurityException
     {
@@ -35,7 +35,8 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
         this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+    public int doFinal(byte[] additionalData, byte[] input, int inputOffset, int inputLength, byte[] output,
+        int outputOffset)
         throws IOException
     {
         /*
@@ -59,11 +60,18 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
                 System.arraycopy(tmp, 64, output, outputOffset, ciphertextLength);
 
                 initMAC(tmp);
-                updateMAC(additionalData, 0, additionalData.length);
+
+                int additionalDataLength = 0;
+                if (!Arrays.isNullOrEmpty(additionalData))
+                {
+                    additionalDataLength = additionalData.length;
+                    updateMAC(additionalData, 0, additionalData.length);
+                }
+
                 updateMAC(tmp, 64, ciphertextLength);
 
                 byte[] lengths = new byte[16];
-                Pack.longToLittleEndian(additionalData.length & 0xFFFFFFFFL, lengths, 0);
+                Pack.longToLittleEndian(additionalDataLength & 0xFFFFFFFFL, lengths, 0);
                 Pack.longToLittleEndian(ciphertextLength & 0xFFFFFFFFL, lengths, 8);
                 mac.update(lengths, 0, 16);
 
@@ -81,11 +89,18 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
                 runCipher(tmp);
 
                 initMAC(tmp);
-                updateMAC(additionalData, 0, additionalData.length);
+
+                int additionalDataLength = 0;
+                if (!Arrays.isNullOrEmpty(additionalData))
+                {
+                    additionalDataLength = additionalData.length;
+                    updateMAC(additionalData, 0, additionalData.length);
+                }
+
                 updateMAC(input, inputOffset, ciphertextLength);
 
                 byte[] expectedMac = new byte[16];
-                Pack.longToLittleEndian(additionalData.length & 0xFFFFFFFFL, expectedMac, 0);
+                Pack.longToLittleEndian(additionalDataLength & 0xFFFFFFFFL, expectedMac, 0);
                 Pack.longToLittleEndian(ciphertextLength & 0xFFFFFFFFL, expectedMac, 8);
                 mac.update(expectedMac, 0, 16);
                 mac.doFinal(expectedMac, 0);
@@ -113,7 +128,7 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
         return cipherMode == Cipher.ENCRYPT_MODE ? inputLength + 16 : inputLength - 16;
     }
 
-    public void init(byte[] nonce, int macSize, byte[] additionalData) throws IOException
+    public void init(byte[] nonce, int macSize) throws IOException
     {
         if (nonce == null || nonce.length != 12 || macSize != 16)
         {
@@ -128,8 +143,6 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
         {
             throw new RuntimeException(e);
         }
-
-        this.additionalData = additionalData;
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen) throws IOException
