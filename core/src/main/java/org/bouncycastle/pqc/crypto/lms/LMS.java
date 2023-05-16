@@ -135,6 +135,12 @@ class LMS
             }
             node_num = node_num / 2;
             i++;
+            // these two can get out of sync with an invalid signature, we'll
+            // try and fail gracefully
+            if (i == path.length && node_num > 1)
+            {
+                return false;
+            }
         }
         byte[] Tc = tmp;
         return publicKey.matchesT1(Tc);
