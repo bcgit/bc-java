@@ -13,6 +13,7 @@ test-code-8:
   script:
     - "apply_overlay bc-java ./"
     - "sh gettestdata.sh"
+    - "sh gettestlibs.sh"
     - ". cienv-8.sh; \ gradle -stacktrace clean build;"
   
 test-code-11:
@@ -20,6 +21,7 @@ test-code-11:
   script:
     - "apply_overlay bc-java ./"
     - "sh gettestdata.sh"
+    - "sh gettestlibs.sh"
     - ". cienv-11.sh; \ gradle -stacktrace clean build;"
   
 test-code-17:
@@ -27,4 +29,5 @@ test-code-17:
   script:
     - "apply_overlay bc-java ./"
     - "sh gettestdata.sh"
+    - "sh gettestlibs.sh"
     - ". cienv-17.sh; \ gradle -stacktrace clean build;"
