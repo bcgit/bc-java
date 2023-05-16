@@ -19,12 +19,17 @@ public class TlsNullNullCipher
         return plaintextLimit;
     }
 
-    public int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit)
+    public int getCiphertextEncodeLimit(int plaintextLimit)
     {
-        return plaintextLength;
+        return plaintextLimit;
     }
 
-    public int getPlaintextLimit(int ciphertextLimit)
+    public int getPlaintextDecodeLimit(int ciphertextLimit)
+    {
+        return ciphertextLimit;
+    }
+
+    public int getPlaintextEncodeLimit(int ciphertextLimit)
     {
         return ciphertextLimit;
     }
@@ -53,7 +58,12 @@ public class TlsNullNullCipher
         throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
-    public boolean usesOpaqueRecordType()
+    public boolean usesOpaqueRecordTypeDecode()
+    {
+        return false;
+    }
+
+    public boolean usesOpaqueRecordTypeEncode()
     {
         return false;
     }

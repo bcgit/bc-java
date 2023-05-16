@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.crypto.impl;
 
+import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
@@ -10,10 +11,12 @@ import org.bouncycastle.util.Arrays;
 /**
  * A generic TLS MAC implementation, acting as an HMAC based on some underlying Digest.
  */
-public class TlsSuiteHMac
+public final class TlsSuiteHMac
     implements TlsSuiteMac
 {
-    protected static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
+    private static final long SEQUENCE_NUMBER_PLACEHOLDER = -1L;
+
+    private static int getMacSize(TlsCryptoParameters cryptoParams, TlsMAC mac)
     {
         int macSize = mac.getMacLength();
         if (cryptoParams.getSecurityParametersHandshake().isTruncatedHMac())
@@ -23,12 +26,12 @@ public class TlsSuiteHMac
         return macSize;
     }
 
-    protected final TlsCryptoParameters cryptoParams;
-    protected final TlsHMAC mac;
-    protected final int digestBlockSize;
-    protected final int digestOverhead;
-    protected final int macSize;
-
+    private final TlsCryptoParameters cryptoParams;
+    private final TlsHMAC mac;
+    private final int digestBlockSize;
+    private final int digestOverhead;
+    private final int macSize;
+    
     /**
      * Generate a new instance of a TlsMac.
      *
@@ -61,39 +64,54 @@ public class TlsSuiteHMac
         return macSize;
     }
 
-    public byte[] calculateMac(long seqNo, short type, byte[] msg, int msgOff, int msgLen)
+    public byte[] calculateMac(long seqNo, short type, byte[] connectionID, byte[] msg, int msgOff, int msgLen)
     {
         ProtocolVersion serverVersion = cryptoParams.getServerVersion();
-        boolean isSSL = serverVersion.isSSL();
 
-        byte[] macHeader = new byte[isSSL ? 11 : 13];
-        TlsUtils.writeUint64(seqNo, macHeader, 0);
-        TlsUtils.writeUint8(type, macHeader, 8);
-        if (!isSSL)
+        if (!Arrays.isNullOrEmpty(connectionID))
         {
-            TlsUtils.writeVersion(serverVersion, macHeader, 9);
-        }
-        TlsUtils.writeUint16(msgLen, macHeader, macHeader.length - 2);
+            int cidLength = connectionID.length;
+            byte[] macHeader = new byte[23 + cidLength];
+            TlsUtils.writeUint64(SEQUENCE_NUMBER_PLACEHOLDER, macHeader, 0);
+            TlsUtils.writeUint8(ContentType.tls12_cid, macHeader, 8);
+            TlsUtils.writeUint8(cidLength, macHeader, 9);
+            TlsUtils.writeUint8(ContentType.tls12_cid, macHeader, 10);
+            TlsUtils.writeVersion(serverVersion, macHeader, 11);
+            TlsUtils.writeUint64(seqNo, macHeader, 13);
+            System.arraycopy(connectionID, 0, macHeader, 21, cidLength);
+            TlsUtils.writeUint16(msgLen, macHeader, 21 + cidLength);
 
-        mac.update(macHeader, 0, macHeader.length);
+            mac.update(macHeader, 0, macHeader.length);
+        }
+        else
+        {
+            byte[] macHeader = new byte[13];
+            TlsUtils.writeUint64(seqNo, macHeader, 0);
+            TlsUtils.writeUint8(type, macHeader, 8);
+            TlsUtils.writeVersion(serverVersion, macHeader, 9);
+            TlsUtils.writeUint16(msgLen, macHeader, 11);
+
+            mac.update(macHeader, 0, macHeader.length);
+        }
+
         mac.update(msg, msgOff, msgLen);
 
         return truncate(mac.calculateMAC());
     }
 
-    public byte[] calculateMacConstantTime(long seqNo, short type, byte[] msg, int msgOff, int msgLen,
-        int fullLength, byte[] dummyData)
+    public byte[] calculateMacConstantTime(long seqNo, short type, byte[] connectionID, byte[] msg, int msgOff,
+        int msgLen, int fullLength, byte[] dummyData)
     {
         /*
          * Actual MAC only calculated on 'length' bytes...
          */
-        byte[] result = calculateMac(seqNo, type, msg, msgOff, msgLen);
+        byte[] result = calculateMac(seqNo, type, connectionID, msg, msgOff, msgLen);
 
         /*
          * ...but ensure a constant number of complete digest blocks are processed (as many as would
          * be needed for 'fullLength' bytes of input).
          */
-        int headerLength = TlsImplUtils.isSSL(cryptoParams) ? 11 : 13;
+        int headerLength = getHeaderLength(connectionID);
 
         // How many extra full blocks do we need to calculate?
         int extra = getDigestBlockCount(headerLength + fullLength) - getDigestBlockCount(headerLength + msgLen);
@@ -110,7 +128,7 @@ public class TlsSuiteHMac
         return result;
     }
 
-    protected int getDigestBlockCount(int inputLength)
+    private int getDigestBlockCount(int inputLength)
     {
         // NOTE: The input pad for HMAC is always a full digest block
 
@@ -118,7 +136,23 @@ public class TlsSuiteHMac
         return (inputLength + digestOverhead) / digestBlockSize;
     }
 
-    protected byte[] truncate(byte[] bs)
+    private int getHeaderLength(byte[] connectionID)
+    {
+        if (TlsImplUtils.isSSL(cryptoParams))
+        {
+            return 11;
+        }
+        else if (!Arrays.isNullOrEmpty(connectionID))
+        {
+            return 23 + connectionID.length;
+        }
+        else
+        {
+            return 13;
+        }
+    }
+
+    private byte[] truncate(byte[] bs)
     {
         if (bs.length <= macSize)
         {
