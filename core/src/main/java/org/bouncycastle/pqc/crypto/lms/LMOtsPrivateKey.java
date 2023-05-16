@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.crypto.lms;
 import org.bouncycastle.crypto.Digest;
 
 import static org.bouncycastle.pqc.crypto.lms.LM_OTS.D_MESG;
-import static org.bouncycastle.pqc.crypto.lms.LM_OTS.SEED_LEN;
 import static org.bouncycastle.pqc.crypto.lms.LM_OTS.SEED_RANDOMISER_INDEX;
 
 class LMOtsPrivateKey
@@ -23,7 +22,7 @@ class LMOtsPrivateKey
 
     LMSContext getSignatureContext(LMSigParameters sigParams, byte[][] path)
     {
-        byte[] C = new byte[SEED_LEN];
+        byte[] C = new byte[parameter.getN()];
 
         SeedDerive derive = getDerivationFunction();
         derive.setJ(SEED_RANDOMISER_INDEX); // This value from reference impl.
