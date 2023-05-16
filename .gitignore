@@ -12,6 +12,7 @@
 bin/
 build/
 */build/
+libs/*.jar
 out/
 */out/
 .settings/
