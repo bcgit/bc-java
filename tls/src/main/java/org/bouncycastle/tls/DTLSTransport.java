@@ -28,6 +28,12 @@ public class DTLSTransport
     public int receive(byte[] buf, int off, int len, int waitMillis)
         throws IOException
     {
+        return receive(buf, off, len, waitMillis, null);
+    }
+
+    public int receive(byte[] buf, int off, int len, int waitMillis, DTLSRecordCallback recordCallback)    
+        throws IOException
+    {
         if (null == buf)
         {
             throw new NullPointerException("'buf' cannot be null");
@@ -47,7 +53,59 @@ public class DTLSTransport
 
         try
         {
-            return recordLayer.receive(buf, off, len, waitMillis);
+            return recordLayer.receive(buf, off, len, waitMillis, recordCallback);
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            if (AlertDescription.bad_record_mac == fatalAlert.getAlertDescription())
+            {
+                return -1;
+            }
+
+            recordLayer.fail(fatalAlert.getAlertDescription());
+            throw fatalAlert;
+        }
+        catch (InterruptedIOException e)
+        {
+            throw e;
+        }
+        catch (IOException e)
+        {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            recordLayer.fail(AlertDescription.internal_error);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    public int receivePending(byte[] buf, int off, int len)
+        throws IOException
+    {
+        return receivePending(buf, off, len, null);
+    }
+
+    public int receivePending(byte[] buf, int off, int len, DTLSRecordCallback recordCallback)    
+        throws IOException
+    {
+        if (null == buf)
+        {
+            throw new NullPointerException("'buf' cannot be null");
+        }
+        if (off < 0 || off >= buf.length)
+        {
+            throw new IllegalArgumentException("'off' is an invalid offset: " + off);
+        }
+        if (len < 0 || len > buf.length - off)
+        {
+            throw new IllegalArgumentException("'len' is an invalid length: " + len);
+        }
+
+        try
+        {
+            return recordLayer.receivePending(buf, off, len, recordCallback);
         }
         catch (TlsFatalAlert fatalAlert)
         {

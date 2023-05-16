@@ -21,6 +21,7 @@ public class TlsExtensionsUtils
     public static final Integer EXT_client_certificate_type = Integers.valueOf(ExtensionType.client_certificate_type);
     public static final Integer EXT_client_certificate_url = Integers.valueOf(ExtensionType.client_certificate_url);
     public static final Integer EXT_compress_certificate = Integers.valueOf(ExtensionType.compress_certificate);
+    public static final Integer EXT_connection_id = Integers.valueOf(ExtensionType.connection_id);
     public static final Integer EXT_cookie = Integers.valueOf(ExtensionType.cookie);
     public static final Integer EXT_early_data = Integers.valueOf(ExtensionType.early_data);
     public static final Integer EXT_ec_point_formats = Integers.valueOf(ExtensionType.ec_point_formats);
@@ -89,6 +90,11 @@ public class TlsExtensionsUtils
     public static void addCompressCertificateExtension(Hashtable extensions, int[] algorithms) throws IOException
     {
         extensions.put(EXT_compress_certificate, createCompressCertificateExtension(algorithms));
+    }
+
+    public static void addConnectionIDExtension(Hashtable extensions, byte[] connectionID) throws IOException
+    {
+        extensions.put(EXT_connection_id, createConnectionIDExtension(connectionID));
     }
 
     public static void addCookieExtension(Hashtable extensions, byte[] cookie) throws IOException
@@ -316,6 +322,12 @@ public class TlsExtensionsUtils
     {
         byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_compress_certificate);
         return extensionData == null ? null : readCompressCertificateExtension(extensionData);
+    }
+
+    public static byte[] getConnectionIDExtension(Hashtable extensions) throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_connection_id);
+        return extensionData == null ? null : readConnectionIDExtension(extensionData);
     }
 
     public static byte[] getCookieExtension(Hashtable extensions)
@@ -620,6 +632,14 @@ public class TlsExtensionsUtils
         }
 
         return TlsUtils.encodeUint16ArrayWithUint8Length(algorithms);
+    }
+
+    public static byte[] createConnectionIDExtension(byte[] connectionID) throws IOException
+    {
+        if (connectionID == null)
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+
+        return TlsUtils.encodeOpaque8(connectionID);
     }
 
     public static byte[] createCookieExtension(byte[] cookie) throws IOException
@@ -1075,6 +1095,11 @@ public class TlsExtensionsUtils
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
         return algorithms;
+    }
+
+    public static byte[] readConnectionIDExtension(byte[] extensionData) throws IOException
+    {
+        return TlsUtils.decodeOpaque8(extensionData);
     }
 
     public static byte[] readCookieExtension(byte[] extensionData) throws IOException

@@ -134,6 +134,11 @@ public class ExtensionType
     public static final int key_share = 51;
 
     /*
+     * RFC 9146
+     */
+    public static final int connection_id = 54;
+
+    /*
      * RFC 5746 3.2.
      */
     public static final int renegotiation_info = 0xff01;
@@ -220,6 +225,8 @@ public class ExtensionType
             return "signature_algorithms_cert";
         case key_share:
             return "key_share";
+        case connection_id:
+            return "connection_id";
         case renegotiation_info:
             return "renegotiation_info";
         default:
@@ -275,6 +282,7 @@ public class ExtensionType
         case post_handshake_auth:
         case signature_algorithms_cert:
         case key_share:
+        case connection_id:
         case renegotiation_info:
             return true;
         default:

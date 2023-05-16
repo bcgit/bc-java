@@ -130,7 +130,7 @@ class DTLSRecordLayer
 
         this.inHandshake = true;
 
-        this.currentEpoch = new DTLSEpoch(0, TlsNullNullCipher.INSTANCE);
+        this.currentEpoch = new DTLSEpoch(0, TlsNullNullCipher.INSTANCE, RECORD_HEADER_LENGTH, RECORD_HEADER_LENGTH);        
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;
@@ -189,8 +189,15 @@ class DTLSRecordLayer
          * lifetime."
          */
 
+        SecurityParameters securityParameters = context.getSecurityParameters();
+        byte[] connectionIDLocal = securityParameters.getConnectionIDLocal();
+        byte[] connectionIDPeer = securityParameters.getConnectionIDPeer();
+        int recordHeaderLengthRead = RECORD_HEADER_LENGTH + (connectionIDPeer != null ? connectionIDPeer.length : 0);
+        int recordHeaderLengthWrite = RECORD_HEADER_LENGTH + (connectionIDLocal != null ? connectionIDLocal.length : 0);
+
         // TODO Check for overflow
-        this.pendingEpoch = new DTLSEpoch(writeEpoch.getEpoch() + 1, pendingCipher);
+        this.pendingEpoch = new DTLSEpoch(writeEpoch.getEpoch() + 1, pendingCipher, recordHeaderLengthRead,
+            recordHeaderLengthWrite);
     }
 
     void handshakeSuccessful(DTLSHandshakeRetransmit retransmit)
@@ -244,18 +251,32 @@ class DTLSRecordLayer
     public int getReceiveLimit()
         throws IOException
     {
-        return Math.min(this.plaintextLimit,
-            readEpoch.getCipher().getPlaintextLimit(transport.getReceiveLimit() - RECORD_HEADER_LENGTH));
+        int ciphertextLimit = transport.getReceiveLimit() - readEpoch.getRecordHeaderLengthRead();
+        TlsCipher cipher = readEpoch.getCipher();
+
+        int plaintextDecodeLimit = cipher.getPlaintextDecodeLimit(ciphertextLimit);
+
+        return Math.min(plaintextLimit, plaintextDecodeLimit);
     }
 
     public int getSendLimit()
         throws IOException
     {
-        return Math.min(this.plaintextLimit,
-            writeEpoch.getCipher().getPlaintextLimit(transport.getSendLimit() - RECORD_HEADER_LENGTH));
+        TlsCipher cipher = writeEpoch.getCipher();
+        int ciphertextLimit = transport.getSendLimit() - writeEpoch.getRecordHeaderLengthWrite();
+
+        int plaintextEncodeLimit = cipher.getPlaintextEncodeLimit(ciphertextLimit);
+
+        return Math.min(plaintextLimit, plaintextEncodeLimit);        
     }
 
     public int receive(byte[] buf, int off, int len, int waitMillis)
+        throws IOException
+    {
+        return receive(buf, off, len, waitMillis, null);
+    }
+
+    int receive(byte[] buf, int off, int len, int waitMillis, DTLSRecordCallback recordCallback)
         throws IOException
     {
         long currentTimeMillis = System.currentTimeMillis();
@@ -305,14 +326,14 @@ class DTLSRecordLayer
                 waitMillis = 1;
             }
 
-            int receiveLimit = Math.min(len, getReceiveLimit()) + RECORD_HEADER_LENGTH;
+            int receiveLimit = transport.getReceiveLimit();            
             if (null == record || record.length < receiveLimit)
             {
                 record = new byte[receiveLimit];
             }
 
             int received = receiveRecord(record, 0, receiveLimit, waitMillis);
-            int processed = processRecord(received, record, buf, off);
+            int processed = processRecord(received, record, buf, off, len, recordCallback);            
             if (processed >= 0)
             {
                 return processed;
@@ -320,6 +341,29 @@ class DTLSRecordLayer
 
             currentTimeMillis = System.currentTimeMillis();
             waitMillis = Timeout.getWaitMillis(timeout, currentTimeMillis);
+        }
+
+        return -1;
+    }
+
+    int receivePending(byte[] buf, int off, int len, DTLSRecordCallback recordCallback)
+        throws IOException
+    {
+        if (recordQueue.available() > 0)
+        {
+            int receiveLimit = recordQueue.available();
+            byte[] record = new byte[receiveLimit];
+
+            do
+            {
+                int received = receivePendingRecord(record, 0, receiveLimit);
+                int processed = processRecord(received, record, buf, off, len, recordCallback);
+                if (processed >= 0)
+                {
+                    return processed;
+                }
+            }
+            while (recordQueue.available() > 0);
         }
 
         return -1;
@@ -476,16 +520,12 @@ class DTLSRecordLayer
     }
 
     // TODO Include 'currentTimeMillis' as an argument, use with Timeout, resetHeartbeat
-    private int processRecord(int received, byte[] record, byte[] buf, int off)
+    private int processRecord(int received, byte[] record, byte[] buf, int off, int len,
+        DTLSRecordCallback recordCallback)    
         throws IOException
     {
         // NOTE: received < 0 (timeout) is covered by this first case
         if (received < RECORD_HEADER_LENGTH)
-        {
-            return -1;
-        }
-        int length = TlsUtils.readUint16(record, 11);
-        if (received != (length + RECORD_HEADER_LENGTH))
         {
             return -1;
         }
@@ -500,8 +540,15 @@ class DTLSRecordLayer
         case ContentType.change_cipher_spec:
         case ContentType.handshake:
         case ContentType.heartbeat:
+        case ContentType.tls12_cid:
             break;
         default:
+            return -1;
+        }
+
+        ProtocolVersion recordVersion = TlsUtils.readVersion(record, 1);
+        if (!recordVersion.isDTLS())
+        {
             return -1;
         }
 
@@ -529,8 +576,35 @@ class DTLSRecordLayer
             return -1;
         }
 
-        ProtocolVersion recordVersion = TlsUtils.readVersion(record, 1);
-        if (!recordVersion.isDTLS())
+        int recordHeaderLength = recordEpoch.getRecordHeaderLengthRead();
+        if (recordHeaderLength > RECORD_HEADER_LENGTH)
+        {
+            if (ContentType.tls12_cid != recordType)
+            {
+                return -1;
+            }
+
+            if (received < recordHeaderLength)
+            {
+                return -1;
+            }
+
+            byte[] connectionID = context.getSecurityParameters().getConnectionIDPeer();
+            if (!Arrays.constantTimeAreEqual(connectionID.length, connectionID, 0, record, 11))
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            if (ContentType.tls12_cid == recordType)
+            {
+                return -1;
+            }
+        }
+
+        int length = TlsUtils.readUint16(record, recordHeaderLength - 2);
+        if (received != (length + recordHeaderLength))
         {
             return -1;
         }
@@ -546,7 +620,7 @@ class DTLSRecordLayer
                     getReadEpoch() == 0
                 &&  length > 0
                 &&  ContentType.handshake == recordType
-                &&  HandshakeType.client_hello == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+                &&  HandshakeType.client_hello == TlsUtils.readUint8(record, recordHeaderLength);
 
             if (!isClientHelloFragment)
             {
@@ -556,10 +630,25 @@ class DTLSRecordLayer
 
         long macSeqNo = getMacSequenceNumber(recordEpoch.getEpoch(), seq);
 
-        TlsDecodeResult decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, recordType, recordVersion, record,
-            RECORD_HEADER_LENGTH, length);
+        TlsDecodeResult decoded;
+        try
+        {
+            decoded = recordEpoch.getCipher().decodeCiphertext(macSeqNo, recordType, recordVersion, record,
+                recordHeaderLength, length);
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            if (AlertDescription.bad_record_mac == fatalAlert.getAlertDescription())
+            {
+                /*
+                 * RFC 9146 6. DTLS implementations MUST silently discard records with bad MACs or that are otherwise
+                 * invalid.
+                 */
+                return -1;
+            }
 
-        recordEpoch.getReplayWindow().reportAuthenticated(seq);
+            throw fatalAlert;
+        }
 
         if (decoded.len > this.plaintextLimit)
         {
@@ -576,7 +665,7 @@ class DTLSRecordLayer
                     getReadEpoch() == 0
                 &&  length > 0
                 &&  ContentType.handshake == recordType
-                &&  HandshakeType.hello_verify_request == TlsUtils.readUint8(record, RECORD_HEADER_LENGTH);
+                &&  HandshakeType.hello_verify_request == TlsUtils.readUint8(record, recordHeaderLength);
 
             if (isHelloVerifyRequest)
             {
@@ -595,6 +684,29 @@ class DTLSRecordLayer
             {
                 readVersion = recordVersion;
             }
+        }
+
+        boolean isLatestConfirmed = recordEpoch.getReplayWindow().reportAuthenticated(seq);
+
+        /*
+         * NOTE: The record has passed record layer validation and will be dispatched according to the decoded
+         * content type.
+         */
+        if (recordCallback != null)
+        {
+            int flags = DTLSRecordFlags.NONE;
+
+            if (recordEpoch == readEpoch && isLatestConfirmed)
+            {
+                flags |= DTLSRecordFlags.IS_NEWEST;
+            }
+
+            if (ContentType.tls12_cid == recordType)
+            {
+                flags |= DTLSRecordFlags.USES_CONNECTION_ID;
+            }
+
+            recordCallback.recordAccepted(flags);
         }
 
         switch (decoded.contentType)
@@ -713,6 +825,7 @@ class DTLSRecordLayer
 
             return -1;
         }
+        case ContentType.tls12_cid:        
         default:
             return -1;
         }
@@ -728,8 +841,55 @@ class DTLSRecordLayer
             this.retransmitTimeout = null;
         }
 
+        // NOTE: Internal error implies getReceiveLimit() was not used to allocate result space
+        if (decoded.len > len)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         System.arraycopy(decoded.buf, decoded.off, buf, off, decoded.len);
         return decoded.len;
+    }
+
+    private int receivePendingRecord(byte[] buf, int off, int len)
+        throws IOException
+    {
+//        assert recordQueue.available() > 0;
+
+        int recordLength = RECORD_HEADER_LENGTH;
+        if (recordQueue.available() >= recordLength)
+        {
+            short recordType = recordQueue.readUint8(0);
+            int epoch = recordQueue.readUint16(3);
+
+            DTLSEpoch recordEpoch = null;
+            if (epoch == readEpoch.getEpoch())
+            {
+                recordEpoch = readEpoch;
+            }
+            else if (recordType == ContentType.handshake && null != retransmitEpoch
+                && epoch == retransmitEpoch.getEpoch())
+            {
+                recordEpoch = retransmitEpoch;
+            }
+
+            if (null == recordEpoch)
+            {
+                recordQueue.removeData(recordQueue.available());
+                return -1;
+            }
+
+            recordLength = recordEpoch.getRecordHeaderLengthRead();
+            if (recordQueue.available() >= recordLength)
+            {
+                int fragmentLength = recordQueue.readUint16(recordLength - 2);
+                recordLength += fragmentLength;
+            }
+        }
+
+        int received = Math.min(recordQueue.available(), recordLength);
+        recordQueue.removeData(buf, off, received, 0);
+        return received;
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)
@@ -737,17 +897,7 @@ class DTLSRecordLayer
     {
         if (recordQueue.available() > 0)
         {
-            int length = 0;
-            if (recordQueue.available() >= RECORD_HEADER_LENGTH)
-            {
-                byte[] lengthBytes = new byte[2];
-                recordQueue.read(lengthBytes, 0, 2, 11);
-                length = TlsUtils.readUint16(lengthBytes, 0);
-            }
-
-            int received = Math.min(recordQueue.available(), RECORD_HEADER_LENGTH + length);
-            recordQueue.removeData(buf, off, received, 0);
-            return received;
+            return receivePendingRecord(buf, off, len);
         }
 
         int received = receiveDatagram(buf, off, len, waitMillis);
@@ -755,12 +905,35 @@ class DTLSRecordLayer
         {
             this.inConnection = true;
 
-            int fragmentLength = TlsUtils.readUint16(buf, off + 11);
-            int recordLength = RECORD_HEADER_LENGTH + fragmentLength;
-            if (received > recordLength)
+            short recordType = TlsUtils.readUint8(buf, off);
+            int epoch = TlsUtils.readUint16(buf, off + 3);
+
+            DTLSEpoch recordEpoch = null;
+            if (epoch == readEpoch.getEpoch())
             {
-                recordQueue.addData(buf, off + recordLength, received - recordLength);
-                received = recordLength;
+                recordEpoch = readEpoch;
+            }
+            else if (recordType == ContentType.handshake && null != retransmitEpoch
+                && epoch == retransmitEpoch.getEpoch())
+            {
+                recordEpoch = retransmitEpoch;
+            }
+
+            if (null == recordEpoch)
+            {
+                return -1;
+            }
+
+            int recordHeaderLength = recordEpoch.getRecordHeaderLengthRead();
+            if (received >= recordHeaderLength)
+            {
+                int fragmentLength = TlsUtils.readUint16(buf, off + recordHeaderLength - 2);
+                int recordLength = recordHeaderLength + fragmentLength;
+                if (received > recordLength)
+                {
+                    recordQueue.addData(buf, off + recordLength, received - recordLength);
+                    received = recordLength;
+                }
             }
         }
 
@@ -820,17 +993,26 @@ class DTLSRecordLayer
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
             ProtocolVersion recordVersion = writeVersion;
 
-            TlsEncodeResult encoded = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
-                recordVersion, RECORD_HEADER_LENGTH, buf, off, len);
+            int recordHeaderLength = writeEpoch.getRecordHeaderLengthWrite();
 
-            int ciphertextLength = encoded.len - RECORD_HEADER_LENGTH;
+            TlsEncodeResult encoded = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
+                recordVersion, recordHeaderLength, buf, off, len);
+
+            int ciphertextLength = encoded.len - recordHeaderLength;
             TlsUtils.checkUint16(ciphertextLength);
 
             TlsUtils.writeUint8(encoded.recordType, encoded.buf, encoded.off + 0);
             TlsUtils.writeVersion(recordVersion, encoded.buf, encoded.off + 1);
             TlsUtils.writeUint16(recordEpoch, encoded.buf, encoded.off + 3);
             TlsUtils.writeUint48(recordSequenceNumber, encoded.buf, encoded.off + 5);
-            TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + 11);
+
+            if (recordHeaderLength > RECORD_HEADER_LENGTH)
+            {
+                byte[] connectionID = context.getSecurityParameters().getConnectionIDLocal();
+                System.arraycopy(connectionID, 0, encoded.buf, encoded.off + 11, connectionID.length);
+            }
+
+            TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + (recordHeaderLength - 2));
 
             sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
         }

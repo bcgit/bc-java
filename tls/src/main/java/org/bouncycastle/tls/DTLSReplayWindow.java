@@ -49,7 +49,7 @@ class DTLSReplayWindow
      *
      * @param seq the 48-bit DTLSPlainText.sequence_number field of an authenticated record.
      */
-    void reportAuthenticated(long seq)
+    boolean reportAuthenticated(long seq)
     {
         if ((seq & VALID_SEQ_MASK) != seq)
         {
@@ -63,6 +63,7 @@ class DTLSReplayWindow
             {
                 bitmap |= (1L << diff);
             }
+            return false;
         }
         else
         {
@@ -77,6 +78,7 @@ class DTLSReplayWindow
                 bitmap |= 1;
             }
             latestConfirmedSeq = seq;
+            return true;
         }
     }
 

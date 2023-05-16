@@ -833,6 +833,27 @@ public class DTLSClientProtocol
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
         securityParameters.applicationProtocolSet = true;
 
+        // Connection ID
+        if (ProtocolVersion.DTLSv12.equals(securityParameters.getNegotiatedVersion()))
+        {
+            /*
+             * RFC 9146 3. When a DTLS session is resumed or renegotiated, the "connection_id" extension is
+             * negotiated afresh.
+             */
+            byte[] serverConnectionID = TlsExtensionsUtils.getConnectionIDExtension(state.serverExtensions);
+            if (serverConnectionID != null)
+            {
+                byte[] clientConnectionID = TlsExtensionsUtils.getConnectionIDExtension(state.clientExtensions);
+                if (clientConnectionID == null)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error);
+                }
+
+                securityParameters.connectionIDLocal = serverConnectionID;
+                securityParameters.connectionIDPeer = clientConnectionID;
+            }
+        }
+
         // Heartbeats
         {
             HeartbeatExtension heartbeatExtension = TlsExtensionsUtils.getHeartbeatExtension(state.serverExtensions);

@@ -239,6 +239,20 @@ public abstract class AbstractTlsServer
         return null;
     }
 
+    /**
+     * RFC 9146 DTLS connection ID.
+     * <p/>
+     * This method will be called if a connection_id extension was sent by the client.
+     * If the return value is non-null, the server will send this connection ID to the client to use in future packets.
+     * As future communication doesn't include the connection IDs length, this should either be fixed-length
+     * or include the connection ID's length. (see explanation in RFC 9146 4. "cid:")
+     * @return The connection ID to use.
+     */
+    protected byte[] getNewConnectionID()
+    {
+        return null;
+    }
+
     public void init(TlsServerContext context)
     {
         this.context = context;
@@ -617,6 +631,22 @@ public abstract class AbstractTlsServer
         {
             TlsExtensionsUtils.addALPNExtensionServer(serverExtensions, selectedProtocolName);
         }
+
+        if (ProtocolVersion.DTLSv12.equals(context.getServerVersion()))
+        {
+            /*
+             * RFC 9146 3. When a DTLS session is resumed or renegotiated, the "connection_id" extension is
+             * negotiated afresh.
+             */
+            if (clientExtensions != null && clientExtensions.containsKey(ExtensionType.connection_id))
+            {
+                byte[] serverConnectionID = getNewConnectionID();
+                if (serverConnectionID != null)
+                {
+                    TlsExtensionsUtils.addConnectionIDExtension(serverExtensions, serverConnectionID);
+                }
+            }
+        }        
     }
 
     public Vector getServerSupplementalData()

@@ -10,6 +10,7 @@ public class ContentType
     public static final short handshake = 22;
     public static final short application_data = 23;
     public static final short heartbeat = 24;
+    public static final short tls12_cid = 25;
 
     public static String getName(short contentType)
     {
@@ -25,6 +26,8 @@ public class ContentType
             return "handshake";
         case heartbeat:
             return "heartbeat";
+        case tls12_cid:
+            return "tls12_cid";            
         default:
             return "UNKNOWN";
         }

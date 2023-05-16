@@ -156,7 +156,9 @@ class RecordStream
         // NOTE: For TLS 1.3, this only MIGHT be application data
         if (ContentType.application_data == recordType && handler.isApplicationDataReady())
         {
-            applicationDataLimit = Math.max(0, Math.min(plaintextLimit, readCipher.getPlaintextLimit(length)));
+            int plaintextDecodeLimit = readCipher.getPlaintextDecodeLimit(length);
+
+            applicationDataLimit = Math.max(0, Math.min(plaintextLimit, plaintextDecodeLimit));
         }
 
         return new RecordPreview(recordSize, applicationDataLimit);
@@ -172,7 +174,7 @@ class RecordStream
     int previewOutputRecordSize(int contentLength)
     {
 //        assert contentLength <= plaintextLimit
-        return RecordFormat.FRAGMENT_OFFSET + writeCipher.getCiphertextEncodeLimit(contentLength, plaintextLimit);
+        return RecordFormat.FRAGMENT_OFFSET + writeCipher.getCiphertextEncodeLimit(contentLength);        
     }
 
     boolean readFullRecord(byte[] input, int inputOff, int inputLen)
@@ -373,7 +375,7 @@ class RecordStream
             this.ciphertextLimit = readCipher.getCiphertextDecodeLimit(plaintextLimit);
             readSeqNo.reset();
         }
-        else if (readCipher.usesOpaqueRecordType())
+        else if (readCipher.usesOpaqueRecordTypeDecode())
         {
             if (ContentType.application_data != recordType)
             {

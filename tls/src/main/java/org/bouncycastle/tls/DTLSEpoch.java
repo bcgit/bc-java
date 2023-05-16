@@ -10,10 +10,11 @@ class DTLSEpoch
 
     private final int epoch;
     private final TlsCipher cipher;
+    private final int recordHeaderLengthRead, recordHeaderLengthWrite;
 
     private long sequenceNumber = 0;
 
-    DTLSEpoch(int epoch, TlsCipher cipher)
+    DTLSEpoch(int epoch, TlsCipher cipher, int recordHeaderLengthRead, int recordHeaderLengthWrite)    
     {
         if (epoch < 0)
         {
@@ -26,6 +27,8 @@ class DTLSEpoch
 
         this.epoch = epoch;
         this.cipher = cipher;
+        this.recordHeaderLengthRead = recordHeaderLengthRead;
+        this.recordHeaderLengthWrite = recordHeaderLengthWrite;
     }
 
     synchronized long allocateSequenceNumber() throws IOException
@@ -46,6 +49,16 @@ class DTLSEpoch
     int getEpoch()
     {
         return epoch;
+    }
+
+    int getRecordHeaderLengthRead()
+    {
+        return recordHeaderLengthRead;
+    }
+
+    int getRecordHeaderLengthWrite()
+    {
+        return recordHeaderLengthWrite;
     }
 
     DTLSReplayWindow getReplayWindow()

@@ -1,4 +1,4 @@
-package org.bouncycastle.tls.crypto;
+    package org.bouncycastle.tls.crypto;
 
 import java.io.IOException;
 
@@ -15,28 +15,35 @@ public interface TlsCipher
      * 
      * @param plaintextLimit
      *            the maximum output size for the plaintext.
-     * @return the maximum input size of the ciphertext for plaintextlimit bytes of output.
+     * @return the maximum input size of the ciphertext for plaintextLimit bytes of output.
      */
     int getCiphertextDecodeLimit(int plaintextLimit);
 
     /**
-     * Return the maximum output size for a ciphertext given an actual input plaintext size of
-     * plaintextLength bytes and a maximum input plaintext size of plaintextLimit bytes.
+     * Return the maximum output size for a ciphertext given a maximum input size for the plaintext of
+     * plaintextLimit bytes.
      * 
-     * @param plaintextLength
-     *            the actual input size for the plaintext.
      * @param plaintextLimit
      *            the maximum input size for the plaintext.
-     * @return the maximum output size of the ciphertext for plaintextlimit bytes of input.
+     * @return the maximum output size of the ciphertext for plaintextLimit bytes of input.
      */
-    int getCiphertextEncodeLimit(int plaintextLength, int plaintextLimit);
+    int getCiphertextEncodeLimit(int plaintextLimit);
 
     /**
-     * Return the maximum size for the plaintext given ciphertextlimit bytes of ciphertext.
-     * @param ciphertextLimit the maximum number of bytes of ciphertext.
-     * @return the maximum size of the plaintext for ciphertextlimit bytes of input.
+     * Return the maximum output size for the plaintext given a maximum input size for the ciphertext of
+     * ciphertextLimit bytes.
+     * @param ciphertextLimit the maximum input size for the ciphertext.
+     * @return the maximum output size of the plaintext for ciphertextLimit bytes of input.
      */
-    int getPlaintextLimit(int ciphertextLimit);
+    int getPlaintextDecodeLimit(int ciphertextLimit);
+
+    /**
+     * Return the maximum input size for the plaintext given a maximum output size for the ciphertext of
+     * ciphertextLimit bytes.
+     * @param ciphertextLimit the maximum output size for the ciphertext.
+     * @return the maximum input size of the plaintext for ciphertextLimit bytes of output.
+     */
+    int getPlaintextEncodeLimit(int ciphertextLimit);
 
     /**
      * Encode the passed in plaintext using the current bulk cipher.
@@ -51,6 +58,7 @@ public interface TlsCipher
      * @return A {@link TlsEncodeResult} containing the result of encoding (after 'headerAllocation' unused bytes).
      * @throws IOException
      */
+    // TODO[api] Add a parameter for how much (D)TLSInnerPlaintext padding to add    
     TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion, int headerAllocation,
         byte[] plaintext, int offset, int len) throws IOException;
 
@@ -73,5 +81,7 @@ public interface TlsCipher
 
     void rekeyEncoder() throws IOException;
 
-    boolean usesOpaqueRecordType();
+    boolean usesOpaqueRecordTypeDecode();
+
+    boolean usesOpaqueRecordTypeEncode();
 }

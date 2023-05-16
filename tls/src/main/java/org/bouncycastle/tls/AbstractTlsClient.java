@@ -79,6 +79,19 @@ public abstract class AbstractTlsClient
         }
     }
 
+    /**
+     * RFC 9146 DTLS connection ID.
+     * <p/>
+     * The default {@link #getClientExtensions()} implementation calls this to get the connection_id extension the
+     * client will send. As future communication doesn't include the connection IDs length, this should either
+     * be fixed-length or include the connection ID's length. (see explanation in RFC 9146 4. "cid:")
+     * @return The connection ID to use.
+     */
+    protected byte[] getNewConnectionID()
+    {
+        return null;
+    }
+
     public TlsPSKIdentity getPSKIdentity() throws IOException
     {
         return null;
@@ -243,11 +256,13 @@ public abstract class AbstractTlsClient
 
         boolean offeringTLSv13Plus = false;
         boolean offeringPreTLSv13 = false;
+        boolean offeringDTLSv12 = false;        
         {
             ProtocolVersion[] supportedVersions = getProtocolVersions();
             for (int i = 0; i < supportedVersions.length; ++i)
             {
-                if (TlsUtils.isTLSv13(supportedVersions[i]))
+                ProtocolVersion supportedVersion = supportedVersions[i];
+                if (TlsUtils.isTLSv13(supportedVersion))
                 {
                     offeringTLSv13Plus = true;
                 }
@@ -255,6 +270,8 @@ public abstract class AbstractTlsClient
                 {
                     offeringPreTLSv13 = true;
                 }
+
+                offeringDTLSv12 |= ProtocolVersion.DTLSv12.equals(supportedVersion);
             }
         }
 
@@ -372,6 +389,19 @@ public abstract class AbstractTlsClient
         if (serverCertTypes != null && (serverCertTypes.length > 1 || serverCertTypes[0] != CertificateType.X509))
         {
             TlsExtensionsUtils.addServerCertificateTypeExtensionClient(clientExtensions, serverCertTypes);
+        }
+
+        if (offeringDTLSv12)
+        {
+            /*
+             * RFC 9146 3. When a DTLS session is resumed or renegotiated, the "connection_id" extension is
+             * negotiated afresh.
+             */
+            byte[] clientConnectionID = getNewConnectionID();
+            if (clientConnectionID != null)
+            {
+                TlsExtensionsUtils.addConnectionIDExtension(clientExtensions, clientConnectionID);
+            }
         }
 
         return clientExtensions;
