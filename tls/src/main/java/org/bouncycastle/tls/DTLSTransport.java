@@ -51,6 +51,11 @@ public class DTLSTransport
         }
         catch (TlsFatalAlert fatalAlert)
         {
+            if (AlertDescription.bad_record_mac == fatalAlert.getAlertDescription())
+            {
+                return -1;
+            }
+
             recordLayer.fail(fatalAlert.getAlertDescription());
             throw fatalAlert;
         }

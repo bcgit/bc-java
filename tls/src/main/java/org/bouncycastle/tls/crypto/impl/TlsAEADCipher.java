@@ -111,16 +111,6 @@ public class TlsAEADCipher
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
-
-        int nonceLength = fixed_iv_length + record_iv_length;
-
-        // NOTE: Ensure dummy nonce is not part of the generated sequence(s)
-        byte[] dummyNonce = new byte[nonceLength];
-        dummyNonce[0] = (byte)~encryptNonce[0];
-        dummyNonce[1] = (byte)~decryptNonce[1];
-
-        encryptCipher.init(dummyNonce, macSize, null);
-        decryptCipher.init(dummyNonce, macSize, null);
     }
 
     public int getCiphertextDecodeLimit(int plaintextLimit)
@@ -172,6 +162,8 @@ public class TlsAEADCipher
 
         int extraLength = (isTLSv13 ? 1 : 0);
 
+        encryptCipher.init(nonce, macSize);
+
         // TODO[tls13] If we support adding padding to TLSInnerPlaintext, this will need review
         int encryptionLength = encryptCipher.getOutputSize(plaintextLength + extraLength);
         int ciphertextLength = record_iv_length + encryptionLength;
@@ -197,8 +189,8 @@ public class TlsAEADCipher
                 output[outputPos + plaintextLength] = (byte)contentType;
             }
 
-            encryptCipher.init(nonce, macSize, additionalData);
-            outputPos += encryptCipher.doFinal(output, outputPos, plaintextLength + extraLength, output, outputPos);
+            outputPos += encryptCipher.doFinal(additionalData, output, outputPos, plaintextLength + extraLength, output,
+                outputPos);
         }
         catch (RuntimeException e)
         {
@@ -241,6 +233,8 @@ public class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        decryptCipher.init(nonce, macSize);
+
         int encryptionOffset = ciphertextOffset + record_iv_length;
         int encryptionLength = ciphertextLength - record_iv_length;
         int plaintextLength = decryptCipher.getOutputSize(encryptionLength);
@@ -250,9 +244,8 @@ public class TlsAEADCipher
         int outputPos;
         try
         {
-            decryptCipher.init(nonce, macSize, additionalData);
-            outputPos = decryptCipher.doFinal(ciphertext, encryptionOffset, encryptionLength, ciphertext,
-                encryptionOffset);
+            outputPos = decryptCipher.doFinal(additionalData, ciphertext, encryptionOffset, encryptionLength,
+                ciphertext, encryptionOffset);
         }
         catch (RuntimeException e)
         {
@@ -362,10 +355,6 @@ public class TlsAEADCipher
 
         cipher.setKey(key, 0, keySize);
         System.arraycopy(iv, 0, nonce, 0, fixed_iv_length);
-
-        // NOTE: Ensure dummy nonce is not part of the generated sequence(s)
-        iv[0] ^= 0x80;
-        cipher.init(iv, macSize, null);
     }
 
     private static int getNonceMode(boolean isTLSv13, int aeadType) throws IOException

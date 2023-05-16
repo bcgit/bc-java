@@ -21,10 +21,9 @@ public interface TlsAEADCipherImpl
      *
      * @param nonce the nonce.
      * @param macSize MAC size in bytes.
-     * @param additionalData any additional data to be included in the MAC calculation.
      * @throws IOException if the parameters are inappropriate.
      */
-    void init(byte[] nonce, int macSize, byte[] additionalData) throws IOException;
+    void init(byte[] nonce, int macSize) throws IOException;
 
     /**
      * Return the maximum size of the output for input of inputLength bytes.
@@ -39,6 +38,7 @@ public interface TlsAEADCipherImpl
      * <p>
      * Note: we have to use doFinal() here as it is the only way to guarantee output from the underlying cipher.
      * </p>
+     * @param additionalData any additional data to be included in the MAC calculation.
      * @param input array holding input data to the cipher.
      * @param inputOffset offset into input array data starts at.
      * @param inputLength length of the input data in the array.
@@ -47,6 +47,6 @@ public interface TlsAEADCipherImpl
      * @return the amount of data written to output.
      * @throws IOException in case of failure.
      */
-    int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+    int doFinal(byte[] additionalData, byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         throws IOException;
 }

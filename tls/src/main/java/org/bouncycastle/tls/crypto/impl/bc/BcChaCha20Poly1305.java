@@ -22,16 +22,22 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
 
     protected final boolean isEncrypting;
 
-    protected int additionalDataLength;
-
     public BcChaCha20Poly1305(boolean isEncrypting)
     {
         this.isEncrypting = isEncrypting;
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+    public int doFinal(byte[] additionalData, byte[] input, int inputOffset, int inputLength, byte[] output,
+        int outputOffset)
         throws IOException
     {
+        int additionalDataLength = 0;
+        if (!Arrays.isNullOrEmpty(additionalData))
+        {
+            additionalDataLength = additionalData.length;
+            updateMAC(additionalData, 0, additionalData.length);
+        }
+
         if (isEncrypting)
         {
             int ciphertextLength = inputLength;
@@ -87,7 +93,7 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
         return isEncrypting ? inputLength + 16 : inputLength - 16;
     }
 
-    public void init(byte[] nonce, int macSize, byte[] additionalData) throws IOException
+    public void init(byte[] nonce, int macSize) throws IOException
     {
         if (nonce == null || nonce.length != 12 || macSize != 16)
         {
@@ -96,15 +102,6 @@ public class BcChaCha20Poly1305 implements TlsAEADCipherImpl
 
         cipher.init(isEncrypting, new ParametersWithIV(null, nonce));
         initMAC();
-        if (additionalData == null)
-        {
-            this.additionalDataLength = 0;
-        }
-        else
-        {
-            this.additionalDataLength = additionalData.length;
-            updateMAC(additionalData, 0, additionalData.length);
-        }
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen) throws IOException
