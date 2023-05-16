@@ -8,11 +8,29 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
 public class LMSigParameters
 {
-    public static final LMSigParameters lms_sha256_n32_h5 = new LMSigParameters(5, 32, 5, NISTObjectIdentifiers.id_sha256);
-    public static final LMSigParameters lms_sha256_n32_h10 = new LMSigParameters(6, 32, 10, NISTObjectIdentifiers.id_sha256);
-    public static final LMSigParameters lms_sha256_n32_h15 = new LMSigParameters(7, 32, 15, NISTObjectIdentifiers.id_sha256);
-    public static final LMSigParameters lms_sha256_n32_h20 = new LMSigParameters(8, 32, 20, NISTObjectIdentifiers.id_sha256);
-    public static final LMSigParameters lms_sha256_n32_h25 = new LMSigParameters(9, 32, 25, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n32_h5 = new LMSigParameters(0x05, 32, 5, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n32_h10 = new LMSigParameters(0x06, 32, 10, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n32_h15 = new LMSigParameters(0x07, 32, 15, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n32_h20 = new LMSigParameters(0x08, 32, 20, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n32_h25 = new LMSigParameters(0x09, 32, 25, NISTObjectIdentifiers.id_sha256);
+
+    public static final LMSigParameters lms_sha256_n24_h5 = new LMSigParameters(0x0a, 24, 5, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n24_h10 = new LMSigParameters(0x0b, 24, 10, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n24_h15 = new LMSigParameters(0x0c, 24, 15, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n24_h20 = new LMSigParameters(0x0d, 24, 20, NISTObjectIdentifiers.id_sha256);
+    public static final LMSigParameters lms_sha256_n24_h25 = new LMSigParameters(0x0e, 24, 25, NISTObjectIdentifiers.id_sha256);
+
+    public static final LMSigParameters lms_shake256_n32_h5 = new LMSigParameters(0x0f, 32, 5, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n32_h10 = new LMSigParameters(0x10, 32, 10, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n32_h15 = new LMSigParameters(0x11, 32, 15, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n32_h20 = new LMSigParameters(0x12, 32, 20, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n32_h25 = new LMSigParameters(0x13, 32, 25, NISTObjectIdentifiers.id_shake256_len);
+
+    public static final LMSigParameters lms_shake256_n24_h5 = new LMSigParameters(0x14, 24, 5, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n24_h10 = new LMSigParameters(0x15, 24, 10, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n24_h15 = new LMSigParameters(0x16, 24, 15, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n24_h20 = new LMSigParameters(0x17, 24, 20, NISTObjectIdentifiers.id_shake256_len);
+    public static final LMSigParameters lms_shake256_n24_h25 = new LMSigParameters(0x18, 24, 25, NISTObjectIdentifiers.id_shake256_len);
 
     private static Map<Object, LMSigParameters> paramBuilders = new HashMap<Object, LMSigParameters>()
     {
@@ -22,6 +40,24 @@ public class LMSigParameters
             put(lms_sha256_n32_h15.type, lms_sha256_n32_h15);
             put(lms_sha256_n32_h20.type, lms_sha256_n32_h20);
             put(lms_sha256_n32_h25.type, lms_sha256_n32_h25);
+
+            put(lms_sha256_n24_h5.type, lms_sha256_n24_h5);
+            put(lms_sha256_n24_h10.type, lms_sha256_n24_h10);
+            put(lms_sha256_n24_h15.type, lms_sha256_n24_h15);
+            put(lms_sha256_n24_h20.type, lms_sha256_n24_h20);
+            put(lms_sha256_n24_h25.type, lms_sha256_n24_h25);
+
+            put(lms_shake256_n32_h5.type, lms_shake256_n32_h5);
+            put(lms_shake256_n32_h10.type, lms_shake256_n32_h10);
+            put(lms_shake256_n32_h15.type, lms_shake256_n32_h15);
+            put(lms_shake256_n32_h20.type, lms_shake256_n32_h20);
+            put(lms_shake256_n32_h25.type, lms_shake256_n32_h25);
+
+            put(lms_shake256_n24_h5.type, lms_shake256_n24_h5);
+            put(lms_shake256_n24_h10.type, lms_shake256_n24_h10);
+            put(lms_shake256_n24_h15.type, lms_shake256_n24_h15);
+            put(lms_shake256_n24_h20.type, lms_shake256_n24_h20);
+            put(lms_shake256_n24_h25.type, lms_shake256_n24_h25);
         }
     };
 

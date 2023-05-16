@@ -101,7 +101,7 @@ class LMS
 
         // tmp = H(I || u32str(node_num) || u16str(D_LEAF) || Kc)
         byte[] I = publicKey.getI();
-        Digest H = DigestUtil.getDigest(lmsParameter.getDigestOID());
+        Digest H = DigestUtil.getDigest(lmsParameter);
         byte[] tmp = new byte[H.getDigestSize()];
 
         H.update(I, 0, I.length);
