@@ -29,7 +29,7 @@ class LMOtsPrivateKey
         derive.setJ(SEED_RANDOMISER_INDEX); // This value from reference impl.
         derive.deriveSeed(C, false);
 
-        Digest ctx = DigestUtil.getDigest(parameter.getDigestOID());
+        Digest ctx = DigestUtil.getDigest(parameter);
 
         LmsUtils.byteArray(this.getI(), ctx);
         LmsUtils.u32str(this.getQ(), ctx);
@@ -41,7 +41,7 @@ class LMOtsPrivateKey
 
     SeedDerive getDerivationFunction()
     {
-        SeedDerive derive = new SeedDerive(I, masterSecret, DigestUtil.getDigest(parameter.getDigestOID()));
+        SeedDerive derive = new SeedDerive(I, masterSecret, DigestUtil.getDigest(parameter));
         derive.setQ(q);
         return derive;
     }

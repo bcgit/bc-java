@@ -6,7 +6,6 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -32,7 +31,31 @@ class DigestUtil
         oidToName.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
     }
 
-    static Digest getDigest(ASN1ObjectIdentifier oid)
+    static Digest getDigest(LMOtsParameters otsParameters)
+    {
+        return createDigest(otsParameters.getDigestOID(), otsParameters.getN());
+    }
+
+    static Digest getDigest(LMSigParameters lmSigParameters)
+    {
+        return createDigest(lmSigParameters.getDigestOID(), lmSigParameters.getM());
+    }
+
+    private static Digest createDigest(ASN1ObjectIdentifier digOid, int digLen)
+    {
+        Digest dig = createDigest(digOid);
+        if (digOid.equals(NISTObjectIdentifiers.id_shake256_len))
+        {
+            return new WrapperDigest(dig, digLen);
+        }
+        if (digLen == 24)
+        {
+            return new WrapperDigest(dig, digLen);
+        }
+        return dig;
+    }
+
+    private static Digest createDigest(ASN1ObjectIdentifier oid)
     {
         if (oid.equals(NISTObjectIdentifiers.id_sha256))
         {
@@ -50,39 +73,66 @@ class DigestUtil
         {
             return new SHAKEDigest(256);
         }
+        if (oid.equals(NISTObjectIdentifiers.id_shake256_len))
+        {
+            return new SHAKEDigest(256);
+        }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);
     }
 
-    static String getDigestName(ASN1ObjectIdentifier oid)
+    static class WrapperDigest
+        implements Digest
     {
-        String name = oidToName.get(oid);
-        if (name != null)
+
+        private final Digest dig;
+        private final int length;
+
+        WrapperDigest(Digest dig, int length)
         {
-            return name;
+            this.dig = dig;
+            this.length = length;
         }
 
-        throw new IllegalArgumentException("unrecognized digest oid: " + oid);
-    }
-
-    static ASN1ObjectIdentifier getDigestOID(String name)
-    {
-        ASN1ObjectIdentifier oid = nameToOid.get(name);
-        if (oid != null)
+        @Override
+        public String getAlgorithmName()
         {
-            return oid;
+            return dig.getAlgorithmName() + "/" + length * 8;
         }
 
-        throw new IllegalArgumentException("unrecognized digest name: " + name);
-    }
-
-    public static int getDigestSize(Digest digest)
-    {
-        if (digest instanceof Xof)
+        @Override
+        public int getDigestSize()
         {
-            return digest.getDigestSize() * 2;
+            return length;
         }
 
-        return digest.getDigestSize();
+        @Override
+        public void update(byte in)
+        {
+             dig.update(in);
+        }
+
+        @Override
+        public void update(byte[] in, int inOff, int len)
+        {
+            dig.update(in, inOff, len);
+        }
+
+        @Override
+        public int doFinal(byte[] out, int outOff)
+        {
+            byte[] digOut = new byte[dig.getDigestSize()];
+
+            dig.doFinal(digOut, 0);
+
+            System.arraycopy(digOut, 0, out, outOff, length);
+            return length;
+        }
+
+        @Override
+        public void reset()
+        {
+            dig.reset();
+        }
     }
 }

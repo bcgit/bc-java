@@ -296,7 +296,7 @@ public class HSSPrivateKeyParameters
             SeedDerive derive = new SeedDerive(
                 intermediateKey.getI(),
                 intermediateKey.getMasterSecret(),
-                DigestUtil.getDigest(intermediateKey.getOtsParameters().getDigestOID()));
+                DigestUtil.getDigest(intermediateKey.getOtsParameters()));
             derive.setQ((int)qTreePath[i - 1]);
             derive.setJ(~1);
 

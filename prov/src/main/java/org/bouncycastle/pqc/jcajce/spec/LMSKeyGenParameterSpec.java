@@ -23,7 +23,22 @@ public class LMSKeyGenParameterSpec
         sigParameters.put("lms-sha256-n32-h15", LMSigParameters.lms_sha256_n32_h15);
         sigParameters.put("lms-sha256-n32-h20", LMSigParameters.lms_sha256_n32_h20);
         sigParameters.put("lms-sha256-n32-h25", LMSigParameters.lms_sha256_n32_h25);
-
+        sigParameters.put("lms-sha256-n24-h5", LMSigParameters.lms_sha256_n24_h5);
+        sigParameters.put("lms-sha256-n24-h10", LMSigParameters.lms_sha256_n24_h10);
+        sigParameters.put("lms-sha256-n24-h15", LMSigParameters.lms_sha256_n24_h15);
+        sigParameters.put("lms-sha256-n24-h20", LMSigParameters.lms_sha256_n24_h20);
+        sigParameters.put("lms-sha256-n24-h25", LMSigParameters.lms_sha256_n24_h25);
+        sigParameters.put("lms-shake256-n32-h5", LMSigParameters.lms_shake256_n32_h5);
+        sigParameters.put("lms-shake256-n32-h10", LMSigParameters.lms_shake256_n32_h10);
+        sigParameters.put("lms-shake256-n32-h15", LMSigParameters.lms_shake256_n32_h15);
+        sigParameters.put("lms-shake256-n32-h20", LMSigParameters.lms_shake256_n32_h20);
+        sigParameters.put("lms-shake256-n32-h25", LMSigParameters.lms_shake256_n32_h25);
+        sigParameters.put("lms-shake256-n24-h5", LMSigParameters.lms_shake256_n24_h5);
+        sigParameters.put("lms-shake256-n24-h10", LMSigParameters.lms_shake256_n24_h10);
+        sigParameters.put("lms-shake256-n24-h15", LMSigParameters.lms_shake256_n24_h15);
+        sigParameters.put("lms-shake256-n24-h20", LMSigParameters.lms_shake256_n24_h20);
+        sigParameters.put("lms-shake256-n24-h25", LMSigParameters.lms_shake256_n24_h25);
+        
         otsParameters.put("sha256-n32-w1", LMOtsParameters.sha256_n32_w1);
         otsParameters.put("sha256-n32-w2", LMOtsParameters.sha256_n32_w2);
         otsParameters.put("sha256-n32-w4", LMOtsParameters.sha256_n32_w4);

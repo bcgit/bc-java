@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -637,7 +638,15 @@ public class AsconTest
     }
 
     public static void main(String[] args)
+        throws InvalidCipherTextException
     {
-        runTest(new AsconTest());
+        //runTest(new AsconTest());
+        AsconEngine ascon = new AsconEngine(AsconEngine.AsconParameters.ascon128);
+        AEADParameters parameters = new AEADParameters(new KeyParameter(Hex.decode("000102030405060708090A0B0C0D0E0F")), 128, Hex.decode("000102030405060708090A0B0C0D0E0F"), null);
+        ascon.init(true, parameters);
+        byte[] buf = new byte[16];
+        ascon.doFinal(buf, 0);
+        System.err.println(Hex.toHexString(buf));
+        System.err.println(Hex.toHexString(Pack.longToBigEndian(-1L)));
     }
 }
