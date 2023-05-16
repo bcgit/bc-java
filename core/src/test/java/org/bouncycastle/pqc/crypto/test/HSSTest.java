@@ -45,6 +45,31 @@ public class HSSTest
         assertTrue(signer.verifySignature(msg, sig));
     }
 
+    public void testHssKeyGenAndSign()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+        AsymmetricCipherKeyPairGenerator kpGen = new HSSKeyPairGenerator();
+
+        kpGen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{
+                new LMSParameters(LMSigParameters.lms_sha256_n24_h5, LMOtsParameters.sha256_n24_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n24_h5, LMOtsParameters.sha256_n24_w4)
+            }, new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        HSSSigner signer = new HSSSigner();
+
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+    }
+
     public void testKeyGenAndUsage()
         throws Exception
     {

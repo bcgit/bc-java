@@ -12,7 +12,6 @@ class LM_OTS
     private static final int ITER_PREV = 23;
     private static final int ITER_J = 22;
     static final int SEED_RANDOMISER_INDEX = ~2;
-    static final int SEED_LEN = 32;
     static final int MAX_HASH = 32;
 
     static final short D_MESG = (short)0x8181;
@@ -54,8 +53,6 @@ class LM_OTS
 
     static byte[] lms_ots_generatePublicKey(LMOtsParameters parameter, byte[] I, int q, byte[] masterSecret)
     {
-
-
         //
         // Start hash that computes the final value.
         //
@@ -126,8 +123,10 @@ class LM_OTS
         }
         else
         {
-            C = new byte[SEED_LEN];
-            System.arraycopy(message, 0, Q, 0, privateKey.getParameter().getN());
+            int n = privateKey.getParameter().getN();
+            
+            C = new byte[n];
+            System.arraycopy(message, 0, Q, 0, n);
         }
 
         return lm_ots_generate_signature(privateKey, Q, C);

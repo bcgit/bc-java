@@ -47,6 +47,50 @@ public class LMSTest
         assertTrue(signer.verifySignature(msg, sig));
     }
 
+    public void testKeyGenAndSignSha256_192()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+
+        kpGen.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n24_h5, LMOtsParameters.sha256_n24_w4), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        LMSSigner signer = new LMSSigner();
+
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+    }
+    
+    public void testKeyGenAndSignShake256_192()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+        AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
+
+        kpGen.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_shake256_n24_h5, LMOtsParameters.shake256_n24_w4), new SecureRandom()));
+
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        LMSSigner signer = new LMSSigner();
+
+        signer.init(true, kp.getPrivate());
+
+        byte[] sig = signer.generateSignature(msg);
+
+        signer.init(false, kp.getPublic());
+
+        assertTrue(signer.verifySignature(msg, sig));
+    }
+
     public void testKeyGenAndSignTwoSigsWithShard()
         throws Exception
     {
