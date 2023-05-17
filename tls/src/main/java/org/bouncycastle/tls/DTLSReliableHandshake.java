@@ -3,7 +3,6 @@ package org.bouncycastle.tls;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -12,58 +11,52 @@ import org.bouncycastle.util.Integers;
 
 class DTLSReliableHandshake
 {
-    private static final int MAX_RECEIVE_AHEAD = 16;
-    private static final int MESSAGE_HEADER_LENGTH = 12;
+    static final int MESSAGE_HEADER_LENGTH = 12;
 
+    private static final int MAX_RECEIVE_AHEAD = 16;
     private static final int MAX_RESEND_MILLIS = 60000;
 
-    static DTLSRequest readClientRequest(byte[] data, int dataOff, int dataLen, OutputStream dtlsOutput)
-        throws IOException
+    static ByteArrayInputStream receiveClientHelloMessage(byte[] msg, int msgOff, int msgLen) throws IOException
     {
         // TODO Support the possibility of a fragmented ClientHello datagram
 
-        byte[] message = DTLSRecordLayer.receiveClientHelloRecord(data, dataOff, dataLen);
-        if (null == message || message.length < MESSAGE_HEADER_LENGTH)
+        if (msgLen < MESSAGE_HEADER_LENGTH)
         {
             return null;
         }
 
-        long recordSeq = TlsUtils.readUint48(data, dataOff + 5);
-
-        short msgType = TlsUtils.readUint8(message, 0);
+        short msgType = TlsUtils.readUint8(msg, msgOff);
         if (HandshakeType.client_hello != msgType)
         {
             return null;
         }
 
-        int length = TlsUtils.readUint24(message, 1);
-        if (message.length != MESSAGE_HEADER_LENGTH + length)
+        int length = TlsUtils.readUint24(msg, msgOff + 1);
+        if (msgLen != MESSAGE_HEADER_LENGTH + length)
         {
             return null;
         }
 
         // TODO Consider stricter HelloVerifyRequest-related checks
-//        int messageSeq = TlsUtils.readUint16(message, 4);
+//        int messageSeq = TlsUtils.readUint16(msg, msgOff + 4);
 //        if (messageSeq > 1)
 //        {
 //            return null;
 //        }
 
-        int fragmentOffset = TlsUtils.readUint24(message, 6);
+        int fragmentOffset = TlsUtils.readUint24(msg, msgOff + 6);
         if (0 != fragmentOffset)
         {
             return null;
         }
 
-        int fragmentLength = TlsUtils.readUint24(message, 9);
+        int fragmentLength = TlsUtils.readUint24(msg, msgOff + 9);
         if (length != fragmentLength)
         {
             return null;
         }
 
-        ClientHello clientHello = ClientHello.parse(new ByteArrayInputStream(message, MESSAGE_HEADER_LENGTH, length), dtlsOutput);
-
-        return new DTLSRequest(recordSeq, message, clientHello);
+        return new ByteArrayInputStream(msg, msgOff + MESSAGE_HEADER_LENGTH, length);
     }
 
     static void sendHelloVerifyRequest(DatagramSender sender, long recordSeq, byte[] cookie) throws IOException
