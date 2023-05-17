@@ -1,5 +1,7 @@
 package org.bouncycastle.tls;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
@@ -7,80 +9,78 @@ import org.bouncycastle.tls.crypto.TlsMAC;
 import org.bouncycastle.tls.crypto.TlsMACOutputStream;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * Implements cookie generation/verification for a DTLS server as described in RFC 4347,
+ * 4.2.1. Denial of Service Countermeasures.
+ * <p/>
+ * RFC 4347 4.2.1 additionally recommends changing the secret frequently. This class does not handle that
+ * internally, so the instance should be replaced instead.
+ */
 public class DTLSVerifier
 {
-    private static TlsMAC createCookieMAC(TlsCrypto crypto)
-    {
-        TlsMAC mac = crypto.createHMAC(MACAlgorithm.hmac_sha256);
-
-        byte[] secret = new byte[mac.getMacLength()];
-        crypto.getSecureRandom().nextBytes(secret);
-
-        mac.setKey(secret, 0, secret.length);
-
-        return mac;
-    }
-
-    private final TlsMAC cookieMAC;
-    private final TlsMACOutputStream cookieMACOutputStream;
+    private final TlsCrypto crypto;
+    private final byte[] macKey;
 
     public DTLSVerifier(TlsCrypto crypto)
     {
-        this.cookieMAC = createCookieMAC(crypto);
-        this.cookieMACOutputStream = new TlsMACOutputStream(cookieMAC);
+        this.crypto = crypto;
+        this.macKey = new byte[32];
+        crypto.getSecureRandom().nextBytes(macKey);
     }
 
-    public synchronized DTLSRequest verifyRequest(byte[] clientID, byte[] data, int dataOff, int dataLen,
-        DatagramSender sender)
+    public DTLSRequest verifyRequest(byte[] clientID, byte[] data, int dataOff, int dataLen, DatagramSender sender)
     {
-        boolean resetCookieMAC = true;
-
         try
         {
-            cookieMAC.update(clientID, 0, clientID.length);
-
-            DTLSRequest request = DTLSReliableHandshake.readClientRequest(data, dataOff, dataLen, cookieMACOutputStream);
-            if (null != request)
+            int msgLen = DTLSRecordLayer.receiveClientHelloRecord(data, dataOff, dataLen);
+            if (msgLen < 0)
             {
-                byte[] expectedCookie = cookieMAC.calculateMAC();
-                resetCookieMAC = false;
-
-                // TODO Consider stricter HelloVerifyRequest protocol
-//                switch (request.getMessageSeq())
-//                {
-//                case 0:
-//                {
-//                    DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), expectedCookie);
-//                    break;
-//                }
-//                case 1:
-//                {
-//                    if (Arrays.constantTimeAreEqual(expectedCookie, request.getClientHello().getCookie()))
-//                    {
-//                        return request;
-//                    }
-//                    break;
-//                }
-//                }
-
-                if (Arrays.constantTimeAreEqual(expectedCookie, request.getClientHello().getCookie()))
-                {
-                    return request;
-                }
-
-                DTLSReliableHandshake.sendHelloVerifyRequest(sender, request.getRecordSeq(), expectedCookie);
+                return null;
             }
+
+            int bodyLength = msgLen - DTLSReliableHandshake.MESSAGE_HEADER_LENGTH;
+            if (bodyLength < 39) // Minimum (syntactically) valid DTLS ClientHello length
+            {
+                return null;
+            }
+
+            int msgOff = dataOff + DTLSRecordLayer.RECORD_HEADER_LENGTH;
+
+            ByteArrayInputStream buf = DTLSReliableHandshake.receiveClientHelloMessage(data, msgOff, msgLen);
+            if (buf == null)
+            {
+                return null;
+            }
+
+            ByteArrayOutputStream macInput = new ByteArrayOutputStream(bodyLength);
+            ClientHello clientHello = ClientHello.parse(buf, macInput);
+            if (clientHello == null)
+            {
+                return null;
+            }
+
+            long recordSeq = TlsUtils.readUint48(data, dataOff + 5);
+
+            byte[] cookie = clientHello.getCookie();
+
+            TlsMAC mac = crypto.createHMAC(MACAlgorithm.hmac_sha256);
+            mac.setKey(macKey, 0, macKey.length);
+            mac.update(clientID, 0, clientID.length);
+            macInput.writeTo(new TlsMACOutputStream(mac));
+            byte[] expectedCookie = mac.calculateMAC();
+
+            if (Arrays.constantTimeAreEqual(expectedCookie, cookie))
+            {
+                byte[] message = TlsUtils.copyOfRangeExact(data, msgOff, msgOff + msgLen);
+
+                return new DTLSRequest(recordSeq, message, clientHello);
+            }
+
+            DTLSReliableHandshake.sendHelloVerifyRequest(sender, recordSeq, expectedCookie);
         }
         catch (IOException e)
         {
             // Ignore
-        }
-        finally
-        {
-            if (resetCookieMAC)
-            {
-                cookieMAC.reset();
-            }
         }
 
         return null;
