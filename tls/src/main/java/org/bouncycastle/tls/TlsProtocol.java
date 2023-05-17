@@ -338,6 +338,8 @@ public abstract class TlsProtocol
         }
 
         closeConnection();
+
+        getPeer().notifyConnectionClosed();
     }
 
     protected abstract void handleHandshakeMessage(short type, HandshakeMessageInput buf)
