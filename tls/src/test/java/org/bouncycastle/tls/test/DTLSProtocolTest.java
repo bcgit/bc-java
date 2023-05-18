@@ -3,10 +3,13 @@ package org.bouncycastle.tls.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.DTLSClientProtocol;
+import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
+import org.bouncycastle.tls.DTLSVerifier;
 import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 import junit.framework.TestCase;
 
@@ -70,7 +73,36 @@ public class DTLSProtocolTest
             try
             {
                 MockDTLSServer server = new MockDTLSServer();
-                DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport);
+
+                DTLSRequest request = null;
+
+                // Use DTLSVerifier to require a HelloVerifyRequest cookie exchange before accepting
+                {
+                    DTLSVerifier verifier = new DTLSVerifier(server.getCrypto());
+
+                    // NOTE: Test value only - would typically be the client IP address
+                    byte[] clientID = Strings.toUTF8ByteArray("MockDtlsClient");
+
+                    int receiveLimit = serverTransport.getReceiveLimit();
+                    int dummyOffset = server.getCrypto().getSecureRandom().nextInt(16) + 1;
+                    byte[] transportBuf = new byte[dummyOffset + serverTransport.getReceiveLimit()];
+
+                    do
+                    {
+                        if (isShutdown)
+                            return;
+
+                        int length = serverTransport.receive(transportBuf, dummyOffset, receiveLimit, 1000);
+                        if (length > 0)
+                        {
+                            request = verifier.verifyRequest(clientID, transportBuf, dummyOffset, length,
+                                serverTransport);
+                        }
+                    }
+                    while (request == null);
+                }
+
+                DTLSTransport dtlsServer = serverProtocol.accept(server, serverTransport, request);                
                 byte[] buf = new byte[dtlsServer.getReceiveLimit()];
                 while (!isShutdown)
                 {
