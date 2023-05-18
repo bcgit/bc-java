@@ -16,7 +16,6 @@ import org.bouncycastle.jcajce.io.CipherOutputStream;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.openpgp.AEADUtil;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -83,11 +82,12 @@ public class JcePGPDataEncryptorBuilder
     }
 
     @Override
-    public JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize) {
+    public JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
+    {
         this.isV5StyleAEAD = true;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
             throw new IllegalStateException("AEAD algorithms can only be used with AES");
         }
@@ -104,11 +104,12 @@ public class JcePGPDataEncryptorBuilder
     }
 
     @Override
-    public JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize) {
+    public JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
+    {
         this.isV5StyleAEAD = false;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
             throw new IllegalStateException("AEAD algorithms can only be used with AES");
         }
@@ -187,7 +188,8 @@ public class JcePGPDataEncryptorBuilder
     }
 
     @Override
-    public boolean isV5StyleAEAD() {
+    public boolean isV5StyleAEAD()
+    {
         return isV5StyleAEAD;
     }
 
@@ -298,7 +300,7 @@ public class JcePGPDataEncryptorBuilder
             else
             {
                 // V6 has the IV appended to the message key, so we need to split it
-                byte[][] keyAndIv = AEADUtil.splitMessageKeyAndIv(keyBytes, encAlgorithm, aeadAlgorithm);
+                byte[][] keyAndIv = AEADUtils.splitMessageKeyAndIv(keyBytes, encAlgorithm, aeadAlgorithm);
                 this.keyBytes = keyAndIv[0];
                 this.iv = keyAndIv[1];
             }
@@ -346,7 +348,8 @@ public class JcePGPDataEncryptorBuilder
         }
 
         @Override
-        public boolean isV5StyleAEAD() {
+        public boolean isV5StyleAEAD()
+        {
             return isV5StyleAEAD;
         }
     }

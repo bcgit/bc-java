@@ -11,7 +11,6 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.io.CipherOutputStream;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.openpgp.AEADUtil;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -26,7 +25,7 @@ import org.bouncycastle.util.Arrays;
 public class BcPGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder
 {
-    private SecureRandom   random;
+    private SecureRandom random;
     private boolean withIntegrityPacket;
     private int encAlgorithm;
     private boolean isV5StyleAEAD;
@@ -35,9 +34,9 @@ public class BcPGPDataEncryptorBuilder
 
     /**
      * Constructs a new data encryptor builder for a specified cipher type.
-     * 
+     *
      * @param encAlgorithm one of the {@link SymmetricKeyAlgorithmTags supported symmetric cipher
-     *            algorithms}. May not be {@link SymmetricKeyAlgorithmTags#NULL}.
+     *                     algorithms}. May not be {@link SymmetricKeyAlgorithmTags#NULL}.
      */
     public BcPGPDataEncryptorBuilder(int encAlgorithm)
     {
@@ -67,7 +66,7 @@ public class BcPGPDataEncryptorBuilder
      * For backwards-compatibility reasons.
      *
      * @param aeadAlgorithm the AEAD mode to use.
-     * @param chunkSize the size of the chunks to be processed with each nonce.
+     * @param chunkSize     the size of the chunks to be processed with each nonce.
      * @return builder
      * @deprecated use {@link #setWithV5AEAD(int, int)} or {@link #setWithV6AEAD(int, int)} instead.
      */
@@ -83,8 +82,8 @@ public class BcPGPDataEncryptorBuilder
     {
         this.isV5StyleAEAD = true;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-                && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
             throw new IllegalStateException("AEAD algorithms can only be used with AES");
         }
@@ -127,6 +126,7 @@ public class BcPGPDataEncryptorBuilder
      * <p>
      * If no SecureRandom is configured, a default SecureRandom will be used.
      * </p>
+     *
      * @param random the secure random to be used.
      * @return the current builder.
      */
@@ -156,7 +156,8 @@ public class BcPGPDataEncryptorBuilder
     }
 
     @Override
-    public boolean isV5StyleAEAD() {
+    public boolean isV5StyleAEAD()
+    {
         return isV5StyleAEAD;
     }
 
@@ -256,7 +257,7 @@ public class BcPGPDataEncryptorBuilder
             else
             {
                 // V6 has the IV appended to the message key, so we need to split it.
-                byte[][] keyAndIv = AEADUtil.splitMessageKeyAndIv(keyBytes, encAlgorithm, aeadAlgorithm);
+                byte[][] keyAndIv = AEADUtils.splitMessageKeyAndIv(keyBytes, encAlgorithm, aeadAlgorithm);
                 this.keyBytes = keyAndIv[0];
                 this.iv = keyAndIv[1];
             }
@@ -305,7 +306,8 @@ public class BcPGPDataEncryptorBuilder
         }
 
         @Override
-        public boolean isV5StyleAEAD() {
+        public boolean isV5StyleAEAD()
+        {
             return isV5StyleAEAD;
         }
     }

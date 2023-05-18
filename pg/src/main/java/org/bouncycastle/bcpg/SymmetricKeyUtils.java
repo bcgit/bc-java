@@ -1,22 +1,16 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.openpgp.PGPException;
-
 public class SymmetricKeyUtils
     implements SymmetricKeyAlgorithmTags
 {
-
     public static int getKeyLengthInBits(int algorithm)
-        throws PGPException
     {
         switch (algorithm)
         {
         case NULL:
-            throw new PGPException("NULL is no encryption algorithm.");
-
+            throw new IllegalArgumentException("NULL is no encryption algorithm.");
         case DES:
             return 64;
-
         case IDEA:
         case CAST5:
         case BLOWFISH:
@@ -34,14 +28,12 @@ public class SymmetricKeyUtils
         case TWOFISH:
         case CAMELLIA_256:
             return 256;
-
         default:
-            throw new PGPException("unknown symmetric algorithm: " + algorithm);
+            throw new IllegalArgumentException("unknown symmetric algorithm: " + algorithm);
         }
     }
 
     public static int getKeyLengthInOctets(int algorithm)
-        throws PGPException
     {
         return (getKeyLengthInBits(algorithm) + 7) / 8;
     }
