@@ -15,6 +15,7 @@ import org.bouncycastle.tls.DatagramSender;
 import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.UDPTransport;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 
 /**
@@ -32,7 +33,9 @@ public class DTLSServerTest
         int port = 5556;
         final int mtu = 1500;
 
-        DTLSVerifier verifier = new DTLSVerifier(new BcTlsCrypto());
+        TlsCrypto serverCrypto = new BcTlsCrypto();
+
+        DTLSVerifier verifier = new DTLSVerifier(serverCrypto);
         DTLSRequest request = null;
 
         byte[] data = new byte[mtu];
@@ -77,7 +80,7 @@ public class DTLSServerTest
         // Uncomment to see packets
 //        transport = new LoggingDatagramTransport(transport, System.out);
 
-        MockDTLSServer server = new MockDTLSServer();
+        MockDTLSServer server = new MockDTLSServer(serverCrypto);
         DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
         DTLSTransport dtlsServer = serverProtocol.accept(server, transport, request);
