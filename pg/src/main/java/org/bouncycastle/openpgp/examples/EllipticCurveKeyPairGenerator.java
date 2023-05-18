@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
@@ -15,6 +16,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
@@ -27,11 +29,13 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -45,7 +49,7 @@ import java.util.List;
  * Where identity is the name to be associated with the public key. The keys are placed 
  * in the files pub.[asc|bpg] and secret.[asc|bpg].
  */
-public class RSAKeyPairGenerator
+public class EllipticCurveKeyPairGenerator
 {
 
     private static final int SIG_HASH = HashAlgorithmTags.SHA512;
@@ -65,24 +69,26 @@ public class RSAKeyPairGenerator
         String          identity,
         char[]          passPhrase,
         boolean         armor)
-            throws IOException, NoSuchProviderException, PGPException, NoSuchAlgorithmException {
+            throws IOException, NoSuchProviderException, PGPException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         if (armor)
         {
             secretOut = new ArmoredOutputStream(secretOut);
         }
 
         PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
 
-        PGPContentSignerBuilder contentSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, SIG_HASH);
+        KeyPairGenerator eddsaGen = KeyPairGenerator.getInstance("EdDSA", "BC");
+        KeyPairGenerator xdhGen = KeyPairGenerator.getInstance("XDH", "BC");
+
+        PGPContentSignerBuilder contentSignerBuilder = new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.EDDSA_LEGACY, SIG_HASH);
         PBESecretKeyEncryptor secretKeyEncryptor = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256, sha1Calc)
                 .build(passPhrase);
 
         Date now = new Date();
 
-        kpg.initialize(3072);
-        KeyPair primaryKP = kpg.generateKeyPair();
-        PGPKeyPair primaryKey = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, primaryKP, now);
+        eddsaGen.initialize(new ECNamedCurveGenParameterSpec("ed25519"));
+        KeyPair primaryKP = eddsaGen.generateKeyPair();
+        PGPKeyPair primaryKey = new JcaPGPKeyPair(PGPPublicKey.EDDSA_LEGACY, primaryKP, now);
         PGPSignatureSubpacketGenerator primarySubpackets = new PGPSignatureSubpacketGenerator();
         primarySubpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
         primarySubpackets.setPreferredHashAlgorithms(false, HASH_PREFERENCES);
@@ -91,16 +97,16 @@ public class RSAKeyPairGenerator
         primarySubpackets.setFeature(false, Features.FEATURE_MODIFICATION_DETECTION);
         primarySubpackets.setIssuerFingerprint(false, primaryKey.getPublicKey());
 
-        kpg.initialize(3072);
-        KeyPair signingKP = kpg.generateKeyPair();
-        PGPKeyPair signingKey = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, signingKP, now);
+        eddsaGen.initialize(new ECNamedCurveGenParameterSpec("ed25519"));
+        KeyPair signingKP = eddsaGen.generateKeyPair();
+        PGPKeyPair signingKey = new JcaPGPKeyPair(PGPPublicKey.EDDSA_LEGACY, signingKP, now);
         PGPSignatureSubpacketGenerator signingKeySubpacket = new PGPSignatureSubpacketGenerator();
         signingKeySubpacket.setKeyFlags(true, KeyFlags.SIGN_DATA);
         signingKeySubpacket.setIssuerFingerprint(false, primaryKey.getPublicKey());
 
-        kpg.initialize(3072);
-        KeyPair encryptionKP = kpg.generateKeyPair();
-        PGPKeyPair encryptionKey = new JcaPGPKeyPair(PGPPublicKey.RSA_GENERAL, encryptionKP, now);
+        xdhGen.initialize(new ECNamedCurveGenParameterSpec("X25519"));
+        KeyPair encryptionKP = xdhGen.generateKeyPair();
+        PGPKeyPair encryptionKey = new JcaPGPKeyPair(PGPPublicKey.ECDH, encryptionKP, now);
         PGPSignatureSubpacketGenerator encryptionKeySubpackets = new PGPSignatureSubpacketGenerator();
         encryptionKeySubpackets.setKeyFlags(true, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
         encryptionKeySubpackets.setIssuerFingerprint(false, primaryKey.getPublicKey());
@@ -141,7 +147,7 @@ public class RSAKeyPairGenerator
         
         if (args.length < 2)
         {
-            System.out.println("RSAKeyPairGenerator [-a] identity passPhrase");
+            System.out.println("EllipticCurveKeyPairGenerator [-a] identity passPhrase");
             System.exit(0);
         }
         
@@ -149,7 +155,7 @@ public class RSAKeyPairGenerator
         {
             if (args.length < 3)
             {
-                System.out.println("RSAKeyPairGenerator [-a] identity passPhrase");
+                System.out.println("EllipticCurveKeyPairGenerator [-a] identity passPhrase");
                 System.exit(0);
             }
             
