@@ -9,6 +9,6 @@ public class BcTlsCryptoTest
 {
     public BcTlsCryptoTest()
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
     }
 }

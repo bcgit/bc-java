@@ -172,7 +172,7 @@ public class BasicTlsTest
 
         MyTlsClient(TlsAuthentication authentication)
         {
-            super(new BcTlsCrypto(new SecureRandom()));
+            super(new BcTlsCrypto());
 
             this.authentication = authentication;
 

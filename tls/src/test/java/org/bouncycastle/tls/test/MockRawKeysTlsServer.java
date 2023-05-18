@@ -42,7 +42,7 @@ class MockRawKeysTlsServer extends DefaultTlsServer
     MockRawKeysTlsServer(short serverCertType, short clientCertType, short[] allowedClientCertTypes,
         Ed25519PrivateKeyParameters privateKey, ProtocolVersion tlsVersion) throws Exception
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
 
         this.serverCertType = serverCertType;
         this.clientCertType = clientCertType;

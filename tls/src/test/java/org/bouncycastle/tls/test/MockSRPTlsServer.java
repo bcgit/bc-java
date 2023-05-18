@@ -45,7 +45,13 @@ class MockSRPTlsServer
     MockSRPTlsServer()
         throws IOException
     {
-        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager(new BcTlsCrypto(new SecureRandom())));
+        this(new BcTlsCrypto());
+    }
+
+    MockSRPTlsServer(TlsCrypto crypto)
+        throws IOException
+    {
+        super(crypto, new MyIdentityManager(crypto));
     }
 
     protected Vector getProtocolNames()

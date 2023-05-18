@@ -33,7 +33,7 @@ class MockDTLSClient
 
     MockDTLSClient(TlsSession session)
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
 
         this.session = session;
     }

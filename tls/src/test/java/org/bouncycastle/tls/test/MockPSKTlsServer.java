@@ -24,7 +24,7 @@ class MockPSKTlsServer
 {
     MockPSKTlsServer()
     {
-        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
+        super(new BcTlsCrypto(), new MyIdentityManager());
     }
 
     protected Vector getProtocolNames()

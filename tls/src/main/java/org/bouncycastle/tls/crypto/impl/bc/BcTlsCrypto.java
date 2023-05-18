@@ -79,6 +79,12 @@ public class BcTlsCrypto
 {
     private final SecureRandom entropySource;
 
+    // TODO[tls] Better default SecureRandom?
+    public BcTlsCrypto()
+    {
+        this(new SecureRandom());
+    }
+
     public BcTlsCrypto(SecureRandom entropySource)
     {
         this.entropySource = entropySource;

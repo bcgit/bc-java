@@ -32,7 +32,7 @@ public class DTLSServerTest
         int port = 5556;
         final int mtu = 1500;
 
-        DTLSVerifier verifier = new DTLSVerifier(new BcTlsCrypto(new SecureRandom()));
+        DTLSVerifier verifier = new DTLSVerifier(new BcTlsCrypto());
         DTLSRequest request = null;
 
         byte[] data = new byte[mtu];
