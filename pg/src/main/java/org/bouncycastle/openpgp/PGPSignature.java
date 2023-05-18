@@ -290,6 +290,12 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
+        if (!PGPSignature.isCertification(signatureType)
+            && PGPSignature.CERTIFICATION_REVOCATION != signatureType)
+        {
+            throw new PGPException("signature is neither a certification signature nor a certification revocation.");
+        }
+
         updateWithPublicKey(key);
 
         //
@@ -334,6 +340,12 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
+        if (!PGPSignature.isCertification(signatureType)
+            && PGPSignature.CERTIFICATION_REVOCATION != signatureType)
+        {
+            throw new PGPException("signature is neither a certification signature nor a certification revocation.");
+        }
+
         updateWithPublicKey(key);
 
         //
@@ -365,6 +377,12 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
+        if (!PGPSignature.isCertification(signatureType)
+            && PGPSignature.CERTIFICATION_REVOCATION != signatureType)
+        {
+            throw new PGPException("signature is neither a certification signature nor a certification revocation.");
+        }
+
         updateWithPublicKey(key);
 
         //
@@ -394,6 +412,13 @@ public class PGPSignature
         if (verifier == null)
         {
             throw new PGPException("PGPSignature not initialised - call init().");
+        }
+
+        if (PGPSignature.SUBKEY_BINDING != signatureType
+            && PGPSignature.PRIMARYKEY_BINDING != signatureType
+            && PGPSignature.SUBKEY_REVOCATION != signatureType)
+        {
+            throw new PGPException("signature is not a key binding signature.");
         }
 
         updateWithPublicKey(masterKey);
@@ -435,7 +460,6 @@ public class PGPSignature
         }
 
         if (this.getSignatureType() != KEY_REVOCATION
-            && this.getSignatureType() != SUBKEY_REVOCATION
             && this.getSignatureType() != DIRECT_KEY)
         {
             throw new PGPException("signature is not a key signature");
