@@ -15,51 +15,58 @@ import org.bouncycastle.util.Arrays;
 class DTLSRecordLayer
     implements DatagramTransport
 {
-    private static final int RECORD_HEADER_LENGTH = 13;
+    static final int RECORD_HEADER_LENGTH = 13;
+
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
     private static final long TCP_MSL = 1000L * 60 * 2;
     private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
 
-    static byte[] receiveClientHelloRecord(byte[] data, int dataOff, int dataLen) throws IOException
+    static int receiveClientHelloRecord(byte[] data, int dataOff, int dataLen) throws IOException
     {
         if (dataLen < RECORD_HEADER_LENGTH)
         {
-            return null;
+            return -1;
         }
 
         short contentType = TlsUtils.readUint8(data, dataOff + 0);
         if (ContentType.handshake != contentType)
         {
-            return null;
+            return -1;
         }
 
         ProtocolVersion version = TlsUtils.readVersion(data, dataOff + 1);
         if (!ProtocolVersion.DTLSv10.isEqualOrEarlierVersionOf(version))
         {
-            return null;
+            return -1;
         }
 
         int epoch = TlsUtils.readUint16(data, dataOff + 3);
         if (0 != epoch)
         {
-            return null;
+            return -1;
         }
 
-//        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
+        //long sequenceNumber = TlsUtilities.ReadUint48(data, dataOff + 5);
 
         int length = TlsUtils.readUint16(data, dataOff + 11);
-        if (dataLen < RECORD_HEADER_LENGTH + length)
+        if (length < 1 || length > MAX_FRAGMENT_LENGTH)
         {
-            return null;
+            return -1;
         }
 
-        if (length > MAX_FRAGMENT_LENGTH)
+        if (dataLen < RECORD_HEADER_LENGTH + length)
         {
-            return null;
+            return -1;
+        }
+
+        short msgType = TlsUtils.readUint8(data, dataOff + RECORD_HEADER_LENGTH);
+        if (HandshakeType.client_hello != msgType)
+        {
+            return -1;
         }
 
         // NOTE: We ignore/drop any data after the first record 
-        return TlsUtils.copyOfRangeExact(data, dataOff + RECORD_HEADER_LENGTH, dataOff + RECORD_HEADER_LENGTH + length);
+        return length;
     }
 
     static void sendHelloVerifyRequestRecord(DatagramSender sender, long recordSeq, byte[] message) throws IOException
