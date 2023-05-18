@@ -30,7 +30,7 @@ public class PRFTest
 
         byte[] msSeed = Arrays.concatenate(clientHello_random, serverHello_random);
 
-        BcTlsCrypto crypto = new BcTlsCrypto(new SecureRandom());
+        BcTlsCrypto crypto = new BcTlsCrypto();
         TlsSecret masterSecret = new BcTlsSecret(crypto, pre_master_secret)
             .deriveUsingPRF(PRFAlgorithm.tls_prf_legacy, ExporterLabel.master_secret, msSeed, master_secret.length);
 
@@ -56,7 +56,7 @@ public class PRFTest
 
         byte[] msSeed = Arrays.concatenate(clientHello_random, serverHello_random);
 
-        BcTlsCrypto crypto = new BcTlsCrypto(new SecureRandom());
+        BcTlsCrypto crypto = new BcTlsCrypto();
         TlsSecret masterSecret = new BcTlsSecret(crypto, pre_master_secret)
             .deriveUsingPRF(PRFAlgorithm.tls_prf_sha256, ExporterLabel.master_secret, msSeed, master_secret.length);
 
@@ -82,7 +82,7 @@ public class PRFTest
 
         byte[] msSeed = Arrays.concatenate(clientHello_random, serverHello_random);
 
-        BcTlsCrypto crypto = new BcTlsCrypto(new SecureRandom());
+        BcTlsCrypto crypto = new BcTlsCrypto();
         TlsSecret masterSecret = new BcTlsSecret(crypto, pre_master_secret)
             .deriveUsingPRF(PRFAlgorithm.tls_prf_sha384, ExporterLabel.master_secret, msSeed, master_secret.length);
 

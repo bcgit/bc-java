@@ -22,6 +22,7 @@ import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -30,7 +31,12 @@ class MockDTLSServer
 {
     MockDTLSServer()
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        this(new BcTlsCrypto());
+    }
+
+    MockDTLSServer(TlsCrypto crypto)
+    {
+        super(crypto);
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

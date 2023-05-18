@@ -31,7 +31,7 @@ class MockTlsServer
 {
     MockTlsServer()
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
     }
 
     protected Vector getProtocolNames()

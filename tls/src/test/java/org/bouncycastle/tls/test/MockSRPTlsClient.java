@@ -34,7 +34,7 @@ class MockSRPTlsClient
 
     MockSRPTlsClient(TlsSession session, TlsSRPIdentity srpIdentity)
     {
-        super(new BcTlsCrypto(new SecureRandom()), srpIdentity);
+        super(new BcTlsCrypto(), srpIdentity);
 
         this.session = session;
     }

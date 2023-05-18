@@ -27,7 +27,7 @@ class MockPSKTls13Client
 {
     MockPSKTls13Client()
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
     }
 
 //    public Vector getEarlyKeyShareGroups()

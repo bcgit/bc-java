@@ -23,7 +23,7 @@ class MockPSKDTLSServer
 {
     MockPSKDTLSServer()
     {
-        super(new BcTlsCrypto(new SecureRandom()), new MyIdentityManager());
+        super(new BcTlsCrypto(), new MyIdentityManager());
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)

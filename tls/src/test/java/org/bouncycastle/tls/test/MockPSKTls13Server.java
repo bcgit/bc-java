@@ -28,7 +28,7 @@ class MockPSKTls13Server
 {
     MockPSKTls13Server()
     {
-        super(new BcTlsCrypto(new SecureRandom()));
+        super(new BcTlsCrypto());
     }
 
     public TlsCredentials getCredentials() throws IOException

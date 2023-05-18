@@ -41,7 +41,7 @@ class MockPSKTlsClient
 
     MockPSKTlsClient(TlsSession session, TlsPSKIdentity pskIdentity)
     {
-        super(new BcTlsCrypto(new SecureRandom()), pskIdentity);
+        super(new BcTlsCrypto(), pskIdentity);
 
         this.session = session;
     }

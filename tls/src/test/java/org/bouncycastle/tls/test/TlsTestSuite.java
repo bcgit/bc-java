@@ -20,7 +20,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 
 public class TlsTestSuite extends TestSuite
 {
-    static TlsCrypto BC_CRYPTO = new BcTlsCrypto(new SecureRandom()); 
+    static TlsCrypto BC_CRYPTO = new BcTlsCrypto(); 
     static TlsCrypto JCA_CRYPTO = new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
 
     static TlsCrypto getCrypto(TlsTestConfig config)
