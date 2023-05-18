@@ -64,6 +64,7 @@ public class JcePBEDataDecryptorFactoryBuilder
     public JcePBEDataDecryptorFactoryBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         return this;
     }
@@ -77,6 +78,7 @@ public class JcePBEDataDecryptorFactoryBuilder
     public JcePBEDataDecryptorFactoryBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         return this;
     }
