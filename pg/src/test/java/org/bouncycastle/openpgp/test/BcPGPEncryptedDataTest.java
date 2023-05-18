@@ -73,7 +73,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(new SecureRandom());
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        encryptorBuilder.setWithV5AEAD(AEADAlgorithmTags.OCB, 10);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 
@@ -138,7 +138,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random);
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+        encryptorBuilder.setWithV5AEAD(AEADAlgorithmTags.OCB, 6);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 
@@ -204,7 +204,7 @@ public class BcPGPEncryptedDataTest
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         BcPGPDataEncryptorBuilder encryptorBuilder = new BcPGPDataEncryptorBuilder(PGPEncryptedData.AES_128).setSecureRandom(random);
 
-        encryptorBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+        encryptorBuilder.setWithV5AEAD(AEADAlgorithmTags.OCB, 6);
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(encryptorBuilder);
 
