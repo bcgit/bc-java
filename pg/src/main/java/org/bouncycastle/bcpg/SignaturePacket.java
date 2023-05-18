@@ -13,13 +13,13 @@ import org.bouncycastle.util.io.Streams;
 /**
  * generic signature packet
  */
-public class SignaturePacket 
+public class SignaturePacket
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
     public static final int VERSION_3 = 3;
-    public static final int VERSION_4 = 4;
-    public static final int VERSION_5 = 5;
-    public static final int VERSION_6 = 6;
+    public static final int VERSION_4 = 4;  // https://datatracker.ietf.org/doc/rfc4880/
+    public static final int VERSION_5 = 5;  // https://datatracker.ietf.org/doc/draft-koch-openpgp-2015-rfc4880bis/
+    public static final int VERSION_6 = 6;  // https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/
 
     private int                    version;
     private int                    signatureType;
@@ -32,8 +32,195 @@ public class SignaturePacket
     private SignatureSubpacket[]   hashedData;
     private SignatureSubpacket[]   unhashedData;
     private byte[]                 signatureEncoding;
-    private byte[] salt = null; // v6 only
-    
+    private byte[]                 salt = null; // v6 only
+
+    public static SignaturePacket createVersion3Packet(
+            int signatureType,
+            long keyID,
+            int keyAlgorithm,
+            int hashAlgorithm,
+            long creationTime,
+            byte[] fingerPrint,
+            MPInteger[] signature)
+    {
+        SignaturePacket signaturePacket = new SignaturePacket(
+                VERSION_3,
+                signatureType,
+                keyID,
+                keyAlgorithm,
+                hashAlgorithm,
+                null,
+                null,
+                fingerPrint,
+                null,
+                signature);
+
+        signaturePacket.creationTime = creationTime;
+
+        return signaturePacket;
+    }
+
+    public static SignaturePacket createVersion4Packet(
+            int signatureType,
+            long keyID,
+            int keyAlgorithm,
+            int hashAlgorithm,
+            SignatureSubpacket[] hashedData,
+            SignatureSubpacket[] unhashedData,
+            byte[] fingerPrint,
+            MPInteger[] signature)
+    {
+        return new SignaturePacket(
+                VERSION_4,
+                signatureType,
+                keyID,
+                keyAlgorithm,
+                hashAlgorithm,
+                hashedData,
+                unhashedData,
+                fingerPrint,
+                null,
+                signature);
+    }
+
+    public static SignaturePacket createVersion5Packet(
+            int signatureType,
+            long keyID,
+            int keyAlgorithm,
+            int hashAlgorithm,
+            SignatureSubpacket[] hashedData,
+            SignatureSubpacket[] unhashedData,
+            byte[] fingerPrint,
+            MPInteger[] signature)
+    {
+        return new SignaturePacket(
+                VERSION_5,
+                signatureType,
+                keyID,
+                keyAlgorithm,
+                hashAlgorithm,
+                hashedData,
+                unhashedData,
+                fingerPrint,
+                null,
+                signature);
+    }
+
+    public static SignaturePacket createVersion6Packet(
+            int signatureType,
+            long keyID,
+            int keyAlgorithm,
+            int hashAlgorithm,
+            SignatureSubpacket[] hashedData,
+            SignatureSubpacket[] unhashedData,
+            byte[] fingerPrint,
+            byte[] salt,
+            MPInteger[] signature)
+    {
+        return new SignaturePacket(
+                VERSION_6,
+                signatureType,
+                keyID,
+                keyAlgorithm,
+                hashAlgorithm,
+                hashedData,
+                unhashedData,
+                fingerPrint,
+                salt,
+                signature);
+    }
+
+    /**
+     * Generate a version 4 signature packet.
+     *
+     * @param signatureType signature type
+     * @param keyAlgorithm signature algorithm
+     * @param hashAlgorithm hash algorithm
+     * @param hashedData hashed signature subpackets
+     * @param unhashedData unhashed signature subpackets
+     * @param fingerPrint signature fingerprint
+     * @param signature signature
+     */
+    public SignaturePacket(
+            int                     signatureType,
+            long                    keyID,
+            int                     keyAlgorithm,
+            int                     hashAlgorithm,
+            SignatureSubpacket[]    hashedData,
+            SignatureSubpacket[]    unhashedData,
+            byte[]                  fingerPrint,
+            MPInteger[]             signature)
+    {
+        this(VERSION_4, signatureType, keyID, keyAlgorithm, hashAlgorithm, hashedData, unhashedData, fingerPrint, null, signature);
+    }
+
+    /**
+     * Generate a version 2/3 signature packet.
+     *
+     * @param version version
+     * @param signatureType signature type
+     * @param keyAlgorithm signature algorithm
+     * @param hashAlgorithm hash algorithm
+     * @param fingerPrint signature fingerprint
+     * @param signature signature
+     */
+    public SignaturePacket(
+            int                     version,
+            int                     signatureType,
+            long                    keyID,
+            int                     keyAlgorithm,
+            int                     hashAlgorithm,
+            long                    creationTime,
+            byte[]                  fingerPrint,
+            MPInteger[]             signature)
+    {
+        this(version, signatureType, keyID, keyAlgorithm, hashAlgorithm, null, null, fingerPrint, null, signature);
+
+        this.creationTime = creationTime;
+    }
+
+    /**
+     * Generate a signature packet.
+     *
+     * @param version signature version
+     * @param signatureType signature type
+     * @param keyID keyID of the signing key
+     * @param keyAlgorithm signature algorithm
+     * @param hashAlgorithm hash algorithm
+     * @param hashedData hashed signature subpackets
+     * @param unhashedData unhashed signature subpackets
+     * @param fingerPrint signature fingerprint
+     * @param signature signature
+     */
+    public SignaturePacket(
+            int                     version,
+            int                     signatureType,
+            long                    keyID,
+            int                     keyAlgorithm,
+            int                     hashAlgorithm,
+            SignatureSubpacket[]    hashedData,
+            SignatureSubpacket[]    unhashedData,
+            byte[]                  fingerPrint,
+            byte[]                  salt,
+            MPInteger[]             signature)
+    {
+        this.version = version;
+        this.signatureType = signatureType;
+        this.keyID = keyID;
+        this.keyAlgorithm = keyAlgorithm;
+        this.hashAlgorithm = hashAlgorithm;
+        this.hashedData = hashedData;
+        this.unhashedData = unhashedData;
+        this.fingerPrint = fingerPrint;
+        this.salt = salt;
+        this.signature = signature;
+
+        if (hashedData != null)
+        {
+            setCreationTime();
+        }
+    }
+
     SignaturePacket(
         BCPGInputStream    in)
         throws IOException
@@ -64,7 +251,7 @@ public class SignaturePacket
         int    l = in.read();
 
         signatureType = in.read();
-        creationTime = (((long) in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read()) * 1000;
+        creationTime = (((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read()) * 1000;
         keyID |= (long) in.read() << 56;
         keyID |= (long) in.read() << 48;
         keyID |= (long) in.read() << 40;
@@ -271,81 +458,6 @@ public class SignaturePacket
         }
     }
 
-    /**
-     * Generate a version 4 signature packet.
-     * 
-     * @param signatureType
-     * @param keyAlgorithm
-     * @param hashAlgorithm
-     * @param hashedData
-     * @param unhashedData
-     * @param fingerPrint
-     * @param signature
-     */
-    public SignaturePacket(
-        int                     signatureType,
-        long                    keyID,
-        int                     keyAlgorithm,
-        int                     hashAlgorithm,
-        SignatureSubpacket[]    hashedData,
-        SignatureSubpacket[]    unhashedData,
-        byte[]                  fingerPrint,
-        MPInteger[]             signature)
-    {
-        this(4, signatureType, keyID, keyAlgorithm, hashAlgorithm, hashedData, unhashedData, fingerPrint, signature);
-    }
-    
-    /**
-     * Generate a version 2/3 signature packet.
-     * 
-     * @param signatureType
-     * @param keyAlgorithm
-     * @param hashAlgorithm
-     * @param fingerPrint
-     * @param signature
-     */
-    public SignaturePacket(
-        int                     version,
-        int                     signatureType,
-        long                    keyID,
-        int                     keyAlgorithm,
-        int                     hashAlgorithm,
-        long                    creationTime,
-        byte[]                  fingerPrint,
-        MPInteger[]             signature)
-    {
-        this(version, signatureType, keyID, keyAlgorithm, hashAlgorithm, null, null, fingerPrint, signature);
-        
-        this.creationTime = creationTime;
-    }
-    
-    public SignaturePacket(
-        int                     version,
-        int                     signatureType,
-        long                    keyID,
-        int                     keyAlgorithm,
-        int                     hashAlgorithm,
-        SignatureSubpacket[]    hashedData,
-        SignatureSubpacket[]    unhashedData,
-        byte[]                  fingerPrint,
-        MPInteger[]             signature)
-    {
-        this.version = version;
-        this.signatureType = signatureType;
-        this.keyID = keyID;
-        this.keyAlgorithm = keyAlgorithm;
-        this.hashAlgorithm = hashAlgorithm;
-        this.hashedData = hashedData;
-        this.unhashedData = unhashedData;
-        this.fingerPrint = fingerPrint;
-        this.signature = signature;
-
-        if (hashedData != null)
-        {
-            setCreationTime();
-        }
-    }
-    
     /**
      * get the version number
      */
