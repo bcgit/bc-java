@@ -46,7 +46,7 @@ class DTLSRecordLayer
             return -1;
         }
 
-        //long sequenceNumber = TlsUtilities.ReadUint48(data, dataOff + 5);
+//        long sequenceNumber = TlsUtils.readUint48(data, dataOff + 5);
 
         int length = TlsUtils.readUint16(data, dataOff + 11);
         if (length < 1 || length > MAX_FRAGMENT_LENGTH)
