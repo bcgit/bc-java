@@ -1,14 +1,14 @@
 package org.bouncycastle.openpgp.operator;
 
-import java.io.IOException;
-import java.math.BigInteger;
-
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.util.Properties;
+
+import java.io.IOException;
+import java.math.BigInteger;
 
 public abstract class PublicKeyKeyEncryptionMethodGenerator
     extends PGPKeyEncryptionMethodGenerator
@@ -144,7 +144,23 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
             keyId = pubKey.getKeyID();
         }
-        return new PublicKeyEncSessionPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+    }
+
+    @Override
+    public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        // TODO: Implement
+        return null;
+    }
+
+    @Override
+    public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        // TODO: Implement
+        return null;
     }
 
     abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)

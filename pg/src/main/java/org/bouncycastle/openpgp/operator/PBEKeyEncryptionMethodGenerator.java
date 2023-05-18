@@ -1,12 +1,23 @@
 package org.bouncycastle.openpgp.operator;
 
-import java.security.SecureRandom;
-
+import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.modes.AEADCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.operator.bc.BcAEADUtil;
+import org.bouncycastle.util.Arrays;
+
+import java.security.SecureRandom;
 
 /**
  * PGP style PBE encryption method.
@@ -159,16 +170,122 @@ public abstract class PBEKeyEncryptionMethodGenerator
         return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, encAlgorithm, s2k, passPhrase);
     }
 
+    @Override
+    public ContainedPacket generateV5(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        return generate(kekAlgorithm, sessionInfo);
+        // TODO: Implement v5 SKESK creation properly.
+        // return generateV5ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
+    }
+
+    @Override
+    public ContainedPacket generateV6(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+        throws PGPException
+    {
+        return generateV6ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
+    }
+
+    // If we use this method, roundtripping v5 AEAD is broken.
+    //  TODO: Investigate
+    private ContainedPacket generateV5ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        byte[] ikm = getKey(kekAlgorithm);
+        byte[] info = new byte[] {
+                (byte) 0xC3,
+                (byte) SymmetricKeyEncSessionPacket.VERSION_5,
+                (byte) kekAlgorithm,
+                (byte) aeadAlgorithm
+        };
+
+        // remove algorithm-id and checksum from sessionInfo
+        byte[] sessionKey = new byte[sessionInfo.length - 3];
+        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
+
+        byte[] iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+        random.nextBytes(iv);
+
+        AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
+        aeadCipher.init(true, new AEADParameters(new KeyParameter(ikm), 128, iv, info));
+        int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+        int outLen = aeadCipher.getOutputSize(sessionKey.length);
+        byte[] eskAndTag = new byte[outLen];
+        int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
+        try
+        {
+            len += aeadCipher.doFinal(eskAndTag, len);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            throw new PGPException("cannot encrypt session info", e);
+        }
+        byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
+        byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
+
+        return SymmetricKeyEncSessionPacket.createV5Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
+    }
+
+    private ContainedPacket generateV6ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+            throws PGPException
+    {
+        byte[] ikm = getKey(kekAlgorithm);
+        byte[] info = new byte[] {
+                (byte) 0xC3,
+                (byte) SymmetricKeyEncSessionPacket.VERSION_6,
+                (byte) kekAlgorithm,
+                (byte) aeadAlgorithm
+        };
+        HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+        hkdf.init(new HKDFParameters(ikm, null, info));
+
+        int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm);
+        byte[] kek = new byte[kekLen];
+        hkdf.generateBytes(kek, 0, kek.length);
+
+        // remove algorithm-id and checksum from sessionInfo
+        byte[] sessionKey = new byte[sessionInfo.length - 3];
+        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
+
+        byte[] iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+        random.nextBytes(iv);
+
+        AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
+        aeadCipher.init(true, new AEADParameters(new KeyParameter(kek), 128, iv, info));
+        int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+        int outLen = aeadCipher.getOutputSize(sessionKey.length);
+        byte[] eskAndTag = new byte[outLen];
+        int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
+        try
+        {
+            len += aeadCipher.doFinal(eskAndTag, len);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            throw new PGPException("cannot encrypt session info", e);
+        }
+        byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
+        byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
+
+        return SymmetricKeyEncSessionPacket.createV6Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
+    }
+    /**
+     * Generate a V4 SKESK packet.
+     *
+     * @param encAlgorithm the {@link SymmetricKeyAlgorithmTags encryption algorithm} being used
+     * @param sessionInfo session data generated by the encrypted data generator.
+     * @return v4 SKESK packet
+     * @throws PGPException
+     */
     public ContainedPacket generate(int encAlgorithm, byte[] sessionInfo)
         throws PGPException
     {
-        byte[] key = getKey(encAlgorithm);
-
         if (sessionInfo == null)
         {
-            return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, null);
+            return SymmetricKeyEncSessionPacket.createV4Packet(encAlgorithm, s2k, null);
         }
 
+        byte[] key = getKey(encAlgorithm);
         //
         // the passed in session info has the an RSA/ElGamal checksum added to it, for PBE this is not included.
         //
@@ -176,7 +293,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
         System.arraycopy(sessionInfo, 0, nSessionInfo, 0, nSessionInfo.length);
 
-        return new SymmetricKeyEncSessionPacket(encAlgorithm, s2k, encryptSessionInfo(encAlgorithm, key, nSessionInfo));
+        return SymmetricKeyEncSessionPacket.createV4Packet(encAlgorithm, s2k, encryptSessionInfo(encAlgorithm, key, nSessionInfo));
     }
 
     abstract protected byte[] encryptSessionInfo(int encAlgorithm, byte[] key, byte[] sessionInfo)

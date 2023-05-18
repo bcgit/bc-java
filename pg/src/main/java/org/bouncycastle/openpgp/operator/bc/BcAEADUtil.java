@@ -106,7 +106,7 @@ public class BcAEADUtil
         return new byte[][] { Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen) };
     }
 
-    static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
+    public static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
         throws PGPException
     {
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
