@@ -354,7 +354,6 @@ public class AsconTest
         try
         {
             ascon.getMac();
-            ascon.getAlgorithmName();
             ascon.getOutputSize(0);
             ascon.getUpdateOutputSize(0);
         }
@@ -363,6 +362,7 @@ public class AsconTest
             //expected
             fail(ascon.getAlgorithmName() + " functions can be called before initialization");
         }
+
         Random rand = new Random();
         int randomNum;
         while ((randomNum = rand.nextInt(100)) == keySize) ;
@@ -426,7 +426,7 @@ public class AsconTest
             fail("mac should not match");
         }
         ascon.init(true, params);
-        ascon.processBytes(new byte[16], 0, 16, new byte[16], 0);
+        ascon.processByte((byte)0, null, 0);
         try
         {
             ascon.processAADByte((byte)0);
@@ -468,7 +468,8 @@ public class AsconTest
         ascon.init(true, params);
         try
         {
-            ascon.processBytes(new byte[16], 0, 16, new byte[16], 8);
+            int need = ascon.getUpdateOutputSize(64);
+            ascon.processBytes(new byte[64], 0, 64, new byte[need], 1);
             fail("output for processBytes is too short");
         }
         catch (OutputLengthException e)
@@ -480,10 +481,13 @@ public class AsconTest
             ascon.doFinal(new byte[2], 2);
             fail("output for dofinal is too short");
         }
-        catch (DataLengthException e)
+        catch (OutputLengthException e)
         {
             //expected
         }
+
+        implTestExceptionsGetUpdateOutputSize(ascon, false, params, 100);
+        implTestExceptionsGetUpdateOutputSize(ascon, true, params, 100);
 
         mac1 = new byte[ascon.getOutputSize(0)];
         mac2 = new byte[ascon.getOutputSize(0)];
@@ -566,9 +570,44 @@ public class AsconTest
         offset = ascon.processBytes(m7, 0, split, c9, 0);
         offset += ascon.processBytes(m7, split, m7.length - split, c9, offset);
         offset += ascon.doFinal(c9, offset);
+
         if (!areEqual(c7, c8) || !areEqual(c7, c9))
         {
             fail("Splitting input of plaintext should output the same ciphertext");
+        }
+    }
+
+    private void implTestExceptionsGetUpdateOutputSize(AsconEngine ascon, boolean forEncryption,
+        CipherParameters parameters, int maxInputSize)
+    {
+        ascon.init(forEncryption, parameters);
+
+        int maxOutputSize = ascon.getUpdateOutputSize(maxInputSize);
+
+        byte[] input = new byte[maxInputSize];
+        byte[] output = new byte[maxOutputSize];
+
+        for (int inputSize = 0; inputSize <= maxInputSize; ++inputSize)
+        {
+            ascon.init(forEncryption, parameters);
+
+            int outputSize = ascon.getUpdateOutputSize(inputSize);
+            if (outputSize > 0)
+            {
+                try
+                {
+                    ascon.processBytes(input, 0, inputSize, output, maxOutputSize - outputSize + 1);
+                    fail("output for processBytes is too short");
+                }
+                catch (OutputLengthException e)
+                {
+                    //expected
+                }
+            }
+            else
+            {
+                ascon.processBytes(input, 0, inputSize, null, 0);
+            }
         }
     }
 
@@ -626,13 +665,13 @@ public class AsconTest
         ascon.init(true, parameters);
         if (ascon.getOutputSize(0) != macSize)
         {
-            fail("mac bytes of " + ascon.getAlgorithmName() + " is incorrect for encryption");
+            fail("getOutputSize of " + ascon.getAlgorithmName() + " is incorrect for encryption");
         }
 
         ascon.init(false, parameters);
         if (ascon.getOutputSize(macSize) != 0)
         {
-            fail("mac bytes of " + ascon.getAlgorithmName() + " is incorrect for decryption");
+            fail("getOutputSize of " + ascon.getAlgorithmName() + " is incorrect for decryption");
         }
     }
 
@@ -649,6 +688,7 @@ public class AsconTest
     private void implTestVectorsDigest(AsconDigest.AsconParameters asconParameters, String filename)
         throws Exception
     {
+        Random random = new Random();
         AsconDigest ascon = createDigest(asconParameters);
         InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
@@ -662,12 +702,25 @@ public class AsconTest
                 byte[] ptByte = Hex.decode((String)map.get("Msg"));
                 byte[] expected = Hex.decode((String)map.get("MD"));
 
-                ascon.update(ptByte, 0, ptByte.length);
                 byte[] hash = new byte[ascon.getDigestSize()];
+
+                ascon.update(ptByte, 0, ptByte.length);
                 ascon.doFinal(hash, 0);
                 if (!areEqual(hash, expected))
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    ascon.update(ptByte, 0, split);
+                    ascon.update(ptByte, split, ptByte.length - split);
+                    ascon.doFinal(hash, 0);
+                    if (!areEqual(hash, expected))
+                    {
+                        mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
                 }
 
                 map.clear();
@@ -682,12 +735,12 @@ public class AsconTest
     private void implTestVectorsEngine(AsconEngine.AsconParameters asconParameters, String filename)
         throws Exception
     {
+        Random random = new Random();
         AsconEngine ascon = createEngine(asconParameters);
         InputStream src = TestResourceFinder.findTestResource("crypto/ascon", "LWC_AEAD_KAT_" + filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> map = new HashMap<String, String>();
-        Random random = new Random();
         while ((line = bin.readLine()) != null)
         {
             int a = line.indexOf('=');
@@ -747,6 +800,7 @@ public class AsconTest
     private void implTestVectorsXof(AsconXof.AsconParameters asconParameters, String filename)
         throws Exception
     {
+        Random random = new Random();
         AsconXof ascon = createXof(asconParameters);
         InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
@@ -760,15 +814,26 @@ public class AsconTest
                 byte[] ptByte = Hex.decode((String)map.get("Msg"));
                 byte[] expected = Hex.decode((String)map.get("MD"));
 
-                ascon.update(ptByte, 0, ptByte.length);
                 byte[] hash = new byte[ascon.getDigestSize()];
+
+                ascon.update(ptByte, 0, ptByte.length);
                 ascon.doFinal(hash, 0);
                 if (!areEqual(hash, expected))
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
                 }
 
-                map.clear();
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    ascon.update(ptByte, 0, split);
+                    ascon.update(ptByte, split, ptByte.length - split);
+                    ascon.doFinal(hash, 0);
+                    if (!areEqual(hash, expected))
+                    {
+                        mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
+                }
             }
             else
             {

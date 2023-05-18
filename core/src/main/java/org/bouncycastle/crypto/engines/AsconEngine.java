@@ -14,7 +14,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
-
 /**
  * ASCON AEAD v1.2, https://ascon.iaik.tugraz.at/
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
@@ -375,7 +374,6 @@ public class AsconEngine
         m_state = nextState;
     }
 
-    @Override
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
@@ -446,7 +444,6 @@ public class AsconEngine
         reset(true);
     }
 
-    @Override
     public String getAlgorithmName()
     {
         return algorithmName;
@@ -457,7 +454,6 @@ public class AsconEngine
         return "v1.2";
     }
 
-    @Override
     public void processAADByte(byte in)
     {
         checkAAD();
@@ -468,7 +464,6 @@ public class AsconEngine
         }
     }
 
-    @Override
     public void processAADBytes(byte[] inBytes, int inOff, int len)
     {
         if ((inOff + len) > inBytes.length)
@@ -506,14 +501,12 @@ public class AsconEngine
         m_bufPos = len;
     }
 
-    @Override
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
         return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
-    @Override
     public int processBytes(byte[] inBytes, int inOff, int len, byte[] outBytes, int outOff)
         throws DataLengthException
     {
@@ -603,7 +596,6 @@ public class AsconEngine
         return resultLength;
     }
 
-    @Override
     public int doFinal(byte[] outBytes, int outOff)
         throws IllegalStateException, InvalidCipherTextException, DataLengthException
     {
@@ -647,13 +639,11 @@ public class AsconEngine
         return resultLength;
     }
 
-    @Override
     public byte[] getMac()
     {
         return mac;
     }
 
-    @Override
     public int getUpdateOutputSize(int len)
     {
         int total = Math.max(0, len);
@@ -677,7 +667,6 @@ public class AsconEngine
         return total - total % ASCON_AEAD_RATE;
     }
 
-    @Override
     public int getOutputSize(int len)
     {
         int total = Math.max(0, len);
@@ -698,7 +687,6 @@ public class AsconEngine
         }
     }
 
-    @Override
     public void reset()
     {
         reset(true);
