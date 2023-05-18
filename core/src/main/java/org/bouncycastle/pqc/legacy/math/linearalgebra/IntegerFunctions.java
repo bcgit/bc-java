@@ -483,7 +483,7 @@ public final class IntegerFunctions
      */
     public static int modPow(int a, int e, int n)
     {
-        if (n <= 0 || (n * n) > Integer.MAX_VALUE || e < 0)
+        if (n <= 0 || ((long)n * n) > Integer.MAX_VALUE || e < 0)
         {
             return 0;
         }
