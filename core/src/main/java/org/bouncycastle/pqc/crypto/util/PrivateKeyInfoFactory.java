@@ -54,7 +54,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -215,16 +214,6 @@ public class PrivateKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.saberOidLookup(params.getParameters()));
-
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
-        }
-        else if (privateKey instanceof SIKEPrivateKeyParameters)
-        {
-            SIKEPrivateKeyParameters params = (SIKEPrivateKeyParameters)privateKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sikeOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes);
         }
