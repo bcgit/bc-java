@@ -1,11 +1,11 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.engines.SparkleEngine;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -14,117 +14,56 @@ import org.bouncycastle.util.Pack;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/sparkle-spec-final.pdf
  */
 public class SparkleDigest
-    implements Digest
+    implements ExtendedDigest
 {
+    public static class Friend
+    {
+        private static final Friend INSTANCE = new Friend();
+        private Friend() {}
+    }
+
     public enum SparkleParameters
     {
         ESCH256,
         ESCH384
     }
 
+    private static final int RATE_BYTES = 16;
+    private static final int RATE_WORDS = 4;
+
     private String algorithmName;
     private final int[] state;
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private final byte[] m_buf = new byte[RATE_BYTES];
     private final int DIGEST_BYTES;
     private final int SPARKLE_STEPS_SLIM;
     private final int SPARKLE_STEPS_BIG;
-    private final int STATE_BRANS;
     private final int STATE_WORDS;
-    private final int RATE_WORDS;
-    private final int RATE_BYTES;
+
+    private int m_bufPos = 0;
 
     public SparkleDigest(SparkleParameters sparkleParameters)
     {
-        int ESCH_DIGEST_LEN;
-        int SPARKLE_STATE;
-        int SPARKLE_RATE = 128;
         switch (sparkleParameters)
         {
         case ESCH256:
-            ESCH_DIGEST_LEN = 256;
-            SPARKLE_STATE = 384;
+            algorithmName = "ESCH-256";
+            DIGEST_BYTES = 32;
             SPARKLE_STEPS_SLIM = 7;
             SPARKLE_STEPS_BIG = 11;
-            algorithmName = "ESCH-256";
+            STATE_WORDS = 12;
             break;
         case ESCH384:
-            ESCH_DIGEST_LEN = 384;
-            SPARKLE_STATE = 512;
+            algorithmName = "ESCH-384";
+            DIGEST_BYTES = 48;
             SPARKLE_STEPS_SLIM = 8;
             SPARKLE_STEPS_BIG = 12;
-            algorithmName = "ESCH-384";
+            STATE_WORDS = 16;
             break;
         default:
             throw new IllegalArgumentException("Invalid definition of SCHWAEMM instance");
         }
-        STATE_BRANS = SPARKLE_STATE >>> 6;
-        STATE_WORDS = SPARKLE_STATE >>> 5;
-        RATE_WORDS = SPARKLE_RATE >>> 5;
-        RATE_BYTES = SPARKLE_RATE >>> 3;
-        DIGEST_BYTES = ESCH_DIGEST_LEN >>> 3;
+
         state = new int[STATE_WORDS];
-    }
-
-    private int ROT(int x, int n)
-    {
-        return (((x) >>> n) | ((x) << (32 - n)));
-    }
-
-    private int ELL(int x)
-    {
-        return ROT(((x) ^ ((x) << 16)), 16);
-    }
-
-    private static final int[] RCON = {0xB7E15162, 0xBF715880, 0x38B4DA56, 0x324E7738, 0xBB1185EB, 0x4F7C7B57,
-        0xCFBFA1C8, 0xC2B3293D};
-
-    private void sparkle_opt(int[] state, int brans, int steps)
-    {
-        int i, j, rc, tmpx, tmpy, x0, y0;
-        for (i = 0; i < steps; i++)
-        {
-            // Add round ant
-            state[1] ^= RCON[i & 7];
-            state[3] ^= i;
-            // ARXBOX layer
-            for (j = 0; j < 2 * brans; j += 2)
-            {
-                rc = RCON[j >>> 1];
-                state[j] += ROT(state[j + 1], 31);
-                state[j + 1] ^= ROT(state[j], 24);
-                state[j] ^= rc;
-                state[j] += ROT(state[j + 1], 17);
-                state[j + 1] ^= ROT(state[j], 17);
-                state[j] ^= rc;
-                state[j] += state[j + 1];
-                state[j + 1] ^= ROT(state[j], 31);
-                state[j] ^= rc;
-                state[j] += ROT(state[j + 1], 24);
-                state[j + 1] ^= ROT(state[j], 16);
-                state[j] ^= rc;
-            }
-            // Linear layer
-            tmpx = x0 = state[0];
-            tmpy = y0 = state[1];
-            for (j = 2; j < brans; j += 2)
-            {
-                tmpx ^= state[j];
-                tmpy ^= state[j + 1];
-            }
-            tmpx = ELL(tmpx);
-            tmpy = ELL(tmpy);
-            for (j = 2; j < brans; j += 2)
-            {
-                state[j - 2] = state[j + brans] ^ state[j] ^ tmpy;
-                state[j + brans] = state[j];
-                state[j - 1] = state[j + brans + 1] ^ state[j + 1] ^ tmpx;
-                state[j + brans + 1] = state[j + 1];
-            }
-            state[brans - 2] = state[brans] ^ x0 ^ tmpy;
-            state[brans] = x0;
-            state[brans - 1] = state[brans + 1] ^ y0 ^ tmpx;
-            state[brans + 1] = y0;
-        }
     }
 
     @Override
@@ -140,110 +79,145 @@ public class SparkleDigest
     }
 
     @Override
-    public void update(byte input)
+    public int getByteLength()
     {
-        message.write(input);
+        return RATE_BYTES;
     }
 
     @Override
-    public void update(byte[] input, int inOff, int len)
+    public void update(byte input)
     {
-        if (inOff + len > input.length)
+        if (m_bufPos == RATE_BYTES)
+        {
+            processBlock(m_buf, 0, SPARKLE_STEPS_SLIM);
+            m_bufPos = 0;
+        }
+
+        m_buf[m_bufPos++] = input;
+    }
+
+    @Override
+    public void update(byte[] in, int inOff, int len)
+    {
+        if (inOff > in.length - len)
         {
             throw new DataLengthException(algorithmName + " input buffer too short");
         }
-        message.write(input, inOff, len);
+
+        if (len < 1)
+            return;
+
+        int available = RATE_BYTES - m_bufPos;
+        if (len <= available)
+        {
+            System.arraycopy(in, inOff, m_buf, m_bufPos, len);
+            m_bufPos += len;
+            return;
+        }
+
+        int inPos = 0;
+        if (m_bufPos > 0)
+        {
+            System.arraycopy(in, inOff, m_buf, m_bufPos, available);
+            processBlock(m_buf, 0, SPARKLE_STEPS_SLIM);
+            inPos += available;
+        }
+
+        int remaining;
+        while ((remaining = len - inPos) > RATE_BYTES)
+        {
+            processBlock(in, inOff + inPos, SPARKLE_STEPS_SLIM);
+            inPos += RATE_BYTES;
+        }
+
+        System.arraycopy(in, inOff + inPos, m_buf, 0, remaining);
+        m_bufPos = remaining;
     }
 
     @Override
     public int doFinal(byte[] output, int outOff)
     {
-        if (outOff + DIGEST_BYTES > output.length)
+        if (outOff > output.length - DIGEST_BYTES)
         {
             throw new OutputLengthException(algorithmName + " input buffer too short");
         }
-        byte[] input = message.toByteArray();
-        int inlen = input.length, i, tmpx, tmpy, inOff = 0;
-        // Main Hashing Loop
-        int[] in32 = Pack.littleEndianToInt(input, 0, inlen >> 2);
-        while (inlen > RATE_BYTES)
-        {
-            // addition of a message block to the state
-            tmpx = 0;
-            tmpy = 0;
-            for (i = 0; i < RATE_WORDS; i += 2)
-            {
-                tmpx ^= in32[i + (inOff >> 2)];
-                tmpy ^= in32[i + 1 + (inOff >> 2)];
-            }
-            tmpx = ELL(tmpx);
-            tmpy = ELL(tmpy);
-            for (i = 0; i < RATE_WORDS; i += 2)
-            {
-                state[i] ^= (in32[i + (inOff >> 2)] ^ tmpy);
-                state[i + 1] ^= (in32[i + 1 + (inOff >> 2)] ^ tmpx);
-            }
-            for (i = RATE_WORDS; i < (STATE_WORDS / 2); i += 2)
-            {
-                state[i] ^= tmpy;
-                state[i + 1] ^= tmpx;
-            }
-            // execute SPARKLE with slim number of steps
-            sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_SLIM);
-            inlen -= RATE_BYTES;
-            inOff += RATE_BYTES;
-        }
-        // Hashing of Last Block
+
         // addition of constant M1 or M2 to the state
-        state[STATE_BRANS - 1] ^= ((inlen < RATE_BYTES) ? (1 << 24) : (1 << 25));
-        // addition of last msg block (incl. padding)
-        int[] buffer = new int[RATE_WORDS];
-        for (i = 0; i < inlen; ++i)
+        if (m_bufPos < RATE_BYTES)
         {
-            buffer[i >>> 2] |= (input[inOff++] & 0xff) << ((i & 3) << 3);
+            state[(STATE_WORDS >> 1) - 1] ^= 1 << 24;
+
+            // padding
+            m_buf[m_bufPos] = (byte)0x80;
+            while(++m_bufPos < RATE_BYTES)
+            {
+                m_buf[m_bufPos] = 0x00;
+            }
         }
-        if (inlen < RATE_BYTES)
-        {  // padding
-            buffer[i >>> 2] |= 0x80 << ((i & 3) << 3);
-        }
-        tmpx = 0;
-        tmpy = 0;
-        for (i = 0; i < RATE_WORDS; i += 2)
+        else
         {
-            tmpx ^= buffer[i];
-            tmpy ^= buffer[i + 1];
+            state[(STATE_WORDS >> 1) - 1] ^= 1 << 25;
         }
-        tmpx = ELL(tmpx);
-        tmpy = ELL(tmpy);
-        for (i = 0; i < RATE_WORDS; i += 2)
-        {
-            state[i] ^= (buffer[i] ^ tmpy);
-            state[i + 1] ^= (buffer[i + 1] ^ tmpx);
-        }
-        for (i = RATE_WORDS; i < (STATE_WORDS / 2); i += 2)
-        {
-            state[i] ^= tmpy;
-            state[i + 1] ^= tmpx;
-        }
-        // execute SPARKLE with big number of steps
-        sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_BIG);
+
+        processBlock(m_buf, 0, SPARKLE_STEPS_BIG);
+
         Pack.intToLittleEndian(state, 0, RATE_WORDS, output, outOff);
-        int outlen = RATE_BYTES;
-        outOff += RATE_BYTES;
-        while (outlen < DIGEST_BYTES)
+
+        if (STATE_WORDS == 16)
         {
-            sparkle_opt(state, STATE_BRANS, SPARKLE_STEPS_SLIM);
-            Pack.intToLittleEndian(state, 0, RATE_WORDS, output, outOff);
-            outlen += RATE_BYTES;
-            outOff += RATE_BYTES;
+            SparkleEngine.sparkle_opt16(Friend.INSTANCE, state, SPARKLE_STEPS_SLIM);
+            Pack.intToLittleEndian(state, 0, RATE_WORDS, output, outOff + 16);
+            SparkleEngine.sparkle_opt16(Friend.INSTANCE, state, SPARKLE_STEPS_SLIM);
+            Pack.intToLittleEndian(state, 0, RATE_WORDS, output, outOff + 32);
         }
+        else
+        {
+            SparkleEngine.sparkle_opt12(Friend.INSTANCE, state, SPARKLE_STEPS_SLIM);
+            Pack.intToLittleEndian(state, 0, RATE_WORDS, output, outOff + 16);
+        }
+
+        reset();
         return DIGEST_BYTES;
     }
 
     @Override
     public void reset()
     {
-        Arrays.fill(state, (byte)0);
-        message.reset();
+        Arrays.fill(state, 0);
+        Arrays.fill(m_buf, (byte)0);
+        m_bufPos = 0;
+    }
+
+    private void processBlock(byte[] buf, int off, int steps)
+    {
+        int t0 = Pack.littleEndianToInt(buf, off     );
+        int t1 = Pack.littleEndianToInt(buf, off +  4);
+        int t2 = Pack.littleEndianToInt(buf, off +  8);
+        int t3 = Pack.littleEndianToInt(buf, off + 12);
+
+        // addition of a buffer block to the state
+        int tx = ELL(t0 ^ t2);
+        int ty = ELL(t1 ^ t3);
+        state[0] ^= t0 ^ ty;
+        state[1] ^= t1 ^ tx;
+        state[2] ^= t2 ^ ty;
+        state[3] ^= t3 ^ tx;
+        state[4] ^= ty;
+        state[5] ^= tx;
+        if (STATE_WORDS == 16)
+        {
+            state[6] ^= ty;
+            state[7] ^= tx;
+            SparkleEngine.sparkle_opt16(Friend.INSTANCE, state, steps);
+        }
+        else
+        {
+            SparkleEngine.sparkle_opt12(Friend.INSTANCE, state, steps);
+        }
+    }
+
+    private static int ELL(int x)
+    {
+        return Integers.rotateRight(x, 16) ^ (x & 0xFFFF);
     }
 }
