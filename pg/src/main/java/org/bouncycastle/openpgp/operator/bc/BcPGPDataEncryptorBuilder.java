@@ -28,7 +28,7 @@ public class BcPGPDataEncryptorBuilder
     private SecureRandom random;
     private boolean withIntegrityPacket;
     private int encAlgorithm;
-    private boolean isV5StyleAEAD;
+    private boolean isV5StyleAEAD = true; // TODO: change to false in 1.75
     private int aeadAlgorithm = -1;
     private int chunkSize;
 
@@ -62,25 +62,45 @@ public class BcPGPDataEncryptorBuilder
         return this;
     }
 
+    public BcPGPDataEncryptorBuilder setUseV5AEAD()
+    {
+        this.isV5StyleAEAD = true;
+
+        return this;
+    }
+
+    public BcPGPDataEncryptorBuilder setUseV6AEAD()
+    {
+        this.isV5StyleAEAD = false;
+
+        return this;
+    }
+
     /**
-     * For backwards-compatibility reasons.
+     * Sets whether the resulting encrypted data will be protected using an AEAD mode.
+     *
+     * The chunkSize is used as a power of two, result in blocks (1 &lt;&lt; chunkSize) containing data
+     * with an extra 16 bytes for the tag. The minimum chunkSize is 6.
      *
      * @param aeadAlgorithm the AEAD mode to use.
      * @param chunkSize     the size of the chunks to be processed with each nonce.
      * @return builder
-     * @deprecated use {@link #setWithV5AEAD(int, int)} or {@link #setWithV6AEAD(int, int)} instead.
      */
-    @Deprecated
     @Override
     public BcPGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        return setWithV5AEAD(aeadAlgorithm, chunkSize);
+        if (isV5StyleAEAD)
+        {
+            return setWithV5AEAD(aeadAlgorithm, chunkSize);
+        }
+        else
+        {
+            return setWithV6AEAD(aeadAlgorithm, chunkSize);
+        }
     }
 
-    @Override
-    public BcPGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
+    private BcPGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
     {
-        this.isV5StyleAEAD = true;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
@@ -99,10 +119,8 @@ public class BcPGPDataEncryptorBuilder
         return this;
     }
 
-    @Override
-    public BcPGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
+    private BcPGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
     {
-        this.isV5StyleAEAD = false; // v6
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)

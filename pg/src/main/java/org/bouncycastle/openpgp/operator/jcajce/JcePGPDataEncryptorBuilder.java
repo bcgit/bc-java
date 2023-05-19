@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -42,7 +43,7 @@ public class JcePGPDataEncryptorBuilder
     private int encAlgorithm;
     private int aeadAlgorithm = -1;
     private int chunkSize;
-    private boolean isV5StyleAEAD;
+    private boolean isV5StyleAEAD = true; // TODO: change to false in 1.75
 
     /**
      * Constructs a new data encryptor builder for a specified cipher type.
@@ -75,16 +76,36 @@ public class JcePGPDataEncryptorBuilder
     }
 
     @Override
-    @Deprecated
     public JcePGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        return setWithV5AEAD(aeadAlgorithm, chunkSize);
+        if (isV5StyleAEAD)
+        {
+            return setWithV5AEAD(aeadAlgorithm, chunkSize);
+        }
+        else
+        {
+            return setWithV6AEAD(aeadAlgorithm, chunkSize);
+        }
     }
 
     @Override
-    public JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
+    public JcePGPDataEncryptorBuilder setUseV5AEAD()
     {
         this.isV5StyleAEAD = true;
+
+        return this;
+    }
+
+    @Override
+    public JcePGPDataEncryptorBuilder setUseV6AEAD()
+    {
+        this.isV5StyleAEAD = false;
+
+        return this;
+    }
+
+    private JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
+    {
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
@@ -103,8 +124,7 @@ public class JcePGPDataEncryptorBuilder
         return this;
     }
 
-    @Override
-    public JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
+    private JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
     {
         this.isV5StyleAEAD = false;
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
