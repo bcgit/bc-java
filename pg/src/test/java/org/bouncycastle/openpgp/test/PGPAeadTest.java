@@ -221,10 +221,12 @@ public class PGPAeadTest
         PGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
         PGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(symAlg);
         if (v5AEAD) {
-            encBuilder.setWithV5AEAD(aeadAlg, 6);
+            encBuilder.setUseV5AEAD();
         } else {
-            encBuilder.setWithV6AEAD(aeadAlg, 6);
+            encBuilder.setUseV6AEAD();
         }
+        encBuilder.setWithAEAD(aeadAlg, 6);
+
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
         encGen.setForceSessionKey(true);
         PBEKeyEncryptionMethodGenerator encMethodGen = new BcPBEKeyEncryptionMethodGenerator(password,
@@ -262,10 +264,11 @@ public class PGPAeadTest
                 .setProvider(provider).build();
         PGPDataEncryptorBuilder encBuilder = new JcePGPDataEncryptorBuilder(symAlg);
         if (v5AEAD) {
-            encBuilder.setWithV5AEAD(aeadAlg, 6);
+            encBuilder.setUseV5AEAD();
         } else {
-            encBuilder.setWithV6AEAD(aeadAlg, 6);
+            encBuilder.setUseV6AEAD();
         }
+        encBuilder.setWithAEAD(aeadAlg, 6);
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
         encGen.setForceSessionKey(true);
         PBEKeyEncryptionMethodGenerator encMethodGen = new JcePBEKeyEncryptionMethodGenerator(password,
