@@ -224,15 +224,9 @@ public class AllTests
         
         PBEFileProcessor.main(new String[]{"-d", "test.txt.bpg", "password"});
         
-        assertEquals("no message integrity check", getLine(_currentErr));
-        
-        PBEFileProcessor.main(new String[]{"-e", "-i", "test.txt", "password"});
-        
-        PBEFileProcessor.main(new String[]{"-d", "test.txt.bpg", "password"});
-        
         assertEquals("message integrity check passed", getLine(_currentErr));
         
-        PBEFileProcessor.main(new String[]{"-e", "-ai", "test.txt", "password"});
+        PBEFileProcessor.main(new String[]{"-e", "-a", "test.txt", "password"});
         
         PBEFileProcessor.main(new String[]{"-d", "test.txt.asc", "password"});
         
