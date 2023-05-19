@@ -63,8 +63,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -153,14 +151,6 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.picnicl1full, new PicnicConverter());
         converters.put(BCObjectIdentifiers.picnicl3full, new PicnicConverter());
         converters.put(BCObjectIdentifiers.picnicl5full, new PicnicConverter());
-        converters.put(BCObjectIdentifiers.sikep434, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep503, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep610, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep751, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep434_compressed, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep503_compressed, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep610_compressed, new SIKEConverter());
-        converters.put(BCObjectIdentifiers.sikep751_compressed, new SIKEConverter());
         converters.put(BCObjectIdentifiers.ntruhps2048509, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps2048677, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps4096821, new NtruConverter());
@@ -471,20 +461,6 @@ public class PublicKeyFactory
             FrodoParameters fParams = Utils.frodoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new FrodoPublicKeyParameters(fParams, keyEnc);
-        }
-    }
-
-    private static class SIKEConverter
-            extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
-
-            SIKEParameters sParams = Utils.sikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-            return new SIKEPublicKeyParameters(sParams, keyEnc);
         }
     }
 

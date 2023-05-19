@@ -32,7 +32,6 @@ import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEParameters;
 import org.bouncycastle.util.Integers;
 
 class Utils
@@ -200,24 +199,6 @@ class Utils
         picnicParams.put(BCObjectIdentifiers.picnicl1full, PicnicParameters.picnicl1full);
         picnicParams.put(BCObjectIdentifiers.picnicl3full, PicnicParameters.picnicl3full);
         picnicParams.put(BCObjectIdentifiers.picnicl5full, PicnicParameters.picnicl5full);
-
-        sikeOids.put(SIKEParameters.sikep434, BCObjectIdentifiers.sikep434);
-        sikeOids.put(SIKEParameters.sikep503, BCObjectIdentifiers.sikep503);
-        sikeOids.put(SIKEParameters.sikep610, BCObjectIdentifiers.sikep610);
-        sikeOids.put(SIKEParameters.sikep751, BCObjectIdentifiers.sikep751);
-        sikeOids.put(SIKEParameters.sikep434_compressed, BCObjectIdentifiers.sikep434_compressed);
-        sikeOids.put(SIKEParameters.sikep503_compressed, BCObjectIdentifiers.sikep503_compressed);
-        sikeOids.put(SIKEParameters.sikep610_compressed, BCObjectIdentifiers.sikep610_compressed);
-        sikeOids.put(SIKEParameters.sikep751_compressed, BCObjectIdentifiers.sikep751_compressed);
-
-        sikeParams.put(BCObjectIdentifiers.sikep434, SIKEParameters.sikep434);
-        sikeParams.put(BCObjectIdentifiers.sikep503, SIKEParameters.sikep503);
-        sikeParams.put(BCObjectIdentifiers.sikep610, SIKEParameters.sikep610);
-        sikeParams.put(BCObjectIdentifiers.sikep751, SIKEParameters.sikep751);
-        sikeParams.put(BCObjectIdentifiers.sikep434_compressed, SIKEParameters.sikep434_compressed);
-        sikeParams.put(BCObjectIdentifiers.sikep503_compressed, SIKEParameters.sikep503_compressed);
-        sikeParams.put(BCObjectIdentifiers.sikep610_compressed, SIKEParameters.sikep610_compressed);
-        sikeParams.put(BCObjectIdentifiers.sikep751_compressed, SIKEParameters.sikep751_compressed);
 
         ntruOids.put(NTRUParameters.ntruhps2048509, BCObjectIdentifiers.ntruhps2048509);
         ntruOids.put(NTRUParameters.ntruhps2048677, BCObjectIdentifiers.ntruhps2048677);
@@ -558,16 +539,6 @@ class Utils
     static PicnicParameters picnicParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (PicnicParameters)picnicParams.get(oid);
-    }
-
-    static ASN1ObjectIdentifier sikeOidLookup(SIKEParameters params)
-    {
-        return (ASN1ObjectIdentifier)sikeOids.get(params);
-    }
-
-    static SIKEParameters sikeParamsLookup(ASN1ObjectIdentifier oid)
-    {
-        return (SIKEParameters)sikeParams.get(oid);
     }
 
     static ASN1ObjectIdentifier falconOidLookup(FalconParameters params)

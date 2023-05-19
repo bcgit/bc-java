@@ -34,7 +34,6 @@ public class AllTests
         suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(FrodoVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
-        suite.addTestSuite(SIKEVectorTest.class);
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUParametersTest.class);
         suite.addTestSuite(FalconTest.class);

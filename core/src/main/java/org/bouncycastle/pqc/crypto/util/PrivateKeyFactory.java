@@ -71,8 +71,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -210,13 +208,6 @@ public class PrivateKeyFactory
             SABERParameters spParams = Utils.saberParamsLookup(algOID);
 
             return new SABERPrivateKeyParameters(spParams, keyEnc);
-        }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_sike))
-        {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
-            SIKEParameters spParams = Utils.sikeParamsLookup(algOID);
-
-            return new SIKEPrivateKeyParameters(spParams, keyEnc);
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntru))
         {

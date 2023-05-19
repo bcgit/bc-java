@@ -40,8 +40,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
-import org.bouncycastle.pqc.legacy.crypto.sike.SIKEPublicKeyParameters;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -199,14 +197,6 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.picnicOidLookup(params.getParameters()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
-        }
-        else if (publicKey instanceof SIKEPublicKeyParameters)
-        {
-            SIKEPublicKeyParameters params = (SIKEPublicKeyParameters)publicKey;
-
-            byte[] encoding = params.getEncoded();
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sikeOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else if (publicKey instanceof NTRUPublicKeyParameters)
