@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;

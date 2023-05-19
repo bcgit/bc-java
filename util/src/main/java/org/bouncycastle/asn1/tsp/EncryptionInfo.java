@@ -25,7 +25,7 @@ import org.bouncycastle.asn1.DLSequence;
  * encryptionInfoType   ENCINFO-TYPE.&amp;id
  * ({SupportedEncryptionAlgorithms}),
  * encryptionInfoValue  ENCINFO-TYPE.&amp;Type
- * ({SupportedEncryptionAlgorithms}{@encryptionInfoType})
+ * ({SupportedEncryptionAlgorithms}{&#064;encryptionInfoType})
  * }
  * <p>
  * ENCINFO-TYPE ::= TYPE-IDENTIFIER
