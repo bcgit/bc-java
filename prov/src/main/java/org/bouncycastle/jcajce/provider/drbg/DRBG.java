@@ -496,7 +496,7 @@ public class DRBG
             return bytesRequired * 8;
         }
 
-        private class SignallingEntropySource
+        private static class SignallingEntropySource
             implements IncrementalEntropySource
         {
             private final EntropyDaemon entropyDaemon;
@@ -571,7 +571,7 @@ public class DRBG
         private final AtomicInteger samples = new AtomicInteger(0);
 
         private final SP800SecureRandom drbg;
-        private final SignallingEntropySource entropySource;
+        private final OneShotSignallingEntropySource entropySource;
         private final int bytesRequired;
         private final byte[] additionalInput = Pack.longToBigEndian(System.currentTimeMillis());
 
@@ -580,7 +580,7 @@ public class DRBG
             EntropySourceProvider entropyProvider = createCoreEntropySourceProvider();
             bytesRequired = (bitsRequired + 7) / 8;
             // remember for the seed generator we need the correct security strength for SHA-512
-            entropySource = new SignallingEntropySource(seedAvailable, entropyProvider, 256);
+            entropySource = new OneShotSignallingEntropySource(seedAvailable, entropyProvider, 256);
             drbg = new SP800SecureRandomBuilder(new EntropySourceProvider()
             {
                 public EntropySource get(final int bitsRequired)
@@ -626,7 +626,7 @@ public class DRBG
             return bytesRequired * 8;
         }
 
-        private class SignallingEntropySource
+        private static class OneShotSignallingEntropySource
             implements IncrementalEntropySource
         {
             private final AtomicBoolean seedAvailable;
@@ -635,7 +635,7 @@ public class DRBG
             private final AtomicReference entropy = new AtomicReference();
             private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
-            SignallingEntropySource(AtomicBoolean seedAvailable, EntropySourceProvider baseRandom, int bitsRequired)
+            OneShotSignallingEntropySource(AtomicBoolean seedAvailable, EntropySourceProvider baseRandom, int bitsRequired)
             {
                 this.seedAvailable = seedAvailable;
                 this.entropySource = (IncrementalEntropySource)baseRandom.get(bitsRequired);

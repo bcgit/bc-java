@@ -4,9 +4,9 @@ import org.bouncycastle.math.raw.Interleave;
 
 /**
  * Utilities for the GF(2^m) field with corresponding extension polynomial:
- *
- * GF (2^256) -> x^256 + x^10 + x^5 + x^2 + 1
- * 
+ * <pre>
+ * GF (2^256) -&gt; x^256 + x^10 + x^5 + x^2 + 1
+ * </pre>
  * The representation is little-endian arrays of 64-bit words
 */
 public class KGCMUtil_256

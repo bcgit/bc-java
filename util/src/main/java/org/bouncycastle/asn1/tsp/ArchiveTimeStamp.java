@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
  * Implementation of the Archive Timestamp type defined in RFC4998.
- * {@see <a href="https://tools.ietf.org/html/rfc4998">RFC 4998</a>}
+ * @see <a href="https://tools.ietf.org/html/rfc4998">RFC 4998</a>
  * <p>
  * ASN.1 Archive Timestamp
  * <p>
