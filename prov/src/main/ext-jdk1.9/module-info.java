@@ -135,7 +135,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.picnic;
     exports org.bouncycastle.pqc.crypto.rainbow;
     exports org.bouncycastle.pqc.crypto.saber;
-    exports org.bouncycastle.pqc.legacy.crypto.sike;
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.crypto.sphincsplus;
     exports org.bouncycastle.pqc.crypto.util;
