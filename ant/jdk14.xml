@@ -26,7 +26,6 @@
                 <exclude name="**/legacy/**/ntru/**/*.java"/>
                 <exclude name="**/xmss/**/*.java"/>
                 <exclude name="**/lms/**/*.java"/>
-                <exclude name="**/sike/*.java"/>
                 <exclude name="**/gemss/*.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
@@ -76,7 +75,6 @@
                 <exclude name="**/PKCS12StoreParameter.java"/>
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
                 <exclude name="**/SIKE*.java"/>
-                <exclude name="**/sike/*.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/XMS*.java"/>

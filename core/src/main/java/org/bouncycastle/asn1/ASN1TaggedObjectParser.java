@@ -38,7 +38,7 @@ public interface ASN1TaggedObjectParser
      * @deprecated This parser now includes the {@link #getTagClass() tag class}.
      *             This method will raise an exception if it is not
      *             {@link BERTags#CONTEXT_SPECIFIC}. Use
-     *             {@link ASN1Util#parseContextBaseUniversal(ASN1TaggedObjectParser, int, int, boolean, int)}
+     *             {@link ASN1Util#parseBaseUniversal(ASN1TaggedObjectParser, int, int, boolean, int)}
      *             as a direct replacement, or use
      *             {@link #parseBaseUniversal(boolean, int)} only after confirming
      *             the expected tag class (e.g.

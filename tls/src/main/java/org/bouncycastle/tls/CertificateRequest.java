@@ -31,8 +31,8 @@ import org.bouncycastle.util.Arrays;
  * Revised for RFC 8446:
  * <pre>
  * struct {
- *     opaque certificate_request_context<0..2^8-1>;
- *     Extension extensions<2..2^16-1>;
+ *     opaque certificate_request_context&lt;0..2^8-1&gt;;
+ *     Extension extensions&lt;2..2^16-1&gt;;
  * } CertificateRequest;
  * </pre>
  *

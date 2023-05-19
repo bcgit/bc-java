@@ -320,7 +320,7 @@ public class LocalizedMessage
         return (extraArgs == null) ? null : extraArgs.getArguments();
     }
     
-    protected class FilteredArguments
+    protected static class FilteredArguments
     {
         protected static final int NO_FILTER = 0;
         protected static final int FILTER = 1;

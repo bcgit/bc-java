@@ -84,7 +84,7 @@ public interface TlsClient
      * NOTE: This is not called for session resumption handshakes.
      *
      * @param serverExtensions
-     *            (Integer -> byte[])
+     *            (Integer -&gt; byte[])
      * @throws IOException
      */
     void processServerExtensions(Hashtable serverExtensions)

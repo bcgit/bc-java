@@ -45,7 +45,6 @@
                 <exclude name="**/PKIXNameConstraints*.java" />
                 <exclude name="**/ExtendedPKIX*.java" />
                 <exclude name="**/RFC3281*.java" />
-                <exclude name="**/sike/*.java" />
                 <exclude name="**/CertPathValidatorUtilities.java" />
                 <exclude name="**/JDKPKCS12StoreParameter.java" />
                 <exclude name="**/IndexGenerator.java" />
@@ -82,7 +81,6 @@
                 <exclude name="**/provider/JCEEC*.java" />
                 <exclude name="**/EC5*.java" />
                 <exclude name="**/SIKE*.java" />
-                <exclude name="**/sike/*.java" />
                 <exclude name="**/Rainbow*.java" />
                 <exclude name="**/rainbow/*.java" />
                 <exclude name="**/GeMSS*.java" />

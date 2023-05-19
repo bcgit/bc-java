@@ -22,7 +22,7 @@ import org.bouncycastle.util.Longs;
  * </p>
  * Text reproduced below.
  * <blockquote>
- * Phillip Rogaway <rogaway@cs.ucdavis.edu> Sat, 27 February 2021 02:46 UTCShow header
+ * Phillip Rogaway &gt;rogaway@cs.ucdavis.edu&lt; Sat, 27 February 2021 02:46 UTCShow header
  *
  * I can confirm that I have abandoned all OCB patents
  * and placed into the public domain all OCB-related IP of mine.
