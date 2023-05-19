@@ -103,8 +103,6 @@ public interface ISISMTTObjectIdentifiers
      * </pre>
      * <p>
      * OID: 1.3.36.8.3.8
-     * 
-     * @see org.bouncycastle.asn1.isismtt.x509.Restriction
      */
     static final ASN1ObjectIdentifier id_isismtt_at_restriction = id_isismtt_at.branch("8");
 
@@ -129,8 +127,6 @@ public interface ISISMTTObjectIdentifiers
      * returned in this extension.
      * <p>
      * OID: 1.3.36.8.3.10
-     * 
-     * @see org.bouncycastle.asn1.isismtt.ocsp.RequestedCertificate
      */
     static final ASN1ObjectIdentifier id_isismtt_at_requestedCertificate = id_isismtt_at.branch("10");
 
@@ -159,8 +155,7 @@ public interface ISISMTTObjectIdentifiers
      * Hash of a certificate in OCSP.
      * <p>
      * OID: 1.3.36.8.3.13
-     * 
-     * @see org.bouncycastle.asn1.isismtt.ocsp.CertHash
+     *
      */
     static final ASN1ObjectIdentifier id_isismtt_at_certHash = id_isismtt_at.branch("13");
 
@@ -186,8 +181,7 @@ public interface ISISMTTObjectIdentifiers
      * </pre>
      * <p>
      * OID: 1.3.36.8.3.15
-     * 
-     * @see org.bouncycastle.asn1.isismtt.x509.AdditionalInformationSyntax
+     *
      */
     static final ASN1ObjectIdentifier id_isismtt_at_additionalInformation = id_isismtt_at.branch("15");
 
