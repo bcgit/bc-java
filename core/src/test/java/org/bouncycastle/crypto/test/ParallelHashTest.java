@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.ParallelHash;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -22,7 +23,7 @@ public class ParallelHashTest
     public void performTest()
         throws Exception
     {
-        ParallelHash  pHash = new ParallelHash(128, new byte[0], 8);
+        ParallelHash pHash = new ParallelHash(128, new byte[0], 8);
 
         byte[] data = Hex.decode("00 01 02 03 04 05 06 07 10 11 12 13 14 15 16 17 20 21 22 23 24 25 26 27");
         pHash.update(data, 0, data.length);
@@ -116,6 +117,7 @@ public class ParallelHashTest
         isTrue("oops!", Arrays.areEqual(Hex.decode("6b3e790b330c889a204c2fbc728d809f19367328d852f4002dc829f73afd6bcefb7fe5b607b13a801c0be5c1170bdb794e339458fdb0e62a6af3d42558970249"), res));
 
         testEmpty();
+        testClone();
     }
 
     private void testEmpty()
@@ -133,9 +135,38 @@ public class ParallelHashTest
         isTrue(Arrays.areEqual(Hex.decode("13C4"), res));
     }
 
-     public static void main(
-         String[]    args)
-     {
-         runTest(new ParallelHashTest());
-     }
+    private void testClone()
+    {
+        Digest digest = new ParallelHash(256, Strings.toByteArray("Parallel Data"), 12);
+        byte[] input = Hex.decode("00 01 02 03 04 05 06 07 08 09 0A 0B 10 11 12 13 14 15 16 17 18 19 1A 1B 20 21 22 23 24 25 26 27 28 29 2A 2B 30 31 32 33 34 35 36 37 38 39 3A 3B 40 41 42 43 44 45 46 47 48 49 4A 4B 50 51 52 53 54 55 56 57 58 59 5A 5B");
+        byte[] expected = Hex.decode("69 D0 FC B7 64 EA 05 5D D0 93 34 BC 60 21 CB 7E 4B 61 34 8D FF 37 5D A2 62 67 1C DE C3 EF FA 8D 1B 45 68 A6 CC E1 6B 1C AD 94 6D DD E2 7F 6C E2 B8 DE E4 CD 1B 24 85 1E BF 00 EB 90 D4 38 13 E9");
+        byte[] resBuf = new byte[expected.length];
+
+        digest.update(input, 0, input.length / 2);
+
+        // clone the Digest
+        Digest d = new ParallelHash((ParallelHash)digest);
+
+        digest.update(input, input.length / 2, input.length - input.length / 2);
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing clone vector test", Hex.toHexString(expected), new String(Hex.encode(resBuf)));
+        }
+
+        d.update(input, input.length / 2, input.length - input.length / 2);
+        d.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing second clone vector test", Hex.toHexString(expected), new String(Hex.encode(resBuf)));
+        }
+    }
+
+    public static void main(
+        String[] args)
+    {
+        runTest(new ParallelHashTest());
+    }
 }
