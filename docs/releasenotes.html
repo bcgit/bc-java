@@ -25,6 +25,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <ul>
 <li>AsconEngine: Fixed a buffering bug when decrypting across multiple processBytes calls (ascon128a unaffected).</li>
 <li>Context based sanity checking on PGP signatures has been added.</li>
+<li>The ParallelHash clone constructor was not copying all fields. This is now fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -37,6 +38,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>DTLS: The initial handshake resend time is now configurable by overriding 'TlsPeer.getHandshakeResendTimeMillis'.</li>
 <li>DTLS: Added support for connection IDs per RFC 9146.</li>
 <li>DTLS: Performance of DTLSVerifier has been improved so that it can reasonably be used for all incoming packets.</li>
+</ul>
+<h3>2.1.4 Notes.</h3>
+<ul>
+<li>The now defunct PQC SIKE algorithm has been removed, this has also meant the removal of its resource files so the provider is now quite a bit smaller.</li>
 </ul>
 
 <a id="r1rv73"><h3>2.2.1 Version</h3></a>
