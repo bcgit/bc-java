@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.TupleHash;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -100,6 +101,39 @@ public class TupleHashTest
 
         isTrue("oops!", !Arrays.areEqual(Hex.decode("45 00 0B E6 3F 9B 6B FD 89 F5 47 17 67 0F 69 A9 BC 76 35 91 A4 F0 5C 50 D6 88 91 A7 44 BC C6 E7 D6 D5 B5 E8 2C 01 8D A9 99 ED 35 B0 BB 49 C9 67 8E 52 6A BD 8E 85 C1 3E D2 54 02 1D B9 E7 90 CE"), res));
         isTrue("oops!", Arrays.areEqual(Hex.decode("0c59b11464f2336c34663ed51b2b950bec743610856f36c28d1d088d8a2446284dd09830a6a178dc752376199fae935d86cfdee5913d4922dfd369b66a53c897"), res));
+
+        testClone();
+    }
+
+    private void testClone()
+    {
+        Digest digest = new TupleHash(256, Strings.toByteArray("My Tuple App"));
+        byte[] expected = Hex.decode("45 00 0B E6 3F 9B 6B FD 89 F5 47 17 67 0F 69 A9 BC 76 35 91 A4 F0 5C 50 D6 88 91 A7 44 BC C6 E7 D6 D5 B5 E8 2C 01 8D A9 99 ED 35 B0 BB 49 C9 67 8E 52 6A BD 8E 85 C1 3E D2 54 02 1D B9 E7 90 CE");
+        byte[] resBuf = new byte[expected.length];
+
+        digest.update(Hex.decode("000102"), 0, 3);
+        digest.update(Hex.decode("101112131415"), 0, 6);
+
+        // clone the Digest
+        Digest d = new TupleHash((TupleHash)digest);
+
+        digest.update(Hex.decode("202122232425262728"), 0, 9);
+
+        digest.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing clone vector test", Hex.toHexString(expected), new String(Hex.encode(resBuf)));
+        }
+
+        d.update(Hex.decode("202122232425262728"), 0, 9);
+
+        d.doFinal(resBuf, 0);
+
+        if (!areEqual(expected, resBuf))
+        {
+            fail("failing second clone vector test", Hex.toHexString(expected), new String(Hex.encode(resBuf)));
+        }
     }
 
     public static void main(
