@@ -87,7 +87,7 @@ public class BEROctetString
      */
     public BEROctetString(byte[] string, int segmentLimit)
     {
-        this(string, new ASN1OctetString[] { new DEROctetString(string) }, segmentLimit);
+        this(string, null, segmentLimit);
     }
 
     /**
@@ -166,17 +166,12 @@ public class BEROctetString
 
     boolean encodeConstructed()
     {
-        return null != elements || string.length > segmentLimit;
+        return false;
     }
 
     int encodedLength(boolean withTag)
         throws IOException
     {
-        if (!encodeConstructed())
-        {
-            return DEROctetString.encodedLength(withTag, string.length);
-        }
-
         int totalLength = withTag ? 4 : 3;
 
         if (null != elements)
@@ -203,12 +198,6 @@ public class BEROctetString
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        if (!encodeConstructed())
-        {
-            DEROctetString.encode(out, withTag, string, 0, string.length);
-            return;
-        }
-
         out.writeIdentifier(withTag, BERTags.CONSTRUCTED | BERTags.OCTET_STRING);
         out.write(0x80);
 

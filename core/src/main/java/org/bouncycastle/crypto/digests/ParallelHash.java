@@ -82,7 +82,6 @@ public class ParallelHash
         this.bufOff = source.bufOff;
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties(this, bitLength, purpose));
-
     }
 
     public String getAlgorithmName()
