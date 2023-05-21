@@ -166,7 +166,7 @@ public class BEROctetString
 
     boolean encodeConstructed()
     {
-        return false;
+        return true;
     }
 
     int encodedLength(boolean withTag)
