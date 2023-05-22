@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.test;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
@@ -25,9 +24,7 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -114,6 +111,7 @@ public class PKESKv6withSEIPDv2Test extends SimpleTest {
 
     @Override
     public void performTest() throws Exception {
+        System.out.println(KEY);
         byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
 
         PGPPublicKeyRing publicKeys = readCert(CERT);
@@ -121,7 +119,7 @@ public class PKESKv6withSEIPDv2Test extends SimpleTest {
 
         PGPDataEncryptorBuilder dataEncBuilder = new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
         dataEncBuilder.setUseV6AEAD();
-        dataEncBuilder.setWithAEAD(AEADAlgorithmTags.OCB, 6);
+        dataEncBuilder.setWithAEAD(AEADAlgorithmTags.EAX, 6);
 
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(dataEncBuilder);
         PublicKeyKeyEncryptionMethodGenerator method = new BcPublicKeyKeyEncryptionMethodGenerator(encKey, true);
