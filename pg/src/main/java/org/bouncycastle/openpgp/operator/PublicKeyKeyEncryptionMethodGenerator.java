@@ -23,13 +23,14 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     }
 
     private PGPPublicKey pubKey;
-
+    protected final boolean useV6Format;
     protected boolean sessionKeyObfuscation;
     protected boolean useWildcardKeyID;
 
     protected PublicKeyKeyEncryptionMethodGenerator(
-        PGPPublicKey pubKey)
+        PGPPublicKey pubKey, boolean useV6Format)
     {
+        this.useV6Format = useV6Format;
         switch (pubKey.getAlgorithm())
         {
         case PGPPublicKey.RSA_ENCRYPT:
@@ -39,6 +40,9 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             throw new IllegalArgumentException("Can't use an RSA_SIGN key for encryption.");
         case PGPPublicKey.ELGAMAL_ENCRYPT:
         case PGPPublicKey.ELGAMAL_GENERAL:
+            if (this.useV6Format) {
+                throw new IllegalArgumentException("Can't use ElGamal to generate v6 PKESK packets.");
+            }
             break;
         case PGPPublicKey.ECDH:
             break;
@@ -136,15 +140,33 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         throws PGPException
     {
         long keyId;
+        byte[] keyFingerprint;
         if (useWildcardKeyID)
         {
             keyId = WILDCARD;
+            keyFingerprint = new byte[0];
         }
         else
         {
             keyId = pubKey.getKeyID();
+            keyFingerprint = pubKey.getFingerprint();
         }
-        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+
+        if (useV6Format)
+        {
+            return PublicKeyEncSessionPacket.createV6PKESKPacket(
+                    pubKey.getVersion(),
+                    keyFingerprint,
+                    pubKey.getAlgorithm(),
+                    processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        }
+        else
+        {
+            return PublicKeyEncSessionPacket.createV3PKESKPacket(
+                    keyId,
+                    pubKey.getAlgorithm(),
+                    processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        }
     }
 
     @Override
