@@ -37,7 +37,8 @@ final class GF12
                 temp[i - length + poly[j]] ^= temp_i;
             }
             {
-                temp[i - length] ^= gf_mul_ext(gf_reduce(temp_i), (short)2);
+                // NOTE: Safe because gf_reduce allows up to 24 bits, but gf_mul_ext(_par) only produces 23.
+                temp[i - length] ^= temp_i << 1;
             }
         }
 
@@ -66,7 +67,8 @@ final class GF12
                 temp[i - length + poly[j]] ^= temp_i;
             }
             {
-                temp[i - length] ^= gf_mul_ext(gf_reduce(temp_i), (short)2);
+                // NOTE: Safe because gf_reduce allows up to 24 bits, but gf_sq_ext only produces 23.
+                temp[i - length] ^= temp_i << 1;
             }
         }
 

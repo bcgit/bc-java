@@ -1532,13 +1532,21 @@ class CMCEEngine
             if (usePadding)
             {
                 int pk_index = 0, tail = PK_NROWS % 8;
-                for (i = 0; i < PK_NROWS; i++)
+                if (tail == 0)
                 {
-                    for (j = (PK_NROWS - 1) / 8; j < SYS_N / 8 - 1; j++)
+                    System.arraycopy(mat[i], (PK_NROWS - 1) / 8, pk, pk_index, SYS_N / 8);
+                    pk_index += SYS_N / 8;
+                }
+                else
+                {
+                    for (i = 0; i < PK_NROWS; i++)
                     {
-                        pk[pk_index++] = (byte)(((mat[i][j] & 0xff) >>> tail) | (mat[i][j + 1] << (8 - tail)));
+                        for (j = (PK_NROWS - 1) / 8; j < SYS_N / 8 - 1; j++)
+                        {
+                            pk[pk_index++] = (byte)(((mat[i][j] & 0xff) >>> tail) | (mat[i][j + 1] << (8 - tail)));
+                        }
+                        pk[pk_index++] = (byte)((mat[i][j] & 0xff) >>> tail);
                     }
-                    pk[pk_index++] = (byte)((mat[i][j] & 0xff) >>> tail);
                 }
             }
             else
