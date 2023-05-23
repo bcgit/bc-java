@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.bouncycastle.util.Pack;
@@ -27,6 +29,17 @@ abstract class LowmcConstants
     protected KMatrices KMatrix_full;
     protected KMatrices KMatrix_inv;
     protected KMatrices RConstants_full;
+
+    static int[] readArray(DataInputStream dIn)
+        throws IOException
+    {
+        int[] rv = new int[dIn.readInt()];
+        for (int i = 0; i != rv.length; i++)
+        {
+            rv[i] = dIn.readInt();
+        }
+        return rv;
+    }
 
     static int[] ReadFromProperty(Properties props, String key, int intSize)
     {
