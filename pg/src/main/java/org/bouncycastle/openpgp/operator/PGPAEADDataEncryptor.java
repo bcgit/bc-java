@@ -19,5 +19,4 @@ public interface PGPAEADDataEncryptor
 
     byte[] getIV();
 
-    boolean isV5StyleAEAD();
 }

@@ -242,7 +242,8 @@ public class PGPEncryptedDataGenerator
 
         // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
         // Since we cannot inject the IV into the data encryptor, we append it to the message key.
-        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !dataEncryptorBuilder.isV5StyleAEAD())
+        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD();
+        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
         {
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
                     SymmetricEncIntegrityPacket.VERSION_2,
@@ -266,7 +267,7 @@ public class PGPEncryptedDataGenerator
             {
                 PGPAEADDataEncryptor aeadDataEncryptor = (PGPAEADDataEncryptor) dataEncryptor;
                 // data is encrypted by AEAD Encrypted Data packet (rfc4880bis10), so write v5 SKESK packet
-                if (aeadDataEncryptor.isV5StyleAEAD())
+                if (isV5StyleAEAD)
                 {
                     writeOpenPGPv5ESKPacket(method, sessionInfo);
                 }
@@ -289,7 +290,7 @@ public class PGPEncryptedDataGenerator
                 PGPAEADDataEncryptor encryptor = (PGPAEADDataEncryptor)dataEncryptor;
 
                 // OpenPGP V5 style AEAD
-                if (encryptor.isV5StyleAEAD())
+                if (isV5StyleAEAD)
                 {
                     byte[] iv = encryptor.getIV();
 

@@ -21,7 +21,6 @@ import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -78,14 +77,22 @@ public class JcePGPDataEncryptorBuilder
     @Override
     public JcePGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        if (isV5StyleAEAD)
+        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
         {
-            return setWithV5AEAD(aeadAlgorithm, chunkSize);
+            throw new IllegalStateException("AEAD algorithms can only be used with AES");
         }
-        else
+
+        if (chunkSize < 6)
         {
-            return setWithV6AEAD(aeadAlgorithm, chunkSize);
+            throw new IllegalArgumentException("minimum chunkSize is 6");
         }
+
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.chunkSize = chunkSize - 6;
+
+        return this;
     }
 
     @Override
@@ -100,47 +107,6 @@ public class JcePGPDataEncryptorBuilder
     public JcePGPDataEncryptorBuilder setUseV6AEAD()
     {
         this.isV5StyleAEAD = false;
-
-        return this;
-    }
-
-    private JcePGPDataEncryptorBuilder setWithV5AEAD(int aeadAlgorithm, int chunkSize)
-    {
-        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
-        {
-            throw new IllegalStateException("AEAD algorithms can only be used with AES");
-        }
-
-        if (chunkSize < 6)
-        {
-            throw new IllegalArgumentException("minimum chunkSize is 6");
-        }
-
-        this.aeadAlgorithm = aeadAlgorithm;
-        this.chunkSize = chunkSize - 6;
-
-        return this;
-    }
-
-    private JcePGPDataEncryptorBuilder setWithV6AEAD(int aeadAlgorithm, int chunkSize)
-    {
-        this.isV5StyleAEAD = false;
-        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
-        {
-            throw new IllegalStateException("AEAD algorithms can only be used with AES");
-        }
-
-        if (chunkSize < 6)
-        {
-            throw new IllegalArgumentException("minimum chunkSize is 6");
-        }
-
-        this.aeadAlgorithm = aeadAlgorithm;
-        this.chunkSize = chunkSize - 6;
 
         return this;
     }
@@ -367,10 +333,5 @@ public class JcePGPDataEncryptorBuilder
             return Arrays.clone(iv);
         }
 
-        @Override
-        public boolean isV5StyleAEAD()
-        {
-            return isV5StyleAEAD;
-        }
     }
 }
