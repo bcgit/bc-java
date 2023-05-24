@@ -39,11 +39,12 @@ public class PGPPublicKeyEncryptedData
     }
 
     private boolean confirmCheckSum(
+        int offset,
         byte[] sessionInfo)
     {
         int check = 0;
 
-        for (int i = 1; i != sessionInfo.length - 2; i++)
+        for (int i = offset; i != sessionInfo.length - 2; i++)
         {
             check += sessionInfo[i] & 0xff;
         }
@@ -60,6 +61,10 @@ public class PGPPublicKeyEncryptedData
     public long getKeyID()
     {
         return keyData.getKeyID();
+    }
+
+    public byte[] getKeyFingerprint() {
+        return keyData.getKeyFingerprint();
     }
 
     /**
@@ -103,12 +108,18 @@ public class PGPPublicKeyEncryptedData
         throws PGPException
     {
         byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
-        if (!confirmCheckSum(sessionData))
+        int offset = getVersion() == VERSION_3 ? 1 : 0;
+        if (!confirmCheckSum(offset, sessionData))
         {
             throw new PGPKeyValidationException("key checksum failed");
         }
 
-        return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
+        if (getVersion() == VERSION_3) {
+            return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
+        } else {
+            SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
+            return new PGPSessionKey(seipd.getCipherAlgorithm(), Arrays.copyOfRange(sessionData, 0, sessionData.length - 2));
+        }
     }
 
     /**

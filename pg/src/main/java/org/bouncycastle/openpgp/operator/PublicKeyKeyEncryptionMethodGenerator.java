@@ -169,22 +169,6 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    @Override
-    public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
-    {
-        // TODO: Implement
-        return null;
-    }
-
-    @Override
-    public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
-    {
-        // TODO: Implement
-        return null;
-    }
-
     abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
         throws PGPException;
 }
