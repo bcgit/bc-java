@@ -198,7 +198,7 @@ subprojects {
 
 
   dependencies {
-    checkstyle files("$rootDir/config/checkstyle/lib/methodchecker.jar")
+    checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
     checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
     errorprone "com.google.errorprone:error_prone_core:2.15.0"
   }
