@@ -118,7 +118,7 @@ public class OpenSSHPublicKeyUtil
             return builder.getBytes();
         }
 
-        throw new IllegalArgumentException("unable to convert " + cipherParameters.getClass().getName() + " to private key");
+        throw new IllegalArgumentException("unable to convert " + cipherParameters.getClass().getName() + " to public key");
     }
 
     /**
