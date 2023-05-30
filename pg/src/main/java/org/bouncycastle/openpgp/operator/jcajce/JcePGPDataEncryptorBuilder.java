@@ -35,11 +35,12 @@ import org.bouncycastle.util.Arrays;
 public class JcePGPDataEncryptorBuilder
     implements PGPDataEncryptorBuilder
 {
+    private final int encAlgorithm;
+
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private JceAEADUtil aeadHelper = new JceAEADUtil(helper);
     private SecureRandom random;
-    private boolean withIntegrityPacket;
-    private int encAlgorithm;
+    private boolean withIntegrityPacket = true;
     private int aeadAlgorithm = -1;
     private int chunkSize;
     private boolean isV5StyleAEAD = true; // TODO: change to false in 1.75
@@ -270,7 +271,7 @@ public class JcePGPDataEncryptorBuilder
          * The first M bytes contain the key, the remaining N-8 bytes contain the IV.
          *
          * @param keyBytes key or key and iv
-         * @throws PGPException
+         * @throws PGPException on encryption failure
          */
         MyAeadDataEncryptor(byte[] keyBytes)
             throws PGPException
