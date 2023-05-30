@@ -127,7 +127,7 @@ public abstract class PGPKeyRing
     /**
      * Return an iterator containing all the public keys carrying signatures issued from key keyID.
      *
-     * @return a an iterator (possibly empty) of the public keys associated with keyID.
+     * @return an iterator (possibly empty) of the public keys associated with keyID.
      */
     public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID);
 
