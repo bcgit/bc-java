@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -115,6 +119,11 @@ public class HC128Engine
             throw new java.lang.IllegalArgumentException(
                 "The key must be 128 bits long");
         }
+        if (iv.length != 16)
+        {
+            throw new java.lang.IllegalArgumentException(
+                "The IV must be 128 bits long");
+        }
 
         idx = 0;
         cnt = 0;
@@ -170,7 +179,7 @@ public class HC128Engine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        CipherParameters keyParam = params;
+        CipherParameters keyParam;
 
         if (params instanceof ParametersWithIV)
         {
@@ -179,7 +188,7 @@ public class HC128Engine
         }
         else
         {
-            iv = new byte[0];
+            throw new IllegalArgumentException("no IV passed");
         }
 
         if (keyParam instanceof KeyParameter)
