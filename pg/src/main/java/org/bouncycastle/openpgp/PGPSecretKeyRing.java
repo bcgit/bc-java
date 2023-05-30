@@ -377,6 +377,16 @@ public class PGPSecretKeyRing
         return extraPubKeys.iterator();
     }
 
+    /**
+     * Return the number of keys in the key ring.
+     *
+     * @return number of keys (master key + subkey).
+     */
+    public int size()
+    {
+        return keys.size();
+    }
+
     public byte[] getEncoded()
         throws IOException
     {

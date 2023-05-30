@@ -3427,6 +3427,8 @@ public class PGPKeyRingTest
         }
         isTrue(count == 4);
 
+        isTrue(publicKeys.size() == count);
+
         checkPublicKeyRing(secretKeys, publicKeys.getEncoded());
         // Extract the public keys
         bOut = new ByteArrayOutputStream(2048);
@@ -3435,6 +3437,8 @@ public class PGPKeyRingTest
         {
             bOut.write(((PGPPublicKey)iterator.next()).getEncoded());
         }
+
+        isTrue(secretKeys.size() == count);
 
         checkPublicKeyRing(secretKeys, bOut.toByteArray());
 
