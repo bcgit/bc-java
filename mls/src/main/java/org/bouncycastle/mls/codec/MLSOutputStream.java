@@ -68,6 +68,8 @@ public class MLSOutputStream {
     }
 
     public <T> void writeArray(T[] val) throws IOException {
+        write(val.length);
+//        write(new Varint(val.length));
         for (T x : val) {
             write(x);
         }

@@ -42,14 +42,13 @@ public class CodecTest
         @SuppressWarnings("unused")
         public ExampleStruct(MLSInputStream stream) throws IOException {
             this.a = (short) stream.read(short.class);
-            this.b = (Integer[]) stream.readArray(Integer.class, 4);
+            this.b = (Integer[]) stream.readArray(Integer.class);
             this.c = (byte) stream.readOptional(byte.class);
 
             this.d = new ArrayList<>();
             stream.readList(this.d, byte.class);
 
-            this.
-                    e = stream.readOpaque();
+            this.e = stream.readOpaque();
         }
 
         @Override
@@ -71,11 +70,11 @@ public class CodecTest
     }
 
     private final ExampleStruct valStruct = new ExampleStruct((short) 0x1111,
-            new Integer[] { 0x22222222, 0x33333333, 0x44444444, 0x55555555 },
+            new Integer[]{0x22222222, 0x33333333, 0x44444444, 0x55555555},
             (byte) 0x66,
             new ArrayList<>(Arrays.asList((byte) 0x77, (byte) 0x88)),
-            new byte[] {(byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99});
-    private final String encStruct = "11112222222233333333444444445555555501660277880499999999";
+            new byte[]{(byte) 0x99, (byte) 0x99, (byte) 0x99, (byte) 0x99});
+    private final String encStruct = "1111000000042222222233333333444444445555555501660277880499999999";
 
     protected <T> void doWriteTest(T val, String hexExpected) throws Exception {
         byte[] actual = MLSOutputStream.encode(val);
@@ -113,8 +112,9 @@ public class CodecTest
         return new TestSuite(CodecTest.class);
     }
 
-    public static void main(String[] args)
-    {
-        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
-    }
+
+        public static void main(String[] args) throws IOException
+        {
+            PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
+        }
 }

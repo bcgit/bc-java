@@ -51,7 +51,8 @@ public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.
 
     @SuppressWarnings("unused")
     public PreSharedKeyID(MLSInputStream stream) throws IOException {
-        pskType = (PSKType) stream.read(PSKType.class);
+        this.pskType = PSKType.values()[(byte) stream.read(byte.class)];
+
         switch (this.pskType) {
             case EXTERNAL:
                 byte[] externalPSKID = stream.readOpaque();

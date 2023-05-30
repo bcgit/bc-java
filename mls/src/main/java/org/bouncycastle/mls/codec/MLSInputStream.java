@@ -1,5 +1,7 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.util.Pack;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -122,7 +124,9 @@ public class MLSInputStream {
         return read(targetClass);
     }
 
-    public Object readArray(Class<?> elemClass, int length) throws IOException {
+    public Object readArray(Class<?> elemClass) throws IOException {
+
+        int length = (int) readInt(4);
         // If this is a byte array, read directly
         if (elemClass == Byte.class) {
             return stream.readAll(length);

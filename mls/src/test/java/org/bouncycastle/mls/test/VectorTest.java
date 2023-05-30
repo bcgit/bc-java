@@ -1,13 +1,13 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.GroupContext;
+import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -16,12 +16,9 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class VectorTest
         extends TestCase
@@ -419,20 +416,48 @@ public class VectorTest
 
                     // Construct a GroupContext object with the provided cipher_suite, group_id, epoch, tree_hash,
                     // and confirmed_transcript_hash values, and empty extensions
-                    GroupContext groupContext = new GroupContext(cipher_suite, group_id, epoch, tree_hash, confirmed_transcript_hash, new byte[0]);
+                    GroupContext groupContext = new GroupContext(
+                            cipher_suite,
+                            group_id,
+                            epoch,
+                            tree_hash,
+                            confirmed_transcript_hash,
+                            new byte[0]
+                    );
+
+                    byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
+//                    System.out.println(Hex.toHexString(group_id));
+//                    System.out.println(Hex.toHexString(groupContextBytes));
 
                     // Initialize a secret tree for 2 members with the specified encryption_secret
                     TreeSize treeSize = TreeSize.forLeaves(2);
-                    Secret root = new Secret(encryption_secret);
-                    GroupKeySet keys = new GroupKeySet(suite, treeSize, root);
+                    Secret encryptionSecret = new Secret(encryption_secret);
+                    GroupKeySet secret_tree = new GroupKeySet(suite, treeSize, encryptionSecret);
+
+
 
                     // Proposal
-                    System.out.println("proposal: " + Hex.toHexString(proposal));
-//                    byte[] decrypted_message =
+
+//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(proposal_pub, MLSMessage.class);
+//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(proposal_priv, MLSMessage.class);
+                    // verify proposal_pub == membership_key + signature_pub
+//                    byte[] decrypted_message = Group.decryptMessage(proposal_pub)
+
+//                    byte[] processed_unverified_message = group.public_group().parse_message(decrypted_message, group.message_secrets_store())
+//                    AuthenticatedContent processed_message:  = processed_unverified_message
+//                        .verify(ciphersuite, backend.crypto(), ProtocolVersion::Mls10)
+
+
+
 
                     // Commit
+//                    System.out.println(Hex.toHexString(commit_pub));
+//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(commit_pub, MLSMessage.class);
+//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(commit_priv, MLSMessage.class);
 
                     // Application
+                    System.out.println(Hex.toHexString(application_priv));
+                    MLSMessage message = (MLSMessage) MLSInputStream.decode(application_priv, MLSMessage.class);
 
 
 
