@@ -131,6 +131,13 @@ public abstract class PGPKeyRing
      */
     public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID);
 
+    /**
+     * Return the number of keys in the key ring.
+     *
+     * @return number of keys (master key + subkey).
+     */
+    public abstract int size();
+
     public abstract void encode(OutputStream outStream)
         throws IOException;
 

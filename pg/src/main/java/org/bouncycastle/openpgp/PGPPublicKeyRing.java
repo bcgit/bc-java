@@ -263,6 +263,16 @@ public class PGPPublicKeyRing
         return bOut.toByteArray();
     }
 
+    /**
+     * Return the number of keys in the key ring.
+     *
+     * @return number of keys (master key + subkey).
+     */
+    public int size()
+    {
+        return keys.size();
+    }
+
     public void encode(
         OutputStream outStream)
         throws IOException
