@@ -72,6 +72,11 @@ public abstract class AbstractTlsServer
         return serverExtensions;
     }
 
+    protected String getDetailMessageNoCipherSuite()
+    {
+        return "No selectable cipher suite";
+    }
+
     protected int getMaximumNegotiableCurveBits()
     {
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
@@ -464,7 +469,7 @@ public abstract class AbstractTlsServer
             }
         }
 
-        throw new TlsFatalAlert(AlertDescription.handshake_failure, "No selectable cipher suite");
+        throw new TlsFatalAlert(AlertDescription.handshake_failure, getDetailMessageNoCipherSuite());
     }
 
     // Hashtable is (Integer -> byte[])

@@ -522,6 +522,11 @@ class ProvSSLContextSpi
         {
             return "SSL_NULL_WITH_NULL_NULL";
         }
+        // TODO[jsse] Place into "understood" cipher suite map
+        if (CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV == cipherSuite)
+        {
+            return "TLS_EMPTY_RENEGOTIATION_INFO_SCSV";
+        }
         if (TlsUtils.isValidUint16(cipherSuite))
         {
             // TODO[jsse] Add CipherSuiteInfo index by 'int'
