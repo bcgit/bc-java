@@ -10,6 +10,7 @@ import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -91,7 +92,7 @@ public class JcaKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else
+        else if (publicPk.getVersion() == 4)
         {
             try
             {
@@ -118,6 +119,68 @@ public class JcaKeyFingerprintCalculator
             {
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
+        }
+        else if (publicPk.getVersion() == 5)
+        {
+            try
+            {
+                byte[]             kBytes = publicPk.getEncodedContents();
+                MessageDigest digest = helper.createMessageDigest("SHA256");
+
+                digest.update((byte)0x9a);
+                digest.update((byte)(kBytes.length >> 24));
+                digest.update((byte)(kBytes.length >> 16));
+                digest.update((byte)(kBytes.length >> 8));
+                digest.update((byte)kBytes.length);
+                digest.update(kBytes);
+
+                return digest.digest();
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                throw new PGPException("can't find SHA256", e);
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new PGPException("can't find SHA256", e);
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("can't encode key components: " + e.getMessage(), e);
+            }
+        }
+        else if (publicPk.getVersion() == 6)
+        {
+            try
+            {
+                byte[]             kBytes = publicPk.getEncodedContents();
+                MessageDigest digest = helper.createMessageDigest("SHA256");
+
+                digest.update((byte)0x9b);
+                digest.update((byte)(kBytes.length >> 24));
+                digest.update((byte)(kBytes.length >> 16));
+                digest.update((byte)(kBytes.length >> 8));
+                digest.update((byte)kBytes.length);
+                digest.update(kBytes);
+
+                return digest.digest();
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                throw new PGPException("can't find SHA256", e);
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new PGPException("can't find SHA256", e);
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("can't encode key components: " + e.getMessage(), e);
+            }
+        }
+        else
+        {
+            throw new UnsupportedPacketVersionException("Unsupported PGP key version: " + publicPk.getVersion());
         }
     }
 }

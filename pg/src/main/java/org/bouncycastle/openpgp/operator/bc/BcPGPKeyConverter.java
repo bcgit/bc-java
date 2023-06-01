@@ -20,6 +20,10 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -30,6 +34,10 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X25519SecretBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
+import org.bouncycastle.bcpg.X448SecretBCPGKey;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -48,6 +56,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
@@ -170,6 +179,20 @@ public class BcPGPKeyConverter
                     rsaPriv.getPrivateExponent(), rsaPriv.getPrimeP(), rsaPriv.getPrimeQ(), rsaPriv.getPrimeExponentP(),
                     rsaPriv.getPrimeExponentQ(), rsaPriv.getCrtCoefficient());
             }
+            case PublicKeyAlgorithmTags.X25519:
+                X25519SecretBCPGKey x25519Priv = (X25519SecretBCPGKey) privPk;
+                return new X25519PrivateKeyParameters(x25519Priv.getKey());
+
+            case PublicKeyAlgorithmTags.X448:
+                X448SecretBCPGKey x448Priv = (X448SecretBCPGKey) privPk;
+                return new X448PrivateKeyParameters(x448Priv.getKey());
+
+            case PublicKeyAlgorithmTags.Ed25519:
+                Ed25519SecretBCPGKey ed25519Priv = (Ed25519SecretBCPGKey) privPk;
+                return new Ed25519PrivateKeyParameters(ed25519Priv.getKey());
+            case PublicKeyAlgorithmTags.Ed448:
+                Ed448SecretBCPGKey ed448Priv = (Ed448SecretBCPGKey) privPk;
+                return new Ed448PrivateKeyParameters(ed448Priv.getKey());
 
             default:
                 throw new PGPException("unknown public key algorithm encountered");
@@ -267,6 +290,22 @@ public class BcPGPKeyConverter
                 return new RSAKeyParameters(false, rsaK.getModulus(), rsaK.getPublicExponent());
             }
 
+            case PublicKeyAlgorithmTags.X25519:
+                X25519PublicBCPGKey x25519Pub = (X25519PublicBCPGKey) publicPk.getKey();
+                return new X25519PublicKeyParameters(x25519Pub.getKey());
+
+            case PublicKeyAlgorithmTags.X448:
+                X448PublicBCPGKey x448Pub = (X448PublicBCPGKey) publicPk.getKey();
+                return new X448PublicKeyParameters(x448Pub.getKey());
+
+            case PublicKeyAlgorithmTags.Ed25519:
+                Ed25519PublicBCPGKey ed25519Pub = (Ed25519PublicBCPGKey) publicPk.getKey();
+                return new Ed25519PublicKeyParameters(ed25519Pub.getKey());
+
+            case PublicKeyAlgorithmTags.Ed448:
+                Ed448PublicBCPGKey ed448Pub = (Ed448PublicBCPGKey) publicPk.getKey();
+                return new Ed448PublicKeyParameters(ed448Pub.getKey());
+
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
@@ -342,7 +381,21 @@ public class BcPGPKeyConverter
             return new RSASecretBCPGKey(rsK.getExponent(), rsK.getP(), rsK.getQ());
         }
 
-        default:
+        case PublicKeyAlgorithmTags.X25519:
+            X25519PrivateKeyParameters x25519K = (X25519PrivateKeyParameters) privKey;
+            return new X25519SecretBCPGKey(x25519K.getEncoded());
+        case PublicKeyAlgorithmTags.X448:
+            X448PrivateKeyParameters x448K = (X448PrivateKeyParameters) privKey;
+            return new X448SecretBCPGKey(x448K.getEncoded());
+        case PublicKeyAlgorithmTags.Ed25519:
+            Ed25519PrivateKeyParameters ed25519K = (Ed25519PrivateKeyParameters) privKey;
+            return new Ed25519SecretBCPGKey(ed25519K.getEncoded());
+        case PublicKeyAlgorithmTags.Ed448:
+            Ed448PrivateKeyParameters ed448K = (Ed448PrivateKeyParameters) privKey;
+            return new Ed448SecretBCPGKey(ed448K.getEncoded());
+
+
+            default:
             throw new PGPException("unknown key class");
         }
     }

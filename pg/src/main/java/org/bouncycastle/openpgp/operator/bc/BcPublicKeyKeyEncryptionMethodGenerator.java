@@ -45,12 +45,25 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
     /**
      * Create a public key encryption method generator with the method to be based on the passed in key.
+     * The generator will produce v3 PKESK packets.
      *
      * @param key   the public key to use for encryption.
      */
     public BcPublicKeyKeyEncryptionMethodGenerator(PGPPublicKey key)
     {
-        super(key);
+        this(key, false);
+    }
+
+    /**
+     * Create a public key encryption method generator with the method to be based on the passed in key.
+     * If <pre>useV6Format</pre> is set to <value>true</value>, the generator will produce v6 PKESK packets.
+     *
+     * @param key   the public key to use for encryption.
+     * @param useV6Format whether to generate v6 packets or not
+     */
+    public BcPublicKeyKeyEncryptionMethodGenerator(PGPPublicKey key, boolean useV6Format)
+    {
+        super(key, useV6Format);
     }
 
     /**

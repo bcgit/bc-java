@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
@@ -703,7 +704,12 @@ public class PGPSignature
     public static PGPSignature join(PGPSignature sig1, PGPSignature sig2)
         throws PGPException
     {
-        if (!isSignatureEncodingEqual(sig1, sig2))
+        if (sig1.getVersion() < SignaturePacket.VERSION_4)
+        {
+            throw new UnsupportedPacketVersionException("Cannot merge signatures with versions other than 4, 5, 6.");
+        }
+
+        if (!isSignatureEncodingEqual(sig1, sig2) || sig1.getVersion() != sig2.getVersion())
         {
             throw new IllegalArgumentException("These are different signatures.");
         }
@@ -734,17 +740,19 @@ public class PGPSignature
         }
 
         SignatureSubpacket[] unhashed = (SignatureSubpacket[])merged.toArray(new SignatureSubpacket[0]);
+
         return new PGPSignature(
-            new SignaturePacket(
-                sig1.getSignatureType(),
-                sig1.getKeyID(),
-                sig1.getKeyAlgorithm(),
-                sig1.getHashAlgorithm(),
-                sig1.getHashedSubPackets().packets,
-                unhashed,
-                sig1.getDigestPrefix(),
-                sig1.sigPck.getSignature()
-            )
+                new SignaturePacket(
+                        sig1.getVersion(),
+                        sig1.getSignatureType(),
+                        sig1.getKeyID(),
+                        sig1.getKeyAlgorithm(),
+                        sig1.getHashAlgorithm(),
+                        sig1.sigPck.getHashedSubPackets(),
+                        unhashed,
+                        sig1.getDigestPrefix(),
+                        sig1.sigPck.getSalt(),
+                        sig1.sigPck.getSignature())
         );
     }
 }

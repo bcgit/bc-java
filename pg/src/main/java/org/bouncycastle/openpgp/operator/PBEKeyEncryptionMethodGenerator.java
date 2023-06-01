@@ -170,7 +170,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
         return PGPUtil.makeKeyFromPassPhrase(s2kDigestCalculator, encAlgorithm, s2k, passPhrase);
     }
 
-    @Override
     public ContainedPacket generateV5(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
             throws PGPException
     {
@@ -179,7 +178,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
         // return generateV5ESK(kekAlgorithm, aeadAlgorithm, sessionInfo);
     }
 
-    @Override
     public ContainedPacket generateV6(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
         throws PGPException
     {

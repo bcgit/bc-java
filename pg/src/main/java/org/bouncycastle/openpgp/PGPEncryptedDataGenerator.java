@@ -142,14 +142,16 @@ public class PGPEncryptedDataGenerator
     /**
      * Write a checksum into the last two bytes of the array.
      *
+     * @param offset offset from which to begin calculating the checksum.
      * @param sessionInfo byte array
      */
     private void addCheckSum(
+        int offset,
         byte[] sessionInfo)
     {
         int check = 0;
 
-        for (int i = 1; i != sessionInfo.length - 2; i++)
+        for (int i = offset; i != sessionInfo.length - 2; i++)
         {
             check += sessionInfo[i] & 0xff;
         }
@@ -165,14 +167,23 @@ public class PGPEncryptedDataGenerator
      * @param keyBytes bytes of the key
      * @return array of algorithm, key and checksum
      */
-    private byte[] createSessionInfo(
+    private byte[] createV3SessionInfo(
         int algorithm,
         byte[] keyBytes)
     {
         byte[] sessionInfo = new byte[keyBytes.length + 3];
         sessionInfo[0] = (byte)algorithm;
         System.arraycopy(keyBytes, 0, sessionInfo, 1, keyBytes.length);
-        addCheckSum(sessionInfo);
+        addCheckSum(1, sessionInfo);
+        return sessionInfo;
+    }
+
+    private byte[] createV6SessionInfo(
+            byte[] keyBytes)
+    {
+        byte[] sessionInfo = new byte[keyBytes.length + 2];
+        System.arraycopy(keyBytes, 0, sessionInfo, 0, keyBytes.length);
+        addCheckSum(0, sessionInfo);
         return sessionInfo;
     }
 
@@ -218,9 +229,12 @@ public class PGPEncryptedDataGenerator
 
         defAlgorithm = dataEncryptorBuilder.getAlgorithm();
         rand = dataEncryptorBuilder.getSecureRandom();
+        boolean isAEAD = dataEncryptorBuilder.getAeadAlgorithm() != -1;
+        boolean isV5StyleAEAD = isAEAD && dataEncryptorBuilder.isV5StyleAEAD();
+        boolean isV6StyleAEAD = isAEAD && !isV5StyleAEAD;
 
         byte[] sessionKey;  // session key, either protected by - or directly derived from session key encryption mechanism.
-        byte[] sessionInfo; // sessionKey with prepended alg-id, appended checksum
+        byte[] sessionInfo; // sessionKey with optionally prepended alg-id, appended checksum
 
         byte[] messageKey;          // key used to encrypt the message. In OpenPGP v6 this is derived from sessionKey + salt.
 
@@ -236,14 +250,14 @@ public class PGPEncryptedDataGenerator
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
             // prepend algorithm, append checksum
-            sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
+            sessionInfo = isV6StyleAEAD ?
+                    createV6SessionInfo(sessionKey) : createV3SessionInfo(defAlgorithm, sessionKey);
             messageKey = sessionKey;
         }
 
         // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
         // Since we cannot inject the IV into the data encryptor, we append it to the message key.
-        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD();
-        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
+        if (isV6StyleAEAD)
         {
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
                     SymmetricEncIntegrityPacket.VERSION_2,
@@ -430,7 +444,7 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator) m;
-            ContainedPacket esk = m.generateV5(
+            ContainedPacket esk = mGen.generateV5(
                     mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                     dataEncryptorBuilder.getAeadAlgorithm(),
                     sessionInfo);
@@ -459,7 +473,7 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator) m;
-            ContainedPacket esk = m.generateV6(
+            ContainedPacket esk = mGen.generateV6(
                     mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                     aeadAlgorithm,
                     sessionInfo);

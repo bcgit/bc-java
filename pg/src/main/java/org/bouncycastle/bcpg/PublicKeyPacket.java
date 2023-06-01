@@ -29,6 +29,10 @@ public class PublicKeyPacket
         }
         
         algorithm = (byte)in.read();
+        if (version == 5 || version == 6)
+        {
+            long keyOctets = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+        }
 
         switch (algorithm)
         {
@@ -53,6 +57,18 @@ public class PublicKeyPacket
         case EDDSA_LEGACY:
             key = new EdDSAPublicBCPGKey(in);
             break;
+        case X25519:
+            key = new X25519PublicBCPGKey(in);
+            break;
+        case X448:
+            key = new X448PublicBCPGKey(in);
+            break;
+        case Ed25519:
+            key = new Ed25519PublicBCPGKey(in);
+            break;
+        case Ed448:
+            key = new Ed448PublicBCPGKey(in);
+            break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
         }
@@ -70,10 +86,34 @@ public class PublicKeyPacket
         Date       time,
         BCPGKey    key)
     {
-        this.version = 4;
+        this(4, algorithm, time, key);
+    }
+
+    public PublicKeyPacket(
+            int version,
+            int algorithm,
+            Date time,
+            BCPGKey key)
+    {
+        this.version = version;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
+    }
+
+    public static PublicKeyPacket createV4PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(4, algorithm, time, key);
+    }
+
+    public static PublicKeyPacket createV5PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(5, algorithm, time, key);
+    }
+
+    public static PublicKeyPacket createV6PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(6, algorithm, time, key);
     }
     
     public int getVersion()
@@ -122,6 +162,15 @@ public class PublicKeyPacket
     
         pOut.write(algorithm);
     
+        if (version == 5 || version == 6)
+        {
+            int keyOctets = key.getEncoded().length;
+            pOut.write(keyOctets >> 24);
+            pOut.write(keyOctets >> 16);
+            pOut.write(keyOctets >> 8);
+            pOut.write(keyOctets);
+        }
+
         pOut.writeObject((BCPGObject)key);
 
         pOut.close();

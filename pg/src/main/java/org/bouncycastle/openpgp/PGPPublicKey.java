@@ -65,7 +65,7 @@ public class PGPPublicKey
             this.keyID = rK.getModulus().longValue();
             this.keyStrength = rK.getModulus().bitLength();
         }
-        else
+        else if (publicPk.getVersion() == 4)
         {
             this.keyID = ((long)(fingerprint[fingerprint.length - 8] & 0xff) << 56)
                 | ((long)(fingerprint[fingerprint.length - 7] & 0xff) << 48)
@@ -75,6 +75,22 @@ public class PGPPublicKey
                 | ((long)(fingerprint[fingerprint.length - 3] & 0xff) << 16)
                 | ((long)(fingerprint[fingerprint.length - 2] & 0xff) << 8)
                 | ((fingerprint[fingerprint.length - 1] & 0xff));
+        }
+        else if (publicPk.getVersion() == 5 || publicPk.getVersion() == 6)
+        {
+            this.keyID = ((long) (fingerprint[0] & 0xff) << 56)
+                    | ((long)(fingerprint[1] & 0xff) << 48)
+                    | ((long)(fingerprint[2] & 0xff) << 40)
+                    | ((long) (fingerprint[3] & 0xff) << 32)
+                    | ((long) (fingerprint[4] & 0xff) << 24)
+                    | ((long) (fingerprint[5] & 0xff) << 16)
+                    | ((long) (fingerprint[6] & 0xff) << 8)
+                    | ((long) (fingerprint[7] & 0xff));
+        }
+
+        // key strength
+        if (publicPk.getVersion() >= 4)
+        {
 
             if (key instanceof RSAPublicBCPGKey)
             {
