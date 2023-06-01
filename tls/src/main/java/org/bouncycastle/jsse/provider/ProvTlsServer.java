@@ -219,6 +219,41 @@ class ProvTlsServer
     }
 
     @Override
+    protected String getDetailMessageNoCipherSuite()
+    {
+        // CAUTION: Required for Common Criteria
+
+        StringBuilder sb = new StringBuilder(serverID);
+        
+        int[] offered = offeredCipherSuites;
+        if (TlsUtils.isNullOrEmpty(offered))
+        {
+            sb.append(" found no selectable cipher suite because none were offered.");
+        }
+        else
+        {
+            sb.append(" found no selectable cipher suite among the ");
+            sb.append(offered.length);
+            sb.append(" offered: ");
+
+            ProvSSLContextSpi context = manager.getContextData().getContext();
+
+            sb.append('[');
+            JsseUtils.appendCipherSuiteDetail(sb, context, offered[0]);
+
+            for (int i = 1; i < offered.length; ++i)
+            {
+                sb.append(", ");
+                JsseUtils.appendCipherSuiteDetail(sb, context, offered[i]);
+            }
+
+            sb.append(']');
+        }
+
+        return sb.toString();
+    }
+
+    @Override
     protected int getMaximumNegotiableCurveBits()
     {
         return NamedGroupInfo.getMaximumBitsServerECDH(jsseSecurityParameters.namedGroups);
