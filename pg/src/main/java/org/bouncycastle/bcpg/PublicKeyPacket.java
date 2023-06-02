@@ -13,6 +13,7 @@ public class PublicKeyPacket
     public static final int VERSION_3 = 3;
     public static final int VERSION_4 = 4;
     public static final int VERSION_6 = 6;
+
     private int            version;
     private long           time;
     private int            validDays;
@@ -32,6 +33,11 @@ public class PublicKeyPacket
         }
         
         algorithm = (byte)in.read();
+        if (version == VERSION_6)
+        {
+            // TODO: Use keyOctets to be able to parse unknown keys
+            long keyOctets = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+        }
 
         switch (algorithm)
         {
@@ -136,6 +142,15 @@ public class PublicKeyPacket
         }
     
         pOut.write(algorithm);
+
+        if (version == VERSION_6)
+        {
+            int keyOctets = key.getEncoded().length;
+            pOut.write(keyOctets >> 24);
+            pOut.write(keyOctets >> 16);
+            pOut.write(keyOctets >> 8);
+            pOut.write(keyOctets);
+        }
     
         pOut.writeObject((BCPGObject)key);
 
