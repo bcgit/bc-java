@@ -129,6 +129,17 @@ public class PGPSignature
     }
 
     /**
+     * Return the salt associated with this signature.
+     * Only for {@link SignaturePacket#VERSION_6} signatures.
+     *
+     * @return salt
+     */
+    public byte[] getSalt()
+    {
+        return sigPck.getSalt();
+    }
+
+    /**
      * Return the digest prefix of the signature.
      *
      * @return digest prefix
