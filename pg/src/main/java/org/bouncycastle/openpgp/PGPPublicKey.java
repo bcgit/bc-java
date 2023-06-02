@@ -58,7 +58,7 @@ public class PGPPublicKey
 
         this.fingerprint = fingerPrintCalculator.calculateFingerprint(publicPk);
 
-        if (publicPk.getVersion() <= 3)
+        if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
@@ -256,7 +256,7 @@ public class PGPPublicKey
      */
     public int getValidDays()
     {
-        if (publicPk.getVersion() > 3)
+        if (publicPk.getVersion() > PublicKeyPacket.VERSION_3)
         {
             long delta = this.getValidSeconds() % (24 * 60 * 60);
             int days = (int)(this.getValidSeconds() / (24 * 60 * 60));
@@ -297,7 +297,7 @@ public class PGPPublicKey
      */
     public long getValidSeconds()
     {
-        if (publicPk.getVersion() > 3)
+        if (publicPk.getVersion() > PublicKeyPacket.VERSION_3)
         {
             if (this.isMasterKey())
             {
