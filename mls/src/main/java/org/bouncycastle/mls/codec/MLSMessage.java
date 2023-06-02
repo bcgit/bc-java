@@ -2,29 +2,29 @@ package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.mls.protocol.GroupContext;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MLSMessage
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion version;
-    WireFormat wireFormat;
-    PublicMessage publicMessage;
+    public WireFormat wireFormat;
+    public PublicMessage publicMessage;
     PrivateMessage privateMessage;
     Welcome welcome;
     GroupInfo groupInfo;
     KeyPackage keyPackage;
 
-    public MLSMessage(MLSInputStream stream) throws IOException {
+    public MLSMessage(MLSInputStream stream) throws IOException
+    {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
         this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
 
-        System.out.println(wireFormat);
         switch (wireFormat)
         {
             case RESERVED:
@@ -71,6 +71,24 @@ public class MLSMessage
             case mls_key_package:
                 stream.write(keyPackage);
                 break;
+        }
+    }
+
+    public long getEpoch()
+    {
+        switch (wireFormat)
+        {
+
+            case mls_public_message:
+                return publicMessage.content.epoch;
+            case mls_private_message:
+                return privateMessage.epoch;
+            case mls_welcome:
+            case mls_group_info:
+            case mls_key_package:
+            default:
+                //TODO: change and throw
+                return -1;
         }
     }
 }
@@ -122,95 +140,8 @@ enum ProtocolVersion
     }
 }
 
-class PublicMessage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    FramedContent content;
-    FramedContentAuthData auth;
-    byte[] membership_tag;
-
-    byte macType;
-
-    @SuppressWarnings("unused")
-    public PublicMessage(MLSInputStream stream) throws IOException
-    {
-        content = (FramedContent) stream.read(FramedContent.class);
-        auth = new FramedContentAuthData(stream, content.content_type);
-
-        switch (content.sender.senderType)
-        {
-
-            case RESERVED:
-            case EXTERNAL:
-            case NEW_MEMBER_PROPOSAL:
-            case NEW_MEMBER_COMMIT:
-                break;
-            case MEMBER:
-                membership_tag = stream.readOpaque();
-                break;
-        }
-    }
-
-
-    public PublicMessage(FramedContent content, FramedContentAuthData auth, byte[] membership_tag)
-    {
-        this.content = content;
-        this.auth = auth;
-        switch (content.sender.senderType)
-        {
-
-            case RESERVED:
-            case NEW_MEMBER_COMMIT:
-            case EXTERNAL:
-            case NEW_MEMBER_PROPOSAL:
-                break;
-            case MEMBER:
-                this.membership_tag = membership_tag;
-                break;
-        }
-    }
-
-    private byte[] tagMessage(CipherSuite suite, Secret membershipKey, AuthenticatedContentTBM tbm) throws IOException
-    {
-        // MAC(membership_key, AuthenticatedContentTBM)
-        Secret ikm = new Secret(MLSOutputStream.encode(tbm));
-        Secret membership_tag = Secret.extract(suite, membershipKey, ikm);
-        return membership_tag.value();
-    }
-
-    public void verifyMembership(CipherSuite suite, Secret membershipKey, byte[] serialized_context) throws IOException
-    {
-        FramedContentTBS tbs = new FramedContentTBS(
-                WireFormat.mls_public_message,
-                content,
-                serialized_context);
-        AuthenticatedContentTBM tbm = new AuthenticatedContentTBM(tbs, auth);
-        byte[] expectedMembershipTag = tagMessage(suite, membershipKey, tbm);
-        System.out.println("e msk: " + Hex.toHexString(expectedMembershipTag));
-        System.out.println("a msk: " + Hex.toHexString(membership_tag));
-
-        //TODO: check for missing MembershipTag
-        if (!Arrays.areEqual(expectedMembershipTag, membership_tag) )
-        {
-            //TODO: throw InvalidMembershipTag
-        }
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        //TODO
-    }
-
-//    @Override
-//    public void writeTo(MLSOutputStream stream) throws IOException
-//    {
-//
-//    }
-}
-
 class AuthenticatedContentTBM
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     FramedContentTBS contentTBS;
     FramedContentAuthData auth;
@@ -221,6 +152,11 @@ class AuthenticatedContentTBM
         this.auth = auth;
     }
 
+    public AuthenticatedContentTBM(MLSInputStream stream) throws IOException
+    {
+        contentTBS = (FramedContentTBS) stream.read(FramedContentTBS.class);
+        auth = (FramedContentAuthData) stream.read(FramedContentAuthData.class);
+    }
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
@@ -262,7 +198,6 @@ class Sender
         stream.write(senderType);
         switch (senderType)
         {
-
             case MEMBER:
             case EXTERNAL:
                 stream.write(node_index);
@@ -303,6 +238,7 @@ class FramedContentAuthData
 
     public FramedContentAuthData(MLSInputStream stream, ContentType contentType) throws IOException
     {
+        this.contentType = contentType;
         signature = stream.readOpaque();
         //TODO CHECK ITS NOT OPAQUE
         if (contentType == ContentType.COMMIT)
@@ -321,111 +257,75 @@ class FramedContentAuthData
     }
 }
 
-class FramedContent
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    byte[] group_id;
-    long epoch;
-    Sender sender;
-    byte[] authenticated_data;
-    byte[] application_data;
-
-    final ContentType content_type;
-
-    Proposal proposal;
-    Commit commit;
-
-
-    public FramedContent(MLSInputStream stream) throws IOException
-    {
-        group_id = stream.readOpaque();
-        epoch = (long) stream.read(long.class);
-        sender = (Sender) stream.read(Sender.class);
-        authenticated_data = stream.readOpaque();
-        content_type = ContentType.values()[(byte) stream.read(byte.class)];
-        switch (content_type)
-        {
-            case APPLICATION:
-                application_data = stream.readOpaque();
-                break;
-            case PROPOSAL:
-                proposal = (Proposal) stream.read(Proposal.class);
-                break;
-            case COMMIT:
-                commit = (Commit) stream.read(Commit.class);
-                break;
-        }
-    }
-    FramedContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data, ContentType content_type, Proposal proposal, Commit commit)
-    {
-        this.group_id = group_id;
-        this.epoch = epoch;
-        this.sender = sender;
-        this.authenticated_data = authenticated_data;
-        this.application_data = application_data;
-        this.content_type = content_type;
-        this.proposal = proposal;
-        this.commit = commit;
-    }
-
-    public static FramedContent application(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data)
-    {
-        return new FramedContent(group_id, epoch, sender, authenticated_data, application_data, ContentType.APPLICATION, null, null);
-    }
-    public static FramedContent proposal(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, Proposal proposal)
-    {
-        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.PROPOSAL, proposal, null);
-    }
-    public static FramedContent commit(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, Commit commit)
-    {
-        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.COMMIT, null, commit);
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.writeOpaque(group_id);
-        stream.write(epoch);
-        stream.write(sender);
-        stream.writeOpaque(authenticated_data);
-
-        switch (content_type)
-        {
-            case RESERVED:
-                break;
-            case APPLICATION:
-                stream.writeOpaque(application_data);
-                break;
-            case PROPOSAL:
-                stream.write(proposal);
-                break;
-            case COMMIT:
-                stream.write(commit);
-                break;
-        }
-    }
-}
-
 class FramedContentTBS
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
+    ProtocolVersion version = ProtocolVersion.mls10;
     WireFormat wireFormat;
     FramedContent content;
     GroupContext context;
 
+    public FramedContentTBS(WireFormat wireFormat, FramedContent content, GroupContext context)
+    {
+        this.wireFormat = wireFormat;
+        this.content = content;
+        switch (content.sender.senderType)
+        {
+            case MEMBER:
+            case NEW_MEMBER_COMMIT:
+                this.context = context;
+                break;
+        }
+    }
     public FramedContentTBS(WireFormat wireFormat, FramedContent content, byte[] context) throws IOException
     {
         this.wireFormat = wireFormat;
         this.content = content;
         switch (content.sender.senderType)
         {
+            case MEMBER:
             case NEW_MEMBER_COMMIT:
                 this.context = (GroupContext) MLSInputStream.decode(context, GroupContext.class);
                 break;
         }
     }
+
+    public FramedContentTBS(MLSInputStream stream) throws IOException
+    {
+        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
+        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
+        this.content = (FramedContent) stream.read(FramedContent.class);
+        switch (content.sender.senderType)
+        {
+            case MEMBER:
+            case NEW_MEMBER_COMMIT:
+                this.context = (GroupContext) stream.read(GroupContext.class);
+                break;
+            case EXTERNAL:
+            case NEW_MEMBER_PROPOSAL:
+                break;
+        }
+    }
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(version);
+        stream.write(wireFormat);
+        stream.write(content);
+        switch (content.sender.senderType)
+        {
+            case MEMBER:
+            case NEW_MEMBER_COMMIT:
+                stream.write(context);
+                break;
+            default:
+                break;
+        }
+    }
 }
+
 class Proposal
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProposalType proposalType;
     Add add;
@@ -692,7 +592,7 @@ class Proposal
 
 
 class Extension
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ExtensionType extensionType;
     byte[] extension_data;
@@ -703,15 +603,23 @@ class Extension
         this.extension_data = extension_data;
     }
 
+    Extension(MLSInputStream stream) throws IOException
+    {
+        this.extensionType = ExtensionType.values()[(short) stream.read(short.class)];
+        this.extension_data = stream.readOpaque();
+    }
+
+
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
+        stream.write(extensionType);
         stream.writeOpaque(extension_data);
     }
 }
 
 class KeyPackage
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion version;
     CipherSuite cipher_suite;
@@ -743,7 +651,7 @@ class KeyPackage
 }
 
 class Credential
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 
 {
     CredentialType credentialType;
@@ -770,7 +678,7 @@ class Credential
     }
 }
 class Certificate
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] cert_data;
 
@@ -786,7 +694,7 @@ class Certificate
     }
 }
 class LeafNode
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] encryption_key;
     byte[] signature_key;
@@ -843,7 +751,7 @@ class LeafNode
     }
 }
 class LifeTime
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     int not_before;
     int not_after;
@@ -868,7 +776,7 @@ class LifeTime
 }
 
 class Capabilities
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion[] versions;
     CipherSuite[] cipherSuites;
@@ -908,7 +816,7 @@ class Capabilities
 
 
 enum CredentialType
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((byte) 0),
     basic((byte) 1),
@@ -928,7 +836,7 @@ enum CredentialType
     }
 }
 enum LeafNodeSource
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((byte) 0),
     KEY_PACKAGE((byte) 1),
@@ -949,7 +857,7 @@ enum LeafNodeSource
     }
 }
 enum ContentType
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((byte)0),
     APPLICATION((byte)1),
@@ -976,14 +884,14 @@ enum ContentType
     }
 }
 enum ExtensionType
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((short)0),
- 	APPLICATION_ID((short)1),
- 	RATCHET_TREE((short)2),
- 	REQUIRED_CAPABILITIES((short)3),
- 	EXTERNAL_PUB((short)4),
- 	EXTERNAL_SENDERS((short)5);
+    APPLICATION_ID((short)1),
+    RATCHET_TREE((short)2),
+    REQUIRED_CAPABILITIES((short)3),
+    EXTERNAL_PUB((short)4),
+    EXTERNAL_SENDERS((short)5);
     final short value;
     ExtensionType(short value)
     {
@@ -993,7 +901,7 @@ enum ExtensionType
     @SuppressWarnings("unused")
     ExtensionType(MLSInputStream stream) throws IOException
     {
-        this.value = (byte) stream.read(byte.class);
+        this.value = (short) stream.read(short.class);
     }
 
     @Override
@@ -1003,7 +911,7 @@ enum ExtensionType
     }
 }
 enum ProposalType
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((short)0),
     ADD((short)1),
@@ -1034,6 +942,7 @@ enum ProposalType
 }
 
 enum SenderType
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     RESERVED((byte)0),
     MEMBER((byte)1),
@@ -1046,6 +955,11 @@ enum SenderType
     SenderType(byte value)
     {
         this.value = value;
+    }
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(value);
     }
 }
 enum ProposalOrRefType
@@ -1062,7 +976,7 @@ enum ProposalOrRefType
     }
 }
 class Commit
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProposalOrRef[] proposals;
 
@@ -1083,7 +997,7 @@ class Commit
     }
 }
 class ProposalOrRef
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProposalOrRefType type;
     Proposal proposal;
@@ -1145,7 +1059,7 @@ class HPKECiphertext
     }
 }
 class UpdatePathNode
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] encryption_key;
 
@@ -1164,7 +1078,7 @@ class UpdatePathNode
 }
 
 class UpdatePath
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     LeafNode leaf_node;
     UpdatePathNode[] nodes;
@@ -1183,7 +1097,7 @@ class UpdatePath
 }
 
 class PrivateMessage
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] group_id;
     long epoch;

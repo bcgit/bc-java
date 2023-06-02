@@ -1,7 +1,5 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.util.Pack;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -33,6 +31,10 @@ public class MLSInputStream {
 
         byte[] readAll(int size) throws IOException {
             byte[] data = new byte[size];
+            if (size == 0)
+            {
+                return data;
+            }
             int length = super.read(data);
             if (length != data.length) {
                 throw new IOException("Attempt to read beyond end of buffer");

@@ -3,7 +3,8 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.PrintTestResult;
-import org.bouncycastle.mls.codec.*;
+import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;

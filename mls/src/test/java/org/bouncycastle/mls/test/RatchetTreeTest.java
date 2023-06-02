@@ -2,12 +2,12 @@ package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.mls.*;
+import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.mls.protocol.ResumptionPSKUsage;
 import org.bouncycastle.util.encoders.Hex;
-import sun.reflect.generics.tree.Tree;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;

@@ -1,12 +1,17 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.cms.AuthenticatedData;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.*;
+import org.bouncycastle.mls.GroupKeySet;
+import org.bouncycastle.mls.codec.AuthenticatedContent;
+import org.bouncycastle.mls.codec.FramedContent;
+import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.mls.protocol.GroupContext;
 import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
@@ -414,6 +419,13 @@ public class VectorTest
 
                     CipherSuite suite = new CipherSuite(cipher_suite);
 
+                    AsymmetricKeyParameter sigPriv = suite.deserializeSignaturePrivateKey(signature_priv);
+                    AsymmetricKeyParameter sigPub = suite.getSignaturePublicKey(sigPriv);
+                    byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigPub);
+
+                    // Sanity Check
+                    assertTrue(Arrays.areEqual(signature_pub, sigPubBytes));
+
                     // Construct a GroupContext object with the provided cipher_suite, group_id, epoch, tree_hash,
                     // and confirmed_transcript_hash values, and empty extensions
                     GroupContext groupContext = new GroupContext(
@@ -422,32 +434,23 @@ public class VectorTest
                             epoch,
                             tree_hash,
                             confirmed_transcript_hash,
-                            new byte[0]
+                            new ArrayList<>()
                     );
-
                     byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
-//                    System.out.println(Hex.toHexString(group_id));
-//                    System.out.println(Hex.toHexString(groupContextBytes));
-
-                    // Initialize a secret tree for 2 members with the specified encryption_secret
-                    TreeSize treeSize = TreeSize.forLeaves(2);
-                    Secret encryptionSecret = new Secret(encryption_secret);
-                    GroupKeySet secret_tree = new GroupKeySet(suite, treeSize, encryptionSecret);
-
-
 
                     // Proposal
+                    MLSMessage proposalPub = (MLSMessage) MLSInputStream.decode(proposal_pub, MLSMessage.class);
 
-//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(proposal_pub, MLSMessage.class);
-//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(proposal_priv, MLSMessage.class);
-                    // verify proposal_pub == membership_key + signature_pub
-//                    byte[] decrypted_message = Group.decryptMessage(proposal_pub)
+                    //TODO move to unprotect(MLSMessage message)
+                    AuthenticatedContent authContent = proposalPub.publicMessage.unprotect(suite, new Secret(membership_key), groupContextBytes);
+                    boolean verified = authContent.verify(suite, signature_pub, groupContextBytes);
+                    assertTrue(verified);
+                    FramedContent proposalPubUnprotected = authContent.content;
+                    byte[] contentBytes = proposalPubUnprotected.getContentBytes();
+                    assertTrue(Arrays.areEqual(contentBytes, proposal));
 
-//                    byte[] processed_unverified_message = group.public_group().parse_message(decrypted_message, group.message_secrets_store())
-//                    AuthenticatedContent processed_message:  = processed_unverified_message
-//                        .verify(ciphersuite, backend.crypto(), ProtocolVersion::Mls10)
 
-
+                    MLSMessage proposalPriv = (MLSMessage) MLSInputStream.decode(proposal_priv, MLSMessage.class);
 
 
                     // Commit
@@ -553,7 +556,7 @@ public class VectorTest
                                     epochCount,
                                     tree_hash,
                                     confirmed_transcript_hash,
-                                    new byte[0]
+                                    new ArrayList<>()
                             );
                             // Verify that group context matches the provided group_context value
                             byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
