@@ -14,6 +14,7 @@ import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -164,8 +165,9 @@ public class SignatureSubpacketInputStream
         case PREFERRED_COMP_ALGS:
         case PREFERRED_HASH_ALGS:
         case PREFERRED_SYM_ALGS:
-        case PREFERRED_AEAD_ALGORITHMS:
             return new PreferredAlgorithms(type, isCritical, isLongLength, data);
+        case PREFERRED_AEAD_ALGORITHMS:
+            return new PreferredAEADCiphersuites(isCritical, isLongLength, data);
         case KEY_FLAGS:
             return new KeyFlags(isCritical, isLongLength, data);
         case POLICY_URL:
