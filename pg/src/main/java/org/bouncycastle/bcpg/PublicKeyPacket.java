@@ -10,6 +10,9 @@ import java.util.Date;
 public class PublicKeyPacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;
+    public static final int VERSION_6 = 6;
     private int            version;
     private long           time;
     private int            validDays;
@@ -23,7 +26,7 @@ public class PublicKeyPacket
         version = in.read();
         time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
  
-        if (version <= 3)
+        if (version <= VERSION_3)
         {
             validDays = (in.read() << 8) | in.read();
         }
@@ -82,7 +85,7 @@ public class PublicKeyPacket
         Date       time,
         BCPGKey    key)
     {
-        this.version = 4;
+        this.version = VERSION_4;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
@@ -126,7 +129,7 @@ public class PublicKeyPacket
         pOut.write((byte)(time >> 8));
         pOut.write((byte)time);
     
-        if (version <= 3)
+        if (version <= VERSION_3)
         {
             pOut.write((byte)(validDays >> 8));
             pOut.write((byte)validDays);
