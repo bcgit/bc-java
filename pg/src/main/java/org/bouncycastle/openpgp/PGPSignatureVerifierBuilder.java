@@ -180,7 +180,7 @@ public class PGPSignatureVerifierBuilder
         return doBuildCertificationVerifier(certification, userAttributes, publicKey);
     }
 
-    private PGPSignatureVerifier doBuildCertificationVerifier(PGPSignature certification, byte[] rawUserID, final PGPPublicKey publicKey)
+    private PGPSignatureVerifier doBuildCertificationVerifier(PGPSignature certification, final byte[] rawUserID, final PGPPublicKey publicKey)
         throws PGPException
     {
         final PGPSignature localSig = createLocalSig(certification);
@@ -211,7 +211,7 @@ public class PGPSignatureVerifierBuilder
         return localSig;
     }
 
-    private PGPSignatureVerifier doBuildCertificationVerifier(PGPSignature certification, PGPUserAttributeSubpacketVector userAttributes, final PGPPublicKey publicKey)
+    private PGPSignatureVerifier doBuildCertificationVerifier(PGPSignature certification, final PGPUserAttributeSubpacketVector userAttributes, final PGPPublicKey publicKey)
         throws PGPException
     {
         final PGPSignature localSig = createLocalSig(certification);
@@ -255,7 +255,7 @@ public class PGPSignatureVerifierBuilder
         };
     }
 
-    private PGPSignatureVerifier doBuildKeyBindingVerifier(PGPSignature certification, PGPPublicKey primaryKey, PGPPublicKey subKey)
+    private PGPSignatureVerifier doBuildKeyBindingVerifier(PGPSignature certification, final PGPPublicKey primaryKey, final PGPPublicKey subKey)
         throws PGPException
     {
         final PGPSignature localSig = createLocalSig(certification);
