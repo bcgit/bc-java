@@ -24,8 +24,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
 
-import org.junit.Assert;
-
 import junit.framework.TestCase;
 
 public class BasicClientAuthTlsTest
@@ -86,7 +84,7 @@ public class BasicClientAuthTlsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
     
@@ -232,7 +230,7 @@ public class BasicClientAuthTlsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
     
@@ -289,7 +287,7 @@ public class BasicClientAuthTlsTest
 
                 SSLSession session = cSock.getSession();
                 assertNotNull(session);
-                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertNull(session.getLocalPrincipal());
                 assertEquals("CN=Test CA Certificate", session.getPeerPrincipal().getName());
 
@@ -374,7 +372,7 @@ public class BasicClientAuthTlsTest
     
                 SSLSession session = sslSock.getSession();
                 assertNotNull(session);
-                Assert.assertNotEquals("SSL_NULL_WITH_NULL_NULL", session.getCipherSuite());
+                assertFalse("SSL_NULL_WITH_NULL_NULL".equals(session.getCipherSuite()));
                 assertEquals("CN=Test CA Certificate", session.getLocalPrincipal().getName());
 
                 if (needClientAuth)
@@ -386,7 +384,7 @@ public class BasicClientAuthTlsTest
                     try
                     {
                         session.getPeerPrincipal();
-                        Assert.fail();
+                        fail();
                     }
                     catch (SSLPeerUnverifiedException e)
                     {
