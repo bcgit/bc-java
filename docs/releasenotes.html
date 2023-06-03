@@ -35,6 +35,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>The PGP examples have been updated to reflect key size and algorithm changes that have occured since they were first written (10+ years...).</li>
 <li>(D)TLS: A new callback 'TlsPeer.notifyConnectionClosed' will be called when the connection is closed (including by failure).</li>
 <li>BCJSSE: Improved logging of connection events and include unique IDs in connection-specific log messages.</li>
+<li>BCJSSE: Server now logs the offered cipher suites when it fails to select one.</li>
 <li>DTLS: The initial handshake resend time is now configurable by overriding 'TlsPeer.getHandshakeResendTimeMillis'.</li>
 <li>DTLS: Added support for connection IDs per RFC 9146.</li>
 <li>DTLS: Performance of DTLSVerifier has been improved so that it can reasonably be used for all incoming packets.</li>
