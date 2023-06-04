@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.activation.DataHandler;
 import javax.crypto.KeyGenerator;
 import javax.mail.Header;
 import javax.mail.MessagingException;
@@ -126,7 +127,7 @@ public class SMIMEGenerator
         throws SMIMEException
     {
         MimeBodyPart content = new MimeBodyPart();
-
+    
         //
         // add the headers to the body part.
         //
@@ -134,6 +135,8 @@ public class SMIMEGenerator
         {
             message.removeHeader("Message-Id");
             message.removeHeader("Mime-Version");
+
+            message.saveChanges();
 
             // JavaMail has a habit of reparsing some content types, if the bodypart is
             // a multipart it might be signed, we rebuild the body part using the raw input stream for the message.
@@ -155,7 +158,7 @@ public class SMIMEGenerator
 
             content.setContent(message.getContent(), message.getContentType());
 
-            content.setDataHandler(message.getDataHandler());
+            content.setDataHandler(new DataHandler(message.getDataHandler().getDataSource()));
 
             extractHeaders(content, message);
         }
