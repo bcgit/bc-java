@@ -75,7 +75,8 @@ public class CipherStreamTest
     private static final byte[] CHA7539OUT = Hex.decode("aef50e541e12a65dc21e90ebb4c03987971c540f78eb536df692ff89fc47561ed17eb23b63eb714c09d0c50af703e01485926c140e994b3edff9df635a91d268");
 
     private static final byte[] HCIN = new byte[64];
-    private static final byte[] HCIV = new byte[32];
+    private static final byte[] HC128IV = new byte[16];
+    private static final byte[] HC256IV = new byte[32];
 
     private static final byte[] HCK256A = new byte[32];
     private static final byte[] HC256A = Hex.decode(
@@ -416,10 +417,10 @@ public class CipherStreamTest
         testAlgorithm("ChaCha20", CHA7539K, CHA7539IV, CHA7539IN, CHA7539OUT);
         runTest("HC128");
         testException("HC128");
-        testAlgorithm("HC128", HCK128A, HCIV, HCIN, HC128A);
+        testAlgorithm("HC128", HCK128A, HC128IV, HCIN, HC128A);
         runTest("HC256");
         testException("HC256");
-        testAlgorithm("HC256", HCK256A, HCIV, HCIN, HC256A);
+        testAlgorithm("HC256", HCK256A, HC256IV, HCIN, HC256A);
         runTest("VMPC");
         testException("VMPC");
         //testAlgorithm("VMPC", a, iv, in, a);
