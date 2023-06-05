@@ -5,7 +5,6 @@ import java.security.Provider;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -171,9 +170,7 @@ public class JcePBEDataDecryptorFactoryBuilder
                 byte[] sessionData;
                 try
                 {
-                    GCMParameterSpec parameters = new GCMParameterSpec(aeadMacLen, aeadIv);
-                    aead.init(Cipher.DECRYPT_MODE, secretKey, parameters);
-                    aead.updateAAD(hkdfInfo);
+                    JceAEADCipherUtil.setUpAeadCipher(aead, secretKey, Cipher.DECRYPT_MODE, aeadIv, aeadMacLen, hkdfInfo);
 
                     sessionData = aead.doFinal(buf, 0, buf.length);
                 }
