@@ -10,6 +10,10 @@ import java.util.Date;
 public class PublicKeyPacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;
+    public static final int VERSION_6 = 6;
+
     private int            version;
     private long           time;
     private int            validDays;
@@ -23,12 +27,17 @@ public class PublicKeyPacket
         version = in.read();
         time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
  
-        if (version <= 3)
+        if (version <= VERSION_3)
         {
             validDays = (in.read() << 8) | in.read();
         }
         
         algorithm = (byte)in.read();
+        if (version == VERSION_6)
+        {
+            // TODO: Use keyOctets to be able to parse unknown keys
+            long keyOctets = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+        }
 
         switch (algorithm)
         {
@@ -53,6 +62,18 @@ public class PublicKeyPacket
         case EDDSA_LEGACY:
             key = new EdDSAPublicBCPGKey(in);
             break;
+        case X25519:
+            key = new X25519PublicBCPGKey(in);
+            break;
+        case X448:
+            key = new X448PublicBCPGKey(in);
+            break;
+        case Ed25519:
+            key = new Ed25519PublicBCPGKey(in);
+            break;
+        case Ed448:
+            key = new Ed448PublicBCPGKey(in);
+            break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
         }
@@ -70,7 +91,7 @@ public class PublicKeyPacket
         Date       time,
         BCPGKey    key)
     {
-        this.version = 4;
+        this.version = VERSION_4;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
@@ -114,13 +135,22 @@ public class PublicKeyPacket
         pOut.write((byte)(time >> 8));
         pOut.write((byte)time);
     
-        if (version <= 3)
+        if (version <= VERSION_3)
         {
             pOut.write((byte)(validDays >> 8));
             pOut.write((byte)validDays);
         }
     
         pOut.write(algorithm);
+
+        if (version == VERSION_6)
+        {
+            int keyOctets = key.getEncoded().length;
+            pOut.write(keyOctets >> 24);
+            pOut.write(keyOctets >> 16);
+            pOut.write(keyOctets >> 8);
+            pOut.write(keyOctets);
+        }
     
         pOut.writeObject((BCPGObject)key);
 
