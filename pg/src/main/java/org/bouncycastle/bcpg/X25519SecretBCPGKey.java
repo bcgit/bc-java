@@ -3,7 +3,7 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 
 public class X25519SecretBCPGKey
-    extends OctetArraySecretBCPGKey
+    extends OctetArrayBCPGKey
 {
     public static final int LENGTH = 32;
 

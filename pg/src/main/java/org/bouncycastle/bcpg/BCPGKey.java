@@ -11,7 +11,8 @@ public interface BCPGKey
     /**
      * Return the base format for this key - in the case of the symmetric keys it will generally
      * be raw indicating that the key is just a straight byte representation, for an asymmetric
-     * key the format will be PGP, indicating the key is a string of MPIs encoded in PGP format.
+     * key the format will be PGP, indicating the key is a string of MPIs or octets
+     * encoded in PGP format.
      * 
      * @return "RAW" or "PGP"
      */
