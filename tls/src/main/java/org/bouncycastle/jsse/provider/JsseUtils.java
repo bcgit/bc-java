@@ -112,9 +112,9 @@ abstract class JsseUtils
     {
         // TODO Efficiency: precalculate "cipherSuiteID" and make context.getCipherSuiteName faster
 
-        sb.append("{0x");
+        sb.append("{0x");   // -DM Hex.toHexString
         sb.append(Hex.toHexString(new byte[]{ (byte)(cipherSuite >> 8) }));
-        sb.append(",0x");
+        sb.append(",0x");   // -DM Hex.toHexString
         sb.append(Hex.toHexString(new byte[]{ (byte)cipherSuite }));
         sb.append('}');
 

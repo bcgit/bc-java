@@ -1,31 +1,30 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.util.Arrays;
-
 import java.io.IOException;
 
-/**
- * PublicBCPGKey which is encoded as an array of octets rather than an MPI.
- */
-public abstract class OctetArrayPublicBCPGKey
-        extends BCPGObject
-        implements BCPGKey
-{
+import org.bouncycastle.util.Arrays;
 
+/**
+ * Public/Secret BCPGKey which is encoded as an array of octets rather than an MPI.
+ */
+public abstract class OctetArrayBCPGKey
+    extends BCPGObject
+    implements BCPGKey
+{
     private final byte[] key;
 
-    OctetArrayPublicBCPGKey(int length, BCPGInputStream in)
-            throws IOException
+    OctetArrayBCPGKey(int length, BCPGInputStream in)
+        throws IOException
     {
         key = new byte[length];
         in.readFully(key);
     }
 
-    OctetArrayPublicBCPGKey(int length, byte[] key)
+    OctetArrayBCPGKey(int length, byte[] key)
     {
         if (key.length != length)
         {
-            throw new IllegalArgumentException("Unexpected key encoding length. Expected " + length + " bytes, got " + key.length);
+            throw new IllegalArgumentException("unexpected key encoding length: expected " + length + " bytes, got " + key.length);
         }
         this.key = new byte[length];
         System.arraycopy(key, 0, this.key, 0, length);
@@ -50,16 +49,20 @@ public abstract class OctetArrayPublicBCPGKey
     }
 
     @Override
-    public String getFormat() {
+    public String getFormat()
+    {
         return "PGP";
     }
 
     @Override
-    public void encode(BCPGOutputStream out) throws IOException {
+    public void encode(BCPGOutputStream out)
+        throws IOException
+    {
         out.write(key);
     }
 
-    public byte[] getKey() {
+    public byte[] getKey()
+    {
         return Arrays.clone(key);
     }
 }

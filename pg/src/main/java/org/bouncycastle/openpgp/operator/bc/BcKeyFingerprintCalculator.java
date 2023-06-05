@@ -31,7 +31,7 @@ public class BcKeyFingerprintCalculator
             {
                 digest = new MD5Digest();
 
-                byte[]  bytes = new MPInteger(rK.getModulus()).getEncoded();
+                byte[] bytes = new MPInteger(rK.getModulus()).getEncoded();
                 digest.update(bytes, 2, bytes.length - 2);
 
                 bytes = new MPInteger(rK.getPublicExponent()).getEncoded();
@@ -46,7 +46,7 @@ public class BcKeyFingerprintCalculator
         {
             try
             {
-                byte[]             kBytes = publicPk.getEncodedContents();
+                byte[] kBytes = publicPk.getEncodedContents();
 
                 digest = new SHA1Digest();
 
@@ -62,11 +62,12 @@ public class BcKeyFingerprintCalculator
         }
         else if (publicPk.getVersion() == 6)
         {
-            try {
+            try
+            {
                 byte[] kBytes = publicPk.getEncodedContents();
                 digest = new SHA256Digest();
 
-                digest.update((byte) 0x9b);
+                digest.update((byte)0x9b);
 
                 digest.update((byte)(kBytes.length >> 24));
                 digest.update((byte)(kBytes.length >> 16));
