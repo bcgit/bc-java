@@ -261,7 +261,7 @@ public class PGPEncryptedDataGenerator
 
         for (int i = 0; i < methods.size(); i++)
         {
-            PGPKeyEncryptionMethodGenerator method = methods.get(i);
+            PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
             // OpenPGP v5 or v6
             if (dataEncryptor instanceof PGPAEADDataEncryptor)
             {

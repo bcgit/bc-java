@@ -155,7 +155,7 @@ public class SphincsPlusTest
                         SPHINCSPlusPrivateKeyParameters privParams = (SPHINCSPlusPrivateKeyParameters)kp.getPrivate();
 
                         // FIXME No OIDs for simple variants of SPHINCS+
-                        if (!name.contains("-simple"))
+                        if (name.indexOf("-simple") < 0)
                         {
                             pubParams = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(
                                 SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pubParams));

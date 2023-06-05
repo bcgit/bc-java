@@ -7,7 +7,6 @@ import java.security.GeneralSecurityException;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -418,8 +417,7 @@ class JceAEADUtil
             byte[] decData;
             try
             {
-                c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
-                c.updateAAD(adata);
+                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE,  getNonce(iv, chunkIndex), 128, adata);
 
                 decData = c.doFinal(buf, 0, dataLen + aeadTagLength);
             }
@@ -449,11 +447,13 @@ class JceAEADUtil
                 }
                 try
                 {
-                    c.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
-                    c.updateAAD(adata);
                     if (v5StyleAEAD)
                     {
-                        c.updateAAD(Pack.longToBigEndian(totalBytes));
+                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, Arrays.concatenate(adata, Pack.longToBigEndian(totalBytes)));
+                    }
+                    else
+                    {
+                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
                     }
 
                     c.doFinal(buf, 0, aeadTagLength); // check final tag
@@ -612,8 +612,7 @@ class JceAEADUtil
 
             try
             {
-                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));  // always full tag.
-                c.updateAAD(adata);
+                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE,  getNonce(iv, chunkIndex), 128, adata);
 
                 out.write(c.doFinal(data, 0, dataOff));
             }
@@ -651,11 +650,13 @@ class JceAEADUtil
 
             try
             {
-                c.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(128, getNonce(iv, chunkIndex)));
-                c.updateAAD(adata);
                 if (isV5AEAD)
                 {
-                    c.updateAAD(Pack.longToBigEndian(totalBytes));
+                    JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE, getNonce(iv, chunkIndex), 128, Arrays.concatenate(adata, Pack.longToBigEndian(totalBytes)));
+                }
+                else
+                {
+                    JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
                 }
 
                 out.write(c.doFinal(aaData, 0, 0)); // output final tag
