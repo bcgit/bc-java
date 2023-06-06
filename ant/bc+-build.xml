@@ -1143,7 +1143,7 @@
     <!--
           jMail JavaDoc
     -->
-    <target name="javadoc-jmail" depends="initMacros">
+    <target name="javadoc-jmail" depends="initMacros" if="jmail.present">
 	<mkdir dir="${jmail.target.src.dir}" />
 
         <copy todir="${jmail.target.src.dir}">
