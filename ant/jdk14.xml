@@ -53,6 +53,7 @@
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java"/>
+		<exclude name="**/SignedMailValidator.java"/>
             </fileset>
             <fileset dir="prov/src/main/java">
 		<exclude name="**/ParameterUtil.java"/>
@@ -137,7 +138,10 @@
                 <exclude name="**/PKIXRevocationTest.java"/>
 		<exclude name="**/its/**/*.java"/>
             </fileset>
-            <fileset dir="mail/src/test/java"/>
+            <fileset dir="mail/src/test/java">
+		<exclude name="**/SignedMailValidatorTest.java"/>
+		<exclude name="**/DummyCertPathReviewer.java"/>
+	    </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java"/>
                 <exclude name="**/ECEncodingTest.java"/>
