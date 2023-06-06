@@ -139,7 +139,10 @@ public class ByteArrayHandler
             out = new ArmoredOutputStream(out);
         }
 
-        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(algorithm).setSecureRandom(new SecureRandom()).setProvider("BC"));
+        JcePGPDataEncryptorBuilder encryptorBuilder = new JcePGPDataEncryptorBuilder(algorithm)
+            .setSecureRandom(new SecureRandom()).setProvider("BC");
+
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encryptorBuilder);
         encGen.addMethod(new JcePBEKeyEncryptionMethodGenerator(passPhrase).setProvider("BC"));
 
         OutputStream encOut = encGen.open(out, compressedData.length);

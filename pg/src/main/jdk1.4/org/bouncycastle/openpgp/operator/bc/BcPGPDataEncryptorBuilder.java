@@ -116,7 +116,7 @@ public class BcPGPDataEncryptorBuilder
      * @param random the secure random to be used.
      * @return the current builder.
      */
-    public PGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
+    public BcPGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
     {
         this.random = random;
 

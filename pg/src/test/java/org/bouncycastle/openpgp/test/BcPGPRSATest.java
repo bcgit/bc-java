@@ -446,7 +446,7 @@ public class BcPGPRSATest
 
         ByteArrayOutputStream bcOut = new ByteArrayOutputStream();
 
-        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128).setWithIntegrityPacket(true).setSecureRandom(new SecureRandom()));
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128).setSecureRandom(new SecureRandom()).setWithIntegrityPacket(true));
 
         encGen.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(pgpPubKey));
 

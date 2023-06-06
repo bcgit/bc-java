@@ -1,21 +1,76 @@
 package org.bouncycastle.cert;
 
+import java.io.IOException;
+
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 
+/**
+ * General tool for handling the extension described in: https://datatracker.ietf.org/doc/draft-bonnell-lamps-chameleon-certs/
+ */
 public class DeltaCertificateTool
 {
+    public static final int signature = 0x01;
+    public static final int issuer = 0x02;
+    public static final int validity = 0x04;
+    public static final int subject = 0x08;
+    public static final int extensions = 0x10;
+
+    public static Extension makeDeltaCertificateExtension(boolean isCritical, int includeFlags, X509CertificateHolder deltaCert)
+        throws IOException
+    {
+        ASN1EncodableVector deltaV = new ASN1EncodableVector();
+
+        deltaV.add(new ASN1Integer(deltaCert.getSerialNumber()));
+        if ((includeFlags & signature) != 0)
+        {
+            deltaV.add(new DERTaggedObject(false, 0, deltaCert.getSignatureAlgorithm()));
+        }
+        if ((includeFlags & issuer) != 0)
+        {
+            deltaV.add(new DERTaggedObject(false, 1, deltaCert.getIssuer()));
+        }
+
+        //
+        // before and after dates
+        //
+        if ((includeFlags & validity) != 0)
+        {
+            ASN1EncodableVector validity = new ASN1EncodableVector(2);
+            validity.add(deltaCert.toASN1Structure().getStartDate());
+            validity.add(deltaCert.toASN1Structure().getEndDate());
+
+            deltaV.add(new DERTaggedObject(false, 2, new DERSequence(validity)));
+        }
+        if ((includeFlags & subject) != 0)
+        {
+            deltaV.add(new DERTaggedObject(false, 3, deltaCert.getSubject()));
+        }
+        deltaV.add(deltaCert.getSubjectPublicKeyInfo());
+        if ((includeFlags & extensions) != 0)
+        {
+            if (deltaCert.getExtensions() != null)
+            {
+                deltaV.add(new DERTaggedObject(false, 4, deltaCert.getExtensions()));
+            }
+        }
+        deltaV.add(new DERBitString(deltaCert.getSignature()));
+
+        return new Extension(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1"), isCritical, new DERSequence(deltaV).getEncoded(ASN1Encoding.DER));
+    }
+
     public static X509CertificateHolder extractDeltaCertificate(X509CertificateHolder originCert)
     {
         ASN1ObjectIdentifier deltaExtOid = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1");
@@ -63,7 +118,29 @@ public class DeltaCertificateTool
 
         extracted[6] = next;  // subjectPublicKey
 
-        if (idx != seq.size() - 1)
+        if (extracted[2] == null)
+        {
+            extracted[2] = originTbs.getObjectAt(2);
+        }
+
+        if (extracted[3] == null)
+        {
+            extracted[3] = originTbs.getObjectAt(3);
+        }
+
+        if (extracted[4] == null)
+        {
+            extracted[4] = originTbs.getObjectAt(4);
+        }
+
+        if (extracted[5] == null)
+        {
+            extracted[5] = originTbs.getObjectAt(5);
+        }
+
+        ExtensionsGenerator extGen = extractExtensions(originTbs);
+
+        if (idx < (seq.size() - 1))  // last element is the signature
         {
             next = seq.getObjectAt(idx++);
             ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
@@ -74,20 +151,6 @@ public class DeltaCertificateTool
 
             ASN1Sequence deltaExts = ASN1Sequence.getInstance(tagged, false);
 
-            ExtensionsGenerator extGen = new ExtensionsGenerator();
-
-            ASN1Sequence originExt = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(originTbs.getObjectAt(originTbs.size() - 1)), true);
-
-            for (int i = 0; i != originExt.size(); i++)
-            {
-                Extension ext = Extension.getInstance(originExt.getObjectAt(i));
-                if (!deltaExtOid.equals(ext.getExtnId()))
-                {
-                    extGen.addExtension(ext);
-                }
-            }
-
-
             for (int i = 0; i != deltaExts.size(); i++)
             {
                 extGen.replaceExtension(Extension.getInstance(deltaExts.getObjectAt(i)));
@@ -95,12 +158,49 @@ public class DeltaCertificateTool
 
             extracted[7] = new DERTaggedObject(3, extGen.generate());
         }
+        else
+        {
+            if (!extGen.isEmpty())
+            {
+                extracted[7] = extGen.generate();
+            }
+            {
+                extracted[7] = null;
+            }
+        }
+
+        ASN1EncodableVector tbsDeltaCertV = new ASN1EncodableVector(7);
+        for (int i = 0; i != extracted.length; i++)
+        {
+            if (extracted[i] != null)
+            {
+                tbsDeltaCertV.add(extracted[i]);
+            }
+        }
 
         ASN1EncodableVector certV = new ASN1EncodableVector();
-        certV.add(new DERSequence(extracted));
-        certV.add(ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1)), false));
-        certV.add(ASN1BitString.getInstance(seq.getObjectAt(idx)));
+        certV.add(new DERSequence(tbsDeltaCertV));
+        certV.add(ASN1Sequence.getInstance(extracted[2]));
+        certV.add(ASN1BitString.getInstance(seq.getObjectAt(seq.size() - 1)));
 
         return new X509CertificateHolder(Certificate.getInstance(new DERSequence(certV)));
+    }
+
+    private static ExtensionsGenerator extractExtensions(ASN1Sequence originTbs)
+    {
+        ASN1ObjectIdentifier deltaExtOid = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1");
+        ASN1Sequence originExt = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(originTbs.getObjectAt(originTbs.size() - 1)), true);
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+
+        for (int i = 0; i != originExt.size(); i++)
+        {
+            Extension ext = Extension.getInstance(originExt.getObjectAt(i));
+            if (!deltaExtOid.equals(ext.getExtnId()))
+            {
+                extGen.addExtension(ext);
+            }
+        }
+
+        return extGen;
     }
 }

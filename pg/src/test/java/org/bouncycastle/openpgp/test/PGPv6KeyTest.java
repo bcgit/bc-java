@@ -52,7 +52,7 @@ public class PGPv6KeyTest
     @Override
     public String getName()
     {
-        return getClass().getSimpleName();
+        return getClass().getName();
     }
 
     @Override
@@ -67,9 +67,9 @@ public class PGPv6KeyTest
         PGPPublicKeyRing publicKeys = new PGPPublicKeyRing(bcIn, fingerPrintCalculator);
 
         Iterator<PGPPublicKey> pIt = publicKeys.getPublicKeys();
-        PGPPublicKey key = pIt.next();
+        PGPPublicKey key = (PGPPublicKey)pIt.next();
         isTrue(Arrays.areEqual(PRIMARY_FINGERPRINT, key.getFingerprint()));
-        key = pIt.next();
+        key = (PGPPublicKey)pIt.next();
         isTrue(Arrays.areEqual(SUBKEY_FINGERPRINT, key.getFingerprint()));
 
         bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes());
@@ -79,10 +79,10 @@ public class PGPv6KeyTest
         PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(bcIn, fingerPrintCalculator);
 
         Iterator<PGPSecretKey> sIt = secretKeys.getSecretKeys();
-        PGPSecretKey sKey = sIt.next();
+        PGPSecretKey sKey = (PGPSecretKey)sIt.next();
         isTrue(Arrays.areEqual(PRIMARY_FINGERPRINT, sKey.getFingerprint()));
 
-        sKey = sIt.next();
+        sKey = (PGPSecretKey)sIt.next();
         isTrue(Arrays.areEqual(SUBKEY_FINGERPRINT, sKey.getFingerprint()));
     }
 

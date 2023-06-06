@@ -1,5 +1,16 @@
 package org.bouncycastle.openpgp.examples;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.SecureRandom;
+import java.security.Security;
+
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -19,17 +30,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilde
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.SecureRandom;
-import java.security.Security;
 
 /**
  * A simple utility class that encrypts/decrypts password based
@@ -155,8 +155,8 @@ public class PBEFileProcessor
             // Encryption
             PGPDataEncryptorBuilder dataEncBuilder = new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256)
                     .setProvider("BC")
-                    .setWithIntegrityPacket(true)
-                    .setSecureRandom(new SecureRandom());
+                    .setSecureRandom(new SecureRandom())
+                    .setWithIntegrityPacket(true);
             PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(dataEncBuilder);
             encGen.addMethod(new JcePBEKeyEncryptionMethodGenerator(passPhrase).setProvider("BC"));
             OutputStream encOut = encGen.open(out, new byte[8192]);

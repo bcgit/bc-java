@@ -327,7 +327,7 @@ public class PGPPBETest
         // with integrity packet
         //
         cbOut = new ByteArrayOutputStream();
-        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(true).setSecureRandom(rand).setProvider("BC"));
+        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(rand).setProvider("BC").setWithIntegrityPacket(true));
         
         cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
         
@@ -406,7 +406,7 @@ public class PGPPBETest
         comOut.close();
         
         cbOut = new ByteArrayOutputStream();
-        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setWithIntegrityPacket(true).setSecureRandom(rand).setProvider("BC"));
+        cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(rand).setProvider("BC").setWithIntegrityPacket(true));
 
         cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
 
