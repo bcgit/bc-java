@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.security.SignatureException;
@@ -14,7 +15,9 @@ import java.util.Iterator;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -762,6 +765,9 @@ public class PGPSignatureTest
         testSignatureTarget();
         testUserAttributeEncoding();
         testExportNonExportableSignature();
+
+        // v6 Signature
+        testParseV6Signature();
     }
 
     private void testUserAttributeEncoding()
@@ -1365,6 +1371,50 @@ public class PGPSignatureTest
         PGPSignature nonExportableSig = readSignatures(NONEXPORTABLESIGNATURE).get(0);
         isTrue(!Arrays.areEqual(nonExportableSig.getEncoded(), nonExportableSig.getEncoded(true)));
         isTrue(nonExportableSig.getEncoded(true).length == 0);
+    }
+
+    private void testParseV6Signature() throws IOException {
+        // Test vector from https://openpgp-wg.gitlab.io/rfc4880bis/#name-sample-inline-signed-messag
+        String inlineSignedMessage = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "xEYGAQobIHZJX1AhiJD39eLuPBgiUU9wUA9VHYblySHkBONKU/usyxhsTwYJppfk\n" +
+                "1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkBy0p1AAAAAABXaGF0IHdlIG5lZWQgZnJv\n" +
+                "bSB0aGUgZ3JvY2VyeSBzdG9yZToKCi0gdG9mdQotIHZlZ2V0YWJsZXMKLSBub29k\n" +
+                "bGVzCsKYBgEbCgAAACkFgmOYo2MiIQbLGGxPBgmml+TVLfpscisMHx4nwYpWcI9l\n" +
+                "JewnutmsyQAAAABpNiB2SV9QIYiQ9/Xi7jwYIlFPcFAPVR2G5ckh5ATjSlP7rCfQ\n" +
+                "b7gKqPxbyxbhljGygHQPnqau1eBzrQD5QVplPEDnemrnfmkrpx0GmhCfokxYz9jj\n" +
+                "FtCgazStmsuOXF9SFQE=\n" +
+                "-----END PGP MESSAGE-----";
+        byte[] salt = Hex.decode("76495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbac");
+        byte[] fingerprint = Hex.decode("cb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc9");
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(inlineSignedMessage.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        PGPObjectFactory pgpFactory = new BcPGPObjectFactory(aIn);
+
+        PGPOnePassSignatureList opsList = (PGPOnePassSignatureList) pgpFactory.nextObject();
+        isEquals(1, opsList.size());
+        PGPOnePassSignature ops = opsList.get(0);
+        isEquals(OnePassSignaturePacket.VERSION_6, ops.getVersion());
+        isEquals(PGPSignature.CANONICAL_TEXT_DOCUMENT, ops.getSignatureType());
+        isEquals(PublicKeyAlgorithmTags.Ed25519, ops.getKeyAlgorithm());
+        isEquals(HashAlgorithmTags.SHA512, ops.getHashAlgorithm());
+        isTrue(Arrays.areEqual(salt, ops.getSalt()));
+        isTrue(Arrays.areEqual(fingerprint, ops.getKeyFingerprint()));
+        isTrue(ops.isContaining());
+
+        PGPLiteralData literalData = (PGPLiteralData) pgpFactory.nextObject();
+
+        PGPSignatureList sigList = (PGPSignatureList) pgpFactory.nextObject();
+        isEquals(1, sigList.size());
+        PGPSignature signature = sigList.get(0);
+        isEquals(SignaturePacket.VERSION_6, signature.getVersion());
+        isEquals(PGPSignature.CANONICAL_TEXT_DOCUMENT, signature.getSignatureType());
+        isEquals(PublicKeyAlgorithmTags.Ed25519, signature.getKeyAlgorithm());
+        isEquals(HashAlgorithmTags.SHA512, signature.getHashAlgorithm());
+        IssuerFingerprint issuerFp = signature.getHashedSubPackets().getIssuerFingerprint();
+        isTrue(Arrays.areEqual(fingerprint, issuerFp.getFingerprint()));
+        isTrue(Arrays.areEqual(salt, signature.getSalt()));
     }
 
     private PGPSignatureList readSignatures(String armored)

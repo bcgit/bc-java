@@ -151,7 +151,7 @@ public class PGPV3SignatureGenerator
         boolean isNested)
         throws PGPException
     {
-        return new PGPOnePassSignature(new OnePassSignaturePacket(sigType, contentSigner.getHashAlgorithm(), contentSigner.getKeyAlgorithm(), contentSigner.getKeyID(), isNested));
+        return new PGPOnePassSignature(OnePassSignaturePacket.createVersion3Packet(sigType, contentSigner.getHashAlgorithm(), contentSigner.getKeyAlgorithm(), contentSigner.getKeyID(), isNested));
     }
     
     /**

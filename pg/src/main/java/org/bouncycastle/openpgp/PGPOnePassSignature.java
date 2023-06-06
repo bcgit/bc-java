@@ -183,9 +183,19 @@ public class PGPOnePassSignature
         return verifier.verify(pgpSig.getSignature());
     }
 
+    public int getVersion()
+    {
+        return sigPack.getVersion();
+    }
+
     public long getKeyID()
     {
         return sigPack.getKeyID();
+    }
+
+    public byte[] getKeyFingerprint()
+    {
+        return sigPack.getKeyFingerprint();
     }
 
     public int getSignatureType()
@@ -201,6 +211,11 @@ public class PGPOnePassSignature
     public int getKeyAlgorithm()
     {
         return sigPack.getKeyAlgorithm();
+    }
+
+    public byte[] getSalt()
+    {
+        return sigPack.getSalt();
     }
 
     /**
