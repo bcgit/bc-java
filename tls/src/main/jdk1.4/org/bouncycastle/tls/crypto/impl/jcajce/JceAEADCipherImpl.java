@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A basic wrapper for a JCE Cipher class to provide the needed AEAD cipher functionality for TLS.
@@ -86,7 +87,10 @@ public class JceAEADCipherImpl
         this.key = new SecretKeySpec(key, keyOff, keyLen, algorithm);
     }
 
-    public void init(byte[] nonce, int macSize, byte[] additionalData)
+    private byte[] nonce;
+    private int macSize;
+    
+    public void init(byte[] nonce, int macSize)
     {
         try
         {
@@ -107,7 +111,8 @@ public class JceAEADCipherImpl
 //            else
 //            {
             // Otherwise fall back to the BC-specific AEADParameterSpec
-            cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+                 this.nonce = Arrays.clone(nonce);
+                 this.macSize = macSize;
             // }
         }
         catch (Exception e)
@@ -121,9 +126,25 @@ public class JceAEADCipherImpl
         return cipher.getOutputSize(inputLength);
     }
 
-    public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
+    public int doFinal(byte[] additionalData, byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
         throws IOException
     {
+        try
+        {
+            if (!Arrays.isNullOrEmpty(additionalData))
+            {
+                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+            }
+            else
+            {
+                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, null));
+            }
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.toString());
+        }
+
         /*
          * NOTE: Some providers don't allow cipher update methods with AEAD decryption,
          * since they may return partial data that has not yet been authenticated. So we

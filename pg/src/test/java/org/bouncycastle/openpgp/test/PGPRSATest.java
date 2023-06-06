@@ -487,7 +487,7 @@ public class PGPRSATest
 
         ByteArrayOutputStream bcOut = new ByteArrayOutputStream();
 
-        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128).setWithIntegrityPacket(true).setSecureRandom(new SecureRandom()).setProvider("BC"));
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128).setSecureRandom(new SecureRandom()).setProvider("BC").setWithIntegrityPacket(true));
 
         encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pgpPubKey).setProvider("BC"));
 

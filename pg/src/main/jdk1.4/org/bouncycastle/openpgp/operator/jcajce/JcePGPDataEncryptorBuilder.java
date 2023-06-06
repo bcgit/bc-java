@@ -118,7 +118,7 @@ public class JcePGPDataEncryptorBuilder
      * @param provider the JCE provider to use.
      * @return the current builder.
      */
-    public PGPDataEncryptorBuilder setProvider(Provider provider)
+    public JcePGPDataEncryptorBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
         this.aeadHelper = new JceAEADUtil(helper);
@@ -132,7 +132,7 @@ public class JcePGPDataEncryptorBuilder
      * @param providerName the name of the JCE provider to use.
      * @return the current builder.
      */
-    public PGPDataEncryptorBuilder setProvider(String providerName)
+    public JcePGPDataEncryptorBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
         this.aeadHelper = new JceAEADUtil(helper);
@@ -149,7 +149,7 @@ public class JcePGPDataEncryptorBuilder
      * @param random the secure random to be used.
      * @return the current builder.
      */
-    public PGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
+    public JcePGPDataEncryptorBuilder setSecureRandom(SecureRandom random)
     {
         this.random = random;
 

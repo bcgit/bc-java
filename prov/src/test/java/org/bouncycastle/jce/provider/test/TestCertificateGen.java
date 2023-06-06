@@ -17,7 +17,6 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -53,7 +52,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 public class TestCertificateGen
 {
-    private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
+    private static volatile long serialNumber = System.currentTimeMillis();
     private static Map<String, AlgorithmIdentifier> algIds = new HashMap<String, AlgorithmIdentifier>();
 
     static
@@ -65,6 +64,11 @@ public class TestCertificateGen
         algIds.put("MD5WithRSAEncryption", new AlgorithmIdentifier(PKCSObjectIdentifiers.md5WithRSAEncryption, DERNull.INSTANCE));
         algIds.put("LMS", new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig));
         algIds.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
+    }
+
+    private synchronized static long getSerialNumber()
+    {
+        return serialNumber++;
     }
 
     public static X509Certificate createSelfSignedCert(String dn, String sigName, KeyPair keyPair)
@@ -80,12 +84,12 @@ public class TestCertificateGen
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(new ASN1Integer(getSerialNumber()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(algIds.get(sigName));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         Signature sig = Signature.getInstance(sigName, "BC");
@@ -99,7 +103,7 @@ public class TestCertificateGen
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(algIds.get(sigName));
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -118,12 +122,12 @@ public class TestCertificateGen
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(new ASN1Integer(getSerialNumber()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(algIds.get(sigName));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);
 
@@ -138,7 +142,7 @@ public class TestCertificateGen
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(algIds.get(sigName));
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -151,12 +155,12 @@ public class TestCertificateGen
 
         long time = System.currentTimeMillis();
 
-        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setSerialNumber(new ASN1Integer(getSerialNumber()));
         certGen.setIssuer(signerName);
         certGen.setSubject(signerName);
         certGen.setStartDate(new Time(new Date(time - 5000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
-        certGen.setSignature(algIds.get(sigName));
+        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
 
         if (issuerUniqID != null)
@@ -180,7 +184,7 @@ public class TestCertificateGen
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add(algIds.get(sigName));
+        v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
@@ -277,7 +281,7 @@ public class TestCertificateGen
 
         crlGen.setThisUpdate(new Time(now));
         crlGen.setNextUpdate(new Time(new Date(now.getTime() + 100000)));
-        crlGen.setSignature(algIds.get("SHA256withRSA"));
+        crlGen.setSignature((AlgorithmIdentifier)algIds.get("SHA256withRSA"));
 
         crlGen.addCRLEntry(new ASN1Integer(revokedSerialNumber), new Time(now), CRLReason.privilegeWithdrawn);
 
@@ -299,7 +303,7 @@ public class TestCertificateGen
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCrl);
-        v.add(algIds.get("SHA256withRSA"));
+        v.add((AlgorithmIdentifier)algIds.get("SHA256withRSA"));
         v.add(new DERBitString(sig.sign()));
 
         return (X509CRL)CertificateFactory.getInstance("X.509", "BC").generateCRL(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
