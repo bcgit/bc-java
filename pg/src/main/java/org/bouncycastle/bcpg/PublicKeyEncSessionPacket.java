@@ -50,25 +50,18 @@ public class PublicKeyEncSessionPacket
         }
         else if (version == VERSION_6)
         {
-            keyVersion = in.read();
-            // anon recipient
-            if (keyVersion == 0)
+            int keyInfoLen = in.read();
+            if (keyInfoLen == 0)
             {
+                // anon recipient
+                keyVersion = 0;
                 keyFingerprint = new byte[0];
-            }
-            else if (keyVersion == 4)
-            {
-                keyFingerprint = new byte[20];
-                in.read(keyFingerprint);
-            }
-            else if (keyVersion == 6)
-            {
-                keyFingerprint = new byte[32];
-                in.read(keyFingerprint);
             }
             else
             {
-                throw new UnsupportedPacketVersionException("Unsupported public key version detected: " + keyVersion);
+                keyVersion = in.read();
+                keyFingerprint = new byte[keyInfoLen - 1];
+                in.readFully(keyFingerprint);
             }
         }
         else
@@ -270,6 +263,7 @@ public class PublicKeyEncSessionPacket
         }
         else if (version == VERSION_6)
         {
+            pOut.write(keyFingerprint.length + 1);
             pOut.write(keyVersion);
             pOut.write(keyFingerprint);
         }
