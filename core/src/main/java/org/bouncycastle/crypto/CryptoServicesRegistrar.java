@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAValidationParameters;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -33,19 +34,13 @@ public final class CryptoServicesRegistrar
 
     private static final ThreadLocal<Map<String, Object[]>> threadProperties = new ThreadLocal<Map<String, Object[]>>();
     private static final Map<String, Object[]> globalProperties = Collections.synchronizedMap(new HashMap<String, Object[]>());
-    private static final SecureRandomProvider defaultRandomProviderImpl = new SecureRandomProvider()
-    {
-        public SecureRandom get()
-        {
-            return new SecureRandom();
-        }
-    };
+    private static final SecureRandomProvider defaultRandomProviderImpl = new ThreadLocalSecureRandomProvider();
 
     private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
     {
         public void check(CryptoServiceProperties service)
         {
-             // anything goes.
+            // anything goes.
         }
     };
 
@@ -525,6 +520,22 @@ public final class CryptoServicesRegistrar
         {
             this.name = name;
             this.type = type;
+        }
+    }
+
+    private static class ThreadLocalSecureRandomProvider
+        implements SecureRandomProvider
+    {
+        final ThreadLocal<SecureRandom> defaultRandoms = new ThreadLocal<SecureRandom>();
+
+        public SecureRandom get()
+        {
+            if (defaultRandoms.get() == null)
+            {
+                defaultRandoms.set(new SecureRandom());
+            }
+
+            return defaultRandoms.get();
         }
     }
 }
