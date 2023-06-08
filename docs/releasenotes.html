@@ -20,12 +20,13 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv74"><h3>2.1.1 Version</h3></a>
 Release: 1.74<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 10th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>AsconEngine: Fixed a buffering bug when decrypting across multiple processBytes calls (ascon128a unaffected).</li>
 <li>Context based sanity checking on PGP signatures has been added.</li>
 <li>The ParallelHash clone constructor was not copying all fields. This is now fixed.</li>
+<li>The maximimum number of blocks for CTR/SIC modes was 1 block less than it should have been. This is now fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -39,11 +40,21 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>DTLS: The initial handshake resend time is now configurable by overriding 'TlsPeer.getHandshakeResendTimeMillis'.</li>
 <li>DTLS: Added support for connection IDs per RFC 9146.</li>
 <li>DTLS: Performance of DTLSVerifier has been improved so that it can reasonably be used for all incoming packets.</li>
+<li>Initial support has been added for <a href="https://datatracker.ietf.org/doc/draft-bonnell-lamps-chameleon-certs/">A Mechanism for Encoding Differences in Paired Certificates</a>.</li>
+<li>The PGP API now supports parsing, encoding, and fiingerprinting of V6 EC/EdEC keys.</li>
+<li>A thread safe verifier API has been added to the PGP API to support multi-threaded verification of certifications on keys and user IDs.</li>
+<li>The number of keys/sub-keys in a PGPKeyRing can now be found by calling PGPKeyRing.size().</li>
+<li>The PQC algorithms LMS/HSS, SPHINCS+, Dilithium, Falcon, and NTRU are now supported directly by the BC provider.</li>
 </ul>
 <h3>2.1.4 Notes.</h3>
 <ul>
 <li>The now defunct PQC SIKE algorithm has been removed, this has also meant the removal of its resource files so the provider is now quite a bit smaller.</li>
-<li>As a precaution, HC128 now enforces a 128 bit IV.</li>
+<li>As a precaution, HC128 now enforces a 128 bit IV, previous behaviour for shorter IVs can be supported where required by padding the IV to the 128 bits with zero.</li>
+<li>PGP encrypted data generation now uses integrity protection by default. Previous behaviour for encrypted data can be supported where required by calling PGPDataEncryptorBuilder.setWithIntegrityPacket(false) when data encryption is set up.</li>
+<li>There are now additional sanity checks in place to prevent accidental mis-use of PGPSignature objects. If this change causes any issues, you might want to check what your code is up to as there is probably a bug.<li>
+<h3>2.1.5 Security Advisories.</h3>
+<ul>
+<li>CVE-2023-33201 - this release fixes an issue with the X509LDAPCertStoreSpi where a specially crafted certificate subject could be used to try and extract extra information out of an LDAP server with wild-card matthing enabled.</li>
 </ul>
 
 <a id="r1rv73"><h3>2.2.1 Version</h3></a>
