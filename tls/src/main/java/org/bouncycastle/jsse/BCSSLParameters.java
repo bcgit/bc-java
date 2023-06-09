@@ -28,7 +28,6 @@ public final class BCSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
-    private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
     private String[] cipherSuites;
     private String[] protocols;
     private boolean wantClientAuth;
@@ -38,7 +37,11 @@ public final class BCSSLParameters
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
     private boolean useCipherSuitesOrder;
+    private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
+    private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
+    private String[] signatureSchemes = null;
+    private String[] namedGroups = null;
 
     public BCSSLParameters()
     {
@@ -53,30 +56,6 @@ public final class BCSSLParameters
     {
         setCipherSuites(cipherSuites);
         setProtocols(protocols);
-    }
-
-    public String[] getApplicationProtocols()
-    {
-        return TlsUtils.clone(applicationProtocols);
-    }
-
-    public void setApplicationProtocols(String[] applicationProtocols)
-    {
-        if (null == applicationProtocols)
-        {
-            throw new NullPointerException("'applicationProtocols' cannot be null");
-        }
-
-        String[] check = TlsUtils.clone(applicationProtocols);
-        for (String entry : check)
-        {
-            if (TlsUtils.isNullOrEmpty(entry))
-            {
-                throw new IllegalArgumentException("'applicationProtocols' entries cannot be null or empty strings");
-            }
-        }
-
-        this.applicationProtocols = check;
     }
 
     public String[] getCipherSuites()
@@ -141,6 +120,11 @@ public final class BCSSLParameters
         this.algorithmConstraints = algorithmConstraints;
     }
 
+    public List<BCSNIServerName> getServerNames()
+    {
+        return copyList(this.serverNames);
+    }
+
     public void setServerNames(List<BCSNIServerName> serverNames)
     {
         if (serverNames == null)
@@ -165,9 +149,9 @@ public final class BCSSLParameters
         }
     }
 
-    public List<BCSNIServerName> getServerNames()
+    public Collection<BCSNIMatcher> getSNIMatchers()
     {
-        return copyList(this.serverNames);
+        return copyList(this.sniMatchers);
     }
 
     public void setSNIMatchers(Collection<BCSNIMatcher> sniMatchers)
@@ -194,9 +178,9 @@ public final class BCSSLParameters
         }
     }
 
-    public Collection<BCSNIMatcher> getSNIMatchers()
+    public boolean getUseCipherSuitesOrder()
     {
-        return copyList(this.sniMatchers);
+        return useCipherSuitesOrder;
     }
 
     public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
@@ -204,9 +188,19 @@ public final class BCSSLParameters
         this.useCipherSuitesOrder = useCipherSuitesOrder;
     }
 
-    public boolean getUseCipherSuitesOrder()
+    public boolean getEnableRetransmissions()
     {
-        return useCipherSuitesOrder;
+        return enableRetransmissions;
+    }
+
+    public void setEnableRetransmissions(boolean enableRetransmissions)
+    {
+        this.enableRetransmissions = enableRetransmissions;
+    }
+
+    public int getMaximumPacketSize()
+    {
+        return maximumPacketSize;
     }
 
     public void setMaximumPacketSize(int maximumPacketSize)
@@ -219,8 +213,81 @@ public final class BCSSLParameters
         this.maximumPacketSize = maximumPacketSize;
     }
 
-    public int getMaximumPacketSize()
+    public String[] getApplicationProtocols()
     {
-        return maximumPacketSize;
+        return TlsUtils.clone(applicationProtocols);
+    }
+
+    public void setApplicationProtocols(String[] applicationProtocols)
+    {
+        if (null == applicationProtocols)
+        {
+            throw new NullPointerException("'applicationProtocols' cannot be null");
+        }
+
+        String[] check = TlsUtils.clone(applicationProtocols);
+        for (String entry : check)
+        {
+            if (TlsUtils.isNullOrEmpty(entry))
+            {
+                throw new IllegalArgumentException("'applicationProtocols' entries cannot be null or empty strings");
+            }
+        }
+
+        this.applicationProtocols = check;
+    }
+
+    public String[] getSignatureSchemes()
+    {
+        return TlsUtils.clone(signatureSchemes);
+    }
+
+    public void setSignatureSchemes(String[] signatureSchemes)
+    {
+        String[] check = null;
+
+        if (signatureSchemes != null)
+        {
+            check = TlsUtils.clone(signatureSchemes);
+            for (String entry : check)
+            {
+                if (TlsUtils.isNullOrEmpty(entry))
+                {
+                    throw new IllegalArgumentException("'signatureSchemes' entries cannot be null or empty strings");
+                }
+            }
+        }
+
+        this.signatureSchemes = check;
+    }
+
+    public String[] getNamedGroups()
+    {
+        return TlsUtils.clone(namedGroups);
+    }
+
+    public void setNamedGroups(String[] namedGroups)
+    {
+        String[] check = null;
+
+        if (namedGroups != null)
+        {
+            check = TlsUtils.clone(namedGroups);
+            HashSet<String> seenEntries = new HashSet<>();
+            for (String entry : check)
+            {
+                if (TlsUtils.isNullOrEmpty(entry))
+                {
+                    throw new IllegalArgumentException("'namedGroups' entries cannot be null or empty strings");
+                }
+
+                if (!seenEntries.add(entry))
+                {
+                    throw new IllegalArgumentException("'namedGroups' contains duplicate entry: " + entry);
+                }
+            }
+        }
+
+        this.namedGroups = check;
     }
 }

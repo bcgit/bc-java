@@ -33,15 +33,16 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 10th
 <li>The PGP API now supports wildcard key IDs for public key based data encryption.</li>
 <li>LMS now supports SHA256/192, SHAKE256/192, and SHAKE256/256 (the additional SP 8000-208 parameter sets).</li>
 <li>The PGP API now supports V5 and V6 AEAD encryption for encrypted data packets.</li>
-<li>The PGP examples have been updated to reflect key size and algorithm changes that have occured since they were first written (10+ years...).</li>
+<li>The PGP examples have been updated to reflect key size and algorithm changes that have occurred since they were first written (10+ years...).</li>
 <li>(D)TLS: A new callback 'TlsPeer.notifyConnectionClosed' will be called when the connection is closed (including by failure).</li>
 <li>BCJSSE: Improved logging of connection events and include unique IDs in connection-specific log messages.</li>
 <li>BCJSSE: Server now logs the offered cipher suites when it fails to select one.</li>
-<li>DTLS: The initial handshake resend time is now configurable by overriding 'TlsPeer.getHandshakeResendTimeMillis'.</li>
+<li>BCJSSE: Added support for SSLParameters namedGroups and signatureSchemes properties (can also be used via BCJSSE extension API in earlier Java versions).</li>
+<li>DTLS: The initial handshake re-send time is now configurable by overriding 'TlsPeer.getHandshakeResendTimeMillis'.</li>
 <li>DTLS: Added support for connection IDs per RFC 9146.</li>
 <li>DTLS: Performance of DTLSVerifier has been improved so that it can reasonably be used for all incoming packets.</li>
 <li>Initial support has been added for <a href="https://datatracker.ietf.org/doc/draft-bonnell-lamps-chameleon-certs/">A Mechanism for Encoding Differences in Paired Certificates</a>.</li>
-<li>The PGP API now supports parsing, encoding, and fiingerprinting of V6 EC/EdEC keys.</li>
+<li>The PGP API now supports parsing, encoding, and fingerprinting of V6 EC/EdEC keys.</li>
 <li>A thread safe verifier API has been added to the PGP API to support multi-threaded verification of certifications on keys and user IDs.</li>
 <li>The number of keys/sub-keys in a PGPKeyRing can now be found by calling PGPKeyRing.size().</li>
 <li>The PQC algorithms LMS/HSS, SPHINCS+, Dilithium, Falcon, and NTRU are now supported directly by the BC provider.</li>
