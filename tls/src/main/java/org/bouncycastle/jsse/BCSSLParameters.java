@@ -273,7 +273,7 @@ public final class BCSSLParameters
         if (namedGroups != null)
         {
             check = TlsUtils.clone(namedGroups);
-            HashSet<String> seenEntries = new HashSet<>();
+            HashSet<String> seenEntries = new HashSet<String>();
             for (String entry : check)
             {
                 if (TlsUtils.isNullOrEmpty(entry))
