@@ -481,16 +481,17 @@ public class BCECPrivateKey
         if (k.getParameters() instanceof ECNamedCurveParameterSpec)
         {
             String name = ((ECNamedCurveParameterSpec)k.getParameters()).getName();
-            return new ECPrivateKeyParameters(
-                k.getD(),
-                new ECNamedDomainParameters(ECNamedCurveTable.getOID(name),
-                    s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            if (name != null)
+            {
+                return new ECPrivateKeyParameters(
+                    k.getD(),
+                    new ECNamedDomainParameters(ECNamedCurveTable.getOID(name),
+                        s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            }
         }
-        else
-        {
-            return new ECPrivateKeyParameters(
+
+        return new ECPrivateKeyParameters(
                 k.getD(),
                 new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-        }
     }
 }
