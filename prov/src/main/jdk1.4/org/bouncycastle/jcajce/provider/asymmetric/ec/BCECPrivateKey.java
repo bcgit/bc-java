@@ -1,32 +1,30 @@
 package org.bouncycastle.jcajce.provider.asymmetric.ec;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.ECPrivateKeyStructure;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
-import org.bouncycastle.jcajce.provider.asymmetric.util.KeyUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
@@ -37,35 +35,40 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.Strings;
-import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.util.Arrays;
 
 public class BCECPrivateKey
     implements ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
 {
-    private String          algorithm = "EC";
-    private boolean         withCompression;
+    static final long serialVersionUID = 994553197664784084L;
 
-    private transient BigInteger              d;
-    private transient ECParameterSpec         ecSpec;
-    private transient ProviderConfiguration   configuration;
-    private transient ASN1BitString           publicKey;
+    private String algorithm = "EC";
+    private boolean withCompression;
 
+    private transient BigInteger d;
+    private transient ECParameterSpec ecSpec;
+    private transient ProviderConfiguration configuration;
+    private transient ASN1BitString publicKey;
+    private transient PrivateKeyInfo privateKeyInfo;
+    private transient byte[] encoding;
+
+    private transient ECPrivateKeyParameters baseKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
+
 
     protected BCECPrivateKey()
     {
     }
 
-    BCECPrivateKey(
-        ECPrivateKey    key,
+    public BCECPrivateKey(
+        ECPrivateKey key,
         ProviderConfiguration configuration)
     {
         this.d = key.getD();
         this.algorithm = key.getAlgorithm();
-        this.ecSpec = key.getParameters();
+        this.ecSpec = key.getParams();
         this.configuration = configuration;
+        this.baseKey = convertToBaseKey(this);
     }
 
     public BCECPrivateKey(
@@ -77,13 +80,28 @@ public class BCECPrivateKey
         this.d = spec.getD();
         this.ecSpec = spec.getParams();
         this.configuration = configuration;
+        this.baseKey = convertToBaseKey(this);
     }
 
     public BCECPrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params,
-        BCECPublicKey          pubKey,
-        ECParameterSpec         spec,
+        String algorithm,
+        BCECPrivateKey key)
+    {
+        this.algorithm = algorithm;
+        this.d = key.d;
+        this.ecSpec = key.ecSpec;
+        this.withCompression = key.withCompression;
+        this.attrCarrier = key.attrCarrier;
+        this.publicKey = key.publicKey;
+        this.configuration = key.configuration;
+        this.baseKey = key.baseKey;
+    }
+
+    public BCECPrivateKey(
+        String algorithm,
+        ECPrivateKeyParameters params,
+        BCECPublicKey pubKey,
+        ECParameterSpec spec,
         ProviderConfiguration configuration)
     {
         ECDomainParameters      dp = params.getParameters();
@@ -106,58 +124,37 @@ public class BCECPrivateKey
             this.ecSpec = spec;
         }
 
-        publicKey = getPublicKeyDetails(pubKey);
+        this.publicKey = getPublicKeyDetails(pubKey);
+        this.baseKey = convertToBaseKey(this);
     }
 
     public BCECPrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params,
-        ProviderConfiguration   configuration)
+        String algorithm,
+        ECPrivateKeyParameters params,
+        ProviderConfiguration configuration)
     {
         this.algorithm = algorithm;
         this.d = params.getD();
         this.ecSpec = null;
         this.configuration = configuration;
-    }
-
-    public BCECPrivateKey(
-        String             algorithm,
-        BCECPrivateKey    key)
-    {
-        this.algorithm = algorithm;
-        this.d = key.d;
-        this.ecSpec = key.ecSpec;
-        this.withCompression = key.withCompression;
-        this.publicKey = key.publicKey;
-        this.attrCarrier = key.attrCarrier;
-        this.configuration = key.configuration;
+        this.baseKey = convertToBaseKey(this);
     }
 
     BCECPrivateKey(
-        PrivateKeyInfo      info,
+        String algorithm,
+        PrivateKeyInfo info,
         ProviderConfiguration configuration)
         throws IOException
     {
-        this.configuration = configuration;
-
-        populateFromPrivKeyInfo(info);
-    }
-
-    BCECPrivateKey(
-        String              algorithm,
-        PrivateKeyInfo      info,
-        ProviderConfiguration configuration)
-        throws IOException
-    {
-        this.configuration = configuration;
-        populateFromPrivKeyInfo(info);
         this.algorithm = algorithm;
+        this.configuration = configuration;
+        populateFromPrivKeyInfo(info);
     }
 
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
         throws IOException
     {
-        X962Parameters      params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
+        X962Parameters params = X962Parameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
         if (params.isNamedCurve())
         {
@@ -199,6 +196,7 @@ public class BCECPrivateKey
             this.d = ec.getKey();
             this.publicKey = ec.getPublicKey();
         }
+        this.baseKey = convertToBaseKey(this);
     }
 
     public String getAlgorithm()
@@ -224,52 +222,103 @@ public class BCECPrivateKey
      */
     public byte[] getEncoded()
     {
-        X962Parameters  params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
+        if (encoding == null)
+        {
+            PrivateKeyInfo info = getPrivateKeyInfo();
 
-        int orderBitLength;
-        if (ecSpec == null)
-        {
-            orderBitLength = ECUtil.getOrderBitLength(configuration, null, this.getD());
-        }
-        else
-        {
-            orderBitLength = ECUtil.getOrderBitLength(configuration, ecSpec.getN(), this.getD());
-        }
+            if (info == null)
+            {
+                return null;
+            }
 
-        PrivateKeyInfo          info;
-        org.bouncycastle.asn1.sec.ECPrivateKey            keyStructure;
-
-        if (publicKey != null)
-        {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), publicKey, params);
-        }
-        else
-        {
-            keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), params);
+            try
+            {
+                encoding = info.getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                return null;
+            }
         }
 
-        try
-        {
-            info = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
+        return Arrays.clone(encoding);
+    }
 
-            return info.getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
+    private PrivateKeyInfo getPrivateKeyInfo()
+    {
+        if (privateKeyInfo == null)
         {
-            return null;
+            X962Parameters params = ECUtils.getDomainParametersFromName(ecSpec, withCompression);
+
+            int orderBitLength;
+            if (ecSpec == null)
+            {
+                orderBitLength = ECUtil.getOrderBitLength(configuration, null, this.getD());
+            }
+            else
+            {
+                orderBitLength = ECUtil.getOrderBitLength(configuration, ecSpec.getN(), this.getD());
+            }
+
+            org.bouncycastle.asn1.sec.ECPrivateKey keyStructure;
+
+            if (publicKey != null)
+            {
+                keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), publicKey, params);
+            }
+            else
+            {
+                keyStructure = new org.bouncycastle.asn1.sec.ECPrivateKey(orderBitLength, this.getD(), params);
+            }
+
+            try
+            {
+                privateKeyInfo = new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params), keyStructure);
+            }
+            catch (IOException e)
+            {
+                return null;
+            }
         }
+
+        return privateKeyInfo;
+    }
+
+    public ECPrivateKeyParameters engineGetKeyParameters()
+    {
+        return baseKey;
     }
 
     public ECParameterSpec getParams()
     {
-        return (ECParameterSpec)ecSpec;
+        return ecSpec;
     }
 
-    public ECParameterSpec getParameters()
+    public org.bouncycastle.jce.spec.ECParameterSpec getParameters()
     {
-        return (ECParameterSpec)ecSpec;
+        if (ecSpec == null)
+        {
+            return null;
+        }
+
+        return ecSpec;
     }
-    
+
+    org.bouncycastle.jce.spec.ECParameterSpec engineGetSpec()
+    {
+        if (ecSpec != null)
+        {
+            return ecSpec;
+        }
+
+        return configuration.getEcImplicitlyCa();
+    }
+
+    public BigInteger getS()
+    {
+        return d;
+    }
+
     public BigInteger getD()
     {
         return d;
@@ -277,7 +326,7 @@ public class BCECPrivateKey
 
     public void setBagAttribute(
         ASN1ObjectIdentifier oid,
-        ASN1Encodable        attribute)
+        ASN1Encodable attribute)
     {
         attrCarrier.setBagAttribute(oid, attribute);
     }
@@ -292,37 +341,40 @@ public class BCECPrivateKey
     {
         return attrCarrier.getBagAttributeKeys();
     }
-    
+
     public void setPointFormat(String style)
     {
-       withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));
-    }
-
-    ECParameterSpec engineGetSpec()
-    {
-        if (ecSpec != null)
-        {
-            return ecSpec;
-        }
-
-        return BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-    }
-
-    public String toString()
-    {
-        return ECUtil.privateKeyToString("EC", d, engineGetSpec());
+        withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));
     }
 
     public boolean equals(Object o)
     {
-        if (!(o instanceof BCECPrivateKey))
+        if (o instanceof ECPrivateKey)
         {
-            return false;
+            ECPrivateKey other = (ECPrivateKey)o;
+
+            PrivateKeyInfo info = this.getPrivateKeyInfo();
+            PrivateKeyInfo otherInfo = (other instanceof BCECPrivateKey) ? ((BCECPrivateKey)other).getPrivateKeyInfo() : PrivateKeyInfo.getInstance(other.getEncoded());
+
+            if (info == null || otherInfo == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                boolean algEquals = Arrays.constantTimeAreEqual(info.getPrivateKeyAlgorithm().getEncoded(), otherInfo.getPrivateKeyAlgorithm().getEncoded());
+                boolean keyEquals = Arrays.constantTimeAreEqual(this.getD().toByteArray(), other.getD().toByteArray());
+
+                return algEquals & keyEquals;
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
         }
 
-        BCECPrivateKey other = (BCECPrivateKey)o;
-
-        return getD().equals(other.getD()) && (engineGetSpec().equals(other.engineGetSpec()));
+        return false;
     }
 
     public int hashCode()
@@ -330,7 +382,12 @@ public class BCECPrivateKey
         return getD().hashCode() ^ engineGetSpec().hashCode();
     }
 
-    private ASN1BitString getPublicKeyDetails(BCECPublicKey   pub)
+    public String toString()
+    {
+        return ECUtil.privateKeyToString("EC", d, engineGetSpec());
+    }
+
+    private ASN1BitString getPublicKeyDetails(BCECPublicKey pub)
     {
         try
         {
@@ -352,9 +409,10 @@ public class BCECPrivateKey
 
         byte[] enc = (byte[])in.readObject();
 
+        this.configuration = BouncyCastleProvider.CONFIGURATION;
+
         populateFromPrivKeyInfo(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(enc)));
 
-        this.configuration = BouncyCastleProvider.CONFIGURATION;
         this.attrCarrier = new PKCS12BagAttributeCarrierImpl();
     }
 
@@ -365,5 +423,31 @@ public class BCECPrivateKey
         out.defaultWriteObject();
 
         out.writeObject(this.getEncoded());
+    }
+
+    private static ECPrivateKeyParameters convertToBaseKey(BCECPrivateKey key)
+    {
+        org.bouncycastle.jce.interfaces.ECPrivateKey k = (org.bouncycastle.jce.interfaces.ECPrivateKey)key;
+        org.bouncycastle.jce.spec.ECParameterSpec s = k.getParameters();
+
+        if (s == null)
+        {
+            s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+        }
+
+        if (k.getParameters() instanceof ECNamedCurveParameterSpec)
+        {
+            String name = ((ECNamedCurveParameterSpec)k.getParameters()).getName();
+            return new ECPrivateKeyParameters(
+                k.getD(),
+                new ECNamedDomainParameters(ECNamedCurveTable.getOID(name),
+                    s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+        }
+        else
+        {
+            return new ECPrivateKeyParameters(
+                k.getD(),
+                new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+        }
     }
 }

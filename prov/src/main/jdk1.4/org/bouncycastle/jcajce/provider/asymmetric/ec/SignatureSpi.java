@@ -64,7 +64,7 @@ public class SignatureSpi
     {
         CipherParameters param;
 
-        param = ECUtil.generatePrivateKeyParameter(privateKey);
+        param = ECUtils.generatePrivateKeyParameter(privateKey);
 
         digest.reset();
 

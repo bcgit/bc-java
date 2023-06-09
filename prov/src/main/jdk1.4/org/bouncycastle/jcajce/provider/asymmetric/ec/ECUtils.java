@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.ec;
 
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Map;
 
@@ -20,6 +21,13 @@ import org.bouncycastle.math.ec.ECPoint;
 
 class ECUtils
 {
+    static AsymmetricKeyParameter generatePrivateKeyParameter(
+                PrivateKey key)
+        throws InvalidKeyException
+    {
+        return (key instanceof BCECPrivateKey) ? ((BCECPrivateKey)key).engineGetKeyParameters() : ECUtil.generatePrivateKeyParameter(key);
+    }
+
     static AsymmetricKeyParameter generatePublicKeyParameter(
             PublicKey key)
         throws InvalidKeyException
