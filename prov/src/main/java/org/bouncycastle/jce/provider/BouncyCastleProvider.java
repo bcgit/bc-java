@@ -6,11 +6,10 @@ import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.PublicKey;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +40,7 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
-import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
 /**
  * To add the provider at runtime use:
@@ -77,6 +76,8 @@ public final class BouncyCastleProvider extends Provider
     public static final String PROVIDER_NAME = "BC";
 
     public static final ProviderConfiguration CONFIGURATION = new BouncyCastleProviderConfiguration();
+
+    private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
 
     private static final Map keyInfoConverters = new HashMap();
 
@@ -250,17 +251,36 @@ public final class BouncyCastleProvider extends Provider
         put("CertStore.Multi", "org.bouncycastle.jce.provider.MultiCertStoreSpi");
         put("Alg.Alias.CertStore.X509LDAP", "LDAP");
 
-        // upgrade our legacy map to the new Service based map.
-        if (!Properties.isOverrideSet("org.bouncycastle.provider.legacy"))
+        getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
+    }
+
+    public final Service getService(String type, String algorithm)
+    {
+        String upperCaseAlgName = Strings.toUpperCase(algorithm);
+        String key = type + "." + upperCaseAlgName;
+
+        Service service = serviceMap.get(key);
+
+        if (service == null)
         {
-            Set<Service> services = getServices();
-            for (Iterator<Service> it = services.iterator(); it.hasNext(); )
+            synchronized (this)
             {
-                Service service = it.next();
-                super.remove(service.getType() + "." + service.getAlgorithm());
-                super.putService(service);            // add to new service map table
+                if (!serviceMap.containsKey(key))
+                {
+                    service = super.getService(type, algorithm);
+                    serviceMap.put(key, service);
+                    // remove legacy entry and swap to service entry
+                    super.remove(service.getType() + "." + service.getAlgorithm());
+                    super.putService(service);
+                }
+                else
+                {
+                    service = serviceMap.get(key);
+                }
             }
         }
+
+        return service;
     }
 
     private void loadAlgorithms(String packageName, String[] names)
