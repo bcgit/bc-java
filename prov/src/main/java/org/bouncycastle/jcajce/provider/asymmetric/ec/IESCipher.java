@@ -42,7 +42,6 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -315,7 +314,7 @@ public class IESCipher
                 IESKey ieKey = (IESKey)key;
 
                 this.key = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
-                this.otherKeyParameter = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
+                this.otherKeyParameter = ECUtils.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
             {
@@ -326,14 +325,14 @@ public class IESCipher
         {
             if (key instanceof PrivateKey)
             {
-                this.key = ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+                this.key = ECUtils.generatePrivateKeyParameter((PrivateKey)key);
             }
             else if (key instanceof IESKey)
             {
                 IESKey ieKey = (IESKey)key;
 
                 this.otherKeyParameter = ECUtils.generatePublicKeyParameter(ieKey.getPublic());
-                this.key = ECUtil.generatePrivateKeyParameter(ieKey.getPrivate());
+                this.key = ECUtils.generatePrivateKeyParameter(ieKey.getPrivate());
             }
             else
             {
