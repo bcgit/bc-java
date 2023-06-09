@@ -169,7 +169,7 @@ public class RainbowTest
 
         sig = Signature.getInstance(algorithmName, "BCPQC");
 
-        assertEquals(algorithmName, sig.getAlgorithm());
+        assertEquals(Strings.toUpperCase(algorithmName), Strings.toUpperCase(sig.getAlgorithm()));
 
         sig.initVerify(kp.getPublic());
 

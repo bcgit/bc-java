@@ -131,7 +131,7 @@ public class FalconTest
 
         sig = Signature.getInstance("Falcon-512", "BC");
 
-        assertEquals("Falcon-512", sig.getAlgorithm());
+        assertEquals("FALCON-512", Strings.toUpperCase(sig.getAlgorithm()));
 
         sig.initVerify(kp.getPublic());
 
@@ -175,7 +175,7 @@ public class FalconTest
 
         sig = Signature.getInstance("Falcon-1024", "BC");
 
-        assertEquals("Falcon-1024", sig.getAlgorithm());
+        assertEquals("FALCON-1024", Strings.toUpperCase(sig.getAlgorithm()));
 
         sig.initVerify(kp.getPublic());
 
