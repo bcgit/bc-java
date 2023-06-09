@@ -309,7 +309,7 @@ public class BouncyCastleJsseProvider
 
             service = new BcJsseService(this, type, upperCaseAlgName, className, aliases, getAttributeMap(attributes), creatorMap.get(className));
 
-            serviceMap.putIfAbsent(type + "." + upperCaseAlgName, service);
+            service = serviceMap.putIfAbsent(type + "." + upperCaseAlgName, service);
         }
 
         return service;
