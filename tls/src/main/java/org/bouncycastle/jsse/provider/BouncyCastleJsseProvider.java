@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
 import org.bouncycastle.util.Strings;
@@ -28,7 +29,7 @@ public class BouncyCastleJsseProvider
     private static final double PROVIDER_VERSION = 1.0017;
     private static final String PROVIDER_INFO = "Bouncy Castle JSSE Provider Version 1.0.17";
 
-    private final Map<String, BcJsseService> serviceMap = new HashMap<String, BcJsseService>();
+    private final Map<String, BcJsseService> serviceMap = new ConcurrentHashMap<String, BcJsseService>();
     private final Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
     private final boolean isInFipsMode;
@@ -262,7 +263,7 @@ public class BouncyCastleJsseProvider
         doPut(key, value);
     }
 
-    public synchronized final Provider.Service getService(String type, String algorithm)
+    public final Provider.Service getService(String type, String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
 
