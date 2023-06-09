@@ -286,7 +286,7 @@ public class BouncyCastleJsseProvider
                 return null;
             }
 
-            String attributeKeyStart = type + "." + upperCaseAlgName + " ";
+            String attributeKeyStart = type + "." + realName + " ";
 
             List<String> aliases = new ArrayList<String>();
             Map<String, String> attributes = new HashMap<String, String>();
@@ -309,7 +309,7 @@ public class BouncyCastleJsseProvider
 
             service = new BcJsseService(this, type, upperCaseAlgName, className, aliases, getAttributeMap(attributes), creatorMap.get(className));
 
-            serviceMap.put(type + "." + upperCaseAlgName, service);
+            serviceMap.putIfAbsent(type + "." + upperCaseAlgName, service);
         }
 
         return service;
@@ -328,9 +328,9 @@ public class BouncyCastleJsseProvider
         return bcServiceSet;
     }
 
-    private static final Map<Map<String, String>, Map<String, String> > attributeMaps = new HashMap<Map<String, String>, Map<String, String>>();
+    private static final Map<Map<String, String>, Map<String, String>> attributeMaps = new HashMap<Map<String, String>, Map<String, String>>();
 
-    private static Map<String, String> getAttributeMap(Map<String, String> attributeMap)
+    private static synchronized Map<String, String> getAttributeMap(Map<String, String> attributeMap)
     {
         Map<String, String> attrMap = attributeMaps.get(attributeMap);
         if (attrMap != null)
