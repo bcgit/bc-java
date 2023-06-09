@@ -33,15 +33,19 @@ final class ProvSSLParameters
 
     private String[] cipherSuites;
     private String[] protocols;
-    private boolean needClientAuth = false;
     private boolean wantClientAuth = false;
-    private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
+    private boolean needClientAuth = false;
     private String endpointIdentificationAlgorithm;
-    private boolean useCipherSuitesOrder = true;
-    private int maximumPacketSize = 0;
-    private List<BCSNIMatcher> sniMatchers;
+    private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private List<BCSNIServerName> sniServerNames;
+    private List<BCSNIMatcher> sniMatchers;
+    private boolean useCipherSuitesOrder = true;
+    private boolean enableRetransmissions = true;
+    private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
+    private String[] signatureSchemes = null;
+    private String[] namedGroups = null;
+
     private BCApplicationProtocolSelector<SSLEngine> engineAPSelector;
     private BCApplicationProtocolSelector<SSLSocket> socketAPSelector;
     private ProvSSLSession sessionToResume;
@@ -57,14 +61,18 @@ final class ProvSSLParameters
     ProvSSLParameters copy()
     {
         ProvSSLParameters p = new ProvSSLParameters(context, cipherSuites, protocols);
-        p.needClientAuth = needClientAuth;
         p.wantClientAuth = wantClientAuth;
-        p.algorithmConstraints = algorithmConstraints;
+        p.needClientAuth = needClientAuth;
         p.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
-        p.useCipherSuitesOrder = useCipherSuitesOrder;
-        p.sniMatchers = sniMatchers;
+        p.algorithmConstraints = algorithmConstraints;
         p.sniServerNames = sniServerNames;
+        p.sniMatchers = sniMatchers;
+        p.useCipherSuitesOrder = useCipherSuitesOrder;
+        p.enableRetransmissions = enableRetransmissions;
+        p.maximumPacketSize = maximumPacketSize;
         p.applicationProtocols = applicationProtocols;
+        p.signatureSchemes = signatureSchemes;
+        p.namedGroups = namedGroups;
         p.engineAPSelector = engineAPSelector;
         p.socketAPSelector = socketAPSelector;
         p.sessionToResume = sessionToResume;
@@ -132,17 +140,6 @@ final class ProvSSLParameters
         this.protocols = protocols;
     }
 
-    public boolean getNeedClientAuth()
-    {
-        return needClientAuth;
-    }
-
-    public void setNeedClientAuth(boolean needClientAuth)
-    {
-        this.needClientAuth = needClientAuth;
-        this.wantClientAuth = false;
-    }
-
     public boolean getWantClientAuth()
     {
         return wantClientAuth;
@@ -154,14 +151,15 @@ final class ProvSSLParameters
         this.wantClientAuth = wantClientAuth;
     }
 
-    public BCAlgorithmConstraints getAlgorithmConstraints()
+    public boolean getNeedClientAuth()
     {
-        return algorithmConstraints;
+        return needClientAuth;
     }
 
-    public void setAlgorithmConstraints(BCAlgorithmConstraints algorithmConstraints)
+    public void setNeedClientAuth(boolean needClientAuth)
     {
-        this.algorithmConstraints = algorithmConstraints;
+        this.needClientAuth = needClientAuth;
+        this.wantClientAuth = false;
     }
 
     public String getEndpointIdentificationAlgorithm()
@@ -174,29 +172,14 @@ final class ProvSSLParameters
         this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     }
 
-    public boolean getUseCipherSuitesOrder()
+    public BCAlgorithmConstraints getAlgorithmConstraints()
     {
-        return useCipherSuitesOrder;
+        return algorithmConstraints;
     }
 
-    public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
+    public void setAlgorithmConstraints(BCAlgorithmConstraints algorithmConstraints)
     {
-        this.useCipherSuitesOrder = useCipherSuitesOrder;
-    }
-
-    public int getMaximumPacketSize()
-    {
-        return maximumPacketSize;
-    }
-
-    public void setMaximumPacketSize(int maximumPacketSize)
-    {
-        if (maximumPacketSize < 0)
-        {
-            throw new IllegalArgumentException("The maximum packet size cannot be negative");
-        }
-
-        this.maximumPacketSize = maximumPacketSize;
+        this.algorithmConstraints = algorithmConstraints;
     }
 
     public List<BCSNIServerName> getServerNames()
@@ -219,6 +202,41 @@ final class ProvSSLParameters
         this.sniMatchers = copyList(matchers);
     }
 
+    public boolean getUseCipherSuitesOrder()
+    {
+        return useCipherSuitesOrder;
+    }
+
+    public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
+    {
+        this.useCipherSuitesOrder = useCipherSuitesOrder;
+    }
+
+    public boolean getEnableRetransmissions()
+    {
+        return enableRetransmissions;
+    }
+
+    public void setEnableRetransmissions(boolean enableRetransmissions)
+    {
+        this.enableRetransmissions = enableRetransmissions;
+    }
+
+    public int getMaximumPacketSize()
+    {
+        return maximumPacketSize;
+    }
+
+    public void setMaximumPacketSize(int maximumPacketSize)
+    {
+        if (maximumPacketSize < 0)
+        {
+            throw new IllegalArgumentException("The maximum packet size cannot be negative");
+        }
+
+        this.maximumPacketSize = maximumPacketSize;
+    }
+
     public String[] getApplicationProtocols()
     {
         return applicationProtocols.clone();
@@ -228,7 +246,27 @@ final class ProvSSLParameters
     {
         this.applicationProtocols = applicationProtocols.clone();
     }
-    
+
+    public String[] getSignatureSchemes()
+    {
+        return TlsUtils.clone(signatureSchemes);
+    }
+
+    public void setSignatureSchemes(String[] signatureSchemes)
+    {
+        this.signatureSchemes = TlsUtils.clone(signatureSchemes);
+    }
+
+    public String[] getNamedGroups()
+    {
+        return TlsUtils.clone(namedGroups);
+    }
+
+    public void setNamedGroups(String[] namedGroups)
+    {
+        this.namedGroups = TlsUtils.clone(namedGroups);
+    }
+
     public BCApplicationProtocolSelector<SSLEngine> getEngineAPSelector()
     {
         return engineAPSelector;

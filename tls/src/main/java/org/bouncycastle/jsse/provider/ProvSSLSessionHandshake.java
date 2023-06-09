@@ -63,13 +63,13 @@ class ProvSSLSessionHandshake
     @Override
     public String[] getLocalSupportedSignatureAlgorithms()
     {
-        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.localSigSchemesCert);
+        return jsseSecurityParameters.signatureSchemes.getLocalJcaSignatureAlgorithms();
     }
 
     @Override
     public String[] getLocalSupportedSignatureAlgorithmsBC()
     {
-        return SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(jsseSecurityParameters.localSigSchemesCert);
+        return jsseSecurityParameters.signatureSchemes.getLocalJcaSignatureAlgorithmsBC();
     }
 
     @Override
@@ -81,13 +81,13 @@ class ProvSSLSessionHandshake
     @Override
     public String[] getPeerSupportedSignatureAlgorithms()
     {
-        return SignatureSchemeInfo.getJcaSignatureAlgorithms(jsseSecurityParameters.peerSigSchemesCert);
+        return jsseSecurityParameters.signatureSchemes.getPeerJcaSignatureAlgorithms();
     }
 
     @Override
     public String[] getPeerSupportedSignatureAlgorithmsBC()
     {
-        return SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(jsseSecurityParameters.peerSigSchemesCert);
+        return jsseSecurityParameters.signatureSchemes.getPeerJcaSignatureAlgorithmsBC();
     }
 
     @Override

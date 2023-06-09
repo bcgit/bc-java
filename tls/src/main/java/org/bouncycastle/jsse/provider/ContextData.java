@@ -33,16 +33,30 @@ final class ContextData
         this.signatureSchemes = SignatureSchemeInfo.createPerContext(context.isFips(), crypto, namedGroups);
     }
 
-    NamedGroupInfo.PerConnection getNamedGroups(ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
+    NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions)
     {
-        return NamedGroupInfo.createPerConnection(namedGroups, sslParameters, activeProtocolVersions);
+        return NamedGroupInfo.createPerConnectionClient(namedGroups, sslParameters, activeProtocolVersions);
     }
 
-    List<SignatureSchemeInfo> getActiveCertsSignatureSchemes(boolean isServer, ProvSSLParameters sslParameters,
+    NamedGroupInfo.PerConnection getNamedGroupsServer(ProvSSLParameters sslParameters,
+        ProtocolVersion negotiatedVersion)
+    {
+        return NamedGroupInfo.createPerConnectionServer(namedGroups, sslParameters, negotiatedVersion);
+    }
+
+    SignatureSchemeInfo.PerConnection getSignatureSchemesClient(ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions, NamedGroupInfo.PerConnection namedGroups)
     {
-        return SignatureSchemeInfo.getActiveCertsSignatureSchemes(signatureSchemes, isServer, sslParameters,
-            activeProtocolVersions, namedGroups);
+        return SignatureSchemeInfo.createPerConnectionClient(signatureSchemes, sslParameters, activeProtocolVersions,
+            namedGroups);
+    }
+
+    SignatureSchemeInfo.PerConnection getSignatureSchemesServer(ProvSSLParameters sslParameters,
+        ProtocolVersion negotiatedVersion, NamedGroupInfo.PerConnection namedGroups)
+    {
+        return SignatureSchemeInfo.createPerConnectionServer(signatureSchemes, sslParameters, negotiatedVersion,
+            namedGroups);
     }
 
     ProvSSLContextSpi getContext()

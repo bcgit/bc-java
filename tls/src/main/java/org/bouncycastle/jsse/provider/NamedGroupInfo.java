@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
@@ -120,25 +121,26 @@ class NamedGroupInfo
         // NOTE: Should have predictable iteration order (by preference)
         private final Map<Integer, NamedGroupInfo> local;
         private final boolean localECDSA;
-
-        private List<NamedGroupInfo> peer;
+        private final AtomicReference<List<NamedGroupInfo>> peer;
 
         PerConnection(Map<Integer, NamedGroupInfo> local, boolean localECDSA)
         {
             this.local = local;
             this.localECDSA = localECDSA;
-
-            this.peer = null;
+            this.peer = new AtomicReference<List<NamedGroupInfo>>();
         }
 
-        public synchronized List<NamedGroupInfo> getPeer()
+        List<NamedGroupInfo> getPeer()
         {
-            return peer;
+            return peer.get();
         }
 
-        private synchronized void setPeer(List<NamedGroupInfo> peer)
+        void notifyPeerData(int[] namedGroups)
         {
-            this.peer = peer;
+            // TODO[jsse] Is there any reason to preserve the unrecognized/disabled groups?
+            List<NamedGroupInfo> namedGroupInfos = getNamedGroupInfos(local, namedGroups);
+
+            peer.set(namedGroupInfos);
         }
     }
 
@@ -154,10 +156,56 @@ class NamedGroupInfo
         }
     }
 
-    static PerConnection createPerConnection(PerContext perContext, ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
+    static PerConnection createPerConnectionClient(PerContext perContext, ProvSSLParameters sslParameters,
+        ProtocolVersion[] activeProtocolVersions)
     {
-        Map<Integer, NamedGroupInfo> local = createLocal(perContext, sslParameters, activeProtocolVersions);
-        boolean localECDSA = createLocalECDSA(local);
+        ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
+        ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
+
+        return createPerConnection(perContext, sslParameters, earliest, latest);
+    }
+
+    static PerConnection createPerConnectionServer(PerContext perContext, ProvSSLParameters sslParameters,
+        ProtocolVersion negotiatedVersion)
+    {
+        return createPerConnection(perContext, sslParameters, negotiatedVersion, negotiatedVersion);
+    }
+
+    private static PerConnection createPerConnection(PerContext perContext, ProvSSLParameters sslParameters,
+        ProtocolVersion earliest, ProtocolVersion latest)
+    {
+        String[] namedGroups = sslParameters.getNamedGroups();
+
+        int[] candidates;
+        if (namedGroups == null)
+        {
+            candidates = perContext.candidates;
+        }
+        else
+        {
+            candidates = createCandidates(perContext.index, namedGroups, "SSLParameters.namedGroups");
+        }
+
+        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
+        boolean post13Active = TlsUtils.isTLSv13(latest);
+        boolean pre13Active = !TlsUtils.isTLSv13(earliest);
+
+        int count = candidates.length;
+        LinkedHashMap<Integer, NamedGroupInfo> local = new LinkedHashMap<Integer, NamedGroupInfo>(count);
+        for (int i = 0; i < count; ++i)
+        {
+            Integer candidate = Integers.valueOf(candidates[i]);
+            NamedGroupInfo namedGroupInfo = perContext.index.get(candidate);
+
+            if (null != namedGroupInfo
+                && namedGroupInfo.isActive(algorithmConstraints, post13Active, pre13Active))
+            {
+                // NOTE: Re-insertion doesn't affect iteration order for insertion-order LinkedHashMap
+                local.put(candidate, namedGroupInfo);
+            }
+        }
+
+        boolean localECDSA = hasAnyECDSA(local);
 
         return new PerConnection(local, localECDSA);
     }
@@ -165,7 +213,7 @@ class NamedGroupInfo
     static PerContext createPerContext(boolean isFipsContext, JcaTlsCrypto crypto)
     {
         Map<Integer, NamedGroupInfo> index = createIndex(isFipsContext, crypto);
-        int[] candidates = createCandidates(index);
+        int[] candidates = createCandidatesFromProperty(index, PROPERTY_NAMED_GROUPS);
 
         return new PerContext(index, candidates);
     }
@@ -220,13 +268,6 @@ class NamedGroupInfo
     static boolean hasLocal(PerConnection perConnection, int namedGroup)
     {
         return perConnection.local.containsKey(namedGroup);
-    }
-
-    static void notifyPeer(PerConnection perConnection, int[] peerNamedGroups)
-    {
-        List<NamedGroupInfo> peer = createPeer(perConnection, peerNamedGroups);
-
-        perConnection.setPeer(peer);
     }
 
     static int selectServerECDH(PerConnection perConnection, int minimumBitsECDH)
@@ -290,14 +331,19 @@ class NamedGroupInfo
         }
     }
 
-    private static int[] createCandidates(Map<Integer, NamedGroupInfo> index)
+    private static int[] createCandidatesFromProperty(Map<Integer, NamedGroupInfo> index, String propertyName)
     {
-        String[] names = PropertyUtils.getStringArraySystemProperty(PROPERTY_NAMED_GROUPS);
+        String[] names = PropertyUtils.getStringArraySystemProperty(propertyName);
         if (null == names)
         {
             return CANDIDATES_DEFAULT;
         }
 
+        return createCandidates(index, names, propertyName);
+    }
+
+    private static int[] createCandidates(Map<Integer, NamedGroupInfo> index, String[] names, String description)
+    {
         int[] result = new int[names.length];
         int count = 0;
         for (String name : names)
@@ -305,20 +351,20 @@ class NamedGroupInfo
             int namedGroup = getNamedGroupByName(name);
             if (namedGroup < 0)
             {
-                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unrecognised NamedGroup: " + name);
+                LOG.warning("'" + description + "' contains unrecognised NamedGroup: " + name);
                 continue;
             }
 
             NamedGroupInfo namedGroupInfo = index.get(namedGroup);
             if (null == namedGroupInfo)
             {
-                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains unsupported NamedGroup: " + name);
+                LOG.warning("'" + description + "' contains unsupported NamedGroup: " + name);
                 continue;
             }
 
             if (!namedGroupInfo.isEnabled())
             {
-                LOG.warning("'" + PROPERTY_NAMED_GROUPS + "' contains disabled NamedGroup: " + name);
+                LOG.warning("'" + description + "' contains disabled NamedGroup: " + name);
                 continue;
             }
 
@@ -330,7 +376,7 @@ class NamedGroupInfo
         }
         if (result.length < 1)
         {
-            LOG.severe("'" + PROPERTY_NAMED_GROUPS + "' contained no usable NamedGroup values");
+            LOG.severe("'" + description + "' contained no usable NamedGroup values");
         }
         return result;
     }
@@ -339,8 +385,9 @@ class NamedGroupInfo
     {
         Map<Integer, NamedGroupInfo> ng = new TreeMap<Integer, NamedGroupInfo>();
 
-        final boolean disableChar2 = PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false)
-                                  || PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
+        final boolean disableChar2 =
+            PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false) ||
+            PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
 
         final boolean disableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
 
@@ -350,52 +397,6 @@ class NamedGroupInfo
         }
 
         return ng;
-    }
-
-    private static Map<Integer, NamedGroupInfo> createLocal(PerContext perContext,
-        ProvSSLParameters sslParameters, ProtocolVersion[] activeProtocolVersions)
-    {
-        ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
-        ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
-
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-        boolean post13Active = TlsUtils.isTLSv13(latest);
-        boolean pre13Active = !TlsUtils.isTLSv13(earliest);
-
-        int count = perContext.candidates.length;
-        LinkedHashMap<Integer, NamedGroupInfo> result = new LinkedHashMap<Integer, NamedGroupInfo>(count);
-        for (int i = 0; i < count; ++i)
-        {
-            Integer candidate = Integers.valueOf(perContext.candidates[i]);
-            NamedGroupInfo namedGroupInfo = perContext.index.get(candidate);
-
-            if (null != namedGroupInfo
-                && namedGroupInfo.isActive(algorithmConstraints, post13Active, pre13Active))
-            {
-                // NOTE: Re-insertion doesn't affect iteration order for insertion-order LinkedHashMap
-                result.put(candidate, namedGroupInfo);
-            }
-        }
-        return result;
-    }
-
-    private static boolean createLocalECDSA(Map<Integer, NamedGroupInfo> local)
-    {
-        for (NamedGroupInfo namedGroupInfo : local.values())
-        {
-            if (NamedGroup.refersToAnECDSACurve(namedGroupInfo.getNamedGroup()))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static List<NamedGroupInfo> createPeer(PerConnection perConnection, int[] peerNamedGroups)
-    {
-        // TODO[jsse] Is there any reason to preserve the unrecognized/disabled groups?
-
-        return getNamedGroupInfos(perConnection.local, peerNamedGroups);
     }
 
     private static Collection<NamedGroupInfo> getEffectivePeer(PerConnection perConnection)
@@ -422,7 +423,8 @@ class NamedGroupInfo
         return -1;
     }
 
-    private static List<NamedGroupInfo> getNamedGroupInfos(Map<Integer, NamedGroupInfo> namedGroupInfos, int[] namedGroups)
+    private static List<NamedGroupInfo> getNamedGroupInfos(Map<Integer, NamedGroupInfo> namedGroupInfos,
+        int[] namedGroups)
     {
         if (TlsUtils.isNullOrEmpty(namedGroups))
         {
@@ -447,6 +449,18 @@ class NamedGroupInfo
         }
         result.trimToSize();
         return result;
+    }
+
+    private static boolean hasAnyECDSA(Map<Integer, NamedGroupInfo> local)
+    {
+        for (NamedGroupInfo namedGroupInfo : local.values())
+        {
+            if (NamedGroup.refersToAnECDSACurve(namedGroupInfo.getNamedGroup()))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private final All all;
