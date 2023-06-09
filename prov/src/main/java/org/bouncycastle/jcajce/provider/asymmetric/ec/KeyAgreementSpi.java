@@ -29,7 +29,6 @@ import org.bouncycastle.crypto.params.MQVPrivateParameters;
 import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -195,9 +194,9 @@ public class KeyAgreementSpi
             {
                 MQVPrivateKey mqvPrivKey = (MQVPrivateKey)key;
                 staticPrivKey = (ECPrivateKeyParameters)
-                    ECUtil.generatePrivateKeyParameter(mqvPrivKey.getStaticPrivateKey());
+                    ECUtils.generatePrivateKeyParameter(mqvPrivKey.getStaticPrivateKey());
                 ephemPrivKey = (ECPrivateKeyParameters)
-                    ECUtil.generatePrivateKeyParameter(mqvPrivKey.getEphemeralPrivateKey());
+                    ECUtils.generatePrivateKeyParameter(mqvPrivKey.getEphemeralPrivateKey());
 
                 ephemPubKey = null;
                 if (mqvPrivKey.getEphemeralPublicKey() != null)
@@ -211,9 +210,9 @@ public class KeyAgreementSpi
                 MQVParameterSpec mqvParameterSpec = (MQVParameterSpec)parameterSpec;
 
                 staticPrivKey = (ECPrivateKeyParameters)
-                    ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+                    ECUtils.generatePrivateKeyParameter((PrivateKey)key);
                 ephemPrivKey = (ECPrivateKeyParameters)
-                    ECUtil.generatePrivateKeyParameter(mqvParameterSpec.getEphemeralPrivateKey());
+                    ECUtils.generatePrivateKeyParameter(mqvParameterSpec.getEphemeralPrivateKey());
 
                 ephemPubKey = null;
                 if (mqvParameterSpec.getEphemeralPublicKey() != null)
@@ -245,9 +244,9 @@ public class KeyAgreementSpi
             ECPublicKeyParameters ephemPubKey;
 
             staticPrivKey = (ECPrivateKeyParameters)
-                ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+                ECUtils.generatePrivateKeyParameter((PrivateKey)key);
             ephemPrivKey = (ECPrivateKeyParameters)
-                ECUtil.generatePrivateKeyParameter(dheParameterSpec.getEphemeralPrivateKey());
+                ECUtils.generatePrivateKeyParameter(dheParameterSpec.getEphemeralPrivateKey());
 
             ephemPubKey = null;
             if (dheParameterSpec.getEphemeralPublicKey() != null)
@@ -274,7 +273,7 @@ public class KeyAgreementSpi
             {
                 throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
             }
-            ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+            ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
             ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
             ((BasicAgreement)agreement).init(privKey);

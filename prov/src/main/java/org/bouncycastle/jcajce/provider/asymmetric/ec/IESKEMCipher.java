@@ -38,7 +38,6 @@ import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
-import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.IESKEMParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -244,7 +243,7 @@ public class IESKEMCipher
         {
             if (key instanceof PrivateKey)
             {
-                this.key = ECUtil.generatePrivateKeyParameter((PrivateKey)key);
+                this.key = ECUtils.generatePrivateKeyParameter((PrivateKey)key);
             }
             else
             {
