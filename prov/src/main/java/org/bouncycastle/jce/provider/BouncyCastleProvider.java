@@ -40,7 +40,6 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
-import org.bouncycastle.util.Strings;
 
 /**
  * To add the provider at runtime use:
@@ -254,34 +253,35 @@ public final class BouncyCastleProvider extends Provider
         getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
     }
 
-    public final Service getService(String type, String algorithm)
-    {
-        String upperCaseAlgName = Strings.toUpperCase(algorithm);
-        String key = type + "." + upperCaseAlgName;
-
-        Service service = serviceMap.get(key);
-
-        if (service == null)
-        {
-            synchronized (this)
-            {
-                if (!serviceMap.containsKey(key))
-                {
-                    service = super.getService(type, algorithm);
-                    serviceMap.put(key, service);
-                    // remove legacy entry and swap to service entry
-                    super.remove(service.getType() + "." + service.getAlgorithm());
-                    super.putService(service);
-                }
-                else
-                {
-                    service = serviceMap.get(key);
-                }
-            }
-        }
-
-        return service;
-    }
+//    public final Service getService(String type, String algorithm)
+//    {
+//        String upperCaseAlgName = Strings.toUpperCase(algorithm);
+//        String key = type + "." + upperCaseAlgName;
+//
+//        Service service = serviceMap.get(key);
+//
+//        if (service == null)
+//        {
+//            synchronized (this)
+//            {
+//                if (!serviceMap.containsKey(key))
+//                {
+//                    System.err.println(type + " " + algorithm);
+//                    service = super.getService(type, algorithm);
+//                    serviceMap.put(key, service);
+//                    // remove legacy entry and swap to service entry
+////                    super.remove(service.getType() + "." + service.getAlgorithm());
+//                    super.putService(service);
+//                }
+//                else
+//                {
+//                    service = serviceMap.get(key);
+//                }
+//            }
+//        }
+//
+//        return service;
+//    }
 
     private void loadAlgorithms(String packageName, String[] names)
     {
