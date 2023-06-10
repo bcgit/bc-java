@@ -511,7 +511,15 @@ public class CipherStreamTest2
                 "/CTS/NoPadding",
                 "/CTR/NoPadding",
                 "/SIC/NoPadding"}, false);
-            testModes(blockCiphers128[i], new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/GCM/NoPadding", "/OCB/NoPadding"}, true);
+            String jvm = System.getProperty("java.version");
+            if (jvm.charAt(2) == '5' || jvm.charAt(2) == '6')   // can't use GCM due to JVM bug in this case.
+            {
+                testModes(blockCiphers128[i], new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/OCB/NoPadding"}, true);
+            }
+            else
+            {
+                testModes(blockCiphers128[i], new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/GCM/NoPadding", "/OCB/NoPadding"}, true);
+            }
         }
 
         final String[] streamCiphers = new String[]{
