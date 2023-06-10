@@ -125,6 +125,13 @@
                 <exclude name="**/pkix/jcajce/X509Revoc*.java" />
                 <exclude name="**/pkix/jcajce/Revoc*.java" />
                 <exclude name="**/pkix/jcajce/RFC3280Cert*.java" />
+                <exclude name="**/pkix/jcajce/PKIXCert*.java" />
+                <exclude name="**/pkix/jcajce/X509CRL*.java" />
+                <exclude name="**/pkix/jcajce/X509Cert*.java" />
+                <exclude name="**/pkix/jcajce/CertPath*.java" />
+                <exclude name="**/pkix/jcajce/PKIXCRL*.java" />
+                <exclude name="**/pkix/jcajce/PKIXPolicy*.java" />
+                <exclude name="**/pkix/util/**.java" />
                 <exclude name="**/mime/**/*.java" />
                 <exclude name="**/est/**/*.java" />
                 <exclude name="**/its/**" />
@@ -278,6 +285,7 @@
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java" >
                 <exclude name="**/LDAP*.java" />
+                <exclude name="**/X509LDAP*.java" />
                 <exclude name="**/rsa/PSSParamSpec.java" />
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
