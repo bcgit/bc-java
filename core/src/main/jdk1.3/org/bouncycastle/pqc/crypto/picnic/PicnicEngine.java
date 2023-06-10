@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.math.raw.Bits;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 class PicnicEngine
@@ -338,19 +339,18 @@ class PicnicEngine
 
     private int picnic_verify(byte[] pk, byte[] message, byte[] signature, int sigLen)
     {
-        byte[] plaintext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        byte[] ciphertext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        picnic_read_public_key(ciphertext_bytes, plaintext_bytes, pk);
         int[] ciphertext = new int[stateSizeWords];
         int[] plaintext = new int[stateSizeWords];
-
-        Pack.littleEndianToInt(plaintext_bytes, 0, plaintext);
-        Pack.littleEndianToInt(ciphertext_bytes, 0, ciphertext);
+        picnic_read_public_key(ciphertext, plaintext, pk);
 
         if(is_picnic3(parameters))
         {
             Signature2 sig = new Signature2(this);
-            deserializeSignature2(sig, signature, sigLen,  message.length + 4);
+            int ret = deserializeSignature2(sig, signature, sigLen,  message.length + 4);
+            if (ret != 0)
+            {
+                return -1;
+            }
 
             return verify_picnic3(sig, ciphertext, plaintext, message);
         }
@@ -392,9 +392,12 @@ class PicnicEngine
             view1s[i] = new View(this);
             view2s[i] = new View(this);
 
-            verifyProof(proofs[i], view1s[i], view2s[i],
-                    getChallenge(received_challengebits, i), sig.salt, i,
-                    tmp, plaintext, tape);
+            if (!verifyProof(proofs[i], view1s[i], view2s[i],
+                getChallenge(received_challengebits, i), sig.salt, i,
+                tmp, plaintext, tape))
+            {
+                return -1;
+            }
 
             // create ordered array of commitments with order computed based on the challenge
             // check commitments of the two opened views
@@ -413,7 +416,7 @@ class PicnicEngine
             viewOutputs[i][challenge] = view1s[i].outputShare;
             viewOutputs[i][(challenge + 1) % 3] = view2s[i].outputShare;
             int[] view3Output = new int[stateSizeWords];     /* pointer into the slab to the current 3rd view */
-            xor_three(view3Output, view1s[i].outputShare,  view2s[i].outputShare, pubKey, stateSizeBytes);
+            xor_three(view3Output, view1s[i].outputShare,  view2s[i].outputShare, pubKey);
             viewOutputs[i][(challenge + 2) % 3] = view3Output;
         }
 
@@ -432,7 +435,7 @@ class PicnicEngine
     }
 
     boolean verifyProof(Signature.Proof proof, View view1, View view2, int challenge, byte[] salt,
-                     int roundNumber, byte[] tmp, int[] plaintext, Tape tape)
+        int roundNumber, byte[] tmp, int[] plaintext, Tape tape)
     {
         System.arraycopy(proof.communicatedBits, 0, view2.communicatedBits, 0, andSizeBytes);
         tape.pos = 0;
@@ -457,6 +460,7 @@ class PicnicEngine
                 {
                     break;
                 }
+
                 Pack.littleEndianToInt(tmp, 0, view2.inputShare);//todo check
                 System.arraycopy(tmp, stateSizeBytes, tape.tapes[1], 0, andSizeBytes);
 
@@ -473,12 +477,13 @@ class PicnicEngine
                 System.arraycopy(tmp, stateSizeBytes, tape.tapes[0], 0, andSizeBytes);
                 status = status && createRandomTape(proof.seed2, 0, salt, roundNumber,
                         2, tape.tapes[1], andSizeBytes);
+
                 if (!status)
                 {
                     break;
                 }
 
-                System.arraycopy(proof.inputShare, 0, view2.inputShare, 0, stateSizeBytes);
+                System.arraycopy(proof.inputShare, 0, view2.inputShare, 0, stateSizeWords);
                 break;
 
             case 2:
@@ -486,12 +491,14 @@ class PicnicEngine
                 // it is not computable from the seed. We just need to compute view2's input from
                 // its seed
                 status = createRandomTape(proof.seed1, 0, salt, roundNumber, 2, tape.tapes[0], andSizeBytes);
-                System.arraycopy(proof.inputShare, 0, view1.inputShare, 0, stateSizeBytes);
+                System.arraycopy(proof.inputShare, 0, view1.inputShare, 0, stateSizeWords);
                 status = status && createRandomTape(proof.seed2, 0, salt, roundNumber, 0, tmp, stateSizeBytes + andSizeBytes);
+
                 if (!status)
                 {
                     break;
                 }
+
                 Pack.littleEndianToInt(tmp, 0, view2.inputShare);//todo check
                 System.arraycopy(tmp, stateSizeBytes, tape.tapes[1], 0, andSizeBytes);
                 break;
@@ -504,18 +511,9 @@ class PicnicEngine
         {
             return false;
         }
-        /* When input shares are read from the tapes, and the length is not a whole number of bytes, the trailing bits must be zero */
-        byte[] view_bytes = new byte[stateSizeBytes * 4];
-        Pack.intToLittleEndian(view1.inputShare, view_bytes, 0);
-        Arrays.fill(view_bytes, stateSizeBytes, view_bytes.length, (byte) 0); //todo have correct size: reduce view.inputshare by /4
-        zeroTrailingBits(view_bytes, stateSizeBits);
-        Pack.littleEndianToInt(view_bytes, 0, view1.inputShare);
 
-        Pack.intToLittleEndian(view2.inputShare, view_bytes, 0);
-        Arrays.fill(view_bytes, stateSizeBytes, view_bytes.length, (byte) 0);
-        zeroTrailingBits(view_bytes, stateSizeBits);
-
-        Pack.littleEndianToInt(view_bytes, 0, view2.inputShare);
+        Utils.zeroTrailingBits(view1.inputShare, stateSizeBits);
+        Utils.zeroTrailingBits(view2.inputShare, stateSizeBits);
 
         int[] tmp_ints = Pack.littleEndianToInt(tmp, 0, tmp.length/4);
         mpc_LowMC_verify(view1, view2, tape, tmp_ints, plaintext, challenge);
@@ -536,7 +534,7 @@ class PicnicEngine
                 view2.inputShare, 0,
                 current.getData(), current.getMatrixPointer());
 
-        mpc_xor(tmp, tmp, stateSizeWords, 2);
+        mpc_xor(tmp, tmp, 2);
 
         for (int r = 1; r <= numRounds; ++r)
         {
@@ -557,7 +555,7 @@ class PicnicEngine
 
             current = lowmcConstants.RConstant(this, r - 1);
             mpc_xor_constant_verify(tmp, current.getData(), current.getMatrixPointer(), stateSizeWords, challenge);
-            mpc_xor(tmp, tmp, stateSizeWords, 2);
+            mpc_xor(tmp, tmp, 2);
         }
 
         System.arraycopy(tmp, 2*stateSizeWords, view1.outputShare, 0, stateSizeWords);
@@ -603,10 +601,14 @@ class PicnicEngine
 
     void mpc_AND_verify(int[] in1, int[] in2, int[] out, Tape rand, View view1, View view2)
     {
-        int[] r = { Utils.getBit(rand.tapes[0], rand.pos), Utils.getBit(rand.tapes[1], rand.pos) };
+        int r0 = Utils.getBit(rand.tapes[0], rand.pos);
+        int r1 = Utils.getBit(rand.tapes[1], rand.pos);
 
-        out[0] = (in1[0] & in2[1]) ^ (in1[1] & in2[0]) ^ (in1[0] & in2[0]) ^ r[0] ^ r[1];
-        Utils.setBit(view1.communicatedBits, rand.pos, (byte) (out[0] & 0xff));
+        int a0 = in1[0], a1 = in1[1];
+        int b0 = in2[0], b1 = in2[1];
+
+        out[0] = (a0 & b1) ^ (a1 & b0) ^ (a0 & b0) ^ r0 ^ r1;
+        Utils.setBit(view1.communicatedBits, rand.pos, (byte)out[0]);
         out[1] = Utils.getBit(view2.communicatedBits, rand.pos);
 
         rand.pos++;
@@ -630,49 +632,51 @@ class PicnicEngine
         }
         for (int i = 0; i < length; i++)
         {
-            state[i + offset] = state[i + offset] ^ in[i + inOffset];
+            state[i + offset] ^= in[i + inOffset];
         }
 
     }
-
 
     private int deserializeSignature(Signature sig, byte[] sigBytes, int sigBytesLen, int sigBytesOffset)
     {
         Signature.Proof[] proofs = sig.proofs;
         byte[] challengeBits = sig.challengeBits;
+        int challengesLength = Utils.numBytes(2 * numMPCRounds);
 
         /* Validate input buffer is large enough */
-        if (sigBytesLen < Utils.numBytes(2 * numMPCRounds))
+        if (sigBytesLen < challengesLength)
         {     /* ensure the input has at least the challenge */
             return -1;
         }
 
-        int inputShareSize = computeInputShareSize(sigBytes, stateSizeBytes);
-        int bytesExpected = Utils.numBytes(2 * numMPCRounds) + saltSizeBytes +
-                numMPCRounds * (2 * seedSizeBytes + andSizeBytes + digestSizeBytes) + inputShareSize;
+        // NOTE: This also validates that there are no challenges > 2
+        int numNonZeroChallenges = countNonZeroChallenges(sigBytes, sigBytesOffset);
+        if (numNonZeroChallenges < 0)
+            return -1;
+
+        int inputShareSize = numNonZeroChallenges * stateSizeBytes;
+        int bytesRequired = challengesLength + saltSizeBytes +
+            numMPCRounds * (2 * seedSizeBytes + andSizeBytes + digestSizeBytes) + inputShareSize;
 
         if (transform == TRANSFORM_UR)
         {
-            bytesExpected += UnruhGWithoutInputBytes * numMPCRounds;
+            bytesRequired += UnruhGWithInputBytes * (numMPCRounds - numNonZeroChallenges);
+            bytesRequired += UnruhGWithoutInputBytes * numNonZeroChallenges;
         }
-        if (sigBytesLen < bytesExpected)
+
+        if (sigBytesLen != bytesRequired)
         {
             return -1;
         }
 
-        System.arraycopy(sigBytes, sigBytesOffset, challengeBits, 0,  Utils.numBytes(2 * numMPCRounds));
-        sigBytesOffset += Utils.numBytes(2 * numMPCRounds);
+        System.arraycopy(sigBytes, sigBytesOffset, challengeBits, 0, challengesLength);
+        sigBytesOffset += challengesLength;
 
-        if (!isChallengeValid(challengeBits))
-        {
-            return -1;
-        }
         System.arraycopy(sigBytes, sigBytesOffset, sig.salt, 0, saltSizeBytes);
         sigBytesOffset += saltSizeBytes;
 
         for (int i = 0; i < numMPCRounds; i++)
         {
-
             int challenge = getChallenge(challengeBits, i);
 
             System.arraycopy(sigBytes, sigBytesOffset, proofs[i].view3Commitment, 0, digestSizeBytes);
@@ -704,7 +708,8 @@ class PicnicEngine
                 }
 
                 sigBytesOffset += stateSizeBytes;
-                if(!arePaddingBitsZero(Pack.intToLittleEndian(proofs[i].inputShare), stateSizeBits))
+
+                if (!arePaddingBitsZero(proofs[i].inputShare, stateSizeBits))
                 {
                     return -1;
                 }
@@ -715,43 +720,50 @@ class PicnicEngine
         return 0;
     }
 
-    private boolean isChallengeValid(byte[] challengeBits)
-    {
-        for (int i = 0; i < numMPCRounds; i++)
-        {
-            int challenge = getChallenge(challengeBits, i);
-            if (challenge > 2)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private int computeInputShareSize(byte[] challengeBits, int stateSizeBytes)
+    private int countNonZeroChallenges(byte[] challengeBits, int challengeBitsOffset)
     {
         /* When the FS transform is used, the input share is included in the proof
-         * only when the challenge is 1 or 2.  When dersializing, to compute the
+         * only when the challenge is 1 or 2.  When deserializing, to compute the
          * number of bytes expected, we must check how many challenge values are 1
-         * or 2. The parameter stateSizeBytes is the size of an input share. */
-        int inputShareSize = 0;
+         * or 2. We also check that no challenges have the invalid value 3. */
+        int count = 0;
+        int challenges3 = 0;
 
-        for (int i = 0; i < numMPCRounds; i++)
+        int i = 0;
+        while (i + 16 <= numMPCRounds)
         {
-            int challenge = getChallenge(challengeBits, i);
-            if (challenge == 1 || challenge == 2)
-            {
-                inputShareSize += stateSizeBytes;
-            }
+            int challenges = Pack.littleEndianToInt(challengeBits, challengeBitsOffset + (i >>> 2));
+            challenges3 |= challenges & (challenges >>> 1);
+            count += Integers.bitCount((challenges ^ (challenges >>> 1)) & 0x55555555);
+            i += 16;
         }
-        return inputShareSize;
+
+        int remainingBits = (numMPCRounds - i) * 2;
+        if (remainingBits > 0)
+        {
+            int remainingBytes = (remainingBits + 7) / 8;
+            int challenges = Pack.littleEndianToInt_Low(challengeBits, challengeBitsOffset + (i >>> 2), remainingBytes);
+            challenges &= Utils.getTrailingBitsMask(remainingBits);
+            challenges3 |= challenges & (challenges >>> 1);
+            count += Integers.bitCount((challenges ^ (challenges >>> 1)) & 0x55555555);
+        }
+
+        return (challenges3 & 0x55555555) == 0 ? count : -1;
     }
 
-    private int picnic_read_public_key(byte[] ciphertext, byte[] plaintext, byte[] pk)
+    private void picnic_read_public_key(int[] ciphertext, int[] plaintext, byte[] pk)
     {
-        System.arraycopy(pk, 1, ciphertext, 0, stateSizeBytes);
-        System.arraycopy(pk, 1 + stateSizeBytes, plaintext, 0, stateSizeBytes);
-        return 0;
+        int ciphertextPos = 1, plaintextPos = 1 + stateSizeBytes;
+        int fullWords = stateSizeBytes / 4;
+        Pack.littleEndianToInt(pk, ciphertextPos, ciphertext, 0, fullWords);
+        Pack.littleEndianToInt(pk, plaintextPos, plaintext, 0, fullWords);
+
+        if (fullWords < stateSizeWords)
+        {
+            int fullWordBytes = fullWords * 4, partialWordBytes = stateSizeBytes - fullWordBytes;
+            ciphertext[fullWords] = Pack.littleEndianToInt_Low(pk, ciphertextPos + fullWordBytes, partialWordBytes);
+            plaintext[fullWords] = Pack.littleEndianToInt_Low(pk, plaintextPos + fullWordBytes, partialWordBytes);
+        }
     }
 
     private int verify_picnic3(Signature2 sig, int[] pubKey, int[] plaintext, byte[] message)
@@ -1042,6 +1054,16 @@ class PicnicEngine
         return true;
     }
 
+    private boolean arePaddingBitsZero(int[] data, int bitLength)
+    {
+        int partialWord = bitLength & 31;
+        if (partialWord == 0)
+            return true;
+
+        int mask = Utils.getTrailingBitsMask(bitLength);
+        return (data[bitLength >>> 5] & ~mask) == 0;
+    }
+
     public void crypto_sign(byte[] sm, byte[] m, byte[] sk)
     {
         boolean ret = picnic_sign(sk, m, sm);
@@ -1050,27 +1072,27 @@ class PicnicEngine
             return; // throw error?
         }
         System.arraycopy(m, 0, sm, 4, m.length);
-//        sm = Arrays.copyOfRange(sm, 0, signatureLength);
     }
 
     private boolean picnic_sign(byte[] sk, byte[] message, byte[] signature)
     {
-        //todo unify conversion
-
-        byte[] data_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        System.arraycopy(sk, 1, data_bytes, 0, stateSizeBytes);
-        byte[] ciphertext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        System.arraycopy(sk, 1 + stateSizeBytes, ciphertext_bytes, 0,  stateSizeBytes);
-        byte[] plaintext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        System.arraycopy(sk, 1 + 2 * stateSizeBytes, plaintext_bytes, 0, stateSizeBytes);
         int[] data = new int[stateSizeWords];
         int[] ciphertext = new int[stateSizeWords];
         int[] plaintext = new int[stateSizeWords];
 
-        Pack.littleEndianToInt(data_bytes, 0, data);
-        Pack.littleEndianToInt(plaintext_bytes, 0, plaintext);
-        Pack.littleEndianToInt(ciphertext_bytes, 0, ciphertext);
+        int dataPos = 1, ciphertextPos = 1 + stateSizeBytes, plaintextPos = 1 + 2 * stateSizeBytes;
+        int fullWords = stateSizeBytes / 4;
+        Pack.littleEndianToInt(sk, dataPos, data, 0, fullWords);
+        Pack.littleEndianToInt(sk, ciphertextPos, ciphertext, 0, fullWords);
+        Pack.littleEndianToInt(sk, plaintextPos, plaintext, 0, fullWords);
 
+        if (fullWords < stateSizeWords)
+        {
+            int fullWordBytes = fullWords * 4, partialWordBytes = stateSizeBytes - fullWordBytes;
+            data[fullWords] = Pack.littleEndianToInt_Low(sk, dataPos + fullWordBytes, partialWordBytes);
+            ciphertext[fullWords] = Pack.littleEndianToInt_Low(sk, ciphertextPos + fullWordBytes, partialWordBytes);
+            plaintext[fullWords] = Pack.littleEndianToInt_Low(sk, plaintextPos + fullWordBytes, partialWordBytes);
+        }
 
         if(!is_picnic3(parameters))
         {
@@ -1083,10 +1105,11 @@ class PicnicEngine
             }
 
             int len = serializeSignature(sig, signature, message.length + 4);
-            if (len == -1)
+            if (len < 0)
             {
                 return false;
             }
+
             signatureLength = len;
             Pack.intToLittleEndian(len, signature, 0);
             return true;
@@ -1101,7 +1124,7 @@ class PicnicEngine
             }
 
             int len = serializeSignature2(sig, signature, message.length + 4);
-            if (len == -1)
+            if (len < 0)
             {
                 return false;
             }
@@ -1139,7 +1162,6 @@ class PicnicEngine
         sigByteIndex += Utils.numBytes(2 * numMPCRounds);
 
         System.arraycopy(sig.salt, 0, sigBytes, sigByteIndex,saltSizeBytes);
-
         sigByteIndex += saltSizeBytes;
 
         for (int i = 0; i < numMPCRounds; i++)
@@ -1178,12 +1200,11 @@ class PicnicEngine
 
     int getChallenge(byte[] challenge, int round)
     {
-        return (Utils.getBit(challenge, 2 * round + 1) << 1) | Utils.getBit(challenge, 2 * round);
+        return Utils.getCrumbAligned(challenge, round);
     }
 
     private int serializeSignature2(Signature2 sig, byte[] sigBytes, int sigOffset)
     {
-
         /* Compute the number of bytes required for the signature */
         int bytesRequired = digestSizeBytes + saltSizeBytes;     /* challenge and salt */
 
@@ -1273,7 +1294,6 @@ class PicnicEngine
         Tape tape = new Tape(this);
 
         byte[] tmp = new byte[Math.max(9 * stateSizeBytes, stateSizeBytes + andSizeBytes)];
-        byte[] view_byte = new byte[stateSizeBytes*4];
 
         for (int k = 0; k < numMPCRounds; k++)
         {
@@ -1289,9 +1309,11 @@ class PicnicEngine
                 {
                     return -1;
                 }
-                System.arraycopy(tmp, 0, view_byte, 0, stateSizeBytes);
-                zeroTrailingBits(view_byte, stateSizeBits);
-                Pack.littleEndianToInt(view_byte, 0, views[k][j].inputShare);
+
+                int[] inputShare = views[k][j].inputShare;
+                Pack.littleEndianToInt(tmp, 0, inputShare);
+                Utils.zeroTrailingBits(inputShare, stateSizeBits);
+                
                 System.arraycopy(tmp, stateSizeBytes, tape.tapes[j], 0, andSizeBytes);
             }
 
@@ -1304,7 +1326,7 @@ class PicnicEngine
                 return -1;
             }
 
-            xor_three(views[k][2].inputShare, privateKey, views[k][0].inputShare, views[k][1].inputShare, stateSizeBytes);
+            xor_three(views[k][2].inputShare, privateKey, views[k][0].inputShare, views[k][1].inputShare);
             tape.pos = 0;
 
             int[] tmp_int = Pack.littleEndianToInt(tmp, 0, tmp.length/4);
@@ -1313,8 +1335,7 @@ class PicnicEngine
             Pack.intToLittleEndian(tmp_int, tmp, 0);
 
             int[] temp = new int[LOWMC_MAX_WORDS];
-            xor_three(temp, views[k][0].outputShare, views[k][1].outputShare, views[k][2].outputShare, stateSizeBytes);
-
+            xor_three(temp, views[k][0].outputShare, views[k][1].outputShare, views[k][2].outputShare);
 
             if(!subarrayEquals(temp, pubKey, stateSizeWords))
             {
@@ -1335,16 +1356,8 @@ class PicnicEngine
         }
 
         //Generating challenges
-        int[][][] viewOutputs = new int[numMPCRounds][3][stateSizeBytes];
-        for (int i = 0; i < numMPCRounds; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                viewOutputs[i][j] = views[i][j].outputShare;
-            }
-        }
 
-        H3(pubKey, plaintext, viewOutputs, as, sig.challengeBits, sig.salt, message, gs);
+        H3(pubKey, plaintext, views, as, sig.challengeBits, sig.salt, message, gs);
 
         //Packing Z
         for (int i = 0; i < numMPCRounds; i++)
@@ -1353,7 +1366,6 @@ class PicnicEngine
             prove(proof, getChallenge(sig.challengeBits, i), seeds, ((seedLen) * i),
                     views[i], as[i], (transform != TRANSFORM_UR) ? null : gs[i]); //todo check if
         }
-
 
         return 0;
     }
@@ -1379,13 +1391,14 @@ class PicnicEngine
         }
         else 
         {
-// ignore
+            throw new IllegalArgumentException("challenge");
         }
 
         if (challenge == 1 || challenge == 2)
         {
-            System.arraycopy(views[2].inputShare, 0, proof.inputShare, 0, stateSizeBytes);
+            System.arraycopy(views[2].inputShare, 0, proof.inputShare, 0, stateSizeWords);
         }
+
         System.arraycopy(views[(challenge + 1) % 3].communicatedBits, 0, proof.communicatedBits, 0, andSizeBytes);
 
         System.arraycopy(commitments[(challenge + 2) % 3], 0, proof.view3Commitment, 0, digestSizeBytes);
@@ -1395,27 +1408,55 @@ class PicnicEngine
             System.arraycopy(gs[(challenge + 2) % 3], 0, proof.view3UnruhG, 0, view3UnruhLength);
         }
     }
-    
-    void H3(int[] circuitOutput, int[] plaintext, int[][][] viewOutputs,
-            byte[][][] as, byte[] challengeBits, byte[] salt,
-            byte[] message, byte[][][] gs)
+
+    private void H3(int[] circuitOutput, int[] plaintext, View[][] views, byte[][][] as, byte[] challengeBits,
+        byte[] salt, byte[] message, byte[][][] gs)
+    {
+        digest.update((byte) 1);
+
+        byte[] tmp = new byte[stateSizeWords * 4];
+        
+        /* Hash the output share from each view */
+        for (int i = 0; i < numMPCRounds; i++) 
+        {
+            for (int j = 0; j < 3; j++) 
+            {
+                Pack.intToLittleEndian(views[i][j].outputShare, tmp, 0);
+                digest.update(tmp, 0, stateSizeBytes);
+            }
+        }
+
+        implH3(circuitOutput, plaintext, as, challengeBits, salt, message, gs);
+    }
+
+    private void H3(int[] circuitOutput, int[] plaintext, int[][][] viewOutputs, byte[][][] as, byte[] challengeBits,
+        byte[] salt, byte[] message, byte[][][] gs)
+    {
+        digest.update((byte) 1);
+
+        byte[] tmp = new byte[stateSizeWords * 4];
+        
+        /* Hash the output share from each view */
+        for (int i = 0; i < numMPCRounds; i++) 
+        {
+            for (int j = 0; j < 3; j++) 
+            {
+                Pack.intToLittleEndian(viewOutputs[i][j], tmp, 0);
+                digest.update(tmp, 0, stateSizeBytes);
+            }
+        }
+
+        implH3(circuitOutput, plaintext, as, challengeBits, salt, message, gs);
+    }
+
+    private void implH3(int[] circuitOutput, int[] plaintext, byte[][][] as, byte[] challengeBits, byte[] salt,
+        byte[] message, byte[][][] gs)
     {
         byte[] hash = new byte[digestSizeBytes];
 
         /* Depending on the number of rounds, we might not set part of the last
          * byte, make sure it's always zero. */
         challengeBits[Utils.numBytes(numMPCRounds * 2) - 1] = 0;
-
-        digest.update((byte) 1);
-
-        /* Hash the output share from each view */
-        for (int i = 0; i < numMPCRounds; i++) 
-        {
-            for (int j = 0; j < 3; j++) 
-            {
-                digest.update( Pack.intToLittleEndian(viewOutputs[i][j]), 0, stateSizeBytes);
-            }
-        }
 
         /* Hash all the commitments C */
         for (int i = 0; i < numMPCRounds; i++) 
@@ -1532,7 +1573,7 @@ class PicnicEngine
                     current.getData(), current.getMatrixPointer());
         }
 
-        mpc_xor(slab, slab, stateSizeWords, 3);
+        mpc_xor(slab, slab, 3);
 
         for (int r = 1; r <= numRounds; r++)
         {
@@ -1555,7 +1596,7 @@ class PicnicEngine
             mpc_xor_constant(slab, 3*stateSizeWords,
                              current.getData(), current.getMatrixPointer(), stateSizeWords);
 
-            mpc_xor(slab, slab, stateSizeWords, 3);
+            mpc_xor(slab, slab, 3);
         }
 
         for (int i = 0; i < 3; i++)
@@ -1619,37 +1660,31 @@ class PicnicEngine
     /*** Functions implementing Sign ***/
     private void mpc_AND(int[] in1, int[] in2, int[] out, Tape rand, View[] views)
     {
-        int[] r = new int[]{
-                Utils.getBit(rand.tapes[0], rand.pos),
-                Utils.getBit(rand.tapes[1], rand.pos),
-                Utils.getBit(rand.tapes[2], rand.pos)
-        };
+        int r0 = Utils.getBit(rand.tapes[0], rand.pos);
+        int r1 = Utils.getBit(rand.tapes[1], rand.pos);
+        int r2 = Utils.getBit(rand.tapes[2], rand.pos);
 
-        for (int i = 0; i < 3; i++)
-        {
-            out[i] = (in1[i] & in2[(i + 1) % 3]) ^ (in1[(i + 1) % 3] & in2[i])
-                    ^ (in1[i] & in2[i]) ^ r[i] ^ r[(i + 1) % 3];
+        out[0] = (in1[0] & in2[1]) ^ (in1[1] & in2[0]) ^ (in1[0] & in2[0]) ^ r0 ^ r1;
+        out[1] = (in1[1] & in2[2]) ^ (in1[2] & in2[1]) ^ (in1[1] & in2[1]) ^ r1 ^ r2;
+        out[2] = (in1[2] & in2[0]) ^ (in1[0] & in2[2]) ^ (in1[2] & in2[2]) ^ r2 ^ r0;
 
-            Utils.setBit(views[i].communicatedBits, rand.pos, (byte) (out[i] & 0xff));
-        }
+        Utils.setBit(views[0].communicatedBits, rand.pos, (byte)out[0]);
+        Utils.setBit(views[1].communicatedBits, rand.pos, (byte)out[1]);
+        Utils.setBit(views[2].communicatedBits, rand.pos, (byte)out[2]);
+
         rand.pos++;
     }
 
-
-    private void mpc_xor(int[] state, int[] in, int len, int players)
+    private void mpc_xor(int[] state, int[] in, int players)
     {
-        for (int player = 0; player < players; player++)
+        for (int i = 0, count = stateSizeWords * players; i < count; ++i)
         {
-            for (int i = 0; i < len; i++)
-            {
-                state[i + (players+player)*stateSizeWords] = state[i + (players+player)*stateSizeWords]  ^ in[i + player*stateSizeWords];
-            }
+            state[players * stateSizeWords + i] ^= in[i];           
         }
     }
 
-
     private void mpc_matrix_mul(int[] output, int outputOffset, int[] state, int stateOffset,
-                        int[] matrix, int matrixOffset,  int players)
+        int[] matrix, int matrixOffset,  int players)
     {
         for (int player = 0; player < players; player++)
         {
@@ -1664,7 +1699,7 @@ class PicnicEngine
     {
         for (int i = 0; i < len; i++)
         {
-            state[i + stateOffset] = state[i + stateOffset] ^ in[i + inOffset];
+            state[i + stateOffset] ^= in[i + inOffset];
         }
     }
 
@@ -1697,11 +1732,12 @@ class PicnicEngine
     private byte[] computeSeeds(int[] privateKey, int[] publicKey, int[] plaintext, byte[] message)
     {
         byte[] allSeeds = new byte[seedSizeBytes * (numMPCParties * numMPCRounds) + saltSizeBytes];
+        byte[] temp = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
 
-        digest.update(Pack.intToLittleEndian(privateKey), 0, stateSizeBytes);
+        updateDigest(privateKey, temp);
         digest.update(message, 0, message.length);
-        digest.update(Pack.intToLittleEndian(publicKey), 0, stateSizeBytes);
-        digest.update(Pack.intToLittleEndian(plaintext), 0, stateSizeBytes);
+        updateDigest(publicKey, temp);
+        updateDigest(plaintext, temp);
         digest.update(Pack.intToLittleEndian(stateSizeBits), 0, 2);
 
         // Derive the N*T seeds + 1 salt
@@ -1762,7 +1798,7 @@ class PicnicEngine
         {
             msgs[t] = new Msg(this);
             int[] maskedKey = Pack.littleEndianToInt(inputs[t], 0, stateSizeWords);
-            xor_array(maskedKey, maskedKey, privateKey, 0,  stateSizeWords);
+            xor_array(maskedKey, maskedKey, privateKey, 0);
             int rv = simulateOnline(maskedKey, tapes[t], tmp_shares, msgs[t], plaintext, pubKey);
             if (rv != 0)
             {
@@ -1844,8 +1880,6 @@ class PicnicEngine
         return -1;
     }
 
-
-
     private int[] getMissingLeavesList(int[] challengeC)
     {
         int missingLeavesSize = numMPCRounds - numOpenedRounds;
@@ -1864,7 +1898,6 @@ class PicnicEngine
         return missingLeaves;
     }
 
-
     private void HCP(byte[] challengeHash, int[] challengeC, int[] challengeP, byte[][] Ch,
                     byte[] hCv, byte[] salt, int[] pubKey, int[] plaintext, byte[] message)
     {
@@ -1875,10 +1908,12 @@ class PicnicEngine
             digest.update(Ch[t], 0, digestSizeBytes);
         }
 
+        byte[] temp = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
+        
         digest.update(hCv, 0,  digestSizeBytes);
         digest.update(salt, 0, saltSizeBytes);
-        digest.update(Pack.intToLittleEndian(pubKey), 0, stateSizeBytes);
-        digest.update(Pack.intToLittleEndian(plaintext), 0, stateSizeBytes);
+        updateDigest(pubKey, temp);
+        updateDigest(plaintext, temp);
         digest.update(message, 0, message.length);
         digest.doFinal(challengeHash, 0, digestSizeBytes);
 
@@ -1894,7 +1929,8 @@ class PicnicEngine
         {
             return 0;
         }
-        int chunkCount = ((inputLen * 8) / chunkLenBits);
+
+        int chunkCount = (inputLen * 8) / chunkLenBits;
 
         for (int i = 0; i < chunkCount; i++)
         {
@@ -1927,8 +1963,6 @@ class PicnicEngine
         list[position] = value;
         return position + 1;
     }
-
-
 
     private void expandChallengeHash(byte[] challengeHash, int[] challengeC, int[] challengeP)
     {
@@ -2006,8 +2040,6 @@ class PicnicEngine
         digest.doFinal(digest_arr, 0, digestSizeBytes);
     }
 
-
-
     private int simulateOnline(int[] maskedKey, Tape tape, int[] tmp_shares,
                               Msg msg, int[] plaintext, int[] pubKey)
     {
@@ -2017,7 +2049,7 @@ class PicnicEngine
 
         KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer()); // roundKey = maskedKey * KMatrix[0]
-        xor_array(state, roundKey, plaintext,0, stateSizeWords);      // state = plaintext + roundKey
+        xor_array(state, roundKey, plaintext, 0);      // state = plaintext + roundKey
 
         for (int r = 1; r <= numRounds; r++)
         {
@@ -2028,11 +2060,11 @@ class PicnicEngine
             matrix_mul(state, state, current.getData(), current.getMatrixPointer()); // state = state * LMatrix (r-1)
 
             current = lowmcConstants.RConstant(this,r - 1);
-            xor_array(state, state, current.getData(), current.getMatrixPointer(), stateSizeWords);  // state += RConstant
+            xor_array(state, state, current.getData(), current.getMatrixPointer());  // state += RConstant
 
             current = lowmcConstants.KMatrix(this, r);
             matrix_mul(roundKey, maskedKey, current.getData(), current.getMatrixPointer());
-            xor_array(state, roundKey, state, 0, stateSizeWords);      // state += roundKey
+            xor_array(state, roundKey, state, 0);      // state += roundKey
         }
 
         if(!(subarrayEquals(state, pubKey, stateSizeWords)))
@@ -2058,26 +2090,34 @@ class PicnicEngine
 
     private static boolean subarrayEquals(byte[] a, byte[] b, int length)
     {
-        if(a.length < length || b.length < length)
+        if (a.length < length || b.length < length)
+        {
             return false;
+        }
 
         for (int i = 0; i < length; i++)
         {
-            if(a[i] != b[i])
+            if (a[i] != b[i])
+            {
                 return false;
+            }
         }
         return true;
     }
 
     private static boolean subarrayEquals(int[] a, int[] b, int length)
     {
-        if(a.length < length || b.length < length)
+        if (a.length < length || b.length < length)
+        {
             return false;
+        }
 
         for (int i = 0; i < length; i++)
         {
             if(a[i] != b[i])
+            {
                 return false;
+            }
         }
         return true;
     }
@@ -2171,7 +2211,6 @@ class PicnicEngine
         Utils.setBit(tape.tapes[lastParty], tape.pos - 1, (byte) (aux_bit & 0xff));
     }
 
-
     private boolean contains(int[] list, int len, int value)
     {
         for (int i = 0; i < len; i++)
@@ -2194,15 +2233,16 @@ class PicnicEngine
 
     private void getAuxBits(byte[] output, Tape tape)
     {
-        int last = numMPCParties - 1;
-        int pos = 0;
-        int n = stateSizeBits;
+        byte[] lastTape = tape.tapes[numMPCParties - 1];
+        int n = stateSizeBits, pos = 0, tapePos = 0;
 
         for(int j = 0; j < numRounds; j++)
         {
+            tapePos += n;
+
             for(int i = 0; i < n; i++)
             {
-                Utils.setBit(output, pos++, Utils.getBit(tape.tapes[last], n + n*2*j  + i));
+                Utils.setBit(output, pos++, Utils.getBit(lastTape, tapePos++));
             }
         }
     }
@@ -2223,46 +2263,38 @@ class PicnicEngine
 
     private void computeSaltAndRootSeed(byte[] saltAndRoot, int[] privateKey, int[] pubKey, int[] plaintext, byte[] message)
     {
-        //todo unify conversion
-        //copy back to byte array
-        byte[] privatekey_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        byte[] pubkey_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        byte[] plaintext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        Pack.intToLittleEndian(privateKey, privatekey_bytes, 0);
-        Pack.intToLittleEndian(pubKey, pubkey_bytes, 0);
-        Pack.intToLittleEndian(plaintext, plaintext_bytes, 0);
-        privatekey_bytes = Arrays.copyOfRange(privatekey_bytes, 0, stateSizeBytes);
-        pubkey_bytes = Arrays.copyOfRange(pubkey_bytes, 0, stateSizeBytes);
-        plaintext_bytes = Arrays.copyOfRange(plaintext_bytes, 0, stateSizeBytes);
-        //
+        byte[] temp = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
 
         // init done in constructor
-        digest.update(privatekey_bytes, 0, stateSizeBytes);
+        updateDigest(privateKey, temp);
         digest.update(message, 0, message.length);
-        digest.update(pubkey_bytes, 0, stateSizeBytes);
-        digest.update(plaintext_bytes, 0, stateSizeBytes);
-        digest.update(Pack.shortToLittleEndian((short)(stateSizeBits & 0xffff)), 0, 2);
+        updateDigest(pubKey, temp);
+        updateDigest(plaintext, temp);
+        Pack.shortToLittleEndian((short)stateSizeBits, temp, 0);
+        digest.update(temp, 0, 2);
         digest.doFinal(saltAndRoot, 0, saltAndRoot.length);
+    }
+
+    private void updateDigest(int[] block, byte[] temp)
+    {
+        Pack.intToLittleEndian(block, temp, 0);
+        digest.update(temp, 0, stateSizeBytes);
     }
 
     static boolean is_picnic3(int params)
     {
-        if (params == 7/*Picnic3_L1*/ ||
-            params == 8/*Picnic3_L3*/ ||
-            params == 9/*Picnic3_L5*/ )
-        {
-            return true;
-        }
-        return false;
+        return params == 7/*Picnic3_L1*/
+            || params == 8/*Picnic3_L3*/
+            || params == 9/*Picnic3_L5*/;
     }
 
     //todo return int;
     public void crypto_sign_keypair(byte[] pk, byte[] sk, SecureRandom random)
     {
         // set array sizes
-        byte[] plaintext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        byte[] ciphertext_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
-        byte[] data_bytes = new byte[PICNIC_MAX_LOWMC_BLOCK_SIZE];
+        byte[] plaintext_bytes = new byte[stateSizeWords * 4];
+        byte[] ciphertext_bytes = new byte[stateSizeWords * 4];
+        byte[] data_bytes = new byte[stateSizeWords * 4];
 
         picnic_keygen(plaintext_bytes, ciphertext_bytes, data_bytes, random);
         picnic_write_public_key(ciphertext_bytes, plaintext_bytes, pk);
@@ -2303,28 +2335,16 @@ class PicnicEngine
         int[] data = new int[data_bytes.length/4];
         int[] plaintext = new int[plaintext_bytes.length/4];
         int[] ciphertext = new int[ciphertext_bytes.length/4];
-        byte[] temp = new byte[stateSizeBytes];
 
         // generate a private key
-        random.nextBytes(temp);
-        zeroTrailingBits(temp, stateSizeBits);
-        System.arraycopy(temp, 0, data_bytes, 0, temp.length);
-
-        for (int i = 0; i < data.length; i++)
-        {
-            data[i] = Pack.littleEndianToInt(data_bytes, i * 4);
-        }
-
+        random.nextBytes(data_bytes);
+        Pack.littleEndianToInt(data_bytes, 0, data);
+        Utils.zeroTrailingBits(data, stateSizeBits);
 
         // generate a plaintext block
-        random.nextBytes(temp);
-        zeroTrailingBits(temp, stateSizeBits);
-        System.arraycopy(temp, 0, plaintext_bytes, 0, temp.length);
-
-        for (int i = 0; i < plaintext.length; i++)
-        {
-            plaintext[i] = Pack.littleEndianToInt(plaintext_bytes, i * 4);
-        }
+        random.nextBytes(plaintext_bytes);
+        Pack.littleEndianToInt(plaintext_bytes, 0, plaintext);
+        Utils.zeroTrailingBits(plaintext, stateSizeBits);
 
         // computer ciphertext
         LowMCEnc(plaintext, ciphertext, data);
@@ -2349,7 +2369,7 @@ class PicnicEngine
         KMatricesWithPointer current = lowmcConstants.KMatrix(this,0);
         matrix_mul(roundKey, key, current.getData(), current.getMatrixPointer());
 
-        xor_array(output, output, roundKey, 0,  stateSizeWords);
+        xor_array(output, output, roundKey, 0);
 
         for (int r = 1; r <= numRounds; r++)
         {
@@ -2362,8 +2382,8 @@ class PicnicEngine
             matrix_mul(output, output, current.getData(), current.getMatrixPointer());
 
             current = lowmcConstants.RConstant(this,r-1);
-            xor_array(output, output, current.getData(), current.getMatrixPointer(), stateSizeWords);
-            xor_array(output, output, roundKey, 0, stateSizeWords);
+            xor_array(output, output, current.getData(), current.getMatrixPointer());
+            xor_array(output, output, roundKey, 0);
         }
     }
 
@@ -2382,18 +2402,17 @@ class PicnicEngine
         }
     }
 
-    private void xor_three(int[] output, int[] in1, int[] in2, int[] in3, int lenBytes)
+    private void xor_three(int[] output, int[] in1, int[] in2, int[] in3)
     {
-        int wholeWords = stateSizeWords;
-        for(int i = 0; i < wholeWords; i++)
+        for(int i = 0; i < stateSizeWords; i++)
         {
             output[i] = in1[i] ^ in2[i] ^ in3[i];
         }
     }
 
-    protected void xor_array(int[] out, int[] in1, int[] in2, int in2_offset, int length)
+    protected void xor_array(int[] out, int[] in1, int[] in2, int in2_offset)
     {
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < stateSizeWords; i++)
         {
             out[i] = in1[i] ^ in2[i + in2_offset];
         }
@@ -2441,14 +2460,5 @@ class PicnicEngine
         }
 
         System.arraycopy(temp, 0, output, outputOffset, stateSizeWords);
-    }
-
-    private void zeroTrailingBits(byte[] data, int bitLength)
-    {
-        int byteLength = Utils.numBytes(bitLength);
-        for (int i = bitLength; i < byteLength * 8; i++)
-        {
-            Utils.setBit(data, i, (byte) 0);
-        }
     }
 }
