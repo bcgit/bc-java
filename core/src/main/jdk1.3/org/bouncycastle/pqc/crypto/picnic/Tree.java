@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.picnic;
 
+
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 

@@ -115,6 +115,14 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/pkix/jcajce/Revocation*.java
     rm org/bouncycastle/pkix/jcajce/X509RevocationChecker.java
     rm org/bouncycastle/pkix/jcajce/RFC3280*.java
+    rm org/bouncycastle/pkix/jcajce/CertPath*.java
+    rm org/bouncycastle/pkix/jcajce/X509CertSel*.java
+    rm org/bouncycastle/pkix/jcajce/X509CertStoreSel*.java
+    rm org/bouncycastle/pkix/jcajce/X509CRLStoreSel*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXCRL*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXCert*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXPolicyN*.java
+    rm -r org/bouncycastle/pkix/util
     rm org/bouncycastle/cms/jcajce/JceKeyTransAuthEnvelopedRecipient.java
     rm org/bouncycastle/cms/jcajce/JceAADStream.java
     rm org/bouncycastle/jcajce/provider/keystore/util/ParameterUtil.java
@@ -224,6 +232,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/cert/test/ConverterTest*
     rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
     rm -rf org/bouncycastle/cert/test/Bc*
+    rm -rf org/bouncycastle/cert/test/Delta*
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
     rm  org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java

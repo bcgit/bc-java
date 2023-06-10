@@ -202,6 +202,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/cert/test/ConverterTest*
     rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
     rm -rf org/bouncycastle/cert/test/Bc*
+    rm -rf org/bouncycastle/cert/test/DeltaCertTest*
     rm -rf org/bouncycastle/cert/test/GOST3410_2012CMSTest.java
     rm -rf org/bouncycastle/cert/ocsp/test/PKIXRevocationTest.java
     rm -rf org/bouncycastle/tsp/GenTimeAccuracyUnit*
@@ -259,6 +260,11 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pkix/jcajce/X509*
     rm -rf org/bouncycastle/pkix/jcajce/RFC3280*
     rm -rf org/bouncycastle/pkix/jcajce/Revocation*
+    rm org/bouncycastle/pkix/jcajce/CertPath*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXCert*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXPolicyN*.java
+    rm org/bouncycastle/pkix/jcajce/PKIXCRLUtil.java
+    rm -r org/bouncycastle/pkix/util
     rm -rf org/bouncycastle/pkix/test/Revocation*
     rm -rf org/bouncycastle/pkix/test/TestUtil*
     rm org/bouncycastle/pkix/test/CheckerTest.java
@@ -284,6 +290,9 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/jce/provider/test/SM2SignatureTest.java
     rm -f  org/bouncycastle/jcajce/provider/drbg/EntropyGatherer.java
     rm -f  org/bouncycastle/jcajce/provider/drbg/EntropyDaemon.java
+    rm -f  org/bouncycastle/jcajce/provider/asymmetric/Dilithium.java
+    rm -f  org/bouncycastle/jcajce/provider/asymmetric/NTRU.java
+    rm -f  org/bouncycastle/jcajce/provider/asymmetric/Falcon.java
     rm -f  org/bouncycastle/test/PrintTestResult.java
 
     sh ../../scripts/jdk1.2ed.sh > /dev/null 2>&1
@@ -670,6 +679,7 @@ then
     rm -f src/org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
     rm  src/org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
     rm -f src/org/bouncycastle/openpgp/examples/DSAElGamalKeyRingGenerator.java
+    rm -f src/org/bouncycastle/openpgp/examples/EllipticCurveKeyPairGenerator.java
 
     find src -name AllTests.java -exec rm {} \;
 
@@ -688,18 +698,26 @@ then
 
     echo "compiling"
 
-
-    for i in src/org/bouncycastle/pqc/jcajce/provider/*/*.java  src/org/bouncycastle/pqc/crypto/*/*.java  src/org/bouncycastle/bcpg/*.java src/org/bouncycastle/openpgp/*.java src/org/bouncycastle/openpgp/test/*.java
-    do
-ed $i <<%%
-g/.Override/d
-w
-q
-%%
-    done
+    (
+    cd src
+    sh ../../../../../scripts/jdk1.2ed.sh > /dev/null 2>&1
+    sh ../../../../../scripts/jdk1.1ed.sh > /dev/null 2>&1
+    )
 
     ed src/org/bouncycastle/gpg/SExpression.java <<%
 g/\.\.\. /s//[]/
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/PGPSignature.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+    ed src/org/bouncycastle/openpgp/operator/jcajce/JceAEADUtil.java <<%
+g/private.*final.*;/s/final//
 w
 q
 %

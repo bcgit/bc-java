@@ -1,10 +1,11 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java 
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java 
 do
 ed $i <<%%
-g/.Override/d
+g/ .Override/d
+g/	.Override/d
 w
 q
 %%
@@ -190,6 +191,18 @@ q
 
 ed org/bouncycastle/openpgp/operator/jcajce/JcePublicKeyDataDecryptorFactoryBuilder.java <<%
 g/RSAKey/s//RSAPrivateKey/g
+w
+q
+%
+
+ed org/bouncycastle/openpgp/operator/jcajce/JcePGPDataEncryptorBuilder.java <<%
+g/private final/s//private/g
+w
+q
+%
+
+ed org/bouncycastle/openpgp/operator/bc/BcPGPDataEncryptorBuilder.java <<%
+g/private final/s//private/g
 w
 q
 %

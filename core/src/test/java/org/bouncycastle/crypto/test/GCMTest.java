@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -358,8 +357,8 @@ public class GCMTest
                 l = gcm.processBytes(ct, 0, ct.length, outPostReset, 0);
                 gcm.doFinal(outPostReset, l);
 
-                TestCase.assertTrue("before / after reset decryptions not the same", Arrays.areEqual(outPreReset, outPostReset));
-                TestCase.assertTrue("decryption not same as message", Arrays.areEqual(msg, outPostReset));
+                isTrue("before / after reset decryptions not the same", Arrays.areEqual(outPreReset, outPostReset));
+                isTrue("decryption not same as message", Arrays.areEqual(msg, outPostReset));
 
             }
 
