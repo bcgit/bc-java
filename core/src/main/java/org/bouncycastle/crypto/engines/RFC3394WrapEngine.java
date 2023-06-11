@@ -209,9 +209,46 @@ public class RFC3394WrapEngine
             }
         }
 
-        if (!Arrays.constantTimeAreEqual(a, iv))
+        if (n != 1)
         {
-            throw new InvalidCipherTextException("checksum failed");
+            if (!Arrays.constantTimeAreEqual(a, iv))
+            {
+                throw new InvalidCipherTextException("checksum failed");
+            }
+        }
+        else
+        {
+            // TODO: old (incorrect) backwards compatible unwrap - will be removed.
+            if (!Arrays.constantTimeAreEqual(a, iv))
+            {
+                System.arraycopy(in, inOff, a, 0, iv.length);
+                System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
+
+                for (int j = 5; j >= 0; j--)
+                {
+                    System.arraycopy(a, 0, buf, 0, iv.length);
+                    System.arraycopy(block, 0, buf, iv.length, 8);
+
+                    int t = n * j + 1;
+                    for (int k = 1; t != 0; k++)
+                    {
+                        byte v = (byte)t;
+
+                        buf[iv.length - k] ^= v;
+
+                        t >>>= 8;
+                    }
+
+                    engine.processBlock(buf, 0, buf, 0);
+                    System.arraycopy(buf, 0, a, 0, 8);
+                    System.arraycopy(buf, 8, block, 0, 8);
+                }
+                
+                if (!Arrays.constantTimeAreEqual(a, iv))
+                {
+                    throw new InvalidCipherTextException("checksum failed");
+                }
+            }
         }
 
         return block;

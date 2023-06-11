@@ -71,7 +71,7 @@ public class AESWrapTest
             }
         }
         catch (TestFailedException e)
-        {
+        { 
             throw e;
         }
         catch (Exception e)
@@ -113,6 +113,58 @@ public class AESWrapTest
             if (!Arrays.areEqual(pText, in))
             {
                 fail("failed unwrap test " + id  + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText)));
+            }
+        }
+        catch (Exception e)
+        {
+            fail("failed unwrap test exception.", e);
+        }
+    }
+
+    private void unwrapTest(
+        int id,
+        byte[] kek,
+        byte[] in,
+        byte[] out)
+    {
+        Wrapper wrapper = new AESWrapEngine(false);
+        
+        wrapper.init(false, new KeyParameter(kek));
+
+        try
+        {
+            byte[] pText = wrapper.unwrap(out, 0, out.length);
+            if (!Arrays.areEqual(pText, in))
+            {
+                fail("failed unwrap test " + id + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText)));
+            }
+        }
+        catch (TestFailedException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            fail("failed unwrap test exception.", e);
+        }
+
+        //
+        // offset test
+        //
+        byte[] pText = new byte[5 + in.length];
+        byte[] cText = new byte[6 + out.length];
+
+        System.arraycopy(in, 0, pText, 5, in.length);
+        System.arraycopy(out, 0, cText, 6, out.length);
+
+        wrapper.init(false, new KeyParameter(kek));
+
+        try
+        {
+            pText = wrapper.unwrap(cText, 6, out.length);
+            if (!Arrays.areEqual(pText, in))
+            {
+                fail("failed unwrap test " + id + " expected " + new String(Hex.encode(in)) + " got " + new String(Hex.encode(pText)));
             }
         }
         catch (Exception e)
@@ -186,6 +238,10 @@ public class AESWrapTest
         byte[]  in8 = Hex.decode("0001020304050607");
         byte[]  out8 = Hex.decode("6f0b501f1f2f59e3ae605aa679ce43a6");
         wrapTest(8, kek8, in8, out8);
+
+        // backwards compatibility test
+        byte[]  out8c = Hex.decode("dc26fb6911d71971df0356d6bb9ed6e6");
+        unwrapTest(9, kek8, in8, out8c);
 
         Wrapper      wrapper = new AESWrapEngine();
         KeyParameter key = new KeyParameter(new byte[16]);
