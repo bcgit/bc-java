@@ -1,5 +1,6 @@
 package org.bouncycastle.mls;
 
+import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
@@ -53,6 +54,50 @@ public class GroupKeySet {
         applicationRatchets.put(sender, applicationRatchet);
     }
 
+    public KeyGeneration get(ContentType contentType, LeafIndex sender, int generation, byte[] reuseGuard) throws IOException, IllegalAccessException
+    {
+        HashRatchet chain;
+
+        switch (contentType)
+        {
+            case APPLICATION:
+                chain = handshakeRatchet(sender);
+                break;
+            case PROPOSAL:
+            case COMMIT:
+                chain = applicationRatchet(sender);
+                break;
+            default:
+                return null;
+        }
+
+        KeyGeneration keys = chain.get(generation);
+        ApplyReuseGuard(reuseGuard, keys.nonce);
+        return keys;
+    }
+    private void ApplyReuseGuard(byte[] guard, byte[] nonce)
+    {
+        for (int i = 0; i < guard.length; i++)
+        {
+            nonce[i] ^= guard[i];
+        }
+    }
+
+    public void erase(ContentType contentType, LeafIndex sender, int generation) throws IOException, IllegalAccessException
+    {
+        switch (contentType)
+        {
+
+            case APPLICATION:
+                applicationRatchet(sender).erase(generation);
+                break;
+            case PROPOSAL:
+            case COMMIT:
+                handshakeRatchet(sender).erase(generation);
+                break;
+        }
+    }
+
     public HashRatchet handshakeRatchet(LeafIndex sender) throws IOException, IllegalAccessException {
         if (!handshakeRatchets.containsKey(sender)) {
             initRatchets(sender);
@@ -67,14 +112,26 @@ public class GroupKeySet {
         return applicationRatchets.get(sender);
     }
 
-    public class SecretTree {
+    public boolean hasLeaf(LeafIndex sender)
+    {
+        return secretTree.hasLeaf(sender);
+    }
+
+    public class SecretTree
+    {
         final TreeSize treeSize;
         public Map<NodeIndex, Secret> secrets;
 
-        public SecretTree(TreeSize treeSizeIn, Secret encryptionSecret) {
+        public SecretTree(TreeSize treeSizeIn, Secret encryptionSecret)
+        {
             treeSize = treeSizeIn;
             secrets = new HashMap<>();
             secrets.put(NodeIndex.root(treeSize), encryptionSecret);
+        }
+
+        protected boolean hasLeaf(LeafIndex sender)
+        {
+            return sender.value() < treeSize.leafCount();
         }
 
         public Secret get(LeafIndex leaf) throws IOException, IllegalAccessException {

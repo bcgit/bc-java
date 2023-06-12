@@ -451,7 +451,11 @@ public class VectorTest
 
 
                     MLSMessage proposalPriv = (MLSMessage) MLSInputStream.decode(proposal_priv, MLSMessage.class);
-
+                    // keys = { cipher_suite, LeafCount{ 2 }, encryption_secret };
+                    TreeSize treeSize = TreeSize.forLeaves(2);
+                    Secret encryptedSecret = new Secret(encryption_secret);
+                    GroupKeySet keys = new GroupKeySet(suite, treeSize, encryptedSecret);
+                    authContent = proposalPriv.privateMessage.unprotect(suite, keys, sender_data_secret);
 
                     // Commit
 //                    System.out.println(Hex.toHexString(commit_pub));

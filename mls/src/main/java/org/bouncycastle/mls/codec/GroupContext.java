@@ -13,8 +13,7 @@ public class GroupContext
     long epoch;
     byte[] treeHash;
     byte[] confirmedTranscriptHash;
-    //    byte[] extensions; // TODO
-    ArrayList<Extension> extensions; // TODO
+    ArrayList<Extension> extensions;
 
     public GroupContext(short ciphersuit, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)
     {

@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 public class LeafIndex {
     private final long value;
 
+
+    //TODO: make this an int not a long?
     public long value() {
         return value;
     }

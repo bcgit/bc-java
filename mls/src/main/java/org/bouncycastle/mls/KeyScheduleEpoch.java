@@ -269,12 +269,6 @@ psk_secret (or 0) --> KDF.Extract
         this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
     }
 
-    public void inject(byte[] senderDataSecret, byte[] membershipKey) throws IOException
-    {
-        this.senderDataSecret = new Secret(senderDataSecret);
-        this.membershipKey = new Secret(membershipKey);
-    }
-
     public KeyScheduleEpoch next(TreeSize treeSize, byte[] externalInit, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
         Secret currInitSecret = initSecret;
         if (externalInit != null) {
@@ -292,88 +286,6 @@ psk_secret (or 0) --> KDF.Extract
     {
         return exporterSecret.deriveSecret(suite, label).expandWithLabel(suite,  "exported", suite.hash(context), length).value();
     }
-
-//    public DecryptedMessage decryptMessage(MLSMessage message)
-//    {
-//        //TODO: validate framing
-//        //validateFraming(message);
-//
-//        long epoch = message.getEpoch();
-//
-//        switch (message.wireFormat)
-//        {
-//            case mls_public_message:
-//                PublicMessage pub = message.publicMessage;
-//
-//                //TODO: if message epoch is older than current epoch get the correct secret tree
-//
-//                if (pub.content.sender.senderType == SenderType.MEMBER)
-//                {
-//                    //TODO: check if membershiptag exists
-//                    if (pub.membership_tag == null)
-//                    {
-//                        // throw new MissingMembershipTag();
-//                    }
-//                }
-//
-//                //TODO: Verify membershiptag
-////                pub.verifyMembership(suite, messageSecrets.getMembershipKey(), messageSecrets.serializedContext());
-//                return new DecryptedMessage(new AuthenticatedContent(message.wireFormat, pub.content, pub.auth));
-//
-//            case mls_private_message:
-//                PrivateMessage priv = message.privateMessage;
-////                KeyGeneration keyGeneration = handshakeRatchets.get(new LeafIndex(priv.))
-//
-//
-//
-//
-//
-////                return AuthenticatedContent();
-//                return null;
-//            default:
-//                return null;
-//        }
-//    }
-//
-//    public void parseMessage(AuthenticatedContent decryptedMessage) throws IOException, IllegalAccessException
-//    {
-////        validateVerifiableContent(decryptedMessage);
-////
-////        // Extract credential if the sender is a member or a new member
-////        //TODO: get credential
-////        Sender sender = decryptedMessage.content.sender;
-//////        groupKeySet.handshakeRatchets.get(new LeafIndex(decryptedMessage.content.epoch));
-////        GroupKeySet.HashRatchet hash = groupKeySet.handshakeRatchet(new LeafIndex(sender.node_index));
-////        KeyGeneration gen = hash.get(100);
-////        System.out.println(Hex.toHexString(gen.key));
-//    }
-
-//    private void validateVerifiableContent(AuthenticatedContent verifiableContent)
-//    {
-//        //TODO: If the sender is a member, it has to be in the tree, except if
-//        //      it's an application message. Then it might be okay if it's in an
-//        //      old secret tree instance
-//
-//        // Application messsages must always be encrypted
-//        if (verifiableContent.content.content_type == ContentType.APPLICATION)
-//        {
-//            if(verifiableContent.wireFormat != WireFormat.mls_private_message)
-//            {
-//                //throw new UnecryptedApplicationMessage();
-//            }
-//            else if (verifiableContent.content.sender.senderType != SenderType.MEMBER)
-//            {
-//                //throw new NonMemberApplicationMessage();
-//            }
-//        }
-//
-//        if (verifiableContent.content.content_type == ContentType.COMMIT &&
-//            verifiableContent.auth.confirmation_tag == null)
-//        {
-//            //throw new MissingConfirmationTag();
-//        }
-//
-//    }
 
     @Override
     public boolean equals(Object o) {

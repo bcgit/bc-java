@@ -4,8 +4,13 @@ import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.hpke.AEAD;
 import org.bouncycastle.crypto.hpke.HPKE;
+import org.bouncycastle.crypto.modes.AEADCipher;
+import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -23,6 +28,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class CipherSuite {
     public static final short MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519  = 0x0001 ;
@@ -65,11 +71,6 @@ public class CipherSuite {
         }
     }
 
-    public interface AEAD {
-        int getKeySize();
-        int getNonceSize();
-    }
-
     //SignContent
     //EncryptContent
     public static class GenericContent implements MLSOutputStream.Writable {
@@ -92,8 +93,12 @@ public class CipherSuite {
     }
 
 
+    public short getSuiteId()
+    {
+        return suiteId;
+    }
 
-        //TODO get from HKDF instead of defining it here.
+    //TODO get from HKDF instead of defining it here.
     // might need to change the KDF functionalities
     static class HKDF implements KDF {
         private final HKDFBytesGenerator kdf;
@@ -130,44 +135,102 @@ public class CipherSuite {
 
     }
 
-    static class AES128GCM implements AEAD {
+    public static class AEAD
+    {
+        AEADCipher cipher;
+        private final short aeadId;
 
-        @Override
-        public int getKeySize() {
-            return 16;
+        public AEAD(short aeadId)
+        {
+            this.aeadId = aeadId;
+
+            switch (aeadId)
+            {
+                case HPKE.aead_AES_GCM128:
+                case HPKE.aead_AES_GCM256:
+                    cipher = new GCMBlockCipher(new AESEngine());
+                    break;
+                case HPKE.aead_CHACHA20_POLY1305:
+                    cipher = new ChaCha20Poly1305();
+                    break;
+                case HPKE.aead_EXPORT_ONLY:
+                    break;
+            }
         }
 
-        @Override
-        public int getNonceSize() {
-            return 12;
+        public int getKeySize()
+        {
+            switch (aeadId)
+            {
+                case HPKE.aead_AES_GCM128:
+                    return 16;
+                case HPKE.aead_AES_GCM256:
+                case HPKE.aead_CHACHA20_POLY1305:
+                    return 32;
+            }
+            return -1;
+        }
+        private int getTagSize()
+        {
+            switch (aeadId)
+            {
+                case HPKE.aead_AES_GCM128:
+                case HPKE.aead_AES_GCM256:
+                case HPKE.aead_CHACHA20_POLY1305:
+                    return 16;
+            }
+            return -1;
+        }
+
+        public int getNonceSize()
+        {
+            switch (aeadId)
+            {
+                case HPKE.aead_AES_GCM128:
+                case HPKE.aead_AES_GCM256:
+                case HPKE.aead_CHACHA20_POLY1305:
+                    return 12;
+            }
+            return -1;
+        }
+        public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct) throws InvalidCipherTextException
+        {
+            System.out.println("key: " + Hex.toHexString(key));
+            System.out.println("nonce: " + Hex.toHexString(nonce));
+            System.out.println("aad: " + Hex.toHexString(aad));
+            System.out.println("ct: " + Hex.toHexString(ct));
+            System.out.println(cipher.getOutputSize(ct.length));
+//            org.bouncycastle.crypto.hpke.AEAD aead = new org.bouncycastle.crypto.hpke.AEAD(aeadId, key, nonce);
+//            return aead.open(aad, ct);
+//            int tagSize = getTagSize();
+//            byte[] tag = Arrays.copyOfRange(ct, ct.length - tagSize, ct.length);
+//            System.out.println(tag.length);
+            CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
+            cipher.init(false, params);
+            cipher.processAADBytes(aad, 0, aad.length);
+
+            byte[] pt = new byte[cipher.getOutputSize(ct.length)];
+//            byte[] pt = new byte[cipher.getOutputSize(tag.length)];
+//            byte[] pt = new byte[tagSize];
+//            System.arraycopy(tag, 0, pt, 0, tagSize);
+
+            int len = cipher.processBytes(ct, 0, ct.length, pt, 0);
+            len += cipher.doFinal(pt, len);
+            return pt;
+        }
+        public byte[] seal(byte[] key, byte[] nonce, byte[] aad, byte[] pt) throws InvalidCipherTextException
+        {
+            CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
+            cipher.init(true, params);
+            cipher.processAADBytes(aad, 0, aad.length);
+
+            byte[] ct = new byte[cipher.getOutputSize(pt.length)];
+            int len = cipher.processBytes(pt, 0, pt.length, ct, 0);
+            cipher.doFinal(ct, len);
+            return ct;
         }
     }
 
-    static class AES256GCM implements AEAD {
-
-        @Override
-        public int getKeySize() {
-            return 32;
-        }
-
-        @Override
-        public int getNonceSize() {
-            return 12;
-        }
-    }
-
-    static class ChaCha20Poly1305 implements AEAD {
-
-        @Override
-        public int getKeySize() {
-            return 32;
-        }
-
-        @Override
-        public int getNonceSize() {
-            return 12;
-        }
-    }
 
     final KDF kdf;
     final AEAD aead;
@@ -178,6 +241,7 @@ public class CipherSuite {
     final Digest digest;
 
     final int sigAlgo;
+    final short suiteId;
     ECDomainParameters domainParams;
 
     public static final int ecdsa = 3;
@@ -191,6 +255,8 @@ public class CipherSuite {
 //                new DSAPrivateKeyParameters(x, dsaParams));
         ECCurve curve;
 
+        suiteId = suite;
+
         switch (suite) {
             case MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
                 kdf = new HKDF(new SHA256Digest());
@@ -198,7 +264,6 @@ public class CipherSuite {
                 signer = new Ed25519Signer();
                 sigAlgo = ed25519;
 
-                aead = new AES128GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
                 break;
 
@@ -220,7 +285,6 @@ public class CipherSuite {
                         Hex.decode("c49d360886e704936a6678e1139d26b7819f7e90")
                 );
 
-                aead = new AES128GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128);
                 break;
 
@@ -230,7 +294,6 @@ public class CipherSuite {
                 signer = new Ed25519Signer();
                 sigAlgo = ed25519;
 
-                aead = new ChaCha20Poly1305();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_CHACHA20_POLY1305);
                 break;
 
@@ -252,7 +315,6 @@ public class CipherSuite {
                         Hex.decode("a335926aa319a27a1d00896a6773a4827acdac73")
                 );
 
-                aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256);
                 break;
 
@@ -262,7 +324,6 @@ public class CipherSuite {
                 signer = new Ed448Signer(new byte[0]);
                 sigAlgo = ed448;
 
-                aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
                 break;
 
@@ -284,7 +345,6 @@ public class CipherSuite {
                         Hex.decode("d09e8800291cb85396cc6717393284aaa0da64ba")
                 );
 
-                aead = new AES256GCM();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_P521_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256);
                 break;
 
@@ -294,13 +354,15 @@ public class CipherSuite {
                 signer = new Ed448Signer(new byte[0]);
                 sigAlgo = ed448;
 
-                aead = new ChaCha20Poly1305();
                 hpke = new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305);
                 break;
 
             default:
                 throw new IllegalArgumentException("Unsupported ciphersuite: " + suite);
         }
+        short aeadId = hpke.getAeadId();
+        aead = new AEAD(aeadId);
+
     }
 
     public byte[] serializeSignaturePublicKey(AsymmetricKeyParameter key)

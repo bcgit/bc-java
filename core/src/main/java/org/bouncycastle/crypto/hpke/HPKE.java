@@ -69,6 +69,11 @@ public class HPKE
         }
     }
 
+    public short getAeadId()
+    {
+        return aeadId;
+    }
+
     private void VerifyPSKInputs(byte mode, byte[] psk, byte[] pskid)
     {
         boolean got_psk = (!Arrays.areEqual(psk, default_psk));

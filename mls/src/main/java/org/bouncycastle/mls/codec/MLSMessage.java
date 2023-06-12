@@ -1,5 +1,10 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.mls.GroupKeySet;
+import org.bouncycastle.mls.KeyGeneration;
+import org.bouncycastle.mls.KeyScheduleEpoch;
+import org.bouncycastle.mls.LeafIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
@@ -15,7 +20,7 @@ public class MLSMessage
     ProtocolVersion version;
     public WireFormat wireFormat;
     public PublicMessage publicMessage;
-    PrivateMessage privateMessage;
+    public PrivateMessage privateMessage;
     Welcome welcome;
     GroupInfo groupInfo;
     KeyPackage keyPackage;
@@ -856,33 +861,7 @@ enum LeafNodeSource
         stream.write(value);
     }
 }
-enum ContentType
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((byte)0),
-    APPLICATION((byte)1),
-    PROPOSAL((byte)2),
-    COMMIT((byte)3);
 
-    final byte value;
-
-    ContentType(byte value)
-    {
-        this.value = value;
-    }
-
-    @SuppressWarnings("unused")
-    ContentType(MLSInputStream stream) throws IOException
-    {
-        this.value = (byte) stream.read(byte.class);
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
-    }
-}
 enum ExtensionType
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -1096,26 +1075,135 @@ class UpdatePath
     }
 }
 
-class PrivateMessage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+class SenderData
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+
+    LeafIndex sender;
+    int leafIndex;
+    int generation;
+    byte[] reuseGuard;
+    SenderData(MLSInputStream stream) throws IOException
+    {
+        leafIndex = (int) stream.read(int.class);
+        sender = new LeafIndex(leafIndex);
+        generation = (int) stream.read(int.class);
+        reuseGuard = stream.readOpaque();
+    }
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(leafIndex);
+        stream.write(generation);
+        stream.writeOpaque(reuseGuard);
+    }
+}
+class SenderDataAAD
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    byte[] group_id;
+    long epoch;
+    ContentType contentType;
+
+    public SenderDataAAD(byte[] group_id, long epoch, ContentType contentType)
+    {
+        this.group_id = group_id;
+        this.epoch = epoch;
+        this.contentType = contentType;
+    }
+
+    SenderDataAAD(MLSInputStream stream) throws IOException
+    {
+        group_id = stream.readOpaque();
+        epoch = (long) stream.read(long.class);
+        this.contentType = ContentType.values()[(byte) stream.read(byte.class)];
+    }
+
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.writeOpaque(group_id);
+        stream.write(epoch);
+        stream.write(contentType);
+    }
+}
+
+class PrivateMessageContent
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    byte[] application_data;
+    Proposal proposal;
+    Commit commit;
+
+    ContentType contentType;
+
+    FramedContentAuthData auth;
+    byte[] padding;
+
+    PrivateMessageContent(MLSInputStream stream, ContentType contentType) throws IOException
+    {
+        switch (contentType)
+        {
+            case APPLICATION:
+                application_data = stream.readOpaque();
+                break;
+            case PROPOSAL:
+                proposal = (Proposal) stream.read(Proposal.class);
+                break;
+            case COMMIT:
+                commit = (Commit) stream.read(Commit.class);
+                break;
+        }
+        auth = (FramedContentAuthData) stream.read(FramedContentAuthData.class);
+        padding = stream.readOpaque();
+    }
+
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        switch (contentType)
+        {
+
+            case APPLICATION:
+                stream.writeOpaque(application_data);
+                break;
+            case PROPOSAL:
+                stream.write(proposal);
+                break;
+            case COMMIT:
+                stream.write(commit);
+                break;
+        }
+        stream.write(auth);
+        stream.writeOpaque(padding);
+    }
+}
+class PrivateContentAAD
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] group_id;
     long epoch;
     ContentType content_type;
     byte[] authenticated_data;
-    byte[] encrypted_sender_data;
-    byte[] ciphertext;
 
-    PrivateMessage(MLSInputStream stream) throws IOException
+    public PrivateContentAAD(byte[] group_id, long epoch, ContentType content_type, byte[] authenticated_data)
+    {
+        this.group_id = group_id;
+        this.epoch = epoch;
+        this.content_type = content_type;
+        this.authenticated_data = authenticated_data;
+    }
+
+    PrivateContentAAD(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();
         epoch = (long) stream.read(long.class);
         content_type = ContentType.values()[(byte) stream.read(byte.class)];
         authenticated_data = stream.readOpaque();
-        encrypted_sender_data = stream.readOpaque();
-        ciphertext = stream.readOpaque();
     }
-
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
@@ -1123,8 +1211,6 @@ class PrivateMessage
         stream.write(epoch);
         stream.write(content_type);
         stream.writeOpaque(authenticated_data);
-        stream.writeOpaque(encrypted_sender_data);
-        stream.writeOpaque(ciphertext);
     }
 }
 
