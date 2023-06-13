@@ -9,6 +9,7 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
@@ -1088,7 +1089,7 @@ class SenderData
         leafIndex = (int) stream.read(int.class);
         sender = new LeafIndex(leafIndex);
         generation = (int) stream.read(int.class);
-        reuseGuard = stream.readOpaque();
+        reuseGuard = Pack.intToBigEndian((int)stream.read(int.class));
     }
 
     @Override
@@ -1096,7 +1097,7 @@ class SenderData
     {
         stream.write(leafIndex);
         stream.write(generation);
-        stream.writeOpaque(reuseGuard);
+        stream.write(reuseGuard);
     }
 }
 class SenderDataAAD

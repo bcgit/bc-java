@@ -61,11 +61,11 @@ public class GroupKeySet {
         switch (contentType)
         {
             case APPLICATION:
-                chain = handshakeRatchet(sender);
+                chain = applicationRatchet(sender);
                 break;
             case PROPOSAL:
             case COMMIT:
-                chain = applicationRatchet(sender);
+                chain = handshakeRatchet(sender);
                 break;
             default:
                 return null;

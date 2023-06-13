@@ -38,21 +38,17 @@ public class PrivateMessage
         byte[] sample = Arrays.copyOf(ciphertext, sampleSize);
         int keySize = suite.getAEAD().getKeySize();
         int nonceSize = suite.getAEAD().getNonceSize();
-        System.out.println("keySize: " + keySize);
-        System.out.println("nonceSize: " + nonceSize);
         Secret key = senderDataSecret.expandWithLabel(suite, "key", sample, keySize);
         Secret nonce = senderDataSecret.expandWithLabel(suite, "nonce", sample, nonceSize);
-
 
         SenderDataAAD senderDataAAD = new SenderDataAAD(group_id, epoch, content_type);
         byte[] senderDataPt = suite.getAEAD().open(
                 key.value(),
                 nonce.value(),
                 MLSOutputStream.encode(senderDataAAD),
-                ciphertext
+                encrypted_sender_data
         );
         SenderData senderData = (SenderData) MLSInputStream.decode(senderDataPt, SenderData.class);
-
         if (!keys.hasLeaf(senderData.sender))
         {
             return null;
@@ -60,35 +56,42 @@ public class PrivateMessage
 
         // Decrypt the content
         KeyGeneration contentKeys = keys.get(content_type, senderData.sender, senderData.generation, senderData.reuseGuard);
-        keys.erase(content_type, senderData.sender, senderData.generation);
 
         PrivateContentAAD contentAAD = new PrivateContentAAD(group_id, epoch, content_type, authenticated_data);
-        byte[] contentPt = suite.getAEAD().open(
+        byte[] contentPtBytes = suite.getAEAD().open(
                 contentKeys.key,
                 contentKeys.nonce,
                 MLSOutputStream.encode(contentAAD),
                 ciphertext
         );
 
-        System.out.println(Hex.toHexString(contentPt));
+        //TODO: check if erase is working properly also check when to erase
+        keys.erase(content_type, senderData.sender, senderData.generation);
 
         // Parse Content
-//        FramedContent content = new FramedContent(
-//                group_id,
-//                epoch,
-//                new Sender(SenderType.MEMBER, (int)senderData.sender.value()),
-//                authenticated_data,
-//
-//        )
-//
-//        AuthenticatedContent res = new AuthenticatedContent(
-//                WireFormat.mls_private_message,
-//
-//
-//        )
+        FramedContent content = new FramedContent(
+                group_id,
+                epoch,
+                new Sender(SenderType.MEMBER, (int)senderData.sender.value()),
+                authenticated_data,
+                null,
+                content_type,
+                null,
+                null
+        );
 
+        FramedContentAuthData auth = new FramedContentAuthData(
+                content_type,
+                null,
+                null
+        );
+        deserializeContentPt(contentPtBytes, content, auth);
 
-        return null;
+        return new AuthenticatedContent(
+                WireFormat.mls_private_message,
+                content,
+                auth
+        );
     }
 
     @Override
@@ -100,5 +103,32 @@ public class PrivateMessage
         stream.writeOpaque(authenticated_data);
         stream.writeOpaque(encrypted_sender_data);
         stream.writeOpaque(ciphertext);
+    }
+
+    private void deserializeContentPt(byte[] contentPt, FramedContent content, FramedContentAuthData auth) throws IOException
+    {
+        MLSInputStream stream = new MLSInputStream(contentPt);
+        switch (content_type)
+        {
+            case APPLICATION:
+                content.application_data = stream.readOpaque();
+                break;
+            case PROPOSAL:
+                content.proposal = (Proposal) stream.read(Proposal.class);
+                break;
+            case COMMIT:
+                content.commit = (Commit) stream.read(Commit.class);
+                break;
+        }
+        auth.signature = stream.readOpaque();
+        switch (content_type)
+        {
+            case APPLICATION:
+            case PROPOSAL:
+                break;
+            case COMMIT:
+                auth.confirmation_tag = stream.readOpaque();
+                break;
+        }
     }
 }

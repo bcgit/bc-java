@@ -64,6 +64,25 @@ public class FramedContent
         this.proposal = proposal;
         this.commit = commit;
     }
+    FramedContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, ContentType content_type)
+    {
+        this.group_id = group_id;
+        this.epoch = epoch;
+        this.sender = sender;
+        this.authenticated_data = authenticated_data;
+        this.contentType = content_type;
+        switch (contentType)
+        {
+            case APPLICATION:
+                this.application_data = new byte[0];
+                break;
+            case PROPOSAL:
+//                this.proposal = new Proposal();
+                break;
+            case COMMIT:
+                break;
+        }
+    }
 
     public static FramedContent application(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data)
     {

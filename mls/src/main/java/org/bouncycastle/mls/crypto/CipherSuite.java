@@ -195,24 +195,11 @@ public class CipherSuite {
         }
         public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct) throws InvalidCipherTextException
         {
-            System.out.println("key: " + Hex.toHexString(key));
-            System.out.println("nonce: " + Hex.toHexString(nonce));
-            System.out.println("aad: " + Hex.toHexString(aad));
-            System.out.println("ct: " + Hex.toHexString(ct));
-            System.out.println(cipher.getOutputSize(ct.length));
-//            org.bouncycastle.crypto.hpke.AEAD aead = new org.bouncycastle.crypto.hpke.AEAD(aeadId, key, nonce);
-//            return aead.open(aad, ct);
-//            int tagSize = getTagSize();
-//            byte[] tag = Arrays.copyOfRange(ct, ct.length - tagSize, ct.length);
-//            System.out.println(tag.length);
             CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
             cipher.init(false, params);
             cipher.processAADBytes(aad, 0, aad.length);
 
             byte[] pt = new byte[cipher.getOutputSize(ct.length)];
-//            byte[] pt = new byte[cipher.getOutputSize(tag.length)];
-//            byte[] pt = new byte[tagSize];
-//            System.arraycopy(tag, 0, pt, 0, tagSize);
 
             int len = cipher.processBytes(ct, 0, ct.length, pt, 0);
             len += cipher.doFinal(pt, len);

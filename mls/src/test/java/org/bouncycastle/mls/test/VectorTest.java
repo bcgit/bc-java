@@ -456,6 +456,8 @@ public class VectorTest
                     Secret encryptedSecret = new Secret(encryption_secret);
                     GroupKeySet keys = new GroupKeySet(suite, treeSize, encryptedSecret);
                     authContent = proposalPriv.privateMessage.unprotect(suite, keys, sender_data_secret);
+                    verified = authContent.verify(suite, signature_pub, groupContextBytes);
+                    assertTrue(verified);
 
                     // Commit
 //                    System.out.println(Hex.toHexString(commit_pub));
@@ -463,7 +465,7 @@ public class VectorTest
 //                    MLSMessage message = (MLSMessage) MLSInputStream.decode(commit_priv, MLSMessage.class);
 
                     // Application
-                    System.out.println(Hex.toHexString(application_priv));
+//                    System.out.println(Hex.toHexString(application_priv));
                     MLSMessage message = (MLSMessage) MLSInputStream.decode(application_priv, MLSMessage.class);
 
 
