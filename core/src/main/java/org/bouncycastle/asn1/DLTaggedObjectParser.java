@@ -18,16 +18,6 @@ class DLTaggedObjectParser
     }
 
     /**
-     * Return true if this tagged object is marked as constructed.
-     *
-     * @return true if constructed, false otherwise.
-     */
-    public boolean isConstructed()
-    {
-        return _constructed;
-    }
-
-    /**
      * Return an in-memory, encodable, representation of the tagged object.
      *
      * @return an ASN1TaggedObject.

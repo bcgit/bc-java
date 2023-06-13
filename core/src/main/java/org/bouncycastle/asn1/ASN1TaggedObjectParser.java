@@ -26,27 +26,6 @@ public interface ASN1TaggedObjectParser
 
     boolean hasTag(int tagClass, int tagNo);
 
-    /**
-     * 
-     * Return a parser for the actual object tagged.
-     *
-     * @param tag        the primitive tag value for the object tagged originally.
-     * @param isExplicit true if the tagging was done explicitly.
-     * @return a parser for the tagged object.
-     * @throws IOException if a parser cannot be constructed.
-     * 
-     * @deprecated This parser now includes the {@link #getTagClass() tag class}.
-     *             This method will raise an exception if it is not
-     *             {@link BERTags#CONTEXT_SPECIFIC}. Use
-     *             {@link ASN1Util#parseBaseUniversal(ASN1TaggedObjectParser, int, int, boolean, int)}
-     *             as a direct replacement, or use
-     *             {@link #parseBaseUniversal(boolean, int)} only after confirming
-     *             the expected tag class (e.g.
-     *             {@link ASN1Util#tryParseContextBaseUniversal(ASN1TaggedObjectParser, int, boolean, int)}.
-     */
-    ASN1Encodable getObjectParser(int tag, boolean isExplicit)
-        throws IOException;
-
     ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException;
 
     /**
