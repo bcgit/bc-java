@@ -40,37 +40,6 @@ class BERTaggedObjectParser
     }
 
     /**
-     * Return true if this tagged object is marked as constructed.
-     *
-     * @return true if constructed, false otherwise.
-     */
-    public boolean isConstructed()
-    {
-        return true;
-    }
-
-    /**
-     * Return an object parser for the contents of this tagged object.
-     *
-     * @param tag        the actual tag number of the object (needed if implicit).
-     * @param isExplicit true if the contained object was explicitly tagged, false
-     *                   if implicit.
-     * @return an ASN.1 encodable object parser.
-     * @throws IOException if there is an issue building the object parser from the
-     *                     stream.
-     * @deprecated See {@link ASN1TaggedObjectParser#getObjectParser(int, boolean)}.
-     */
-    public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
-    {
-        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
-        {
-            throw new ASN1Exception("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return parseBaseUniversal(isExplicit, tag);
-    }
-
-    /**
      * Return an in-memory, encodable, representation of the tagged object.
      *
      * @return an ASN1TaggedObject.

@@ -435,19 +435,6 @@ public abstract class ASN1TaggedObject
         }
     }
 
-    /**
-     * @deprecated See {@link ASN1TaggedObjectParser#getObjectParser(int, boolean)}.
-     */
-    public ASN1Encodable getObjectParser(int tag, boolean isExplicit) throws IOException
-    {
-        if (BERTags.CONTEXT_SPECIFIC != getTagClass())
-        {
-            throw new ASN1Exception("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return parseBaseUniversal(isExplicit, tag);
-    }
-
     public ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException
     {
         ASN1Primitive primitive = getBaseUniversal(declaredExplicit, baseTagNo);
