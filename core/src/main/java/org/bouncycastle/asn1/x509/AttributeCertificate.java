@@ -36,25 +36,23 @@ public class AttributeCertificate
     public AttributeCertificate(
         AttributeCertificateInfo    acinfo,
         AlgorithmIdentifier         signatureAlgorithm,
-        DERBitString                signatureValue)
+        ASN1BitString               signatureValue)
     {
         this.acinfo = acinfo;
         this.signatureAlgorithm = signatureAlgorithm;
         this.signatureValue = signatureValue;
     }
 
-    private AttributeCertificate(
-        ASN1Sequence    seq)
+    private AttributeCertificate(ASN1Sequence seq)
     {
         if (seq.size() != 3)
         {
-            throw new IllegalArgumentException("Bad sequence size: "
-                    + seq.size());
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
         this.acinfo = AttributeCertificateInfo.getInstance(seq.getObjectAt(0));
         this.signatureAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
-        this.signatureValue = DERBitString.getInstance(seq.getObjectAt(2));
+        this.signatureValue = ASN1BitString.getInstance(seq.getObjectAt(2));
     }
     
     public AttributeCertificateInfo getAcinfo()

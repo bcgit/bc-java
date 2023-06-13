@@ -58,7 +58,7 @@ public class SignatureCheck
         {
             this.certificates = null;
         }
-        this.signatureValue = DERBitString.getInstance(seq.getObjectAt(index));
+        this.signatureValue = ASN1BitString.getInstance(seq.getObjectAt(index));
     }
 
     public static SignatureCheck getInstance(Object o)

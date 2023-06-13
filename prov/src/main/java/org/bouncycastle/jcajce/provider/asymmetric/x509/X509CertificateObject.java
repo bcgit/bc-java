@@ -16,7 +16,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -313,7 +312,7 @@ class X509CertificateObject
                 return null;
             }
 
-            ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(extOctets));
+            ASN1BitString bits = ASN1BitString.getInstance(ASN1Primitive.fromByteArray(extOctets));
 
             byte[] bytes = bits.getBytes();
             int length = (bytes.length * 8) - bits.getPadBits();

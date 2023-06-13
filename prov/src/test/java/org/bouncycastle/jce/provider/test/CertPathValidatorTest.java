@@ -62,7 +62,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -734,7 +733,7 @@ public class CertPathValidatorTest
                 byte[] bytes = this.getExtensionBytes("2.5.29.15");
                 if (bytes != null)
                 {
-                    ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(bytes));
+                    ASN1BitString bits = ASN1BitString.getInstance(ASN1Primitive.fromByteArray(bytes));
 
                     bytes = bits.getBytes();
                     int length = (bytes.length * 8) - bits.getPadBits();
@@ -1302,7 +1301,7 @@ public class CertPathValidatorTest
                             }
                             else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                             {
-                                buf.append(new NetscapeCertType((DERBitString)dIn.readObject())).append(nl);
+                                buf.append(new NetscapeCertType((ASN1BitString)dIn.readObject())).append(nl);
                             }
                             else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                             {
@@ -1692,10 +1691,10 @@ public class CertPathValidatorTest
                 switch (extra.getTagNo())
                 {
                 case 1:
-                    issuerUniqueId = DERBitString.getInstance(extra, false);
+                    issuerUniqueId = ASN1BitString.getInstance(extra, false);
                     break;
                 case 2:
-                    subjectUniqueId = DERBitString.getInstance(extra, false);
+                    subjectUniqueId = ASN1BitString.getInstance(extra, false);
                     break;
                 case 3:
 //                    if (isV2)

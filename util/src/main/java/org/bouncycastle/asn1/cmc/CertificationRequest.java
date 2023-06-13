@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -63,7 +62,7 @@ public class CertificationRequest
         }
         this.certificationRequestInfo = new CertificationRequestInfo(ASN1Sequence.getInstance(seq.getObjectAt(0)));
         this.signatureAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
-        this.signature = DERBitString.getInstance(seq.getObjectAt(2));
+        this.signature = ASN1BitString.getInstance(seq.getObjectAt(2));
     }
 
     public static CertificationRequest getInstance(Object o)
@@ -103,7 +102,7 @@ public class CertificationRequest
 
     public ASN1BitString getSubjectPublicKey()
     {
-        return DERBitString.getInstance(certificationRequestInfo.getSubjectPublicKeyInfo().getObjectAt(1));
+        return ASN1BitString.getInstance(certificationRequestInfo.getSubjectPublicKeyInfo().getObjectAt(1));
     }
 
     /**

@@ -42,7 +42,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -507,7 +506,7 @@ abstract class X509CertificateImpl
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                         {
-                            buf.append(new NetscapeCertType(DERBitString.getInstance(dIn.readObject()))).append(nl);
+                            buf.append(new NetscapeCertType(ASN1BitString.getInstance(dIn.readObject()))).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {
@@ -627,7 +626,7 @@ abstract class X509CertificateImpl
         {
             List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
 
             boolean success = false;
             for (int i = 0; i != pubKeys.size(); i++)
@@ -648,7 +647,7 @@ abstract class X509CertificateImpl
                     checkSignature(
                         (PublicKey)pubKeys.get(i), signature,
                         sigAlg.getParameters(),
-                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
                     success = true;
                 }
                 catch (SignatureException e)
@@ -670,7 +669,7 @@ abstract class X509CertificateImpl
         else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
         {
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
 
             boolean success = false;
             for (int i = 0; i != sigSeq.size(); i++)
@@ -687,7 +686,7 @@ abstract class X509CertificateImpl
                     checkSignature(
                         key, signature,
                         sigAlg.getParameters(),
-                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
 
                     success = true;
                 }

@@ -130,7 +130,7 @@ public class ObjectDigestInfo
 
         digestAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(1 + offset));
 
-        objectDigest = DERBitString.getInstance(seq.getObjectAt(2 + offset));
+        objectDigest = ASN1BitString.getInstance(seq.getObjectAt(2 + offset));
     }
 
     public ASN1Enumerated getDigestedObjectType()

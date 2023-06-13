@@ -1,12 +1,12 @@
 package org.bouncycastle.asn1.crmf;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 
@@ -30,13 +30,13 @@ public class POPOPrivKey
         switch (tagNo)
         {
         case thisMessage:
-            this.obj = DERBitString.getInstance(obj, false);
+            this.obj = ASN1BitString.getInstance(obj, false);
             break;
         case subsequentMessage:
             this.obj = SubsequentMessage.valueOf(ASN1Integer.getInstance(obj, false).intValueExact());
             break;
         case dhMAC:
-            this.obj = DERBitString.getInstance(obj, false);
+            this.obj = ASN1BitString.getInstance(obj, false);
             break;
         case agreeMAC:
             this.obj = PKMACValue.getInstance(obj, false);

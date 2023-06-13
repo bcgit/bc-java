@@ -6,6 +6,8 @@ import java.util.Date;
 import java.util.Vector;
 
 import junit.framework.TestCase;
+
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
@@ -15,15 +17,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERBMPString;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERGeneralString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERNumericString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERT61String;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -482,7 +481,7 @@ public class GetInstanceTest
         IssuerSerial.getInstance(null);
         IssuingDistributionPoint.getInstance(null);
         IssuingDistributionPoint.getInstance(null);
-        DERBitString.getInstance(null);
+        ASN1BitString.getInstance(null);
 
         v.clear();
         v.add(generalSubtree);
