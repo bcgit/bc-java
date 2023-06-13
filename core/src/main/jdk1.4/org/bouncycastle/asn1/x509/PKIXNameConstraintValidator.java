@@ -9,9 +9,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
@@ -71,14 +71,14 @@ public class PKIXNameConstraintValidator
                 extractNameAsString(name));
             break;
         case GeneralName.dNSName:
-            checkPermittedDNS(permittedSubtreesDNS, DERIA5String.getInstance(
+            checkPermittedDNS(permittedSubtreesDNS, ASN1IA5String.getInstance(
                 name.getName()).getString());
             break;
         case GeneralName.directoryName:
             checkPermittedDN(X500Name.getInstance(name.getName()));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkPermittedURI(permittedSubtreesURI, DERIA5String.getInstance(
+            checkPermittedURI(permittedSubtreesURI, ASN1IA5String.getInstance(
                 name.getName()).getString());
             break;
         case GeneralName.iPAddress:
@@ -110,14 +110,14 @@ public class PKIXNameConstraintValidator
             checkExcludedEmail(excludedSubtreesEmail, extractNameAsString(name));
             break;
         case GeneralName.dNSName:
-            checkExcludedDNS(excludedSubtreesDNS, DERIA5String.getInstance(
+            checkExcludedDNS(excludedSubtreesDNS, ASN1IA5String.getInstance(
                 name.getName()).getString());
             break;
         case GeneralName.directoryName:
             checkExcludedDN(X500Name.getInstance(name.getName()));
             break;
         case GeneralName.uniformResourceIdentifier:
-            checkExcludedURI(excludedSubtreesURI, DERIA5String.getInstance(
+            checkExcludedURI(excludedSubtreesURI, ASN1IA5String.getInstance(
                 name.getName()).getString());
             break;
         case GeneralName.iPAddress:
@@ -1830,7 +1830,7 @@ public class PKIXNameConstraintValidator
 
     private String extractNameAsString(GeneralName name)
     {
-        return DERIA5String.getInstance(name.getName()).getString();
+        return ASN1IA5String.getInstance(name.getName()).getString();
     }
 
     /**

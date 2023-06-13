@@ -522,7 +522,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                            switch(o.getTagNo())            TODO - move resources to PKIXNameConstraints
 //                            {
 //                            case 1:
-//                                String email = DERIA5String.getInstance(o, true).getString();
+//                                String email = ASN1IA5String.getInstance(o, true).getString();
 //
 //                                try
 //                                {

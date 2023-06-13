@@ -51,7 +51,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -934,7 +934,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                             switch(o.getTagNo())
                             {
                             case 1:
-                                String email = DERIA5String.getInstance(o, true).getString();
+                                String email = ASN1IA5String.getInstance(o, true).getString();
     
                                 checkPermittedEmail(permittedSubtreesEmail, email);
                                 checkExcludedEmail(excludedSubtreesEmail, email);
@@ -1334,7 +1334,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                                 switch(base.getTagNo())
                                 {
                                     case 1:
-                                        permittedSubtreesEmail = intersectEmail(permittedSubtreesEmail, DERIA5String.getInstance(base.getName()).getString());
+                                        permittedSubtreesEmail = intersectEmail(permittedSubtreesEmail, ASN1IA5String.getInstance(base.getName()).getString());
                                         break;
                                     case 4:
                                         permittedSubtreesDN = intersectDN(permittedSubtreesDN, (ASN1Sequence)base.getName());
@@ -1360,7 +1360,7 @@ public class PKIXCertPathValidatorSpi extends CertPathValidatorSpi
                                 switch(base.getTagNo())
                                 {
                                 case 1:
-                                    excludedSubtreesEmail = unionEmail(excludedSubtreesEmail, DERIA5String.getInstance(base.getName()).getString());
+                                    excludedSubtreesEmail = unionEmail(excludedSubtreesEmail, ASN1IA5String.getInstance(base.getName()).getString());
                                     break;
                                 case 4:
                                     excludedSubtreesDN = unionDN(excludedSubtreesDN, (ASN1Sequence)base.getName());
