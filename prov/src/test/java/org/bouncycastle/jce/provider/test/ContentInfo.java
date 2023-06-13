@@ -82,12 +82,12 @@ class ContentInfo
         if (seq.size() > 1)
         {
             ASN1TaggedObject tagged = (ASN1TaggedObject)seq.getObjectAt(1);
-            if (!tagged.isExplicit() || tagged.getTagNo() != 0)
+            if (!tagged.isExplicit() || !tagged.hasContextTag(0))
             {
                 throw new IllegalArgumentException("Bad tag for 'content'");
             }
 
-            content = tagged.getObject();
+            content = tagged.getBaseObject();
         }
     }
 

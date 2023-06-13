@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -2327,27 +2328,17 @@ public class X509CertSelector implements CertSelector
                         ((ASN1OctetString)derInputStream.readObject())
                                 .getOctets());
                 derInputStream = new ASN1InputStream(inStream);
-                Enumeration altNamesSequence = ((ASN1Sequence)derInputStream
-                        .readObject()).getObjects();
-                ASN1TaggedObject altNameObject;
+                Enumeration altNamesSequence = ((ASN1Sequence)derInputStream.readObject()).getObjects();
                 boolean test = false;
                 Set testSet = new HashSet(subjectAltNamesByte);
-                List testList;
-                ASN1Object derData;
-                ByteArrayOutputStream outStream;
-                ASN1OutputStream derOutStream;
                 while (altNamesSequence.hasMoreElements() && !test)
                 {
-                    altNameObject = (ASN1TaggedObject)altNamesSequence
-                            .nextElement();
-                    testList = new ArrayList(2);
+                    // TODO Should this be requiring explicit tagging?
+                    ASN1TaggedObject altNameObject = ASN1TaggedObject.getInstance(altNamesSequence.nextElement(),
+                        BERTags.CONTEXT_SPECIFIC);
+                    List testList = new ArrayList(2);
                     testList.add(Integers.valueOf(altNameObject.getTagNo()));
-                    derData = altNameObject.getObject();
-                    outStream = new ByteArrayOutputStream();
-                    derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-                    derOutStream.writeObject(derData);
-                    derOutStream.close();
-                    testList.add(outStream.toByteArray());
+                    testList.add(altNameObject.getBaseObject().getEncoded(ASN1Encoding.DER));
 
                     if (testSet.remove(testList))
                     {
