@@ -99,7 +99,7 @@ public class CMPCertificate
         {
             ASN1TaggedObject taggedObject = ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC);
 
-            return new CMPCertificate(taggedObject.getTagNo(), taggedObject.getObject());
+            return new CMPCertificate(taggedObject.getTagNo(), taggedObject.getBaseObject());
         }
 
         throw new IllegalArgumentException("Invalid object: " + o.getClass().getName());
