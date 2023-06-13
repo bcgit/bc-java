@@ -295,16 +295,6 @@ public abstract class ASN1TaggedObject
     }
 
     /**
-     * Return true if the object is marked as constructed, false otherwise.
-     *
-     * @return true if constructed, otherwise false.
-     */
-    boolean isConstructed()
-    {
-        return encodeConstructed();
-    }
-
-    /**
      * Return whatever was following the tag.
      * <p>
      * Note: tagged objects are generally context dependent. If you're trying to
@@ -522,49 +512,24 @@ public abstract class ASN1TaggedObject
     {
         boolean maybeExplicit = (contentsElements.size() == 1);
 
-        ASN1TaggedObject taggedObject = maybeExplicit
+        return maybeExplicit
             ?   new DLTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
             :   new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, DLFactory.createSequence(contentsElements));
-
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return new DLApplicationSpecific(taggedObject);
-        default:
-            return taggedObject;
-        }
     }
 
     static ASN1Primitive createConstructedIL(int tagClass, int tagNo, ASN1EncodableVector contentsElements)
     {
         boolean maybeExplicit = (contentsElements.size() == 1);
 
-        ASN1TaggedObject taggedObject = maybeExplicit
+        return maybeExplicit
             ?   new BERTaggedObject(PARSED_EXPLICIT, tagClass, tagNo, contentsElements.get(0))
             :   new BERTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, BERFactory.createSequence(contentsElements));
-
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return new BERApplicationSpecific(taggedObject);
-        default:
-            return taggedObject;
-        }
     }
 
     static ASN1Primitive createPrimitive(int tagClass, int tagNo, byte[] contentsOctets)
     {
         // Note: !CONSTRUCTED => IMPLICIT
-        ASN1TaggedObject taggedObject = new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo,
-            new DEROctetString(contentsOctets));
-
-        switch (tagClass)
-        {
-        case BERTags.APPLICATION:
-            return new DLApplicationSpecific(taggedObject);
-        default:
-            return taggedObject;
-        }
+        return new DLTaggedObject(PARSED_IMPLICIT, tagClass, tagNo, new DEROctetString(contentsOctets));
     }
 
     private static ASN1TaggedObject checkedCast(ASN1Primitive primitive)

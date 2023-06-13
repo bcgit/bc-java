@@ -76,7 +76,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * in the fields professionItems and professionOIDs and by a registration number
  * in the field registrationNumber. An indication in text form must always be
  * present, whereas the other indications are optional. The component
- * addProfessionInfo may contain additional applicationspecific information in
+ * addProfessionInfo may contain additional application-specific information in
  * DER-encoded form.
  * </ul>
  * <p>

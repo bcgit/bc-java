@@ -78,12 +78,6 @@ public class ASN1StreamParser
             int tagClass = tagHdr & BERTags.PRIVATE;
             if (0 != tagClass)
             {
-                // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecificParser types removed.
-                if (BERTags.APPLICATION == tagClass)
-                {
-                    return new BERApplicationSpecificParser(tagNo, sp);
-                }
-
                 return new BERTaggedObjectParser(tagClass, tagNo, sp);
             }
 
@@ -104,13 +98,6 @@ public class ASN1StreamParser
             if (0 != tagClass)
             {
                 boolean isConstructed = (tagHdr & BERTags.CONSTRUCTED) != 0;
-
-                // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecific types removed.
-                if (BERTags.APPLICATION == tagClass)
-                {
-                    // This cast is ensuring the current user-expected return type.
-                    return (DLApplicationSpecific)sp.loadTaggedDL(tagClass, tagNo, isConstructed);
-                }
 
                 return new DLTaggedObjectParser(tagClass, tagNo, isConstructed, sp);
             }
