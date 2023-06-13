@@ -52,7 +52,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 12th
 <li>The now defunct PQC SIKE algorithm has been removed, this has also meant the removal of its resource files so the provider is now quite a bit smaller.</li>
 <li>As a precaution, HC128 now enforces a 128 bit IV, previous behaviour for shorter IVs can be supported where required by padding the IV to the 128 bits with zero.</li>
 <li>PGP encrypted data generation now uses integrity protection by default. Previous behaviour for encrypted data can be supported where required by calling PGPDataEncryptorBuilder.setWithIntegrityPacket(false) when data encryption is set up.</li>
-<li>There are now additional sanity checks in place to prevent accidental mis-use of PGPSignature objects. If this change causes any issues, you might want to check what your code is up to as there is probably a bug.<li>
+<li>There are now additional sanity checks in place to prevent accidental mis-use of PGPSignature objects. If this change causes any issues, you might want to check what your code is up to as there is probably a bug.</li>
 </ul>
 <h3>2.1.5 Security Advisories.</h3>
 <ul>
