@@ -45,4 +45,10 @@ public class TrustPacket
     {
         out.writePacket(TRUST, levelAndTrustAmount);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return TRUST;
+    }
 }

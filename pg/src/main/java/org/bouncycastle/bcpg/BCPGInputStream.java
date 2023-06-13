@@ -309,7 +309,7 @@ public class BCPGInputStream
         case EXPERIMENTAL_4:
             return new ExperimentalPacket(tag, objStream);
         default:
-            throw new IOException("unknown packet type encountered: " + tag);
+            return new UnknownPacket(tag, objStream);
         }
     }
 

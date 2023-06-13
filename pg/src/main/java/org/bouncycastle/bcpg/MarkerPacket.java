@@ -25,4 +25,10 @@ public class MarkerPacket
     {
         out.writePacket(MARKER, marker);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return MARKER;
+    }
 }

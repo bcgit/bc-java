@@ -9,4 +9,9 @@ public class ReservedPacket
         super(in);
     }
 
+    @Override
+    public int getPacketTag()
+    {
+        return RESERVED;
+    }
 }
