@@ -171,10 +171,11 @@ public class PGPObjectFactory
             return in.readPacket();
         }
 
+        int tag = in.nextPacketTag();
         UnknownPacket unknownPacket = (UnknownPacket) in.readPacket();
-        if (!throwForUnknownCriticalPackets && unknownPacket.isCritical()) {
+        if (throwForUnknownCriticalPackets && unknownPacket.isCritical()) {
             // Leave the error message intact for backwards compatibility
-            throw new IOException("unknown object in stream: " + in.nextPacketTag());
+            throw new IOException("unknown object in stream: " + tag);
         }
         return unknownPacket;
     }
