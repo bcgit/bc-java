@@ -264,7 +264,7 @@ public class BCPGInputStream
         switch (tag)
         {
         case RESERVED:
-            return new InputStreamPacket(objStream);
+            return new ReservedPacket(objStream);
         case PUBLIC_KEY_ENC_SESSION:
             return new PublicKeyEncSessionPacket(objStream);
         case SIGNATURE:
