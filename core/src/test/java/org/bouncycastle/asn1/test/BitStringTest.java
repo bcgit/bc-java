@@ -110,7 +110,7 @@ public class BitStringTest
         {
             fail("failed DL check");
         }
-        ASN1BitString dl = DLBitString.getInstance(dlData);
+        ASN1BitString dl = ASN1BitString.getInstance(dlData);
 
         isTrue("DL test failed", dl instanceof DLBitString);
         if (!Arrays.areEqual(derData, ASN1Primitive.fromByteArray(dlData).getEncoded(ASN1Encoding.DER)))
@@ -121,15 +121,15 @@ public class BitStringTest
         {
             /*
              * Allow this since getInstance should work for
-             * "an object that can be converted into [a DERBitString]".
+             * "an object that can be converted into [an ASN1BitString]".
              */
-            DERBitString.getInstance(dlData);
+            ASN1BitString.getInstance(dlData);
         }
         catch (IllegalArgumentException e)
         {
             fail("failed DL encoding conversion");
         }
-        ASN1BitString der = DERBitString.getInstance(derData);
+        ASN1BitString der = ASN1BitString.getInstance(derData);
         isTrue("DER test failed", der instanceof DERBitString);
     }
 

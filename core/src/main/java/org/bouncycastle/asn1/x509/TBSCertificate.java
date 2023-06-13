@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -140,10 +139,10 @@ public class TBSCertificate
             switch (extra.getTagNo())
             {
             case 1:
-                issuerUniqueId = DERBitString.getInstance(extra, false);
+                issuerUniqueId = ASN1BitString.getInstance(extra, false);
                 break;
             case 2:
-                subjectUniqueId = DERBitString.getInstance(extra, false);
+                subjectUniqueId = ASN1BitString.getInstance(extra, false);
                 break;
             case 3:
                 if (isV2)

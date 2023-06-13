@@ -37,7 +37,7 @@ public class PKIStatusInfo
         if (seq.size() > 2)
         {
             this.statusString = PKIFreeText.getInstance(seq.getObjectAt(1));
-            this.failInfo = DERBitString.getInstance(seq.getObjectAt(2));
+            this.failInfo = ASN1BitString.getInstance(seq.getObjectAt(2));
         }
         else if (seq.size() > 1)
         {

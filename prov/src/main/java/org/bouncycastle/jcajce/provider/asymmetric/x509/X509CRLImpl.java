@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -36,7 +37,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -242,7 +242,7 @@ abstract class X509CRLImpl
         {
             List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
 
             boolean success = false;
             for (int i = 0; i != pubKeys.size(); i++)
@@ -264,7 +264,7 @@ abstract class X509CRLImpl
                     checkSignature(
                         (PublicKey)pubKeys.get(i), signature,
                         sigAlg.getParameters(),
-                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
                     success = true;
                 }
                 catch (SignatureException e)
@@ -286,7 +286,7 @@ abstract class X509CRLImpl
         else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
         {
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(DERBitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
 
             boolean success = false;
             for (int i = 0; i != sigSeq.size(); i++)
@@ -303,7 +303,7 @@ abstract class X509CRLImpl
                     checkSignature(
                         key, signature,
                         sigAlg.getParameters(),
-                        DERBitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
 
                     success = true;
                 }

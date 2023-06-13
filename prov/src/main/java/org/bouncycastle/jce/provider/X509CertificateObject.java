@@ -41,7 +41,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -105,7 +104,7 @@ public class X509CertificateObject
             byte[] bytes = this.getExtensionBytes("2.5.29.15");
             if (bytes != null)
             {
-                ASN1BitString bits = DERBitString.getInstance(ASN1Primitive.fromByteArray(bytes));
+                ASN1BitString bits = ASN1BitString.getInstance(ASN1Primitive.fromByteArray(bytes));
 
                 bytes = bits.getBytes();
                 int length = (bytes.length * 8) - bits.getPadBits();
@@ -691,7 +690,7 @@ public class X509CertificateObject
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeCertType))
                         {
-                            buf.append(new NetscapeCertType((DERBitString)dIn.readObject())).append(nl);
+                            buf.append(new NetscapeCertType((ASN1BitString)dIn.readObject())).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {

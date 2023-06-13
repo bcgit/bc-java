@@ -23,7 +23,7 @@ public class EndEntityType
         this(new DERBitString(eeType));
     }
 
-    private EndEntityType(DERBitString str)
+    private EndEntityType(ASN1BitString str)
     {
         this.type = str;
     }
@@ -36,7 +36,7 @@ public class EndEntityType
         }
         else if (src != null)
         {
-            return new EndEntityType(DERBitString.getInstance(src));
+            return new EndEntityType(ASN1BitString.getInstance(src));
         }
 
         return null;
