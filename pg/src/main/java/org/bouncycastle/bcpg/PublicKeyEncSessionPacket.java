@@ -279,4 +279,10 @@ public class PublicKeyEncSessionPacket
 
         out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return PUBLIC_KEY_ENC_SESSION;
+    }
 }

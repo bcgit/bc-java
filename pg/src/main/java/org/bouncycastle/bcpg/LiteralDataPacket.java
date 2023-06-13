@@ -73,4 +73,10 @@ public class LiteralDataPacket
     {
         return Arrays.clone(fileName);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return LITERAL_DATA;
+    }
 }

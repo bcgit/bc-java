@@ -3,7 +3,7 @@ package org.bouncycastle.bcpg;
 /**
  * A block of data associated with other packets in a PGP object stream.
  */
-public class InputStreamPacket
+public abstract class InputStreamPacket
     extends Packet
 {
     private BCPGInputStream        in;

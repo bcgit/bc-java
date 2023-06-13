@@ -63,4 +63,10 @@ public class UserIDPacket
     {
         out.writePacket(USER_ID, idData);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return USER_ID;
+    }
 }

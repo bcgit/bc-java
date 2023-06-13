@@ -55,4 +55,10 @@ public class SecretSubkeyPacket
     {
         out.writePacket(SECRET_SUBKEY, getEncodedContents());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return SECRET_SUBKEY;
+    }
 }

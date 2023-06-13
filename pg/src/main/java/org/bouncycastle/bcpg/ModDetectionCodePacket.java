@@ -42,4 +42,10 @@ public class ModDetectionCodePacket
     {
         out.writePacket(MOD_DETECTION_CODE, digest, false);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return MOD_DETECTION_CODE;
+    }
 }

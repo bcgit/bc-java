@@ -43,4 +43,10 @@ public class ExperimentalPacket
     {
         out.writePacket(tag, contents);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return getTag();
+    }
 }

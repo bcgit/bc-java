@@ -118,4 +118,10 @@ public class AEADEncDataPacket
     {
         return AEADUtils.getIVLength(aeadAlgorithm);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return getType();
+    }
 }

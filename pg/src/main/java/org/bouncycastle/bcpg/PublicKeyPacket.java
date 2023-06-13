@@ -165,4 +165,10 @@ public class PublicKeyPacket
     {
         out.writePacket(PUBLIC_KEY, getEncodedContents());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return PUBLIC_KEY;
+    }
 }
