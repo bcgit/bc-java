@@ -20,7 +20,7 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv74"><h3>2.1.1 Version</h3></a>
 Release: 1.74<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 10th
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 12th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>AsconEngine: Fixed a buffering bug when decrypting across multiple processBytes calls (ascon128a unaffected).</li>
@@ -53,6 +53,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 10th
 <li>As a precaution, HC128 now enforces a 128 bit IV, previous behaviour for shorter IVs can be supported where required by padding the IV to the 128 bits with zero.</li>
 <li>PGP encrypted data generation now uses integrity protection by default. Previous behaviour for encrypted data can be supported where required by calling PGPDataEncryptorBuilder.setWithIntegrityPacket(false) when data encryption is set up.</li>
 <li>There are now additional sanity checks in place to prevent accidental mis-use of PGPSignature objects. If this change causes any issues, you might want to check what your code is up to as there is probably a bug.<li>
+</ul>
 <h3>2.1.5 Security Advisories.</h3>
 <ul>
 <li>CVE-2023-33201 - this release fixes an issue with the X509LDAPCertStoreSpi where a specially crafted certificate subject could be used to try and extract extra information out of an LDAP server with wild-card matthing enabled.</li>
