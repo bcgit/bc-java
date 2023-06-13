@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
 import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
@@ -126,11 +126,11 @@ public class CertificateRequestMessage
             }
             if (found.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken))
             {
-                return new RegTokenControl(DERUTF8String.getInstance(found.getValue()));
+                return new RegTokenControl(ASN1UTF8String.getInstance(found.getValue()));
             }
             if (found.getType().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator))
             {
-                return new AuthenticatorControl(DERUTF8String.getInstance(found.getValue()));
+                return new AuthenticatorControl(ASN1UTF8String.getInstance(found.getValue()));
             }
         }
 
