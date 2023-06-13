@@ -87,6 +87,8 @@ public class PGPObjectFactory
         {
         case -1:
             return null;
+        case PacketTags.RESERVED:
+            return in.readPacket();
         case PacketTags.SIGNATURE:
             l = new ArrayList();
 
