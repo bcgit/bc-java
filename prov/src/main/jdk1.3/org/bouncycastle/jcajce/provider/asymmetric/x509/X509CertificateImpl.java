@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -38,7 +39,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -512,11 +512,11 @@ abstract class X509CertificateImpl
                         }
                         else if (oid.equals(MiscObjectIdentifiers.netscapeRevocationURL))
                         {
-                            buf.append(new NetscapeRevocationURL(DERIA5String.getInstance(dIn.readObject()))).append(nl);
+                            buf.append(new NetscapeRevocationURL(ASN1IA5String.getInstance(dIn.readObject()))).append(nl);
                         }
                         else if (oid.equals(MiscObjectIdentifiers.verisignCzagExtension))
                         {
-                            buf.append(new VerisignCzagExtension(DERIA5String.getInstance(dIn.readObject()))).append(nl);
+                            buf.append(new VerisignCzagExtension(ASN1IA5String.getInstance(dIn.readObject()))).append(nl);
                         }
                         else 
                         {
