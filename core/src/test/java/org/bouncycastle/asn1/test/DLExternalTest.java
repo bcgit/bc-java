@@ -18,7 +18,6 @@ import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERUTF8String;
-import org.bouncycastle.asn1.DLApplicationSpecific;
 import org.bouncycastle.asn1.DLBitString;
 import org.bouncycastle.asn1.DLExternal;
 import org.bouncycastle.asn1.DLSequence;
@@ -163,23 +162,23 @@ public class DLExternalTest
 
         DLSet msBindSet = (DLSet)msBind.getBaseUniversal(true, BERTags.SET);
         isEquals("check number of elements", 2, msBindSet.size());
-        isEquals("check first element in set: " + msBindSet.getObjectAt(0).getClass(), DLApplicationSpecific.class.getName(), msBindSet.getObjectAt(0).getClass().getName());
+        isEquals("check first element in set: " + msBindSet.getObjectAt(0).getClass(), DLTaggedObject.class.getName(), msBindSet.getObjectAt(0).getClass().getName());
 
-        DLApplicationSpecific objectName = (DLApplicationSpecific)msBindSet.getObjectAt(0);
-        isEquals("check tag number", 0, objectName.getApplicationTag());
-        isEquals("check application object: " + objectName.getEnclosedObject().getClass(), DLSequence.class.getName(), objectName.getEnclosedObject().getClass().getName());
-        DLSequence objNameElems = (DLSequence)objectName.getEnclosedObject();
+        DLTaggedObject objectName = (DLTaggedObject)msBindSet.getObjectAt(0);
+        isEquals("check tag number", true, objectName.hasTag(BERTags.APPLICATION, 0));
+        isEquals("check application object: " + objectName.getBaseObject().toASN1Primitive().getClass(), DLSequence.class.getName(), objectName.getBaseObject().toASN1Primitive().getClass().getName());
+        DLSequence objNameElems = (DLSequence)objectName.getBaseObject().toASN1Primitive();
         isEquals("check number of elements", 4, objNameElems.size());
-        isEquals("check first element in set: " + objNameElems.getObjectAt(0).getClass(), DLApplicationSpecific.class.getName(), objNameElems.getObjectAt(0).getClass().getName());
-        DLApplicationSpecific objNameAppl = (DLApplicationSpecific)objNameElems.getObjectAt(0);
-        isEquals("check application number", 0, objNameAppl.getApplicationTag());
-        isEquals("check application object: " + objNameAppl.getEnclosedObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getEnclosedObject().getClass().getName());
-        isEquals("check C", "de", ((DERPrintableString)objNameAppl.getEnclosedObject()).getString());
-        isEquals("check second element in set: " + objNameElems.getObjectAt(1).getClass(), DLApplicationSpecific.class.getName(), objNameElems.getObjectAt(1).getClass().getName());
-        objNameAppl = (DLApplicationSpecific)objNameElems.getObjectAt(1);
-        isEquals("check application number", 2, objNameAppl.getApplicationTag());
-        isEquals("check application object: " + objNameAppl.getEnclosedObject().getClass(), DERPrintableString.class.getName(), objNameAppl.getEnclosedObject().getClass().getName());
-        isEquals("check A", "viaT", ((DERPrintableString)objNameAppl.getEnclosedObject()).getString());
+        isEquals("check first element in set: " + objNameElems.getObjectAt(0).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(0).getClass().getName());
+        DLTaggedObject objNameAppl = (DLTaggedObject)objNameElems.getObjectAt(0);
+        isEquals("check application number", true, objNameAppl.hasTag(BERTags.APPLICATION, 0));
+        isEquals("check application object: " + objNameAppl.getBaseObject().toASN1Primitive().getClass(), DERPrintableString.class.getName(), objNameAppl.getBaseObject().toASN1Primitive().getClass().getName());
+        isEquals("check C", "de", ((DERPrintableString)objNameAppl.getBaseObject().toASN1Primitive()).getString());
+        isEquals("check second element in set: " + objNameElems.getObjectAt(1).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(1).getClass().getName());
+        objNameAppl = (DLTaggedObject)objNameElems.getObjectAt(1);
+        isEquals("check application number", true, objNameAppl.hasTag(BERTags.APPLICATION, 2));
+        isEquals("check application object: " + objNameAppl.getBaseObject().toASN1Primitive().getClass(), DERPrintableString.class.getName(), objNameAppl.getBaseObject().toASN1Primitive().getClass().getName());
+        isEquals("check A", "viaT", ((DERPrintableString)objNameAppl.getBaseObject().toASN1Primitive()).getString());
         isEquals("check third element in set: " + objNameElems.getObjectAt(2).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(2).getClass().getName());
         DLTaggedObject objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(2);
         isTrue("check tag", objNameTagged.hasContextTag(3));
@@ -215,12 +214,12 @@ public class DLExternalTest
         vec.add(new DERUTF8String("example data representing the User Data of an OSI.6 ConnectP containing an MSBind with username and password"));
 
         ASN1EncodableVector objectNameVec = new ASN1EncodableVector();
-        objectNameVec.add(new DLApplicationSpecific(0, new DERPrintableString("de")));
-        objectNameVec.add(new DLApplicationSpecific(2, new DERPrintableString("viaT")));
+        objectNameVec.add(new DLTaggedObject(BERTags.APPLICATION, 0, new DERPrintableString("de")));
+        objectNameVec.add(new DLTaggedObject(BERTags.APPLICATION, 2, new DERPrintableString("viaT")));
         objectNameVec.add(new DLTaggedObject(false, 3, new DEROctetString("Organization".getBytes("8859_1"))));
         objectNameVec.add(new DLTaggedObject(true, 5, new DLTaggedObject(false, 0, new DEROctetString("Common Name".getBytes("8859_1")))));
 
-        DLApplicationSpecific objectName = new DLApplicationSpecific(0, new DLSequence(objectNameVec));
+        DLTaggedObject objectName = new DLTaggedObject(BERTags.APPLICATION, 0, new DLSequence(objectNameVec));
         DLTaggedObject password = new DLTaggedObject(true, 2, new DERIA5String("SomePassword"));
         ASN1EncodableVector msBindVec = new ASN1EncodableVector();
         msBindVec.add(objectName);

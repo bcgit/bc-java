@@ -4,10 +4,8 @@ import java.io.IOException;
 
 /**
  * Parser for indefinite-length tagged objects.
- * 
- * @deprecated Will be made non-public. Test for and use only {@link ASN1TaggedObjectParser}.
  */
-public class BERTaggedObjectParser
+class BERTaggedObjectParser
     implements ASN1TaggedObjectParser
 {
     final int _tagClass;
@@ -106,12 +104,6 @@ public class BERTaggedObjectParser
 
     public ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException
     {
-        // TODO[asn1] Special handling can be removed once ASN1ApplicationSpecificParser types removed.
-        if (BERTags.APPLICATION == baseTagClass)
-        {
-            return new BERApplicationSpecificParser(baseTagNo, _parser);
-        }
-
         return new BERTaggedObjectParser(baseTagClass, baseTagNo, _parser);
     }
 

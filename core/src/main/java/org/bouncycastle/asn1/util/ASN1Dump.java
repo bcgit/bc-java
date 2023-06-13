@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.util;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
@@ -115,10 +114,6 @@ public class ASN1Dump
             {
                 _dumpAsString(elementsIndent, verbose, set.getObjectAt(i).toASN1Primitive(), buf);
             }
-        }
-        else if (obj instanceof ASN1ApplicationSpecific)
-        {
-            _dumpAsString(indent, verbose, ((ASN1ApplicationSpecific)obj).getTaggedObject(), buf);
         }
         else if (obj instanceof ASN1TaggedObject)
         {

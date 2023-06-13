@@ -76,7 +76,7 @@ public class InputStreamTest
         }
 
         // TODO Test data has length issues too; needs to be reworked
-//        testWithByteArray(classCast1, "unknown object encountered: class org.bouncycastle.asn1.DLApplicationSpecific");
+//        testWithByteArray(classCast1, "unknown object encountered: class org.bouncycastle.asn1.DLTaggedObjectParser");
         testWithByteArray(classCast2, "unknown object encountered: class org.bouncycastle.asn1.DLTaggedObjectParser");
         testWithByteArray(classCast3, "unknown object encountered in constructed OCTET STRING: class org.bouncycastle.asn1.DLTaggedObject");
 

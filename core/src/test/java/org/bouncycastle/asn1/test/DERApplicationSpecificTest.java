@@ -1,12 +1,11 @@
 package org.bouncycastle.asn1.test;
 
-import org.bouncycastle.asn1.ASN1ApplicationSpecific;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1VisibleString;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERVisibleString;
 import org.bouncycastle.util.Arrays;
@@ -56,7 +55,7 @@ public class DERApplicationSpecificTest
 
         // Type2 ::= [APPLICATION 3] IMPLICIT Type1
         explicit = false;
-        DERApplicationSpecific type2 = new DERApplicationSpecific(explicit, 3, type1);
+        DERTaggedObject type2 = new DERTaggedObject(explicit, BERTags.APPLICATION, 3, type1);
         // type2.isConstructed()
         if (!Arrays.areEqual(Hex.decode("43054A6F6E6573"), type2.getEncoded()))
         {
@@ -73,7 +72,7 @@ public class DERApplicationSpecificTest
 
         // Type4 ::= [APPLICATION 7] IMPLICIT Type3
         explicit = false;
-        DERApplicationSpecific type4 = new DERApplicationSpecific(explicit, 7, type3);
+        DERTaggedObject type4 = new DERTaggedObject(explicit, BERTags.APPLICATION, 7, type3);
         if (!Arrays.areEqual(Hex.decode("670743054A6F6E6573"), type4.getEncoded()))
         {
             fail("ERROR: expected value doesn't match!");
@@ -94,32 +93,32 @@ public class DERApplicationSpecificTest
     {
         testTaggedObject();
 
-        ASN1ApplicationSpecific appSpec = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(sampleData);
+        ASN1TaggedObject appSpec = (ASN1TaggedObject)ASN1Primitive.fromByteArray(sampleData);
 
-        if (1 != appSpec.getApplicationTag())
+        if (!appSpec.hasTag(BERTags.APPLICATION, 1))
         {
             fail("wrong tag detected");
         }
 
         ASN1Integer value = new ASN1Integer(9);
 
-        DERApplicationSpecific tagged = new DERApplicationSpecific(false, 3, value);
+        DERTaggedObject tagged = new DERTaggedObject(false, BERTags.APPLICATION, 3, value);
 
         if (!areEqual(impData, tagged.getEncoded()))
         {
             fail("implicit encoding failed");
         }
 
-        ASN1Integer recVal = (ASN1Integer)tagged.getObject(BERTags.INTEGER);
+        ASN1Integer recVal = (ASN1Integer)tagged.getBaseUniversal(false, BERTags.INTEGER);
 
         if (!value.equals(recVal))
         {
             fail("implicit read back failed");
         }
 
-        ASN1ApplicationSpecific certObj = (ASN1ApplicationSpecific)ASN1Primitive.fromByteArray(certData);
+        ASN1TaggedObject certObj = (ASN1TaggedObject)ASN1Primitive.fromByteArray(certData);
 
-        if (!certObj.isConstructed() || certObj.getApplicationTag() != 33)
+        if (!certObj.hasTag(BERTags.APPLICATION, 33))
         {
             fail("parsing of certificate data failed");
         }
@@ -132,8 +131,7 @@ public class DERApplicationSpecificTest
         }
     }
 
-    public static void main(
-        String[]    args)
+    public static void main(String[] args)
     {
         runTest(new DERApplicationSpecificTest());
     }

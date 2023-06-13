@@ -23,7 +23,7 @@ import org.bouncycastle.util.Integers;
  *      // level
  *      ASN1ObjectIdentifier        oid,
  *      // access rights
- *      DERApplicationSpecific    accessRights,
+ *      ASN1TaggedObject            accessRights,
  *  }
  * </pre>
  */
@@ -115,7 +115,7 @@ public class CertificateHolderAuthorization
     /**
      * create an Iso7816CertificateHolderAuthorization according to the {@link ASN1TaggedObject}
      *
-     * @param aSpe the DERApplicationSpecific containing the data
+     * @param aSpe the ASN1TaggedObject containing the data
      * @throws IOException
      */
     public CertificateHolderAuthorization(ASN1TaggedObject aSpe)
@@ -140,7 +140,7 @@ public class CertificateHolderAuthorization
     }
 
     /**
-     * create a DERApplicationSpecific and set the access rights to "rights"
+     * create an ASN1TaggedObject and set the access rights to "rights"
      *
      * @param rights byte containing the rights.
      */
@@ -168,7 +168,7 @@ public class CertificateHolderAuthorization
     }
 
     /**
-     * return the Certificate Holder Authorization as a DERApplicationSpecific Object
+     * return the Certificate Holder Authorization as an ASN1TaggedObject
      */
     public ASN1Primitive toASN1Primitive()
     {

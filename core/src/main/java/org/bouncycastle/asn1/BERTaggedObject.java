@@ -11,17 +11,6 @@ public class BERTaggedObject
     extends ASN1TaggedObject
 {
     /**
-     * create an implicitly tagged object that contains a zero
-     * length sequence.
-     * 
-     * @deprecated Will be removed.
-     */
-    public BERTaggedObject(int tagNo)
-    {
-        super(false, tagNo, new BERSequence());
-    }
-
-    /**
      * @param tagNo the tag number for this object.
      * @param obj the tagged object.
      */
