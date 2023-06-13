@@ -45,7 +45,7 @@ public class ArmoredOutputStreamUTF8Test
         isEquals("Comment was not properly encoded. Expected: " + utf8WithUmlauts + ", Actual: " + comment, comment, utf8WithUmlauts);
 
         // round-tripped comment from ascii armor input stream
-        isEquals(headers[1].substring("Comment: ".length()), utf8WithUmlauts);
+        isEquals(headers[0].substring("Comment: ".length()), utf8WithUmlauts);
     }
 
     private String findComment(byte[] armoredOutputUTF8)
