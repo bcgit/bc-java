@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Provider;
@@ -9,6 +10,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.IvParameterSpec;
 
+import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -78,7 +80,12 @@ public class JcePBEProtectionRemoverFactory
         {
             return new PGPSecretKeyDecryptorWithAAD(passPhrase, calculatorProvider)
             {
-                public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData,  int keyOff, int keyLen)
+                @Override
+                public byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secretKeyPacket, byte[] s2kDerivedKey) throws IOException, PGPException {
+                    return new byte[0];
+                }
+
+                public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData, int keyOff, int keyLen)
                     throws PGPException
                 {
                     try
@@ -137,6 +144,11 @@ public class JcePBEProtectionRemoverFactory
                     {
                         throw new PGPException("invalid key: " + e.getMessage(), e);
                     }
+                }
+
+                @Override
+                public byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secretKeyPacket, byte[] s2kDerivedKey) throws IOException, PGPException {
+                    return new byte[0];
                 }
             };
 
