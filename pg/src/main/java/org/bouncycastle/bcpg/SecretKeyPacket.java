@@ -1,5 +1,8 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -10,6 +13,10 @@ public class SecretKeyPacket
     extends ContainedPacket
     implements PublicKeyAlgorithmTags
 {
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;
+    public static final int VERSION_6 = 6;
+
     public static final int USAGE_NONE = 0x00;
     public static final int USAGE_CHECKSUM = 0xff;
     public static final int USAGE_SHA1 = 0xfe;
@@ -19,6 +26,8 @@ public class SecretKeyPacket
     private byte[] secKeyData;
     private int s2kUsage;
     private int encAlgorithm;
+    private int aeadAlgorithm;
+    private byte[] aeadNonce;
     private S2K s2k;
     private byte[] iv;
 
@@ -39,19 +48,39 @@ public class SecretKeyPacket
             pubKeyPacket = new PublicKeyPacket(in);
         }
 
+        int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
 
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
         {
             encAlgorithm = in.read();
+            if (version == VERSION_6) {
+                // TODO: Use length-octet to enable parsing unknown S2Ks.
+                in.read();
+            }
             s2k = new S2K(in);
+        }
+        else if (s2kUsage == USAGE_AEAD)
+        {
+            encAlgorithm = in.read();
+            aeadAlgorithm = in.read();
+            if (version == 5 || version == 6)
+            {
+                in.read();
+            }
+            s2k = new S2K(in);
+            aeadNonce = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+            Streams.readFully(in, aeadNonce);
         }
         else
         {
             encAlgorithm = s2kUsage;
         }
 
-        if (!(s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K && s2k.getProtectionMode() == 0x01))
+        boolean isGNUDummyNoPrivateKey = s2k != null &&
+                s2k.getType() == S2K.GNU_DUMMY_S2K &&
+                s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
+        if (!(isGNUDummyNoPrivateKey))
         {
             if (s2kUsage != 0)
             {
@@ -89,7 +118,7 @@ public class SecretKeyPacket
 
         if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
         {
-            this.s2kUsage = USAGE_CHECKSUM;
+            this.s2kUsage = USAGE_SHA1;
         }
         else
         {
@@ -120,6 +149,14 @@ public class SecretKeyPacket
     public int getEncAlgorithm()
     {
         return encAlgorithm;
+    }
+
+    public int getAeadAlgorithm() {
+        return aeadAlgorithm;
+    }
+
+    public byte[] getAeadNonce() {
+        return Arrays.clone(aeadNonce);
     }
 
     public int getS2KUsage()
@@ -157,16 +194,42 @@ public class SecretKeyPacket
 
         pOut.write(s2kUsage);
 
-        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
+        // prepare conditional parameters
+        ByteArrayOutputStream conditionalParameters = new ByteArrayOutputStream();
+        boolean hasS2KSpecifier = s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD;
+        byte[] encodedS2K = hasS2KSpecifier ? s2k.getEncoded() : null;
+        if (hasS2KSpecifier)
         {
-            pOut.write(encAlgorithm);
-            pOut.writeObject(s2k);
+            conditionalParameters.write(encAlgorithm);
         }
-
+        if (s2kUsage == USAGE_AEAD)
+        {
+            conditionalParameters.write(aeadAlgorithm);
+        }
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && hasS2KSpecifier)
+        {
+            conditionalParameters.write(encodedS2K.length);
+        }
+        if (hasS2KSpecifier)
+        {
+            conditionalParameters.write(encodedS2K);
+        }
+        if (s2kUsage == USAGE_AEAD)
+        {
+            conditionalParameters.write(aeadNonce);
+        }
         if (iv != null)
         {
-            pOut.write(iv);
+            conditionalParameters.write(iv);
         }
+
+        // write length of conditional parameters
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
+        {
+            pOut.write(conditionalParameters.size());
+        }
+        // write conditional parameters
+        pOut.write(conditionalParameters.toByteArray());
 
         if (secKeyData != null && secKeyData.length > 0)
         {

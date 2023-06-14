@@ -17,11 +17,11 @@ public class PublicSubkeyPacket
     }
     
     /**
-     * Construct version 4 public key packet.
+     * Construct version 4 public subkey packet.
      * 
-     * @param algorithm
-     * @param time
-     * @param key
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
      */
     public PublicSubkeyPacket(
         int       algorithm,
@@ -30,7 +30,47 @@ public class PublicSubkeyPacket
     {
         super(algorithm, time, key);
     }
-    
+
+    /**
+     * Construct public subkey packet.
+     *
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     */
+    PublicSubkeyPacket(
+            int version,
+            int algorithm,
+            Date time,
+            BCPGKey key)
+    {
+        super(version, algorithm, time, key);
+    }
+
+    /**
+     * Construct version 4 public subkey packet.
+     *
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     */
+    public static PublicSubkeyPacket createV4PublicSubKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicSubkeyPacket(VERSION_4, algorithm, time, key);
+    }
+
+    /**
+     * Construct version 6 public subkey packet.
+     *
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     */
+    public static PublicSubkeyPacket createV6PublicSubKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicSubkeyPacket(VERSION_6, algorithm, time, key);
+    }
+
     public void encode(
         BCPGOutputStream    out)
         throws IOException

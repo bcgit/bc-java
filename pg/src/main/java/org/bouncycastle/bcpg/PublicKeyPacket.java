@@ -82,19 +82,62 @@ public class PublicKeyPacket
     /**
      * Construct version 4 public key packet.
      * 
-     * @param algorithm
-     * @param time
-     * @param key
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
      */
     public PublicKeyPacket(
         int        algorithm,
         Date       time,
         BCPGKey    key)
     {
-        this.version = VERSION_4;
+        this(VERSION_4, algorithm, time, key);
+    }
+
+    /**
+     * Construct a public key packet.
+     *
+     * @param version key version
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     */
+    PublicKeyPacket(
+            int version,
+            int algorithm,
+            Date time,
+            BCPGKey key)
+    {
+        this.version = version;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
+    }
+
+    /**
+     * Create an OpenPGP v4 public key packet.
+     *
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     * @return public key packet
+     */
+    public static PublicKeyPacket createV4PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(4, algorithm, time, key);
+    }
+
+    /**
+     * Create an OpenPGP v6 public key packet.
+     *
+     * @param algorithm public key algorithm
+     * @param time creation time
+     * @param key key
+     * @return public key packet
+     */
+    public static PublicKeyPacket createV6PublicKey(int algorithm, Date time, BCPGKey key)
+    {
+        return new PublicKeyPacket(6, algorithm, time, key);
     }
     
     public int getVersion()
