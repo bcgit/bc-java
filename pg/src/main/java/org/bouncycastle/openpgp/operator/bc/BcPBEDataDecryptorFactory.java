@@ -8,16 +8,11 @@ import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.HKDFParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A {@link PBEDataDecryptorFactory} for handling PBE decryption operations using the Bouncy Castle
@@ -26,6 +21,9 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 public class BcPBEDataDecryptorFactory
     extends PBEDataDecryptorFactory
 {
+
+    private final BcAEADUtil aeadHelper = new BcAEADUtil();
+
     /**
      * Base constructor.
      *
@@ -91,39 +89,24 @@ public class BcPBEDataDecryptorFactory
             throw new PGPException("SKESK packet MUST be version 5 or later.");
         }
 
+        // HKDF
         byte[] hkdfInfo = keyData.getAAData(); // Between v5 and v6, these bytes differ
         int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
-        byte[] kek = new byte[kekLen];
-
-        // HKDF
-        // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-        HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
-        hkdfGen.init(new HKDFParameters(ikm, null, hkdfInfo));
-        hkdfGen.generateBytes(kek, 0, kek.length);
-        final KeyParameter secretKey = new KeyParameter(kek);
+        byte[] salt = null;
+        byte[] kek = BcAEADUtil.hkdfDeriveKey(hkdfInfo, salt, kekLen, ikm);
 
         // AEAD
-        AEADBlockCipher aead = BcAEADUtil.createAEADCipher(keyData.getEncAlgorithm(), keyData.getAeadAlgorithm());
+        byte[] aad = hkdfInfo;
+        int encAlgorith = keyData.getEncAlgorithm();
+        int aeadAlgorithm = keyData.getAeadAlgorithm();
         int aeadMacLen = 128;
-        byte[] authTag = keyData.getAuthTag();
         byte[] aeadIv = keyData.getIv();
-        byte[] encSessionKey = keyData.getSecKeyData();
 
-        // sessionData := AEAD(secretKey).decrypt(encSessionKey || authTag)
-        AEADParameters parameters = new AEADParameters(secretKey,
-                aeadMacLen, aeadIv, keyData.getAAData());
-        aead.init(false, parameters);
-        int sessionKeyLen = aead.getOutputSize(encSessionKey.length + authTag.length);
-        byte[] sessionData = new byte[sessionKeyLen];
-        int dataLen = aead.processBytes(encSessionKey, 0, encSessionKey.length, sessionData, 0);
-        dataLen += aead.processBytes(authTag, 0, authTag.length, sessionData, dataLen);
-
-        try
-        {
-            aead.doFinal(sessionData, dataLen);
-        }
-        catch (InvalidCipherTextException e)
-        {
+        byte[] ciphertextAndAuthTag = Arrays.concatenate(keyData.getSecKeyData(), keyData.getAuthTag());
+        byte[] sessionData;
+        try {
+            sessionData = aeadHelper.decryptAEAD(encAlgorith, aeadAlgorithm, kek, aeadMacLen, aeadIv, ciphertextAndAuthTag, aad);
+        } catch (InvalidCipherTextException e) {
             throw new PGPException("Exception recovering session info", e);
         }
 
