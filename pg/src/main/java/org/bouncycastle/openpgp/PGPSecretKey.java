@@ -516,18 +516,25 @@ public class PGPSecretKey
         {
             try
             {
-                if (secret.getPublicKeyPacket().getVersion() == 4)
+                int keyVersion = secret.getPublicKeyPacket().getVersion();
+                if (keyVersion >= PublicKeyPacket.VERSION_4)
                 {
                     byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
 
-                    data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
-
-                    boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
-                    byte[] check = checksum(useSHA1 ? decryptorFactory.getChecksumCalculator(HashAlgorithmTags.SHA1) : null, data, (useSHA1) ? data.length - 20 : data.length - 2);
-
-                    if (!Arrays.constantTimeAreEqual(check.length, check, 0, data, data.length - check.length))
+                    if (secret.getS2KUsage() == SecretKeyPacket.USAGE_AEAD)
                     {
-                        throw new PGPException("checksum mismatch at in checksum of " + check.length + " bytes");
+                        data = decryptorFactory.recoverAEADEncryptedKeyData(secret, key);
+                    }
+                    else
+                    {
+                        data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
+
+                        boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
+                        byte[] check = checksum(useSHA1 ? decryptorFactory.getChecksumCalculator(HashAlgorithmTags.SHA1) : null, data, (useSHA1) ? data.length - 20 : data.length - 2);
+
+                        if (!Arrays.constantTimeAreEqual(check.length, check, 0, data, data.length - check.length)) {
+                            throw new PGPException("checksum mismatch at in checksum of " + check.length + " bytes");
+                        }
                     }
                 }
                 else // version 2 or 3, RSA only.
