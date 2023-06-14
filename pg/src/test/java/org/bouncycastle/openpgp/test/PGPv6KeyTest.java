@@ -27,7 +27,6 @@ import org.bouncycastle.util.test.SimpleTest;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.Iterator;
 
 public class PGPv6KeyTest
@@ -101,12 +100,12 @@ public class PGPv6KeyTest
         throws Exception
     {
         // Parse certificate
-        //testCertificateParsing(bcFpCalc);
-        //testCertificateParsing(jcaFpCalc);
+        testCertificateParsing(bcFpCalc);
+        testCertificateParsing(jcaFpCalc);
 
         // Parse unencrypted key
-        //testKeyParsing(bcFpCalc);
-        //testKeyParsing(jcaFpCalc);
+        testKeyParsing(bcFpCalc);
+        testKeyParsing(jcaFpCalc);
 
         // Parse encrypted key
         testEncryptedKeyParsing(bcFpCalc);
