@@ -24,17 +24,34 @@ public class S2K
     private static final int EXPBIAS = 6;
 
     /**
-     * Simple key generation. A single non-salted iteration of a hash function
+     * Simple key generation. A single non-salted iteration of a hash function.
+     * This method is deprecated to use, since it can be brute-forced when used
+     * with a low-entropy string, such as those typically provided by users.
+     * Additionally, the usage of Simple S2K can lead to key and IV reuse.
+     * Therefore, in OpenPGP v6, Therefore, when generating an S2K specifier,
+     * an implementation MUST NOT use Simple S2K.
+     *
+     * @deprecated use {@link #SALTED_AND_ITERATED} or {@link #ARGON_2} instead.
      */
     public static final int SIMPLE = 0;
+
     /**
-     * Salted key generation. A single iteration of a hash function with a (unique) salt
+     * Salted key generation. A single iteration of a hash function with a (unique) salt.
+     * This method is deprecated to use, since it can be brute-forced when used
+     * with a low-entropy string, such as those typically provided by users.
+     * Therefore, in OpenPGP v6, an implementation SHOULD NOT generate a Salted S2K,
+     * unless the implementation knows that the input string is high-entropy.
+     *
+     * @deprecated use {@link #SALTED_AND_ITERATED} or {@link #ARGON_2} instead.
      */
     public static final int SALTED = 1;
+
     /**
-     * Salted and iterated key generation. Multiple iterations of a hash function, with a salt
+     * Salted and iterated key generation. Multiple iterations of a hash function, with a salt.
+     * This method MAY be used if {@link #ARGON_2} is not available.
      */
     public static final int SALTED_AND_ITERATED = 3;
+
     /**
      * Memory-hard, salted key generation using Argon2 hash algorithm.
      */
