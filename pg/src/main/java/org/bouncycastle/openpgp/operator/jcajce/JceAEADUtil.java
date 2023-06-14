@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -35,6 +39,27 @@ class JceAEADUtil
     public JceAEADUtil(OperatorHelper helper)
     {
         this.helper = helper;
+    }
+
+    static byte[] hkdfDeriveKey(byte[] hkdfInfo, byte[] salt, int kekLength, byte[] ikm) {
+        byte[] kek = new byte[kekLength];
+
+        // HKDF
+        // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
+        // TODO: needs to be JCA based. KeyGenerator?
+        HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest()); // SHA256 is fixed
+        hkdfGen.init(new HKDFParameters(ikm, salt, hkdfInfo));
+        hkdfGen.generateBytes(kek, 0, kek.length);
+        return kek;
+    }
+
+    byte[] decryptAEAD(int encAlgoritm, int aeadAlgorithm, byte[] key, int aeadMacLen, byte[] aeadIv, byte[] ciphertextAndAuthTag, byte[] aad)
+            throws PGPException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException, InvalidKeyException {
+        final SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgoritm));
+        Cipher aead = createAEADCipher(encAlgoritm, aeadAlgorithm);
+        JceAEADCipherUtil.setUpAeadCipher(aead, secretKey, Cipher.DECRYPT_MODE, aeadIv, aeadMacLen, aad);
+        byte[] decrypted = aead.doFinal(ciphertextAndAuthTag);
+        return decrypted;
     }
 
     /**

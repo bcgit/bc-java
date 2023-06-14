@@ -32,6 +32,35 @@ import org.bouncycastle.util.io.Streams;
 
 public class BcAEADUtil
 {
+
+    static byte[] hkdfDeriveKey(byte[] hkdfInfo, byte[] salt, int kekLength, byte[] ikm) {
+        // HKDF
+        // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
+        HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
+        hkdfGen.init(new HKDFParameters(ikm, salt, hkdfInfo));
+        byte[] kek = new byte[kekLength];
+        hkdfGen.generateBytes(kek, 0, kek.length);
+        return kek;
+    }
+
+    public byte[] decryptAEAD(int encAlgoritm, int aeadAlgorithm, byte[] key, int aeadMacLen, byte[] aeadIv, byte[] ciphertextAndAuthTag, byte[] aad)
+            throws PGPException, InvalidCipherTextException {
+        // AEAD
+        final KeyParameter aeadSecretKey = new KeyParameter(key);
+
+        AEADBlockCipher aead = BcAEADUtil.createAEADCipher(encAlgoritm, aeadAlgorithm);
+        AEADParameters parameters = new AEADParameters(aeadSecretKey, aeadMacLen, aeadIv, aad);
+        aead.init(false, parameters);
+
+        int decryptedLen = aead.getOutputSize(ciphertextAndAuthTag.length);
+        byte[] decrypted = new byte[decryptedLen];
+        int dataLen = aead.processBytes(ciphertextAndAuthTag, 0, ciphertextAndAuthTag.length, decrypted, 0);
+
+        aead.doFinal(decrypted, dataLen);
+
+        return decrypted;
+    }
+
     /**
      * Generate a nonce by xor-ing the given iv with the chunk index.
      *
