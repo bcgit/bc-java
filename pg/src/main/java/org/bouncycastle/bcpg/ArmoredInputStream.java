@@ -179,6 +179,18 @@ public class ArmoredInputStream
 
         start = false;
     }
+
+    /**
+     * Disable calculation of the CRC sum.
+     * If the CRC check is disabled, missing or malformed CRC sums are ignored.
+     *
+     * @return armored input stream
+     */
+    public ArmoredInputStream ignoreCRCSum()
+    {
+        this.crc = null;
+        return this;
+    }
     
     public int available()
         throws IOException
@@ -367,7 +379,10 @@ public class ArmoredInputStream
                 parseHeaders();
             }
 
-            crc.reset();
+            if (crc != null)
+            {
+                crc.reset();
+            }
             start = false;
         }
         
@@ -435,12 +450,15 @@ public class ArmoredInputStream
 
                     crcFound = true;
 
-                    int i = ((outBuf[0] & 0xff) << 16)
-                          | ((outBuf[1] & 0xff) << 8)
-                          | (outBuf[2] & 0xff);
-                    if (i != crc.getValue())
+                    if (crc != null)
                     {
-                        throw new ArmoredInputException("crc check failed in armored message");
+                        int i = ((outBuf[0] & 0xff) << 16)
+                                | ((outBuf[1] & 0xff) << 8)
+                                | (outBuf[2] & 0xff);
+                        if (i != crc.getValue())
+                        {
+                            throw new ArmoredInputException("crc check failed in armored message");
+                        }
                     }
 
                     return read();
@@ -482,15 +500,18 @@ public class ArmoredInputStream
 
             bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
 
-            if (bufPtr == 0)
+            if (crc != null)
             {
-                crc.update3(outBuf, 0);
-            }
-            else
-            {
-                for (int i = bufPtr; i < 3; ++i)
+                if (bufPtr == 0)
                 {
-                    crc.update(outBuf[i] & 0xFF);
+                    crc.update3(outBuf, 0);
+                }
+                else
+                {
+                    for (int i = bufPtr; i < 3; ++i)
+                    {
+                        crc.update(outBuf[i] & 0xFF);
+                    }
                 }
             }
         }
