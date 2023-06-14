@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -18,8 +19,8 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  DES_CBC         = OIWObjectIdentifiers.desCBC.intern();
     public static final ASN1ObjectIdentifier  DES_EDE3_CBC    = PKCSObjectIdentifiers.des_EDE3_CBC.intern();
     public static final ASN1ObjectIdentifier  RC2_CBC         = PKCSObjectIdentifiers.RC2_CBC.intern();
-    public static final ASN1ObjectIdentifier  IDEA_CBC        = new ASN1ObjectIdentifier("1.3.6.1.4.1.188.7.1.1.2").intern();
-    public static final ASN1ObjectIdentifier  CAST5_CBC       = new ASN1ObjectIdentifier("1.2.840.113533.7.66.10").intern();
+    public static final ASN1ObjectIdentifier  IDEA_CBC        = MiscObjectIdentifiers.as_sys_sec_alg_ideaCBC.intern();
+    public static final ASN1ObjectIdentifier  CAST5_CBC       = MiscObjectIdentifiers.cast5CBC.intern();
 
     public static final ASN1ObjectIdentifier  AES128_CBC      = NISTObjectIdentifiers.id_aes128_CBC.intern();
     public static final ASN1ObjectIdentifier  AES192_CBC      = NISTObjectIdentifiers.id_aes192_CBC.intern();
