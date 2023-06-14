@@ -10,9 +10,54 @@ public class SecretKeyPacket
     extends ContainedPacket
     implements PublicKeyAlgorithmTags
 {
+    /**
+     * Unprotected.
+     */
     public static final int USAGE_NONE = 0x00;
+
+    /**
+     * Malleable CFB.
+     * Malleable-CFB-encrypted keys are vulnerable to corruption attacks
+     * that can cause leakage of secret data when the secret key is used.
+     *
+     * @see <a href="https://eprint.iacr.org/2002/076">
+     *     Klíma, V. and T. Rosa,
+     *     "Attack on Private Signature Keys of the OpenPGP Format,
+     *     PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
+     * @see <a href="https://www.kopenpgp.com/">
+     *     Bruseghini, L., Paterson, K. G., and D. Huigens,
+     *     "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
+     * @deprecated Use of MalleableCFB is deprecated.
+     *             For v4 keys, use {@link #USAGE_SHA1} instead.
+     *             For v6 keys use {@link #USAGE_AEAD} instead.
+     */
+    @Deprecated
     public static final int USAGE_CHECKSUM = 0xff;
+
+    /**
+     * CFB.
+     * CFB-encrypted keys are vulnerable to corruption attacks that can
+     * cause leakage of secret data when the secret key is use.
+     *
+     * @see <a href="https://eprint.iacr.org/2002/076">
+     *     Klíma, V. and T. Rosa,
+     *     "Attack on Private Signature Keys of the OpenPGP Format,
+     *     PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
+     * @see <a href="https://www.kopenpgp.com/">
+     *     Bruseghini, L., Paterson, K. G., and D. Huigens,
+     *     "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
+     */
     public static final int USAGE_SHA1 = 0xfe;
+
+    /**
+     * AEAD.
+     * This usage protects against above-mentioned attacks.
+     * Passphrase-protected secret key material in a v6 Secret Key or
+     * v6 Secret Subkey packet SHOULD be protected with AEAD encryption
+     * unless it will be transferred to an implementation that is known
+     * to not support AEAD.
+     * Users should migrate to AEAD with all due speed.
+     */
     public static final int USAGE_AEAD = 0xfd;
 
     private PublicKeyPacket pubKeyPacket;
