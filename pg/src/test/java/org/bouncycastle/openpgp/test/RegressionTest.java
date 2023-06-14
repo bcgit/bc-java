@@ -51,7 +51,8 @@ public class RegressionTest
         new PGPEncryptedDataTest(),
         new PGPAeadTest(),
         new CRC24Test(),
-        new WildcardKeyIDTest()
+        new WildcardKeyIDTest(),
+        new PGPv6KeyTest()
     };
 
     public static void main(String[] args)
