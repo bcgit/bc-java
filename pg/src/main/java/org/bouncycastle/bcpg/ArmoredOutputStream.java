@@ -122,7 +122,7 @@ public class ArmoredOutputStream
     String          footerStart = "-----END PGP ";
     String          footerTail = "-----";
 
-    Hashtable<String, List<String>> headers = new Hashtable<String, List<String>>();
+    final Hashtable<String, List<String>> headers = new Hashtable<String, List<String>>();
 
     /**
      * Constructs an armored output stream with {@link #resetHeaders() default headers}.
@@ -297,11 +297,7 @@ public class ArmoredOutputStream
         }
         sb.append(nl);
 
-        for (int i = 0; i != sb.length(); i++)
-        {
-            out.write(sb.charAt(i));
-        }
-
+        write(sb.toString());
         clearText = true;
         newLine = true;
         lastb = 0;
@@ -317,20 +313,10 @@ public class ArmoredOutputStream
         String value)
         throws IOException
     {
-        for (int i = 0; i != name.length(); i++)
-        {
-            out.write(name.charAt(i));
-        }
-
-        out.write(':');
-        out.write(' ');
-
-        out.write(Strings.toUTF8ByteArray(value));
-
-        for (int i = 0; i != nl.length(); i++)
-        {
-            out.write(nl.charAt(i));
-        }
+        write(name);
+        write(": ");
+        write(value);
+        write(nl);
     }
 
     public void write(
@@ -390,25 +376,10 @@ public class ArmoredOutputStream
                 type = "MESSAGE";
             }
 
-            for (int i = 0; i != headerStart.length(); i++)
-            {
-                out.write(headerStart.charAt(i));
-            }
-
-            for (int i = 0; i != type.length(); i++)
-            {
-                out.write(type.charAt(i));
-            }
-
-            for (int i = 0; i != headerTail.length(); i++)
-            {
-                out.write(headerTail.charAt(i));
-            }
-
-            for (int i = 0; i != nl.length(); i++)
-            {
-                out.write(nl.charAt(i));
-            }
+            write(headerStart);
+            write(type);
+            write(headerTail);
+            write(nl);
 
             if (headers.containsKey(VERSION_HDR))
             {
@@ -430,11 +401,7 @@ public class ArmoredOutputStream
                 }
             }
 
-            for (int i = 0; i != nl.length(); i++)
-            {
-                out.write(nl.charAt(i));
-            }
-
+            write(nl);
             start = false;
         }
 
@@ -448,10 +415,7 @@ public class ArmoredOutputStream
             bufPtr = 0;
             if ((++chunkCount & 0xf) == 0)
             {
-                for (int i = 0; i != nl.length(); i++)
-                {
-                    out.write(nl.charAt(i));
-                }
+                write(nl);
             }
         }
 
@@ -484,10 +448,7 @@ public class ArmoredOutputStream
                 encode(out, buf, bufPtr);
             }
 
-            for (int i = 0; i != nl.length(); i++)
-            {
-                out.write(nl.charAt(i));
-            }
+            write(nl);
 
             if (crc != null)
             {
@@ -502,36 +463,21 @@ public class ArmoredOutputStream
                 encode3(out, buf);
             }
 
-            for (int i = 0; i != nl.length(); i++)
-            {
-                out.write(nl.charAt(i));
-            }
-
-            for (int i = 0; i != footerStart.length(); i++)
-            {
-                out.write(footerStart.charAt(i));
-            }
-
-            for (int i = 0; i != type.length(); i++)
-            {
-                out.write(type.charAt(i));
-            }
-
-            for (int i = 0; i != footerTail.length(); i++)
-            {
-                out.write(footerTail.charAt(i));
-            }
-
-            for (int i = 0; i != nl.length(); i++)
-            {
-                out.write(nl.charAt(i));
-            }
+            write(nl);
+            write(footerStart);
+            write(type);
+            write(footerTail);
+            write(nl);
 
             out.flush();
 
             type = null;
             start = true;
         }
+    }
+
+    private void write(String string) throws IOException {
+        out.write(Strings.toUTF8ByteArray(string));
     }
 
     public static Builder builder() {
