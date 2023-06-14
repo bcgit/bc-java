@@ -1,20 +1,9 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.security.GeneralSecurityException;
-import java.security.Provider;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -24,6 +13,13 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.util.Arrays;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.GeneralSecurityException;
+import java.security.Provider;
 
 /**
  * Builder for {@link PBEDataDecryptorFactory} instances that obtain cryptographic primitives using
@@ -145,34 +141,25 @@ public class JcePBEDataDecryptorFactoryBuilder
 
                 byte[] hkdfInfo = keyData.getAAData(); // between v5 and v6, these bytes differ
                 int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
-                byte[] kek = new byte[kekLen];
+                byte[] salt = null;
+                byte[] kek = JceAEADUtil.hkdfDeriveKey(hkdfInfo, salt, kekLen, ikm);
 
-                // HKDF
-                // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-                HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest()); // SHA256 is fixed
-                hkdfGen.init(new HKDFParameters(ikm, null, hkdfInfo));
-                hkdfGen.generateBytes(kek, 0, kek.length);
-                final SecretKey secretKey = new SecretKeySpec(kek, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
+                int encAlgorithm = keyData.getEncAlgorithm();
+                int aeadAlgorithm = keyData.getAeadAlgorithm();
+
+                byte[] aad = hkdfInfo;
+                byte[] aeadIv = keyData.getIv();
+                int aeadMacLen = 128;
 
                 // AEAD
-                Cipher aead = aeadHelper.createAEADCipher(keyData.getEncAlgorithm(), keyData.getAeadAlgorithm());
-                int aeadMacLen = 128;
                 byte[] authTag = keyData.getAuthTag();
-                byte[] aeadIv = keyData.getIv();
                 byte[] encSessionKey = keyData.getSecKeyData();
+                byte[] ciphertextAndAuthTag = Arrays.concatenate(encSessionKey, authTag);
 
-                // buf := encSessionKey || authTag
-                byte[] buf = new byte[encSessionKey.length + authTag.length];
-                System.arraycopy(encSessionKey, 0, buf, 0, encSessionKey.length);
-                System.arraycopy(authTag, 0, buf, encSessionKey.length, authTag.length);
-
-                // sessionData := AEAD(secretKey).decrypt(buf)
                 byte[] sessionData;
                 try
                 {
-                    JceAEADCipherUtil.setUpAeadCipher(aead, secretKey, Cipher.DECRYPT_MODE, aeadIv, aeadMacLen, hkdfInfo);
-
-                    sessionData = aead.doFinal(buf, 0, buf.length);
+                    sessionData = aeadHelper.decryptAEAD(encAlgorithm, aeadAlgorithm, kek, aeadMacLen, aeadIv, ciphertextAndAuthTag, aad);
                 }
                 catch (GeneralSecurityException e)
                 {
