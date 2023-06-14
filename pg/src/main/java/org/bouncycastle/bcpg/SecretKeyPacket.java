@@ -1,6 +1,5 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayOutputStream;
@@ -27,12 +26,13 @@ public class SecretKeyPacket
     private int s2kUsage;
     private int encAlgorithm;
     private int aeadAlgorithm;
-    private byte[] aeadNonce;
     private S2K s2k;
     private byte[] iv;
 
     /**
-     * @param in
+     * Parse a SecretKeyPacket from an input stream.
+     *
+     * @param in input stream
      * @throws IOException
      */
     SecretKeyPacket(
@@ -51,38 +51,40 @@ public class SecretKeyPacket
         int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
 
-        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
-        {
-            encAlgorithm = in.read();
-            if (version == VERSION_6) {
-                // TODO: Use length-octet to enable parsing unknown S2Ks.
-                in.read();
-            }
-            s2k = new S2K(in);
+        if (version == 6 && s2kUsage != USAGE_NONE) {
+            // TODO: Use length to parse unknown parameters
+            int conditionalParameterLength = in.read();
         }
-        else if (s2kUsage == USAGE_AEAD)
+
+        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
         {
             encAlgorithm = in.read();
-            aeadAlgorithm = in.read();
-            if (version == 5 || version == 6)
-            {
-                in.read();
-            }
-            s2k = new S2K(in);
-            aeadNonce = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
-            Streams.readFully(in, aeadNonce);
         }
         else
         {
             encAlgorithm = s2kUsage;
         }
-
+        if (s2kUsage == USAGE_AEAD)
+        {
+            aeadAlgorithm = in.read();
+        }
+        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD) {
+            if (version == VERSION_6) {
+                // TODO: Use length to parse unknown S2Ks
+                int s2kLen = in.read();
+            }
+            s2k = new S2K(in);
+        }
+        if (s2kUsage == USAGE_AEAD) {
+            iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+            Streams.readFully(in, iv);
+        }
         boolean isGNUDummyNoPrivateKey = s2k != null &&
                 s2k.getType() == S2K.GNU_DUMMY_S2K &&
                 s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
         if (!(isGNUDummyNoPrivateKey))
         {
-            if (s2kUsage != 0)
+            if (s2kUsage != 0 && iv == null)
             {
                 if (encAlgorithm < 7)
                 {
@@ -100,11 +102,16 @@ public class SecretKeyPacket
     }
 
     /**
-     * @param pubKeyPacket
-     * @param encAlgorithm
-     * @param s2k
-     * @param iv
-     * @param secKeyData
+     * Create a secret key packet.
+     * If the encryption algorithm is not {@link SymmetricKeyAlgorithmTags#NULL},
+     * then {@link #USAGE_SHA1} will be used as S2K usage, otherwise the key will be
+     * unencrypted ({@link #USAGE_NONE}).
+     *
+     * @param pubKeyPacket public key packet
+     * @param encAlgorithm encryption algorithm
+     * @param s2k s2k identifier
+     * @param iv optional iv for the encryption algorithm
+     * @param secKeyData secret key data
      */
     public SecretKeyPacket(
         PublicKeyPacket pubKeyPacket,
@@ -113,21 +120,13 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
-        this.pubKeyPacket = pubKeyPacket;
-        this.encAlgorithm = encAlgorithm;
-
-        if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
-        {
-            this.s2kUsage = USAGE_SHA1;
-        }
-        else
-        {
-            this.s2kUsage = USAGE_NONE;
-        }
-
-        this.s2k = s2k;
-        this.iv = iv;
-        this.secKeyData = secKeyData;
+        this(
+                pubKeyPacket,
+                encAlgorithm,
+                (encAlgorithm != SymmetricKeyAlgorithmTags.NULL ? USAGE_SHA1 : USAGE_NONE),
+                s2k,
+                iv,
+                secKeyData);
     }
 
     public SecretKeyPacket(
@@ -138,12 +137,115 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
+        this(pubKeyPacket, encAlgorithm, 0, s2kUsage, s2k, iv, secKeyData);
+    }
+
+    SecretKeyPacket(
+            PublicKeyPacket pubKeyPacket,
+            int encAlgorithm,
+            int aeadAlgorithm,
+            int s2kUsage,
+            S2K s2k,
+            byte[] iv,
+            byte[] secKeyData)
+    {
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
+        this.aeadAlgorithm = aeadAlgorithm;
         this.s2kUsage = s2kUsage;
         this.s2k = s2k;
         this.iv = iv;
         this.secKeyData = secKeyData;
+
+        if (pubKeyPacket.getVersion() == VERSION_6) {
+            if (s2kUsage == USAGE_CHECKSUM) {
+                throw new IllegalArgumentException("Version 6 keys MUST NOT use S2K usage USAGE_CHECKSUM");
+            }
+        }
+    }
+
+    /**
+     * Create a v4 secret key packet.
+     *
+     * @param pubKeyPacket public key packet
+     * @param encAlgorithm encryption algorithm
+     * @param s2kUsage s2k usage
+     * @param s2k s2k identifier
+     * @param iv optional iv for the encryption algorithm
+     * @param secKeyData secret key data
+     * @return secret key packet
+     */
+    public static SecretKeyPacket createV4SecretKey(PublicKeyPacket pubKeyPacket,
+                                                    int encAlgorithm,
+                                                    int s2kUsage,
+                                                    S2K s2k,
+                                                    byte[] iv,
+                                                    byte[] secKeyData)
+    {
+        if (pubKeyPacket.getVersion() != VERSION_4) {
+            throw new IllegalArgumentException("Pubkey version mismatch. Expected 4, got " + pubKeyPacket.getVersion());
+        }
+        return new SecretKeyPacket(pubKeyPacket, encAlgorithm, s2kUsage, s2k, iv, secKeyData);
+    }
+
+    /**
+     * Create a v6 secret key packet.
+     * For AEAD encryption use {@link #createAeadEncryptedV6SecretKey(PublicKeyPacket, int, int, byte[], S2K, byte[])} instead.
+     *
+     * @param pubKeyPacket public key packet
+     * @param encAlgorithm encryption algorithm
+     * @param s2kUsage s2k usage
+     * @param s2k s2k identifier
+     * @param iv optional iv for the symmetric algorithm
+     * @param secKeyData secret key data
+     * @return secret key packet
+     */
+    public static SecretKeyPacket createV6SecretKey(
+            PublicKeyPacket pubKeyPacket,
+            int encAlgorithm,
+            int s2kUsage,
+            S2K s2k,
+            byte[] iv,
+            byte[] secKeyData)
+    {
+        if (pubKeyPacket.getVersion() != VERSION_6)
+        {
+            throw new IllegalArgumentException("Pubkey version mismatch. Expected 6, got " + pubKeyPacket.getVersion());
+        }
+        if (s2kUsage == USAGE_AEAD)
+        {
+            throw new IllegalArgumentException("Use createAeadEncryptedV6SecretKey() instead.");
+        }
+        return new SecretKeyPacket(pubKeyPacket, encAlgorithm, 0, s2kUsage, s2k, iv, secKeyData);
+    }
+
+    /**
+     * Create an AEAD encrypted v6 secret key packet.
+     *
+     * @param pubKeyPacket public key packet
+     * @param encAlgorithm encryption algorithm
+     * @param aeadAlgorithm aead algorithm
+     * @param aeadNonce nonce for the AEAD algorithm
+     * @param s2k s2k identifier
+     * @param secKeyData encrypted secret key data with appended AEAD auth tag
+     * @return secret key packet
+     */
+    public static SecretKeyPacket createAeadEncryptedV6SecretKey(
+            PublicKeyPacket pubKeyPacket,
+            int encAlgorithm,
+            int aeadAlgorithm,
+            byte[] aeadNonce,
+            S2K s2k,
+            byte[] secKeyData)
+    {
+        if (pubKeyPacket.getVersion() != VERSION_6) {
+            throw new IllegalArgumentException("Pubkey version mismatch. Expected 6, got " + pubKeyPacket.getVersion());
+        }
+        return new SecretKeyPacket(pubKeyPacket, encAlgorithm, aeadAlgorithm, USAGE_AEAD, s2k, aeadNonce, secKeyData);
+    }
+
+    public int getVersion() {
+        return pubKeyPacket.getVersion();
     }
 
     public int getEncAlgorithm()
@@ -153,10 +255,6 @@ public class SecretKeyPacket
 
     public int getAeadAlgorithm() {
         return aeadAlgorithm;
-    }
-
-    public byte[] getAeadNonce() {
-        return Arrays.clone(aeadNonce);
     }
 
     public int getS2KUsage()
@@ -194,7 +292,26 @@ public class SecretKeyPacket
 
         pOut.write(s2kUsage);
 
-        // prepare conditional parameters
+        // conditional parameters
+        byte[] conditionalParameters = encodeConditionalParameters();
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
+        {
+            pOut.write(conditionalParameters.length);
+        }
+        pOut.write(conditionalParameters);
+
+        // encrypted secret key
+        if (secKeyData != null && secKeyData.length > 0)
+        {
+            pOut.write(secKeyData);
+        }
+
+        pOut.close();
+
+        return bOut.toByteArray();
+    }
+
+    private byte[] encodeConditionalParameters() throws IOException {
         ByteArrayOutputStream conditionalParameters = new ByteArrayOutputStream();
         boolean hasS2KSpecifier = s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD;
         byte[] encodedS2K = hasS2KSpecifier ? s2k.getEncoded() : null;
@@ -214,31 +331,13 @@ public class SecretKeyPacket
         {
             conditionalParameters.write(encodedS2K);
         }
-        if (s2kUsage == USAGE_AEAD)
+        if (s2kUsage == USAGE_AEAD || iv != null)
         {
-            conditionalParameters.write(aeadNonce);
-        }
-        if (iv != null)
-        {
+            // since USAGE_AEAD and other types that use an IV are mutually exclusive,
+            // we use the IV field for both v4 IVs and v6 AEAD nonces
             conditionalParameters.write(iv);
         }
-
-        // write length of conditional parameters
-        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
-        {
-            pOut.write(conditionalParameters.size());
-        }
-        // write conditional parameters
-        pOut.write(conditionalParameters.toByteArray());
-
-        if (secKeyData != null && secKeyData.length > 0)
-        {
-            pOut.write(secKeyData);
-        }
-
-        pOut.close();
-
-        return bOut.toByteArray();
+        return conditionalParameters.toByteArray();
     }
 
     public void encode(
