@@ -99,11 +99,6 @@ public interface CryptoProObjectIdentifiers
     static final ASN1ObjectIdentifier    gostR3410_2001_CryptoPro_XchA  = GOST_id.branch("36.0");
     /** Gost R3410-2001-CryptoPro-XchA OID: 1.2.643.2.2.36.1 */
     static final ASN1ObjectIdentifier    gostR3410_2001_CryptoPro_XchB  = GOST_id.branch("36.1");
-    
-    /** Gost R3410-ElSqDH3410-default OID: 1.2.643.2.2.36.0 */
-    static final ASN1ObjectIdentifier    gost_ElSgDH3410_default    = GOST_id.branch("36.0");
-    /** Gost R3410-ElSqDH3410-1 OID: 1.2.643.2.2.36.1 */
-    static final ASN1ObjectIdentifier    gost_ElSgDH3410_1          = GOST_id.branch("36.1");
 
     static final ASN1ObjectIdentifier    gostR3410_2001_CryptoPro_ESDH = GOST_id.branch("96");
 
