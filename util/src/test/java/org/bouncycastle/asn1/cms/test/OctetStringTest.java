@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.BEROctetString;
@@ -144,16 +143,11 @@ public class OctetStringTest
                 new BEROctetString(new byte[20])
             });
 
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
+        byte[] encoding = str.getEncoded();
 
-        aOut.writeObject(str);
+        ASN1OctetString decoded = ASN1OctetString.getInstance(encoding);
 
-        aOut.close();
-
-        ASN1InputStream aIn = new ASN1InputStream(bOut.toByteArray());
-
-        assertTrue(Arrays.areEqual(new byte[30], ASN1OctetString.getInstance(aIn.readObject()).getOctets()));
+        assertTrue(Arrays.areEqual(new byte[30], decoded.getOctets()));
     }
 
     public void testNestedStructure()
