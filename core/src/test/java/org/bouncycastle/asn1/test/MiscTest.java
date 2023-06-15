@@ -114,7 +114,7 @@ public class MiscTest
 
         for (int i = 0; i != values.length; i++)
         {
-            aOut.writeObject(values[i].toASN1Primitive());
+            aOut.writeObject(values[i]);
         }
 
         if (!areEqual(bOut.toByteArray(), data))
