@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -610,6 +611,51 @@ public class VectorTest
         }
     }
 
+    public void testTranscriptHashes()
+            throws Exception
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("transcript-hashes.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        int count = 0;
 
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    System.out.println("test case: " + count);
+                    short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
+                    byte[] confirmation_key = Hex.decode(buf.get("confirmation_key"));
+                    byte[] authenticated_content = Hex.decode(buf.get("authenticated_content"));
+                    byte[] interim_transcript_hash_before = Hex.decode(buf.get("interim_transcript_hash_before"));
+                    byte[] confirmed_transcript_hash_after = Hex.decode(buf.get("confirmed_transcript_hash_after"));
+                    byte[] interim_transcript_hash_after = Hex.decode(buf.get("interim_transcript_hash_after"));
 
+                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    TranscriptHash transcript = new TranscriptHash(suite);
+                    transcript.setInterim(interim_transcript_hash_before);
+
+                    AuthenticatedContent authContent = (AuthenticatedContent) MLSInputStream.decode(authenticated_content, AuthenticatedContent.class);
+                    transcript.update(authContent);
+                    assertTrue(Arrays.areEqual(transcript.confirmed, confirmed_transcript_hash_after));
+                    assertTrue(Arrays.areEqual(transcript.interim, interim_transcript_hash_after));
+
+                    byte[] confirmationTag = suite.getKDF().extract(confirmation_key, transcript.confirmed);
+                    assertTrue(Arrays.areEqual(confirmationTag, authContent.getConfirmationTag()));
+
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+
+    }
 }

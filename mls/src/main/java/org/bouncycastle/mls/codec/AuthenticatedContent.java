@@ -15,6 +15,20 @@ public class AuthenticatedContent
     {
         auth.confirmation_tag = tag;
     }
+
+    public byte[] getConfirmationTag()
+    {
+        return auth.confirmation_tag;
+    }
+    public byte[] getConfirmedTranscriptHashInput() throws IOException
+    {
+        return MLSOutputStream.encode(new ConfirmedTranscriptHashInput(wireFormat, content, auth.signature));
+    }
+    public byte[] getInterimTranscriptHashInput() throws IOException
+    {
+        return MLSOutputStream.encode(new InterimTranscriptHashInput(auth.confirmation_tag));
+    }
+
     public AuthenticatedContent(WireFormat wireFormat, FramedContent content, FramedContentAuthData auth)
     {
         this.wireFormat = wireFormat;
@@ -79,5 +93,56 @@ public class AuthenticatedContent
         stream.write(wireFormat);
         stream.write(content);
         stream.write(auth);
+    }
+}
+class ConfirmedTranscriptHashInput
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    WireFormat wireFormat;
+    FramedContent content;
+    byte[] signature;
+
+    public ConfirmedTranscriptHashInput(WireFormat wireFormat, FramedContent content, byte[] signature)
+    {
+        this.wireFormat = wireFormat;
+        this.content = content;
+        this.signature = signature;
+    }
+
+    public ConfirmedTranscriptHashInput(MLSInputStream stream) throws IOException
+    {
+        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
+        content = (FramedContent) stream.read(FramedContent.class);
+        signature = stream.readOpaque();
+    }
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(wireFormat);
+        stream.write(content);
+        stream.writeOpaque(signature);
+    }
+}
+
+class InterimTranscriptHashInput
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    byte[] confirmation_tag;
+
+    public InterimTranscriptHashInput(byte[] confirmation_tag)
+    {
+        this.confirmation_tag = confirmation_tag;
+    }
+
+    public InterimTranscriptHashInput(MLSInputStream stream) throws IOException
+    {
+        confirmation_tag = stream.readOpaque();
+    }
+
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.writeOpaque(confirmation_tag);
     }
 }
