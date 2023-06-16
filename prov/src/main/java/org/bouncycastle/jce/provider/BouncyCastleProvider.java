@@ -77,8 +77,6 @@ public final class BouncyCastleProvider extends Provider
 
     public static final ProviderConfiguration CONFIGURATION = new BouncyCastleProviderConfiguration();
 
-    private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
-
     private static final Map keyInfoConverters = new HashMap();
 
     private static final Class revChkClass = ClassUtil.loadClass(BouncyCastleProvider.class, "java.security.cert.PKIXRevocationChecker");
@@ -156,6 +154,8 @@ public final class BouncyCastleProvider extends Provider
     {
         "DRBG"
     };
+
+    private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
 
     /**
      * Construct a new provider.  This should only be required when
