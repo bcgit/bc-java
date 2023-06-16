@@ -14,6 +14,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MLSMessage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
@@ -80,6 +81,23 @@ public class MLSMessage
         }
     }
 
+    public ContentType getContentType()
+    {
+        switch (wireFormat)
+        {
+            case mls_public_message:
+                return publicMessage.content.getContentType();
+            case mls_private_message:
+                return privateMessage.content_type;
+            case mls_welcome:
+                break;
+            case mls_group_info:
+                break;
+            case mls_key_package:
+                break;
+        }
+        return null;
+    }
     public long getEpoch()
     {
         switch (wireFormat)
@@ -99,34 +117,6 @@ public class MLSMessage
     }
 }
 
-enum WireFormat
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((short) 0),
-    mls_public_message((short) 1),
-    mls_private_message((short) 2),
-    mls_welcome((short) 3),
-    mls_group_info((short) 4),
-    mls_key_package((short) 5);
-
-    final short value;
-
-    WireFormat(short value)
-    {
-        this.value = value;
-    }
-
-//    WireFormat(MLSInputStream stream) throws IOException
-//    {
-//        this.value = (short) stream.read(short.class);
-//    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
-    }
-}
 enum ProtocolVersion
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -172,51 +162,7 @@ class AuthenticatedContentTBM
 }
 
 
-class Sender
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    SenderType senderType;
-    int node_index; // leaf or sender
-
-    public Sender(SenderType senderType, int node_index)
-    {
-        this.senderType = senderType;
-        this.node_index = node_index;
-    }
-    public Sender(MLSInputStream stream) throws IOException
-    {
-        this.senderType = SenderType.values()[(byte) stream.read(byte.class)];
-        switch (senderType)
-        {
-
-            case MEMBER:
-            case EXTERNAL:
-                node_index = (int) stream.read(int.class);
-                break;
-            case NEW_MEMBER_PROPOSAL:
-            case NEW_MEMBER_COMMIT:
-                break;
-        }
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(senderType);
-        switch (senderType)
-        {
-            case MEMBER:
-            case EXTERNAL:
-                stream.write(node_index);
-                break;
-            case NEW_MEMBER_PROPOSAL:
-            case NEW_MEMBER_COMMIT:
-                break;
-        }
-    }
-}
-
 class FramedContentAuthData
-//    extends FramedContent
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] signature;
@@ -258,7 +204,7 @@ class FramedContentAuthData
         stream.writeOpaque(signature);
         if(contentType == ContentType.COMMIT)
         {
-            stream.write(confirmation_tag);
+            stream.writeOpaque(confirmation_tag);
         }
     }
 }
@@ -921,27 +867,6 @@ enum ProposalType
     }
 }
 
-enum SenderType
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((byte)0),
-    MEMBER((byte)1),
-    EXTERNAL((byte)2),
-    NEW_MEMBER_PROPOSAL((byte)3),
-    NEW_MEMBER_COMMIT((byte)4);
-
-    final byte value;
-
-    SenderType(byte value)
-    {
-        this.value = value;
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
-    }
-}
 enum ProposalOrRefType
 {
     RESERVED((byte) 0),
@@ -958,21 +883,23 @@ enum ProposalOrRefType
 class Commit
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    ProposalOrRef[] proposals;
+    List<ProposalOrRef> proposals;
 
-    byte[] testProposals;
+    byte[] proposalsBytes;
     UpdatePath updatePath;
 
     Commit(MLSInputStream stream) throws IOException
     {
-        testProposals = stream.readOpaque();
-//        proposals = (ProposalOrRef[]) stream.readArray(ProposalOrRef.class);
+//        proposals = new ArrayList<>();
+//        stream.readList(proposals ,ProposalOrRef.class);
+        proposalsBytes = stream.readOpaque();
         updatePath = (UpdatePath) stream.readOptional(UpdatePath.class);
     }
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.writeArray(proposals);
+        stream.writeOpaque(proposalsBytes);
+//        stream.writeList(proposals);
         stream.writeOptional(updatePath);
     }
 }
@@ -1001,7 +928,7 @@ class ProposalOrRef
                 break;
             case REFERENCE:
                 //TODO
-                reference = (byte[]) stream.readArray(byte.class);
+                reference = stream.readOpaque();
                 break;
         }
     }
@@ -1084,6 +1011,15 @@ class SenderData
     int leafIndex;
     int generation;
     byte[] reuseGuard;
+
+    public SenderData(int leafIndex, int generation, byte[] reuseGuard)
+    {
+        this.leafIndex = leafIndex;
+        this.sender = new LeafIndex(leafIndex);
+        this.generation = generation;
+        this.reuseGuard = reuseGuard;
+    }
+
     SenderData(MLSInputStream stream) throws IOException
     {
         leafIndex = (int) stream.read(int.class);
@@ -1097,7 +1033,7 @@ class SenderData
     {
         stream.write(leafIndex);
         stream.write(generation);
-        stream.write(reuseGuard);
+        stream.write(Pack.bigEndianToInt(reuseGuard, 0));
     }
 }
 class SenderDataAAD

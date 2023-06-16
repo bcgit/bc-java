@@ -16,6 +16,11 @@ public class FramedContent
     Proposal proposal;
     Commit commit;
 
+    public ContentType getContentType()
+    {
+        return contentType;
+    }
+
     public byte[] getContentBytes() throws IOException
     {
         switch (contentType)
@@ -64,24 +69,18 @@ public class FramedContent
         this.proposal = proposal;
         this.commit = commit;
     }
-    FramedContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, ContentType content_type)
+    public static FramedContent rawContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, ContentType content_type, byte[] contentBytes) throws IOException
     {
-        this.group_id = group_id;
-        this.epoch = epoch;
-        this.sender = sender;
-        this.authenticated_data = authenticated_data;
-        this.contentType = content_type;
-        switch (contentType)
+        switch (content_type)
         {
             case APPLICATION:
-                this.application_data = new byte[0];
-                break;
+                return application(group_id, epoch, sender, authenticated_data, contentBytes);
             case PROPOSAL:
-//                this.proposal = new Proposal();
-                break;
+                return proposal(group_id, epoch, sender, authenticated_data, contentBytes);
             case COMMIT:
-                break;
+                return commit(group_id, epoch, sender, authenticated_data, contentBytes);
         }
+        return null;
     }
 
     public static FramedContent application(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data)
@@ -89,14 +88,14 @@ public class FramedContent
         return new FramedContent(group_id, epoch, sender, authenticated_data, application_data, ContentType.APPLICATION, null, null);
     }
 
-    public static FramedContent proposal(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, Proposal proposal)
+    public static FramedContent proposal(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] proposal) throws IOException
     {
-        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.PROPOSAL, proposal, null);
+        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.PROPOSAL, (Proposal) MLSInputStream.decode(proposal, Proposal.class), null);
     }
 
-    public static FramedContent commit(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, Commit commit)
+    public static FramedContent commit(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] commit) throws IOException
     {
-        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.COMMIT, null, commit);
+        return new FramedContent(group_id, epoch, sender, authenticated_data, null, ContentType.COMMIT, null, (Commit) MLSInputStream.decode(commit, Commit.class));
     }
 
     @Override

@@ -6,10 +6,15 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
+import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.codec.FramedContent;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.codec.PublicMessage;
+import org.bouncycastle.mls.codec.Sender;
+import org.bouncycastle.mls.codec.SenderType;
+import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.codec.MLSMessage;
@@ -19,6 +24,7 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -377,107 +383,6 @@ public class VectorTest
                         bufLeaf.put(line.substring(0, b).trim(), line.substring(b + 1).trim());
                     }
                 }
-            }
-        }
-    }
-
-    public void testMessageProtection()
-            throws Exception
-    {
-        InputStream src = VectorTest.class.getResourceAsStream("message-protection.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        HashMap<String, String> buf = new HashMap<String, String>();
-        int count = 0;
-
-        while((line = bin.readLine())!= null)
-        {
-            line = line.trim();
-            if (line.length() == 0)
-            {
-                if (buf.size() > 0)
-                {
-                    System.out.println("test case: " + count);
-                    short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
-                    byte[] group_id = Hex.decode(buf.get("group_id"));
-                    long epoch = Long.parseLong(buf.get("epoch"));
-                    byte[] tree_hash = Hex.decode(buf.get("tree_hash"));
-                    byte[] confirmed_transcript_hash = Hex.decode(buf.get("confirmed_transcript_hash"));
-                    byte[] signature_priv = Hex.decode(buf.get("signature_priv"));
-                    byte[] signature_pub = Hex.decode(buf.get("signature_pub"));
-                    byte[] encryption_secret = Hex.decode(buf.get("encryption_secret"));
-                    byte[] sender_data_secret = Hex.decode(buf.get("sender_data_secret"));
-                    byte[] membership_key = Hex.decode(buf.get("membership_key"));
-                    byte[] proposal = Hex.decode(buf.get("proposal"));
-                    byte[] proposal_priv = Hex.decode(buf.get("proposal_priv"));
-                    byte[] proposal_pub = Hex.decode(buf.get("proposal_pub"));
-                    byte[] commit = Hex.decode(buf.get("commit"));
-                    byte[] commit_priv = Hex.decode(buf.get("commit_priv"));
-                    byte[] commit_pub = Hex.decode(buf.get("commit_pub"));
-                    byte[] application = Hex.decode(buf.get("application"));
-                    byte[] application_priv = Hex.decode(buf.get("application_priv"));
-
-                    CipherSuite suite = new CipherSuite(cipher_suite);
-
-                    AsymmetricKeyParameter sigPriv = suite.deserializeSignaturePrivateKey(signature_priv);
-                    AsymmetricKeyParameter sigPub = suite.getSignaturePublicKey(sigPriv);
-                    byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigPub);
-
-                    // Sanity Check
-                    assertTrue(Arrays.areEqual(signature_pub, sigPubBytes));
-
-                    // Construct a GroupContext object with the provided cipher_suite, group_id, epoch, tree_hash,
-                    // and confirmed_transcript_hash values, and empty extensions
-                    GroupContext groupContext = new GroupContext(
-                            cipher_suite,
-                            group_id,
-                            epoch,
-                            tree_hash,
-                            confirmed_transcript_hash,
-                            new ArrayList<>()
-                    );
-                    byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
-
-                    // Proposal
-                    MLSMessage proposalPub = (MLSMessage) MLSInputStream.decode(proposal_pub, MLSMessage.class);
-
-                    //TODO move to unprotect(MLSMessage message)
-                    AuthenticatedContent authContent = proposalPub.publicMessage.unprotect(suite, new Secret(membership_key), groupContextBytes);
-                    boolean verified = authContent.verify(suite, signature_pub, groupContextBytes);
-                    assertTrue(verified);
-                    FramedContent proposalPubUnprotected = authContent.content;
-                    byte[] contentBytes = proposalPubUnprotected.getContentBytes();
-                    assertTrue(Arrays.areEqual(contentBytes, proposal));
-
-
-                    MLSMessage proposalPriv = (MLSMessage) MLSInputStream.decode(proposal_priv, MLSMessage.class);
-                    // keys = { cipher_suite, LeafCount{ 2 }, encryption_secret };
-                    TreeSize treeSize = TreeSize.forLeaves(2);
-                    Secret encryptedSecret = new Secret(encryption_secret);
-                    GroupKeySet keys = new GroupKeySet(suite, treeSize, encryptedSecret);
-                    authContent = proposalPriv.privateMessage.unprotect(suite, keys, sender_data_secret);
-                    verified = authContent.verify(suite, signature_pub, groupContextBytes);
-                    assertTrue(verified);
-
-                    // Commit
-//                    System.out.println(Hex.toHexString(commit_pub));
-//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(commit_pub, MLSMessage.class);
-//                    MLSMessage message = (MLSMessage) MLSInputStream.decode(commit_priv, MLSMessage.class);
-
-                    // Application
-//                    System.out.println(Hex.toHexString(application_priv));
-                    MLSMessage message = (MLSMessage) MLSInputStream.decode(application_priv, MLSMessage.class);
-
-
-
-
-                    count++;
-                }
-            }
-            int a = line.indexOf("=");
-            if (a > -1)
-            {
-                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
     }

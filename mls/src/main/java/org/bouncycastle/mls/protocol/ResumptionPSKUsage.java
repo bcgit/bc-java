@@ -6,6 +6,7 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import java.io.IOException;
 
 public enum ResumptionPSKUsage implements MLSInputStream.Readable, MLSOutputStream.Writable {
+    RESERVED((byte) 0),
     APPLICATION((byte) 1),
     REINIT((byte) 2),
     BRANCH((byte) 3);

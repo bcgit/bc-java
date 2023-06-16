@@ -1,5 +1,6 @@
 package org.bouncycastle.mls.protocol;
 
+import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 
@@ -61,7 +62,7 @@ public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.
                 break;
 
             case RESUMPTION:
-                ResumptionPSKUsage resumptionPSKUsage = (ResumptionPSKUsage) stream.read(ResumptionPSKUsage.class);
+                ResumptionPSKUsage resumptionPSKUsage = ResumptionPSKUsage.values()[(byte) stream.read(byte.class)];
                 byte[] pskGroupID = stream.readOpaque();
                 long pskEpoch = (long) stream.read(long.class);
 

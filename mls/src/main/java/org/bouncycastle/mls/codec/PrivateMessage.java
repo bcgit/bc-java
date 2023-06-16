@@ -3,6 +3,9 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyGeneration;
+import org.bouncycastle.mls.KeyScheduleEpoch;
+import org.bouncycastle.mls.LeafIndex;
+import org.bouncycastle.mls.NodeIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.Arrays;
@@ -20,6 +23,16 @@ public class PrivateMessage
     byte[] encrypted_sender_data;
     byte[] ciphertext;
 
+    public PrivateMessage(byte[] group_id, long epoch, ContentType content_type, byte[] authenticated_data, byte[] encrypted_sender_data, byte[] ciphertext)
+    {
+        this.group_id = group_id;
+        this.epoch = epoch;
+        this.content_type = content_type;
+        this.authenticated_data = authenticated_data;
+        this.encrypted_sender_data = encrypted_sender_data;
+        this.ciphertext = ciphertext;
+    }
+
     PrivateMessage(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();
@@ -30,24 +43,76 @@ public class PrivateMessage
         ciphertext = stream.readOpaque();
     }
 
+    static public PrivateMessage protect(AuthenticatedContent auth, CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
+            throws IOException, IllegalAccessException, InvalidCipherTextException
+    {
+        // Get KeyGeneration from the secret tree
+        int index = auth.content.sender.node_index;
+        ContentType contentType = auth.content.contentType;
+        byte[] reuseGuard = new byte[4];
+        KeyGeneration keyGen = keys.get(contentType, new LeafIndex(index), reuseGuard);
+
+        // Encrypt the content
+        byte[] contentPt = serializeContentPt(auth.content, auth.auth, paddingSize);
+        PrivateContentAAD contentAAD = new PrivateContentAAD(
+                auth.content.group_id,
+                auth.content.epoch,
+                auth.content.contentType,
+                auth.content.authenticated_data
+        );
+
+        byte[] contentCt = suite.getAEAD().seal(
+                keyGen.key,
+                keyGen.nonce,
+                MLSOutputStream.encode(contentAAD),
+                contentPt
+        );
+
+        // Encrypt the sender data
+        int senderIndex = auth.content.sender.node_index;
+        SenderData senderDataPt = new SenderData(
+                senderIndex,
+                keyGen.generation,
+                reuseGuard
+        );
+        SenderDataAAD senderDataAAD = new SenderDataAAD(
+                auth.content.group_id,
+                auth.content.epoch,
+                auth.content.contentType
+        );
+
+        KeyGeneration senderDataKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), contentCt);
+        byte[] senderDataCt = suite.getAEAD().seal(
+                senderDataKeys.key,
+                senderDataKeys.nonce,
+                MLSOutputStream.encode(senderDataAAD),
+                MLSOutputStream.encode(senderDataPt)
+        );
+
+
+        return new PrivateMessage(
+                auth.content.group_id,
+                auth.content.epoch,
+                auth.content.contentType,
+                auth.content.authenticated_data,
+                senderDataCt,
+                contentCt
+        );
+    }
     public AuthenticatedContent unprotect(CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
     {
         // Decrypt and parse the sender data
-        Secret senderDataSecret = new Secret(senderDataSecretBytes);
-        int sampleSize = suite.getKDF().getHashLength();
-        byte[] sample = Arrays.copyOf(ciphertext, sampleSize);
-        int keySize = suite.getAEAD().getKeySize();
-        int nonceSize = suite.getAEAD().getNonceSize();
-        Secret key = senderDataSecret.expandWithLabel(suite, "key", sample, keySize);
-        Secret nonce = senderDataSecret.expandWithLabel(suite, "nonce", sample, nonceSize);
+
+        KeyGeneration senderKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), ciphertext);
 
         SenderDataAAD senderDataAAD = new SenderDataAAD(group_id, epoch, content_type);
         byte[] senderDataPt = suite.getAEAD().open(
-                key.value(),
-                nonce.value(),
+                senderKeys.key,
+                senderKeys.nonce,
                 MLSOutputStream.encode(senderDataAAD),
                 encrypted_sender_data
         );
+
         SenderData senderData = (SenderData) MLSInputStream.decode(senderDataPt, SenderData.class);
         if (!keys.hasLeaf(senderData.sender))
         {
@@ -130,5 +195,35 @@ public class PrivateMessage
                 auth.confirmation_tag = stream.readOpaque();
                 break;
         }
+        //TODO: read padding?
+    }
+    static private byte[] serializeContentPt(FramedContent content, FramedContentAuthData auth, int paddingSize) throws IOException
+    {
+        MLSOutputStream stream = new MLSOutputStream();
+        switch (content.contentType)
+        {
+            case APPLICATION:
+                stream.writeOpaque(content.application_data);
+                break;
+            case PROPOSAL:
+                stream.write(content.proposal);
+                break;
+            case COMMIT:
+                stream.write(content.commit);
+                break;
+        }
+        stream.writeOpaque(auth.signature);
+        switch (content.contentType)
+        {
+            case APPLICATION:
+            case PROPOSAL:
+                break;
+            case COMMIT:
+                stream.writeOpaque(auth.confirmation_tag);
+                break;
+        }
+        //TODO: write padding;
+//        stream.write(new byte[paddingSize]);
+        return stream.toByteArray();
     }
 }

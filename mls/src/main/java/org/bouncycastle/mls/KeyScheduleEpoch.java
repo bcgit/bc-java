@@ -8,6 +8,7 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
+import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -211,6 +212,18 @@ psk_secret (or 0) --> KDF.Extract
     // Further dervied products
     final AsymmetricCipherKeyPair externalKeyPair;
     final GroupKeySet groupKeySet;
+
+    public static KeyGeneration senderDataKeys(CipherSuite suite, byte[] senderDataSecretBytes, byte[] ciphertext) throws IOException
+    {
+        Secret senderDataSecret = new Secret(senderDataSecretBytes);
+        int sampleSize = suite.getKDF().getHashLength();
+        byte[] sample = Arrays.copyOf(ciphertext, sampleSize);
+        int keySize = suite.getAEAD().getKeySize();
+        int nonceSize = suite.getAEAD().getNonceSize();
+        Secret key = senderDataSecret.expandWithLabel(suite, "key", sample, keySize);
+        Secret nonce = senderDataSecret.expandWithLabel(suite, "nonce", sample, nonceSize);
+        return new KeyGeneration(0, key, nonce);
+    }
 
     public static KeyScheduleEpoch forCreator(CipherSuite suite) throws IOException, IllegalAccessException {
         SecureRandom rng = new SecureRandom();

@@ -11,6 +11,10 @@ public class AuthenticatedContent
     public FramedContent content;
     FramedContentAuthData auth;
 
+    public void setConfirmationTag(byte[] tag)
+    {
+        auth.confirmation_tag = tag;
+    }
     public AuthenticatedContent(WireFormat wireFormat, FramedContent content, FramedContentAuthData auth)
     {
         this.wireFormat = wireFormat;
@@ -35,6 +39,19 @@ public class AuthenticatedContent
 //                throw new Exception("sender must be a member")
             }
         }
+    }
+
+    public static AuthenticatedContent sign(WireFormat wireFormat, FramedContent content, CipherSuite suite, byte[] sigPriv, byte[] groupContext) throws Exception
+    {
+        if (wireFormat == WireFormat.mls_public_message &&
+            content.contentType == ContentType.APPLICATION)
+        {
+            throw new Exception("Application data cannot be sent as PublicMessage");
+        }
+        FramedContentTBS tbs = new FramedContentTBS(wireFormat, content, groupContext);
+        byte[] signature = suite.signWithLabel(sigPriv, "FramedContentTBS", MLSOutputStream.encode(tbs));
+        FramedContentAuthData auth = new FramedContentAuthData(content.contentType, signature, null);
+        return new AuthenticatedContent(wireFormat, content, auth);
     }
 
     public boolean verify(CipherSuite suite, byte[] sigPub, byte[] context) throws IOException

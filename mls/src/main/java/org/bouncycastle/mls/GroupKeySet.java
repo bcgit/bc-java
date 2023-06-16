@@ -8,6 +8,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,28 @@ public class GroupKeySet {
         }
 
         KeyGeneration keys = chain.get(generation);
+        ApplyReuseGuard(reuseGuard, keys.nonce);
+        return keys;
+    }
+    public KeyGeneration get(ContentType contentType, LeafIndex sender, byte[] reuseGuard) throws IOException, IllegalAccessException
+    {
+        HashRatchet chain;
+
+        switch (contentType)
+        {
+            case APPLICATION:
+                chain = applicationRatchet(sender);
+                break;
+            case PROPOSAL:
+            case COMMIT:
+                chain = handshakeRatchet(sender);
+                break;
+            default:
+                return null;
+        }
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(reuseGuard);
+        KeyGeneration keys = chain.next();
         ApplyReuseGuard(reuseGuard, keys.nonce);
         return keys;
     }

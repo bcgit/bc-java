@@ -53,12 +53,23 @@ public class PublicMessage
         }
     }
 
-    public AuthenticatedContent unprotect(CipherSuite suite, Secret membership_key, byte[] context) throws IOException
+    static public PublicMessage protect(AuthenticatedContent authContent, CipherSuite suite,
+                                        byte[] membershipKeyBytes, byte[] groupContextBytes) throws IOException
+    {
+        PublicMessage pt = new PublicMessage(authContent.content, authContent.auth, null);
+        if (pt.content.sender.senderType == SenderType.MEMBER)
+        {
+            GroupContext context = (GroupContext) MLSInputStream.decode(groupContextBytes, GroupContext.class);
+            Secret membershipKey = new Secret(membershipKeyBytes);
+            pt.membership_tag = pt.membershipMac(suite, membershipKey, context);
+        }
+        return pt;
+    }
+    public AuthenticatedContent unprotect(CipherSuite suite, Secret membership_key, GroupContext context) throws IOException
     {
         if (content.sender.senderType == SenderType.MEMBER)
         {
-            GroupContext groupContext = (GroupContext) MLSInputStream.decode(context, GroupContext.class);
-            byte[] membershipTag = tagMessage(suite, membership_key, groupContext);
+            byte[] membershipTag = membershipMac(suite, membership_key, context);
             if (!Arrays.areEqual(membershipTag, membership_tag))
             {
                 // throw tagMisMatch error!
@@ -68,7 +79,7 @@ public class PublicMessage
         return new AuthenticatedContent(WireFormat.mls_public_message, content, auth);
     }
 
-    private byte[] tagMessage(CipherSuite suite, Secret membershipKey, GroupContext context) throws IOException
+    public byte[] membershipMac(CipherSuite suite, Secret membershipKey, GroupContext context) throws IOException
     {
         // MAC(membership_key, AuthenticatedContentTBM)
         FramedContentTBS tbs = new FramedContentTBS(
