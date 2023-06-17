@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
