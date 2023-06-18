@@ -133,6 +133,7 @@ public class BCECPrivateKey
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
+        this.baseKey = params;
 
         if (spec == null)
         {
@@ -151,7 +152,6 @@ public class BCECPrivateKey
         }
 
         this.publicKey = getPublicKeyDetails(pubKey);
-        this.baseKey = convertToBaseKey(this);
     }
 
     public BCECPrivateKey(
@@ -164,6 +164,7 @@ public class BCECPrivateKey
         this.algorithm = algorithm;
         this.d = params.getD();
         this.configuration = configuration;
+        this.baseKey = params;
 
         if (spec == null)
         {
@@ -191,7 +192,6 @@ public class BCECPrivateKey
         {
             this.publicKey = null; // not all curves are encodable
         }
-        this.baseKey = convertToBaseKey(this);
     }
 
     public BCECPrivateKey(
@@ -203,7 +203,7 @@ public class BCECPrivateKey
         this.d = params.getD();
         this.ecSpec = null;
         this.configuration = configuration;
-        this.baseKey = convertToBaseKey(this);
+        this.baseKey = params;
     }
 
     BCECPrivateKey(
