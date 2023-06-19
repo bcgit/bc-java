@@ -1,13 +1,11 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.util.encoders.Hex;
@@ -105,6 +103,14 @@ public class OIDTest
         }
     }
 
+    private void testIntern()
+    {
+        ASN1ObjectIdentifier oid1 = new ASN1ObjectIdentifier("2.2.100").intern();
+        ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier("2.2.100").intern();
+
+        isEquals(oid1, oid2);
+    }
+
     public void performTest()
         throws IOException
     {
@@ -151,6 +157,8 @@ public class OIDTest
         onCheck("1.12", "1.1.2", false);
         onCheck("1.1", "1.1.1", true);
         onCheck("1.1", "1.1.2", true);
+
+        testIntern();
     }
 
     public static void main(
