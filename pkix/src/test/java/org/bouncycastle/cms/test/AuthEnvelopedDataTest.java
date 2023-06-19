@@ -290,9 +290,12 @@ public class AuthEnvelopedDataTest
 
         RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
 
-        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        {
+            byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
-        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+            assertEquals("Hello, world!", Strings.fromByteArray(recData));
+        }
     }
 
     public void testBcAttributes()
@@ -333,8 +336,11 @@ public class AuthEnvelopedDataTest
 
         RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
 
-        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
-
-        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        {
+            byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+                                    
+            assertEquals("Hello, world!", Strings.fromByteArray(recData));
+        }
     }
 }

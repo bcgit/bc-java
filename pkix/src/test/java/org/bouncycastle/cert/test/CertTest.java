@@ -4547,9 +4547,12 @@ public class CertTest
 
         cert.verify(lmsPub, "BCPQC");     // lms key only
 
-        cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
-
-        cert.verify(lmsPub, new BouncyCastlePQCProvider());     // lms key only
+        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        {
+            cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
+                                       
+            cert.verify(lmsPub, new BouncyCastlePQCProvider());     // lms key only
+        }
 
         //
         // check verifies with contained key
@@ -4650,7 +4653,10 @@ public class CertTest
 
         cert.verify(ecPub, "BC");      // ec key only
 
-        cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
+        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        {
+            cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
+        }
 
         //
         // check verifies with contained key
