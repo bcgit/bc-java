@@ -2108,6 +2108,11 @@ public class PKCS12StoreTest
     private void testJKS()
         throws Exception
     {
+        if (System.getProperty("java.version").indexOf("1.5.") == 0)
+        {
+            return;
+        }
+                            
         KeyStore ks = KeyStore.getInstance("PKCS12", BC);
 
         ks.load(new ByteArrayInputStream(JKS_Store), JKS_TEST_PWD);

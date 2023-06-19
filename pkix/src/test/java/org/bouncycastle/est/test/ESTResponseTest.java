@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +14,8 @@ import javax.net.ssl.SSLSession;
 import junit.framework.TestCase;
 import org.bouncycastle.est.ESTResponse;
 import org.bouncycastle.est.Source;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 
 public class ESTResponseTest
@@ -98,7 +98,7 @@ public class ESTResponseTest
         try
         {
             byte[] data = Streams.readAll(response.getInputStream());
-            String dataString = new String(data, StandardCharsets.UTF_8);
+            String dataString = Strings.fromUTF8ByteArray(data);
             assertEquals(expected, dataString);
         }
         catch (IOException e)
@@ -145,7 +145,7 @@ public class ESTResponseTest
         throws IOException
     {
         String data = "Test message body";
-        String dataBase64 = Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
+        String dataBase64 = Base64.toBase64String(Strings.toUTF8ByteArray(data));
 
         Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("content-transfer-encoding", "base64");
@@ -207,7 +207,7 @@ public class ESTResponseTest
         throws IOException
     {
         String data = "Test message body";
-        String dataBase64 = Base64.getEncoder().encodeToString(data.getBytes(StandardCharsets.UTF_8));
+        String dataBase64 = Base64.toBase64String(Strings.toUTF8ByteArray(data));
 
         Map<String, String> httpHeader = new HashMap<String, String>();
         httpHeader.put("content-transfer-encoding", "base64");
