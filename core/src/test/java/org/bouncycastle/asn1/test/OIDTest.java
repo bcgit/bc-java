@@ -108,6 +108,7 @@ public class OIDTest
         ASN1ObjectIdentifier oid1 = new ASN1ObjectIdentifier("2.2.100").intern();
         ASN1ObjectIdentifier oid2 = new ASN1ObjectIdentifier("2.2.100").intern();
 
+        isTrue(oid2 != null);
         isEquals(oid1, oid2);
     }
 
