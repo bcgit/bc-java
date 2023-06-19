@@ -362,10 +362,17 @@ public class ASN1ObjectIdentifier
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
-            oid = pool.putIfAbsent(hdl, this);
-            if (oid == null)
+            synchronized (pool)
             {
-                oid = this;
+                if (!pool.containsKey(hdl))
+                {
+                    pool.put(hdl, this);
+                    return this;
+                }
+                else
+                {
+                    return pool.get(hdl);
+                }
             }
         }
         return oid;

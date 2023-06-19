@@ -266,8 +266,9 @@ public class BouncyCastleJsseProvider
     public final Provider.Service getService(String type, String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
-
-        BcJsseService service = serviceMap.get(type + "." + upperCaseAlgName);
+        String serviceKey = type + "." + upperCaseAlgName;
+        
+        BcJsseService service = serviceMap.get(serviceKey);
 
         if (service == null)
         {
@@ -307,11 +308,19 @@ public class BouncyCastleJsseProvider
                 }
             }
 
-            service = new BcJsseService(this, type, upperCaseAlgName, className, aliases, getAttributeMap(attributes), creatorMap.get(className));
+            synchronized (this)
+            {
+                if (!serviceMap.containsKey(serviceKey))
+                {
+                    service = new BcJsseService(this, type, upperCaseAlgName, className, aliases, getAttributeMap(attributes), creatorMap.get(className));
 
-            BcJsseService altService = serviceMap.putIfAbsent(type + "." + upperCaseAlgName, service);
-
-            service = altService != null ? altService : service;
+                    serviceMap.put(serviceKey, service);
+                }
+                else
+                {
+                    service = serviceMap.get(serviceKey);
+                }
+            }
         }
 
         return service;
