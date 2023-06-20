@@ -1,9 +1,11 @@
 package org.bouncycastle.pqc.crypto.gemss;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.Pack;
 
 class GeMSSEngine
 {
@@ -1895,7 +1897,7 @@ class GeMSSEngine
             /* Choose a root with a determinist hash */
             getSHA3Hash(hash, 0, Sha3BitStrength >>> 3, U.toBytes(NB_BYTES_GFqn), 0,
                 NB_BYTES_GFqn, new byte[Sha3BitStrength >>> 3]);
-            root.copyFrom(0, roots, (int)Long.remainderUnsigned(hash.get(), l) * NB_WORD_GFqn, NB_WORD_GFqn);
+            root.copyFrom(0, roots, (int)remainderUnsigned(hash.get(), l) * NB_WORD_GFqn, NB_WORD_GFqn);
         }
         return l;
     }
@@ -3204,5 +3206,17 @@ class GeMSSEngine
         vecMatProduct(acc, V, new Pointer(F, NB_WORD_GFqn), FunctionParams.V);
         acc.setXorRange(F, NB_WORD_GFqn);
         F.move(MLv_GFqn_SIZE);
+    }
+
+    private static long remainderUnsigned(long dividend, long divisor)
+    {
+        if (dividend > 0L && divisor > 0L)
+        {
+            return dividend % divisor;
+        }
+        else
+        {
+            return new BigInteger(1, Pack.longToBigEndian(dividend)).mod(new BigInteger(1, Pack.longToBigEndian(divisor))).longValue();
+        }
     }
 }
