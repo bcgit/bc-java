@@ -8,6 +8,7 @@ import org.bouncycastle.openpgp.PGPException;
 public abstract class PBESecretKeyEncryptor
 {
     protected int encAlgorithm;
+    protected int aeadAlgorithm;
     protected char[] passPhrase;
     protected PGPDigestCalculator s2kDigestCalculator;
     protected int s2kCount;
@@ -33,6 +34,14 @@ public abstract class PBESecretKeyEncryptor
         }
 
         this.s2kCount = s2kCount;
+    }
+
+    protected PBESecretKeyEncryptor(int encAlgorithm, int aeadAlgorithm, S2K.Argon2Params argon2Params, char[] passPhrase)
+    {
+        this.encAlgorithm = encAlgorithm;
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.s2k = new S2K(argon2Params);
+        this.passPhrase = passPhrase;
     }
 
     public int getAlgorithm()
@@ -100,5 +109,11 @@ public abstract class PBESecretKeyEncryptor
         throw new PGPException("encryption of version 3 keys not supported.");
     }
 
+    public abstract byte[] encryptKeyData(byte[] kek, byte[] secretKeyData, byte[] hkdfInfo, byte[] aad, byte[] iv) throws PGPException;
+
     public abstract byte[] getCipherIV();
+
+    public int getAEADAlgorithm() {
+        return aeadAlgorithm;
+    }
 }

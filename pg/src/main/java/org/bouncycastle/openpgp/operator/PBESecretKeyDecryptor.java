@@ -1,7 +1,10 @@
 package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
+
+import java.io.IOException;
 
 public abstract class PBESecretKeyDecryptor
 {
@@ -28,4 +31,6 @@ public abstract class PBESecretKeyDecryptor
 
     public abstract byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         throws PGPException;
+
+    public abstract byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secretKeyPacket, byte[] s2kDerivedKey) throws IOException, PGPException;
 }

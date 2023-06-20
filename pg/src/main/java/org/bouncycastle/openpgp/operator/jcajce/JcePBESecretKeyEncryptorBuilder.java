@@ -172,6 +172,12 @@ public class JcePBESecretKeyEncryptorBuilder
                 }
             }
 
+            @Override
+            public byte[] encryptKeyData(byte[] kek, byte[] secretKeyData, byte[] hkdfInfo, byte[] aad, byte[] iv)
+                    throws PGPException {
+                return new byte[0];
+            }
+
             public byte[] getCipherIV()
             {
                 return iv;

@@ -1,14 +1,9 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Provider;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.spec.IvParameterSpec;
-
+import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.SecretKeyPacket;
+import org.bouncycastle.bcpg.SecretSubkeyPacket;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -16,10 +11,22 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.util.Arrays;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.spec.IvParameterSpec;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Provider;
 
 public class JcePBESecretKeyDecryptorBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private JceAEADUtil aeadHelper = new JceAEADUtil(helper);
     private PGPDigestCalculatorProvider calculatorProvider;
 
     private JcaPGPDigestCalculatorProviderBuilder calculatorProviderBuilder;
@@ -37,6 +44,7 @@ public class JcePBESecretKeyDecryptorBuilder
     public JcePBESecretKeyDecryptorBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -49,6 +57,7 @@ public class JcePBESecretKeyDecryptorBuilder
     public JcePBESecretKeyDecryptorBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadHelper = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -94,6 +103,45 @@ public class JcePBESecretKeyDecryptorBuilder
                 catch (InvalidKeyException e)
                 {
                     throw new PGPException("invalid key: " + e.getMessage(), e);
+                }
+            }
+
+            @Override
+            public byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secret, byte[] key)
+                    throws IOException, PGPException
+            {
+                int encAlgorithm = secret.getEncAlgorithm();
+                int aeadAlgorithm = secret.getAeadAlgorithm();
+                byte[] hkdfInfo = new byte[] {
+                        (byte) (secret instanceof SecretSubkeyPacket ?
+                                0xC0 | PacketTags.SECRET_SUBKEY :
+                                0xC0 | PacketTags.SECRET_KEY), // TODO: 0xC0 | secret.getPacketTag()
+                        (byte) secret.getVersion(),
+                        (byte) encAlgorithm,
+                        (byte) aeadAlgorithm
+                };
+
+                int kekLength = SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
+                byte[] salt = null;
+                byte[] kek = aeadHelper.hkdfDeriveKey(hkdfInfo, salt, kekLength, key);
+
+                byte[] aad = Arrays.prepend(secret.getPublicKeyPacket().getEncodedContents(),
+                        (byte) (secret instanceof SecretSubkeyPacket ?
+                        0xC0 | PacketTags.SECRET_SUBKEY :
+                        0xC0 | PacketTags.SECRET_KEY));
+                byte[] aeadIv = secret.getIV();
+                int aeadMacLen = 128;
+
+                byte[] ciphertextAndAuthTag = secret.getSecretKeyData();
+                byte[] sessionData;
+                try
+                {
+                    sessionData = aeadHelper.decryptAEAD(encAlgorithm, aeadAlgorithm, kek, aeadMacLen, aeadIv, ciphertextAndAuthTag, aad);
+                    return sessionData;
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new PGPException("unable to open stream: " + e.getMessage());
                 }
             }
         };
