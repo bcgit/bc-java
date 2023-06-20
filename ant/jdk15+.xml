@@ -42,6 +42,7 @@
             <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
             <fileset dir="tls/src/test/java" includes="**/*.java" />
+            <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />

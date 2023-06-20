@@ -164,8 +164,6 @@ subprojects {
     targetCompatibility = 1.8
   }
 
-  version = '1.74'
-
  task testFull(type:Test) {
     systemProperties = [
             'bc.test.data.home': bcTestDataHome,
