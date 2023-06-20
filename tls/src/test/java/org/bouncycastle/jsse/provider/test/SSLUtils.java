@@ -59,15 +59,23 @@ class SSLUtils
             {
                 try
                 {
-                    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("PKIX");
+                    boolean isJdk15 = System.getProperty("java.version").indexOf("1.5.") == 0;
+
+                    KeyManagerFactory keyManagerFactory = isJdk15 ?
+                        KeyManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE) :
+                        KeyManagerFactory.getInstance("PKIX");
 
                     keyManagerFactory.init(keyStore, password);
 
-                    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
+                    TrustManagerFactory trustManagerFactory = isJdk15 ?
+                        TrustManagerFactory.getInstance("PKIX", ProviderUtils.PROVIDER_NAME_BCJSSE) :
+                        TrustManagerFactory.getInstance("PKIX");
 
                     trustManagerFactory.init(serverStore);
 
-                    SSLContext context = SSLContext.getInstance("TLS");
+                    SSLContext context = isJdk15 ?
+                        SSLContext.getInstance("TLS", ProviderUtils.PROVIDER_NAME_BCJSSE) :
+                        SSLContext.getInstance("TLS");
 
                     context.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
@@ -92,9 +100,10 @@ class SSLUtils
 
                     ss.close();
                 }
-                catch (Exception e)
+                catch (Throwable e)
                 {
-                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                    latch.countDown();
                 }
             }
         };
@@ -109,7 +118,7 @@ class SSLUtils
         }
         catch (InterruptedException e)
         {
-            
+              e.printStackTrace();
         }
     }
 }
