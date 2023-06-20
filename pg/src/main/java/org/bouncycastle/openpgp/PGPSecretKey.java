@@ -5,10 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -19,6 +21,7 @@ import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -856,17 +859,22 @@ public class PGPSecretKey
         byte[] keyData;
         int newEncAlgorithm = SymmetricKeyAlgorithmTags.NULL;
 
+        // key will be unencrypted
         if (newKeyEncryptor == null || newKeyEncryptor.getAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
             s2kUsage = SecretKeyPacket.USAGE_NONE;
             if (key.secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1)   // SHA-1 hash, need to rewrite checksum
             {
+                // strip SHA1 checksum
                 keyData = new byte[rawKeyData.length - 18];
 
+                // Copy raw key bytes
                 System.arraycopy(rawKeyData, 0, keyData, 0, keyData.length - 2);
 
+                // Calculate 2-byte checksum
                 byte[] check = checksum(null, keyData, keyData.length - 2);
 
+                // append 2 byte checksum
                 keyData[keyData.length - 2] = check[0];
                 keyData[keyData.length - 1] = check[1];
             }
@@ -875,8 +883,9 @@ public class PGPSecretKey
                 keyData = rawKeyData;
             }
         }
-        else
+        else // key will be encrypted
         {
+            // OpenPGP v3
             if (key.secret.getPublicKeyPacket().getVersion() < 4)
             {
                 if (s2kUsage == SecretKeyPacket.USAGE_NONE)
@@ -939,12 +948,33 @@ public class PGPSecretKey
             }
             else
             {
+                // key WAS unencrypted, but will be encrypted
                 if (s2kUsage == SecretKeyPacket.USAGE_NONE)
                 {
-                    if (checksumCalculator != null)
+                    if (newKeyEncryptor.getS2K() != null && newKeyEncryptor.getS2K().getType() == S2K.ARGON_2)
                     {
-                        if (checksumCalculator.getAlgorithm() != HashAlgorithmTags.SHA1)
-                        {
+                        byte[] encKey = newKeyEncryptor.getKey();
+                        newEncAlgorithm = newKeyEncryptor.getAlgorithm();
+                        int aeadAlgorithm = newKeyEncryptor.getAEADAlgorithm();
+                        // HKDF
+                        // [tag, version, symAlg, aeadAlg]
+                        byte[] hkdfInfo = new byte[] {
+                                (byte) (key.secret instanceof SecretSubkeyPacket ?
+                                        0xC0 | PacketTags.SECRET_SUBKEY :
+                                        0xC0 | PacketTags.SECRET_KEY), // TODO: 0xC0 | secret.getPacketTag()
+                                (byte) key.secret.getVersion(),
+                                (byte) newEncAlgorithm,
+                                (byte) aeadAlgorithm
+                        };
+                        // AEAD
+                        byte[] aad = key.getAADFromPublicKey(key);
+                        // AEAD Nonce (IV)
+                        byte[] aeadIv = newKeyEncryptor.getCipherIV();
+                        keyData = newKeyEncryptor.encryptKeyData(encKey, rawKeyData, hkdfInfo, aad, aeadIv);
+                    }
+                    else if (checksumCalculator != null) // USAGE_SHA1
+                    {
+                        if (checksumCalculator.getAlgorithm() != HashAlgorithmTags.SHA1) {
                             throw new IllegalArgumentException("only SHA-1 supported for checksums");
                         }
                         s2kUsage = SecretKeyPacket.USAGE_SHA1;
@@ -953,7 +983,7 @@ public class PGPSecretKey
                         rawKeyData = Arrays.concatenate(rawKeyData, check);
                         keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
                     }
-                    else
+                    else // USAGE_CHECKSUM (deprecated!)
                     {
                         s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
                         keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
@@ -961,6 +991,7 @@ public class PGPSecretKey
                 }
                 else
                 {
+                    // key was and will be encrypted
                     keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
                 }
 
@@ -975,16 +1006,44 @@ public class PGPSecretKey
         SecretKeyPacket secret;
         if (key.secret instanceof SecretSubkeyPacket)
         {
-            secret = new SecretSubkeyPacket(key.secret.getPublicKeyPacket(),
-                newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+            if (newKeyEncryptor != null && newKeyEncryptor.getAEADAlgorithm() != 0)
+            {
+                secret = SecretSubkeyPacket.createAeadEncryptedSecretSubkey(
+                        (PublicSubkeyPacket) key.secret.getPublicKeyPacket(),
+                        newEncAlgorithm, newKeyEncryptor.getAEADAlgorithm(), iv, s2k, keyData);
+            }
+            else
+            {
+                secret = new SecretSubkeyPacket(key.secret.getPublicKeyPacket(),
+                        newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+            }
         }
         else
         {
-            secret = new SecretKeyPacket(key.secret.getPublicKeyPacket(),
-                newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+            if (newKeyEncryptor != null && newKeyEncryptor.getAEADAlgorithm() != 0) {
+                secret = SecretKeyPacket.createAeadEncryptedSecretKey(
+                        key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAEADAlgorithm(),
+                        iv, s2k, keyData);
+            }
+            else
+            {
+                secret = new SecretKeyPacket(key.secret.getPublicKeyPacket(),
+                        newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+            }
         }
 
         return new PGPSecretKey(secret, key.pub);
+    }
+
+    private byte[] getAADFromPublicKey(PGPSecretKey key) throws PGPException {
+        try {
+            return Arrays.prepend(key.getPublicKey().publicPk.getEncodedContents(),
+                    (byte) (key.secret instanceof SecretSubkeyPacket ?
+                            0xC0 | PacketTags.SECRET_SUBKEY :
+                            0xC0 | PacketTags.SECRET_KEY));
+        } catch (IOException e) {
+            throw new PGPException("Cannot encode public key contents.");
+        }
     }
 
     /**

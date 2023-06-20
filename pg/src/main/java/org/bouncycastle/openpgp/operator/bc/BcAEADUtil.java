@@ -61,6 +61,20 @@ public class BcAEADUtil
         return decrypted;
     }
 
+    public byte[] encryptAEAD(int encAlgorithm, int aeadAlgorithm, byte[] kek, int aeadMacLen, byte[] iv, byte[] secretKeyData, byte[] aad)
+            throws PGPException, InvalidCipherTextException {
+        final KeyParameter aeadSecretKey = new KeyParameter(kek);
+
+        AEADBlockCipher aead = BcAEADUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+        AEADParameters parameters = new AEADParameters(aeadSecretKey, aeadMacLen, iv, aad);
+        aead.init(true, parameters);
+
+        byte[] ciphertextAndAuthTag = new byte[aead.getOutputSize(secretKeyData.length)];
+        int dataLen = aead.processBytes(secretKeyData, 0, secretKeyData.length, ciphertextAndAuthTag, 0);
+        aead.doFinal(ciphertextAndAuthTag, dataLen);
+        return ciphertextAndAuthTag;
+    }
+
     /**
      * Generate a nonce by xor-ing the given iv with the chunk index.
      *

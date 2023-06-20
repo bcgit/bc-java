@@ -112,7 +112,7 @@ public class SecretSubkeyPacket
 
     /**
      * Create a v6 secret subkey packet.
-     * For AEAD encryption use {@link #createAeadEncryptedV6SecretSubkey(PublicSubkeyPacket, int, int, byte[], S2K, byte[])} instead.
+     * For AEAD encryption use {@link #createAeadEncryptedSecretSubkey(PublicSubkeyPacket, int, int, byte[], S2K, byte[])} instead.
      *
      * @param pubKeyPacket public subkey packet
      * @param encAlgorithm encryption algorithm
@@ -142,7 +142,7 @@ public class SecretSubkeyPacket
     }
 
     /**
-     * Create an AEAD encrypted v6 secret subkey packet.
+     * Create an AEAD encrypted secret subkey packet.
      * @param pubKeyPacket public subkey packet
      * @param encAlgorithm encryption algorithm
      * @param aeadAlgorithm aead algorithm
@@ -151,7 +151,7 @@ public class SecretSubkeyPacket
      * @param secKeyData encrypted secret key data with appended AEAD auth tag
      * @return secret key packet
      */
-    public static SecretKeyPacket createAeadEncryptedV6SecretSubkey(
+    public static SecretKeyPacket createAeadEncryptedSecretSubkey(
             PublicSubkeyPacket pubKeyPacket,
             int encAlgorithm,
             int aeadAlgorithm,
@@ -159,9 +159,6 @@ public class SecretSubkeyPacket
             S2K s2k,
             byte[] secKeyData)
     {
-        if (pubKeyPacket.getVersion() != VERSION_6) {
-            throw new IllegalArgumentException("Pubkey version mismatch. Expected 6, got " + pubKeyPacket.getVersion());
-        }
         return new SecretSubkeyPacket(pubKeyPacket, encAlgorithm, aeadAlgorithm, USAGE_AEAD, s2k, aeadNonce, secKeyData);
     }
 

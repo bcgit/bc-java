@@ -1,17 +1,27 @@
 package org.bouncycastle.openpgp.operator.bc;
 
-import java.security.SecureRandom;
-
+import org.bouncycastle.bcpg.AEADUtils;
+import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Arrays;
+
+import java.security.SecureRandom;
+import java.util.Objects;
 
 public class BcPBESecretKeyEncryptorBuilder
 {
+    private final BcAEADUtil aeadHelper = new BcAEADUtil();
+
     private int encAlgorithm;
+    private int aeadAlgorithm;
+    private S2K.Argon2Params argon2Params;
     private PGPDigestCalculator s2kDigestCalculator;
     private SecureRandom random;
     private int s2kCount = 0x60;
@@ -66,6 +76,28 @@ public class BcPBESecretKeyEncryptorBuilder
     }
 
     /**
+     * Create an encryptor builder using AEAD and Argon2.
+     *
+     * @param encAlgorithm encryption algorithm
+     * @param aeadAlgorithm aead algorithm
+     * @param argon2Params argon2 parameters
+     */
+    public BcPBESecretKeyEncryptorBuilder(int encAlgorithm, int aeadAlgorithm, S2K.Argon2Params argon2Params)
+    {
+        if (encAlgorithm == SymmetricKeyAlgorithmTags.NULL)
+        {
+            throw new IllegalArgumentException("Symmetric key algorithm MUST NOT be 0.");
+        }
+        if (aeadAlgorithm == 0)
+        {
+            throw new IllegalArgumentException("AEAD algorithm MUST NOT be 0.");
+        }
+        this.encAlgorithm = encAlgorithm;
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.argon2Params = Objects.requireNonNull(argon2Params);
+    }
+
+    /**
      * Provide a user defined source of randomness.
      *
      * @param random  the secure random to be used.
@@ -85,58 +117,106 @@ public class BcPBESecretKeyEncryptorBuilder
             this.random = new SecureRandom();
         }
 
-        return new PBESecretKeyEncryptor(encAlgorithm, s2kDigestCalculator, s2kCount, this.random, passPhrase)
-        {
-            private byte[] iv;
-
-            public byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
-                throws PGPException
+        if (aeadAlgorithm == 0) {
+            return new PBESecretKeyEncryptor(encAlgorithm, s2kDigestCalculator, s2kCount, this.random, passPhrase)
             {
-                return encryptKeyData(key, null, keyData, keyOff, keyLen);
-            }
+                private byte[] iv;
 
-            public byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
-                throws PGPException
-            {
-                try
+                public byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
+                        throws PGPException
                 {
-                    BlockCipher engine = BcImplProvider.createBlockCipher(this.encAlgorithm);
+                    return encryptKeyData(key, null, keyData, keyOff, keyLen);
+                }
 
-                    if (iv != null)
-                    {    // to deal with V3 key encryption
-                        this.iv = iv;
-                    }
-                    else
+                public byte[] encryptKeyData(byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
+                        throws PGPException {
+                    try
                     {
-                        if (this.random == null)
+                        BlockCipher engine = BcImplProvider.createBlockCipher(this.encAlgorithm);
+
+                        if (iv != null) {    // to deal with V3 key encryption
+                            this.iv = iv;
+                        }
+                        else
                         {
-                            this.random = new SecureRandom();
+                            if (this.random == null)
+                            {
+                                this.random = new SecureRandom();
+                            }
+
+                            this.iv = iv = new byte[engine.getBlockSize()];
+
+                            this.random.nextBytes(iv);
                         }
 
-                        this.iv = iv = new byte[engine.getBlockSize()];
+                        BufferedBlockCipher c = BcUtil.createSymmetricKeyWrapper(true, engine, key, iv);
 
-                        this.random.nextBytes(iv);
+                        byte[] out = new byte[keyLen];
+                        int outLen = c.processBytes(keyData, keyOff, keyLen, out, 0);
+
+                        outLen += c.doFinal(out, outLen);
+
+                        return out;
                     }
-
-                    BufferedBlockCipher c = BcUtil.createSymmetricKeyWrapper(true, engine, key, iv);
-
-                    byte[] out = new byte[keyLen];
-                    int    outLen = c.processBytes(keyData, keyOff, keyLen, out, 0);
-
-                    outLen += c.doFinal(out, outLen);
-
-                    return out;
+                    catch (InvalidCipherTextException e)
+                    {
+                        throw new PGPException("decryption failed: " + e.getMessage(), e);
+                    }
                 }
-                catch (InvalidCipherTextException e)
+
+                @Override
+                public byte[] encryptKeyData(byte[] kek, byte[] secretKeyData, byte[] hkdfInfo, byte[] aad, byte[] iv) throws PGPException {
+                    throw new PGPException("Wrong method used.");
+                }
+
+                public byte[] getCipherIV()
                 {
-                    throw new PGPException("decryption failed: " + e.getMessage(), e);
+                    return iv;
                 }
-            }
-
-            public byte[] getCipherIV()
+            };
+        }
+        else
+        {
+            return new PBESecretKeyEncryptor(encAlgorithm, aeadAlgorithm, argon2Params, passPhrase)
             {
-                return iv;
-            }
-        };
+                final byte[] iv;
+                {
+                    iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+                    new SecureRandom().nextBytes(iv);
+                }
+
+                @Override
+                public byte[] encryptKeyData(byte[] key, byte[] keyData, int keyOff, int keyLen)
+                        throws PGPException
+                {
+                    throw new PGPException("Wrong method used.");
+                }
+
+                @Override
+                public byte[] encryptKeyData(byte[] key, byte[] secretKeyData, byte[] hkdfInfo, byte[] aad, byte[] iv) throws PGPException {
+                    int encAlgorithm = hkdfInfo[2];
+                    int aeadAlgorithm = hkdfInfo[3];
+                    int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm);
+                    byte[] salt = null;
+                    byte[] kek = BcAEADUtil.hkdfDeriveKey(hkdfInfo, salt, kekLen, key);
+
+                    int aeadMacLen = 128;
+                    try {
+                        byte[] ciphertextAndAuthTag = aeadHelper.encryptAEAD(encAlgorithm, aeadAlgorithm, kek, aeadMacLen, iv, secretKeyData, aad);
+                        return ciphertextAndAuthTag;
+                    } catch (PGPException | InvalidCipherTextException e) {
+                        throw new PGPException("decryption failed: " + e.getMessage(), e);
+                    }
+                }
+
+                @Override
+                public byte[] getCipherIV()
+                {
+                    // TODO: It is perhaps inconvenient that we reuse the same IV for each subkey,
+                    //  but that's an architectural issue
+                    return Arrays.clone(iv);
+                }
+            };
+        }
     }
 }

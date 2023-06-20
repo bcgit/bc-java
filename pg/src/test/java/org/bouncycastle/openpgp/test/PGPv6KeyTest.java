@@ -2,7 +2,9 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -17,6 +19,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
@@ -26,6 +29,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -99,6 +103,7 @@ public class PGPv6KeyTest
     public void performTest()
         throws Exception
     {
+        lockAndUnlockKeyWithArgon2();
         // Parse certificate
         testCertificateParsing(bcFpCalc);
         testCertificateParsing(jcaFpCalc);
@@ -176,6 +181,43 @@ public class PGPv6KeyTest
         isTrue(Arrays.areEqual(pKey.getPrivateKeyDataPacket().getEncoded(), pKey2.getPrivateKeyDataPacket().getEncoded()));
     }
 
+    private void lockAndUnlockKeyWithArgon2() throws IOException, PGPException {
+        KeyFingerPrintCalculator fingerprintCalculator = new BcKeyFingerprintCalculator();
+        PGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
+        String passphrase = "sw0rdf1sh";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes());
+        ArmoredInputStream armorIn = new ArmoredInputStream(bIn);
+        BCPGInputStream bcIn = new BCPGInputStream(armorIn);
+        PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(bcIn, fingerprintCalculator);
+        PGPPrivateKey unlockedPrimaryKey = unlockWith(null, secretKeys.getSecretKey());
+
+        PGPSecretKeyRing lockedKeyRing = PGPSecretKeyRing.copyWithNewPassword(secretKeys, null,
+                new BcPBESecretKeyEncryptorBuilder(
+                        SymmetricKeyAlgorithmTags.AES_256,
+                        AEADAlgorithmTags.OCB,
+                        S2K.Argon2Params.memoryConstrainedParameters()
+                ).build(passphrase.toCharArray()));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream armorOut = new ArmoredOutputStream(bOut);
+        lockedKeyRing.encode(armorOut);
+        armorOut.close();
+
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
+        armorIn = new ArmoredInputStream(bIn);
+        BCPGInputStream bcpgInputStream = new BCPGInputStream(armorIn);
+        PGPSecretKeyRing parsed = new PGPSecretKeyRing(bcpgInputStream, fingerprintCalculator);
+
+        PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(digestCalculatorProvider)
+                .build(passphrase.toCharArray());
+        PGPPrivateKey decryptedPrimaryKey = unlockWith(decryptor, parsed.getSecretKey());
+
+        isTrue(Arrays.areEqual(
+                unlockedPrimaryKey.getPrivateKeyDataPacket().getEncoded(),
+                decryptedPrimaryKey.getPrivateKeyDataPacket().getEncoded()));
+    }
+
     private PGPPrivateKey unlockWith(PBESecretKeyDecryptor decryptor, PGPSecretKey secretKey)
             throws PGPException {
         PGPPrivateKey privateKey = secretKey.extractPrivateKey(decryptor);
@@ -184,7 +226,7 @@ public class PGPv6KeyTest
 
     private PGPPrivateKey bcUnlock(PGPSecretKey secretKey, String passphrase) throws PGPException {
         BcPGPDigestCalculatorProvider calculatorProvider = new BcPGPDigestCalculatorProvider();
-        PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(calculatorProvider)
+        PBESecretKeyDecryptor decryptor = passphrase == null ? null : new BcPBESecretKeyDecryptorBuilder(calculatorProvider)
                 .build(passphrase.toCharArray());
         return unlockWith(decryptor, secretKey);
     }
@@ -193,7 +235,7 @@ public class PGPv6KeyTest
         PGPDigestCalculatorProvider digestCalculatorProvider = new JcaPGPDigestCalculatorProviderBuilder()
                 .setProvider(new BouncyCastleProvider())
                 .build();
-        PBESecretKeyDecryptor decryptor = new JcePBESecretKeyDecryptorBuilder(digestCalculatorProvider)
+        PBESecretKeyDecryptor decryptor = passphrase == null ? null : new JcePBESecretKeyDecryptorBuilder(digestCalculatorProvider)
                 .setProvider(new BouncyCastleProvider())
                 .build(passphrase.toCharArray());
         return unlockWith(decryptor, secretKey);

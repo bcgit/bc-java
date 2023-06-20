@@ -48,7 +48,9 @@ public class BcPBESecretKeyDecryptorBuilder
             }
 
             @Override
-            public byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secret, byte[] key) throws IOException, PGPException {
+            public byte[] recoverAEADEncryptedKeyData(SecretKeyPacket secret, byte[] key)
+                    throws IOException, PGPException
+            {
                 // HKDF
                 // [tag, version, symAlg, aeadAlg]
                 byte[] hkdfInfo = new byte[] {
@@ -81,7 +83,7 @@ public class BcPBESecretKeyDecryptorBuilder
                 }
                 catch (PGPException | InvalidCipherTextException e)
                 {
-                    throw new PGPException("Exception recovering session info", e);
+                    throw new PGPException("Exception recovering secret key data", e);
                 }
 
                 return sessionData;

@@ -157,6 +157,10 @@ public class SecretKeyPacket
         this.iv = iv;
         this.secKeyData = secKeyData;
 
+        if (s2k != null && s2k.getType() == S2K.ARGON_2 && s2kUsage != USAGE_AEAD) {
+            throw new IllegalArgumentException("Argon2 is only used with AEAD (S2K usage octet 253)");
+        }
+
         if (pubKeyPacket.getVersion() == VERSION_6) {
             if (s2kUsage == USAGE_CHECKSUM) {
                 throw new IllegalArgumentException("Version 6 keys MUST NOT use S2K usage USAGE_CHECKSUM");
@@ -190,7 +194,7 @@ public class SecretKeyPacket
 
     /**
      * Create a v6 secret key packet.
-     * For AEAD encryption use {@link #createAeadEncryptedV6SecretKey(PublicKeyPacket, int, int, byte[], S2K, byte[])} instead.
+     * For AEAD encryption use {@link #createAeadEncryptedSecretKey(PublicKeyPacket, int, int, byte[], S2K, byte[])} instead.
      *
      * @param pubKeyPacket public key packet
      * @param encAlgorithm encryption algorithm
@@ -220,7 +224,7 @@ public class SecretKeyPacket
     }
 
     /**
-     * Create an AEAD encrypted v6 secret key packet.
+     * Create an AEAD encrypted secret key packet.
      *
      * @param pubKeyPacket public key packet
      * @param encAlgorithm encryption algorithm
@@ -230,7 +234,7 @@ public class SecretKeyPacket
      * @param secKeyData encrypted secret key data with appended AEAD auth tag
      * @return secret key packet
      */
-    public static SecretKeyPacket createAeadEncryptedV6SecretKey(
+    public static SecretKeyPacket createAeadEncryptedSecretKey(
             PublicKeyPacket pubKeyPacket,
             int encAlgorithm,
             int aeadAlgorithm,
@@ -238,9 +242,6 @@ public class SecretKeyPacket
             S2K s2k,
             byte[] secKeyData)
     {
-        if (pubKeyPacket.getVersion() != VERSION_6) {
-            throw new IllegalArgumentException("Pubkey version mismatch. Expected 6, got " + pubKeyPacket.getVersion());
-        }
         return new SecretKeyPacket(pubKeyPacket, encAlgorithm, aeadAlgorithm, USAGE_AEAD, s2k, aeadNonce, secKeyData);
     }
 
