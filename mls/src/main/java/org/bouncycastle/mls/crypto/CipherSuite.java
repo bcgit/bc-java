@@ -197,7 +197,10 @@ public class CipherSuite {
         {
             CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
             cipher.init(false, params);
-            cipher.processAADBytes(aad, 0, aad.length);
+            if(aad != null)
+            {
+                cipher.processAADBytes(aad, 0, aad.length);
+            }
 
             byte[] pt = new byte[cipher.getOutputSize(ct.length)];
 

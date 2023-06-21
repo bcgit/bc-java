@@ -225,6 +225,14 @@ psk_secret (or 0) --> KDF.Extract
         return new KeyGeneration(0, key, nonce);
     }
 
+
+    public static Secret welcomeSecret(CipherSuite suite, byte[] joinerSecret, List<PSKWithSecret> psk) throws IOException
+    {
+        Secret pskSecret = JoinSecrets.pskSecret(suite, psk);
+        Secret extract = new Secret(suite.getKDF().extract(joinerSecret, pskSecret.value()));
+        return extract.deriveSecret(suite, "welcome");
+    }
+
     public static KeyScheduleEpoch forCreator(CipherSuite suite) throws IOException, IllegalAccessException {
         SecureRandom rng = new SecureRandom();
         return forCreator(suite, rng);
@@ -265,6 +273,17 @@ psk_secret (or 0) --> KDF.Extract
                     init_secret_[n]
      */
 
+    public byte[] confirmationTag(byte[] confirmedTranscriptHash)
+    {
+        return suite.getKDF().extract(confirmationKey.value(), confirmedTranscriptHash);
+    }
+    public static KeyScheduleEpoch joiner(CipherSuite suite, byte[] joinerSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException
+    {
+        TreeSize size = TreeSize.forLeaves(1);
+        JoinSecrets joinSecrets = new JoinSecrets(suite, new Secret(joinerSecret), psks);
+        return joinSecrets.complete(size, context);
+
+    }
     public KeyScheduleEpoch(CipherSuite suite, TreeSize treeSize, Secret epochSecret) throws IOException, IllegalAccessException {
         this.suite = suite;
         this.initSecret = epochSecret.deriveSecret(suite, "init");

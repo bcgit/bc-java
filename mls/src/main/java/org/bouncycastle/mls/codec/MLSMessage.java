@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
@@ -23,9 +24,9 @@ public class MLSMessage
     public WireFormat wireFormat;
     public PublicMessage publicMessage;
     public PrivateMessage privateMessage;
-    Welcome welcome;
+    public Welcome welcome;
     GroupInfo groupInfo;
-    KeyPackage keyPackage;
+    public KeyPackage keyPackage;
 
     public MLSMessage(MLSInputStream stream) throws IOException
     {
@@ -71,6 +72,7 @@ public class MLSMessage
                 stream.write(privateMessage);
                 break;
             case mls_welcome:
+                stream.write(welcome);
                 break;
             case mls_group_info:
                 stream.write(groupInfo);
@@ -97,6 +99,21 @@ public class MLSMessage
                 break;
         }
         return null;
+    }
+    public short getCipherSuite()
+    {
+        switch (wireFormat)
+        {
+            case mls_public_message:
+            case mls_private_message:
+            case mls_group_info:
+                break;
+            case mls_welcome:
+                return welcome.cipher_suite;
+            case mls_key_package:
+                return keyPackage.cipher_suite;
+        }
+        return -1;
     }
     public long getEpoch()
     {
@@ -128,7 +145,6 @@ enum ProtocolVersion
     {
         this.value = value;
     }
-
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
@@ -570,45 +586,13 @@ class Extension
     }
 }
 
-class KeyPackage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    ProtocolVersion version;
-    CipherSuite cipher_suite;
-    byte[] init_key;
-    LeafNode leaf_node;
-    Extension[] extensions;
-    /* SignWithLabel(., "KeyPackageTBS", KeyPackageTBS) */
-    byte[] signature; // KeyPackageTBS (without signature)
-    KeyPackage(MLSInputStream stream) throws IOException
-    {
-        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
-        //TODO ciphersuit
-
-        init_key = (byte[]) stream.read(byte[].class);
-        leaf_node = (LeafNode) stream.read(LeafNode.class);
-        extensions = (Extension[]) stream.read(Extension.class);
-        signature = stream.readOpaque();
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(version);
-        stream.write(init_key);
-        stream.write(leaf_node);
-        stream.writeArray(extensions);
-        stream.writeOpaque(signature);
-    }
-}
-
 class Credential
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 
 {
     CredentialType credentialType;
     byte[] identity;
-    Certificate[] certificates;
+    List<Certificate> certificates;
     Credential(MLSInputStream stream) throws IOException
     {
         this.credentialType = CredentialType.values()[(short) stream.read(short.class)];
@@ -618,7 +602,8 @@ class Credential
                 identity = stream.readOpaque();
                 break;
             case x509:
-                certificates = (Certificate[]) stream.readArray(Certificate.class);
+                certificates = new ArrayList<>();
+                stream.readList(certificates, Certificate.class);
                 break;
         }
     }
@@ -626,7 +611,16 @@ class Credential
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-
+        stream.write(credentialType);
+        switch (credentialType)
+        {
+            case basic:
+                stream.writeOpaque(identity);
+                break;
+            case x509:
+                stream.writeList(certificates);
+                break;
+        }
     }
 }
 class Certificate
@@ -658,16 +652,16 @@ class LeafNode
     LifeTime lifeTime;
     byte[] parent_hash;
 
-    Extension[] extensions;
+    List<Extension> extensions;
     /* SignWithLabel(., "LeafNodeTBS", LeafNodeTBS) */
     byte[] signature; // not in TBS
     LeafNode(MLSInputStream stream) throws IOException
     {
-        encryption_key = (byte[]) stream.read(byte[].class);
-        signature_key = (byte[]) stream.read(byte[].class);
+        encryption_key = stream.readOpaque();
+        signature_key = stream.readOpaque();
         credential = (Credential) stream.read(Credential.class);
         capabilities = (Capabilities) stream.read(Capabilities.class);
-        leaf_node_source = LeafNodeSource.values()[(short) stream.read(short.class)];
+        leaf_node_source = LeafNodeSource.values()[(byte) stream.read(byte.class)];
         switch (leaf_node_source)
         {
             case KEY_PACKAGE:
@@ -679,13 +673,18 @@ class LeafNode
                 parent_hash = stream.readOpaque();
                 break;
         }
+        extensions = new ArrayList<>();
+        stream.readList(extensions, Extension.class);
+        signature = stream.readOpaque();
+
+
     }
 
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.write(encryption_key);
-        stream.write(signature_key);
+        stream.writeOpaque(encryption_key);
+        stream.writeOpaque(signature_key);
         stream.write(credential);
         stream.write(capabilities);
         stream.write(leaf_node_source);
@@ -700,20 +699,22 @@ class LeafNode
                 stream.writeOpaque(parent_hash);
                 break;
         }
+        stream.writeList(extensions);
+        stream.writeOpaque(signature);
     }
 }
 class LifeTime
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    int not_before;
-    int not_after;
+    long not_before;
+    long not_after;
     LifeTime(MLSInputStream stream) throws IOException
     {
-        not_before = (int) stream.read(int.class);
-        not_after = (int) stream.read(int.class);
+        not_before = (long) stream.read(long.class);
+        not_after = (long) stream.read(long.class);
     }
 
-    public LifeTime(int not_before, int not_after)
+    public LifeTime(long not_before, long not_after)
     {
         this.not_before = not_before;
         this.not_after = not_after;
@@ -730,39 +731,34 @@ class LifeTime
 class Capabilities
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    ProtocolVersion[] versions;
-    CipherSuite[] cipherSuites;
-    ExtensionType[] extensions;
-    ProposalType[] proposals;
-    CredentialType[] credentials;
-
-    public Capabilities(ProtocolVersion[] versions, CipherSuite[] cipherSuites, ExtensionType[] extensions, ProposalType[] proposals, CredentialType[] credentials)
-    {
-        this.versions = versions;
-        this.cipherSuites = cipherSuites;
-        this.extensions = extensions;
-        this.proposals = proposals;
-        this.credentials = credentials;
-    }
+    List<Short> versions;
+    List<Short> cipherSuites;
+    List<Short> extensions;
+    List<Short> proposals;
+    List<Short> credentials;
 
     Capabilities(MLSInputStream stream) throws IOException
     {
-        //TODO: check might need to iterate and cast to type
-        stream.readArray(ProtocolVersion.class);
-        stream.readArray(CipherSuite.class);
-        stream.readArray(ExtensionType.class);
-        stream.readArray(ProposalType.class);
-        stream.readArray(CredentialType.class);
+        versions = new ArrayList<>();
+        cipherSuites = new ArrayList<>();
+        extensions = new ArrayList<>();
+        proposals = new ArrayList<>();
+        credentials = new ArrayList<>();
+        stream.readList(versions, short.class);
+        stream.readList(cipherSuites, short.class);
+        stream.readList(extensions, short.class);
+        stream.readList(proposals, short.class);
+        stream.readList(credentials, short.class);
     }
 
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.writeArray(versions);
-        stream.writeArray(cipherSuites);
-        stream.writeArray(extensions);
-        stream.writeArray(proposals);
-        stream.writeArray(credentials);
+        stream.writeList(versions);
+        stream.writeList(cipherSuites);
+        stream.writeList(extensions);
+        stream.writeList(proposals);
+        stream.writeList(credentials);
     }
 }
 
@@ -770,21 +766,26 @@ class Capabilities
 enum CredentialType
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    RESERVED((byte) 0),
-    basic((byte) 1),
-    x509((byte) 2);
+    RESERVED((short) 0),
+    basic((short) 1),
+    x509((short) 2);
 
-    final byte value;
+    final short value;
 
-    CredentialType(byte value)
+    CredentialType(short value)
     {
         this.value = value;
     }
 
+    @SuppressWarnings("unused")
+    CredentialType(MLSInputStream stream) throws IOException
+    {
+        this.value = (short) stream.read(short.class);
+    }
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        //TODO
+        stream.write(value);
     }
 }
 enum LeafNodeSource
@@ -1152,16 +1153,41 @@ class PrivateContentAAD
 }
 
 
-class Welcome
-//        implements MLSInputStream.Readable, MLSOutputStream.Writable
+class EncryptedGroupSecrets
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
 
+    byte[] new_member; // KeyPackageRaf
+    HPKECiphertext encrypted_group_secrets;
+
+
+    EncryptedGroupSecrets(MLSInputStream stream) throws IOException
+    {
+        new_member = stream.readOpaque();
+        encrypted_group_secrets = (HPKECiphertext) stream.read(HPKECiphertext.class);
+    }
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.writeOpaque(new_member);
+        stream.write(encrypted_group_secrets);
+    }
 }
 
-
-class GroupInfo
-//        implements MLSInputStream.Readable, MLSOutputStream.Writable
+class PathSecret
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
+    byte[] path_secret;
 
+    PathSecret(MLSInputStream stream) throws IOException
+    {
+        path_secret = stream.readOpaque();
+    }
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.writeOpaque(path_secret);
+    }
 }
+
 

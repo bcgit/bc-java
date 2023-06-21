@@ -12,7 +12,7 @@ public class GroupContext
     byte[] groupID;
     long epoch;
     byte[] treeHash;
-    byte[] confirmedTranscriptHash;
+    public byte[] confirmedTranscriptHash;
     ArrayList<Extension> extensions;
 
     public GroupContext(short ciphersuit, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)

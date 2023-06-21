@@ -9,7 +9,7 @@ public class KeyGeneration {
     public final byte[] key;
     public final byte[] nonce;
 
-    KeyGeneration(int generation, Secret key, Secret nonce) {
+    public KeyGeneration(int generation, Secret key, Secret nonce) {
         this.generation = generation;
         this.key = key.value().clone();
         this.nonce = nonce.value().clone();

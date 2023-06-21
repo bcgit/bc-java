@@ -9,11 +9,14 @@ import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.codec.FramedContent;
 import org.bouncycastle.mls.codec.GroupContext;
+import org.bouncycastle.mls.codec.GroupInfo;
+import org.bouncycastle.mls.codec.GroupSecrets;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.Sender;
 import org.bouncycastle.mls.codec.SenderType;
+import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
@@ -656,6 +659,76 @@ public class VectorTest
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
+    }
+    public void testWelcome()
+            throws Exception
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("welcome.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        int count = 0;
 
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    System.out.println("test case: " + count);
+                    short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
+                    byte[] init_priv = Hex.decode(buf.get("init_priv"));
+                    byte[] key_package = Hex.decode(buf.get("key_package"));
+                    byte[] signer_pub = Hex.decode(buf.get("signer_pub"));
+                    byte[] welcome = Hex.decode(buf.get("welcome"));
+
+                    CipherSuite suite = new CipherSuite(cipherSuite);
+
+                    MLSMessage welcomeMessage = (MLSMessage) MLSInputStream.decode(welcome, MLSMessage.class);
+
+                    // Sanity check
+                    byte[] welcomeBytes = MLSOutputStream.encode(welcomeMessage);
+                    assertTrue(Arrays.areEqual(welcomeBytes, welcome));
+                    assertEquals(welcomeMessage.wireFormat, WireFormat.mls_welcome);
+
+                    MLSMessage kpMessage = (MLSMessage) MLSInputStream.decode(key_package, MLSMessage.class);
+                    assertEquals(kpMessage.wireFormat, WireFormat.mls_key_package);
+
+                    // Sanity check
+                    byte[] kpBytes = MLSOutputStream.encode(kpMessage);
+                    assertTrue(Arrays.areEqual(kpBytes, key_package));
+
+                    assertEquals(kpMessage.getCipherSuite(), cipherSuite);
+                    assertEquals(kpMessage.getCipherSuite(), cipherSuite);
+
+                    int kpi = welcomeMessage.welcome.find(suite, kpMessage.keyPackage);
+                    assertTrue(kpi != -1);
+                    GroupSecrets groupSecrets = welcomeMessage.welcome.decryptSecrets(suite, kpi, init_priv);
+                    GroupInfo groupInfo = welcomeMessage.welcome.decrypt(suite, groupSecrets.joiner_secret, new ArrayList<>());
+
+                    boolean verified = groupInfo.verify(suite, signer_pub);
+                    assertTrue(verified);
+
+                    GroupContext groupContext = groupInfo.groupContext;
+                    KeyScheduleEpoch keySchedule = KeyScheduleEpoch.joiner(
+                            suite,
+                            groupSecrets.joiner_secret,
+                            new ArrayList<>(),
+                            MLSOutputStream.encode(groupContext));
+
+
+                    byte[] confirmationTag = keySchedule.confirmationTag(groupContext.confirmedTranscriptHash);
+                    assertTrue(Arrays.areEqual(confirmationTag, groupInfo.confirmationTag));
+
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
     }
 }
