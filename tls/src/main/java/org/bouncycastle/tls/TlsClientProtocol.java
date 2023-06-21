@@ -372,7 +372,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (securityParameters.isResumedSession())
+        if (securityParameters.isResumedSession() && type != HandshakeType.hello_request)
         {
             if (type != HandshakeType.finished || this.connection_state != CS_SERVER_HELLO)
             {
