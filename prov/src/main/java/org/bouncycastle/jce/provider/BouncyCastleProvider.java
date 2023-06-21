@@ -267,15 +267,24 @@ public final class BouncyCastleProvider extends Provider
             {
                 if (!serviceMap.containsKey(key))
                 {
-                    service = super.getService(type, algorithm);
-                    if (service == null)
+                    service = AccessController.doPrivileged(new PrivilegedAction<Service>()
                     {
-                        return null;
-                    }
-                    serviceMap.put(key, service);
-                    // remove legacy entry and swap to service entry
-                    super.remove(service.getType() + "." + service.getAlgorithm());
-                    super.putService(service);
+                        @Override
+                        public Service run()
+                        {
+                            Service service = BouncyCastleProvider.super.getService(type, algorithm);
+                            if (service == null)
+                            {
+                                return null;
+                            }
+                            serviceMap.put(key, service);
+                            // remove legacy entry and swap to service entry
+                            BouncyCastleProvider.super.remove(service.getType() + "." + service.getAlgorithm());
+                            BouncyCastleProvider.super.putService(service);
+
+                            return service;
+                        }
+                    });
                 }
                 else
                 {
