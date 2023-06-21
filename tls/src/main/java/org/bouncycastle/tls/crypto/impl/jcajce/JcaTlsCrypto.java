@@ -840,7 +840,7 @@ public class JcaTlsCrypto
     protected TlsAEADCipherImpl createAEADCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceAEADCipherImpl(helper, cipherName, algorithm, keySize, isEncrypting);
+        return new JceAEADCipherImpl(this, helper, cipherName, algorithm, keySize, isEncrypting);
     }
 
     /**
@@ -853,10 +853,11 @@ public class JcaTlsCrypto
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
      */
-    protected TlsBlockCipherImpl createBlockCipher(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+    protected TlsBlockCipherImpl createBlockCipher(String cipherName, String algorithm, int keySize,
+        boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherImpl(helper.createCipher(cipherName), algorithm, keySize, isEncrypting);
+        return new JceBlockCipherImpl(this, helper.createCipher(cipherName), algorithm, keySize, isEncrypting);
     }
 
     /**
@@ -869,10 +870,11 @@ public class JcaTlsCrypto
      * @return a block cipher.
      * @throws GeneralSecurityException in case of failure.
      */
-    protected TlsBlockCipherImpl createBlockCipherWithCBCImplicitIV(String cipherName, String algorithm, int keySize, boolean isEncrypting)
+    protected TlsBlockCipherImpl createBlockCipherWithCBCImplicitIV(String cipherName, String algorithm, int keySize,
+        boolean isEncrypting)
         throws GeneralSecurityException
     {
-        return new JceBlockCipherWithCBCImplicitIVImpl(helper.createCipher(cipherName), algorithm, isEncrypting);
+        return new JceBlockCipherWithCBCImplicitIVImpl(this, helper.createCipher(cipherName), algorithm, isEncrypting);
     }
 
     /**
@@ -1193,8 +1195,8 @@ public class JcaTlsCrypto
     private TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams)
         throws IOException, GeneralSecurityException
     {
-        return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(helper, true),
-            new JceChaCha20Poly1305(helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305);
+        return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(this, helper, true),
+            new JceChaCha20Poly1305(this, helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305);
     }
 
     private TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)

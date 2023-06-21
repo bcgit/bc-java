@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -17,20 +18,22 @@ public class JceBlockCipherImpl
 {
     private static final int BUF_SIZE = 32 * 1024;
 
-    private final int cipherMode;
+    private final JcaTlsCrypto crypto;
     private final Cipher cipher;
     private final String algorithm;
     private final int keySize;
+    private final int cipherMode;
 
     private SecretKey key;
 
-    public JceBlockCipherImpl(Cipher cipher, String algorithm, int keySize, boolean isEncrypting)
+    public JceBlockCipherImpl(JcaTlsCrypto crypto, Cipher cipher, String algorithm, int keySize, boolean isEncrypting)
         throws GeneralSecurityException
     {
+        this.crypto = crypto;
         this.cipher = cipher;
         this.algorithm = algorithm;
         this.keySize = keySize;
-        this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
@@ -45,9 +48,12 @@ public class JceBlockCipherImpl
 
     public void init(byte[] iv, int ivOff, int ivLen)
     {
+        // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
+        SecureRandom random = crypto.getSecureRandom();
+
         try
         {
-            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen), null);
+            cipher.init(cipherMode, key, new IvParameterSpec(iv, ivOff, ivLen), random);
         }
         catch (GeneralSecurityException e)
         {

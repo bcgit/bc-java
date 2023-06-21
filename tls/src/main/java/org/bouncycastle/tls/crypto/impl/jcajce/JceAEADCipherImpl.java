@@ -5,6 +5,7 @@ import java.security.AccessController;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -58,6 +59,7 @@ public class JceAEADCipherImpl
         }
     }
 
+    private final JcaTlsCrypto crypto;
     private final JcaJceHelper helper;
     private final int cipherMode;
     private final Cipher cipher;
@@ -67,14 +69,16 @@ public class JceAEADCipherImpl
 
     private SecretKey key;
 
-    public JceAEADCipherImpl(JcaJceHelper helper, String cipherName, String algorithm, int keySize, boolean isEncrypting)
+    public JceAEADCipherImpl(JcaTlsCrypto crypto, JcaJceHelper helper, String cipherName, String algorithm, int keySize,
+        boolean isEncrypting)
         throws GeneralSecurityException
     {
+        this.crypto = crypto;
         this.helper = helper;
         this.cipher = helper.createCipher(cipherName);
         this.algorithm = algorithm;
         this.keySize = keySize;
-        this.cipherMode = (isEncrypting) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+        this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
         this.algorithmParamsName = getAlgParamsName(helper, cipherName);
     }
 
@@ -90,6 +94,9 @@ public class JceAEADCipherImpl
 
     public void init(byte[] nonce, int macSize)
     {
+        // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
+        SecureRandom random = crypto.getSecureRandom();
+
         try
         {
             if (canDoAEAD && algorithmParamsName != null)
@@ -107,12 +114,12 @@ public class JceAEADCipherImpl
                     algParams.init(new GCMParameters(nonce, macSize).getEncoded());
                 }
 
-                cipher.init(cipherMode, key, algParams, null);
+                cipher.init(cipherMode, key, algParams, random);
             }
             else
             {
                 // Otherwise fall back to the BC-specific AEADParameterSpec
-                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, null), null);
+                cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, null), random);
             }
         }
         catch (Exception e)
