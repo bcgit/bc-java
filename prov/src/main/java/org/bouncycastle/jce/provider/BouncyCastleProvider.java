@@ -257,7 +257,7 @@ public final class BouncyCastleProvider extends Provider
     public final Service getService(String type, String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
-        String key = type + "." + upperCaseAlgName;
+        final String key = type + "." + upperCaseAlgName;
 
         Service service = serviceMap.get(key);
 
