@@ -361,6 +361,7 @@ public class ParserTest
         isTrue(edSig.verify(s));
 
         doOpenSslGost2012Test();
+        doParseAttrECKeyTest();
     }
 
     private void checkTrustedCert(X509TrustedCertificateBlock trusted)
@@ -612,6 +613,17 @@ public class ParserTest
                     "-----END EC PRIVATE KEY-----";
 
         PEMParser pemRd = new PEMParser(new StringReader(ecSample));
+
+        PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
+
+        isTrue(kp.getPublicKeyInfo() == null);
+    }
+
+    private void doParseAttrECKeyTest()
+        throws Exception
+    {
+        // EC private key extremely dodgy attributes.
+        PEMParser pemRd = openPEMResource("ec_attr_key.pem");
 
         PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
 
