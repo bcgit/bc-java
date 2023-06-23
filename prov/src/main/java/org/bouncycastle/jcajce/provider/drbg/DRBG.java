@@ -269,7 +269,15 @@ public class DRBG
 
     private static EntropySourceProvider createCoreEntropySourceProvider()
     {
-        if (Security.getProperty("securerandom.source") == null)
+        String source = AccessController.doPrivileged(new PrivilegedAction<String>()
+        {
+            public String run()
+            {
+                return Security.getProperty("securerandom.source");
+            }
+        });
+
+        if (source == null)
         {
             return createInitialEntropySource();
         }
@@ -277,8 +285,6 @@ public class DRBG
         {
             try
             {
-                String source = Security.getProperty("securerandom.source");
-
                 return new URLSeededEntropySourceProvider(new URL(source));
             }
             catch (Exception e)
