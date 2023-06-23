@@ -706,9 +706,14 @@ public class ArmoredOutputStream
             return this;
         }
 
-        public Builder setComputeCRCSum(boolean computeSum)
+        /**
+         * Enable calculation and inclusion of the CRC check sum.
+         * @param doComputeCRC true if CRC to be included, false otherwise.
+         * @return the current builder instance.
+         */
+        public Builder enableCRC(boolean doComputeCRC)
         {
-            this.computeCRCSum = computeSum;
+            this.computeCRCSum = doComputeCRC;
             return this;
         }
     }
