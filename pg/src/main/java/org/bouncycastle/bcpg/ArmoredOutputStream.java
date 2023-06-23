@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.util.Strings;
 
@@ -29,6 +30,8 @@ public class ArmoredOutputStream
     public static final String HASH_HDR = "Hash";
     public static final String CHARSET_HDR = "Charset";
 
+    public static final String DEFAULT_VERSION = "BCPG v@RELEASE_NAME@";
+    
     private static final byte[] encodingTable =
         {
             (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
@@ -103,24 +106,24 @@ public class ArmoredOutputStream
         out.write(encodingTable[d3 & 0x3f]);
     }
 
-    OutputStream    out;
-    byte[]          buf = new byte[3];
-    int             bufPtr = 0;
-    CRC24           crc = new FastCRC24();
-    int             chunkCount = 0;
-    int             lastb;
+    OutputStream out;
+    byte[] buf = new byte[3];
+    int bufPtr = 0;
+    CRC24 crc = new FastCRC24();
+    int chunkCount = 0;
+    int lastb;
 
-    boolean         start = true;
-    boolean         clearText = false;
-    boolean         newLine = false;
+    boolean start = true;
+    boolean clearText = false;
+    boolean newLine = false;
 
-    String          nl = Strings.lineSeparator();
+    String nl = Strings.lineSeparator();
 
-    String          type;
-    String          headerStart = "-----BEGIN PGP ";
-    String          headerTail = "-----";
-    String          footerStart = "-----END PGP ";
-    String          footerTail = "-----";
+    String type;
+    String headerStart = "-----BEGIN PGP ";
+    String headerTail = "-----";
+    String footerStart = "-----END PGP ";
+    String footerTail = "-----";
 
     final Hashtable<String, List<String>> headers = new Hashtable<String, List<String>>();
 
@@ -130,7 +133,7 @@ public class ArmoredOutputStream
      * @param out the OutputStream to wrap.
      */
     public ArmoredOutputStream(
-        OutputStream    out)
+        OutputStream out)
     {
         this.out = out;
 
@@ -138,14 +141,16 @@ public class ArmoredOutputStream
         {
             nl = "\r\n";
         }
+
+        setHeader(VERSION_HDR, DEFAULT_VERSION);
     }
 
     /**
      * Constructs an armored output stream with default and custom headers.
      *
-     * @param out the OutputStream to wrap.
+     * @param out     the OutputStream to wrap.
      * @param headers additional headers that add to or override the {@link #resetHeaders() default
-     *            headers}.
+     *                headers}.
      */
     public ArmoredOutputStream(
         OutputStream out,
@@ -164,13 +169,18 @@ public class ArmoredOutputStream
         }
     }
 
-    ArmoredOutputStream(OutputStream out, HashMap<String, List<String>> headerMap, boolean computeCRC) {
+    ArmoredOutputStream(OutputStream out, Builder builder)
+    {
         this(out);
-        if (!computeCRC) {
+        if (!builder.computeCRCSum)
+        {
             crc = null;
         }
         this.headers.clear();
-        for (String key : headerMap.keySet()) {
+
+        Map<String, List<String>> headerMap = builder.headers;
+        for (String key : headerMap.keySet())
+        {
             this.headers.put(key, headerMap.get(key));
         }
     }
@@ -179,7 +189,7 @@ public class ArmoredOutputStream
      * Set an additional header entry. Any current value(s) under the same name will be
      * replaced by the new one. A null value will clear the entry for name.
      *
-     * @param name the name of the header entry.
+     * @param name  the name of the header entry.
      * @param value the value of the header entry.
      * @deprecated use appropriate methods in {@link Builder} instead.
      */
@@ -210,6 +220,7 @@ public class ArmoredOutputStream
 
     /**
      * Remove all headers.
+     *
      * @deprecated use appropriate methods in {@link Builder} instead.
      */
     @Deprecated
@@ -222,7 +233,7 @@ public class ArmoredOutputStream
      * Set an additional header entry. The current value(s) will continue to exist together
      * with the new one. Adding a null value has no effect.
      *
-     * @param name the name of the header entry.
+     * @param name  the name of the header entry.
      * @param value the value of the header entry.
      * @deprecated use appropriate methods in {@link Builder} instead
      */
@@ -247,6 +258,7 @@ public class ArmoredOutputStream
 
     /**
      * Reset the headers to only contain a Version string (if one is present)
+     *
      * @deprecated use {@link Builder#clearHeaders()} instead.
      */
     @Deprecated
@@ -264,17 +276,19 @@ public class ArmoredOutputStream
 
     /**
      * Start a clear text signed message - backwards compatibility.
+     *
      * @param hashAlgorithm hash algorithm
      */
     public void beginClearText(
         int hashAlgorithm)
         throws IOException
     {
-        beginClearText(new int[] { hashAlgorithm });
+        beginClearText(new int[]{hashAlgorithm});
     }
 
     /**
      * Start a clear text signed message.
+     *
      * @param hashAlgorithms hash algorithms
      */
     public void beginClearText(
@@ -285,15 +299,51 @@ public class ArmoredOutputStream
         sb.append(nl);
         for (int hashAlgorithm : hashAlgorithms)
         {
-            try
+            String hash;
+            switch (hashAlgorithm)
             {
-                String hash = HashAlgorithmUtils.getHashAlgorithmName(hashAlgorithm);
-                sb.append(HASH_HDR).append(": ").append(hash).append(nl);
+            case HashAlgorithmTags.MD5:
+                hash = "MD5";
+                break;
+            case HashAlgorithmTags.SHA1:
+                hash = "SHA1";
+                break;
+            case HashAlgorithmTags.RIPEMD160:
+                hash = "RIPEMD160";
+                break;
+            case HashAlgorithmTags.MD2:
+                hash = "MD2";
+                break;
+            case HashAlgorithmTags.SHA256:
+                hash = "SHA256";
+                break;
+            case HashAlgorithmTags.SHA384:
+                hash = "SHA384";
+                break;
+            case HashAlgorithmTags.SHA512:
+                hash = "SHA512";
+                break;
+            case HashAlgorithmTags.SHA224:
+                hash = "SHA224";
+                break;
+            case HashAlgorithmTags.SHA3_256:
+            case HashAlgorithmTags.SHA3_256_OLD:
+                hash = "SHA3-256";
+                break;
+            case HashAlgorithmTags.SHA3_384: // OLD
+                hash = "SHA3-384";
+                break;
+            case HashAlgorithmTags.SHA3_512:
+            case HashAlgorithmTags.SHA3_512_OLD:
+                hash = "SHA3-512";
+                break;
+            case HashAlgorithmTags.SHA3_224:
+                hash = "SHA3-224";
+                break;
+            default:
+                throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
             }
-            catch (IllegalArgumentException e)
-            {
-                throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm, e);
-            }
+            sb.append(HASH_HDR).append(": ").append(hash).append(nl);
         }
         sb.append(nl);
 
@@ -320,7 +370,7 @@ public class ArmoredOutputStream
     }
 
     public void write(
-        int    b)
+        int b)
         throws IOException
     {
         if (clearText)
@@ -349,8 +399,8 @@ public class ArmoredOutputStream
 
         if (start)
         {
-            boolean     newPacket = (b & 0x40) != 0;
-            int         tag = 0;
+            boolean newPacket = (b & 0x40) != 0;
+            int tag = 0;
 
             if (newPacket)
             {
@@ -389,12 +439,12 @@ public class ArmoredOutputStream
             Enumeration<String> e = headers.keys();
             while (e.hasMoreElements())
             {
-                String  key = e.nextElement();
+                String key = e.nextElement();
 
                 if (!key.equals(VERSION_HDR))
                 {
                     List<String> values = headers.get(key);
-                    for (Iterator<String> it = values.iterator(); it.hasNext();)
+                    for (Iterator<String> it = values.iterator(); it.hasNext(); )
                     {
                         writeHeaderEntry(key, it.next());
                     }
@@ -456,9 +506,9 @@ public class ArmoredOutputStream
 
                 int crcV = crc.getValue();
 
-                buf[0] = (byte) (crcV >>> 16);
-                buf[1] = (byte) (crcV >>> 8);
-                buf[2] = (byte) crcV;
+                buf[0] = (byte)(crcV >>> 16);
+                buf[1] = (byte)(crcV >>> 8);
+                buf[2] = (byte)crcV;
 
                 encode3(out, buf);
             }
@@ -476,21 +526,25 @@ public class ArmoredOutputStream
         }
     }
 
-    private void write(String string) throws IOException {
+    private void write(String string)
+        throws IOException
+    {
         out.write(Strings.toUTF8ByteArray(string));
     }
 
-    public static Builder builder() {
+    public static Builder builder()
+    {
         return new Builder();
     }
 
-    static class Builder {
-
-        private final HashMap<String, List<String>> headers = new HashMap<String, List<String>>();
+    static class Builder
+    {
+        private final Map<String, List<String>> headers = new HashMap<String, List<String>>();
         private boolean computeCRCSum = true;
 
-        public ArmoredOutputStream build(OutputStream outputStream) {
-            return new ArmoredOutputStream(outputStream, headers, computeCRCSum);
+        public ArmoredOutputStream build(OutputStream outputStream)
+        {
+            return new ArmoredOutputStream(outputStream, this);
         }
 
         /**
@@ -500,7 +554,8 @@ public class ArmoredOutputStream
          * @param version version
          * @return builder
          */
-        public Builder setVersion(String version) {
+        public Builder setVersion(String version)
+        {
             return setSingletonHeader(VERSION_HDR, version);
         }
 
@@ -512,7 +567,8 @@ public class ArmoredOutputStream
          * @param comment comment
          * @return builder
          */
-        public Builder setComment(String comment) {
+        public Builder setComment(String comment)
+        {
             return replaceHeader(COMMENT_HDR, comment);
         }
 
@@ -522,7 +578,8 @@ public class ArmoredOutputStream
          * @param messageId message ID
          * @return builder
          */
-        public Builder setMessageId(String messageId) {
+        public Builder setMessageId(String messageId)
+        {
             return replaceHeader(MESSAGE_ID_HDR, messageId);
         }
 
@@ -532,7 +589,8 @@ public class ArmoredOutputStream
          * @param charset charset
          * @return builder
          */
-        public Builder setCharset(String charset) {
+        public Builder setCharset(String charset)
+        {
             return replaceHeader(CHARSET_HDR, charset);
         }
 
@@ -544,7 +602,8 @@ public class ArmoredOutputStream
          * @param comment comment
          * @return builder
          */
-        public Builder addComment(String comment) {
+        public Builder addComment(String comment)
+        {
             return addHeader(COMMENT_HDR, comment);
         }
 
@@ -552,11 +611,12 @@ public class ArmoredOutputStream
          * Set and replace the given header value with a single-line header.
          * If the value is <pre>null</pre>, this method will remove the header entirely.
          *
-         * @param key header key
+         * @param key   header key
          * @param value header value
          * @return builder
          */
-        private Builder setSingletonHeader(String key, String value) {
+        private Builder setSingletonHeader(String key, String value)
+        {
             if (value == null || value.trim().isEmpty())
             {
                 this.headers.remove(key);
@@ -576,7 +636,7 @@ public class ArmoredOutputStream
         /**
          * Add a header, splitting it into multiple headers if required (newlines).
          *
-         * @param key key
+         * @param key   key
          * @param value value
          * @return builder
          */
@@ -612,7 +672,7 @@ public class ArmoredOutputStream
          * If the value is <pre>null</pre>, existing headers for the given key are removed.
          * The value is split into multiple headers if it contains newlines.
          *
-         * @param key key
+         * @param key   key
          * @param value value
          * @return builder
          */
@@ -640,12 +700,14 @@ public class ArmoredOutputStream
             return this;
         }
 
-        public Builder clearHeaders() {
+        public Builder clearHeaders()
+        {
             headers.clear();
             return this;
         }
 
-        public Builder setComputeCRCSum(boolean computeSum) {
+        public Builder setComputeCRCSum(boolean computeSum)
+        {
             this.computeCRCSum = computeSum;
             return this;
         }
