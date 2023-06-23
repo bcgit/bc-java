@@ -126,7 +126,7 @@ public class JcaKeyFingerprintCalculator
             {
                 byte[] kBytes = publicPk.getEncodedContents();
 
-                MessageDigest digest = helper.createMessageDigest("SHA256");
+                MessageDigest digest = helper.createMessageDigest("SHA-256");
 
                 digest.update((byte)0x9b);
 
@@ -141,11 +141,11 @@ public class JcaKeyFingerprintCalculator
             }
             catch (NoSuchAlgorithmException e)
             {
-                throw new PGPException("can't find SHA256", e);
+                throw new PGPException("can't find SHA-256", e);
             }
             catch (NoSuchProviderException e)
             {
-                throw new PGPException("can't find SHA256", e);
+                throw new PGPException("can't find SHA-256", e);
             }
             catch (IOException e)
             {
