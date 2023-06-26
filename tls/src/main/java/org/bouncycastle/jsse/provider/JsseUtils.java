@@ -77,6 +77,7 @@ abstract class JsseUtils
         PropertyUtils.getIntegerSystemProperty("jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
     private static final boolean provTlsRequireCloseNotify =
         PropertyUtils.getBooleanSystemProperty("com.sun.net.ssl.requireCloseNotify", true);
+    // TODO SunJSSE additionally checks KeyGenerator.getInstance("SunTlsExtendedMasterSecret")
     private static final boolean provTlsUseExtendedMasterSecret =
         PropertyUtils.getBooleanSystemProperty("jdk.tls.useExtendedMasterSecret", true);
 
