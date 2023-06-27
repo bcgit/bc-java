@@ -654,6 +654,12 @@ class ProvTlsClient
     }
 
     @Override
+    public boolean shouldUseCompatibilityMode()
+    {
+        return JsseUtils.useCompatibilityMode();
+    }
+
+    @Override
     public boolean shouldUseExtendedMasterSecret()
     {
         return JsseUtils.useExtendedMasterSecret();
