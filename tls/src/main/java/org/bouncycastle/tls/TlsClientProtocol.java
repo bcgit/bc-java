@@ -1817,7 +1817,7 @@ public class TlsClientProtocol
              * RFC 8446 4.2.1. In compatibility mode [..], this field MUST be non-empty, so a client
              * not offering a pre-TLS 1.3 session MUST generate a new 32-byte value.
              */
-            if (legacy_session_id.length < 1)
+            if (legacy_session_id.length < 1 && tlsClient.shouldUseCompatibilityMode())
             {
                 legacy_session_id = tlsClientContext.getNonceGenerator().generateNonce(32);
             }

@@ -431,6 +431,11 @@ public abstract class AbstractTlsClient
         return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
     }
 
+    public boolean shouldUseCompatibilityMode()
+    {
+        return true;
+    }
+
     public void notifyServerVersion(ProtocolVersion serverVersion)
         throws IOException
     {
