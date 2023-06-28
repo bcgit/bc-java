@@ -4,12 +4,8 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
-import org.bouncycastle.mls.LeafIndex;
-import org.bouncycastle.mls.NodeIndex;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 

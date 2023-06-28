@@ -3,6 +3,8 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.GroupKeySet;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
@@ -170,7 +172,7 @@ public class RatchetTreeTest
         }
 
     }
-    public void testTreee() throws Exception
+    public void testTree() throws Exception
     {
         // psks
 
@@ -219,7 +221,7 @@ public class RatchetTreeTest
         Map<NodeIndex, Secret> secrets = keys.secretTree.secrets;
 
         // Verify next()
-        for (long i = 0; i < treeSize.leafCount(); i++)
+        for (int i = 0; i < treeSize.leafCount(); i++)
         {
             LeafIndex leaf = new LeafIndex(i);
             for (int generation = 0; generation < generations; generation++)

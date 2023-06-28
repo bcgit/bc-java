@@ -1,20 +1,27 @@
-package org.bouncycastle.mls;
+package org.bouncycastle.mls.TreeKEM;
 
+import org.bouncycastle.mls.TreeSize;
+import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSOutputStream;
+
+import java.io.IOException;
 import java.util.Objects;
 import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
-public class LeafIndex {
-    private final long value;
+public class LeafIndex
+        implements MLSInputStream.Readable, MLSOutputStream.Writable
+{
+    protected int value;
 
 
     //TODO: make this an int not a long?
-    public long value() {
+    public int value() {
         return value;
     }
 
-    public LeafIndex(long valueIn) {
+    public LeafIndex(int valueIn) {
         value = valueIn;
     }
 
@@ -92,5 +99,14 @@ public class LeafIndex {
         return d.stream()
                 .map(NodeIndex::sibling)
                 .collect(Collectors.toList());
+    }
+    public LeafIndex(MLSInputStream stream) throws IOException
+    {
+        value = (int) stream.read(int.class);
+    }
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(value);
     }
 }

@@ -1,4 +1,6 @@
-package org.bouncycastle.mls;
+package org.bouncycastle.mls.TreeKEM;
+
+import org.bouncycastle.mls.TreeSize;
 
 import java.util.Objects;
 
@@ -41,7 +43,7 @@ public class NodeIndex {
         return Objects.hash(value);
     }
 
-    private long level() {
+    public long level() {
         return Long.numberOfTrailingZeros(~value);
     }
 

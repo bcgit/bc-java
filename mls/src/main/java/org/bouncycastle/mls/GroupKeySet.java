@@ -1,9 +1,10 @@
 package org.bouncycastle.mls;
 
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

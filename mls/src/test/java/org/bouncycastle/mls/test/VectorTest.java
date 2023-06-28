@@ -1,22 +1,18 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.cms.AuthenticatedData;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.GroupKeySet;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.TreeKEM.NodeIndex;
+import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
-import org.bouncycastle.mls.codec.ContentType;
-import org.bouncycastle.mls.codec.FramedContent;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.GroupInfo;
 import org.bouncycastle.mls.codec.GroupSecrets;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
-import org.bouncycastle.mls.codec.PublicMessage;
-import org.bouncycastle.mls.codec.Sender;
-import org.bouncycastle.mls.codec.SenderType;
-import org.bouncycastle.mls.codec.Welcome;
+import org.bouncycastle.mls.codec.Proposal;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
@@ -30,7 +26,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -720,6 +715,81 @@ public class VectorTest
 
                     byte[] confirmationTag = keySchedule.confirmationTag(groupContext.confirmedTranscriptHash);
                     assertTrue(Arrays.areEqual(confirmationTag, groupInfo.confirmationTag));
+
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    public void testTreeOperations() throws IOException
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("tree-operations.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+
+                    System.out.println("test case: " + count);
+                    byte[] tree_before = Hex.decode(buf.get("tree_before"));
+                    byte[] proposal = Hex.decode(buf.get("proposal"));
+                    int proposal_sender = Integer.parseInt(buf.get("proposal_sender"));
+                    byte[] tree_after = Hex.decode(buf.get("tree_after"));
+
+                    CipherSuite suite = new CipherSuite(CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519);
+
+                    TreeKEMPublicKey beforeTree = (TreeKEMPublicKey) MLSInputStream.decode(tree_before, TreeKEMPublicKey.class);
+                    TreeKEMPublicKey afterTree = (TreeKEMPublicKey) MLSInputStream.decode(tree_after, TreeKEMPublicKey.class);
+
+                    //SanityChecks
+                    byte[] beforeTreeBytes = MLSOutputStream.encode(beforeTree);
+                    assertTrue(Arrays.areEqual(tree_before, beforeTreeBytes));
+                    byte[] afterTreeBytes = MLSOutputStream.encode(afterTree);
+                    assertTrue(Arrays.areEqual(tree_after, afterTreeBytes));
+
+
+                    beforeTree.setSuite(suite);
+                    beforeTree.setHashAll();
+//                    System.out.print("Before");
+//                    beforeTree.dump();
+
+//                    System.out.print("After");
+//                    afterTree.dump();
+
+
+                    Proposal proposalObj = (Proposal) MLSInputStream.decode(proposal, Proposal.class);
+                    switch (proposalObj.getProposalType())
+                    {
+                        case ADD:
+                            beforeTree.addLeaf(proposalObj.getLeafNode());
+                            break;
+                        case UPDATE:
+                            beforeTree.updateLeaf(new LeafIndex(proposal_sender), proposalObj.getLeafNode());
+                            break;
+                        case REMOVE:
+                            beforeTree.blankPath(new LeafIndex(proposalObj.remove.removed));
+                            beforeTree.truncate();
+                            break;
+                    }
+
+//                    System.out.print("NewBefore");
+//                    beforeTree.dump();
+
+                    byte[] treeBytes = MLSOutputStream.encode(beforeTree);
+                    assertTrue(Arrays.areEqual(tree_after, treeBytes));
 
                     count++;
                 }

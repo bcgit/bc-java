@@ -4,9 +4,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.mls.TreeSize;
-import org.bouncycastle.mls.NodeIndex;
-import org.bouncycastle.mls.LeafIndex;
-import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.mls.TreeKEM.NodeIndex;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

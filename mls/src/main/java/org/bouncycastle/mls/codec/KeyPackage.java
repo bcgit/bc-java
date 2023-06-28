@@ -1,5 +1,7 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.mls.TreeKEM.LeafNode;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

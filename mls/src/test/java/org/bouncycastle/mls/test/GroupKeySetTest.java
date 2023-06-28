@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.mls.KeyGeneration;
-import org.bouncycastle.mls.LeafIndex;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.crypto.CipherSuite;
@@ -29,7 +29,7 @@ public class GroupKeySetTest
         GroupKeySet keys = new GroupKeySet(suite, treeSize, encryptionSecret);
 
         // Verify next()
-        for (long i = 0; i < treeSize.leafCount(); i++) {
+        for (int i = 0; i < treeSize.leafCount(); i++) {
             LeafIndex leaf = new LeafIndex(i);
             for (int generation = 0; generation < generations; generation++) {
                 // TODO verify that the generated values are correct
