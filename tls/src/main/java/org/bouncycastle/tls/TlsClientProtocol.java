@@ -1170,6 +1170,17 @@ public class TlsClientProtocol
             tlsClient.notifySessionID(selectedSessionID);
             securityParameters.resumedSession = selectedSessionID.length > 0 && this.tlsSession != null
                 && Arrays.areEqual(selectedSessionID, this.tlsSession.getSessionID());
+
+            if (securityParameters.isResumedSession())
+            {
+                if (serverHello.getCipherSuite() != sessionParameters.getCipherSuite() ||
+                    CompressionMethod._null != sessionParameters.getCompressionAlgorithm() ||
+                    !securityParameters.getNegotiatedVersion().equals(sessionParameters.getNegotiatedVersion()))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                        "ServerHello parameters do not match resumed session");
+                }
+            }
         }
 
         /*
@@ -1182,7 +1193,8 @@ public class TlsClientProtocol
             if (!TlsUtils.isValidCipherSuiteSelection(offeredCipherSuites, cipherSuite) ||
                 !TlsUtils.isValidVersionForCipherSuite(cipherSuite, securityParameters.getNegotiatedVersion()))
             {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "ServerHello selected invalid cipher suite");
             }
 
             TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
