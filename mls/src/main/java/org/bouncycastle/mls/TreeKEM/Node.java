@@ -13,6 +13,17 @@ public class Node
     LeafNode leafNode;
     ParentNode parentNode;
 
+    public byte[] getParentHash()
+    {
+        switch (nodeType)
+        {
+            case leaf:
+                return leafNode.parent_hash;
+            case parent:
+                return parentNode.parentHash;
+        }
+        return null;
+    }
     public byte[] getPublicKey()
     {
         switch (nodeType)

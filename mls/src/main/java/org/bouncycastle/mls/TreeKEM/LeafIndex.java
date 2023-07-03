@@ -16,6 +16,7 @@ public class LeafIndex
     protected int value;
 
 
+    //TODO: make a setter for value
     //TODO: make this an int not a long?
     public int value() {
         return value;
@@ -23,6 +24,9 @@ public class LeafIndex
 
     public LeafIndex(int valueIn) {
         value = valueIn;
+    }
+    public LeafIndex(NodeIndex valueIn) {
+        value = (int) (valueIn.value() >> 1);
     }
 
     @Override

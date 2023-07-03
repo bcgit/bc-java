@@ -2,9 +2,11 @@ package org.bouncycastle.mls.TreeKEM;
 
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Credential;
+import org.bouncycastle.mls.codec.CredentialType;
 import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.crypto.CipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,6 +75,48 @@ public class LeafNode
         }
         stream.writeList(extensions);
         stream.writeOpaque(signature);
+    }
+    public byte[] toBeSigned(byte[] groupId, int leafIndex) throws IOException
+    {
+        MLSOutputStream stream = new MLSOutputStream();
+        stream.writeOpaque(encryption_key);
+        stream.writeOpaque(signature_key);
+        stream.write(credential);
+        stream.write(capabilities);
+        stream.write(leaf_node_source);
+        switch (leaf_node_source)
+        {
+            case KEY_PACKAGE:
+                stream.write(lifeTime);
+                break;
+            case UPDATE:
+                break;
+            case COMMIT:
+                stream.writeOpaque(parent_hash);
+                break;
+        }
+        stream.writeList(extensions);
+        switch (leaf_node_source)
+        {
+            case KEY_PACKAGE:
+                break;
+            case UPDATE:
+            case COMMIT:
+                stream.writeOpaque(groupId);
+                stream.write(leafIndex);
+                break;
+        }
+        return stream.toByteArray();
+    }
+
+    public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
+    {
+        if (credential.credentialType == CredentialType.x509)
+        {
+            //TODO: get credential and check if it's signature scheme matches the cipher suite signature scheme
+        }
+
+        return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
     }
 }
 

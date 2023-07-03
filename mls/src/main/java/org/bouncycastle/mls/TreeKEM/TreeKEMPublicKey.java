@@ -9,6 +9,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,10 @@ public class TreeKEMPublicKey
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     CipherSuite suite;
-    TreeSize size;
+    public TreeSize size;
     Map<NodeIndex, byte[]> hashes;
+    private final Map<NodeIndex, byte[]> treeHashCache;
+    private final Map<NodeIndex, Integer> exceptCache;
     ArrayList<OptionalNode> nodes;
 
 
@@ -26,6 +29,8 @@ public class TreeKEMPublicKey
     {
         hashes = new HashMap<>();
         nodes = new ArrayList<>();
+        treeHashCache = new HashMap<>();
+        exceptCache = new HashMap<>();
         stream.readList(nodes, OptionalNode.class);
 
         size = TreeSize.forLeaves(1);
@@ -101,7 +106,50 @@ public class TreeKEMPublicKey
         }
         System.out.println("nodeCount: " + nodes.size());
     }
-    
+
+    public LeafNode getLeafNode(LeafIndex index)
+    {
+        OptionalNode node = nodeAt(index);
+        if(!node.isLeaf())
+        {
+            return null;
+        }
+
+        return node.getLeafNode();
+    }
+
+    public ArrayList<NodeIndex> resolve(NodeIndex index)
+    {
+        ArrayList<NodeIndex> out = new ArrayList<>();
+        boolean atLeaf = (index.level() == 0);
+        if (!nodeAt(index).isBlank())
+        {
+            out.add(index);
+            if(index.isLeaf())
+            {
+                return out;
+            }
+
+            OptionalNode node = nodeAt(index);
+            List<LeafIndex> unmerged = node.getParentNode().unmerged_leaves;
+
+            for (LeafIndex lindex : unmerged)
+            {
+                out.add(new NodeIndex(lindex));
+            }
+            return out;
+        }
+
+        if(atLeaf)
+        {
+            return out;
+        }
+
+        ArrayList<NodeIndex> l = resolve(index.left());
+        ArrayList<NodeIndex> r = resolve(index.right());
+        l.addAll(r);
+        return l;
+    }
     public LeafIndex addLeaf(LeafNode leaf)
     {
         LeafIndex index = new LeafIndex(0);
@@ -263,7 +311,155 @@ public class TreeKEMPublicKey
         getHash(r);
     }
 
-    private byte[] getHash(NodeIndex index) throws IOException
+    public boolean verifyParentHash() throws IOException
+    {
+        long width = size.width();
+        long height = NodeIndex.root(size).level();
+
+        for (int level = 1; level <= height ; level++)
+        {
+            long stride = 2L << level;
+            int start = (int) ((stride >>> 1)-1);
+
+            for (int p = start; p < width; p += stride)
+            {
+                NodeIndex pIndex = new NodeIndex(p);
+                if (nodeAt(pIndex).isBlank())
+                {
+                    continue;
+                }
+
+                NodeIndex l = pIndex.left();
+                NodeIndex r = pIndex.right();
+
+                byte[] lh = originalParentHash(pIndex, r);
+                byte[] rh = originalParentHash(pIndex, l);
+
+                if (!hasParentHash(l, lh) && !hasParentHash(r, rh))
+                {
+                    dump();
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean hasParentHash(NodeIndex child, byte[] targetParentHash)
+    {
+        ArrayList<NodeIndex> res = resolve(child);
+        for (NodeIndex n: res)
+        {
+            if (Arrays.equals(nodeAt(n).node.getParentHash(), targetParentHash))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private byte[] originalTreeHash(NodeIndex index, List<LeafIndex> parentExcept) throws IOException
+    {
+        List<LeafIndex> except = new ArrayList<>();
+        //TODO: check adding sequence
+        for (LeafIndex i: parentExcept)
+        {
+            NodeIndex n = new NodeIndex(i);
+            if (n.isBelow(index))
+            {
+                except.add(i);
+            }
+        }
+        boolean haveLocalChanges = ! except.isEmpty();
+
+        // If there are no local changes, then we can use the cached tree hash
+        if (!haveLocalChanges)
+        {
+            return hashes.get(index);
+        }
+
+        // If this method has been called before with the same number of excluded
+        // leaves (which implies the same set), then use the cached value.
+        if (treeHashCache.containsKey(index))
+        {
+            if (exceptCache.get(index) == except.size())
+            {
+                return treeHashCache.get(index);
+            }
+        }
+
+        // If there is no entry in either cache, recompute the value
+        byte[] hash;
+
+        if (index.isLeaf())
+        {
+            // A leaf node with local changes is by definition excluded from the parent
+            // hash.  So we return the hash of an empty leaf.
+            LeafNodeHashInput leafHashInput = new LeafNodeHashInput(new LeafIndex(index), null);
+            hash = suite.hash(MLSOutputStream.encode(TreeHashInput.forLeafNode(leafHashInput)));
+        }
+        else
+        {
+            // If there is no cached value, recalculate the child hashes with the
+            // specified `except` list, removing the `except` list from
+            // `unmerged_leaves`.
+            ParentNodeHashInput parentHashInput = new ParentNodeHashInput(
+                    null,
+                    originalTreeHash(index.left(), except),
+                    originalTreeHash(index.right(), except)
+            );
+
+            if (!nodeAt(index).isBlank())
+            {
+                parentHashInput.parentNode = nodeAt(index).getParentNode();
+
+                //TODO: check which one runs faster (assuming the latter)
+                List<LeafIndex> unmergedOriginal = new ArrayList<>(parentHashInput.parentNode.unmerged_leaves);
+                parentHashInput.parentNode.unmerged_leaves.removeAll(except);
+//                int end = parentHashInput.parentNode.unmerged_leaves.size();
+//                for (LeafIndex leaf: parentHashInput.parentNode.unmerged_leaves)
+//                {
+//                    if (except.contains(leaf))
+//                    {
+//                        end--;
+//                    }
+//                    else
+//                    {
+//                        break;
+//                    }
+//                }
+//                parentHashInput.parentNode.unmerged_leaves = parentHashInput.parentNode.unmerged_leaves.subList(0, end);
+
+                hash = suite.hash(MLSOutputStream.encode(TreeHashInput.forParentNode(parentHashInput)));
+
+                // Revert the unmerged Array
+                parentHashInput.parentNode.unmerged_leaves = unmergedOriginal;
+            }
+            else
+            {
+                hash = suite.hash(MLSOutputStream.encode(TreeHashInput.forParentNode(parentHashInput)));
+            }
+
+
+
+        }
+
+        treeHashCache.put(index, hash);
+        exceptCache.put(index, except.size());
+        return hash;
+    }
+    private byte[] originalParentHash(NodeIndex parent, NodeIndex sibling) throws IOException
+    {
+        ParentNode parentNode = nodeAt(parent).getParentNode();
+        byte[] siblingHash =  originalTreeHash(sibling, parentNode.unmerged_leaves);
+        return suite.hash(MLSOutputStream.encode(new ParentHashInput(
+                parentNode.encryptionKey,
+                parentNode.parentHash,
+                siblingHash
+        )));
+    }
+
+    public byte[] getHash(NodeIndex index) throws IOException
     {
         if (hashes.containsKey(index))
         {
@@ -274,7 +470,7 @@ public class TreeKEMPublicKey
         OptionalNode node = nodeAt(index);
         if (index.level() == 0)
         {
-            LeafNodeHashInput input = new LeafNodeHashInput(new LeafIndex((int)index.value()), null);
+            LeafNodeHashInput input = new LeafNodeHashInput(new LeafIndex(index), null);
             if (!node.isBlank())
             {
                 input.leafNode = node.getLeafNode();

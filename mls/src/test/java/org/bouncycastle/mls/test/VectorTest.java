@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
@@ -798,6 +799,127 @@ public class VectorTest
             if (a > -1)
             {
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    public void testTreeValidation()
+            throws Exception
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("tree-validation.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<>();
+        ArrayList<byte[]> hashes = new ArrayList<>();
+        ArrayList<ArrayList<NodeIndex>> resolution = new ArrayList<>();
+        ArrayList<NodeIndex> temp = new ArrayList<>();
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+//                    if (count != 59)
+//                    {
+//                        count++;
+//                        continue;
+//                    }
+                    System.out.println("test case: " + count);
+                    short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
+                    byte[] treeBytes = Hex.decode(buf.get("tree"));
+                    byte[] group_id = Hex.decode(buf.get("group_id"));
+
+                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(treeBytes, TreeKEMPublicKey.class);
+                    tree.setSuite(suite);
+                    tree.setHashAll();
+//                    tree.dump();
+
+                    // Verify each leaf node is properly signed
+                    for (int i = 0; i < tree.size.leafCount(); i++)
+                    {
+                        LeafNode leaf = tree.getLeafNode(new LeafIndex(i));
+                        if (leaf == null)
+                        {
+                            continue;
+                        }
+
+                        boolean leafValid = leaf.verify(suite, leaf.toBeSigned(group_id, i));
+                        assertTrue(leafValid);
+                    }
+
+                    // Verify the tree hashes
+                    for (int i = 0; i < tree.size.width(); i++)
+                    {
+                        NodeIndex index = new NodeIndex(i);
+                        // Tree hash
+                        assertTrue(Arrays.areEqual(tree.getHash(index), hashes.get(i)));
+                        // Resolution
+                        assertEquals(tree.resolve(index), resolution.get(i));
+                    }
+
+                    // Verify parent hashes
+                    assertTrue(tree.verifyParentHash());
+
+                    // verify resolutions
+                    for (int i = 0; i < tree.size.width(); i++)
+                    {
+                        NodeIndex n = new NodeIndex(i);
+                        assertEquals(tree.resolve(n), resolution.get(i));
+                    }
+
+                    hashes.clear();
+                    resolution.clear();
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+
+            // Read Hashes
+            if (line.endsWith("START"))
+            {
+                while ((line = bin.readLine()) != null)
+                {
+                    line = line.trim();
+                    if (line.endsWith("STOP"))
+                    {
+                        line = bin.readLine();
+                        line = bin.readLine();
+                        break;
+                    }
+                    byte[] hash = Hex.decode(line);
+                    hashes.add(hash);
+
+                }
+            }
+            if (line.endsWith("START"))
+            {
+                while ((line = bin.readLine()) != null)
+                {
+                    line = line.trim();
+                    if (line.endsWith("STOP"))
+                    {
+                        resolution.add((ArrayList<NodeIndex>) temp.clone());
+                        temp.clear();
+                        line = bin.readLine().trim();
+                        if (line.endsWith("STOP"))
+                        {
+                            break;
+                        }
+                    }
+                    if (line.endsWith("START"))
+                    {
+                        continue;
+                    }
+                    temp.add(new NodeIndex(Integer.parseInt(line)));
+                }
             }
         }
     }

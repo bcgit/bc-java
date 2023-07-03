@@ -286,50 +286,6 @@ class FramedContentTBS
 }
 
 
-class Certificate
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    byte[] cert_data;
-
-    Certificate(MLSInputStream stream) throws IOException
-    {
-        cert_data = stream.readOpaque();
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.writeOpaque(cert_data);
-    }
-}
-
-
-enum CredentialType
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((short) 0),
-    basic((short) 1),
-    x509((short) 2);
-
-    final short value;
-
-    CredentialType(short value)
-    {
-        this.value = value;
-    }
-
-    @SuppressWarnings("unused")
-    CredentialType(MLSInputStream stream) throws IOException
-    {
-        this.value = (short) stream.read(short.class);
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
-    }
-}
-
 enum ExtensionType
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {

@@ -8,7 +8,7 @@ public class Credential
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 
 {
-    CredentialType credentialType;
+    public CredentialType credentialType;
     byte[] identity;
     List<Certificate> certificates;
 
