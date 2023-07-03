@@ -19,7 +19,8 @@ public class Varint implements MLSInputStream.Readable, MLSOutputStream.Writable
 
     @SuppressWarnings("unused")
     public Varint(MLSInputStream stream) throws IOException {
-        int logSize = stream.peek() >> HEADER_OFFSET;
+        int prefix = stream.peek() & 0xff;
+        int logSize = prefix >>> HEADER_OFFSET;
         int size = 1 << logSize;
         switch (size) {
             case 1:
