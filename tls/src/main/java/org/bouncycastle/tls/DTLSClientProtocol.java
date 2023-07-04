@@ -472,7 +472,7 @@ public class DTLSClientProtocol
         state.clientAgreements = TlsUtils.addKeyShareToClientHello(state.clientContext, state.client,
             state.clientExtensions);
 
-        if (TlsUtils.isExtendedMasterSecretOptionalDTLS(context.getClientSupportedVersions())
+        if (TlsUtils.isExtendedMasterSecretOptional(context.getClientSupportedVersions())
             && state.client.shouldUseExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);

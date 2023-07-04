@@ -847,8 +847,7 @@ class ProvTlsServer
             JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
                 sslParameters.getEndpointIdentificationAlgorithm(), matchedSNIServerName);
             // TODO[tls13] Resumption/PSK
-            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context)
-                && context.getSecurityParametersConnection().isExtendedMasterSecret();
+            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
                 jsseSessionParameters, addToCache);
@@ -1000,12 +999,6 @@ class ProvTlsServer
                         return false;
                     }
                 }
-            }
-
-            // TODO[resumption] Consider support for related system properties
-            if (!sessionParameters.isExtendedMasterSecret())
-            {
-                return false;
             }
         }
 

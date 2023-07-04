@@ -1332,37 +1332,41 @@ public class TlsClientProtocol
         // TODO[compat-gnutls] GnuTLS test server fails to send renegotiation_info extension when resuming
         tlsClient.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
 
-        /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         * 
-         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
-         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
-         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
-         */
+        // extended_master_secret
         {
-            final boolean acceptedExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(
-                serverExtensions);
-            final boolean resumedSession = securityParameters.isResumedSession();
+            boolean negotiatedEMS = false;
 
-            if (acceptedExtendedMasterSecret)
+            if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions))
             {
-                if (server_version.isSSL()
-                    || (!resumedSession && !tlsClient.shouldUseExtendedMasterSecret()))
+                negotiatedEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+
+                if (TlsUtils.isExtendedMasterSecretOptional(server_version))
                 {
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
+                    if (!negotiatedEMS &&
+                        tlsClient.requiresExtendedMasterSecret())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                            "Extended Master Secret extension is required");
+                    }
+                }
+                else
+                {
+                    if (negotiatedEMS)
+                    {
+                        throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                            "Server sent an unexpected extended_master_secret extension negotiating " + server_version);
+                    }
                 }
             }
-            else
-            {
-                if (tlsClient.requiresExtendedMasterSecret()
-                    || (resumedSession && !tlsClient.allowLegacyResumption()))
-                {
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                }
-            }
 
-            securityParameters.extendedMasterSecret = acceptedExtendedMasterSecret;
+            securityParameters.extendedMasterSecret = negotiatedEMS;
+        }
+
+        if (securityParameters.isResumedSession() &&
+            securityParameters.isExtendedMasterSecret() != sessionParameters.isExtendedMasterSecret())
+        {
+            throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                "Server resumed session with mismatched extended_master_secret negotiation");
         }
 
         /*
@@ -1794,8 +1798,17 @@ public class TlsClientProtocol
             securityParameters.clientRandom = createRandomBlock(useGMTUnixTime, tlsClientContext);
         }
 
-        establishSession(offeringTLSv12Minus ? tlsClient.getSessionToResume() : null);
-        tlsClient.notifySessionToResume(tlsSession);
+        TlsSession sessionToResume = offeringTLSv12Minus ? tlsClient.getSessionToResume() : null;
+
+        boolean fallback = tlsClient.isFallback();
+
+        int[] offeredCipherSuites = tlsClient.getCipherSuites();
+
+        this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsClient.getClientExtensions());
+
+        final boolean shouldUseEMS = tlsClient.shouldUseExtendedMasterSecret();
+
+        establishSession(sessionToResume);
 
         /*
          * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
@@ -1803,20 +1816,51 @@ public class TlsClientProtocol
          */
         byte[] legacy_session_id = TlsUtils.getSessionID(tlsSession);
 
-        boolean fallback = tlsClient.isFallback();
-
-        int[] offeredCipherSuites = tlsClient.getCipherSuites();
-
-        if (legacy_session_id.length > 0 && this.sessionParameters != null)
+        if (legacy_session_id.length > 0)
         {
-            if (!Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite())
-                || CompressionMethod._null != sessionParameters.getCompressionAlgorithm())
+            if (CompressionMethod._null != sessionParameters.getCompressionAlgorithm() ||
+                !Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite()))
             {
                 legacy_session_id = TlsUtils.EMPTY_BYTES;
             }
         }
 
-        this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsClient.getClientExtensions());
+        ProtocolVersion sessionVersion = null;
+        if (legacy_session_id.length > 0)
+        {
+            sessionVersion = sessionParameters.getNegotiatedVersion();
+
+            if (!ProtocolVersion.contains(supportedVersions, sessionVersion))
+            {
+                legacy_session_id = TlsUtils.EMPTY_BYTES;
+            }
+        }
+
+        if (legacy_session_id.length > 0 && TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
+        {
+            if (shouldUseEMS)
+            {
+                if (!sessionParameters.isExtendedMasterSecret() &&
+                    !tlsClient.allowLegacyResumption())
+                {
+                    legacy_session_id = TlsUtils.EMPTY_BYTES;
+                }
+            }
+            else
+            {
+                if (sessionParameters.isExtendedMasterSecret())
+                {
+                    legacy_session_id = TlsUtils.EMPTY_BYTES;
+                }
+            }
+        }
+
+        if (legacy_session_id.length < 1)
+        {
+            cancelSession();
+        }
+
+        tlsClient.notifySessionToResume(tlsSession);
 
         ProtocolVersion legacy_version = latestVersion;
         if (offeringTLSv13Plus)
@@ -1852,15 +1896,13 @@ public class TlsClientProtocol
         // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered  
         this.clientAgreements = TlsUtils.addKeyShareToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
-        if (TlsUtils.isExtendedMasterSecretOptionalTLS(supportedVersions)
-            && (tlsClient.shouldUseExtendedMasterSecret() ||
-                (null != sessionParameters && sessionParameters.isExtendedMasterSecret())))
+        if (shouldUseEMS && TlsUtils.isExtendedMasterSecretOptional(supportedVersions))
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(this.clientExtensions);
         }
-        else if (!offeringTLSv13Plus && tlsClient.requiresExtendedMasterSecret())
+        else
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
+            this.clientExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
         if (securityParameters.isRenegotiating())
