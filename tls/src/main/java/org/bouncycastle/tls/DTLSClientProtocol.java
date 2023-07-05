@@ -378,7 +378,6 @@ public class DTLSClientProtocol
 
         state.sessionParameters = new SessionParameters.Builder()
             .setCipherSuite(securityParameters.getCipherSuite())
-            .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
             .setMasterSecret(state.clientContext.getCrypto().adoptSecret(state.sessionMasterSecret))
@@ -440,8 +439,7 @@ public class DTLSClientProtocol
 
         if (session_id.length > 0 && state.sessionParameters != null)
         {
-            if (!Arrays.contains(state.offeredCipherSuites, state.sessionParameters.getCipherSuite())
-                || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm())
+            if (!Arrays.contains(state.offeredCipherSuites, state.sessionParameters.getCipherSuite()))
             {
                 session_id = TlsUtils.EMPTY_BYTES;
             }
@@ -472,7 +470,7 @@ public class DTLSClientProtocol
         state.clientAgreements = TlsUtils.addKeyShareToClientHello(state.clientContext, state.client,
             state.clientExtensions);
 
-        if (TlsUtils.isExtendedMasterSecretOptionalDTLS(context.getClientSupportedVersions())
+        if (TlsUtils.isExtendedMasterSecretOptional(context.getClientSupportedVersions())
             && state.client.shouldUseExtendedMasterSecret())
         {
             TlsExtensionsUtils.addExtendedMasterSecretExtension(state.clientExtensions);
@@ -874,9 +872,8 @@ public class DTLSClientProtocol
 
         if (state.resumedSession)
         {
-            if (securityParameters.getCipherSuite() != state.sessionParameters.getCipherSuite()
-                || CompressionMethod._null != state.sessionParameters.getCompressionAlgorithm()
-                || !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
+            if (securityParameters.getCipherSuite() != state.sessionParameters.getCipherSuite() ||
+                !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }

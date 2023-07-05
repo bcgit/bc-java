@@ -369,7 +369,6 @@ public class DTLSServerProtocol
 
         state.sessionParameters = new SessionParameters.Builder()
             .setCipherSuite(securityParameters.getCipherSuite())
-            .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
             .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
             .setLocalCertificate(securityParameters.getLocalCertificate())
             .setMasterSecret(state.serverContext.getCrypto().adoptSecret(state.sessionMasterSecret))
