@@ -650,7 +650,7 @@ public class ArmoredOutputStream
             List<String> values = headers.get(key);
             if (values == null)
             {
-                values = new ArrayList<>();
+                values = new ArrayList<String>();
                 headers.put(key, values);
             }
 
@@ -683,7 +683,7 @@ public class ArmoredOutputStream
                 return this;
             }
 
-            List<String> values = new ArrayList<>();
+            List<String> values = new ArrayList<String>();
 
             // handle multi-line values
             String trimmed = value.trim();
