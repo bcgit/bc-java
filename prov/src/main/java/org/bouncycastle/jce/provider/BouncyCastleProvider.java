@@ -254,7 +254,7 @@ public final class BouncyCastleProvider extends Provider
         getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
     }
 
-    public final Service getService(String type, String algorithm)
+    public final Service getService(final String type, final String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
         final String key = type + "." + upperCaseAlgName;
