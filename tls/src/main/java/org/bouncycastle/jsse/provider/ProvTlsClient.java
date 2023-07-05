@@ -23,6 +23,7 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
+import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.OCSPStatusRequest;
@@ -654,6 +655,12 @@ class ProvTlsClient
     }
 
     @Override
+    public boolean shouldUseCompatibilityMode()
+    {
+        return JsseUtils.useCompatibilityMode();
+    }
+
+    @Override
     public boolean shouldUseExtendedMasterSecret()
     {
         return JsseUtils.useExtendedMasterSecret();
@@ -683,14 +690,19 @@ class ProvTlsClient
 
         {
             if (null == sessionParameters ||
-                !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
             {
                 return null;
             }
 
+            ProtocolVersion sessionVersion = sessionParameters.getNegotiatedVersion();
+            if (!ProtocolVersion.contains(getProtocolVersions(), sessionVersion))
+            {
+                return null;
+            }
+
             // TODO[tls13] Resumption/PSK 
-            if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
+            if (TlsUtils.isTLSv13(sessionVersion))
             {
                 return null;
             }

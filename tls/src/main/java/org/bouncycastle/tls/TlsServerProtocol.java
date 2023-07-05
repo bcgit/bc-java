@@ -625,8 +625,6 @@ public class TlsServerProtocol
 
         tlsServer.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
 
-        boolean offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions);
-
         if (clientExtensions != null)
         {
             // NOTE: Validates the padding extension data, if present
@@ -648,11 +646,63 @@ public class TlsServerProtocol
             tlsServer.processClientExtensions(clientExtensions);
         }
 
-        boolean resumedSession = establishSession(tlsServer.getSessionToResume(clientHello.getSessionID()));
-        securityParameters.resumedSession = resumedSession;
+        TlsSession sessionToResume = tlsServer.getSessionToResume(clientHello.getSessionID());
+
+        boolean resumedSession = establishSession(sessionToResume);
+
+        if (resumedSession && !serverVersion.equals(sessionParameters.getNegotiatedVersion()))
+        {
+            resumedSession = false;
+        }
+
+        // TODO Check the session cipher suite is selectable by the same rules that getSelectedCipherSuite uses
+
+        // TODO Check the resumed session has a peer certificate if we NEED client-auth
+
+        // extended_master_secret
+        {
+            boolean negotiateEMS = false;
+
+            if (TlsUtils.isExtendedMasterSecretOptional(serverVersion) &&
+                tlsServer.shouldUseExtendedMasterSecret())
+            {
+                if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions))
+                {
+                    negotiateEMS = true;
+                }
+                else if (tlsServer.requiresExtendedMasterSecret())
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                        "Extended Master Secret extension is required");
+                }
+                else if (resumedSession)
+                {
+                    if (sessionParameters.isExtendedMasterSecret())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                            "Extended Master Secret extension is required for EMS session resumption");
+                    }
+
+                    if (!tlsServer.allowLegacyResumption())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                            "Extended Master Secret extension is required for legacy session resumption");
+                    }
+                }
+            }
+
+            if (resumedSession && negotiateEMS != sessionParameters.isExtendedMasterSecret())
+            {
+                resumedSession = false;
+            }
+
+            securityParameters.extendedMasterSecret = negotiateEMS;
+        }
 
         if (!resumedSession)
         {
+            cancelSession();
+
             byte[] newSessionID = tlsServer.getNewSessionID();
             if (null == newSessionID)
             {
@@ -660,10 +710,9 @@ public class TlsServerProtocol
             }
 
             this.tlsSession = TlsUtils.importSession(newSessionID, null);
-            this.sessionParameters = null;
-            this.sessionMasterSecret = null;
         }
 
+        securityParameters.resumedSession = resumedSession;
         securityParameters.sessionID = tlsSession.getSessionID();
 
         tlsServer.notifySession(tlsSession);
@@ -739,43 +788,13 @@ public class TlsServerProtocol
             }
         }
 
-        /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         */
-        if (resumedSession)
+        if (securityParameters.isExtendedMasterSecret())
         {
-            if (!sessionParameters.isExtendedMasterSecret())
-            {
-                /*
-                 * TODO[resumption] ProvTlsServer currently only resumes EMS sessions. Revisit this
-                 * in relation to 'tlsServer.allowLegacyResumption()'.
-                 */
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
-
-            if (!offeredExtendedMasterSecret)
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-
-            securityParameters.extendedMasterSecret = true;
-
             TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
         }
         else
         {
-            securityParameters.extendedMasterSecret = offeredExtendedMasterSecret && !serverVersion.isSSL()
-                && tlsServer.shouldUseExtendedMasterSecret();
-
-            if (securityParameters.isExtendedMasterSecret())
-            {
-                TlsExtensionsUtils.addExtendedMasterSecretExtension(serverExtensions);
-            }
-            else if (tlsServer.requiresExtendedMasterSecret())
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
+            serverExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);

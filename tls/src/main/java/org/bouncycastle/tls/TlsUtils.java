@@ -1288,17 +1288,28 @@ public class TlsUtils
         return new TlsSessionImpl(sessionID, sessionParameters);
     }
 
-    static boolean isExtendedMasterSecretOptionalDTLS(ProtocolVersion[] activeProtocolVersions)
+    static boolean isExtendedMasterSecretOptional(ProtocolVersion protocolVersion)
     {
-        return ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.DTLSv12)
-            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.DTLSv10);
+        ProtocolVersion tlsVersion = protocolVersion.getEquivalentTLSVersion();
+
+        return ProtocolVersion.TLSv12.equals(tlsVersion)
+            || ProtocolVersion.TLSv11.equals(tlsVersion)
+            || ProtocolVersion.TLSv10.equals(tlsVersion);
     }
 
-    static boolean isExtendedMasterSecretOptionalTLS(ProtocolVersion[] activeProtocolVersions)
+    static boolean isExtendedMasterSecretOptional(ProtocolVersion[] protocolVersions)
     {
-        return ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv12)
-            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv11)
-            || ProtocolVersion.contains(activeProtocolVersions, ProtocolVersion.TLSv10);
+        if (protocolVersions != null)
+        {
+            for (int i = 0; i < protocolVersions.length; ++i)
+            {
+                if (isExtendedMasterSecretOptional(protocolVersions[i]))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static boolean isNullOrContainsNull(Object[] array)

@@ -519,7 +519,6 @@ public abstract class TlsProtocol
 
                 this.sessionParameters = new SessionParameters.Builder()
                     .setCipherSuite(securityParameters.getCipherSuite())
-                    .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
                     .setMasterSecret(context.getCrypto().adoptSecret(this.sessionMasterSecret))
@@ -1576,18 +1575,26 @@ public abstract class TlsProtocol
             return false;
         }
 
-        if (!sessionParameters.isExtendedMasterSecret())
+        ProtocolVersion sessionVersion = sessionParameters.getNegotiatedVersion();
+        if (null == sessionVersion || !sessionVersion.isTLS())
         {
-            TlsPeer peer = getPeer();
-            if (!peer.allowLegacyResumption() || peer.requiresExtendedMasterSecret())
+            return false;
+        }
+
+        boolean isEMS = sessionParameters.isExtendedMasterSecret();
+        if (sessionVersion.isSSL())
+        {
+            if (isEMS)
             {
                 return false;
             }
-
-            /*
-             * NOTE: For session resumption without extended_master_secret, renegotiation MUST be disabled
-             * (see RFC 7627 5.4).
-             */
+        }
+        else if (!TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
+        {
+            if (!isEMS)
+            {
+                return false;
+            }
         }
 
         TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(getContext().getCrypto(),
@@ -1604,7 +1611,7 @@ public abstract class TlsProtocol
         return true;
     }
 
-    protected void invalidateSession()
+    protected void cancelSession()
     {
         if (this.sessionMasterSecret != null)
         {
@@ -1618,11 +1625,17 @@ public abstract class TlsProtocol
             this.sessionParameters = null;
         }
 
+        this.tlsSession = null;
+    }
+
+    protected void invalidateSession()
+    {
         if (this.tlsSession != null)
         {
             this.tlsSession.invalidate();
-            this.tlsSession = null;
         }
+
+        cancelSession();
     }
 
     protected void processFinishedMessage(ByteArrayInputStream buf)

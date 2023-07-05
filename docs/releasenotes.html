@@ -26,6 +26,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Service allocation in the provider could fail due to the lack of a permission block. This has been fixed.</li>
 <li>JceKeyFingerPrintCalculator has been generalised for different providers by using "SHA-256" for the algorithm string.</li>
 </ul>
+<h3>2.1.3 Additional Features and Functionality</h3>
+<ul>
+<li>BCJSSE: Added support for boolean system property "jdk.tls.client.useCompatibilityMode" (default "true").</li>
+</ul>
 
 <a id="r1rv75"><h3>2.2.1 Version</h3></a>
 Release: 1.75<br/>
@@ -78,7 +82,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 12th
 </ul>
 <h3>2.3.5 Security Advisories.</h3>
 <ul>
-<li>CVE-2023-33201 - this release fixes an issue with the X509LDAPCertStoreSpi where a specially crafted certificate subject could be used to try and extract extra information out of an LDAP server with wild-card matthing enabled.</li>
+<li>CVE-2023-33201 - this release fixes an issue with the X509LDAPCertStoreSpi where a specially crafted certificate subject could be used to try and extract extra information out of an LDAP server with wild-card matching enabled.</li>
 </ul>
 
 <a id="r1rv73"><h3>2.4.1 Version</h3></a>
