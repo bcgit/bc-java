@@ -1174,7 +1174,6 @@ public class TlsClientProtocol
             if (securityParameters.isResumedSession())
             {
                 if (serverHello.getCipherSuite() != sessionParameters.getCipherSuite() ||
-                    CompressionMethod._null != sessionParameters.getCompressionAlgorithm() ||
                     !securityParameters.getNegotiatedVersion().equals(sessionParameters.getNegotiatedVersion()))
                 {
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter,
@@ -1380,9 +1379,8 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (securityParameters.isResumedSession())
         {
-            if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite()
-                || CompressionMethod._null != this.sessionParameters.getCompressionAlgorithm()
-                || !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
+            if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite() ||
+                !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -1530,9 +1528,8 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (securityParameters.isResumedSession())
         {
-            if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite()
-                || CompressionMethod._null != sessionParameters.getCompressionAlgorithm()
-                || !negotiatedVersion.equals(sessionParameters.getNegotiatedVersion()))
+            if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite() ||
+                !negotiatedVersion.equals(sessionParameters.getNegotiatedVersion()))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
             }
@@ -1818,8 +1815,7 @@ public class TlsClientProtocol
 
         if (legacy_session_id.length > 0)
         {
-            if (CompressionMethod._null != sessionParameters.getCompressionAlgorithm() ||
-                !Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite()))
+            if (!Arrays.contains(offeredCipherSuites, sessionParameters.getCipherSuite()))
             {
                 legacy_session_id = TlsUtils.EMPTY_BYTES;
             }

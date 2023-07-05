@@ -690,7 +690,6 @@ class ProvTlsClient
 
         {
             if (null == sessionParameters ||
-                CompressionMethod._null != sessionParameters.getCompressionAlgorithm() ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
             {
                 return null;

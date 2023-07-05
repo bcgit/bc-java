@@ -15,7 +15,6 @@ public class SecurityParameters
     boolean renegotiating = false;
     boolean secureRenegotiation = false;
     int cipherSuite = CipherSuite.TLS_NULL_WITH_NULL_NULL;
-    final short compressionAlgorithm = CompressionMethod._null;
     short maxFragmentLength = -1;
     int prfAlgorithm = -1;
     int prfCryptoHashAlgorithm = -1;
@@ -175,10 +174,12 @@ public class SecurityParameters
 
     /**
      * @return {@link CompressionMethod}
+     * 
+     * @deprecated Will be removed. Use constant CompressionMethod._null instead.
      */
     public short getCompressionAlgorithm()
     {
-        return compressionAlgorithm;
+        return CompressionMethod._null;
     }
 
     /**

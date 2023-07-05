@@ -519,7 +519,6 @@ public abstract class TlsProtocol
 
                 this.sessionParameters = new SessionParameters.Builder()
                     .setCipherSuite(securityParameters.getCipherSuite())
-                    .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
                     .setMasterSecret(context.getCrypto().adoptSecret(this.sessionMasterSecret))
