@@ -27,12 +27,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSocket;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -77,11 +79,12 @@ class TestUtils
     static final SecureRandom RANDOM = new SecureRandom();
 
     private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
-    private static Map<String, AlgorithmIdentifier> algIDs = createAlgIds();
+    private static Map<String, AlgorithmIdentifier> algIDs = createAlgIDs();
+    private static Set<String> tlsUniqueProtocols = createTlsUniqueProtocols();
 
-    private static Map<String, AlgorithmIdentifier> createAlgIds()
+    private static Map<String, AlgorithmIdentifier> createAlgIDs()
     {
-        Map<String, AlgorithmIdentifier> algIDs = new HashMap<String, AlgorithmIdentifier>();
+        HashMap<String, AlgorithmIdentifier> algIDs = new HashMap<String, AlgorithmIdentifier>();
 
         algIDs.put("SHA1withDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa_with_sha1));
         algIDs.put("SHA224withDSA", new AlgorithmIdentifier(NISTObjectIdentifiers.dsa_with_sha224));
@@ -102,6 +105,22 @@ class TestUtils
         algIDs.put("Ed448", new AlgorithmIdentifier(TestOIDs.id_Ed448));
 
         return Collections.unmodifiableMap(algIDs);
+    }
+
+    private static Set<String> createTlsUniqueProtocols()
+    {
+        /*
+         * NOTE: This is slightly simplified. tls-unique is available pre-TLSv1.3 when extended_master_secret is
+         * negotiated OR a full handshake is performed (i.e. not a session resumption). All relevant tests negotiate
+         * EMS except SSLv3, which we just ignore here since it is not long for this world.
+         */
+        HashSet<String> tlsUniqueProtocols = new HashSet<String>();
+
+        tlsUniqueProtocols.add("TLSv1");
+        tlsUniqueProtocols.add("TLSv1.1");
+        tlsUniqueProtocols.add("TLSv1.2");
+
+        return Collections.unmodifiableSet(tlsUniqueProtocols);
     }
 
     private static AlgorithmIdentifier getAlgID(String sigAlgName)
@@ -420,6 +439,19 @@ class TestUtils
         return null;
     }
 
+    public static byte[] getChannelBinding(SSLEngine e, String channelBinding)
+    {
+        if (e instanceof BCSSLEngine)
+        {
+            BCSSLConnection connection = ((BCSSLEngine)e).getConnection();
+            if (connection != null)
+            {
+                return connection.getChannelBinding(channelBinding);
+            }
+        }
+        return null;
+    }
+
     public static List<String> getTestableProtocols(SSLContext sslContext, boolean fips)
     {
         BCSSLEngine sslEngine = (BCSSLEngine)sslContext.createSSLEngine();
@@ -434,6 +466,11 @@ class TestUtils
         }
         addTestableProtocols(result, algorithmConstraints, primitives, "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3");
         return result;
+    }
+
+    public static boolean isTlsUniqueProtocol(String protocol)
+    {
+        return tlsUniqueProtocols.contains(protocol);
     }
 
     private static void addTestableProtocols(ArrayList<String> result, BCAlgorithmConstraints algorithmConstraints,
