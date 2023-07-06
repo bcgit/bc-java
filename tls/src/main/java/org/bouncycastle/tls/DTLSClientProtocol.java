@@ -146,7 +146,7 @@ public class DTLSClientProtocol
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
-        if (state.resumedSession)
+        if (securityParameters.isResumedSession())
         {
             securityParameters.masterSecret = state.sessionMasterSecret;
             recordLayer.initPendingEpoch(TlsUtils.initCipher(state.clientContext));
@@ -668,7 +668,7 @@ public class DTLSClientProtocol
             byte[] selectedSessionID = serverHello.getSessionID();
             securityParameters.sessionID = selectedSessionID;
             state.client.notifySessionID(selectedSessionID);
-            state.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
+            securityParameters.resumedSession = selectedSessionID.length > 0 && state.tlsSession != null
                 && Arrays.areEqual(selectedSessionID, state.tlsSession.getSessionID());
         }
 
@@ -724,7 +724,7 @@ public class DTLSClientProtocol
 
             if (acceptedExtendedMasterSecret)
             {
-                if (!state.resumedSession && !state.client.shouldUseExtendedMasterSecret())
+                if (!securityParameters.isResumedSession() && !state.client.shouldUseExtendedMasterSecret())
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
@@ -732,7 +732,7 @@ public class DTLSClientProtocol
             else
             {
                 if (state.client.requiresExtendedMasterSecret()
-                    || (state.resumedSession && !state.client.allowLegacyResumption()))
+                    || (securityParameters.isResumedSession() && !state.client.allowLegacyResumption()))
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
@@ -783,7 +783,7 @@ public class DTLSClientProtocol
                  * extensions appearing in the client hello, and send a server hello containing no
                  * extensions[.]
                  */
-                if (state.resumedSession)
+                if (securityParameters.isResumedSession())
                 {
                     // TODO[compat-gnutls] GnuTLS test server sends server extensions e.g. ec_point_formats
                     // TODO[compat-openssl] OpenSSL test server sends server extensions e.g. ec_point_formats
@@ -870,7 +870,7 @@ public class DTLSClientProtocol
 
         Hashtable sessionClientExtensions = state.clientExtensions, sessionServerExtensions = state.serverExtensions;
 
-        if (state.resumedSession)
+        if (securityParameters.isResumedSession())
         {
             if (securityParameters.getCipherSuite() != state.sessionParameters.getCipherSuite() ||
                 !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
@@ -899,12 +899,13 @@ public class DTLSClientProtocol
                 securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
             }
 
-            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.resumedSession,
-                sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(
+                securityParameters.isResumedSession(), sessionClientExtensions, sessionServerExtensions,
+                AlertDescription.illegal_parameter);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
 
-            if (!state.resumedSession)
+            if (!securityParameters.isResumedSession())
             {
                 // TODO[tls13] See RFC 8446 4.4.2.1
                 if (TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsExtensionsUtils.EXT_status_request_v2,
@@ -917,11 +918,10 @@ public class DTLSClientProtocol
                 {
                     securityParameters.statusRequestVersion = 1;
                 }
-            }
 
-            state.expectSessionTicket = !state.resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions, TlsProtocol.EXT_SessionTicket,
-                    AlertDescription.illegal_parameter);
+                state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
+                    TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
+            }
         }
 
         if (sessionClientExtensions != null)
@@ -1005,7 +1005,6 @@ public class DTLSClientProtocol
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
-        boolean resumedSession = false;
         boolean expectSessionTicket = false;
         Hashtable clientAgreements = null;
         TlsKeyExchange keyExchange = null;

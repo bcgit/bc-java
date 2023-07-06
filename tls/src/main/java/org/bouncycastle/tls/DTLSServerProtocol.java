@@ -134,6 +134,7 @@ public class DTLSServerProtocol
             state.sessionMasterSecret = null;
         }
 
+        securityParameters.resumedSession = false;
         securityParameters.sessionID = state.tlsSession.getSessionID();
 
         state.server.notifySession(state.tlsSession);
@@ -452,6 +453,8 @@ public class DTLSServerProtocol
             }
         }
 
+        final boolean resumedSession = securityParameters.isResumedSession();
+
         {
             int cipherSuite = validateSelectedCipherSuite(state.server.getSelectedCipherSuite(),
                 AlertDescription.internal_error);
@@ -529,7 +532,7 @@ public class DTLSServerProtocol
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
             }
-            else if (state.resumedSession && !state.server.allowLegacyResumption())
+            else if (resumedSession && !state.server.allowLegacyResumption())
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -581,7 +584,7 @@ public class DTLSServerProtocol
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
 
-            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(state.resumedSession,
+            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(resumedSession,
                 state.clientExtensions, state.serverExtensions, AlertDescription.internal_error);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
@@ -590,7 +593,7 @@ public class DTLSServerProtocol
              * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
              * a session resumption handshake.
              */
-            if (!state.resumedSession)
+            if (!resumedSession)
             {
                 // TODO[tls13] See RFC 8446 4.4.2.1
                 if (TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
@@ -603,11 +606,10 @@ public class DTLSServerProtocol
                 {
                     securityParameters.statusRequestVersion = 1;
                 }
-            }
 
-            state.expectSessionTicket = !state.resumedSession
-                && TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions, TlsProtocol.EXT_SessionTicket,
-                    AlertDescription.internal_error);
+                state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
+                    TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
+            }
         }
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
@@ -883,7 +885,6 @@ public class DTLSServerProtocol
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
         boolean offeredExtendedMasterSecret = false;
-        boolean resumedSession = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsCredentials serverCredentials = null;
