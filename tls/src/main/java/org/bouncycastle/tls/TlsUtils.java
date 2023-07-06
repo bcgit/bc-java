@@ -6113,4 +6113,21 @@ public class TlsUtils
         }
         return v;
     }
+
+    static short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
+        throws IOException
+    {
+        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
+        if (maxFragmentLength >= 0)
+        {
+            if (!MaxFragmentLength.isValid(maxFragmentLength) ||
+                (clientExtensions != null &&
+                    maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions)))
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
+        }
+        return maxFragmentLength;
+    }
 }

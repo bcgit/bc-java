@@ -1945,21 +1945,14 @@ public abstract class TlsProtocol
         return null != context && context.isHandshaking();
     }
 
+    /**
+     * @deprecated Will be removed.
+     */
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
-        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-        if (maxFragmentLength >= 0)
-        {
-            if (!MaxFragmentLength.isValid(maxFragmentLength) ||
-                (clientExtensions != null &&
-                    maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions)))
-            {
-                throw new TlsFatalAlert(alertDescription);
-            }
-        }
-        return maxFragmentLength;
+        return TlsUtils.processMaxFragmentLengthExtension(clientExtensions, serverExtensions, alertDescription);
     }
 
     protected void refuseRenegotiation() throws IOException
