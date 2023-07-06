@@ -356,7 +356,7 @@ public class TlsServerProtocol
 
         if (!serverEncryptedExtensions.isEmpty())
         {
-            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(
+            securityParameters.maxFragmentLength = TlsUtils.processMaxFragmentLengthExtension(
                 securityParameters.isResumedSession() ? null : clientHelloExtensions, serverEncryptedExtensions,
                 AlertDescription.internal_error);
         }
@@ -804,7 +804,7 @@ public class TlsServerProtocol
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(serverExtensions);
 
-            securityParameters.maxFragmentLength = processMaxFragmentLengthExtension(
+            securityParameters.maxFragmentLength = TlsUtils.processMaxFragmentLengthExtension(
                 resumedSession ? null : clientExtensions, serverExtensions, AlertDescription.internal_error);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(serverExtensions);

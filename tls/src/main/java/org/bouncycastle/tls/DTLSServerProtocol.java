@@ -584,8 +584,9 @@ public class DTLSServerProtocol
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
 
-            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(resumedSession,
-                state.clientExtensions, state.serverExtensions, AlertDescription.internal_error);
+            securityParameters.maxFragmentLength = TlsUtils.processMaxFragmentLengthExtension(
+                resumedSession ? null : state.clientExtensions, state.serverExtensions,
+                AlertDescription.internal_error);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
 

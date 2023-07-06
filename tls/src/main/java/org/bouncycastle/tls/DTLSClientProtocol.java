@@ -899,9 +899,8 @@ public class DTLSClientProtocol
                 securityParameters.encryptThenMAC = serverSentEncryptThenMAC;
             }
 
-            securityParameters.maxFragmentLength = evaluateMaxFragmentLengthExtension(
-                securityParameters.isResumedSession(), sessionClientExtensions, sessionServerExtensions,
-                AlertDescription.illegal_parameter);
+            securityParameters.maxFragmentLength = TlsUtils.processMaxFragmentLengthExtension(sessionClientExtensions,
+                sessionServerExtensions, AlertDescription.illegal_parameter);
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
 

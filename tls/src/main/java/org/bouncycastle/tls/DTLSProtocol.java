@@ -45,20 +45,14 @@ public abstract class DTLSProtocol
         }
     }
 
+    /**
+     * @deprecated Will be removed.
+     */
     protected static short evaluateMaxFragmentLengthExtension(boolean resumedSession, Hashtable clientExtensions,
         Hashtable serverExtensions, short alertDescription) throws IOException
     {
-        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-        if (maxFragmentLength >= 0)
-        {
-            if (!MaxFragmentLength.isValid(maxFragmentLength)
-                || (!resumedSession && maxFragmentLength != TlsExtensionsUtils
-                    .getMaxFragmentLengthExtension(clientExtensions)))
-            {
-                throw new TlsFatalAlert(alertDescription);
-            }
-        }
-        return maxFragmentLength;
+        return TlsUtils.processMaxFragmentLengthExtension(resumedSession ? null : clientExtensions, serverExtensions,
+            alertDescription);
     }
 
     protected static byte[] generateCertificate(TlsContext context, Certificate certificate, OutputStream endPointHash)
