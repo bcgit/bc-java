@@ -79,17 +79,17 @@ public class CipherSuitesTestCase extends TestCase
 
     private void runTestConnection(int port, SSLContext clientContext, SSLContext serverContext) throws Throwable
     {
-        SimpleServer server = new SimpleServer(serverContext, port, config);
         SimpleClient client = new SimpleClient(clientContext, port, config);
+        SimpleServer server = new SimpleServer(serverContext, port, config);
 
         TestProtocolUtil.runClientAndServer(server, client);
 
-        if (!"TLSv1.3".equals(config.protocol))
+        if (TestUtils.isTlsUniqueProtocol(config.protocol))
         {
-            TestCase.assertNotNull(server.tlsUnique);
             TestCase.assertNotNull(client.tlsUnique);
+            TestCase.assertNotNull(server.tlsUnique);
         }
-        TestCase.assertTrue(Arrays.areEqual(server.tlsUnique, client.tlsUnique));
+        TestCase.assertTrue(Arrays.areEqual(client.tlsUnique, server.tlsUnique));
     }
 
     private SSLContext createClientContext() throws Exception
