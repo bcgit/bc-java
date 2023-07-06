@@ -215,12 +215,6 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        ContextData contextData = manager.getContextData();
-        ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
-
-        jsseSecurityParameters.signatureSchemes = contextData.getSignatureSchemesClient(sslParameters,
-            activeProtocolVersions, jsseSecurityParameters.namedGroups);
-
         return jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
     }
 
@@ -499,6 +493,9 @@ class ProvTlsClient
         ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
 
         jsseSecurityParameters.namedGroups = contextData.getNamedGroupsClient(sslParameters, activeProtocolVersions);
+
+        jsseSecurityParameters.signatureSchemes = contextData.getSignatureSchemesClient(sslParameters,
+            activeProtocolVersions, jsseSecurityParameters.namedGroups);
     }
 
     @Override
