@@ -1099,8 +1099,8 @@ public class TlsClientProtocol
         Hashtable serverHelloExtensions = serverHello.getExtensions();
 
         final ProtocolVersion legacy_version = serverHello.getVersion();
-        final ProtocolVersion supported_version = TlsExtensionsUtils
-            .getSupportedVersionsExtensionServer(serverHelloExtensions);
+        final ProtocolVersion supported_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(
+            serverHelloExtensions);
 
         final ProtocolVersion server_version;
         if (null == supported_version)
@@ -1807,10 +1807,6 @@ public class TlsClientProtocol
 
         establishSession(sessionToResume);
 
-        /*
-         * TODO RFC 5077 3.4. When presenting a ticket, the client MAY generate and include a
-         * Session ID in the TLS ClientHello.
-         */
         byte[] legacy_session_id = TlsUtils.getSessionID(tlsSession);
 
         if (legacy_session_id.length > 0)

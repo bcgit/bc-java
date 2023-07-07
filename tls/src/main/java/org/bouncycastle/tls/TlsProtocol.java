@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -1597,8 +1598,8 @@ public abstract class TlsProtocol
             }
         }
 
-        TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(getContext().getCrypto(),
-            sessionParameters.getMasterSecret());
+        TlsCrypto crypto = getContext().getCrypto();
+        TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(crypto, sessionParameters.getMasterSecret());
         if (null == sessionMasterSecret)
         {
             return false;
