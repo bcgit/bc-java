@@ -1208,9 +1208,9 @@ public class TlsClientProtocol
          * Hello is always allowed.
          */
         this.serverExtensions = serverHelloExtensions;
-        if (this.serverExtensions != null)
+        if (serverHelloExtensions != null)
         {
-            Enumeration e = this.serverExtensions.keys();
+            Enumeration e = serverHelloExtensions.keys();
             while (e.hasMoreElements())
             {
                 Integer extType = (Integer)e.nextElement();
@@ -1254,7 +1254,7 @@ public class TlsClientProtocol
             }
         }
 
-        byte[] renegExtData = TlsUtils.getExtensionData(this.serverExtensions, EXT_RenegotiationInfo);
+        byte[] renegExtData = TlsUtils.getExtensionData(serverHelloExtensions, EXT_RenegotiationInfo);
 
         if (securityParameters.isRenegotiating())
         {
@@ -1337,7 +1337,7 @@ public class TlsClientProtocol
 
             if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(clientExtensions))
             {
-                negotiatedEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverExtensions);
+                negotiatedEMS = TlsExtensionsUtils.hasExtendedMasterSecretExtension(serverHelloExtensions);
 
                 if (TlsUtils.isExtendedMasterSecretOptional(server_version))
                 {
@@ -1373,10 +1373,10 @@ public class TlsClientProtocol
          * contents of this extension are irrelevant, and only the values in the new handshake
          * messages are considered.
          */
-        securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
+        securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverHelloExtensions);
         securityParameters.applicationProtocolSet = true;
 
-        Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
+        Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverHelloExtensions;
         if (securityParameters.isResumedSession())
         {
             if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite() ||
