@@ -126,25 +126,6 @@ public class DTLSServerProtocol
             processClientHello(state, request.getClientHello());
         }
 
-        /*
-         * NOTE: Currently no server support for session resumption
-         * 
-         * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
-         * ONLY when extended_master_secret has been negotiated (otherwise NULL).
-         */
-        {
-            // TODO[resumption]
-
-            state.tlsSession = TlsUtils.importSession(TlsUtils.EMPTY_BYTES, null);
-            state.sessionParameters = null;
-            state.sessionMasterSecret = null;
-        }
-
-        securityParameters.resumedSession = false;
-        securityParameters.sessionID = state.tlsSession.getSessionID();
-
-        server.notifySession(state.tlsSession);
-
         {
             byte[] serverHelloBody = generateServerHello(state, recordLayer);
 
@@ -387,7 +368,7 @@ public class DTLSServerProtocol
             .setServerExtensions(state.serverExtensions)
             .build();
 
-        state.tlsSession = TlsUtils.importSession(state.tlsSession.getSessionID(), state.sessionParameters);
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), state.sessionParameters);
 
         securityParameters.tlsUnique = securityParameters.getPeerVerifyData();
 
@@ -430,9 +411,14 @@ public class DTLSServerProtocol
         TlsServerContextImpl serverContext = state.serverContext;
         SecurityParameters securityParameters = serverContext.getSecurityParametersHandshake();
 
-        ProtocolVersion server_version = server.getServerVersion();
+        // TODO[dtls13] Negotiate cipher suite first?
+
+        ProtocolVersion serverVersion;
+
+        // NOT renegotiating
         {
-            if (!ProtocolVersion.contains(serverContext.getClientSupportedVersions(), server_version))
+            serverVersion = server.getServerVersion();
+            if (!ProtocolVersion.contains(serverContext.getClientSupportedVersions(), serverVersion))
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
@@ -443,24 +429,116 @@ public class DTLSServerProtocol
 //                : server_version;
 //
 //            recordLayer.setWriteVersion(legacy_record_version);
-            securityParameters.negotiatedVersion = server_version;
-
-            TlsUtils.negotiatedVersionDTLSServer(serverContext);
+            securityParameters.negotiatedVersion = serverVersion;
         }
 
+        // TODO[dtls13]
+//        if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(serverVersion))
+//        {
+//            // See RFC 8446 D.4.
+//            recordStream.setIgnoreChangeCipherSpec(true);
+//
+//            recordStream.setWriteVersion(ProtocolVersion.DTLSv12);
+//
+//            return generate13ServerHello(clientHello, clientHelloMessage, false);
+//        }
+//
+//        recordStream.setWriteVersion(serverVersion);
+
         {
-            boolean useGMTUnixTime = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(server_version)
-                && server.shouldUseGMTUnixTime();
+            boolean useGMTUnixTime = server.shouldUseGMTUnixTime();
 
             securityParameters.serverRandom = TlsProtocol.createRandomBlock(useGMTUnixTime, serverContext);
 
-            if (!server_version.equals(ProtocolVersion.getLatestDTLS(server.getProtocolVersions())))
+            if (!serverVersion.equals(ProtocolVersion.getLatestDTLS(server.getProtocolVersions())))
             {
-                TlsUtils.writeDowngradeMarker(server_version, securityParameters.getServerRandom());
+                TlsUtils.writeDowngradeMarker(serverVersion, securityParameters.getServerRandom());
             }
         }
 
-        final boolean resumedSession = securityParameters.isResumedSession();
+        /*
+         * NOTE: Currently no server support for session resumption
+         * 
+         * If adding support, ensure securityParameters.tlsUnique is set to the localVerifyData, but
+         * ONLY when extended_master_secret has been negotiated (otherwise NULL).
+         */
+        // TODO[resumption]
+        {
+            state.tlsSession = null;
+            state.sessionParameters = null;
+            state.sessionMasterSecret = null;
+        }
+
+        boolean resumedSession = false;
+
+        if (resumedSession && !serverVersion.equals(state.sessionParameters.getNegotiatedVersion()))
+        {
+            resumedSession = false;
+        }
+
+        // TODO Check the session cipher suite is selectable by the same rules that getSelectedCipherSuite uses
+
+        // TODO Check the resumed session has a peer certificate if we NEED client-auth
+
+        // extended_master_secret
+        {
+            boolean negotiateEMS = false;
+
+            if (TlsUtils.isExtendedMasterSecretOptional(serverVersion) &&
+                server.shouldUseExtendedMasterSecret())
+            {
+                if (TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions))
+                {
+                    negotiateEMS = true;
+                }
+                else if (server.requiresExtendedMasterSecret())
+                {
+                    throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                        "Extended Master Secret extension is required");
+                }
+                else if (resumedSession)
+                {
+                    if (state.sessionParameters.isExtendedMasterSecret())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                            "Extended Master Secret extension is required for EMS session resumption");
+                    }
+
+                    if (!server.allowLegacyResumption())
+                    {
+                        throw new TlsFatalAlert(AlertDescription.handshake_failure,
+                            "Extended Master Secret extension is required for legacy session resumption");
+                    }
+                }
+            }
+
+            if (resumedSession && negotiateEMS != state.sessionParameters.isExtendedMasterSecret())
+            {
+                resumedSession = false;
+            }
+
+            securityParameters.extendedMasterSecret = negotiateEMS;
+        }
+
+        if (!resumedSession)
+        {
+            cancelSession(state);
+
+            byte[] newSessionID = server.getNewSessionID();
+            if (null == newSessionID)
+            {
+                newSessionID = TlsUtils.EMPTY_BYTES;
+            }
+
+            state.tlsSession = TlsUtils.importSession(newSessionID, null);
+        }
+
+        securityParameters.resumedSession = resumedSession;
+        securityParameters.sessionID = state.tlsSession.getSessionID();
+
+        server.notifySession(state.tlsSession);
+
+        TlsUtils.negotiatedVersionDTLSServer(serverContext);
 
         {
             int cipherSuite = validateSelectedCipherSuite(server.getSelectedCipherSuite(),
@@ -475,74 +553,54 @@ public class DTLSServerProtocol
             TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         }
 
-        state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(server.getServerExtensions());
+        {
+            Hashtable sessionServerExtensions = resumedSession
+                ?   state.sessionParameters.readServerExtensions()
+                :   server.getServerExtensions();
+
+            state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(sessionServerExtensions);
+        }
 
         server.getServerExtensionsForConnection(state.serverExtensions);
 
-        ProtocolVersion legacy_version = server_version;
-        if (server_version.isLaterVersionOf(ProtocolVersion.DTLSv12))
+        // NOT renegotiating
         {
-            legacy_version = ProtocolVersion.DTLSv12;
-
-            TlsExtensionsUtils.addSupportedVersionsExtensionServer(state.serverExtensions, server_version);
-        }
-
-        /*
-         * RFC 5746 3.6. Server Behavior: Initial Handshake 
-         */
-        if (securityParameters.isSecureRenegotiation())
-        {
-            byte[] renegExtData = TlsUtils.getExtensionData(state.serverExtensions, TlsProtocol.EXT_RenegotiationInfo);
-            boolean noRenegExt = (null == renegExtData);
-
-            if (noRenegExt)
+            /*
+             * RFC 5746 3.6. Server Behavior: Initial Handshake (both full and session-resumption)
+             */
+            if (securityParameters.isSecureRenegotiation())
             {
-                /*
-                 * Note that sending a "renegotiation_info" extension in response to a ClientHello
-                 * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
-                 * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
-                 * because the client is signaling its willingness to receive the extension via the
-                 * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
-                 */
+                byte[] serverRenegExtData = TlsUtils.getExtensionData(state.serverExtensions,
+                    TlsProtocol.EXT_RenegotiationInfo);
+                boolean noRenegExt = (null == serverRenegExtData);
 
-                /*
-                 * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
-                 * "renegotiation_info" extension in the ServerHello message.
-                 */
-                state.serverExtensions.put(TlsProtocol.EXT_RenegotiationInfo,
-                    TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
+                if (noRenegExt)
+                {
+                    /*
+                     * Note that sending a "renegotiation_info" extension in response to a ClientHello
+                     * containing only the SCSV is an explicit exception to the prohibition in RFC 5246,
+                     * Section 7.4.1.4, on the server sending unsolicited extensions and is only allowed
+                     * because the client is signaling its willingness to receive the extension via the
+                     * TLS_EMPTY_RENEGOTIATION_INFO_SCSV SCSV.
+                     */
+
+                    /*
+                     * If the secure_renegotiation flag is set to TRUE, the server MUST include an empty
+                     * "renegotiation_info" extension in the ServerHello message.
+                     */
+                    state.serverExtensions.put(TlsProtocol.EXT_RenegotiationInfo,
+                        TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES));
+                }
             }
         }
 
-        /*
-         * RFC 7627 4. Clients and servers SHOULD NOT accept handshakes that do not use the extended
-         * master secret [..]. (and see 5.2, 5.3)
-         * 
-         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
-         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
-         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
-         */
-        if (TlsUtils.isTLSv13(server_version))
+        if (securityParameters.isExtendedMasterSecret())
         {
-            securityParameters.extendedMasterSecret = true;
+            TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
         }
         else
         {
-            securityParameters.extendedMasterSecret = state.offeredExtendedMasterSecret
-                && server.shouldUseExtendedMasterSecret();
-
-            if (securityParameters.isExtendedMasterSecret())
-            {
-                TlsExtensionsUtils.addExtendedMasterSecretExtension(state.serverExtensions);
-            }
-            else if (server.requiresExtendedMasterSecret())
-            {
-                throw new TlsFatalAlert(AlertDescription.handshake_failure);
-            }
-            else if (resumedSession && !server.allowLegacyResumption())
-            {
-                throw new TlsFatalAlert(AlertDescription.internal_error);
-            }
+            state.serverExtensions.remove(TlsExtensionsUtils.EXT_extended_master_secret);
         }
 
         // Heartbeats
@@ -551,13 +609,6 @@ public class DTLSServerProtocol
             TlsExtensionsUtils.addHeartbeatExtension(state.serverExtensions, new HeartbeatExtension(state.heartbeatPolicy));
         }
 
-
-
-        /*
-         * RFC 7301 3.1. When session resumption or session tickets [...] are used, the previous
-         * contents of this extension are irrelevant, and only the values in the new handshake
-         * messages are considered.
-         */
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
         securityParameters.applicationProtocolSet = true;
 
@@ -582,11 +633,6 @@ public class DTLSServerProtocol
             }
         }
 
-        /*
-         * TODO RFC 3546 2.3 If [...] the older session is resumed, then the server MUST ignore
-         * extensions appearing in the client hello, and send a server hello containing no
-         * extensions.
-         */
         if (!state.serverExtensions.isEmpty())
         {
             securityParameters.encryptThenMAC = TlsExtensionsUtils.hasEncryptThenMACExtension(state.serverExtensions);
@@ -597,13 +643,8 @@ public class DTLSServerProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(state.serverExtensions);
 
-            /*
-             * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
-             * a session resumption handshake.
-             */
             if (!resumedSession)
             {
-                // TODO[tls13] See RFC 8446 4.4.2.1
                 if (TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
                     TlsExtensionsUtils.EXT_status_request_v2, AlertDescription.internal_error))
                 {
@@ -622,17 +663,15 @@ public class DTLSServerProtocol
 
         applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
 
-
-
-        ServerHello serverHello = new ServerHello(legacy_version, securityParameters.getServerRandom(),
-            state.tlsSession.getSessionID(), securityParameters.getCipherSuite(), state.serverExtensions);
+        ServerHello serverHello = new ServerHello(serverVersion, securityParameters.getServerRandom(),
+            securityParameters.getSessionID(), securityParameters.getCipherSuite(), state.serverExtensions);
 
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         serverHello.encode(serverContext, buf);
         return buf.toByteArray();
     }
 
-    protected void invalidateSession(ServerHandshakeState state)
+    protected void cancelSession(ServerHandshakeState state)
     {
         if (state.sessionMasterSecret != null)
         {
@@ -646,11 +685,17 @@ public class DTLSServerProtocol
             state.sessionParameters = null;
         }
 
+        state.tlsSession = null;
+    }
+
+    protected void invalidateSession(ServerHandshakeState state)
+    {
         if (state.tlsSession != null)
         {
             state.tlsSession.invalidate();
-            state.tlsSession = null;
         }
+
+        cancelSession(state);
     }
 
     protected void notifyClientCertificate(ServerHandshakeState state, Certificate clientCertificate)
@@ -771,10 +816,15 @@ public class DTLSServerProtocol
          * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
          */
 
-        /*
-         * RFC 5746 3.6. Server Behavior: Initial Handshake
-         */
+        byte[] clientRenegExtData = TlsUtils.getExtensionData(state.clientExtensions,
+            TlsProtocol.EXT_RenegotiationInfo);
+
+        // NOT renegotiatiing
         {
+            /*
+             * RFC 5746 3.6. Server Behavior: Initial Handshake (both full and session-resumption)
+             */
+            
             /*
              * RFC 5746 3.4. The client MUST include either an empty "renegotiation_info" extension,
              * or the TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the
@@ -795,8 +845,7 @@ public class DTLSServerProtocol
              * The server MUST check if the "renegotiation_info" extension is included in the
              * ClientHello.
              */
-            byte[] renegExtData = TlsUtils.getExtensionData(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
-            if (renegExtData != null)
+            if (clientRenegExtData != null)
             {
                 /*
                  * If the extension is present, set secure_renegotiation flag to TRUE. The
@@ -805,7 +854,8 @@ public class DTLSServerProtocol
                  */
                 securityParameters.secureRenegotiation = true;
 
-                if (!Arrays.constantTimeAreEqual(renegExtData, TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
+                if (!Arrays.constantTimeAreEqual(clientRenegExtData,
+                    TlsProtocol.createRenegotiationInfo(TlsUtils.EMPTY_BYTES)))
                 {
                     throw new TlsFatalAlert(AlertDescription.handshake_failure);
                 }
@@ -813,8 +863,6 @@ public class DTLSServerProtocol
         }
 
         server.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
-
-        state.offeredExtendedMasterSecret = TlsExtensionsUtils.hasExtendedMasterSecretExtension(state.clientExtensions);
 
         if (state.clientExtensions != null)
         {
@@ -894,7 +942,6 @@ public class DTLSServerProtocol
         int[] offeredCipherSuites = null;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
-        boolean offeredExtendedMasterSecret = false;
         boolean expectSessionTicket = false;
         TlsKeyExchange keyExchange = null;
         TlsCredentials serverCredentials = null;

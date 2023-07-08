@@ -829,7 +829,7 @@ public class TlsServerProtocol
 
         applyMaxFragmentLengthExtension(securityParameters.getMaxFragmentLength());
 
-        return new ServerHello(serverVersion, securityParameters.getServerRandom(), tlsSession.getSessionID(),
+        return new ServerHello(serverVersion, securityParameters.getServerRandom(), securityParameters.getSessionID(),
             securityParameters.getCipherSuite(), serverExtensions);
     }
 
