@@ -31,7 +31,6 @@ public class ArmoredOutputStreamTest
 
     static final byte[] expected = Strings.toByteArray(
         "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
-            "Version: BCPG v@RELEASE_NAME@\n" +
             "\n" +
             "mQELBEQh2+wBCAD26kte0hO6flr7Y2aetpPYutHY4qsmDPy+GwmmqVeCDkX+r1g7\n" +
             "DuFbMhVeu0NkKDnVl7GsJ9VarYsFYyqu0NzLa9XS2qlTIkmJV+2/xKa1tzjn18fT\n" +
@@ -60,7 +59,7 @@ public class ArmoredOutputStreamTest
         PGPPublicKeyRing keyRing = new PGPPublicKeyRing(publicKey, new JcaKeyFingerprintCalculator());
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-        ArmoredOutputStream aOut = new ArmoredOutputStream(bOut);
+        ArmoredOutputStream aOut = ArmoredOutputStream.builder().build(bOut);
 
         aOut.write(keyRing.getEncoded());
         aOut.close();
