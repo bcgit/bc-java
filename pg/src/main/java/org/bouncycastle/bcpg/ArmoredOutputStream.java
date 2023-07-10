@@ -537,10 +537,15 @@ public class ArmoredOutputStream
         return new Builder();
     }
 
-    static class Builder
+    public static class Builder
     {
         private final Map<String, List<String>> headers = new HashMap<String, List<String>>();
         private boolean computeCRCSum = true;
+
+        private Builder()
+        {
+
+        }
 
         public ArmoredOutputStream build(OutputStream outputStream)
         {
