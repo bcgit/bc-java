@@ -134,7 +134,8 @@ public class DTLSClientProtocol
             // NOTE: Calculated exclusive of the actual Finished message from the server
             securityParameters.peerVerifyData = TlsUtils.calculateVerifyData(clientContext,
                 handshake.getHandshakeHash(), true);
-            processFinished(handshake.receiveMessageBody(HandshakeType.finished), securityParameters.getPeerVerifyData());
+            processFinished(handshake.receiveMessageBody(HandshakeType.finished),
+                securityParameters.getPeerVerifyData());
 
             // NOTE: Calculated exclusive of the Finished message itself
             securityParameters.localVerifyData = TlsUtils.calculateVerifyData(clientContext,
