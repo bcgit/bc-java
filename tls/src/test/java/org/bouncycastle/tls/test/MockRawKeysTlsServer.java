@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Hashtable;
 import java.util.Vector;
 

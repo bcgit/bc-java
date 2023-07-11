@@ -2,7 +2,6 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.security.SecureRandom;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.x509.Certificate;

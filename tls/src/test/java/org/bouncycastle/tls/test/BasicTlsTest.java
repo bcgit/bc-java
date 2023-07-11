@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.Socket;
-import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.test.PrintTestResult;
