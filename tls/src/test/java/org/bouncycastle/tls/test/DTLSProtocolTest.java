@@ -94,7 +94,7 @@ public class DTLSProtocolTest
                         if (isShutdown)
                             return;
 
-                        int length = serverTransport.receive(buf, dummyOffset, receiveLimit, 1000);
+                        int length = serverTransport.receive(buf, dummyOffset, receiveLimit, 100);
                         if (length > 0)
                         {
                             request = verifier.verifyRequest(clientID, buf, dummyOffset, length, serverTransport);
@@ -110,7 +110,7 @@ public class DTLSProtocolTest
                     byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                     while (!isShutdown)
                     {
-                        int length = dtlsTransport.receive(buf, 0, buf.length, 1000);
+                        int length = dtlsTransport.receive(buf, 0, buf.length, 100);
                         if (length >= 0)
                         {
                             dtlsTransport.send(buf, 0, length);
