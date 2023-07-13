@@ -1,5 +1,8 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.InputStream;
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -7,6 +10,7 @@ import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
@@ -20,9 +24,6 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.BigIntegers;
 
-import java.io.InputStream;
-import java.math.BigInteger;
-
 public class BcUtil
 {
     static BufferedBlockCipher createStreamCipher(boolean forEncryption, BlockCipher engine, boolean withIntegrityPacket, byte[] key)
@@ -31,11 +32,11 @@ public class BcUtil
 
         if (withIntegrityPacket)
         {
-            c = new BufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
+            c = new DefaultBufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
         }
         else
         {
-            c = new BufferedBlockCipher(new OpenPGPCFBBlockCipher(engine));
+            c = new DefaultBufferedBlockCipher(new OpenPGPCFBBlockCipher(engine));
         }
 
         KeyParameter keyParameter = new KeyParameter(key);
@@ -89,7 +90,7 @@ public class BcUtil
 
     public static BufferedBlockCipher createSymmetricKeyWrapper(boolean forEncryption, BlockCipher engine, byte[] key, byte[] iv)
     {
-        BufferedBlockCipher c = new BufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
+        BufferedBlockCipher c = new DefaultBufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
 
         c.init(forEncryption, new ParametersWithIV(new KeyParameter(key), iv));
 
