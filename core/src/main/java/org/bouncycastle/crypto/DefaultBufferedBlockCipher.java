@@ -7,9 +7,12 @@ package org.bouncycastle.crypto;
  * buffer is full and more data is being added, or on a doFinal.
  * <p>
  * Note: in the case where the underlying cipher is either a CFB cipher or an
- * OFB one the last block may not be a multiple of the block size.
+ * OFB one the last block may not be a multiple of the block size. Use this class
+ * for construction rather than BufferedBlockCipher as BufferedBlockCipher will eventually
+ * turn into an interface.
  */
-public class BufferedBlockCipher
+public class DefaultBufferedBlockCipher
+    extends BufferedBlockCipher
 {
     protected byte[]        buf;
     protected int           bufOff;
@@ -24,7 +27,7 @@ public class BufferedBlockCipher
     /**
      * constructor for subclasses
      */
-    BufferedBlockCipher()
+    protected DefaultBufferedBlockCipher()
     {
     }
 
@@ -32,9 +35,8 @@ public class BufferedBlockCipher
      * Create a buffered block cipher without padding.
      *
      * @param cipher the underlying block cipher this buffering object wraps.
-     * @deprecated use the constructor on DefaultBufferedBlockCipher.
      */
-    public BufferedBlockCipher(
+    public DefaultBufferedBlockCipher(
         BlockCipher     cipher)
     {
         this.cipher = cipher;
