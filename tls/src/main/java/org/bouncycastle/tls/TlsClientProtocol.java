@@ -1419,6 +1419,11 @@ public class TlsClientProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
+                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
+                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+
                 this.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);
             }
@@ -1473,9 +1478,6 @@ public class TlsClientProtocol
 
         this.certificateRequest = certificateRequest;
 
-        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
-            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);
-
         TlsUtils.establishServerSigAlgs(tlsClientContext.getSecurityParametersHandshake(), certificateRequest);
     }
 
@@ -1528,13 +1530,21 @@ public class TlsClientProtocol
         securityParameters.encryptThenMAC = false;
         securityParameters.truncatedHMac = false;
 
-        /*
-         * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
-         * OCSP information is carried in an extension for a CertificateEntry.
-         */
-        securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
-            ? 1 : 0;
+        if (!securityParameters.isResumedSession())
+        {
+            /*
+             * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
+             * 
+             * OCSP information is carried in an extension for a CertificateEntry.
+             */
+            securityParameters.statusRequestVersion = clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
+                ? 1 : 0;
+
+            securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension13(
+                sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+            securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension13(
+                sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+        }
 
         this.expectSessionTicket = false;
 
@@ -1624,9 +1634,6 @@ public class TlsClientProtocol
         assertEmpty(buf);
 
         this.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, keyExchange);
-
-        tlsClientContext.getSecurityParametersHandshake().clientCertificateType =
-            TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions, CertificateType.X509);        
     }
 
     protected void receiveNewSessionTicket(ByteArrayInputStream buf)
