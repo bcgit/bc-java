@@ -36,6 +36,7 @@ public class CBCBlockCipher
      * Basic constructor.
      *
      * @param cipher the block cipher to be used as the basis of chaining.
+     * @deprecated use the CBCBlockCipher.newInstance() static method.
      */
     public CBCBlockCipher(
         BlockCipher cipher)
