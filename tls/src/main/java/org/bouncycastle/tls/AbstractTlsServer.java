@@ -558,18 +558,29 @@ public abstract class AbstractTlsServer
         if (serverCertTypes != null)
         {
             TlsCredentials credentials = getCredentials();
-
-            if (credentials == null ||
-                !TlsUtils.contains(serverCertTypes, 0, serverCertTypes.length, credentials.getCertificate().getCertificateType()))
+            if (credentials != null)
             {
-                // outcome 2: we support the extension but have no common types
-                throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
-            }
+                // TODO An X509 certificate should still be usable as RawPublicKey
+                short serverCertificateType = credentials.getCertificate().getCertificateType();
 
-            // outcome 3: we support the extension and have a common type
-            TlsExtensionsUtils.addServerCertificateTypeExtensionServer(serverExtensions, credentials.getCertificate().getCertificateType());
+                if (CertificateType.OpenPGP == serverCertificateType && isTLSv13)
+                {
+                    throw new TlsFatalAlert(AlertDescription.internal_error,
+                        "The OpenPGP certificate type MUST NOT be used with TLS 1.3");
+                }
+
+                if (!TlsUtils.contains(serverCertTypes, 0, serverCertTypes.length, serverCertificateType))
+                {
+                    // outcome 2: we support the extension but have no common types
+                    throw new TlsFatalAlert(AlertDescription.unsupported_certificate);
+                }
+
+                // outcome 3: we support the extension and have a common type
+                TlsExtensionsUtils.addServerCertificateTypeExtensionServer(serverExtensions, serverCertificateType);
+            }
         }
 
+        // TODO If we won't be sending a CertificateRequest, this extension can be ignored
         // RFC 7250 4.2 for client_certificate_type
         short[] remoteClientCertTypes = TlsExtensionsUtils.getClientCertificateTypeExtensionClient(clientExtensions);
         if (remoteClientCertTypes != null)
@@ -593,13 +604,20 @@ public abstract class AbstractTlsServer
                 short selectedType = -1;
                 for (int i = 0; i < preferredTypes.length; i++)
                 {
-                    if (TlsUtils.contains(nonPreferredTypes, 0, nonPreferredTypes.length, preferredTypes[i]))
+                    short preferredType = preferredTypes[i];
+                    if (CertificateType.OpenPGP == preferredType && isTLSv13)
                     {
-                        selectedType = preferredTypes[i];
+                        continue;
+                    }
+
+                    if (TlsUtils.contains(nonPreferredTypes, 0, nonPreferredTypes.length, preferredType))
+                    {
+                        selectedType = preferredType;
                         break;
                     }
                 }
 
+                // TODO Shouldn't be an error unless we REQUIRE client authentication
                 if (selectedType == -1)
                 {
                     // outcome 2: we support the extension but have no common types

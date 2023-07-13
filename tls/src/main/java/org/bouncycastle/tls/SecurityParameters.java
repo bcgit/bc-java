@@ -57,7 +57,8 @@ public class SecurityParameters
     Certificate peerCertificate = null;
     ProtocolVersion negotiatedVersion = null;
     int statusRequestVersion = 0;
-    short clientCertificateType = -1;
+    short clientCertificateType = CertificateType.X509;
+    short serverCertificateType = CertificateType.X509;
 
     // TODO[tls-ops] Investigate whether we can handle verify data using TlsSecret
     byte[] localVerifyData = null;
@@ -387,6 +388,11 @@ public class SecurityParameters
     public short getClientCertificateType()
     {
         return clientCertificateType;
+    }
+
+    public short getServerCertificateType()
+    {
+        return serverCertificateType;
     }
 
     private static TlsSecret clearSecret(TlsSecret secret)

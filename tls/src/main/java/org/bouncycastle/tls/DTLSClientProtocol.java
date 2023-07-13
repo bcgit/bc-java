@@ -664,19 +664,13 @@ public class DTLSClientProtocol
             throw new TlsFatalAlert(AlertDescription.handshake_failure);
         }
 
-        TlsClientContextImpl clientContext = state.clientContext;
-        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
-
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
-        CertificateRequest certificateRequest = CertificateRequest.parse(clientContext, buf);
+        CertificateRequest certificateRequest = CertificateRequest.parse(state.clientContext, buf);
 
         TlsProtocol.assertEmpty(buf);
 
         state.certificateRequest = TlsUtils.validateCertificateRequest(certificateRequest, state.keyExchange);
-
-        securityParameters.clientCertificateType = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(
-            state.serverExtensions, CertificateType.X509);
     }
 
     protected void processCertificateStatus(ClientHandshakeState state, byte[] body)
@@ -1053,6 +1047,11 @@ public class DTLSClientProtocol
                 {
                     securityParameters.statusRequestVersion = 1;
                 }
+
+                securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
+                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+                securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
+                    sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
 
                 state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(sessionServerExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.illegal_parameter);

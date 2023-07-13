@@ -689,6 +689,11 @@ public class DTLSServerProtocol
                     securityParameters.statusRequestVersion = 1;
                 }
 
+                securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension(
+                    clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
+                securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension(
+                    clientHelloExtensions, state.serverExtensions, AlertDescription.internal_error);
+
                 state.expectSessionTicket = TlsUtils.hasExpectedEmptyExtensionData(state.serverExtensions,
                     TlsProtocol.EXT_SessionTicket, AlertDescription.internal_error);
             }
@@ -796,7 +801,7 @@ public class DTLSServerProtocol
         ByteArrayInputStream buf = new ByteArrayInputStream(body);
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
-            .setCertificateType(TlsExtensionsUtils.getClientCertificateTypeExtensionServer(state.serverExtensions, CertificateType.X509))
+            .setCertificateType(state.serverContext.getSecurityParametersHandshake().getClientCertificateType())
             .setMaxChainLength(state.server.getMaxCertificateChainLength());
 
         Certificate clientCertificate = Certificate.parse(options, state.serverContext, buf, null);
