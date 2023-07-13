@@ -1014,12 +1014,6 @@ public class DTLSClientProtocol
 
         if (securityParameters.isResumedSession())
         {
-            if (securityParameters.getCipherSuite() != state.sessionParameters.getCipherSuite() ||
-                !server_version.equals(state.sessionParameters.getNegotiatedVersion()))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
             sessionClientExtensions = null;
             sessionServerExtensions = state.sessionParameters.readServerExtensions();
         }
