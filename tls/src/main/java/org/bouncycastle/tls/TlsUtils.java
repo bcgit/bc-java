@@ -649,6 +649,10 @@ public class TlsUtils
         {
             throw new IllegalArgumentException("'buf' cannot be null");
         }
+        if (buf.length < 1)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
 
         int count = readUint8(buf, 0);
         if (buf.length != (count + 1))
@@ -4939,7 +4943,7 @@ public class TlsUtils
             certificateRequest.getCertificateAuthorities());
     }
 
-    static boolean contains(short[] buf, int off, int len, int value)
+    static boolean contains(short[] buf, int off, int len, short value)
     {
         for (int i = 0; i < len; ++i)
         {
@@ -4973,6 +4977,18 @@ public class TlsUtils
             }
         }
         return true;
+    }
+
+    static boolean containsNot(short[] buf, int off, int len, short value)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            if (value != buf[off + i])
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     static short[] retainAll(short[] retainer, short[] elements)
@@ -5158,7 +5174,7 @@ public class TlsUtils
         ByteArrayOutputStream endPointHash = new ByteArrayOutputStream();
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
-            .setCertificateType(TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
+            .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
         Certificate serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
@@ -5199,7 +5215,7 @@ public class TlsUtils
         }
 
         Certificate.ParseOptions options = new Certificate.ParseOptions()
-            .setCertificateType(TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions, CertificateType.X509))            
+            .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
         Certificate serverCertificate = Certificate.parse(options, clientContext, buf, null);
@@ -6129,5 +6145,84 @@ public class TlsUtils
             }
         }
         return maxFragmentLength;
+    }
+
+    static short processClientCertificateTypeExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
+        throws IOException
+    {
+        short serverValue = TlsExtensionsUtils.getClientCertificateTypeExtensionServer(serverExtensions);
+        if (serverValue < 0)
+        {
+            return CertificateType.X509;
+        }
+
+        if (!CertificateType.isValid(serverValue))
+        {
+            throw new TlsFatalAlert(alertDescription, "Unknown value for client_certificate_type");
+        }
+
+        short[] clientValues = TlsExtensionsUtils.getClientCertificateTypeExtensionClient(clientExtensions);
+        if (clientValues == null || !contains(clientValues, 0, clientValues.length, serverValue))
+        {
+            throw new TlsFatalAlert(alertDescription, "Invalid selection for client_certificate_type");
+        }
+
+        return serverValue;
+    }
+
+    static short processClientCertificateTypeExtension13(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
+        throws IOException
+    {
+        short certificateType = processClientCertificateTypeExtension(clientExtensions, serverExtensions,
+            alertDescription);
+
+        return validateCertificateType13(certificateType, alertDescription);
+    }
+
+    static short processServerCertificateTypeExtension(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
+        throws IOException
+    {
+        short serverValue = TlsExtensionsUtils.getServerCertificateTypeExtensionServer(serverExtensions);
+        if (serverValue < 0)
+        {
+            return CertificateType.X509;
+        }
+
+        if (!CertificateType.isValid(serverValue))
+        {
+            throw new TlsFatalAlert(alertDescription, "Unknown value for server_certificate_type");
+        }
+
+        short[] clientValues = TlsExtensionsUtils.getServerCertificateTypeExtensionClient(clientExtensions);
+        if (clientValues == null || !contains(clientValues, 0, clientValues.length, serverValue))
+        {
+            throw new TlsFatalAlert(alertDescription, "Invalid selection for server_certificate_type");
+        }
+
+        return serverValue;
+    }
+
+    static short processServerCertificateTypeExtension13(Hashtable clientExtensions, Hashtable serverExtensions,
+        short alertDescription)
+        throws IOException
+    {
+        short certificateType = processServerCertificateTypeExtension(clientExtensions, serverExtensions,
+            alertDescription);
+
+        return validateCertificateType13(certificateType, alertDescription);
+    }
+
+    private static short validateCertificateType13(short certificateType, short alertDescription)
+        throws IOException
+    {
+        if (CertificateType.OpenPGP == certificateType)
+        {
+            throw new TlsFatalAlert(alertDescription, "The OpenPGP certificate type MUST NOT be used with TLS 1.3");
+        }
+
+        return certificateType;
     }
 }

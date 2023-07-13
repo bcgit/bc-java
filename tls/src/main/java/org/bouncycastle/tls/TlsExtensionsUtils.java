@@ -310,6 +310,16 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
     }
 
+    public static short getClientCertificateTypeExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_client_certificate_type);
+        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
+    }
+
+    /**
+     * @deprecated Use version without defaultValue instead
+     */
     public static short getClientCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
@@ -427,6 +437,16 @@ public class TlsExtensionsUtils
         return extensionData == null ? null : readCertificateTypeExtensionClient(extensionData);
     }
 
+    public static short getServerCertificateTypeExtensionServer(Hashtable extensions)
+        throws IOException
+    {
+        byte[] extensionData = TlsUtils.getExtensionData(extensions, EXT_server_certificate_type);
+        return extensionData == null ? -1 : readCertificateTypeExtensionServer(extensionData);
+    }
+
+    /**
+     * @deprecated Use version without defaultValue instead
+     */
     public static short getServerCertificateTypeExtensionServer(Hashtable extensions, short defaultValue)
         throws IOException
     {
