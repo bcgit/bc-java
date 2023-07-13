@@ -433,6 +433,7 @@ private static final int[] Tinv0 =
 
     /**
      * default constructor - 128 bit block size.
+     * @deprecated use AESEngine.newInstance()
      */
     public AESEngine()
     {
