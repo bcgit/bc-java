@@ -74,11 +74,24 @@ public class GCMBlockCipher
         return new GCMBlockCipher(cipher, m);
     }
 
+    /**
+     * Base constructor - GCM mode over base cipher c.
+     *
+     * @param c the base cipher.
+     * @deprecated use the GCMBlockCipher.newInstance() static method.
+     */
     public GCMBlockCipher(BlockCipher c)
     {
         this(c, null);
     }
 
+    /**
+     * Base constructor - GCM mode over base cipher c over base multiplier m.
+     *
+     * @param c the base cipher.
+     * @param m the GCM multiplier to use.
+     * @deprecated use the CBCBlockCipher.newInstance() static method.
+     */
     public GCMBlockCipher(BlockCipher c, GCMMultiplier m)
     {
         if (c.getBlockSize() != BLOCK_SIZE)

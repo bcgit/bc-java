@@ -41,6 +41,7 @@ public class CFBBlockCipher
      * @param cipher the block cipher to be used as the basis of the
      * feedback mode.
      * @param bitBlockSize the block size in bits (note: a multiple of 8)
+     * @deprecated use the equivalent CFBBlockCipher.newInstance() static method.
      */
     public CFBBlockCipher(
         BlockCipher cipher,

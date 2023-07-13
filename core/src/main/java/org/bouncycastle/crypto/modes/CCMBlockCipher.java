@@ -47,6 +47,7 @@ public class CCMBlockCipher
      * Basic constructor.
      *
      * @param c the block cipher to be used.
+     * @deprecated use the CCMBlockCipher.newInstance() static method.
      */
     public CCMBlockCipher(BlockCipher c)
     {
