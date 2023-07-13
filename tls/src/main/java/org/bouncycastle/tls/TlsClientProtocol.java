@@ -1379,12 +1379,6 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverHelloExtensions;
         if (securityParameters.isResumedSession())
         {
-            if (securityParameters.getCipherSuite() != this.sessionParameters.getCipherSuite() ||
-                !server_version.equals(this.sessionParameters.getNegotiatedVersion()))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
             sessionClientExtensions = null;
             sessionServerExtensions = this.sessionParameters.readServerExtensions();
         }
@@ -1411,10 +1405,6 @@ public class TlsClientProtocol
 
             securityParameters.truncatedHMac = TlsExtensionsUtils.hasTruncatedHMacExtension(sessionServerExtensions);
 
-            /*
-             * TODO It's surprising that there's no provision to allow a 'fresh' CertificateStatus to be sent in
-             * a session resumption handshake.
-             */
             if (!securityParameters.isResumedSession())
             {
                 // TODO[tls13] See RFC 8446 4.4.2.1
@@ -1528,12 +1518,6 @@ public class TlsClientProtocol
         Hashtable sessionClientExtensions = clientExtensions, sessionServerExtensions = serverExtensions;
         if (securityParameters.isResumedSession())
         {
-            if (securityParameters.getCipherSuite() != sessionParameters.getCipherSuite() ||
-                !negotiatedVersion.equals(sessionParameters.getNegotiatedVersion()))
-            {
-                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
-            }
-
             sessionClientExtensions = null;
             sessionServerExtensions = sessionParameters.readServerExtensions();
         }
