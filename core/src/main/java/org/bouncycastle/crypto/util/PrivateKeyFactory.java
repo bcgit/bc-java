@@ -185,11 +185,27 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X25519))
         {
-            return new X25519PrivateKeyParameters(getRawKey(keyInfo));
+            byte[] encoding = keyInfo.getPrivateKey().getOctets();
+
+             // Java 11 bug: exact length of X25519/X448 secret used in Java 11
+             if (encoding.length != X25519PrivateKeyParameters.KEY_SIZE)
+             {
+                 encoding = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+             }
+
+            return new X25519PrivateKeyParameters(encoding);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X448))
         {
-            return new X448PrivateKeyParameters(getRawKey(keyInfo));
+            byte[] encoding = keyInfo.getPrivateKey().getOctets();
+
+            // Java 11 bug: exact length of X25519/X448 secret used in Java 11
+            if (encoding.length != X448PrivateKeyParameters.KEY_SIZE)
+            {
+                encoding = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            }
+
+            return new X448PrivateKeyParameters(encoding);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_Ed25519))
         {
