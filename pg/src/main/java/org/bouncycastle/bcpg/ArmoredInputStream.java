@@ -57,6 +57,7 @@ public class ArmoredInputStream
         decodingTable['/'] = 63;
     }
 
+
     /**
      * decode the base 64 encoded input data.
      *
@@ -128,11 +129,12 @@ public class ArmoredInputStream
      */
     private boolean detectMissingChecksum = false;
 
+    private final CRC24   crc;
+
     InputStream    in;
     boolean        start = true;
     byte[]         outBuf = new byte[3];
     int            bufPtr = 3;
-    CRC24          crc = new FastCRC24();
     boolean        crcFound = false;
     boolean        hasHeaders = true;
     String         header = null;
@@ -171,6 +173,7 @@ public class ArmoredInputStream
     {
         this.in = in;
         this.hasHeaders = hasHeaders;
+        this.crc = new FastCRC24();
         
         if (hasHeaders)
         {
@@ -179,7 +182,25 @@ public class ArmoredInputStream
 
         start = false;
     }
-    
+
+    private ArmoredInputStream(
+        InputStream    in,
+        Builder        builder)
+        throws IOException
+    {
+        this.in = in;
+        this.hasHeaders = builder.hasHeaders;
+        this.detectMissingChecksum = builder.detectMissingCRC;
+        this.crc = builder.ignoreCRC ? null : new FastCRC24();
+
+        if (hasHeaders)
+        {
+            parseHeaders();
+        }
+
+        start = false;
+    }
+
     public int available()
         throws IOException
     {
@@ -367,7 +388,10 @@ public class ArmoredInputStream
                 parseHeaders();
             }
 
-            crc.reset();
+            if (crc != null)
+            {
+                crc.reset();
+            }
             start = false;
         }
         
@@ -435,12 +459,15 @@ public class ArmoredInputStream
 
                     crcFound = true;
 
-                    int i = ((outBuf[0] & 0xff) << 16)
-                          | ((outBuf[1] & 0xff) << 8)
-                          | (outBuf[2] & 0xff);
-                    if (i != crc.getValue())
+                    if (crc != null)
                     {
-                        throw new ArmoredInputException("crc check failed in armored message");
+                        int i = ((outBuf[0] & 0xff) << 16)
+                            | ((outBuf[1] & 0xff) << 8)
+                            | (outBuf[2] & 0xff);
+                        if (i != crc.getValue())
+                        {
+                            throw new ArmoredInputException("crc check failed in armored message");
+                        }
                     }
 
                     return read();
@@ -482,15 +509,18 @@ public class ArmoredInputStream
 
             bufPtr = decode(c, readIgnoreSpace(), readIgnoreSpace(), readIgnoreSpace(), outBuf);
 
-            if (bufPtr == 0)
+            if (crc != null)
             {
-                crc.update3(outBuf, 0);
-            }
-            else
-            {
-                for (int i = bufPtr; i < 3; ++i)
+                if (bufPtr == 0)
                 {
-                    crc.update(outBuf[i] & 0xFF);
+                    crc.update3(outBuf, 0);
+                }
+                else
+                {
+                    for (int i = bufPtr; i < 3; ++i)
+                    {
+                        crc.update(outBuf[i] & 0xFF);
+                    }
                 }
             }
         }
@@ -572,10 +602,74 @@ public class ArmoredInputStream
      * The default value is false (ignore missing CRC checksums). If the behavior is set to true,
      * an {@link IOException} will be thrown if a missing CRC checksum is encountered.
      *
-     * @param detectMissing ignore missing CRC sums
+     * @param detectMissing false if ignore missing CRC sums, true for exception
+     * @deprecated use Builder class for configuring this.
      */
     public void setDetectMissingCRC(boolean detectMissing)
     {
         this.detectMissingChecksum = detectMissing;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private boolean hasHeaders = false;
+        private boolean detectMissingCRC = false;
+        private boolean ignoreCRC = false;
+
+        private Builder()
+        {
+
+        }
+
+        /**
+         * Turn on header parsing (default value false).
+         *
+         * @param hasHeaders true if headers should be expected, false otherwise.
+         * @return the current builder instance.
+         */
+        public Builder setParseForHeaders(boolean hasHeaders)
+        {
+            this.hasHeaders = hasHeaders;
+
+            return this;
+        }
+
+        /**
+         * Change how the stream should react if it encounters missing CRC checksum.
+         * The default value is false (ignore missing CRC checksums). If the behavior is set to true,
+         * an {@link IOException} will be thrown if a missing CRC checksum is encountered.
+         *
+         * @param detectMissingCRC false if ignore missing CRC sums, true for exception
+         */
+        public Builder setDetectMissingCRC(boolean detectMissingCRC)
+        {
+            this.detectMissingCRC = detectMissingCRC;
+
+            return this;
+        }
+
+        /**
+         * Specifically ignore the CRC if in place (this will also avoid the cost of calculation).
+         *
+         * @param ignoreCRC true if CRC should be ignored, false otherwise.
+         * @return the current builder instance.
+         */
+        public Builder setIgnoreCRC(boolean ignoreCRC)
+        {
+            this.ignoreCRC = ignoreCRC;
+
+            return this;
+        }
+
+        public ArmoredInputStream build(InputStream inputStream)
+            throws IOException
+        {
+            return new ArmoredInputStream(inputStream, this);
+        }
     }
 }
