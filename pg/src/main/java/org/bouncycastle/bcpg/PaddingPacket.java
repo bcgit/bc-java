@@ -45,4 +45,10 @@ public class PaddingPacket
     {
         pOut.writePacket(PacketTags.PADDING, padding);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return PADDING;
+    }
 }

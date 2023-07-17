@@ -37,4 +37,10 @@ public class PublicSubkeyPacket
     {
         out.writePacket(PUBLIC_SUBKEY, getEncodedContents());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return PUBLIC_SUBKEY;
+    }
 }

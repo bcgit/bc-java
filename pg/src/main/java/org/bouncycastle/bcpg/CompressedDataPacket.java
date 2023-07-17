@@ -28,4 +28,10 @@ public class CompressedDataPacket
     {
         return algorithm;
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return COMPRESSED_DATA;
+    }
 }
