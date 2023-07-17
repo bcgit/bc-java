@@ -174,6 +174,27 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sphincsPlus_haraka_256s_r3 = sphincsPlus.branch("17");
     ASN1ObjectIdentifier sphincsPlus_haraka_256f_r3 = sphincsPlus.branch("18");
 
+    ASN1ObjectIdentifier sphincsPlus_sha2_128s_r3_simple = sphincsPlus.branch("19");
+    ASN1ObjectIdentifier sphincsPlus_sha2_128f_r3_simple = sphincsPlus.branch("20");
+    ASN1ObjectIdentifier sphincsPlus_shake_128s_r3_simple = sphincsPlus.branch("21");
+    ASN1ObjectIdentifier sphincsPlus_shake_128f_r3_simple = sphincsPlus.branch("22");
+    ASN1ObjectIdentifier sphincsPlus_haraka_128s_r3_simple = sphincsPlus.branch("23");
+    ASN1ObjectIdentifier sphincsPlus_haraka_128f_r3_simple = sphincsPlus.branch("24");
+
+    ASN1ObjectIdentifier sphincsPlus_sha2_192s_r3_simple = sphincsPlus.branch("25");
+    ASN1ObjectIdentifier sphincsPlus_sha2_192f_r3_simple = sphincsPlus.branch("26");
+    ASN1ObjectIdentifier sphincsPlus_shake_192s_r3_simple = sphincsPlus.branch("27");
+    ASN1ObjectIdentifier sphincsPlus_shake_192f_r3_simple = sphincsPlus.branch("28");
+    ASN1ObjectIdentifier sphincsPlus_haraka_192s_r3_simple = sphincsPlus.branch("29");
+    ASN1ObjectIdentifier sphincsPlus_haraka_192f_r3_simple = sphincsPlus.branch("30");
+
+    ASN1ObjectIdentifier sphincsPlus_sha2_256s_r3_simple = sphincsPlus.branch("31");
+    ASN1ObjectIdentifier sphincsPlus_sha2_256f_r3_simple = sphincsPlus.branch("32");
+    ASN1ObjectIdentifier sphincsPlus_shake_256s_r3_simple = sphincsPlus.branch("33");
+    ASN1ObjectIdentifier sphincsPlus_shake_256f_r3_simple = sphincsPlus.branch("34");
+    ASN1ObjectIdentifier sphincsPlus_haraka_256s_r3_simple = sphincsPlus.branch("35");
+    ASN1ObjectIdentifier sphincsPlus_haraka_256f_r3_simple = sphincsPlus.branch("36");
+
     /**
      * Picnic
      */
