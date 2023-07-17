@@ -10,6 +10,7 @@ import java.util.NoSuchElementException;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.UnknownPacket;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
@@ -42,6 +43,8 @@ public class PGPObjectFactory
 {
     private BCPGInputStream in;
     private KeyFingerPrintCalculator fingerPrintCalculator;
+
+    private boolean throwForUnknownCriticalPackets = false;
 
     /**
      * Create an object factory suitable for reading PGP objects such as keys, key rings and key
@@ -87,6 +90,8 @@ public class PGPObjectFactory
         {
         case -1:
             return null;
+        case PacketTags.RESERVED:
+            return in.readPacket();
         case PacketTags.SIGNATURE:
             l = new ArrayList();
 
@@ -166,7 +171,13 @@ public class PGPObjectFactory
             return in.readPacket();
         }
 
-        throw new IOException("unknown object in stream: " + in.nextPacketTag());
+        int tag = in.nextPacketTag();
+        UnknownPacket unknownPacket = (UnknownPacket) in.readPacket();
+        if (throwForUnknownCriticalPackets && unknownPacket.isCritical()) {
+            // Leave the error message intact for backwards compatibility
+            throw new IOException("unknown object in stream: " + tag);
+        }
+        return unknownPacket;
     }
 
     /**
@@ -217,5 +228,17 @@ public class PGPObjectFactory
                 }
             }
         };
+    }
+
+    /**
+     * If set to true, the object factory will throw an {@link IOException} if it encounters an unknown packet with a
+     * packet tag within the critical range (0 - 39).
+     *
+     * @param throwException whether to throw
+     * @return object factory
+     */
+    public PGPObjectFactory setThrowForUnknownCriticalPackets(boolean throwException) {
+        this.throwForUnknownCriticalPackets = throwException;
+        return this;
     }
 }

@@ -264,7 +264,7 @@ public class BCPGInputStream
         switch (tag)
         {
         case RESERVED:
-            return new InputStreamPacket(objStream);
+            return new ReservedPacket(objStream);
         case PUBLIC_KEY_ENC_SESSION:
             return new PublicKeyEncSessionPacket(objStream);
         case SIGNATURE:
@@ -309,7 +309,7 @@ public class BCPGInputStream
         case EXPERIMENTAL_4:
             return new ExperimentalPacket(tag, objStream);
         default:
-            throw new IOException("unknown packet type encountered: " + tag);
+            return new UnknownPacket(tag, objStream);
         }
     }
 

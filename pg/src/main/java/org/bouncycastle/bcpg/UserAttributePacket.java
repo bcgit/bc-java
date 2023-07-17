@@ -57,4 +57,10 @@ public class UserAttributePacket
 
         out.writePacket(USER_ATTRIBUTE, bOut.toByteArray());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return USER_ATTRIBUTE;
+    }
 }
