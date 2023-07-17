@@ -511,9 +511,9 @@ public class ArmoredOutputStream
                 buf[2] = (byte)crcV;
 
                 encode3(out, buf);
+                write(nl);
             }
 
-            write(nl);
             write(footerStart);
             write(type);
             write(footerTail);
@@ -712,7 +712,7 @@ public class ArmoredOutputStream
         }
 
         /**
-         * Enable calculation and inclusion of the CRC check sum.
+         * Enable calculation and inclusion of the CRC check sum (default is true).
          * @param doComputeCRC true if CRC to be included, false otherwise.
          * @return the current builder instance.
          */
