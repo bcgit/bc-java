@@ -49,6 +49,24 @@ public class SphincsPlusKeyPairGeneratorTest
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256f_r3.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple.getId(), "BCPQC");
+        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple.getId(), "BCPQC");
     }
 
     public void testKeySpecs()
@@ -119,6 +137,27 @@ public class SphincsPlusKeyPairGeneratorTest
                 BCObjectIdentifiers.sphincsPlus_shake_256f_r3,
                 BCObjectIdentifiers.sphincsPlus_haraka_256s_r3,
                 BCObjectIdentifiers.sphincsPlus_haraka_256f_r3,
+
+                BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple,
+
+                BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple,
+
+                BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple,
+                BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple,
             };
         
         kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");

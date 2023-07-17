@@ -3652,6 +3652,57 @@ public class CertTest
     /*
      * we generate a self signed certificate for the sake of testing - SPHINCSPlus
      */
+    public void checkCreationSPHINCSPlusSimple()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BC");
+
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f_simple, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BC").build(privKey);
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check verifies in general
+        //
+        cert.verify(pubKey);
+
+        //
+        // check verifies with contained key
+        //
+        cert.verify(cert.getPublicKey());
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
+    /*
+     * we generate a self signed certificate for the sake of testing - SPHINCSPlus
+     */
     public void checkCreationSPHINCSPlusHaraka()
         throws Exception
     {
@@ -5450,6 +5501,7 @@ public class CertTest
         checkCreationEd448();
 
         checkCreationSPHINCSPlus();
+        checkCreationSPHINCSPlusSimple();
         checkCreationSPHINCSPlusHaraka();
         checkCreationDSA();
         checkCreationECDSA();
