@@ -173,4 +173,10 @@ public class SymmetricEncIntegrityPacket
     {
         return Arrays.copyOf(salt, salt.length);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return getType();
+    }
 }

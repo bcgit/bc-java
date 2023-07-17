@@ -127,4 +127,10 @@ public class OnePassSignaturePacket
 
         out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return ONE_PASS_SIGNATURE;
+    }
 }

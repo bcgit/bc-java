@@ -538,4 +538,10 @@ public class SignaturePacket
 
         return new SignaturePacket(in);
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return SIGNATURE;
+    }
 }

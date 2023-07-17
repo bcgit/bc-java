@@ -345,4 +345,10 @@ public class SymmetricKeyEncSessionPacket
 
         out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return SYMMETRIC_KEY_ENC_SESSION;
+    }
 }

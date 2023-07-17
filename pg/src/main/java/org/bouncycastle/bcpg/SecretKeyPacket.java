@@ -184,4 +184,10 @@ public class SecretKeyPacket
     {
         out.writePacket(SECRET_KEY, getEncodedContents());
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return SECRET_KEY;
+    }
 }

@@ -32,4 +32,10 @@ public class SymmetricEncDataPacket
     {
          // nothing to add
     }
+
+    @Override
+    public int getPacketTag()
+    {
+        return getType();
+    }
 }
