@@ -60,11 +60,16 @@ public class BCXDHPrivateKey
     private void populateFromPrivateKeyInfo(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        byte[] encoding = keyInfo.getPrivateKey().getOctets();
+        int privateKeyLength = keyInfo.getPrivateKeyLength();
+        byte[] encoding;
 
         // exact length of X25519/X448 secret used in Java 11
-        if (encoding.length != X25519PrivateKeyParameters.KEY_SIZE &&
-            encoding.length != X448PrivateKeyParameters.KEY_SIZE)
+        if (privateKeyLength == X25519PrivateKeyParameters.KEY_SIZE ||
+            privateKeyLength == X448PrivateKeyParameters.KEY_SIZE)
+        {
+            encoding = keyInfo.getPrivateKey().getOctets();
+        }
+        else
         {
             encoding = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
         }

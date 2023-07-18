@@ -195,6 +195,11 @@ public class PrivateKeyInfo
         return new DEROctetString(privateKey.getOctets());
     }
 
+    public int getPrivateKeyLength()
+    {
+        return privateKey.getOctetsLength();
+    }
+
     public ASN1Encodable parsePrivateKey()
         throws IOException
     {
