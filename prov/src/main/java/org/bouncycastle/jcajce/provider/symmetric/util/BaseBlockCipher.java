@@ -94,14 +94,14 @@ public class BaseBlockCipher
     // specs we can handle.
     //
     private static final Class[] availableSpecs =
-    {
-        RC2ParameterSpec.class,
-        RC5ParameterSpec.class,
-        GcmSpecUtil.gcmSpecClass,
-        GOST28147ParameterSpec.class,
-        IvParameterSpec.class,
-        PBEParameterSpec.class
-    };
+        {
+            RC2ParameterSpec.class,
+            RC5ParameterSpec.class,
+            GcmSpecUtil.gcmSpecClass,
+            GOST28147ParameterSpec.class,
+            IvParameterSpec.class,
+            PBEParameterSpec.class
+        };
 
     private BlockCipher baseEngine;
     private BlockCipherProvider engineProvider;
@@ -375,12 +375,12 @@ public class BaseBlockCipher
                 int wordSize = Integer.parseInt(modeName.substring(3));
 
                 cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, wordSize));
+                    CFBBlockCipher.newInstance(baseEngine, wordSize));
             }
             else
             {
                 cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                    CFBBlockCipher.newInstance(baseEngine, 8 * baseEngine.getBlockSize()));
             }
         }
         else if (modeName.startsWith("PGPCFB"))
@@ -423,7 +423,7 @@ public class BaseBlockCipher
             }
             fixedIv = false;
             cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
-                new SICBlockCipher(baseEngine)));
+                SICBlockCipher.newInstance(baseEngine)));
         }
         else if (modeName.equals("CTR"))
         {
@@ -437,7 +437,7 @@ public class BaseBlockCipher
             else
             {
                 cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
-                    new SICBlockCipher(baseEngine)));
+                    SICBlockCipher.newInstance(baseEngine)));
             }
         }
         else if (modeName.equals("GOFB"))
@@ -466,7 +466,7 @@ public class BaseBlockCipher
             }
             else
             {
-                cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(CCMBlockCipher.newInstance(baseEngine));
             }
         }
         else if (modeName.equals("OCB"))
@@ -504,7 +504,7 @@ public class BaseBlockCipher
             else
             {
                 ivLength = 12;
-                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(GCMBlockCipher.newInstance(baseEngine));
             }
         }
         else
