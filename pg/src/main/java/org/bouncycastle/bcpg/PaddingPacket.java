@@ -14,11 +14,15 @@ public class PaddingPacket
     public PaddingPacket(BCPGInputStream in)
         throws IOException
     {
+        super(PADDING);
+
         padding = Streams.readAll(in);
     }
 
     public PaddingPacket(byte[] padding)
     {
+        super(PADDING);
+
         this.padding = padding;
     }
 
@@ -44,11 +48,5 @@ public class PaddingPacket
         throws IOException
     {
         pOut.writePacket(PacketTags.PADDING, padding);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return PADDING;
     }
 }

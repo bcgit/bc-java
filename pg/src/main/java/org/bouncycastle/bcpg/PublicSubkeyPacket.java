@@ -13,7 +13,7 @@ public class PublicSubkeyPacket
         BCPGInputStream    in)
         throws IOException
     {      
-        super(in);
+        super(PUBLIC_SUBKEY, in);
     }
     
     /**
@@ -28,19 +28,6 @@ public class PublicSubkeyPacket
         Date      time,
         BCPGKey   key)
     {
-        super(algorithm, time, key);
-    }
-    
-    public void encode(
-        BCPGOutputStream    out)
-        throws IOException
-    {
-        out.writePacket(PUBLIC_SUBKEY, getEncodedContents());
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return PUBLIC_SUBKEY;
+        super(PUBLIC_SUBKEY, algorithm, time, key);
     }
 }

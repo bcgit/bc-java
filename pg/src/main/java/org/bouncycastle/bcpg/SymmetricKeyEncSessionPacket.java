@@ -43,6 +43,8 @@ public class SymmetricKeyEncSessionPacket
         BCPGInputStream in)
         throws IOException
     {
+        super(SYMMETRIC_KEY_ENC_SESSION);
+
         version = in.read();
         if (version == VERSION_4)
         {
@@ -169,6 +171,8 @@ public class SymmetricKeyEncSessionPacket
         S2K s2k,
         byte[] secKeyData)
     {
+        super(SYMMETRIC_KEY_ENC_SESSION);
+
         this.version = VERSION_4;
         this.encAlgorithm = encAlgorithm;
         this.s2k = s2k;
@@ -194,6 +198,8 @@ public class SymmetricKeyEncSessionPacket
         byte[] secKeyData,
         byte[] authTag)
     {
+        super(SYMMETRIC_KEY_ENC_SESSION);
+
         this.version = version;
         this.encAlgorithm = encAlgorithm;
         this.aeadAlgorithm = aeadAlgorithm;
@@ -344,11 +350,5 @@ public class SymmetricKeyEncSessionPacket
         pOut.close();
 
         out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray());
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return SYMMETRIC_KEY_ENC_SESSION;
     }
 }

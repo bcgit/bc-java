@@ -22,14 +22,24 @@ public class SecretKeyPacket
     private S2K s2k;
     private byte[] iv;
 
+    SecretKeyPacket(
+        BCPGInputStream in)
+        throws IOException
+    {
+        this(SECRET_KEY, in);
+    }
+
     /**
      * @param in
      * @throws IOException
      */
     SecretKeyPacket(
+        int keyTag,
         BCPGInputStream in)
         throws IOException
     {
+        super(keyTag);
+
         if (this instanceof SecretSubkeyPacket)
         {
             pubKeyPacket = new PublicSubkeyPacket(in);
@@ -84,6 +94,19 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
+        this(SECRET_KEY, pubKeyPacket, encAlgorithm, s2k, iv, secKeyData);
+    }
+
+    SecretKeyPacket(
+        int keyTag,
+        PublicKeyPacket pubKeyPacket,
+        int encAlgorithm,
+        S2K s2k,
+        byte[] iv,
+        byte[] secKeyData)
+    {
+        super(keyTag);
+
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
 
@@ -102,6 +125,18 @@ public class SecretKeyPacket
     }
 
     public SecretKeyPacket(
+         PublicKeyPacket pubKeyPacket,
+         int encAlgorithm,
+         int s2kUsage,
+         S2K s2k,
+         byte[] iv,
+         byte[] secKeyData)
+    {
+        this(SECRET_KEY, pubKeyPacket, encAlgorithm, s2kUsage, s2k, iv, secKeyData);
+    }
+
+    SecretKeyPacket(
+        int keyTag,
         PublicKeyPacket pubKeyPacket,
         int encAlgorithm,
         int s2kUsage,
@@ -109,6 +144,8 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
+        super(keyTag);
+
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
         this.s2kUsage = s2kUsage;
@@ -182,12 +219,6 @@ public class SecretKeyPacket
         BCPGOutputStream out)
         throws IOException
     {
-        out.writePacket(SECRET_KEY, getEncodedContents());
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return SECRET_KEY;
+        out.writePacket(getPacketTag(), getEncodedContents());
     }
 }

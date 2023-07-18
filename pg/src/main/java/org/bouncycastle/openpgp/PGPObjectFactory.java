@@ -36,7 +36,6 @@ import org.bouncycastle.util.Iterable;
  * <li>{@link PacketTags#ONE_PASS_SIGNATURE} - produces a {@link PGPOnePassSignatureList}</li>
  * <li>{@link PacketTags#MARKER} - produces a {@link PGPMarker}</li>
  * </ul>
- *
  */
 public class PGPObjectFactory
     implements Iterable
@@ -50,11 +49,11 @@ public class PGPObjectFactory
      * Create an object factory suitable for reading PGP objects such as keys, key rings and key
      * ring collections, or PGP encrypted data.
      *
-     * @param in stream to read PGP data from.
+     * @param in                    stream to read PGP data from.
      * @param fingerPrintCalculator calculator to use in key finger print calculations.
      */
     public PGPObjectFactory(
-        InputStream              in,
+        InputStream in,
         KeyFingerPrintCalculator fingerPrintCalculator)
     {
         this.in = BCPGInputStream.wrap(in);
@@ -65,7 +64,7 @@ public class PGPObjectFactory
      * Create an object factory suitable for reading PGP objects such as keys, key rings and key
      * ring collections, or PGP encrypted data.
      *
-     * @param bytes PGP encoded data.
+     * @param bytes                 PGP encoded data.
      * @param fingerPrintCalculator calculator to use in key finger print calculations.
      */
     public PGPObjectFactory(
@@ -172,8 +171,9 @@ public class PGPObjectFactory
         }
 
         int tag = in.nextPacketTag();
-        UnknownPacket unknownPacket = (UnknownPacket) in.readPacket();
-        if (throwForUnknownCriticalPackets && unknownPacket.isCritical()) {
+        UnknownPacket unknownPacket = (UnknownPacket)in.readPacket();
+        if (throwForUnknownCriticalPackets && unknownPacket.isCritical())
+        {
             // Leave the error message intact for backwards compatibility
             throw new IOException("unknown object in stream: " + tag);
         }
@@ -237,7 +237,8 @@ public class PGPObjectFactory
      * @param throwException whether to throw
      * @return object factory
      */
-    public PGPObjectFactory setThrowForUnknownCriticalPackets(boolean throwException) {
+    public PGPObjectFactory setThrowForUnknownCriticalPackets(boolean throwException)
+    {
         this.throwForUnknownCriticalPackets = throwException;
         return this;
     }

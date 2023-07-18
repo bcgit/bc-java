@@ -118,7 +118,7 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.AES_128:
         case SymmetricKeyAlgorithmTags.AES_192:
         case SymmetricKeyAlgorithmTags.AES_256:
-            engine = new AESEngine();
+            engine = AESEngine.newInstance();
             break;
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
@@ -158,7 +158,7 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.AES_128:
         case SymmetricKeyAlgorithmTags.AES_192:
         case SymmetricKeyAlgorithmTags.AES_256:
-            return new RFC3394WrapEngine(new AESEngine());
+            return new RFC3394WrapEngine(AESEngine.newInstance());
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:

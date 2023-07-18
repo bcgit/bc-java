@@ -2,16 +2,31 @@ package org.bouncycastle.bcpg;
 
 /**
  */
-public abstract class Packet
+public class Packet
     implements PacketTags
 {
+    private final int packetTag;
+
+    // for API compatibility
+    public Packet()
+    {
+        this(RESERVED);
+    }
+
+    Packet(int packetTag)
+    {
+        this.packetTag = packetTag;
+    }
 
     /**
      * Return the tag of the packet.
      *
      * @return packet tag
      */
-    public abstract int getPacketTag();
+    public final int getPacketTag()
+    {
+         return packetTag;
+    }
 
     /**
      * Returns whether the packet is to be considered critical for v6 implementations.
