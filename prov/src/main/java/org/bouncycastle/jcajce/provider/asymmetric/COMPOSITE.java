@@ -84,7 +84,7 @@ public class COMPOSITE
         public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
             throws IOException
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.getPrivateKey().getOctets());
+            ASN1Sequence keySeq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
             PrivateKey[] privKeys = new PrivateKey[keySeq.size()];
 
             for (int i = 0; i != keySeq.size(); i++)
