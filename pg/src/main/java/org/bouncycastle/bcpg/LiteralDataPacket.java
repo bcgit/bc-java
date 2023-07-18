@@ -19,7 +19,7 @@ public class LiteralDataPacket
         BCPGInputStream    in)
         throws IOException
     {
-        super(in);
+        super(in, LITERAL_DATA);
 
         format = in.read();
         int    l = in.read();
@@ -72,11 +72,5 @@ public class LiteralDataPacket
     public byte[] getRawFileName()
     {
         return Arrays.clone(fileName);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return LITERAL_DATA;
     }
 }

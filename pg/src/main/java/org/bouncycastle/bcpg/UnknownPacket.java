@@ -1,20 +1,18 @@
 package org.bouncycastle.bcpg;
 
-import org.bouncycastle.util.Arrays;
-
 import java.io.IOException;
+
+import org.bouncycastle.util.Arrays;
 
 public class UnknownPacket
         extends ContainedPacket
 {
-
-    private final int tag;
     private final byte[] contents;
 
     public UnknownPacket(int tag, BCPGInputStream in)
             throws IOException
     {
-        this.tag = tag;
+        super(tag);
         this.contents = in.readAll();
     }
 
@@ -28,12 +26,6 @@ public class UnknownPacket
             BCPGOutputStream    out)
             throws IOException
     {
-        out.writePacket(tag, contents);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return tag;
+        out.writePacket(getPacketTag(), contents);
     }
 }

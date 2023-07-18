@@ -8,11 +8,16 @@ import org.bouncycastle.util.Encodable;
 /**
  * Basic type for a PGP packet.
  */
-public abstract class ContainedPacket 
+public abstract class ContainedPacket
     extends Packet
     implements Encodable
 {
-    public byte[] getEncoded() 
+    ContainedPacket(int packetTag)
+    {
+        super(packetTag);
+    }
+
+    public byte[] getEncoded()
         throws IOException
     {
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();

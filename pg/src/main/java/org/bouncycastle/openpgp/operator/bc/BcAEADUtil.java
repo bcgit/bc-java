@@ -120,11 +120,11 @@ public class BcAEADUtil
         switch (aeadAlgorithm)
         {
         case AEADAlgorithmTags.EAX:
-            return new EAXBlockCipher(new AESEngine());
+            return new EAXBlockCipher(AESEngine.newInstance());
         case AEADAlgorithmTags.OCB:
-            return new OCBBlockCipher(new AESEngine(), new AESEngine());
+            return new OCBBlockCipher(AESEngine.newInstance(), AESEngine.newInstance());
         case AEADAlgorithmTags.GCM:
-            return new GCMBlockCipher(new AESEngine());
+            return GCMBlockCipher.newInstance(AESEngine.newInstance());
         default:
             throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
         }

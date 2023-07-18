@@ -12,12 +12,12 @@ public class SymmetricEncDataPacket
     public SymmetricEncDataPacket(
         BCPGInputStream  in)
     {
-        super(in);
+        super(in, SYMMETRIC_KEY_ENC);
     }
 
     public SymmetricEncDataPacket()
     {
-        super(null);
+        super(null, SYMMETRIC_KEY_ENC);
     }
 
     @Override
@@ -31,11 +31,5 @@ public class SymmetricEncDataPacket
         throws IOException
     {
          // nothing to add
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return getType();
     }
 }

@@ -18,17 +18,23 @@ public class UserIDPacket
         BCPGInputStream  in)
         throws IOException
     {
+        super(USER_ID);
+
         this.idData = in.readAll();
     }
 
     public UserIDPacket(
         String    id)
     {
+        super(USER_ID);
+
         this.idData = Strings.toUTF8ByteArray(id);
     }
 
     public UserIDPacket(byte[] rawID)
     {
+        super(USER_ID);
+
         this.idData = Arrays.clone(rawID);
     }
 
@@ -62,11 +68,5 @@ public class UserIDPacket
         throws IOException
     {
         out.writePacket(USER_ID, idData);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return USER_ID;
     }
 }

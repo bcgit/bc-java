@@ -14,7 +14,7 @@ public class CompressedDataPacket
         BCPGInputStream    in)
         throws IOException
     {
-        super(in);
+        super(in, COMPRESSED_DATA);
 
         algorithm = in.read();
     }
@@ -27,11 +27,5 @@ public class CompressedDataPacket
     public int getAlgorithm()
     {
         return algorithm;
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return COMPRESSED_DATA;
     }
 }

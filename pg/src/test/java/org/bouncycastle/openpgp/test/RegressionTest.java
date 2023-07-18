@@ -53,6 +53,7 @@ public class RegressionTest
         new PGPAeadTest(),
         new CRC24Test(),
         new WildcardKeyIDTest(),
+        new ArmorCRCTest(),
         new UnknownPacketTest()
     };
 

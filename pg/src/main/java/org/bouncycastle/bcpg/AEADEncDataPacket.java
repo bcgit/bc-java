@@ -25,7 +25,7 @@ public class AEADEncDataPacket
     public AEADEncDataPacket(BCPGInputStream in)
         throws IOException
     {
-        super(in);
+        super(in, AEAD_ENC_DATA);
 
         version = (byte)in.read();
         if (version != VERSION_1)
@@ -43,7 +43,8 @@ public class AEADEncDataPacket
 
     public AEADEncDataPacket(int algorithm, int aeadAlgorithm, int chunkSize, byte[] iv)
     {
-        super(null);
+        super(null, AEAD_ENC_DATA);
+
         this.version = VERSION_1;
         this.algorithm = (byte)algorithm;
         this.aeadAlgorithm = (byte)aeadAlgorithm;
@@ -117,11 +118,5 @@ public class AEADEncDataPacket
     public static int getIVLength(byte aeadAlgorithm)
     {
         return AEADUtils.getIVLength(aeadAlgorithm);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return getType();
     }
 }

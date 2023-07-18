@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * basic packet for a modification detection code packet.
@@ -13,7 +13,9 @@ public class ModDetectionCodePacket
     ModDetectionCodePacket(
         BCPGInputStream in)
         throws IOException
-    {    
+    {
+        super(MOD_DETECTION_CODE);
+
         this.digest = new byte[20];
         in.readFully(this.digest);
     }
@@ -21,7 +23,9 @@ public class ModDetectionCodePacket
     public ModDetectionCodePacket(
         byte[]    digest)
         throws IOException
-    {    
+    {
+        super(MOD_DETECTION_CODE);
+
         this.digest = new byte[digest.length];
         
         System.arraycopy(digest, 0, this.digest, 0, this.digest.length);
@@ -41,11 +45,5 @@ public class ModDetectionCodePacket
         throws IOException
     {
         out.writePacket(MOD_DETECTION_CODE, digest, false);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return MOD_DETECTION_CODE;
     }
 }

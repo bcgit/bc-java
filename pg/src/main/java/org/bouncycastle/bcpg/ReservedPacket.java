@@ -3,15 +3,8 @@ package org.bouncycastle.bcpg;
 public class ReservedPacket
     extends InputStreamPacket
 {
-
     public ReservedPacket(BCPGInputStream in)
     {
-        super(in);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return RESERVED;
+        super(in, RESERVED);
     }
 }

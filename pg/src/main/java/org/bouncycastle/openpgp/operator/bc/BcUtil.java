@@ -32,7 +32,7 @@ public class BcUtil
 
         if (withIntegrityPacket)
         {
-            c = new DefaultBufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
+            c = new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(engine, engine.getBlockSize() * 8));
         }
         else
         {
@@ -90,7 +90,7 @@ public class BcUtil
 
     public static BufferedBlockCipher createSymmetricKeyWrapper(boolean forEncryption, BlockCipher engine, byte[] key, byte[] iv)
     {
-        BufferedBlockCipher c = new DefaultBufferedBlockCipher(new CFBBlockCipher(engine, engine.getBlockSize() * 8));
+        BufferedBlockCipher c = new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(engine, engine.getBlockSize() * 8));
 
         c.init(forEncryption, new ParametersWithIV(new KeyParameter(key), iv));
 

@@ -16,6 +16,8 @@ public class UserAttributePacket
         BCPGInputStream  in)
         throws IOException
     {
+        super(USER_ATTRIBUTE);
+
         UserAttributeSubpacketInputStream     sIn = new UserAttributeSubpacketInputStream(in);
         UserAttributeSubpacket                sub;
                                         
@@ -36,6 +38,8 @@ public class UserAttributePacket
     public UserAttributePacket(
         UserAttributeSubpacket[]    subpackets)
     {
+        super(USER_ATTRIBUTE);
+
         this.subpackets = subpackets;
     }
     
@@ -56,11 +60,5 @@ public class UserAttributePacket
         }
 
         out.writePacket(USER_ATTRIBUTE, bOut.toByteArray());
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return USER_ATTRIBUTE;
     }
 }

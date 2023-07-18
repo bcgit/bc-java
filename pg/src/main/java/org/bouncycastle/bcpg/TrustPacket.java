@@ -15,6 +15,8 @@ public class TrustPacket
         BCPGInputStream  in)
         throws IOException
     {
+        super(TRUST);
+
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
         int                      ch;
         
@@ -29,6 +31,8 @@ public class TrustPacket
     public TrustPacket(
         int    trustCode)
     {
+        super(TRUST);
+
         this.levelAndTrustAmount = new byte[1];
         
         this.levelAndTrustAmount[0] = (byte)trustCode;
@@ -44,11 +48,5 @@ public class TrustPacket
         throws IOException
     {
         out.writePacket(TRUST, levelAndTrustAmount);
-    }
-
-    @Override
-    public int getPacketTag()
-    {
-        return TRUST;
     }
 }
