@@ -35,7 +35,7 @@ abstract class Symmetric
         AesSymmetric()
         {
             super(64, 64);
-            cipher = new SICBlockCipher(new AESEngine());
+            cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         }
 
         private void aes128(byte[] out, int offset, int size)
