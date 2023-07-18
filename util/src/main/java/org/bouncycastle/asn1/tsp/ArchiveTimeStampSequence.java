@@ -30,7 +30,7 @@ public class ArchiveTimeStampSequence
      */
     public static ArchiveTimeStampSequence getInstance(final Object obj)
     {
-        if (obj instanceof ArchiveTimeStampChain)
+        if (obj instanceof ArchiveTimeStampSequence)
         {
             return (ArchiveTimeStampSequence)obj;
         }
@@ -43,7 +43,6 @@ public class ArchiveTimeStampSequence
     }
 
     private ArchiveTimeStampSequence(final ASN1Sequence sequence)
-        throws IllegalArgumentException
     {
         final ASN1EncodableVector vector = new ASN1EncodableVector(sequence.size());
 
