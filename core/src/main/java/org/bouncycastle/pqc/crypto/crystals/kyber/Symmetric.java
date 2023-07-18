@@ -111,7 +111,7 @@ abstract class Symmetric
             super(64);
             this.sha256Digest = new SHA256Digest();
             this.sha512Digest = new SHA512Digest();
-            this.cipher = new SICBlockCipher(new AESEngine());
+            this.cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         }
 
         private void doDigest(ExtendedDigest digest, byte[] out, byte[] in, int outOffset)

@@ -222,12 +222,12 @@ public class LEATest
 
                     if (comment.indexOf("CBC") >= 0)
                     {
-                        engine = new CBCBlockCipher(new LEAEngine());
+                        engine = CBCBlockCipher.newInstance(new LEAEngine());
                     }
                     else
                     {
                         // CTR
-                        engine = new SICBlockCipher(new LEAEngine());
+                        engine = SICBlockCipher.newInstance(new LEAEngine());
                     }
                     if (line.endsWith("Encrypt"))
                     {

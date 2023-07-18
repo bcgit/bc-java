@@ -27,9 +27,20 @@ public class SICBlockCipher
     private int             byteCount;
 
     /**
+     * Return a new SIC/CTR mode cipher based on the passed in base cipher
+     *
+     * @param cipher the base cipher for the SIC/CTR mode.
+     */
+    public static SICBlockCipher newInstance(BlockCipher cipher)
+    {
+        return new SICBlockCipher(cipher);
+    }
+
+    /**
      * Basic constructor.
      *
      * @param c the block cipher to be used.
+     * @deprecated use newInstance() method.
      */
     public SICBlockCipher(BlockCipher c)
     {

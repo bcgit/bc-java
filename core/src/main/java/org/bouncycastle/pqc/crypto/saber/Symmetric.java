@@ -70,7 +70,7 @@ abstract class Symmetric
         {
             sha256Digest = new SHA256Digest();
             sha512Digest = new SHA512Digest();
-            this.cipher = new SICBlockCipher(new AESEngine());
+            this.cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         }
         @Override
         void hash_h(byte[] out, byte[] in, int outOffset)

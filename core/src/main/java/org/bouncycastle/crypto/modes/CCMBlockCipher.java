@@ -271,7 +271,7 @@ public class CCMBlockCipher
         iv[0] = (byte)((q - 1) & 0x7);
         System.arraycopy(nonce, 0, iv, 1, nonce.length);
 
-        BlockCipher ctrCipher = new SICBlockCipher(cipher);
+        BlockCipher ctrCipher = SICBlockCipher.newInstance(cipher);
         ctrCipher.init(forEncryption, new ParametersWithIV(keyParam, iv));
 
         int outputLen;
