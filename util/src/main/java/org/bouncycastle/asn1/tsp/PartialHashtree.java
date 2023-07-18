@@ -51,7 +51,7 @@ public class PartialHashtree
     {
         for (int i = 0; i != values.size(); i++)
         {
-            if (!(values.getObjectAt(i) instanceof DEROctetString))
+            if (!(values.getObjectAt(i) instanceof ASN1OctetString))
             {
                 throw new IllegalArgumentException("unknown object in constructor: " + values
                     .getObjectAt(i).getClass().getName());

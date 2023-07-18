@@ -46,7 +46,15 @@ public class EncryptionInfo
      */
     private ASN1Encodable encryptionInfoValue;
 
+    /**
+     * @deprecated Use {@link EncryptionInfo#getInstance(Object)} instead.
+     */
     public static EncryptionInfo getInstance(final ASN1Object obj)
+    {
+        return getInstance((Object)obj);
+    }
+
+    public static EncryptionInfo getInstance(final Object obj)
     {
         if (obj instanceof EncryptionInfo)
         {
@@ -64,7 +72,7 @@ public class EncryptionInfo
         ASN1TaggedObject obj,
         boolean explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return getInstance((Object)ASN1Sequence.getInstance(obj, explicit));
     }
 
     private EncryptionInfo(ASN1Sequence sequence)
@@ -83,6 +91,16 @@ public class EncryptionInfo
     {
         this.encryptionInfoType = encryptionInfoType;
         this.encryptionInfoValue = encryptionInfoValue;
+    }
+
+    public ASN1ObjectIdentifier getEncryptionInfoType()
+    {
+        return encryptionInfoType;
+    }
+
+    public ASN1Encodable getEncryptionInfoValue()
+    {
+        return encryptionInfoValue;
     }
 
     public ASN1Primitive toASN1Primitive()

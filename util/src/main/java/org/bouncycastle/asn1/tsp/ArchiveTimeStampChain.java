@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.DERSequence;
 public class ArchiveTimeStampChain
     extends ASN1Object
 {
-    private ASN1Sequence archiveTimestamps;
+    private ASN1Sequence archiveTimeStamps;
 
     /**
      * Return an ArchiveTimeStampChain from the given object.
@@ -44,12 +44,12 @@ public class ArchiveTimeStampChain
 
     public ArchiveTimeStampChain(ArchiveTimeStamp archiveTimeStamp)
     {
-        archiveTimestamps = new DERSequence(archiveTimeStamp);
+        this.archiveTimeStamps = new DERSequence(archiveTimeStamp);
     }
 
     public ArchiveTimeStampChain(ArchiveTimeStamp[] archiveTimeStamps)
     {
-        archiveTimestamps = new DERSequence(archiveTimeStamps);
+        this.archiveTimeStamps = new DERSequence(archiveTimeStamps);
     }
 
     private ArchiveTimeStampChain(final ASN1Sequence sequence)
@@ -62,16 +62,16 @@ public class ArchiveTimeStampChain
             vector.add(ArchiveTimeStamp.getInstance(objects.nextElement()));
         }
 
-        archiveTimestamps = new DERSequence(vector);
+        this.archiveTimeStamps = new DERSequence(vector);
     }
 
     public ArchiveTimeStamp[] getArchiveTimestamps()
     {
-        ArchiveTimeStamp[] rv = new ArchiveTimeStamp[archiveTimestamps.size()];
+        ArchiveTimeStamp[] rv = new ArchiveTimeStamp[archiveTimeStamps.size()];
 
         for (int i = 0; i != rv.length; i++)
         {
-            rv[i] = ArchiveTimeStamp.getInstance(archiveTimestamps.getObjectAt(i));
+            rv[i] = ArchiveTimeStamp.getInstance(archiveTimeStamps.getObjectAt(i));
         }
 
         return rv;
@@ -85,11 +85,11 @@ public class ArchiveTimeStampChain
      */
     public ArchiveTimeStampChain append(final ArchiveTimeStamp archiveTimeStamp)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(archiveTimestamps.size() + 1);
+        ASN1EncodableVector v = new ASN1EncodableVector(archiveTimeStamps.size() + 1);
 
-        for (int i = 0; i != archiveTimestamps.size(); i++)
+        for (int i = 0; i != archiveTimeStamps.size(); i++)
         {
-            v.add(archiveTimestamps.getObjectAt(i));
+            v.add(archiveTimeStamps.getObjectAt(i));
         }
 
         v.add(archiveTimeStamp);
@@ -99,6 +99,6 @@ public class ArchiveTimeStampChain
 
     public ASN1Primitive toASN1Primitive()
     {
-        return archiveTimestamps;
+        return archiveTimeStamps;
     }
 }
