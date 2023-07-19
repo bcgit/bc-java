@@ -102,30 +102,35 @@ public class OriginatorIdentifierOrKey
      * @param o the object we want converted.
      * @exception IllegalArgumentException if the object cannot be converted.
      */
-    public static OriginatorIdentifierOrKey getInstance(
-        Object o)
+    public static OriginatorIdentifierOrKey getInstance(Object o)
     {
         if (o == null || o instanceof OriginatorIdentifierOrKey)
         {
             return (OriginatorIdentifierOrKey)o;
         }
 
-        if (o instanceof IssuerAndSerialNumber || o instanceof ASN1Sequence)
+        if (o instanceof IssuerAndSerialNumber)
+        {
+            return new OriginatorIdentifierOrKey((IssuerAndSerialNumber)o);
+        }
+
+        if (o instanceof ASN1Sequence)
         {
             return new OriginatorIdentifierOrKey(IssuerAndSerialNumber.getInstance(o));
         }
 
         if (o instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC);
+            ASN1TaggedObject taggedObject = (ASN1TaggedObject)o;
 
-            if (tagged.getTagNo() == 0)
+            if (taggedObject.hasContextTag(0))
             {
-                return new OriginatorIdentifierOrKey(SubjectKeyIdentifier.getInstance(tagged, false));
+                return new OriginatorIdentifierOrKey(SubjectKeyIdentifier.getInstance(taggedObject, false));
             }
-            else if (tagged.getTagNo() == 1)
+
+            if (taggedObject.hasContextTag(1))
             {
-                return new OriginatorIdentifierOrKey(OriginatorPublicKey.getInstance(tagged, false));
+                return new OriginatorIdentifierOrKey(OriginatorPublicKey.getInstance(taggedObject, false));
             }
         }
 
@@ -149,9 +154,13 @@ public class OriginatorIdentifierOrKey
 
     public SubjectKeyIdentifier getSubjectKeyIdentifier()
     {
-        if (id instanceof ASN1TaggedObject && ((ASN1TaggedObject)id).getTagNo() == 0)
+        if (id instanceof ASN1TaggedObject)
         {
-            return SubjectKeyIdentifier.getInstance((ASN1TaggedObject)id, false);
+            ASN1TaggedObject taggedObject = (ASN1TaggedObject)id;
+            if (taggedObject.hasContextTag(0))
+            {
+                return SubjectKeyIdentifier.getInstance(taggedObject, false);
+            }
         }
 
         return null;
@@ -159,9 +168,13 @@ public class OriginatorIdentifierOrKey
 
     public OriginatorPublicKey getOriginatorKey()
     {
-        if (id instanceof ASN1TaggedObject && ((ASN1TaggedObject)id).getTagNo() == 1)
+        if (id instanceof ASN1TaggedObject)
         {
-            return OriginatorPublicKey.getInstance((ASN1TaggedObject)id, false);
+            ASN1TaggedObject taggedObject = (ASN1TaggedObject)id;
+            if (taggedObject.hasContextTag(1))
+            {
+                return OriginatorPublicKey.getInstance(taggedObject, false);
+            }
         }
 
         return null;

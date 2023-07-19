@@ -29,7 +29,7 @@ public class SubjectPublicKeyInfo
         ASN1TaggedObject obj,
         boolean          explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return new SubjectPublicKeyInfo(ASN1Sequence.getInstance(obj, explicit));
     }
 
     public static SubjectPublicKeyInfo getInstance(
@@ -45,6 +45,14 @@ public class SubjectPublicKeyInfo
         }
 
         return null;
+    }
+
+    public SubjectPublicKeyInfo(
+        AlgorithmIdentifier algId,
+        ASN1BitString publicKey)
+    {
+        this.keyData = publicKey;
+        this.algId = algId;
     }
 
     public SubjectPublicKeyInfo(
