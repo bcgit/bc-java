@@ -464,28 +464,8 @@ public class CipherSuite {
     {
         GenericContent encryptContext = new GenericContent(label, context);
         byte[] encryptContextBytes = MLSOutputStream.encode(encryptContext);
-        AsymmetricKeyParameter privKey;
-        AsymmetricKeyParameter pubKey;
-        AsymmetricCipherKeyPair kp;
-        switch (sigAlgo)
-        {
-            case ecdsa:
-                BigInteger d = new BigInteger(1, priv);
-                privKey = new ECPrivateKeyParameters(d, domainParams);
-                pubKey = new ECPublicKeyParameters(domainParams.getG().multiply(d), domainParams);
-                break;
-            case ed25519:
-                privKey = new X25519PrivateKeyParameters(priv);
-                pubKey = ((X25519PrivateKeyParameters)privKey).generatePublicKey();
-                break;
-            case ed448:
-                privKey = new X448PrivateKeyParameters(priv);
-                pubKey = ((X448PrivateKeyParameters)privKey).generatePublicKey();
-                break;
-            default:
-                throw new IllegalStateException("Unknown mode");
-        }
-        kp = new AsymmetricCipherKeyPair(pubKey, privKey);
+
+        AsymmetricCipherKeyPair kp = hpke.deserializePrivateKey(priv, null);
         return hpke.open(kem_output, kp, encryptContextBytes, "".getBytes(), ciphertext, null, null, null);
     }
     public byte[][] encryptWithLabel(byte[] pub, String label, byte[] context, byte[] plaintext) throws IOException, InvalidCipherTextException

@@ -10,6 +10,7 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LeafNode
@@ -28,6 +29,10 @@ public class LeafNode
     List<Extension> extensions;
     /* SignWithLabel(., "LeafNodeTBS", LeafNodeTBS) */
     byte[] signature; // not in TBS
+
+    public LeafNode()
+    {
+    }
 
     public LeafNode(MLSInputStream stream) throws IOException
     {
@@ -117,6 +122,56 @@ public class LeafNode
         }
 
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
+    }
+
+    public LeafNode forCommit(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, byte[] sigPriv) throws Exception
+    {
+        LeafNode clone = copy(encKeyIn);
+        clone.leaf_node_source = LeafNodeSource.COMMIT;
+        clone.parent_hash = parentHash.clone();
+
+        clone.sign(suite, sigPriv, toBeSigned(groupId, leafIndex.value));
+
+        return clone;
+    }
+
+    private void sign(CipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
+    {
+        byte[] sigPub = suite.serializeSignaturePublicKey(suite.getSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv)));
+        if (!Arrays.equals(sigPub, signature_key))
+        {
+            throw new Exception("Signature key mismatch");
+        }
+
+        //TODO: check if credential is valid for signature key
+
+        signature = suite.signWithLabel(sigPriv, "LeafNodeTBS", tbs);
+    }
+
+
+    //TODO: add options to clone with credential/capabilities/extensions
+    private LeafNode copy(byte[] encKeyIn)
+    {
+        LeafNode clone = new LeafNode();
+        clone.encryption_key = encKeyIn.clone();
+        clone.signature_key = this.signature_key.clone();
+        clone.credential = this.credential;
+        clone.capabilities = this.capabilities;
+        clone.leaf_node_source =  this.leaf_node_source;
+        switch (clone.leaf_node_source)
+        {
+            case KEY_PACKAGE:
+                clone.lifeTime = this.lifeTime;
+                break;
+            case UPDATE:
+                break;
+            case COMMIT:
+                clone.parent_hash = this.parent_hash.clone();
+                break;
+        }
+        clone.extensions = new ArrayList<>(this.extensions);
+        clone.signature = this.signature.clone();
+        return clone;
     }
 }
 

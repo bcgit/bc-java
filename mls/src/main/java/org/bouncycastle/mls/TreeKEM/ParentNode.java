@@ -15,6 +15,13 @@ public class ParentNode
     byte[] parentHash;
     public List<LeafIndex> unmerged_leaves;
 
+    public ParentNode(byte[] encryptionKey, byte[] parentHash, List<LeafIndex> unmerged_leaves)
+    {
+        this.encryptionKey = encryptionKey.clone();
+        this.parentHash = parentHash.clone();
+        this.unmerged_leaves = new ArrayList<>(unmerged_leaves);
+    }
+
     public ParentNode(MLSInputStream stream) throws IOException
     {
         encryptionKey = stream.readOpaque();

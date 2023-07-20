@@ -2,8 +2,12 @@ package org.bouncycastle.mls.TreeKEM;
 
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.codec.Optional;
+import org.bouncycastle.mls.codec.PathSecret;
+import org.bouncycastle.mls.codec.UpdatePath;
 
 import java.io.IOException;
+import java.util.List;
 
 public class LifeTime
         implements MLSInputStream.Readable, MLSOutputStream.Writable

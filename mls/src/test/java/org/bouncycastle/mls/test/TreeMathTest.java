@@ -168,7 +168,7 @@ public class TreeMathTest
         for (int i = 0; i < leafCount; i++) {
             LeafIndex li = new LeafIndex(i);
             assertEquals(asNodeList(expected_dirpath[i]), li.directPath(size));
-            assertEquals(asNodeList(expected_copath[i]), li.copath(size));
+            assertEquals(asNodeList(expected_copath[i]), (new NodeIndex(li)).copath(size));
         }
     }
 

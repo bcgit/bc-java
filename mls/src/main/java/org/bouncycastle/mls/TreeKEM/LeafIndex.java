@@ -26,7 +26,7 @@ public class LeafIndex
         value = valueIn;
     }
     public LeafIndex(NodeIndex valueIn) {
-        value = (int) (valueIn.value() >> 1);
+        value = (int) (valueIn.value() >>> 1);
     }
 
     @Override
@@ -90,20 +90,20 @@ public class LeafIndex
         return d;
     }
 
-    public List<NodeIndex> copath(TreeSize size) {
-        List<NodeIndex> d = directPath(size);
-        if (d.isEmpty()) {
-            return d;
-        }
-
-        // Prepend leaf; omit root
-        d.add(0, new NodeIndex(this));
-        d.remove(d.size() - 1);
-
-        return d.stream()
-                .map(NodeIndex::sibling)
-                .collect(Collectors.toList());
-    }
+//    public List<NodeIndex> copath(TreeSize size) {
+//        List<NodeIndex> d = directPath(size);
+//        if (d.isEmpty()) {
+//            return d;
+//        }
+//
+//        // Prepend leaf; omit root
+//        d.add(0, new NodeIndex(this));
+//        d.remove(d.size() - 1);
+//
+//        return d.stream()
+//                .map(NodeIndex::sibling)
+//                .collect(Collectors.toList());
+//    }
     public LeafIndex(MLSInputStream stream) throws IOException
     {
         value = (int) stream.read(int.class);

@@ -1,18 +1,53 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.TreeSize;
+import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.codec.UpdatePath;
+import org.bouncycastle.mls.codec.UpdatePathNode;
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
+
+class FilteredDirectPath
+{
+    ArrayList<NodeIndex> parents;
+    ArrayList<ArrayList<NodeIndex>> resolutions;
+
+    public FilteredDirectPath clone()
+    {
+        FilteredDirectPath fdp = new FilteredDirectPath();
+        fdp.parents = (ArrayList<NodeIndex>) parents.clone();
+        fdp.resolutions = (ArrayList<ArrayList<NodeIndex>>) resolutions.clone();
+        return fdp;
+    }
+
+    public FilteredDirectPath()
+    {
+        this.parents = new ArrayList<>();
+        this.resolutions = new ArrayList<>();
+    }
+    public void reverse()
+    {
+        Collections.reverse(parents);
+        Collections.reverse(resolutions);
+    }
+
+}
 
 public class TreeKEMPublicKey
         implements MLSInputStream.Readable, MLSOutputStream.Writable
@@ -24,6 +59,13 @@ public class TreeKEMPublicKey
     private final Map<NodeIndex, Integer> exceptCache;
     ArrayList<OptionalNode> nodes;
 
+    public static TreeKEMPublicKey clone(TreeKEMPublicKey other) throws IOException
+    {
+        TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(MLSOutputStream.encode(other), TreeKEMPublicKey.class);
+        tree.setSuite(other.suite);
+        tree.setHashAll();
+        return tree;
+    }
 
     public TreeKEMPublicKey(MLSInputStream stream) throws IOException
     {
@@ -59,7 +101,15 @@ public class TreeKEMPublicKey
     {
         this.suite = suite;
     }
-    
+
+    public void dumpHashes()
+    {
+        for (NodeIndex n : hashes.keySet())
+        {
+            System.out.print(n.value() + " : ");
+            System.out.println(Hex.toHexString(hashes.get(n)));
+        }
+    }
     public void dump()
     {
         System.out.println("Tree:");
@@ -107,6 +157,167 @@ public class TreeKEMPublicKey
         System.out.println("nodeCount: " + nodes.size());
     }
 
+    //TODO: include leaf node options
+    public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv) throws Exception
+    {
+        // Grab information about the sender
+        OptionalNode leafNode = nodeAt(from);
+        if (leafNode.isBlank())
+        {
+            throw new Exception("Cannot update from blank node");
+        }
+
+        // Generate path secrets
+        TreeKEMPrivateKey priv = TreeKEMPrivateKey.create(this, from, leafSecret);
+        FilteredDirectPath dp = getFilteredDirectPath(new NodeIndex(from));
+
+        // Encrypt path secrets to the copath, forming a stub UpdatePath with no
+        // encryptions
+        ArrayList<UpdatePathNode> pathNodes = new ArrayList<>();
+        for (NodeIndex n: dp.parents)
+        {
+            Secret pathSecret = priv.pathSecrets.get(n);
+            AsymmetricCipherKeyPair nodePriv = priv.getPrivateKey(n);
+
+            pathNodes.add(new UpdatePathNode(suite.getHPKE().serializePublicKey(nodePriv.getPublic()), new ArrayList<>()));
+        }
+
+        // Update and re-sign the leaf_node
+        byte[][] ph = parentHashes(from, dp, pathNodes);
+        byte[] ph0 = new byte[0];
+        if (ph.length != 0)
+        {
+            ph0 = ph[0];
+        }
+
+        byte[] leafPub = suite.getHPKE().serializePublicKey(priv.getPrivateKey(new NodeIndex(from)).getPublic());
+        LeafNode newLeaf = leafNode.getLeafNode().forCommit(suite, groupId, from, leafPub, ph0, sigPriv);
+
+        // Merge the changes into the tree
+        merge(from, new UpdatePath(newLeaf, pathNodes));
+
+        return priv;
+    }
+
+    public UpdatePath encap(TreeKEMPrivateKey priv, byte[] context, List<LeafIndex> except) throws IOException, InvalidCipherTextException
+    {
+        FilteredDirectPath dp = getFilteredDirectPath(new NodeIndex(priv.index));
+        List<UpdatePathNode> pathNodes = new ArrayList<>();
+        for (int i = 0; i < dp.parents.size(); i++)
+        {
+            NodeIndex n = dp.parents.get(i);
+            List<NodeIndex> res = dp.resolutions.get(i);
+            removeLeaves(res, except);
+
+            Secret pathSecret = priv.pathSecrets.get(n);
+            AsymmetricCipherKeyPair nodePriv = priv.getPrivateKey(n);
+
+            List<HPKECiphertext> cts = new ArrayList<>();
+            for (NodeIndex nr: res)
+            {
+                byte[] nodePub = nodeAt(nr).node.getPublicKey();
+                byte[][] ctAndEnc = suite.encryptWithLabel(nodePub, "UpdatePathNode", context, pathSecret.value());
+                HPKECiphertext ct = new HPKECiphertext(ctAndEnc[1], ctAndEnc[0]);
+                cts.add(ct);
+            }
+            pathNodes.add(new UpdatePathNode(suite.getHPKE().serializePublicKey(nodePriv.getPublic()), cts));
+        }
+        LeafNode newLeaf = getLeafNode(priv.index);
+        return new UpdatePath(newLeaf, pathNodes);
+    }
+
+    public byte[] getRootHash() throws Exception
+    {
+        NodeIndex r = NodeIndex.root(size);
+        if (!hashes.containsKey(r))
+        {
+            throw new Exception("Root hash not set");
+        }
+
+        return hashes.get(r);
+    }
+
+    public void merge(LeafIndex from, UpdatePath path) throws Exception
+    {
+        nodeAt(from).node = new Node(path.leaf_node);
+
+        FilteredDirectPath dp = getFilteredDirectPath(new NodeIndex(from));
+
+        if (dp.parents.size() != path.nodes.size())
+        {
+            throw new Exception("Malformed direct path");
+        }
+
+        byte[][] ph = parentHashes(from, dp, path.nodes);
+        for (int i = 0; i < dp.parents.size(); i++)
+        {
+            NodeIndex n = dp.parents.get(i);
+
+            byte[] parentHash = new byte[0];
+            if (i < dp.parents.size() - 1)
+            {
+                parentHash = ph[i + 1];
+            }
+
+            nodeAt(n).node = new Node(new ParentNode(path.nodes.get(i).encryption_key, parentHash, new ArrayList<>()));
+        }
+
+        clearHashPath(from);
+        setHashAll();
+    }
+
+    public boolean hasLeaf(LeafIndex index)
+    {
+        return !nodeAt(index).isBlank();
+    }
+
+    protected FilteredDirectPath getFilteredCommonDirectPath(LeafIndex leaf1, LeafIndex leaf2)
+    {
+        FilteredDirectPath xPath = getFilteredDirectPath(new NodeIndex(leaf1));
+        FilteredDirectPath yPath = getFilteredDirectPath(new NodeIndex(leaf2));
+        xPath.reverse();
+        yPath.reverse();
+
+        FilteredDirectPath commonPath = new FilteredDirectPath();
+        for (int i = 0; i < xPath.parents.size(); i++)
+        {
+            if (xPath.parents.get(i).value() == yPath.parents.get(i).value())
+            {
+                commonPath.parents.add(xPath.parents.get(i));
+                commonPath.resolutions.add(yPath.resolutions.get(i));
+            }
+            else
+            {
+                break;
+            }
+        }
+        commonPath.reverse();
+        return commonPath;
+    }
+
+    protected FilteredDirectPath getFilteredDirectPath(NodeIndex index)
+    {
+        FilteredDirectPath fdp = new FilteredDirectPath();
+        //TODO: Why is the leafindex copath different than nodeindex copath
+//        LeafIndex i = new LeafIndex(index);
+        List<NodeIndex> cp = index.copath(size);
+
+        for (NodeIndex n : cp)
+        {
+            NodeIndex p = n.parent();
+            ArrayList<NodeIndex> res = resolve(n);
+
+            if (res.isEmpty())
+            {
+                continue;
+            }
+
+            fdp.parents.add(p);
+            fdp.resolutions.add(res);
+        }
+        return fdp;
+    }
+
     public LeafNode getLeafNode(LeafIndex index)
     {
         OptionalNode node = nodeAt(index);
@@ -120,10 +331,10 @@ public class TreeKEMPublicKey
 
     public ArrayList<NodeIndex> resolve(NodeIndex index)
     {
-        ArrayList<NodeIndex> out = new ArrayList<>();
         boolean atLeaf = (index.level() == 0);
         if (!nodeAt(index).isBlank())
         {
+            ArrayList<NodeIndex> out = new ArrayList<>();
             out.add(index);
             if(index.isLeaf())
             {
@@ -142,11 +353,12 @@ public class TreeKEMPublicKey
 
         if(atLeaf)
         {
-            return out;
+            return new ArrayList<>();
         }
 
         ArrayList<NodeIndex> l = resolve(index.left());
         ArrayList<NodeIndex> r = resolve(index.right());
+
         l.addAll(r);
         return l;
     }
@@ -257,7 +469,7 @@ public class TreeKEMPublicKey
         return nodeAt(new NodeIndex(n));
     }
 
-    private OptionalNode nodeAt(NodeIndex n)
+    OptionalNode nodeAt(NodeIndex n)
     {
         long width = size.width();
         if (n.value() >= width)
@@ -311,6 +523,71 @@ public class TreeKEMPublicKey
         getHash(r);
     }
 
+    private byte[][] parentHashes(LeafIndex from, FilteredDirectPath fdp, List<UpdatePathNode> nodes) throws Exception
+    {
+        NodeIndex fromNode = new NodeIndex(from);
+        FilteredDirectPath dp = fdp.clone();
+
+        // removing root from fdp
+        dp.parents.remove(dp.parents.size()-1);
+        dp.resolutions.remove(dp.resolutions.size()-1);
+
+        // special case of one-leaf tree
+        if (!fromNode.equals(NodeIndex.root(size)))
+        {
+            dp.parents.add(0, fromNode);
+            dp.resolutions.add(0, new ArrayList<>());
+        }
+
+        if (dp.parents.size() != nodes.size())
+        {
+            throw new Exception("Malformed UpdatePath");
+        }
+
+        // Parent hash for all the parents, starting from the root
+        NodeIndex last = NodeIndex.root(size);
+        byte[] lastHash = new byte[0];
+        byte[][] ph = new byte[dp.parents.size()][];
+
+        for (int i = dp.parents.size() - 1; i >= 0; i--)
+        {
+            NodeIndex n = dp.parents.get(i);
+            NodeIndex s = n.sibling(last);
+
+            ParentNode parentNode = new ParentNode(nodes.get(i).encryption_key, lastHash, new ArrayList<>());
+            lastHash = getParentHash(parentNode, s);
+            ph[i] = lastHash;
+
+            last = n;
+        }
+
+        return ph;
+    }
+    private byte[] getParentHash(ParentNode parent, NodeIndex cpChild) throws Exception
+    {
+        if (!hashes.containsKey(cpChild))
+        {
+            throw new Exception("Child hash not set");
+        }
+
+        ParentHashInput hashInput = new ParentHashInput(
+                parent.encryptionKey,
+                parent.parentHash,
+                hashes.get(cpChild)
+        );
+
+        return suite.hash(MLSOutputStream.encode(hashInput));
+    }
+    public boolean verifyParentHash(LeafIndex from, UpdatePath path) throws Exception
+    {
+        FilteredDirectPath fdp = getFilteredDirectPath(new NodeIndex(from));
+        byte[][] hashChain = parentHashes(from, fdp, path.nodes);
+        if (hashChain.length == 0)
+        {
+            return path.leaf_node.leaf_node_source != LeafNodeSource.COMMIT;
+        }
+        return Arrays.equals(path.leaf_node.parent_hash, hashChain[0]);
+    }
     public boolean verifyParentHash() throws IOException
     {
         long width = size.width();

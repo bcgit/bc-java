@@ -1,11 +1,13 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
+import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.GroupContext;
@@ -13,7 +15,10 @@ import org.bouncycastle.mls.codec.GroupInfo;
 import org.bouncycastle.mls.codec.GroupSecrets;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.codec.Optional;
+import org.bouncycastle.mls.codec.PathSecret;
 import org.bouncycastle.mls.codec.Proposal;
+import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
@@ -27,9 +32,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class VectorTest
         extends TestCase
@@ -923,4 +931,296 @@ public class VectorTest
             }
         }
     }
+
+
+    public void testTreeKEM()
+            throws Exception
+    {
+        class PathSecretInfo
+        {
+            NodeIndex node;
+            byte[] pathSecret;
+
+            public PathSecretInfo(NodeIndex node, byte[] pathSecret)
+            {
+                this.node = node;
+                this.pathSecret = pathSecret;
+            }
+        }
+        class LeafPrivateInfo
+        {
+            LeafIndex index;
+            byte[] encryptionPriv;
+            byte[] signaturePriv;
+            List<PathSecretInfo> pathSecrets;
+
+            public LeafPrivateInfo(LeafIndex index, byte[] encryptionPriv, byte[] signaturePriv, List<PathSecretInfo> pathSecrets)
+            {
+                this.index = index;
+                this.encryptionPriv = encryptionPriv;
+                this.signaturePriv = signaturePriv;
+                this.pathSecrets = pathSecrets;
+            }
+        }
+
+        class UpdatePathInfo
+        {
+            LeafIndex sender;
+            UpdatePath updatePath;
+            List<PathSecret> pathSecrets;
+            byte[] commitSecret;
+            byte[] treeHashAfter;
+
+            public UpdatePathInfo(LeafIndex sender, UpdatePath updatePath, List<PathSecret> pathSecrets, byte[] commitSecret, byte[] treeHashAfter)
+            {
+                this.sender = sender;
+                this.updatePath = updatePath;
+                this.pathSecrets = pathSecrets;
+                this.commitSecret = commitSecret;
+                this.treeHashAfter = treeHashAfter;
+            }
+        }
+
+
+
+        InputStream src = VectorTest.class.getResourceAsStream("treekem.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+
+        String reading = "";
+        String prevReading = "";
+        HashMap<String, String> buf = new HashMap<String, String>();
+
+        HashMap<String, String> bufleaf = new HashMap<String, String>();
+        ArrayList<LeafPrivateInfo> privateLeaves = new ArrayList<>();
+        ArrayList<PathSecretInfo> plPathSecrets = new ArrayList<>();
+
+        HashMap<String, String> bufPaths = new HashMap<String, String>();
+        ArrayList<UpdatePathInfo> updatePaths = new ArrayList<>();
+        ArrayList<PathSecret> upPathSecrets = new ArrayList<>();
+
+
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.endsWith("START"))
+            {
+                prevReading = reading;
+                reading = line.substring(0, line.indexOf("START"));
+                continue;
+            }
+            if(line.endsWith("STOP"))
+            {
+                reading = prevReading;
+                prevReading = "";
+                continue;
+            }
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0 && reading.equals(prevReading))
+                {
+                    System.out.println("test case: " + count);
+                    short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
+                    byte[] confirmed_transcript_hash = Hex.decode(buf.get("confirmed_transcript_hash"));
+                    long epoch = Long.parseLong(buf.get("epoch"));
+                    byte[] group_id = Hex.decode(buf.get("group_id"));
+                    byte[] ratchet_tree = Hex.decode(buf.get("ratchet_tree"));
+
+                    CipherSuite suite = new CipherSuite(cipher_suite);
+                    TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
+                    tree.setSuite(suite);
+                    tree.setHashAll();
+
+                    // Validate the public state
+                    assertTrue(tree.verifyParentHash());
+
+                    for (int i = 0; i < tree.size.leafCount(); i++)
+                    {
+                        LeafIndex index = new LeafIndex(i);
+                        LeafNode leaf = tree.getLeafNode(index);
+                        if (leaf == null)
+                        {
+                            continue;
+                        }
+
+                        assertTrue(leaf.verify(suite, leaf.toBeSigned(group_id, i)));
+                    }
+
+                    // Import private keys
+                    Map<LeafIndex, TreeKEMPrivateKey> treePrivs = new HashMap<>();
+                    Map<LeafIndex, byte[]> sigPrivs = new HashMap<>();
+
+                    for (LeafPrivateInfo info : privateLeaves)
+                    {
+                        AsymmetricCipherKeyPair encPriv = suite.getHPKE().deserializePrivateKey(info.encryptionPriv, null);
+                        byte[] sigPriv = info.signaturePriv;
+                        TreeKEMPrivateKey priv = new TreeKEMPrivateKey(suite, info.index);
+                        priv.privateKeyCache.put(new NodeIndex(info.index), encPriv);
+
+                        for (PathSecretInfo entry : info.pathSecrets)
+                        {
+                            priv.pathSecrets.put(entry.node, new Secret(entry.pathSecret));
+                        }
+                        assertTrue(priv.consistent(tree));
+
+                        treePrivs.put(info.index, priv);
+                        sigPrivs.put(info.index, sigPriv);
+                    }
+
+                    for (UpdatePathInfo info : updatePaths)
+                    {
+                        // Test decap of the existing group secrets
+                        LeafIndex from = info.sender;
+                        UpdatePath path = info.updatePath;
+                        assertTrue(tree.verifyParentHash(from, path));
+
+                        TreeKEMPublicKey treeAfter = TreeKEMPublicKey.clone(tree);
+                        treeAfter.merge(from, path);
+                        treeAfter.setHashAll();
+                        assertTrue(Arrays.areEqual(treeAfter.getRootHash(), info.treeHashAfter));
+
+                        GroupContext groupContext = new GroupContext(
+                                cipher_suite,
+                                group_id,
+                                epoch,
+                                treeAfter.getRootHash(),
+                                confirmed_transcript_hash,
+                                new ArrayList<>()
+                        );
+
+                        byte[] ctx = MLSOutputStream.encode(groupContext);
+                        for (int i = 0; i < treeAfter.size.leafCount(); i++)
+                        {
+                            LeafIndex to = new LeafIndex(i);
+                            if (to.equals(from) || !treeAfter.hasLeaf(to))
+                            {
+                                continue;
+                            }
+                            TreeKEMPrivateKey priv = treePrivs.get(to).copy();
+                            priv.decap(from, treeAfter, ctx, path, new ArrayList<>());
+
+
+//                            System.out.println("updateSecret: " + Hex.toHexString(priv.updateSecret.value()));
+//                            System.out.println("commitSecret: " + Hex.toHexString(info.commitSecret));
+                            assertTrue(Arrays.areEqual(priv.updateSecret.value(), info.commitSecret));
+
+                            Secret sharedPathSecret = priv.getSharedPathSecret(from);
+//                            System.out.println("sharedPS: " + Hex.toHexString(sharedPathSecret.value()));
+//                            System.out.println("pathSecrets: " + Hex.toHexString(info.pathSecrets.get(to.value()).path_secret));
+                            assertTrue(Arrays.areEqual(sharedPathSecret.value(), info.pathSecrets.get(to.value()).path_secret));
+
+                        }
+
+                        // Test encap/decap
+                        TreeKEMPublicKey encapTree = TreeKEMPublicKey.clone(tree);
+                        byte[] leafSecret = new byte[suite.getKDF().getHashLength()];
+//                        SecureRandom rng = new SecureRandom();
+//                        rng.nextBytes(leafSecret);
+                        byte[] sigPriv = sigPrivs.get(from);
+                        TreeKEMPrivateKey newSenderPriv = encapTree.update(from, new Secret(leafSecret), group_id, sigPriv);
+
+                        UpdatePath newPath = encapTree.encap(newSenderPriv, ctx, new ArrayList<>());
+                        assertTrue(tree.verifyParentHash(from, path));
+
+                        for (int i = 0; i < encapTree.size.leafCount(); i++)
+                        {
+                            LeafIndex to = new LeafIndex(i);
+                            if (to.equals(from) || !encapTree.hasLeaf(to))
+                            {
+                                continue;
+                            }
+
+                            TreeKEMPrivateKey priv = treePrivs.get(to).copy();
+                            priv.decap(from, encapTree, ctx, newPath, new ArrayList<>());
+
+                            assertTrue(Arrays.areEqual(priv.updateSecret.value(), newSenderPriv.updateSecret.value()));
+                        }
+
+
+                    }
+
+
+                    buf.clear();
+                    privateLeaves.clear();
+                    count++;
+                }
+                if (bufleaf.size() > 0 && !prevReading.equals("leaves_private"))
+                {
+
+                    int index = Integer.parseInt(bufleaf.get("index"));
+                    byte[] encryption_priv = Hex.decode(bufleaf.get("encryption_priv"));
+                    byte[] signature_priv = Hex.decode(bufleaf.get("signature_priv"));
+
+                    privateLeaves.add(new LeafPrivateInfo(
+                            new LeafIndex(index),
+                            encryption_priv,
+                            signature_priv,
+                            (List<PathSecretInfo>) plPathSecrets.clone()));
+
+                    updatePaths.clear();
+                    plPathSecrets.clear();
+                    bufleaf.clear();
+                }
+                if (bufPaths.size() > 0 && !prevReading.equals("update_paths"))
+                {
+
+                    int sender = Integer.parseInt(bufPaths.get("sender"));
+                    byte[] update_path = Hex.decode(bufPaths.get("update_path"));
+                    byte[] commit_secret = Hex.decode(bufPaths.get("commit_secret"));
+                    byte[] tree_hash_after = Hex.decode(bufPaths.get("tree_hash_after"));
+
+                    updatePaths.add(new UpdatePathInfo(
+                            new LeafIndex(sender),
+                            (UpdatePath) MLSInputStream.decode(update_path, UpdatePath.class),
+                            (List<PathSecret>) upPathSecrets.clone(),
+                            commit_secret,
+                            tree_hash_after
+                    ));
+
+                    upPathSecrets.clear();
+                    bufPaths.clear();
+                }
+            }
+            else if (reading.equals("path_secrets") && prevReading.equals("update_paths"))
+            {
+                if (line.equals("None"))
+                {
+                    upPathSecrets.add(new PathSecret(new byte[0]));
+                }
+                else
+                {
+                    upPathSecrets.add(new PathSecret(Hex.decode(line.trim())));
+                }
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                if (reading.equals(""))
+                {
+                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+                else if (reading.equals("leaves_private"))
+                {
+                    bufleaf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+                else if (reading.equals("update_paths"))
+                {
+                    bufPaths.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+                }
+                else if (reading.equals("path_secrets") && prevReading.equals("leaves_private"))
+                {
+                    int node = Integer.parseInt(line.substring(a + 1).trim());
+                    line = bin.readLine();
+                    line = line.trim();
+                    a = line.indexOf("=");
+                    byte[] pathsecret = Hex.decode(line.substring(a + 1).trim());
+                    plPathSecrets.add(new PathSecretInfo(new NodeIndex(node), pathsecret));
+                }
+            }
+        }
+    }
+
 }

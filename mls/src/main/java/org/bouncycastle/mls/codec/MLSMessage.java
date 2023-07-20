@@ -387,69 +387,6 @@ class ProposalOrRef
     }
 }
 
-class HPKECiphertext
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    byte[] kem_output;
-    byte[] ciphertext;
-
-    public HPKECiphertext(byte[] kem_output, byte[] ciphertext)
-    {
-        this.kem_output = kem_output;
-        this.ciphertext = ciphertext;
-    }
-
-    HPKECiphertext(MLSInputStream stream) throws IOException
-    {
-        kem_output = stream.readOpaque();
-        ciphertext = stream.readOpaque();
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.writeOpaque(kem_output);
-        stream.writeOpaque(ciphertext);
-    }
-}
-class UpdatePathNode
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    byte[] encryption_key;
-
-    HPKECiphertext[] encrypted_path_secret;
-    UpdatePathNode(MLSInputStream stream) throws IOException
-    {
-        encryption_key = (byte[]) stream.read(byte[].class);
-        encrypted_path_secret = (HPKECiphertext[]) stream.read(HPKECiphertext.class);
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-
-    }
-}
-
-class UpdatePath
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    LeafNode leaf_node;
-    UpdatePathNode[] nodes;
-
-    UpdatePath(MLSInputStream stream) throws IOException
-    {
-        leaf_node = (LeafNode) stream.read(LeafNode.class);
-        nodes = (UpdatePathNode[]) stream.readArray(UpdatePathNode.class);
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(LeafNode.class);
-        stream.writeArray(nodes);
-    }
-}
-
 class SenderData
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -617,22 +554,6 @@ class EncryptedGroupSecrets
     {
         stream.writeOpaque(new_member);
         stream.write(encrypted_group_secrets);
-    }
-}
-
-class PathSecret
-    implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    byte[] path_secret;
-
-    PathSecret(MLSInputStream stream) throws IOException
-    {
-        path_secret = stream.readOpaque();
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.writeOpaque(path_secret);
     }
 }
 
