@@ -28,7 +28,7 @@ public class UpdatePath
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.write(LeafNode.class);
+        stream.write(leaf_node);
         stream.writeList(nodes);
     }
 }

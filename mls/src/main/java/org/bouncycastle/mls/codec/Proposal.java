@@ -5,6 +5,8 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.protocol.PreSharedKeyID;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Proposal
         implements MLSInputStream.Readable, MLSOutputStream.Writable
@@ -233,10 +235,10 @@ public class Proposal
     {
         byte[] group_id;
         ProtocolVersion version;
-        CipherSuite cipherSuite;
-        Extension[] extensions;
+        short cipherSuite;
+        List<Extension> extensions;
 
-        public ReInit(byte[] group_id, ProtocolVersion version, CipherSuite cipherSuite, Extension[] extensions)
+        public ReInit(byte[] group_id, ProtocolVersion version, short cipherSuite, List<Extension> extensions)
         {
             this.group_id = group_id;
             this.version = version;
@@ -249,7 +251,9 @@ public class Proposal
             //TODO: ciphersuite
             group_id = stream.readOpaque();
             version = ProtocolVersion.values()[(short) stream.read(short.class)];
-            extensions = (Extension[]) stream.readArray(Extension.class);
+            cipherSuite = (short) stream.read(short.class);
+            extensions = new ArrayList<>();
+            stream.readList(extensions, Extension.class);
         }
 
         @Override
@@ -257,7 +261,8 @@ public class Proposal
         {
             stream.writeOpaque(group_id);
             stream.write(version);
-            stream.writeArray(extensions);
+            stream.write(cipherSuite);
+            stream.writeList(extensions);
         }
     }
 
@@ -286,22 +291,23 @@ public class Proposal
     public static class GroupContextExtensions
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        public GroupContextExtensions(Extension[] extensions)
+        public GroupContextExtensions(List<Extension> extensions)
         {
             this.extensions = extensions;
         }
 
-        Extension[] extensions;
+        List<Extension> extensions;
 
         GroupContextExtensions(MLSInputStream stream) throws IOException
         {
-            extensions = (Extension[]) stream.readArray(Extension.class);
+            extensions = new ArrayList<>();
+            stream.readList(extensions, Extension.class);
         }
 
         @Override
         public void writeTo(MLSOutputStream stream) throws IOException
         {
-            stream.writeArray(extensions);
+            stream.writeList(extensions);
         }
     }
 

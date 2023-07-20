@@ -6,6 +6,7 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import java.io.IOException;
 
 public enum PSKType implements MLSInputStream.Readable, MLSOutputStream.Writable {
+    REFERENCE((byte) 0),
     EXTERNAL((byte) 1),
     RESUMPTION((byte) 2);
 

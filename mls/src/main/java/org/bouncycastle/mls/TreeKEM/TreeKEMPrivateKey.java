@@ -209,7 +209,7 @@ public class TreeKEMPrivateKey
         if (priv != null)
         {
             //TODO: Why is this adding more than what we want???
-//            privateKeyCache.put(n, priv);
+            privateKeyCache.put(n, priv);
         }
         return priv;
     }

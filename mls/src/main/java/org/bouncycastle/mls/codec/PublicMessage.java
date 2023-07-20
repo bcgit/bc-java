@@ -35,6 +35,27 @@ public class PublicMessage
     }
 
 
+    @Override
+    public void writeTo(MLSOutputStream stream) throws IOException
+    {
+        stream.write(content);
+        stream.write(auth);
+
+        switch (content.sender.senderType)
+        {
+
+            case RESERVED:
+            case EXTERNAL:
+            case NEW_MEMBER_PROPOSAL:
+            case NEW_MEMBER_COMMIT:
+                break;
+            case MEMBER:
+                stream.writeOpaque(membership_tag);
+                break;
+        }
+    }
+
+
     public PublicMessage(FramedContent content, FramedContentAuthData auth, byte[] membership_tag)
     {
         this.content = content;
@@ -91,17 +112,4 @@ public class PublicMessage
         Secret membership_tag = Secret.extract(suite, membershipKey, ikm);
         return membership_tag.value();
     }
-
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        //TODO
-    }
-
-//    @Override
-//    public void writeTo(MLSOutputStream stream) throws IOException
-//    {
-//
-//    }
 }

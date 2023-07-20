@@ -10,15 +10,20 @@ import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
+import org.bouncycastle.mls.codec.Commit;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.GroupInfo;
 import org.bouncycastle.mls.codec.GroupSecrets;
+import org.bouncycastle.mls.codec.KeyPackage;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.Optional;
 import org.bouncycastle.mls.codec.PathSecret;
+import org.bouncycastle.mls.codec.PrivateMessage;
 import org.bouncycastle.mls.codec.Proposal;
+import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.UpdatePath;
+import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
@@ -1223,4 +1228,118 @@ public class VectorTest
         }
     }
 
+    public void testMessages() throws IOException
+    {
+        InputStream src = VectorTest.class.getResourceAsStream("messages.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        int count = 0;
+
+        while((line = bin.readLine())!= null)
+        {
+            line = line.trim();
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+
+                    System.out.println("test case: " + count);
+                    byte[] mls_welcome = Hex.decode(buf.get("mls_welcome"));
+                    byte[] mls_group_info = Hex.decode(buf.get("mls_group_info"));
+                    byte[] mls_key_package = Hex.decode(buf.get("mls_key_package"));
+                    byte[] ratchet_tree = Hex.decode(buf.get("ratchet_tree"));
+                    byte[] group_secrets = Hex.decode(buf.get("group_secrets"));
+                    byte[] add_proposal = Hex.decode(buf.get("add_proposal"));
+                    byte[] update_proposal = Hex.decode(buf.get("update_proposal"));
+                    byte[] remove_proposal = Hex.decode(buf.get("remove_proposal"));
+                    byte[] pre_shared_key_proposal = Hex.decode(buf.get("pre_shared_key_proposal"));
+                    byte[] re_init_proposal = Hex.decode(buf.get("re_init_proposal"));
+                    byte[] external_init_proposal = Hex.decode(buf.get("external_init_proposal"));
+                    byte[] group_context_extensions_proposal = Hex.decode(buf.get("group_context_extensions_proposal"));
+                    byte[] commit = Hex.decode(buf.get("commit"));
+                    byte[] public_message_application = Hex.decode(buf.get("public_message_application"));
+                    byte[] public_message_proposal = Hex.decode(buf.get("public_message_proposal"));
+                    byte[] public_message_commit = Hex.decode(buf.get("public_message_commit"));
+                    byte[] private_message = Hex.decode(buf.get("private_message"));
+
+                    MLSMessage mlsWelcome = (MLSMessage) MLSInputStream.decode(mls_welcome, MLSMessage.class);
+                    byte[] mlsWelcomeBytes = MLSOutputStream.encode(mlsWelcome);
+                    assertTrue(Arrays.areEqual(mlsWelcomeBytes, mls_welcome));
+
+                    MLSMessage mlsGroupInfo = (MLSMessage) MLSInputStream.decode(mls_group_info, MLSMessage.class);
+                    byte[] mlsGroupInfoBytes = MLSOutputStream.encode(mlsGroupInfo);
+                    assertTrue(Arrays.areEqual(mlsGroupInfoBytes, mls_group_info));
+
+                    MLSMessage mlsKeyPackage = (MLSMessage) MLSInputStream.decode(mls_key_package, MLSMessage.class );
+                    byte[] mlsKeyPackageBytes = MLSOutputStream.encode(mlsKeyPackage);
+                    assertTrue(Arrays.areEqual(mlsKeyPackageBytes, mls_key_package));
+
+                    TreeKEMPublicKey ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
+                    byte[] ratchetTreeBytes = MLSOutputStream.encode(ratchetTree);
+                    assertTrue(Arrays.areEqual(ratchetTreeBytes, ratchet_tree));
+
+                    GroupSecrets groupSecrets = (GroupSecrets) MLSInputStream.decode(group_secrets, GroupSecrets.class );
+                    byte[] groupSecretsBytes = MLSOutputStream.encode(groupSecrets);
+                    assertTrue(Arrays.areEqual(groupSecretsBytes, group_secrets));
+
+                    Proposal.Add addProposal = (Proposal.Add) MLSInputStream.decode(add_proposal, Proposal.Add.class);
+                    byte[] addProposalBytes = MLSOutputStream.encode(addProposal);
+                    assertTrue(Arrays.areEqual(addProposalBytes, add_proposal));
+
+                    Proposal.Update updateProposal = (Proposal.Update) MLSInputStream.decode(update_proposal, Proposal.Update.class );
+                    byte[] updateProposalBytes = MLSOutputStream.encode(updateProposal);
+                    assertTrue(Arrays.areEqual(updateProposalBytes, update_proposal));
+
+                    Proposal.Remove removeProposal = (Proposal.Remove) MLSInputStream.decode(remove_proposal, Proposal.Remove.class);
+                    byte[] removeProposalBytes = MLSOutputStream.encode(removeProposal);
+                    assertTrue(Arrays.areEqual(removeProposalBytes, remove_proposal));
+
+                    Proposal.PreSharedKey preSharedKeyProposal = (Proposal.PreSharedKey) MLSInputStream.decode(pre_shared_key_proposal, Proposal.PreSharedKey.class);
+                    byte[] preSharedKeyProposalBytes = MLSOutputStream.encode(preSharedKeyProposal);
+                    assertTrue(Arrays.areEqual(preSharedKeyProposalBytes, pre_shared_key_proposal));
+
+                    Proposal.ReInit reInitProposal = (Proposal.ReInit) MLSInputStream.decode(re_init_proposal, Proposal.ReInit.class);
+                    byte[] reInitProposalBytes = MLSOutputStream.encode(reInitProposal);
+                    assertTrue(Arrays.areEqual(reInitProposalBytes, re_init_proposal));
+
+                    Proposal.ExternalInit externalInitProposal = (Proposal.ExternalInit) MLSInputStream.decode(external_init_proposal, Proposal.ExternalInit.class);
+                    byte[] externalInitProposalBytes = MLSOutputStream.encode(externalInitProposal);
+                    assertTrue(Arrays.areEqual(externalInitProposalBytes, external_init_proposal));
+
+                    Proposal.GroupContextExtensions groupContextExtensionsProposal = (Proposal.GroupContextExtensions) MLSInputStream.decode(group_context_extensions_proposal, Proposal.GroupContextExtensions.class);
+                    byte[] groupContextExtensionsProposalBytes = MLSOutputStream.encode(groupContextExtensionsProposal);
+                    assertTrue(Arrays.areEqual(groupContextExtensionsProposalBytes, group_context_extensions_proposal));
+
+                    Commit commitObj = (Commit) MLSInputStream.decode(commit, Commit.class);
+                    byte[] commitBytes = MLSOutputStream.encode(commitObj);
+                    assertTrue(Arrays.areEqual(commitBytes, commit));
+
+                    MLSMessage publicMessageApplication = (MLSMessage) MLSInputStream.decode(public_message_application, MLSMessage.class);
+                    byte[] publicMessageApplicationBytes = MLSOutputStream.encode(publicMessageApplication);
+                    assertTrue(Arrays.areEqual(publicMessageApplicationBytes, public_message_application));
+
+                    MLSMessage publicMessageProposal = (MLSMessage) MLSInputStream.decode(public_message_proposal, MLSMessage.class);
+                    byte[] publicMessageProposalBytes = MLSOutputStream.encode(publicMessageProposal);
+                    assertTrue(Arrays.areEqual(publicMessageProposalBytes, public_message_proposal));
+
+                    MLSMessage publicMessageCommit = (MLSMessage) MLSInputStream.decode(public_message_commit, MLSMessage.class);
+                    byte[] publicMessageCommitBytes = MLSOutputStream.encode(publicMessageCommit);
+                    assertTrue(Arrays.areEqual(publicMessageCommitBytes, public_message_commit));
+
+                    MLSMessage privateMessage = (MLSMessage) MLSInputStream.decode(private_message, MLSMessage.class);
+                    byte[] privateMessageBytes = MLSOutputStream.encode(privateMessage);
+                    assertTrue(Arrays.areEqual(privateMessageBytes, private_message));
+
+
+                    count++;
+                }
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
 }
