@@ -145,8 +145,8 @@ public abstract class JceKeyAgreeRecipient
             MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(userKeyingMaterial.getOctets());
 
             SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(
-                                                getPrivateKeyAlgorithmIdentifier(),
-                                                ukm.getEphemeralPublicKey().getPublicKey().getBytes());
+                getPrivateKeyAlgorithmIdentifier(),
+                ukm.getEphemeralPublicKey().getPublicKeyData());
 
             X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubInfo.getEncoded());
             KeyFactory fact = helper.createKeyFactory(keyEncAlg.getAlgorithm());
