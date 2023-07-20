@@ -5,7 +5,8 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
-public class PreferredAEADCiphersuites extends SignatureSubpacket
+public class PreferredAEADCiphersuites
+    extends SignatureSubpacket
 {
 
     private final Combination[] algorithms;
@@ -14,16 +15,16 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
      * AES-128 + OCB is a MUST implement and is therefore implicitly supported.
      *
      * @see <a href="https://openpgp-wg.gitlab.io/rfc4880bis/#name-preferred-aead-ciphersuites">
-     *     Crypto-Refresh § 5.2.3.15. Preferred AEAD Ciphersuites</a>
+     * Crypto-Refresh § 5.2.3.15. Preferred AEAD Ciphersuites</a>
      */
     private static final Combination AES_128_OCB = new Combination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB);
 
     /**
      * Create a new PreferredAEADAlgorithms signature subpacket from raw data.
      *
-     * @param critical whether the subpacket is critical
+     * @param critical     whether the subpacket is critical
      * @param isLongLength whether the subpacket uses long length encoding
-     * @param data raw data
+     * @param data         raw data
      */
     public PreferredAEADCiphersuites(boolean critical, boolean isLongLength, byte[] data)
     {
@@ -34,7 +35,7 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
     /**
      * Create a new PreferredAEADAlgorithm signature subpacket.
      *
-     * @param critical whether the subpacket is critical
+     * @param critical     whether the subpacket is critical
      * @param combinations list of combinations, with the most preferred option first
      */
     public PreferredAEADCiphersuites(boolean critical, Combination[] combinations)
@@ -54,8 +55,8 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
         for (int i = 0; i < algorithms.length; i++)
         {
             algorithms[i] = new Combination(
-                    data[i * 2],
-                    data[i * 2 + 1]);
+                data[i * 2],
+                data[i * 2 + 1]);
         }
         return algorithms;
     }
@@ -72,8 +73,8 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
         for (int i = 0; i < combinations.length; i++)
         {
             Combination combination = combinations[i];
-            encoding[i * 2] =       (byte) (combination.getSymmetricAlgorithm() & 0xff);
-            encoding[i * 2 + 1] =   (byte) (combination.getAeadAlgorithm() & 0xff);
+            encoding[i * 2] = (byte)(combination.getSymmetricAlgorithm() & 0xff);
+            encoding[i * 2 + 1] = (byte)(combination.getAeadAlgorithm() & 0xff);
         }
         return encoding;
     }
@@ -89,7 +90,8 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
         return contains(combination, getAlgorithms());
     }
 
-    private static boolean contains(Combination combination, Combination[] combinations) {
+    private static boolean contains(Combination combination, Combination[] combinations)
+    {
         for (Combination supported : combinations)
         {
             if (supported.equals(combination))
@@ -154,7 +156,7 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
          * Create a new algorithm combination from a {@link SymmetricKeyAlgorithmTags} and a {@link AEADAlgorithmTags}.
          *
          * @param symmetricAlgorithmTag symmetric algorithm tag
-         * @param aeadAlgorithmTag aead algorithm tag
+         * @param aeadAlgorithmTag      aead algorithm tag
          */
         public Combination(int symmetricAlgorithmTag, int aeadAlgorithmTag)
         {
@@ -200,9 +202,9 @@ public class PreferredAEADCiphersuites extends SignatureSubpacket
                 return false;
             }
 
-            Combination other = (Combination) o;
+            Combination other = (Combination)o;
             return getSymmetricAlgorithm() == other.getSymmetricAlgorithm()
-                    && getAeadAlgorithm() == other.getAeadAlgorithm();
+                && getAeadAlgorithm() == other.getAeadAlgorithm();
         }
 
         @Override
