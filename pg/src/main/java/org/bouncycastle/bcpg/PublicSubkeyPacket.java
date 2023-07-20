@@ -17,7 +17,7 @@ public class PublicSubkeyPacket
     }
     
     /**
-     * Construct version 4 public key packet.
+     * Construct version 4 public sub-key packet.
      * 
      * @param algorithm
      * @param time
@@ -28,6 +28,23 @@ public class PublicSubkeyPacket
         Date      time,
         BCPGKey   key)
     {
-        super(PUBLIC_SUBKEY, algorithm, time, key);
+        this(VERSION_4, algorithm, time, key);
+    }
+
+    /**
+     * Construct a public sub-key packet.
+     *
+     * @param version
+     * @param algorithm
+     * @param time
+     * @param key
+     */
+    public PublicSubkeyPacket(
+        int version,
+        int       algorithm,
+        Date      time,
+        BCPGKey   key)
+    {
+        super(PUBLIC_SUBKEY, version, algorithm, time, key);
     }
 }
