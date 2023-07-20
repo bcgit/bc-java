@@ -92,8 +92,9 @@ public class PreferredAEADCiphersuites
 
     private static boolean contains(Combination combination, Combination[] combinations)
     {
-        for (Combination supported : combinations)
+        for (int i = 0; i != combinations.length; i++)
         {
+            Combination supported = combinations[i];
             if (supported.equals(combination))
             {
                 return true;
