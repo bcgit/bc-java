@@ -102,18 +102,28 @@ public class PublicKeyPacket
         Date time,
         BCPGKey key)
     {
-        this(PUBLIC_KEY, algorithm, time, key);
+        this(VERSION_4, algorithm, time, key);
     }
 
-    PublicKeyPacket(int keyTag, int algorithm, Date time, BCPGKey key)
+    public PublicKeyPacket(
+         int version,
+         int algorithm,
+         Date time,
+         BCPGKey key)
+     {
+         this(PUBLIC_KEY, version, algorithm, time, key);
+     }
+
+    PublicKeyPacket(int keyTag, int version, int algorithm, Date time, BCPGKey key)
     {
         super(keyTag);
 
-        this.version = VERSION_4;
+        this.version = version;
         this.time = time.getTime() / 1000;
         this.algorithm = algorithm;
         this.key = key;
     }
+
 
     public int getVersion()
     {

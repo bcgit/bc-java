@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.io.Streams;
+
 /**
  * basic packet for a PGP secret key
  */
@@ -21,15 +23,15 @@ public class SecretKeyPacket
      * that can cause leakage of secret data when the secret key is used.
      *
      * @see <a href="https://eprint.iacr.org/2002/076">
-     *     Klíma, V. and T. Rosa,
-     *     "Attack on Private Signature Keys of the OpenPGP Format,
-     *     PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
+     * Klíma, V. and T. Rosa,
+     * "Attack on Private Signature Keys of the OpenPGP Format,
+     * PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
      * @see <a href="https://www.kopenpgp.com/">
-     *     Bruseghini, L., Paterson, K. G., and D. Huigens,
-     *     "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
+     * Bruseghini, L., Paterson, K. G., and D. Huigens,
+     * "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
      * @deprecated Use of MalleableCFB is deprecated.
-     *             For v4 keys, use {@link #USAGE_SHA1} instead.
-     *             For v6 keys use {@link #USAGE_AEAD} instead.
+     * For v4 keys, use {@link #USAGE_SHA1} instead.
+     * For v6 keys use {@link #USAGE_AEAD} instead.
      */
     @Deprecated
     public static final int USAGE_CHECKSUM = 0xff;
@@ -40,12 +42,12 @@ public class SecretKeyPacket
      * cause leakage of secret data when the secret key is use.
      *
      * @see <a href="https://eprint.iacr.org/2002/076">
-     *     Klíma, V. and T. Rosa,
-     *     "Attack on Private Signature Keys of the OpenPGP Format,
-     *     PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
+     * Klíma, V. and T. Rosa,
+     * "Attack on Private Signature Keys of the OpenPGP Format,
+     * PGP(TM) Programs and Other Applications Compatible with OpenPGP"</a>
      * @see <a href="https://www.kopenpgp.com/">
-     *     Bruseghini, L., Paterson, K. G., and D. Huigens,
-     *     "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
+     * Bruseghini, L., Paterson, K. G., and D. Huigens,
+     * "Victory by KO: Attacking OpenPGP Using Key Overwriting"</a>
      */
     public static final int USAGE_SHA1 = 0xfe;
 
@@ -64,6 +66,7 @@ public class SecretKeyPacket
     private byte[] secKeyData;
     private int s2kUsage;
     private int encAlgorithm;
+    private int aeadAlgorithm;
     private S2K s2k;
     private byte[] iv;
 
@@ -94,21 +97,47 @@ public class SecretKeyPacket
             pubKeyPacket = new PublicKeyPacket(in);
         }
 
+        int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
 
-        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
+        if (version == 6 && s2kUsage != USAGE_NONE)
+        {
+            // TODO: Use length to parse unknown parameters
+            int conditionalParameterLength = in.read();
+        }
+
+        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
         {
             encAlgorithm = in.read();
-            s2k = new S2K(in);
         }
         else
         {
             encAlgorithm = s2kUsage;
         }
-
-        if (!(s2k != null && s2k.getType() == S2K.GNU_DUMMY_S2K && s2k.getProtectionMode() == 0x01))
+        if (s2kUsage == USAGE_AEAD)
         {
-            if (s2kUsage != 0)
+            aeadAlgorithm = in.read();
+        }
+        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
+        {
+            if (version == PublicKeyPacket.VERSION_6)
+            {
+                // TODO: Use length to parse unknown S2Ks
+                int s2kLen = in.read();
+            }
+            s2k = new S2K(in);
+        }
+        if (s2kUsage == USAGE_AEAD)
+        {
+            iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
+            Streams.readFully(in, iv);
+        }
+        boolean isGNUDummyNoPrivateKey = s2k != null
+                && s2k.getType() == S2K.GNU_DUMMY_S2K
+                && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
+        if (!(isGNUDummyNoPrivateKey))
+        {
+            if (s2kUsage != 0 && iv == null)
             {
                 if (encAlgorithm < 7)
                 {
@@ -150,40 +179,25 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
-        super(keyTag);
-
-        this.pubKeyPacket = pubKeyPacket;
-        this.encAlgorithm = encAlgorithm;
-
-        if (encAlgorithm != SymmetricKeyAlgorithmTags.NULL)
-        {
-            this.s2kUsage = USAGE_CHECKSUM;
-        }
-        else
-        {
-            this.s2kUsage = USAGE_NONE;
-        }
-
-        this.s2k = s2k;
-        this.iv = iv;
-        this.secKeyData = secKeyData;
+        this(keyTag, pubKeyPacket, encAlgorithm, 0, encAlgorithm != SymmetricKeyAlgorithmTags.NULL ? USAGE_CHECKSUM : USAGE_NONE, s2k, iv, secKeyData);
     }
 
     public SecretKeyPacket(
-         PublicKeyPacket pubKeyPacket,
-         int encAlgorithm,
-         int s2kUsage,
-         S2K s2k,
-         byte[] iv,
-         byte[] secKeyData)
+        PublicKeyPacket pubKeyPacket,
+        int encAlgorithm,
+        int s2kUsage,
+        S2K s2k,
+        byte[] iv,
+        byte[] secKeyData)
     {
-        this(SECRET_KEY, pubKeyPacket, encAlgorithm, s2kUsage, s2k, iv, secKeyData);
+        this(SECRET_KEY, pubKeyPacket, encAlgorithm, 0, s2kUsage, s2k, iv, secKeyData);
     }
 
     SecretKeyPacket(
         int keyTag,
         PublicKeyPacket pubKeyPacket,
         int encAlgorithm,
+        int aeadAlgorithm,
         int s2kUsage,
         S2K s2k,
         byte[] iv,
@@ -193,15 +207,34 @@ public class SecretKeyPacket
 
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
+        this.aeadAlgorithm = aeadAlgorithm;
         this.s2kUsage = s2kUsage;
         this.s2k = s2k;
         this.iv = iv;
         this.secKeyData = secKeyData;
+
+        if (s2k != null && s2k.getType() == S2K.ARGON_2 && s2kUsage != USAGE_AEAD)
+        {
+            throw new IllegalArgumentException("Argon2 is only used with AEAD (S2K usage octet 253)");
+        }
+
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6)
+        {
+            if (s2kUsage == USAGE_CHECKSUM)
+            {
+                throw new IllegalArgumentException("Version 6 keys MUST NOT use S2K usage USAGE_CHECKSUM");
+            }
+        }
     }
 
     public int getEncAlgorithm()
     {
         return encAlgorithm;
+    }
+
+    public int getAeadAlgorithm()
+    {
+        return aeadAlgorithm;
     }
 
     public int getS2KUsage()
@@ -239,17 +272,15 @@ public class SecretKeyPacket
 
         pOut.write(s2kUsage);
 
-        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1)
+        // conditional parameters
+        byte[] conditionalParameters = encodeConditionalParameters();
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
         {
-            pOut.write(encAlgorithm);
-            pOut.writeObject(s2k);
+            pOut.write(conditionalParameters.length);
         }
+        pOut.write(conditionalParameters);
 
-        if (iv != null)
-        {
-            pOut.write(iv);
-        }
-
+        // encrypted secret key
         if (secKeyData != null && secKeyData.length > 0)
         {
             pOut.write(secKeyData);
@@ -258,6 +289,36 @@ public class SecretKeyPacket
         pOut.close();
 
         return bOut.toByteArray();
+    }
+
+    private byte[] encodeConditionalParameters()
+        throws IOException
+    {
+        ByteArrayOutputStream conditionalParameters = new ByteArrayOutputStream();
+        boolean hasS2KSpecifier = s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD;
+
+        if (hasS2KSpecifier)
+        {
+            conditionalParameters.write(encAlgorithm);
+            if (s2kUsage == USAGE_AEAD)
+            {
+                conditionalParameters.write(aeadAlgorithm);
+            }
+            byte[] encodedS2K = s2k.getEncoded();
+            if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6)
+            {
+                conditionalParameters.write(encodedS2K.length);
+            }
+            conditionalParameters.write(encodedS2K);
+        }
+        if (iv != null)
+        {
+            // since USAGE_AEAD and other types that use an IV are mutually exclusive,
+            // we use the IV field for both v4 IVs and v6 AEAD nonces
+            conditionalParameters.write(iv);
+        }
+
+        return conditionalParameters.toByteArray();
     }
 
     public void encode(
