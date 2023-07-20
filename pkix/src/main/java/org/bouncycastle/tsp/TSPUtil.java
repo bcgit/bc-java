@@ -51,6 +51,10 @@ public class TSPUtil
         digestLengths.put(NISTObjectIdentifiers.id_sha256.getId(), Integers.valueOf(32));
         digestLengths.put(NISTObjectIdentifiers.id_sha384.getId(), Integers.valueOf(48));
         digestLengths.put(NISTObjectIdentifiers.id_sha512.getId(), Integers.valueOf(64));
+        digestLengths.put(NISTObjectIdentifiers.id_sha3_224.getId(), Integers.valueOf(28));
+        digestLengths.put(NISTObjectIdentifiers.id_sha3_256.getId(), Integers.valueOf(32));
+        digestLengths.put(NISTObjectIdentifiers.id_sha3_384.getId(), Integers.valueOf(48));
+        digestLengths.put(NISTObjectIdentifiers.id_sha3_512.getId(), Integers.valueOf(64));
         digestLengths.put(TeleTrusTObjectIdentifiers.ripemd128.getId(), Integers.valueOf(16));
         digestLengths.put(TeleTrusTObjectIdentifiers.ripemd160.getId(), Integers.valueOf(20));
         digestLengths.put(TeleTrusTObjectIdentifiers.ripemd256.getId(), Integers.valueOf(32));
@@ -65,6 +69,10 @@ public class TSPUtil
         digestNames.put(NISTObjectIdentifiers.id_sha256.getId(), "SHA256");
         digestNames.put(NISTObjectIdentifiers.id_sha384.getId(), "SHA384");
         digestNames.put(NISTObjectIdentifiers.id_sha512.getId(), "SHA512");
+        digestNames.put(NISTObjectIdentifiers.id_sha3_224.getId(), "SHA3-224");
+        digestNames.put(NISTObjectIdentifiers.id_sha3_256.getId(), "SHA3-256");
+        digestNames.put(NISTObjectIdentifiers.id_sha3_384.getId(), "SHA3-384");
+        digestNames.put(NISTObjectIdentifiers.id_sha3_512.getId(), "SHA3-512");
         digestNames.put(PKCSObjectIdentifiers.sha1WithRSAEncryption.getId(), "SHA1");
         digestNames.put(PKCSObjectIdentifiers.sha224WithRSAEncryption.getId(), "SHA224");
         digestNames.put(PKCSObjectIdentifiers.sha256WithRSAEncryption.getId(), "SHA256");

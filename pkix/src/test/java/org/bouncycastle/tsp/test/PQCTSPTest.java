@@ -96,13 +96,13 @@ public class PQCTSPTest
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
-                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256))
+                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_512))
                 .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
 
         // tsTokenGen.addCertificates(certs);
 
         TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
-        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SM3, new byte[32], BigInteger.valueOf(100));
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_512, new byte[64], BigInteger.valueOf(100));
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
@@ -171,13 +171,13 @@ public class PQCTSPTest
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
-                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256))
+                .setContentDigest(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256))
                 .build(signer, cert), new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2"));
 
         // tsTokenGen.addCertificates(certs);
 
         TimeStampRequestGenerator reqGen = new TimeStampRequestGenerator();
-        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SM3, new byte[32], BigInteger.valueOf(100));
+        TimeStampRequest request = reqGen.generate(TSPAlgorithms.SHA3_256, new byte[32], BigInteger.valueOf(100));
 
         TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
 
