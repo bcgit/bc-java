@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -27,30 +28,39 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class OOBCertHash
     extends ASN1Object
 {
-    private AlgorithmIdentifier hashAlg;
-    private CertId certId;
+    private final AlgorithmIdentifier hashAlg;
+    private final CertId certId;
     private final ASN1BitString hashVal;
 
     private OOBCertHash(ASN1Sequence seq)
     {
         int index = seq.size() - 1;
 
-        hashVal = ASN1BitString.getInstance(seq.getObjectAt(index--));
+        this.hashVal = ASN1BitString.getInstance(seq.getObjectAt(index--));
+
+        AlgorithmIdentifier hashAlg = null;
+        CertId certId = null;
 
         for (int i = index; i >= 0; i--)
         {
             ASN1TaggedObject tObj = (ASN1TaggedObject)seq.getObjectAt(i);
 
-            if (tObj.getTagNo() == 0)
+            if (tObj.hasContextTag(0))
             {
                 hashAlg = AlgorithmIdentifier.getInstance(tObj, true);
             }
-            else
+            else if (tObj.hasContextTag(1))
             {
                 certId = CertId.getInstance(tObj, true);
             }
+            else
+            {
+                throw new IllegalArgumentException("unknown tag " + ASN1Util.getTagText(tObj));
+            }
         }
 
+        this.hashAlg = hashAlg;
+        this.certId = certId;
     }
 
     public OOBCertHash(AlgorithmIdentifier hashAlg, CertId certId, byte[] hashVal)

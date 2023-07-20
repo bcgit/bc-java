@@ -61,11 +61,11 @@ public class RootCaKeyUpdateContent
         while (encodable.hasNext())
         {
             ASN1TaggedObject ato = ASN1TaggedObject.getInstance(encodable.next());
-            if (ato.getTagNo() == 0)
+            if (ato.hasContextTag(0))
             {
                 newWithOld = CMPCertificate.getInstance(ato, true);
             }
-            else if (ato.getTagNo() == 1)
+            else if (ato.hasContextTag(1))
             {
                 oldWithNew = CMPCertificate.getInstance(ato, true);
             }
@@ -74,7 +74,6 @@ public class RootCaKeyUpdateContent
         this.newWithNew = newWithNew;
         this.newWithOld = newWithOld;
         this.oldWithNew = oldWithNew;
-
     }
 
     public static RootCaKeyUpdateContent getInstance(Object o)

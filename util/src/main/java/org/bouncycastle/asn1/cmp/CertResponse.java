@@ -111,6 +111,11 @@ public class CertResponse
         return certifiedKeyPair;
     }
 
+    public ASN1OctetString getRspInfo()
+    {
+        return rspInfo;
+    }
+
     /**
      * <pre>
      * CertResponse ::= SEQUENCE {
