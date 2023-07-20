@@ -33,7 +33,6 @@ public class SecretKeyPacket
      * For v4 keys, use {@link #USAGE_SHA1} instead.
      * For v6 keys use {@link #USAGE_AEAD} instead.
      */
-    @Deprecated
     public static final int USAGE_CHECKSUM = 0xff;
 
     /**
