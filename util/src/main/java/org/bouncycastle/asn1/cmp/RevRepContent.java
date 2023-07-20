@@ -43,11 +43,11 @@ public class RevRepContent
         {
             ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement());
 
-            if (tObj.getTagNo() == 0)
+            if (tObj.hasContextTag(0))
             {
                 revCerts = ASN1Sequence.getInstance(tObj, true);
             }
-            else
+            else if (tObj.hasContextTag(1))
             {
                 crls = ASN1Sequence.getInstance(tObj, true);
             }
