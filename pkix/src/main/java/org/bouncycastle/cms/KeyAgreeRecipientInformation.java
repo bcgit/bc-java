@@ -131,11 +131,7 @@ public class KeyAgreeRecipientInformation
     private SubjectPublicKeyInfo getPublicKeyInfoFromOriginatorPublicKey(AlgorithmIdentifier recKeyAlgId,
             OriginatorPublicKey originatorPublicKey)
     {
-        SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(
-            recKeyAlgId,
-            originatorPublicKey.getPublicKey().getBytes());
-
-        return pubInfo;
+        return new SubjectPublicKeyInfo(recKeyAlgId, originatorPublicKey.getPublicKeyData());
     }
 
     private SubjectPublicKeyInfo getPublicKeyInfoFromOriginatorId(OriginatorId origID)

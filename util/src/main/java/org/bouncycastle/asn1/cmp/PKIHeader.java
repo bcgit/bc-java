@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -89,6 +90,10 @@ public class PKIHeader
         while (en.hasMoreElements())
         {
             ASN1TaggedObject tObj = (ASN1TaggedObject)en.nextElement();
+            if (!tObj.hasContextTag())
+            {
+                throw new IllegalArgumentException("unknown tag: " + ASN1Util.getTagText(tObj));
+            }
 
             switch (tObj.getTagNo())
             {

@@ -26,8 +26,8 @@ public class PKIMessage
 {
     private final PKIHeader header;
     private final PKIBody body;
-    private ASN1BitString protection;
-    private ASN1Sequence extraCerts;
+    private final ASN1BitString protection;
+    private final ASN1Sequence extraCerts;
 
     private PKIMessage(ASN1Sequence seq)
     {
@@ -35,6 +35,9 @@ public class PKIMessage
 
         header = PKIHeader.getInstance(en.nextElement());
         body = PKIBody.getInstance(en.nextElement());
+
+        ASN1BitString protection = null;
+        ASN1Sequence extraCerts = null;
 
         while (en.hasMoreElements())
         {
@@ -49,6 +52,9 @@ public class PKIMessage
                 extraCerts = ASN1Sequence.getInstance(tObj, true);
             }
         }
+
+        this.protection = protection;
+        this.extraCerts = extraCerts;
     }
 
     /**
@@ -71,6 +77,10 @@ public class PKIMessage
         if (extraCerts != null)
         {
             this.extraCerts = new DERSequence(extraCerts);
+        }
+        else
+        {
+            this.extraCerts = null;
         }
     }
 
