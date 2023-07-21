@@ -67,7 +67,8 @@ public class Features
         return supportsFeature(FEATURE_MODIFICATION_DETECTION);
     }
 
-    public boolean supportsSEIPDv2() {
+    public boolean supportsSEIPDv2()
+    {
         return supportsFeature(FEATURE_SEIPD_V2);
     }
 

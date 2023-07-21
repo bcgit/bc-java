@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -58,7 +57,7 @@ public class ArmorCRCTest
         PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
         OutputStream litOut = litGen.open(armorOut, PGPLiteralDataGenerator.TEXT,
             "", PGPLiteralData.NOW, new byte[512]);
-        litOut.write("Hello, World!\n".getBytes(StandardCharsets.UTF_8));
+        litOut.write(Strings.toByteArray("Hello, World!\n"));
         litOut.close();
         armorOut.close();
 
@@ -76,7 +75,7 @@ public class ArmorCRCTest
     private void consumeSuccessfullyIgnoringCRCSum(String armor)
         throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armor.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toByteArray(armor));
         ArmoredInputStream armorIn = ArmoredInputStream.builder()
             .setParseForHeaders(true)
             .setIgnoreCRC(true)
