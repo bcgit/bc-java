@@ -16,6 +16,12 @@ import org.bouncycastle.util.io.Streams;
 public class SignaturePacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
+    public static final int VERSION_2 = 2;
+    public static final int VERSION_3 = 3;
+    public static final int VERSION_4 = 4;  // https://datatracker.ietf.org/doc/rfc4880/
+    public static final int VERSION_5 = 5;  // https://datatracker.ietf.org/doc/draft-koch-openpgp-2015-rfc4880bis/
+    public static final int VERSION_6 = 6;  // https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/
+
     private int                    version;
     private int                    signatureType;
     private long                   creationTime;
@@ -36,7 +42,7 @@ public class SignaturePacket
 
         version = in.read();
         
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == VERSION_2)
         {
             int    l = in.read();
             
@@ -53,7 +59,7 @@ public class SignaturePacket
             keyAlgorithm = in.read();
             hashAlgorithm = in.read();
         }
-        else if (version == 4)
+        else if (version == VERSION_4)
         {
             signatureType = in.read();
             keyAlgorithm = in.read();
