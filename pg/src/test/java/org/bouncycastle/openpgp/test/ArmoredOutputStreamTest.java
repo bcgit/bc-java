@@ -64,7 +64,31 @@ public class ArmoredOutputStreamTest
         aOut.write(keyRing.getEncoded());
         aOut.close();
 
-        String result = Strings.fromByteArray(bOut.toByteArray()).replace("\r\n", "\n").replace("\r", "\n");
+        byte[] res = bOut.toByteArray();
+        StringBuffer sb = new StringBuffer();
+        byte lastC = 0;
+        for (int i = 0; i != res.length; i++)
+        {
+            if (lastC == '\r')
+            {
+                if (res[i] == '\n')
+                {
+                    sb.append('\n');
+                }
+                else
+                {
+                    sb.append('\n');
+                    sb.append((char)res[i]);
+                }
+            }
+            else if (res[i] != '\r')
+            {
+                sb.append((char)res[i]);
+            }
+            lastC = res[i];
+        }
+
+        String result = sb.toString();
 
         isTrue(Arrays.areEqual(expected, Strings.toByteArray(result)));
     }
