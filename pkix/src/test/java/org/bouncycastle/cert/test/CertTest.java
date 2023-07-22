@@ -5687,8 +5687,6 @@ public class CertTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        checkCreationRDN();
-
-//        runTest(new CertTest());
+        runTest(new CertTest());
     }
 }
