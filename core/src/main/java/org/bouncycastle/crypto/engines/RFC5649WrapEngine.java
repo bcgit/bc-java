@@ -21,15 +21,14 @@ import org.bouncycastle.util.Pack;
 public class RFC5649WrapEngine
     implements Wrapper
 {
-    private BlockCipher engine;
-    private KeyParameter param;
-    private boolean forWrapping;
-
     // The AIV as defined in the RFC
-    private byte[] highOrderIV = {(byte)0xa6, (byte)0x59, (byte)0x59, (byte)0xa6};
-    private byte[] preIV = highOrderIV;
+    private static final byte[] DEFAULT_IV = {(byte)0xa6, (byte)0x59, (byte)0x59, (byte)0xa6};
 
-    private byte[] extractedAIV = null;
+    private final BlockCipher engine;
+    private final byte[] preIV = new byte[4];
+
+    private KeyParameter param = null;
+    private boolean forWrapping = true;
 
     public RFC5649WrapEngine(BlockCipher engine)
     {
@@ -48,16 +47,24 @@ public class RFC5649WrapEngine
         if (param instanceof KeyParameter)
         {
             this.param = (KeyParameter)param;
-            this.preIV = highOrderIV;
+            System.arraycopy(DEFAULT_IV, 0, preIV, 0, 4);
         }
         else if (param instanceof ParametersWithIV)
         {
-            this.preIV = ((ParametersWithIV)param).getIV();
-            this.param = (KeyParameter)((ParametersWithIV)param).getParameters();
-            if (this.preIV.length != 4)
+            ParametersWithIV withIV = (ParametersWithIV)param;
+
+            byte[] iv = withIV.getIV();
+            if (iv.length != 4)
             {
                 throw new IllegalArgumentException("IV length not equal to 4");
             }
+
+            this.param = (KeyParameter)withIV.getParameters();
+            System.arraycopy(iv, 0, this.preIV, 0, 4);
+        }
+        else
+        {
+            // TODO Throw an exception for bad parameters?
         }
     }
 
@@ -95,14 +102,13 @@ public class RFC5649WrapEngine
         {
             throw new IllegalStateException("not set for wrapping");
         }
+
         byte[] iv = new byte[8];
 
-        // MLI = size of key to be wrapped
-        byte[] mli = Pack.intToBigEndian(inLen);
         // copy in the fixed portion of the AIV
-        System.arraycopy(preIV, 0, iv, 0, preIV.length);
-        // copy in the MLI after the AIV
-        System.arraycopy(mli, 0, iv, preIV.length, mli.length);
+        System.arraycopy(preIV, 0, iv, 0, 4);
+        // copy in the MLI (size of key to be wrapped) after the AIV
+        Pack.intToBigEndian(inLen, iv, 4);
 
         // get the relevant plaintext to be wrapped
         byte[] relevantPlaintext = new byte[inLen];
@@ -120,7 +126,7 @@ public class RFC5649WrapEngine
             System.arraycopy(paddedPlaintext, 0, paddedPlainTextWithIV, iv.length, paddedPlaintext.length);
 
             engine.init(true, param);
-            for (int i = 0; i < paddedPlainTextWithIV.length; i += engine.getBlockSize())
+            for (int i = 0, blockSize = engine.getBlockSize(); i < paddedPlainTextWithIV.length; i += blockSize)
             {
                 engine.processBlock(paddedPlainTextWithIV, i, paddedPlainTextWithIV, i);
             }
@@ -131,7 +137,7 @@ public class RFC5649WrapEngine
         {
             // otherwise, apply the RFC 3394 wrap to
             // the padded plaintext with the new IV
-            Wrapper wrapper = new RFC3394WrapEngine(engine);
+            RFC3394WrapEngine wrapper = new RFC3394WrapEngine(engine);
             ParametersWithIV paramsWithIV = new ParametersWithIV(param, iv);
             wrapper.init(true, paramsWithIV);
             return wrapper.wrap(paddedPlaintext, 0, paddedPlaintext.length);
@@ -164,18 +170,19 @@ public class RFC5649WrapEngine
         byte[] decrypted = new byte[inLen];
         byte[] paddedPlaintext;
 
+        byte[] extractedAIV = new byte[8];
+
         if (n == 2)
         {
             // When there are exactly two 64-bit blocks of ciphertext,
             // they are decrypted as a single block using AES in ECB.
             engine.init(false, param);
-            for (int i = 0; i < relevantCiphertext.length; i += engine.getBlockSize())
+            for (int i = 0, blockSize = engine.getBlockSize(); i < relevantCiphertext.length; i += blockSize)
             {
                 engine.processBlock(relevantCiphertext, i, decrypted, i);
             }
 
             // extract the AIV
-            extractedAIV = new byte[8];
             System.arraycopy(decrypted, 0, extractedAIV, 0, extractedAIV.length);
             paddedPlaintext = new byte[decrypted.length - extractedAIV.length];
             System.arraycopy(decrypted, extractedAIV.length, paddedPlaintext, 0, paddedPlaintext.length);
@@ -183,25 +190,20 @@ public class RFC5649WrapEngine
         else
         {
             // Otherwise, unwrap as per RFC 3394 but don't check IV the same way
-            decrypted = rfc3394UnwrapNoIvCheck(in, inOff, inLen);
+            decrypted = rfc3394UnwrapNoIvCheck(in, inOff, inLen, extractedAIV);
             paddedPlaintext = decrypted;
         }
 
         // Decompose the extracted AIV to the fixed portion and the MLI
         byte[] extractedHighOrderAIV = new byte[4];
-        byte[] mliBytes = new byte[4];
-        System.arraycopy(extractedAIV, 0, extractedHighOrderAIV, 0, extractedHighOrderAIV.length);
-        System.arraycopy(extractedAIV, extractedHighOrderAIV.length, mliBytes, 0, mliBytes.length);
-        int mli = Pack.bigEndianToInt(mliBytes, 0);
+        System.arraycopy(extractedAIV, 0, extractedHighOrderAIV, 0, 4);
+        int mli = Pack.bigEndianToInt(extractedAIV, 4);
+
         // Even if a check fails we still continue and check everything 
         // else in order to avoid certain timing based side-channel attacks.
-        boolean isValid = true;
 
         // Check the fixed portion of the AIV
-        if (!Arrays.constantTimeAreEqual(extractedHighOrderAIV, preIV))
-        {
-            isValid = false;
-        }
+        boolean isValid = Arrays.constantTimeAreEqual(extractedHighOrderAIV, preIV);
 
         // Check the MLI against the actual length
         int upperBound = paddedPlaintext.length;
@@ -254,15 +256,13 @@ public class RFC5649WrapEngine
      * @param inLen
      * @return Unwrapped data.
      */
-    private byte[] rfc3394UnwrapNoIvCheck(byte[] in, int inOff, int inLen)
+    private byte[] rfc3394UnwrapNoIvCheck(byte[] in, int inOff, int inLen, byte[] extractedAIV)
     {
-        byte[] iv = new byte[8];
-        byte[] block = new byte[inLen - iv.length];
-        byte[] a = new byte[iv.length];
-        byte[] buf = new byte[8 + iv.length];
+        byte[] block = new byte[inLen - 8];
+        byte[] buf = new byte[16];
 
-        System.arraycopy(in, inOff, a, 0, iv.length);
-        System.arraycopy(in, inOff + iv.length, block, 0, inLen - iv.length);
+        System.arraycopy(in, inOff, buf, 0, 8);
+        System.arraycopy(in, inOff + 8, block, 0, inLen - 8);
 
         engine.init(false, param);
 
@@ -273,29 +273,23 @@ public class RFC5649WrapEngine
         {
             for (int i = n; i >= 1; i--)
             {
-                System.arraycopy(a, 0, buf, 0, iv.length);
-                System.arraycopy(block, 8 * (i - 1), buf, iv.length, 8);
+                System.arraycopy(block, 8 * (i - 1), buf, 8, 8);
 
                 int t = n * j + i;
                 for (int k = 1; t != 0; k++)
                 {
-                    byte v = (byte)t;
-
-                    buf[iv.length - k] ^= v;
-
+                    buf[8 - k] ^= (byte)t;
                     t >>>= 8;
                 }
 
                 engine.processBlock(buf, 0, buf, 0);
-                System.arraycopy(buf, 0, a, 0, 8);
+
                 System.arraycopy(buf, 8, block, 8 * (i - 1), 8);
             }
         }
 
-        // set the extracted AIV
-        extractedAIV = a;
+        System.arraycopy(buf, 0, extractedAIV, 0, 8);
 
         return block;
     }
-
 }
