@@ -20,14 +20,15 @@ import org.bouncycastle.util.Arrays;
 public class RFC3394WrapEngine
     implements Wrapper
 {
-    private BlockCipher     engine;
-    private boolean         wrapCipherMode;
-    private KeyParameter    param;
-    private boolean         forWrapping;
+    private static final byte[] DEFAULT_IV = { (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6,
+        (byte)0xa6, (byte)0xa6 };
 
-    private byte[]          iv = {
-                              (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6,
-                              (byte)0xa6, (byte)0xa6, (byte)0xa6, (byte)0xa6 };
+    private final BlockCipher engine;
+    private final boolean wrapCipherMode;
+    private final byte[] iv = new byte[8];
+
+    private KeyParameter param = null;
+    private boolean forWrapping = true;
 
     /**
      * Create a RFC 3394 WrapEngine specifying the encrypt for wrapping, decrypt for unwrapping.
@@ -65,15 +66,24 @@ public class RFC3394WrapEngine
         if (param instanceof KeyParameter)
         {
             this.param = (KeyParameter)param;
+            System.arraycopy(DEFAULT_IV, 0, iv, 0, 8);
         }
         else if (param instanceof ParametersWithIV)
         {
-            this.iv = ((ParametersWithIV)param).getIV();
-            this.param = (KeyParameter)((ParametersWithIV) param).getParameters();
-            if (this.iv.length != 8)
+            ParametersWithIV withIV = (ParametersWithIV)param;
+
+            byte[] iv = withIV.getIV();
+            if (iv.length != 8)
             {
                throw new IllegalArgumentException("IV not equal to 8");
             }
+
+            this.param = (KeyParameter)withIV.getParameters();
+            System.arraycopy(iv, 0, this.iv, 0, 8);
+        }
+        else
+        {
+            // TODO Throw an exception for bad parameters?
         }
     }
 
