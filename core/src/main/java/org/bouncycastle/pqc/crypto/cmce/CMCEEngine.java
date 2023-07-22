@@ -236,7 +236,7 @@ class CMCEEngine
 
             // SeededKeyGen - 2. Define δ′ as the last l bits of E.
             // Update seed using the last 32 bytes (l) of E
-            // If anything fails, this set δ ←δ′ (the next last 32 bytes of E) and restart the algorithm.
+            // If anything fails, this set δ = δ′ (the next last 32 bytes of E) and restart the algorithm.
             seedIndex = E.length - 32;
             seed_b = Arrays.copyOfRange(E, seedIndex, seedIndex + 32);
 
