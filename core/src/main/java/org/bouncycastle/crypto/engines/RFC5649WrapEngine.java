@@ -22,7 +22,7 @@ public class RFC5649WrapEngine
     implements Wrapper
 {
     // The AIV as defined in the RFC
-    private static final byte[] highOrderIV = {(byte)0xa6, (byte)0x59, (byte)0x59, (byte)0xa6};
+    private static final byte[] DEFAULT_IV = {(byte)0xa6, (byte)0x59, (byte)0x59, (byte)0xa6};
 
     private final BlockCipher engine;
     private final byte[] preIV = new byte[4];
@@ -47,18 +47,24 @@ public class RFC5649WrapEngine
         if (param instanceof KeyParameter)
         {
             this.param = (KeyParameter)param;
-            System.arraycopy(highOrderIV, 0, preIV, 0, 4);
+            System.arraycopy(DEFAULT_IV, 0, preIV, 0, 4);
         }
         else if (param instanceof ParametersWithIV)
         {
-            byte[] iv = ((ParametersWithIV)param).getIV();
+            ParametersWithIV withIV = (ParametersWithIV)param;
+
+            byte[] iv = withIV.getIV();
             if (iv.length != 4)
             {
                 throw new IllegalArgumentException("IV length not equal to 4");
             }
 
-            this.param = (KeyParameter)((ParametersWithIV)param).getParameters();
-            System.arraycopy(iv, 0, preIV, 0, 4);
+            this.param = (KeyParameter)withIV.getParameters();
+            System.arraycopy(iv, 0, this.preIV, 0, 4);
+        }
+        else
+        {
+            // TODO Throw an exception for bad parameters?
         }
     }
 
