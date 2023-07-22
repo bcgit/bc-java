@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.HQCKey;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCHQCPrivateKey
     implements PrivateKey, HQCKey
@@ -74,7 +75,7 @@ public class BCHQCPrivateKey
      */
     public final String getAlgorithm()
     {
-        return "HQC";
+        return Strings.toUpperCase(params.getParameters().getName());
     }
 
     public byte[] getEncoded()

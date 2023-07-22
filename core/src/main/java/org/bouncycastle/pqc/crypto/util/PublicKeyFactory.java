@@ -649,11 +649,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
                 throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new HQCPublicKeyParameters(hqcParams, keyEnc);
+                return new HQCPublicKeyParameters(hqcParams, keyEnc);
+            }
+            catch (Exception e)
+            {
+                // raw encoding
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new HQCPublicKeyParameters(hqcParams, keyEnc);
+            }
         }
     }
 
