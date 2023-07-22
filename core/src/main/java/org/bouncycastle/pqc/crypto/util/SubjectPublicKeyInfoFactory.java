@@ -273,7 +273,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.hqcOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof RainbowPublicKeyParameters)
         {

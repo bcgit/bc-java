@@ -32,6 +32,7 @@ import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
@@ -405,6 +406,9 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.bike128, new BIKEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.bike192, new BIKEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.bike256, new BIKEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc128, new HQCKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc192, new HQCKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc256, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi());

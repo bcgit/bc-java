@@ -67,6 +67,8 @@ public class AllTests
         suite.addTestSuite(DilithiumTest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(BIKETest.class);
+        suite.addTestSuite(HQCKeyPairGeneratorTest.class);
+        suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(RainbowKeyPairGeneratorTest.class);
         suite.addTestSuite(RainbowTest.class);
 
