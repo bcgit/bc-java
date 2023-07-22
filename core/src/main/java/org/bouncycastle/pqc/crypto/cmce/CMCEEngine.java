@@ -277,7 +277,7 @@ class CMCEEngine
             }
 
             // SeededKeyGen - 4. Compute α1,...,αq from the next σ2q bits of E by the FieldOrdering algorithm.
-            // If this fails, set δ ←δ′ and restart the algorithm.
+            // If this fails, set δ = δ′ and restart the algorithm.
 
             // Generate permutation
             int[] perm = new int[(1 << GFBITS)];
@@ -592,7 +592,7 @@ class CMCEEngine
 
         /*
         2.3.3 Decapsulation
-        4. Compute e ←Decode(C0,Γ′). If e = ⊥, set e ←s and b ←0.
+        4. Compute e = Decode(C0,Γ′). If e = ⊥, set e = s and b = 0.
          */
 
         // Decrypt
@@ -600,7 +600,7 @@ class CMCEEngine
 
         /*
         2.3.3 Decapsulation
-        6. If C′1 6= C1, set e ←s and b ←0.
+        6. If C′1 6= C1, set e = s and b = 0.
          */
 
         short m;
@@ -611,7 +611,7 @@ class CMCEEngine
 
         /*
         2.3.3 Decapsulation
-        2. Set b ←1.
+        2. Set b = 1.
          */
         preimage[0] = (byte)(m & 1);
         for (i = 0; i < SYS_N / 8; i++)
@@ -1502,7 +1502,7 @@ class CMCEEngine
                     mat[row][c] ^= mat[k][c] & mask;
                 }
             }
-            // 7. Compute (T,cn−k−μ+1,...,cn−k,Γ′) ← MatGen(Γ). If this fails, set δ ← δ′ and
+            // 7. Compute (T,cn−k−μ+1,...,cn−k,Γ′) =  MatGen(Γ). If this fails, set δ =  δ′ and
             // restart the algorithm.
             if (((mat[row][i] >> j) & 1) == 0) // return if not systematic
             {
