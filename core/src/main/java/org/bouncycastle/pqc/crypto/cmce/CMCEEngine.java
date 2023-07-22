@@ -246,7 +246,7 @@ class CMCEEngine
 
             // (step 5 and 4 are swapped)
             // SeededKeyGen - 5. Compute g from the next σ1t bits of E by the Irreducible algorithm. If this fails,
-            // set δ ←δ′ and restart the algorithm.
+            // set δ = δ′ and restart the algorithm.
 
             // Create Field which is an element in gf2^mt
 
