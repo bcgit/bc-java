@@ -624,11 +624,22 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
                 throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+                return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+            }
+            catch (IOException e)
+            {
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+            }
         }
     }
 
