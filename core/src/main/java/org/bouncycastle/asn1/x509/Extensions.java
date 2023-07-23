@@ -1,9 +1,5 @@
 package org.bouncycastle.asn1.x509;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -12,6 +8,11 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.IllegalArgumentWarningException;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * <pre>
@@ -71,6 +72,7 @@ public class Extensions
         ASN1Sequence seq)
     {
         Enumeration e = seq.getObjects();
+        String error = null;
 
         while (e.hasMoreElements())
         {
@@ -78,11 +80,16 @@ public class Extensions
 
             if (extensions.containsKey(ext.getExtnId()))
             {
-                throw new IllegalArgumentException("repeated extension found: " + ext.getExtnId());
+                error = "repeated extension found: " + ext.getExtnId();
+                continue;
             }
             
             extensions.put(ext.getExtnId(), ext);
             ordering.addElement(ext.getExtnId());
+        }
+        
+        if (error != null) {
+          throw new IllegalArgumentWarningException(error, this);
         }
     }
 
@@ -163,6 +170,7 @@ public class Extensions
      *        extnValue         OCTET STRING }
      * </pre>
      */
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector vec = new ASN1EncodableVector(ordering.size());

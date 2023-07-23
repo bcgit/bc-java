@@ -10,7 +10,12 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.util.IllegalArgumentWarningException;
 import org.bouncycastle.util.Properties;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * The TBSCertificate object.
@@ -47,6 +52,7 @@ public class TBSCertificate
     ASN1BitString           issuerUniqueId;
     ASN1BitString           subjectUniqueId;
     Extensions              extensions;
+    List<String> errors;
 
     public static TBSCertificate getInstance(
         ASN1TaggedObject obj,
@@ -103,7 +109,8 @@ public class TBSCertificate
         }
         else if (!version.hasValue(2))
         {
-            throw new IllegalArgumentException("version number not recognised");
+          addError(
+              String.format("Certificate version number value %d not 0, 1 or 2", version.getValue()));
         }
 
         serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));
@@ -129,7 +136,8 @@ public class TBSCertificate
         int extras = seq.size() - (seqStart + 6) - 1;
         if (extras != 0 && isV1)
         {
-            throw new IllegalArgumentException("version 1 certificate contains extra data");
+          addError("version 1 certificate contains extra data");
+          extras = 0; // Ignore the extra data
         }
         
         while (extras > 0)
@@ -147,15 +155,42 @@ public class TBSCertificate
             case 3:
                 if (isV2)
                 {
-                    throw new IllegalArgumentException("version 2 certificate cannot contain extensions");
+                  addError("version 2 certificate cannot contain extensions");
+                  return;
                 }
-                extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
+                try {
+                  extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
+                } catch (IllegalArgumentWarningException ex) {
+                  extensions = (Extensions) ex.getObject(Extensions.class);
+                  addErrors(ex.getMessages());
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unknown tag encountered in structure: " + extra.getTagNo());
             }
             extras--;
         }
+        
+        if (errors != null) {
+          throw new IllegalArgumentWarningException(errors, this);
+        }
+    }
+    
+    private void addError(String error) {
+      if (errors == null) {
+        errors = new ArrayList<>();
+      }
+      errors.add(error);
+    }
+    
+    private void addErrors(List<String> errors) {
+      for (String error : errors) {
+        addError(error);
+      }
+    }
+
+    public Collection<String> getErrors() {
+      return errors;
     }
 
     public int getVersionNumber()
@@ -218,6 +253,7 @@ public class TBSCertificate
         return extensions;
     }
 
+    @Override
     public ASN1Primitive toASN1Primitive()
     {
         if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)

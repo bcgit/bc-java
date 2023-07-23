@@ -1,11 +1,14 @@
 package org.bouncycastle.crypto.params;
 
-import java.math.BigInteger;
-
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.math.Primes;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.IllegalArgumentWarningException;
 import org.bouncycastle.util.Properties;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
@@ -41,16 +44,20 @@ public class RSAKeyParameters
     {
         super(isPrivate);
 
+        this.modulus = modulus;
+        this.exponent = exponent;
+
         if (!isPrivate)
         {
             if ((exponent.intValue() & 1) == 0)
             {
-                throw new IllegalArgumentException("RSA publicExponent is even");
+                throw new IllegalArgumentWarningException("RSA publicExponent is even", this);
             }
         }
   
-        this.modulus = validated.contains(modulus) ? modulus : validate(modulus, isInternal);
-        this.exponent = exponent;
+        if (!validated.contains(modulus)) {
+            validate(modulus, isInternal);
+        }
     }
 
     private BigInteger validate(BigInteger modulus, boolean isInternal)
@@ -62,44 +69,48 @@ public class RSAKeyParameters
             return modulus;
         }
 
+        List<String> issues = new ArrayList<>();
+
         if ((modulus.intValue() & 1) == 0)
         {
-            throw new IllegalArgumentException("RSA modulus is even");
+            issues.add("RSA modulus is even");
         }
 
         // If you need to set this you need to have a serious word to whoever is generating
         // your keys.
-        if (Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
+        if (!Properties.isOverrideSet("org.bouncycastle.rsa.allow_unsafe_mod"))
         {
-            return modulus;
-        }
+            int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 15360);
 
-        int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 15360);
-
-        int modBitLength = modulus.bitLength();
-        if (maxBitLength < modBitLength)
-        {
-            throw new IllegalArgumentException("modulus value out of range");
-        }
-
-        if (!modulus.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
-        {
-            throw new IllegalArgumentException("RSA modulus has a small prime factor");
-        }
-
-        int bits = modulus.bitLength() / 2;
-        int iterations = Properties.asInteger("org.bouncycastle.rsa.max_mr_tests", getMRIterations(bits));
-
-        if (iterations > 0)
-        {
-            Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(), iterations);
-            if (!mr.isProvablyComposite())
+            int modBitLength = modulus.bitLength();
+            if (maxBitLength < modBitLength)
             {
-                throw new IllegalArgumentException("RSA modulus is not composite");
+                issues.add("modulus value out of range");
             }
-        }
 
-        validated.add(modulus);
+            if (!modulus.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
+            {
+                issues.add("RSA modulus has a small prime factor");
+            }
+
+            int bits = modulus.bitLength() / 2;
+            int iterations = Properties.asInteger("org.bouncycastle.rsa.max_mr_tests", getMRIterations(bits));
+
+            if (iterations > 0)
+            {
+                Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(), iterations);
+                if (!mr.isProvablyComposite())
+                {
+                    issues.add("RSA modulus is not composite");
+                }
+            }
+
+            if (!issues.isEmpty()) {
+              throw new IllegalArgumentWarningException(issues, this);
+            }
+
+            validated.add(modulus);
+        }
         
         return modulus;
     }
