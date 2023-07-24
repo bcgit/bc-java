@@ -41,6 +41,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(OIWObjectIdentifiers.dsaWithSHA1, OIWObjectIdentifiers.idSHA1);
         digestOids.put(OIWObjectIdentifiers.md4WithRSAEncryption, PKCSObjectIdentifiers.md4);
         digestOids.put(OIWObjectIdentifiers.md4WithRSA, PKCSObjectIdentifiers.md4);
+        digestOids.put(OIWObjectIdentifiers.md5WithRSA, PKCSObjectIdentifiers.md5);
         digestOids.put(OIWObjectIdentifiers.sha1WithRSA, OIWObjectIdentifiers.idSHA1);
 
         digestOids.put(PKCSObjectIdentifiers.sha224WithRSAEncryption, NISTObjectIdentifiers.id_sha224);
@@ -287,7 +288,7 @@ public class DefaultDigestAlgorithmIdentifierFinder
         }
         else
         {
-            digAlgOid = (ASN1ObjectIdentifier)digestOids.get(sigAlgId.getAlgorithm());
+            digAlgOid = (ASN1ObjectIdentifier)digestOids.get(sigAlgOid);
         }
 
         return find(digAlgOid);
@@ -318,11 +319,12 @@ public class DefaultDigestAlgorithmIdentifierFinder
         {
             return find(oid);
         }
+
         try
         {
             return find(new ASN1ObjectIdentifier(digAlgName));
         }
-        catch (IllegalArgumentException e)
+        catch (RuntimeException e)
         {
             // ignore - tried it but it didn't work...
         }

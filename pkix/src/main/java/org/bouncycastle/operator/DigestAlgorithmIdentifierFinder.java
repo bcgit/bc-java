@@ -16,9 +16,9 @@ public interface DigestAlgorithmIdentifierFinder
 
     /**
      * Find the algorithm identifier that matches with
-     * the passed in digest name.
+     * the passed in digest OID.
      *
-     * @param digestOid the name of the digest algorithm of interest.
+     * @param digestOid the OID of the digest algorithm of interest.
      * @return an algorithm identifier for the digest signature.
      */
     AlgorithmIdentifier find(ASN1ObjectIdentifier digestOid);
