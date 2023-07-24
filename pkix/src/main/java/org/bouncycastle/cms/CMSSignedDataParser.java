@@ -443,7 +443,7 @@ public class CMSSignedDataParser
         for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext();)
         {
             SignerInformation signer = (SignerInformation)it.next();
-            digestAlgs.add(CMSSignedHelper.INSTANCE.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
+            digestAlgs.add(HELPER.fixDigestAlgID(signer.getDigestAlgorithmID(), dgstAlgFinder));
         }
 
         sigGen.getRawOutputStream().write(new DERSet(digestAlgs).getEncoded());

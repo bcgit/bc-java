@@ -247,7 +247,6 @@ public interface BCObjectIdentifiers
      */
     ASN1ObjectIdentifier rainbow = bc_sig.branch("9");
 
-    // OpenSSL OIDs
     ASN1ObjectIdentifier rainbow_III_classic = rainbow.branch("1");
     ASN1ObjectIdentifier rainbow_III_circumzenithal = rainbow.branch("2");
     ASN1ObjectIdentifier rainbow_III_compressed = rainbow.branch("3");
@@ -394,6 +393,7 @@ public interface BCObjectIdentifiers
      * BIKE
      **/
     ASN1ObjectIdentifier pqc_kem_bike = bc_kem.branch("8");
+
     ASN1ObjectIdentifier bike128 = pqc_kem_bike.branch("1");
     ASN1ObjectIdentifier bike192 = pqc_kem_bike.branch("2");
     ASN1ObjectIdentifier bike256 = pqc_kem_bike.branch("3");
@@ -402,6 +402,7 @@ public interface BCObjectIdentifiers
      * HQC
      **/
     ASN1ObjectIdentifier pqc_kem_hqc = bc_kem.branch("9");
+
     ASN1ObjectIdentifier hqc128 = pqc_kem_hqc.branch("1");
     ASN1ObjectIdentifier hqc192 = pqc_kem_hqc.branch("2");
     ASN1ObjectIdentifier hqc256 = pqc_kem_hqc.branch("3");
