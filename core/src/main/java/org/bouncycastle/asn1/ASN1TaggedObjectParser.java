@@ -22,9 +22,13 @@ public interface ASN1TaggedObjectParser
      */
     int getTagNo();
 
+    boolean hasContextTag();
+
     boolean hasContextTag(int tagNo);
 
     boolean hasTag(int tagClass, int tagNo);
+
+    boolean hasTagClass(int tagClass);
 
     ASN1Encodable parseBaseUniversal(boolean declaredExplicit, int baseTagNo) throws IOException;
 

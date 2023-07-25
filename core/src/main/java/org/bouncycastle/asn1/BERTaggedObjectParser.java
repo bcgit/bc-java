@@ -29,6 +29,11 @@ class BERTaggedObjectParser
         return _tagNo;
     }
 
+    public boolean hasContextTag()
+    {
+        return this._tagClass == BERTags.CONTEXT_SPECIFIC;
+    }
+
     public boolean hasContextTag(int tagNo)
     {
         return this._tagClass == BERTags.CONTEXT_SPECIFIC && this._tagNo == tagNo;
@@ -37,6 +42,11 @@ class BERTaggedObjectParser
     public boolean hasTag(int tagClass, int tagNo)
     {
         return this._tagClass == tagClass && this._tagNo == tagNo;
+    }
+
+    public boolean hasTagClass(int tagClass)
+    {
+        return this._tagClass == tagClass;
     }
 
     /**
