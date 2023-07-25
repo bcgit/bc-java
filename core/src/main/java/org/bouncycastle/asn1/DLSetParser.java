@@ -4,8 +4,8 @@ import java.io.IOException;
 
 /**
  * Parser class for DL SETs.
- *
- * TODO The class is only publicly visible to support 'instanceof' checks; provide an alternative
+ * 
+ * @deprecated Check for 'ASN1SetParser' instead 
  */
 public class DLSetParser
     implements ASN1SetParser
