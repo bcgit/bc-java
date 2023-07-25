@@ -88,11 +88,6 @@ public class DERTaggedObject
         primitive.encode(out.getDERSubStream(), explicit);
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.DER;
-    }
-
     ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
     {
         return new DERSequence(primitive);
