@@ -422,8 +422,6 @@ public abstract class ASN1TaggedObject
         return this;
     }
 
-    abstract String getASN1Encoding();
-
     abstract ASN1Sequence rebuildConstructed(ASN1Primitive primitive);
 
     abstract ASN1TaggedObject replaceTag(int tagClass, int tagNo);
