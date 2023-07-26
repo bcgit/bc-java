@@ -47,7 +47,7 @@ public abstract class SimpleTest
     {
         if (!a.equals(b))
         {
-            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+            throw new TestFailedException(SimpleTestResult.failed(this, String.format("isEqual fail: %s != %s", a, b)));
         }
     }
 
@@ -57,7 +57,7 @@ public abstract class SimpleTest
     {
         if (a != b)
         {
-            throw new TestFailedException(SimpleTestResult.failed(this, "no message"));
+            throw new TestFailedException(SimpleTestResult.failed(this, String.format("isEqual fail: %s != %s", a, b)));
         }
     }
 

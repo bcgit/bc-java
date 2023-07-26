@@ -156,17 +156,18 @@ public class TBSCertificate
                 if (isV2)
                 {
                   addError("version 2 certificate cannot contain extensions");
-                  return;
+                  throw new IllegalArgumentWarningException(errors, this);
                 }
                 try {
                   extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
                 } catch (IllegalArgumentWarningException ex) {
-                  extensions = (Extensions) ex.getObject(Extensions.class);
+                  extensions = ex.getObject(Extensions.class);
                   addErrors(ex.getMessages());
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Unknown tag encountered in structure: " + extra.getTagNo());
+              addError("Unknown tag encountered in structure: " + extra.getTagNo());
+              throw new IllegalArgumentWarningException(errors, this);
             }
             extras--;
         }
