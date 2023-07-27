@@ -292,9 +292,7 @@ public class CertificateRequestMessageBuilder
                 }
                 else
                 {
-                    PKMACValueGenerator pkmacGenerator = new PKMACValueGenerator(pkmacBuilder);
-
-                    builder.setPublicKeyMac(pkmacGenerator, password);
+                    builder.setPublicKeyMac(pkmacBuilder, password);
                 }
                 proofOfPossession = new ProofOfPossession(builder.build(popSigner));
             }
