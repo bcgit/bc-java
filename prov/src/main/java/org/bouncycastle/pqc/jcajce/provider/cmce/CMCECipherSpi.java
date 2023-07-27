@@ -25,26 +25,36 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMExtractor;
 import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
+import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 class CMCECipherSpi
     extends CipherSpi
 {
     private final String algorithmName;
     private CMCEKEMGenerator kemGen;
-    private KEMParameterSpec kemParameterSpec;
+    private KTSParameterSpec kemParameterSpec;
     private BCCMCEPublicKey wrapKey;
     private BCCMCEPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
+    private CMCEParameters cmceParameters;
 
     CMCECipherSpi(String algorithmName)
     {
         this.algorithmName = algorithmName;
+    }
+
+    CMCECipherSpi(CMCEParameters cmceParameters)
+    {
+        this.cmceParameters = cmceParameters;
+        this.algorithmName = Strings.toUpperCase(cmceParameters.getName());
     }
 
     @Override
@@ -131,12 +141,12 @@ class CMCECipherSpi
         }
         else
         {
-            if (!(paramSpec instanceof KEMParameterSpec))
+            if (!(paramSpec instanceof KTSParameterSpec))
             {
                 throw new InvalidAlgorithmParameterException(algorithmName + " can only accept KTSParameterSpec");
             }
 
-            kemParameterSpec = (KEMParameterSpec)paramSpec;
+            kemParameterSpec = (KTSParameterSpec)paramSpec;
         }
 
         if (opmode == Cipher.WRAP_MODE)
@@ -165,6 +175,15 @@ class CMCECipherSpi
         else
         {
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
+        }
+
+        if (cmceParameters != null)
+        {
+            String canonicalAlgName = Strings.toUpperCase(cmceParameters.getName());
+            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
+            }
         }
     }
 
@@ -308,6 +327,56 @@ class CMCECipherSpi
             throws NoSuchAlgorithmException
         {
             super("CMCE");
+        }
+    }
+
+    public static class MCE348864
+        extends CMCECipherSpi
+    {
+        public MCE348864()
+            throws NoSuchAlgorithmException
+        {
+            super(CMCEParameters.mceliece348864r3);
+        }
+    }
+
+    public static class MCE460896
+        extends CMCECipherSpi
+    {
+        public MCE460896()
+            throws NoSuchAlgorithmException
+        {
+            super(CMCEParameters.mceliece460896r3);
+        }
+    }
+
+    public static class MCE6688128
+        extends CMCECipherSpi
+    {
+        public MCE6688128()
+            throws NoSuchAlgorithmException
+        {
+            super(CMCEParameters.mceliece6688128r3);
+        }
+    }
+
+    public static class MCE6960119
+        extends CMCECipherSpi
+    {
+        public MCE6960119()
+            throws NoSuchAlgorithmException
+        {
+            super(CMCEParameters.mceliece6960119r3);
+        }
+    }
+
+    public static class MCE8192128
+        extends CMCECipherSpi
+    {
+        public MCE8192128()
+            throws NoSuchAlgorithmException
+        {
+            super(CMCEParameters.mceliece8192128r3);
         }
     }
 }
