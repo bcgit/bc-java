@@ -3,6 +3,7 @@ package org.bouncycastle.cert.crmf;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1UTF8String;
@@ -40,7 +41,7 @@ public class CertificateRequestMessage
     {
         try
         {
-            return CertReqMsg.getInstance(ASN1Primitive.fromByteArray(encoding));
+            return CertReqMsg.getInstance(encoding);
         }
         catch (ClassCastException e)
         {
@@ -179,7 +180,7 @@ public class CertificateRequestMessage
      */
     public boolean hasProofOfPossession()
     {
-        return this.certReqMsg.getPopo() != null;
+        return this.certReqMsg.getPop() != null;
     }
 
     /**
@@ -189,7 +190,7 @@ public class CertificateRequestMessage
      */
     public int getProofOfPossessionType()
     {
-        return this.certReqMsg.getPopo().getType();
+        return this.certReqMsg.getPop().getType();
     }
 
     /**
@@ -200,16 +201,16 @@ public class CertificateRequestMessage
      */
     public boolean hasSigningKeyProofOfPossessionWithPKMAC()
     {
-        ProofOfPossession pop = certReqMsg.getPopo();
+        ProofOfPossession pop = certReqMsg.getPop();
 
-        if (pop.getType() == popSigningKey)
+        if (pop.getType() != popSigningKey)
         {
-            POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
-
-            return popoSign.getPoposkInput().getPublicKeyMAC() != null;
+            return false;
         }
 
-        return false;
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
+
+        return popoSign.getPoposkInput().getPublicKeyMAC() != null;
     }
 
     /**
@@ -223,23 +224,21 @@ public class CertificateRequestMessage
     public boolean isValidSigningKeyPOP(ContentVerifierProvider verifierProvider)
         throws CRMFException, IllegalStateException
     {
-        ProofOfPossession pop = certReqMsg.getPopo();
+        ProofOfPossession pop = certReqMsg.getPop();
 
-        if (pop.getType() == popSigningKey)
-        {
-            POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
-
-            if (popoSign.getPoposkInput() != null && popoSign.getPoposkInput().getPublicKeyMAC() != null)
-            {
-                throw new IllegalStateException("verification requires password check");
-            }
-
-            return verifySignature(verifierProvider, popoSign);
-        }
-        else
+        if (pop.getType() != popSigningKey)
         {
             throw new IllegalStateException("not Signing Key type of proof of possession");
         }
+
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
+
+        if (popoSign.getPoposkInput() != null && popoSign.getPoposkInput().getPublicKeyMAC() != null)
+        {
+            throw new IllegalStateException("verification requires password check");
+        }
+
+        return verifySignature(verifierProvider, popoSign);
     }
 
     /**
@@ -255,38 +254,31 @@ public class CertificateRequestMessage
     public boolean isValidSigningKeyPOP(ContentVerifierProvider verifierProvider, PKMACBuilder macBuilder, char[] password)
         throws CRMFException, IllegalStateException
     {
-        ProofOfPossession pop = certReqMsg.getPopo();
+        ProofOfPossession pop = certReqMsg.getPop();
 
-        if (pop.getType() == popSigningKey)
-        {
-            POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
-
-            if (popoSign.getPoposkInput() == null || popoSign.getPoposkInput().getSender() != null)
-            {
-                throw new IllegalStateException("no PKMAC present in proof of possession");
-            }
-
-            PKMACValue pkMAC = popoSign.getPoposkInput().getPublicKeyMAC();
-            PKMACValueVerifier macVerifier = new PKMACValueVerifier(macBuilder);
-
-            if (macVerifier.isValid(pkMAC, password, this.getCertTemplate().getPublicKey()))
-            {
-                return verifySignature(verifierProvider, popoSign);
-            }
-
-            return false;
-        }
-        else
+        if (pop.getType() != popSigningKey)
         {
             throw new IllegalStateException("not Signing Key type of proof of possession");
         }
+
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(pop.getObject());
+
+        if (popoSign.getPoposkInput() == null || popoSign.getPoposkInput().getSender() != null)
+        {
+            throw new IllegalStateException("no PKMAC present in proof of possession");
+        }
+
+        PKMACValue pkMAC = popoSign.getPoposkInput().getPublicKeyMAC();
+        PKMACValueVerifier macVerifier = new PKMACValueVerifier(macBuilder);
+
+        return macVerifier.isValid(pkMAC, password, this.getCertTemplate().getPublicKey())
+            && verifySignature(verifierProvider, popoSign);
     }
 
     private boolean verifySignature(ContentVerifierProvider verifierProvider, POPOSigningKey popoSign)
         throws CRMFException
     {
         ContentVerifier verifier;
-
         try
         {
             verifier = verifierProvider.get(popoSign.getAlgorithmIdentifier());
@@ -296,14 +288,13 @@ public class CertificateRequestMessage
             throw new CRMFException("unable to create verifier: " + e.getMessage(), e);
         }
 
-        if (popoSign.getPoposkInput() != null)
+        ASN1Object obj = popoSign.getPoposkInput();
+        if (obj == null)
         {
-            CRMFUtil.derEncodeToStream(popoSign.getPoposkInput(), verifier.getOutputStream());
+            obj = certReqMsg.getCertReq();
         }
-        else
-        {
-            CRMFUtil.derEncodeToStream(certReqMsg.getCertReq(), verifier.getOutputStream());
-        }
+
+        CRMFUtil.derEncodeToStream(obj, verifier.getOutputStream());
 
         return verifier.verify(popoSign.getSignature().getOctets());
     }
