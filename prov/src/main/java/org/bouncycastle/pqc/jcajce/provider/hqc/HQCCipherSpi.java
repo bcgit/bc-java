@@ -176,6 +176,15 @@ class HQCCipherSpi
         {
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
         }
+
+        if (hqcParameters != null)
+        {
+            String canonicalAlgName = Strings.toUpperCase(hqcParameters.getName());
+            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
+            }
+        }
     }
 
     @Override
