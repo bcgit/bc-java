@@ -435,11 +435,22 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = CMCEPublicKey.getInstance(keyInfo.parsePublicKey()).getT();
+            try
+            {
+                byte[] keyEnc = CMCEPublicKey.getInstance(keyInfo.parsePublicKey()).getT();
 
-            CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new CMCEPublicKeyParameters(spParams, keyEnc);
+                return new CMCEPublicKeyParameters(spParams, keyEnc);
+            }
+            catch (Exception e)
+            {        
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new CMCEPublicKeyParameters(spParams, keyEnc);
+            }
         }
     }
 
