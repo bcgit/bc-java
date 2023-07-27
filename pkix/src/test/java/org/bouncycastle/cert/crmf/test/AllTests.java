@@ -137,7 +137,7 @@ public class AllTests
         JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
 
 
-        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPopo().getObject());
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPop().getObject());
 
         Signature sig = Signature.getInstance("SHA1withRSA", "BC");
 
@@ -178,7 +178,7 @@ public class AllTests
         JcaCertificateRequestMessage certReqMsg = new JcaCertificateRequestMessage(certReqBuild.build()).setProvider(BC);
 
 
-        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPopo().getObject());
+        POPOSigningKey popoSign = POPOSigningKey.getInstance(certReqMsg.toASN1Structure().getPop().getObject());
 
         Signature sig = Signature.getInstance("SHA1withRSA", "BC");
 

@@ -8,11 +8,10 @@ import org.bouncycastle.asn1.crmf.CertReqMsg;
 
 public class CertificateReqMessagesBuilder
 {
-    List<CertReqMsg> requests = new ArrayList<CertReqMsg>();
+    private final List<CertReqMsg> requests = new ArrayList<CertReqMsg>();
 
     public CertificateReqMessagesBuilder()
     {
-
     }
 
     public void addRequest(CertificateRequestMessage request)
@@ -22,8 +21,8 @@ public class CertificateReqMessagesBuilder
 
     public CertificateReqMessages build()
     {
-
-        CertificateReqMessages certificateReqMessages = new CertificateReqMessages(new CertReqMessages((CertReqMsg[])requests.toArray(new CertReqMsg[0])));
+        CertificateReqMessages certificateReqMessages = new CertificateReqMessages(
+            new CertReqMessages((CertReqMsg[])requests.toArray(new CertReqMsg[0])));
 
         requests.clear();
 

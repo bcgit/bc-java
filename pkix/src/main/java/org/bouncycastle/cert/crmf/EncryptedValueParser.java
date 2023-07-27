@@ -63,14 +63,7 @@ public class EncryptedValueParser
             value.getEncValue().getBytes()));
         try
         {
-            byte[] data = Streams.readAll(dataIn);
-
-            if (padder != null)
-            {
-                return padder.getUnpaddedData(data);
-            }
-            
-            return data;
+            return unpadData(Streams.readAll(dataIn));
         }
         catch (IOException e)
         {
@@ -115,5 +108,15 @@ public class EncryptedValueParser
         throws CRMFException
     {
         return Strings.fromUTF8ByteArray(decryptValue(decGen)).toCharArray();
+    }
+
+    private byte[] unpadData(byte[] data)
+    {
+        if (padder != null)
+        {
+            return padder.getUnpaddedData(data);
+        }
+
+        return data;
     }
 }

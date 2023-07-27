@@ -72,7 +72,7 @@ public class GeneralPKIMessage
      */
     public boolean hasProtection()
     {
-        return pkiMessage.getHeader().getProtectionAlg() != null;
+        return pkiMessage.getProtection() != null;
     }
 
     public PKIMessage toASN1Structure()
