@@ -33,6 +33,7 @@ public class JcaPKCS10CertificationRequest
         //
         keyAlgorithms.put(PKCSObjectIdentifiers.rsaEncryption, "RSA");
         keyAlgorithms.put(X9ObjectIdentifiers.id_dsa, "DSA");
+        keyAlgorithms.put(X9ObjectIdentifiers.id_ecPublicKey, "EC");
     }
 
     private JcaJceHelper helper = new DefaultJcaJceHelper();
