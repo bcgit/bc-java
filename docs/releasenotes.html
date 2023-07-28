@@ -20,17 +20,24 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv76"><h3>2.1.1 Version</h3></a>
 Release: 1.76<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, July 29th
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Service allocation in the provider could fail due to the lack of a permission block. This has been fixed.</li>
 <li>JceKeyFingerPrintCalculator has been generalised for different providers by using "SHA-256" for the algorithm string.</li>
 <li>BCJSSE: Fixed a regression in 1.74 (NullPointerException) that prevents a BCJSSE server from negotiating TLSv1.1 or earlier.</li>
 <li>DTLS: Fixed server support for client_certificate_type extension.</li>
+<li>Cipher.unwrap() for HQC could fail due to a miscalculation of the length of the KEM packet. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>BCJSSE: Added support for boolean system property "jdk.tls.client.useCompatibilityMode" (default "true").</li>
+<li>JcaPKCS10CertificationRequest will now work with EC on the OpenJDK provider.</li>
+<li>TimeStamp generation now supports the SHA3 algorithm set.</li>
+<li>The SPHINCS+ simple parameters are now fully supported in the BCPQC provider.</li>
+<li>Kyber, Classic McEliece, HQC, and Bike now supported by the CRMF/CMS/CMP APIs.</li>
+<li>Builder classes have been add for PGP ASCII Armored streams allowing CRCs and versions to now be optional.</li>
+<li>An UnknownPacket type has been added to the PGP APIs to allow for forwards compatibility with upcoming revisions to the standard.</li>
 </ul>
 
 <a id="r1rv75"><h3>2.2.1 Version</h3></a>
