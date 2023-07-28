@@ -31,7 +31,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, July 29th
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>BCJSSE: Following OpenJDK, finalizers have been removed from SSLSocket subclasses. Applications should close sockets and not rely on garbage collection.</li>
 <li>BCJSSE: Added support for boolean system property "jdk.tls.client.useCompatibilityMode" (default "true").</li>
+<li>DTLS: Added server support for session resumption.</li>
 <li>JcaPKCS10CertificationRequest will now work with EC on the OpenJDK provider.</li>
 <li>TimeStamp generation now supports the SHA3 algorithm set.</li>
 <li>The SPHINCS+ simple parameters are now fully supported in the BCPQC provider.</li>
