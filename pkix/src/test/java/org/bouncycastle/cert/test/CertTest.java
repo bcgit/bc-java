@@ -48,18 +48,13 @@ import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DLSequence;
-import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
@@ -5582,104 +5577,6 @@ public class CertTest
 
         return ASN1Primitive.fromByteArray(octs.getOctets());
     }
-
-    public static void checkCreationRDN()
-              throws Exception
-          {
-              //
-              // a sample key pair.
-              //
-              RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(
-                  new BigInteger("b4a7e46170574f16a97082b22be58b6a2a629798419be12872a4bdba626cfae9900f76abfb12139dce5de56564fab2b6543165a040c606887420e33d91ed7ed7", 16),
-                  new BigInteger("11", 16));
-
-              RSAPrivateCrtKeySpec privKeySpec = new RSAPrivateCrtKeySpec(
-                  new BigInteger("b4a7e46170574f16a97082b22be58b6a2a629798419be12872a4bdba626cfae9900f76abfb12139dce5de56564fab2b6543165a040c606887420e33d91ed7ed7", 16),
-                  new BigInteger("11", 16),
-                  new BigInteger("9f66f6b05410cd503b2709e88115d55daced94d1a34d4e32bf824d0dde6028ae79c5f07b580f5dce240d7111f7ddb130a7945cd7d957d1920994da389f490c89", 16),
-                  new BigInteger("c0a0758cdf14256f78d4708c86becdead1b50ad4ad6c5c703e2168fbf37884cb", 16),
-                  new BigInteger("f01734d7960ea60070f1b06f2bb81bfac48ff192ae18451d5e56c734a5aab8a5", 16),
-                  new BigInteger("b54bb9edff22051d9ee60f9351a48591b6500a319429c069a3e335a1d6171391", 16),
-                  new BigInteger("d3d83daf2a0cecd3367ae6f8ae1aeb82e9ac2f816c6fc483533d8297dd7884cd", 16),
-                  new BigInteger("b8f52fc6f38593dabb661d3f50f8897f8106eee68b1bce78a95b132b4e5b5d19", 16));
-
-              //
-              // set up the keys
-              //
-              SecureRandom rand = new SecureRandom();
-              PrivateKey privKey;
-              PublicKey pubKey;
-
-              KeyFactory fact = KeyFactory.getInstance("RSA", BC);
-
-              privKey = fact.generatePrivate(privKeySpec);
-              pubKey = fact.generatePublic(pubKeySpec);
-
-              //
-              // distinguished name table.
-              //
-              X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
-
-              builder.addRDN(BCStyle.C, "AU");
-              builder.addRDN(BCStyle.O, "The Legion of the Bouncy Castle");
-              builder.addRDN(BCStyle.L, "Melbourne");
-              builder.addRDN(BCStyle.ST, "Victoria");
-              builder.addMultiValuedRDN(new ASN1ObjectIdentifier[] { BCStyle.E, BCStyle.SERIALNUMBER}, new String[] {"feedback-crypto@bouncycastle.org", "CVR:12345678-UID:1111"});
-
-              //
-              // create base certificate - version 3
-              //
-              ContentSigner sigGen = new JcaContentSignerBuilder("MD5WithRSAEncryption").setProvider(BC).build(privKey);
-              X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey)
-                  .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
-                      new X509KeyUsage(X509KeyUsage.encipherOnly))
-                  .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
-                      new DERSequence(KeyPurposeId.anyExtendedKeyUsage))
-                  .addExtension(new ASN1ObjectIdentifier("2.5.29.17"), true,
-                      new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")));
-
-              X509CertificateHolder cert = certGen.build(sigGen);
-
-             System.err.println(Base64.toBase64String(cert.toASN1Structure().getEncoded(ASN1Encoding.DER)));
-
-
-             
-             ASN1Sequence oSeq = ASN1Sequence.getInstance(cert.toASN1Structure());
-             ASN1Sequence iSeq = ASN1Sequence.getInstance(oSeq.getObjectAt(0));
-             ASN1Encodable[] enc = new ASN1Encodable[iSeq.size()];
-
-             for (int i = 0;  i != iSeq.size(); i++)
-             {
-                 if (i == 3)
-                 {
-                      ASN1Sequence s = ASN1Sequence.getInstance(iSeq.getObjectAt(i));
-                      ASN1Encodable[] sEnc = new ASN1Encodable[s.size()];
-
-                      for (int j = 0; j != sEnc.length; j++)
-                      {
-                          sEnc[j] = s.getObjectAt(j);
-                          if (j == 4)
-                          {
-                              ASN1Set set = ASN1Set.getInstance(sEnc[j]);
-                                             System.err.println("here");
-                              sEnc[j] = new DLSet(new ASN1Encodable[] { set.getObjectAt(1), set.getObjectAt(0) });
-                          }
-                      }
-                      enc[i] = new DLSequence(sEnc);
-                 }
-                 else
-                 {
-                     enc[i] = iSeq.getObjectAt(i);
-                 }
-             }
-
-              ASN1Encodable[] oEnc = new ASN1Encodable[3];
-              oEnc[0] = new DLSequence(enc);
-              oEnc[1] = oSeq.getObjectAt(1);
-              oEnc[2] = oSeq.getObjectAt(2);
-              //System.err.println(ASN1Dump.dumpAsString(new DLSequence(oEnc)));
-              System.err.println(Base64.toBase64String(new DLSequence(oEnc).getEncoded(ASN1Encoding.DL)));
-          }
 
     public static void main(
         String[] args)
