@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.SkippingStreamCipher;
 import org.bouncycastle.crypto.StreamBlockCipher;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
@@ -16,7 +15,7 @@ import org.bouncycastle.util.Pack;
  */
 public class SICBlockCipher
     extends StreamBlockCipher
-    implements SkippingStreamCipher
+    implements CTRModeCipher
 {
     private final BlockCipher     cipher;
     private final int             blockSize;
@@ -31,7 +30,7 @@ public class SICBlockCipher
      *
      * @param cipher the base cipher for the SIC/CTR mode.
      */
-    public static SICBlockCipher newInstance(BlockCipher cipher)
+    public static CTRModeCipher newInstance(BlockCipher cipher)
     {
         return new SICBlockCipher(cipher);
     }
