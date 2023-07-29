@@ -33,7 +33,7 @@ public class EAXBlockCipher
 
     private static final byte cTAG = 0x2;
 
-    private SICBlockCipher cipher;
+    private CTRModeCipher cipher;
 
     private boolean forEncryption;
 
