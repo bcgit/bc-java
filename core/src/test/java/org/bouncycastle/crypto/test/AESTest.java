@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -264,7 +265,7 @@ public class AESTest
     private void skipTest()
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
-        SICBlockCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
 
         engine.init(true, params);
 
@@ -393,7 +394,7 @@ public class AESTest
     private void ctrCounterTest()
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("000000000000000000000000000000"));
-        SICBlockCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
 
         engine.init(true, params);
 
@@ -426,7 +427,7 @@ public class AESTest
     private void testLastByte()
         throws Exception
     {
-        SICBlockCipher cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
+        CTRModeCipher cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         byte[] iv = new byte[15];
         byte[] key = new byte[16];
 
@@ -464,7 +465,7 @@ public class AESTest
     private void ctrFragmentedTest()
         throws InvalidCipherTextException
     {
-        SICBlockCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         byte[] out = new byte[tData.length];
