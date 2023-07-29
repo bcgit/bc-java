@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -30,7 +31,7 @@ abstract class Symmetric
         extends Symmetric
     {
 
-        private final SICBlockCipher cipher;
+        private final CTRModeCipher cipher;
 
         AesSymmetric()
         {
