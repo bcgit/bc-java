@@ -68,6 +68,8 @@ public class JceAEADCipherImpl
     private final String algorithmParamsName;
 
     private SecretKey key;
+    private byte[]    nonce;
+    private int       macSize;
 
     public JceAEADCipherImpl(JcaTlsCrypto crypto, JcaJceHelper helper, String cipherName, String algorithm, int keySize,
         boolean isEncrypting)
@@ -120,6 +122,8 @@ public class JceAEADCipherImpl
             {
                 // Otherwise fall back to the BC-specific AEADParameterSpec
                 cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, null), random);
+                this.nonce = Arrays.clone(nonce);
+                this.macSize = macSize;
             }
         }
         catch (Exception e)
@@ -138,7 +142,21 @@ public class JceAEADCipherImpl
     {
         if (!Arrays.isNullOrEmpty(additionalData))
         {
-            cipher.updateAAD(additionalData);
+            if (canDoAEAD)
+            {
+                cipher.updateAAD(additionalData);
+            }
+            else
+            {
+                try
+                {
+                    cipher.init(cipherMode, key, new AEADParameterSpec(nonce, macSize * 8, additionalData));
+                }
+                catch (Exception e)
+                {
+                    throw new IOException(e);
+                }
+            }
         }
 
         /*
