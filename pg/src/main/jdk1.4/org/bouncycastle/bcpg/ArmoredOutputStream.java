@@ -634,7 +634,9 @@ public class ArmoredOutputStream
                 {
                     throw new IllegalArgumentException("Armor header value for key " + key + " cannot contain newlines.");
                 }
-                this.headers.put(key, Collections.singletonList(value));
+                List h = new ArrayList();
+                h.add(value);
+                this.headers.put(key, h);
             }
             return this;
         }

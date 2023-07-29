@@ -1,12 +1,12 @@
 package org.bouncycastle.pqc.crypto.saber;
 
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -54,18 +54,14 @@ abstract class Symmetric
             shakeDigest.update(in, 0, inLen);
             shakeDigest.doFinal(out, 0, outLen);
         }
-
-
     }
+    
     static class AesSymmetric
         extends Symmetric
     {
-
         private final SHA256Digest sha256Digest;
         private final SHA512Digest sha512Digest;
-
-        private final CTRModeCipher cipher;
-
+        private final StreamCipher cipher;
 
         AesSymmetric()
         {

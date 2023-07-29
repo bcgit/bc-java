@@ -1,12 +1,12 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -105,7 +105,7 @@ abstract class Symmetric
     {
         private final SHA256Digest sha256Digest;
         private final SHA512Digest sha512Digest;
-        private final CTRModeCipher cipher;
+        private final StreamCipher cipher;
 
         AesSymmetric()
         {

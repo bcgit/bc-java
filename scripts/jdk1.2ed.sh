@@ -1,7 +1,7 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java 
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java org/bouncycastle/bcpg/sig/*
 do
 ed $i <<%%
 g/ .Override/d
@@ -173,6 +173,20 @@ q
 ed org/bouncycastle/cms/CMSEncryptedDataGenerator.java <<%
 g/java.util.Collections/s//java.util.HashMap/
 g/Collections.EMPTY_MAP/s//new HashMap()/
+w
+q
+%
+
+ed org/bouncycastle/bcpg/ArmoredOutputStream.java <<%
+g/private final/s/final//
+g/\\.\\.\\./s//[]/
+w
+q
+%
+
+ed org/bouncycastle/bcpg/ArmoredInputStream.java <<%
+g/private static final/s/final//
+g/private final/s/final//
 w
 q
 %

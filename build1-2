@@ -237,6 +237,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/tsp/TimeStampTokenInfoUnit*
     rm  org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
     rm  org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
+    rm  org/bouncycastle/openpgp/test/PGPAeadTest.java
 
     sh ../../scripts/jdk1.2ed.sh
 
