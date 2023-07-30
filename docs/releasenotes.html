@@ -28,6 +28,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, July 29th
 <li>BCJSSE: Fixed a regression in 1.74 (NullPointerException) that prevents a BCJSSE server from negotiating TLSv1.1 or earlier.</li>
 <li>DTLS: Fixed server support for client_certificate_type extension.</li>
 <li>Cipher.unwrap() for HQC could fail due to a miscalculation of the length of the KEM packet. This has been fixed.</li>
+<li>There was exposure to a Java 7 method in the Java 5 to Java 8 BCTLS jar which could cause issues with some TLS 1.2 cipher suites running on older JVMs. This is now fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
