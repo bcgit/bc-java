@@ -90,8 +90,7 @@ public class ProtectedPKIMessage
      */
     public boolean hasPasswordBasedMacProtection()
     {
-        ASN1ObjectIdentifier procAlg = pkiMessage.getHeader().getProtectionAlg().getAlgorithm();
-        return procAlg.equals(CMPObjectIdentifiers.passwordBasedMac);
+        return CMPObjectIdentifiers.passwordBasedMac.equals(getProtectionAlgorithm().getAlgorithm());
     }
 
     /**
@@ -138,12 +137,11 @@ public class ProtectedPKIMessage
     public boolean verify(ContentVerifierProvider verifierProvider)
         throws CMPException
     {
-        ContentVerifier verifier;
         try
         {
-            verifier = verifierProvider.get(pkiMessage.getHeader().getProtectionAlg());
+            ContentVerifier verifier = verifierProvider.get(getProtectionAlgorithm());
 
-            return verifySignature(pkiMessage.getProtection().getBytes(), verifier);
+            return verifySignature(pkiMessage.getProtection().getOctets(), verifier);
         }
         catch (Exception e)
         {
@@ -164,20 +162,11 @@ public class ProtectedPKIMessage
     {
         try
         {
-            MacCalculator calculator = pbeMacCalculatorProvider.get(pkiMessage.getHeader().getProtectionAlg(), password);
+            MacCalculator calculator = pbeMacCalculatorProvider.get(getProtectionAlgorithm(), password);
 
-            OutputStream macOut = calculator.getOutputStream();
+            CMPUtil.derEncodeToStream(createProtected(), calculator.getOutputStream());
 
-            ASN1EncodableVector v = new ASN1EncodableVector();
-
-            v.add(pkiMessage.getHeader());
-            v.add(pkiMessage.getBody());
-
-            macOut.write(new DERSequence(v).getEncoded(ASN1Encoding.DER));
-
-            macOut.close();
-
-            return Arrays.constantTimeAreEqual(calculator.getMac(), pkiMessage.getProtection().getBytes());
+            return Arrays.constantTimeAreEqual(calculator.getMac(), pkiMessage.getProtection().getOctets());
         }
         catch (Exception e)
         {
@@ -186,19 +175,17 @@ public class ProtectedPKIMessage
     }
 
     private boolean verifySignature(byte[] signature, ContentVerifier verifier)
-        throws IOException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        v.add(pkiMessage.getHeader());
-        v.add(pkiMessage.getBody());
-
-        OutputStream sOut = verifier.getOutputStream();
-
-        sOut.write(new DERSequence(v).getEncoded(ASN1Encoding.DER));
-
-        sOut.close();
+        CMPUtil.derEncodeToStream(createProtected(), verifier.getOutputStream());
 
         return verifier.verify(signature);
+    }
+
+    private DERSequence createProtected()
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
+        v.add(pkiMessage.getHeader());
+        v.add(pkiMessage.getBody());
+        return new DERSequence(v);
     }
 }
