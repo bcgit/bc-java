@@ -313,13 +313,13 @@ public class PKCS1Encoding
             random = fallback;
         }
 
-        byte[] data = (useStrictLength & (block.length != engine.getOutputBlockSize())) ? blockBuffer : block;
+        byte[] data = (useStrictLength && (block.length != engine.getOutputBlockSize())) ? blockBuffer : block;
 
 		/*
 		 * Check the padding.
 		 */
         int correct = PKCS1Encoding.checkPkcs1Encoding(data, this.pLen);
-		
+
 		/*
 		 * Now, to a constant time constant memory copy of the decrypted value
 		 * or the random value, depending on the validity of the padding.
@@ -354,7 +354,7 @@ public class PKCS1Encoding
         }
 
         byte[] block = engine.processBlock(in, inOff, inLen);
-        boolean incorrectLength = (useStrictLength & (block.length != engine.getOutputBlockSize()));
+        boolean incorrectLength = (useStrictLength && (block.length != engine.getOutputBlockSize()));
 
         byte[] data;
         if (block.length < getOutputBlockSize())
