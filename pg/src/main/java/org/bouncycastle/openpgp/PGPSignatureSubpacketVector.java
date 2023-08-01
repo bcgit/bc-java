@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -285,7 +286,7 @@ public class PGPSignatureSubpacketVector
         return ((PreferredAlgorithms)p).getPreferences();
     }
 
-    public int[] getPreferredAEADAlgorithms()
+    public PreferredAEADCiphersuites getPreferredAEADAlgorithms()
     {
         SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
 
@@ -294,7 +295,8 @@ public class PGPSignatureSubpacketVector
             return null;
         }
 
-        return ((PreferredAlgorithms)p).getPreferences();
+        PreferredAEADCiphersuites packet = (PreferredAEADCiphersuites) p;
+        return new PreferredAEADCiphersuites(packet.isCritical(), packet.getRawAlgorithms());
     }
 
     public int getKeyFlags()

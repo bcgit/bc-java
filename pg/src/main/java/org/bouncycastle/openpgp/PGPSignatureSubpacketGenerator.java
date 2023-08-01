@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -196,10 +197,9 @@ public class PGPSignatureSubpacketGenerator
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param algorithms array of algorithms in descending preference
      */
-    public void setPreferredAEADAlgorithms(boolean isCritical, int[] algorithms)
+    public void setPreferredAEADAlgorithms(boolean isCritical, PreferredAEADCiphersuites.Combination[] algorithms)
     {
-        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
-            algorithms));
+        packets.add(new PreferredAEADCiphersuites(isCritical, algorithms));
     }
 
     public void addPolicyURI(boolean isCritical, String policyUri)
