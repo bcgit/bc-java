@@ -26,6 +26,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>BCJSSE: Added org.bouncycastle.jsse.client.omitSigAlgsCertExtension and org.bouncycastle.jsse.server.omitSigAlgsCertExtension boolean system properties
+to control (for client and server resp.) whether the signature_algorithms_cert extension should be omitted if it would be identical to signature_algorithms.
+Defaults to true, the historical behaviour.</li>
 </ul>
 
 <a id="r1rv76"><h3>2.2.1 Version</h3></a>
