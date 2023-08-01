@@ -82,6 +82,9 @@ class ProvTlsServer
     private static final boolean provServerEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableTrustedCAKeysExtension", false);
 
+    private static final boolean provServerOmitSigAlgsCert = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.server.omitSigAlgsCertExtension", true);
+
     private static DHGroup[] getDefaultDHEParameters()
     {
         String propertyValue = PropertyUtils.getStringSecurityProperty(PROPERTY_DEFAULT_DHE_PARAMETERS);
@@ -454,6 +457,11 @@ class ProvTlsServer
 
             Vector<SignatureAndHashAlgorithm> serverSigAlgsCert =
                 jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithmsCert();
+
+            if (serverSigAlgsCert == null && !provServerOmitSigAlgsCert)
+            {
+                serverSigAlgsCert = jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+            }
 
             return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
                 certificateAuthorities);

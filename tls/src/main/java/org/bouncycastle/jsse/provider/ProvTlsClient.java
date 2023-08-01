@@ -23,7 +23,6 @@ import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
-import org.bouncycastle.tls.CompressionMethod;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.IdentifierType;
 import org.bouncycastle.tls.OCSPStatusRequest;
@@ -66,6 +65,9 @@ class ProvTlsClient
 
     private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
+
+    private static final boolean provClientOmitSigAlgsCert = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.omitSigAlgsCertExtension", true);
 
     private static final boolean provEnableSNIExtension = PropertyUtils
         .getBooleanSystemProperty("jsse.enableSNIExtension", true);
@@ -221,12 +223,15 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithmsCert()
     {
-//        if (jsseSecurityParameters.localSigSchemes != jsseSecurityParameters.localSigSchemesCert)
-//        {
-//            return SignatureSchemeInfo.getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemesCert);
-//        }
+        Vector<SignatureAndHashAlgorithm> result = jsseSecurityParameters.signatureSchemes
+            .getLocalSignatureAndHashAlgorithmsCert();
 
-        return null;
+        if (result == null && !provClientOmitSigAlgsCert)
+        {
+            result = jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+        }
+
+        return result;
     }
 
     @Override
