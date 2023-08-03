@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.cmp;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -10,6 +8,8 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -33,9 +33,9 @@ public class KemOtherInfo
     private static final PKIFreeText DEFAULT_staticString = new PKIFreeText("CMP-KEM");
 
     private final PKIFreeText staticString;
-    private ASN1OctetString transactionID;
-    private ASN1OctetString senderNonce;
-    private ASN1OctetString recipNonce;
+    private final ASN1OctetString transactionID;
+    private final ASN1OctetString senderNonce;
+    private final ASN1OctetString recipNonce;
     private final ASN1Integer len;
     private final AlgorithmIdentifier mac;
     private final ASN1OctetString ct;
@@ -75,40 +75,67 @@ public class KemOtherInfo
             throw new IllegalArgumentException("sequence size should be between 4 and 7 inclusive");
         }
 
-        Enumeration en = seq.getObjects();
+        int seqPos = 0;
 
-        staticString = PKIFreeText.getInstance(en.nextElement());
-        if (!staticString.equals(DEFAULT_staticString))
+        this.staticString = PKIFreeText.getInstance(seq.getObjectAt(seqPos));
+        if (!DEFAULT_staticString.equals(staticString))
         {
             throw new IllegalArgumentException("staticString field should be " + DEFAULT_staticString);
         }
 
-        ASN1Object next = null;
-        while (en.hasMoreElements())
+        ASN1OctetString transactionID = null;
+        ASN1OctetString senderNonce = null;
+        ASN1OctetString recipNonce = null;
+
+        ASN1TaggedObject tagged = tryGetTagged(seq, ++seqPos);
+
+        if (tagged != null)
         {
-            next = (ASN1Object)en.nextElement();
-            if (!(next instanceof ASN1TaggedObject))
+            ASN1Primitive _transactionID = ASN1Util.tryGetContextBaseUniversal(tagged, 0, true, BERTags.OCTET_STRING);
+            if (_transactionID != null)
             {
-                break;
-            }
-            ASN1TaggedObject tagged = (ASN1TaggedObject)next;
-            switch (tagged.getTagNo())
-            {
-            case 0:
-                transactionID = ASN1OctetString.getInstance(tagged, true);
-                break;
-            case 1:
-                senderNonce = ASN1OctetString.getInstance(tagged, true);
-                break;
-            case 2:
-                recipNonce = ASN1OctetString.getInstance(tagged, true);
-            default:
-                throw new IllegalArgumentException("unknown tag number: " + tagged.getTagNo());
+                transactionID = (ASN1OctetString)_transactionID;
+                tagged = tryGetTagged(seq, ++seqPos);
             }
         }
-        len = ASN1Integer.getInstance(next);
-        mac = AlgorithmIdentifier.getInstance(en.nextElement());
-        ct = ASN1OctetString.getInstance(en.nextElement());
+
+        if (tagged != null)
+        {
+            ASN1Primitive _senderNonce = ASN1Util.tryGetContextBaseUniversal(tagged, 1, true, BERTags.OCTET_STRING);
+            if (_senderNonce != null)
+            {
+                senderNonce = (ASN1OctetString)_senderNonce;
+                tagged = tryGetTagged(seq, ++seqPos);
+            }
+        }
+
+        if (tagged != null)
+        {
+            ASN1Primitive _recipNonce = ASN1Util.tryGetContextBaseUniversal(tagged, 2, true, BERTags.OCTET_STRING);
+            if (_recipNonce != null)
+            {
+                recipNonce = (ASN1OctetString)_recipNonce;
+                tagged = tryGetTagged(seq, ++seqPos);
+            }
+        }
+
+        if (tagged != null)
+        {
+            throw new IllegalArgumentException("unknown tag: " + ASN1Util.getTagText(tagged));
+        }
+
+        this.transactionID = transactionID;
+        this.senderNonce = senderNonce;
+        this.recipNonce = recipNonce;
+
+        this.len = ASN1Integer.getInstance(seq.getObjectAt(seqPos));
+        this.mac = AlgorithmIdentifier.getInstance(seq.getObjectAt(++seqPos));
+        this.ct = ASN1OctetString.getInstance(seq.getObjectAt(++seqPos));
+
+        if (++seqPos != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected data at end of sequence");
+        }
     }
 
     public static KemOtherInfo getInstance(Object o)
@@ -186,11 +213,17 @@ public class KemOtherInfo
         return new DERSequence(v);
     }
 
-    private void addOptional(ASN1EncodableVector v, int tagNo, ASN1Encodable obj)
+    private static void addOptional(ASN1EncodableVector v, int tagNo, ASN1Encodable obj)
     {
         if (obj != null)
         {
             v.add(new DERTaggedObject(true, tagNo, obj));
         }
+    }
+
+    private static ASN1TaggedObject tryGetTagged(ASN1Sequence seq, int seqPos)
+    {
+        ASN1Encodable element = seq.getObjectAt(seqPos);
+        return element instanceof ASN1TaggedObject ? (ASN1TaggedObject)element : null;
     }
 }
