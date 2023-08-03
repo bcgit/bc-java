@@ -156,11 +156,11 @@ public interface CMPObjectIdentifiers
 
     ASN1ObjectIdentifier id_it_crls =  id_it.branch("23");
 
-    // Not yet formally defined.
+    // TODO Update once OID allocated.
     /**
      * id-it-KemCiphertextInfo OBJECT IDENTIFIER ::= { id-it TBD1 }
      */
-    // ASN1ObjectIdentifier id_it_kemCiphertextInfo = id_it.branch("TBD1");
+//    ASN1ObjectIdentifier id_it_KemCiphertextInfo = id_it.branch("TBD1");
 
     // RFC 4211
 
@@ -255,10 +255,9 @@ public interface CMPObjectIdentifiers
      */
     ASN1ObjectIdentifier id_regCtrl_rsaKeyLen = id_pkip.branch("1.12");
 
+    // TODO Update once OID allocated.
     /**
-     * id-PasswordBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 TBD4}
+     * id-KemBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 TBD4}
      */
-    ASN1ObjectIdentifier kemBasedMac = new ASN1ObjectIdentifier("1.2.840.113533.7.66.99");
-
-
+//    ASN1ObjectIdentifier id_KemBasedMac = new ASN1ObjectIdentifier("1.2.840.113533.7.66.TBD4");
 }
