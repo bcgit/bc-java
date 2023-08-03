@@ -114,9 +114,17 @@ public class HSSPublicKeyParameters
         {
             throw new IllegalStateException("cannot parse signature: " + e.getMessage());
         }
-
+     
         LMSSignedPubKey[] signedPubKeys = signature.getSignedPubKey();
-        LMSPublicKeyParameters key = signedPubKeys[signedPubKeys.length - 1].getPublicKey();
+        LMSPublicKeyParameters key;
+        if (signedPubKeys.length != 0)
+        {
+            key = signedPubKeys[signedPubKeys.length - 1].getPublicKey();
+        }
+        else
+        {
+            key = this.getLMSPublicKey();
+        }
 
         return key.generateOtsContext(signature.getSignature()).withSignedPublicKeys(signedPubKeys);
     }
