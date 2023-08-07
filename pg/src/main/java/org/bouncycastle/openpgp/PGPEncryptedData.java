@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -21,7 +23,7 @@ import org.bouncycastle.util.Arrays;
  * </p>
  */
 public abstract class PGPEncryptedData
-    implements SymmetricKeyAlgorithmTags
+    implements SymmetricKeyAlgorithmTags, AEADAlgorithmTags
 {
     protected static class TruncatedStream
         extends InputStream
@@ -161,7 +163,7 @@ public abstract class PGPEncryptedData
     }
 
     /**
-     * Checks whether the packet is integrity protected.
+     * Checks whether the packet is integrity protected using a modification detection code package.
      *
      * @return <code>true</code> if there is a modification detection code package associated with
      * this stream
@@ -169,6 +171,17 @@ public abstract class PGPEncryptedData
     public boolean isIntegrityProtected()
     {
         return (encData instanceof SymmetricEncIntegrityPacket);
+    }
+
+    /**
+     * Checks whether the packet is protected using an AEAD algorithm.
+     *
+     * @return <code>true</code> if there is a modification detection code package associated with
+     * this stream
+     */
+    public boolean isAEAD()
+    {
+        return (encData instanceof AEADEncDataPacket);
     }
 
     /**
