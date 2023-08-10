@@ -803,9 +803,7 @@ public final class Arrays
         int newLength = to - from;
         if (newLength < 0)
         {
-            StringBuffer sb = new StringBuffer(from);
-            sb.append(" > ").append(to);
-            throw new IllegalArgumentException(sb.toString());
+            throw new IllegalArgumentException(from + " > " + to);
         }
         return newLength;
     }
