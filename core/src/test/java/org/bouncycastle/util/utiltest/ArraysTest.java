@@ -21,7 +21,7 @@ public class ArraysTest
         }
         catch (Exception e)
         {
-            assertEquals(e.getMessage(), "5 > 2");
+            assertEquals("5 > 2", e.getMessage());
         }
     }
 }
