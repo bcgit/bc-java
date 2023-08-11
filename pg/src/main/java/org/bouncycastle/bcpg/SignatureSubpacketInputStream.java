@@ -149,6 +149,7 @@ public class SignatureSubpacketInputStream
         case PREFERRED_COMP_ALGS:
         case PREFERRED_HASH_ALGS:
         case PREFERRED_SYM_ALGS:
+        case PREFERRED_ENCRYPTION_MODES:
             return new PreferredAlgorithms(type, isCritical, isLongLength, data);
         case PREFERRED_AEAD_ALGORITHMS:
             return new PreferredAEADCiphersuites(isCritical, isLongLength, data);

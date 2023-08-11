@@ -286,7 +286,37 @@ public class PGPSignatureSubpacketVector
         return ((PreferredAlgorithms)p).getPreferences();
     }
 
-    public PreferredAEADCiphersuites getPreferredAEADAlgorithms()
+    /**
+     * Return an array containing the preferred AEAD encryption modes of the key.
+     * AEAD Encryption modes are defined in {@link org.bouncycastle.bcpg.AEADAlgorithmTags}.
+     * <br>
+     * This packet type is defined in draft-koch-openpgp-2015-rfc4880bis.
+     * Recipients should ignore this packet and assume the recipient to prefer OCB.
+     *
+     * @return encryption modes
+     * @deprecated use {@link #getPreferredAEADCiphersuites()} instead.
+     */
+    @Deprecated
+    public int[] getPreferredAEADAlgorithms()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_ENCRYPTION_MODES);
+
+        if (p == null)
+        {
+            return null;
+        }
+
+        PreferredAlgorithms packet = (PreferredAlgorithms) p;
+        return packet.getPreferences();
+    }
+
+    /**
+     * Return an array containing preferred AEAD ciphersuites of the key.
+     * AEAD cipher suites are pairs of a symmetric algorithm and an AEAD algorithm.
+     *
+     * @return AEAD cipher suites
+     */
+    public PreferredAEADCiphersuites getPreferredAEADCiphersuites()
     {
         SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
 

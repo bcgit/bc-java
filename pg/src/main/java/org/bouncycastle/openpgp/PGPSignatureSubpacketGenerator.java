@@ -193,11 +193,27 @@ public class PGPSignatureSubpacketGenerator
 
     /**
      * Specify the preferred AEAD algorithms of this key.
+     * This method of defining encryption mode preferences was introduced and deprecated in
+     * draft-koch-openpgp-2015-rfc4880bis for OpenPGP v5 keys.
      *
-     * @param isCritical true if should be treated as critical, false otherwise.
+     * @param isCritical true, if this packet should be treated as critical, false otherwise.
+     * @param algorithms array of algorithms in descending preference
+     * @deprecated use {@link #setPreferredAEADCiphersuites(boolean, PreferredAEADCiphersuites.Combination[])} instead
+     */
+    @Deprecated
+    public void setPreferredAEADAlgorithms(boolean isCritical, int[] algorithms)
+    {
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_ENCRYPTION_MODES, isCritical,
+            algorithms));
+    }
+
+    /**
+     * Specify the preferred AEAD cipher suites of this key.
+     *
+     * @param isCritical true, if this packet should be treated as critical, false otherwise.
      * @param algorithms array of algorithms in descending preference
      */
-    public void setPreferredAEADAlgorithms(boolean isCritical, PreferredAEADCiphersuites.Combination[] algorithms)
+    public void setPreferredAEADCiphersuites(boolean isCritical, PreferredAEADCiphersuites.Combination[] algorithms)
     {
         packets.add(new PreferredAEADCiphersuites(isCritical, algorithms));
     }
