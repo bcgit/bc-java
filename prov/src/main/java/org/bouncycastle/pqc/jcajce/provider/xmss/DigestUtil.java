@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
+import org.bouncycastle.util.Properties;
 
 class DigestUtil
 {
@@ -57,7 +58,15 @@ class DigestUtil
 
     public static byte[] getDigestResult(Digest digest)
     {
-        byte[] hash = new byte[DigestUtil.getDigestSize(digest)];
+        byte[] hash;
+        if (digest instanceof Xof && Properties.isOverrideSet("org.bouncycastle.xmss.old_style_prehash_xof"))
+        {
+            hash = new byte[digest.getDigestSize() * 2];
+        }
+        else
+        {
+            hash = new byte[digest.getDigestSize()];
+        }
 
         if (digest instanceof Xof)
         {
@@ -69,16 +78,6 @@ class DigestUtil
         }
 
         return hash;
-    }
-
-    public static int getDigestSize(Digest digest)
-    {
-        if (digest instanceof Xof)
-        {
-            return digest.getDigestSize() * 2;
-        }
-
-        return digest.getDigestSize();
     }
 
     public static String getXMSSDigestName(ASN1ObjectIdentifier treeDigest)
