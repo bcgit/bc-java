@@ -9,7 +9,7 @@ import java.util.Arrays;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.io.Streams;
 
-public class HSSSignature
+class HSSSignature
     implements Encodable
 {
     private final int lMinus1;

@@ -6,7 +6,6 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -71,15 +70,5 @@ class DigestUtil
         }
 
         throw new IllegalArgumentException("unrecognized digest name: " + name);
-    }
-
-    public static int getDigestSize(Digest digest)
-    {
-        if (digest instanceof Xof)
-        {
-            return digest.getDigestSize() * 2;
-        }
-
-        return digest.getDigestSize();
     }
 }
