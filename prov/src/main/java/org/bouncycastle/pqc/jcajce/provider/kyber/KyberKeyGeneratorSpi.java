@@ -147,31 +147,4 @@ public class KyberKeyGeneratorSpi
             super(KyberParameters.kyber1024);
         }
     }
-
-    public static class Kyber512_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber512_AES()
-        {
-            super(KyberParameters.kyber512_aes);
-        }
-    }
-
-    public static class Kyber768_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber768_AES()
-        {
-            super(KyberParameters.kyber768_aes);
-        }
-    }
-
-    public static class Kyber1024_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber1024_AES()
-        {
-            super(KyberParameters.kyber1024_aes);
-        }
-    }
 }

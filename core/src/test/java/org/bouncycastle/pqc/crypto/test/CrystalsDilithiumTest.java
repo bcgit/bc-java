@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyGenerationParameters;
@@ -22,8 +23,6 @@ import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class CrystalsDilithiumTest
     extends TestCase
@@ -90,9 +89,6 @@ public class CrystalsDilithiumTest
             DilithiumParameters.dilithium2,
             DilithiumParameters.dilithium3,
             DilithiumParameters.dilithium5,
-            DilithiumParameters.dilithium2_aes,
-            DilithiumParameters.dilithium3_aes,
-            DilithiumParameters.dilithium5_aes
         };
 
         TestSampler sampler = new TestSampler();

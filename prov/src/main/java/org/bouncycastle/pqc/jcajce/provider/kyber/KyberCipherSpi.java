@@ -346,31 +346,4 @@ class KyberCipherSpi
             super(KyberParameters.kyber1024);
         }
     }
-
-    public static class Kyber512_AES
-        extends KyberCipherSpi
-    {
-        public Kyber512_AES()
-        {
-            super(KyberParameters.kyber512_aes);
-        }
-    }
-
-    public static class Kyber768_AES
-        extends KyberCipherSpi
-    {
-        public Kyber768_AES()
-        {
-            super(KyberParameters.kyber768_aes);
-        }
-    }
-
-    public static class Kyber1024_AES
-        extends KyberCipherSpi
-    {
-        public Kyber1024_AES()
-        {
-            super(KyberParameters.kyber1024_aes);
-        }
-    }
 }
