@@ -45,7 +45,7 @@ class KyberIndCpa
      *
      * @return KeyPair where each key is represented as bytes
      */
-    public byte[][] generateKeyPair()
+    byte[][] generateKeyPair()
     {
         PolyVec secretKey = new PolyVec(engine),
             publicKey = new PolyVec(engine),
