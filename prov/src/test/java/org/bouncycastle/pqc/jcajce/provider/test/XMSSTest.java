@@ -790,7 +790,7 @@ public class XMSSTest
 
         digest.update(message, 0, message.length);
 
-        byte[] dig = new byte[(digest instanceof Xof) ? digest.getDigestSize() * 2 : digest.getDigestSize()];
+        byte[] dig = new byte[digest.getDigestSize()];
 
         if (digest instanceof Xof)
         {
