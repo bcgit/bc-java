@@ -19,6 +19,8 @@ class DilithiumEngine
     public final static int DilithiumRootOfUnity = 1753;
     public final static int SeedBytes = 32;
     public final static int CrhBytes = 64;
+    public final static int RndBytes = 32;
+    public final static int TrBytes = 64;
 
     public final static int DilithiumPolyT1PackedBytes = 320;
     public final static int DilithiumPolyT0PackedBytes = 416;
@@ -236,7 +238,7 @@ class DilithiumEngine
     {
         byte[] seedBuf = new byte[SeedBytes];
         byte[] buf = new byte[2 * SeedBytes + CrhBytes];
-        byte[] tr = new byte[SeedBytes];
+        byte[] tr = new byte[TrBytes];
 
         byte[] rho = new byte[SeedBytes],
             rhoPrime = new byte[CrhBytes],
@@ -300,7 +302,7 @@ class DilithiumEngine
 
         shake256Digest.update(rho, 0, rho.length);
         shake256Digest.update(encT1, 0, encT1.length);
-        shake256Digest.doFinal(tr, 0, SeedBytes);
+        shake256Digest.doFinal(tr, 0, TrBytes);
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
         
@@ -320,21 +322,21 @@ class DilithiumEngine
 
         Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
 
-        this.shake256Digest.update(tr, 0, SeedBytes);
+        this.shake256Digest.update(tr, 0, TrBytes);
         this.shake256Digest.update(msg, 0, msglen);
         this.shake256Digest.doFinal(mu, 0, CrhBytes);
 
+        byte[] rnd = new byte[RndBytes];
         if (random != null)
         {
-            random.nextBytes(rhoPrime);
+            random.nextBytes(rnd);
         }
-        else
-        {
-            byte[] keyMu = Arrays.copyOf(key, SeedBytes + CrhBytes);
-            System.arraycopy(mu, 0, keyMu, SeedBytes, CrhBytes);
-            shake256Digest.update(keyMu, 0, SeedBytes + CrhBytes);
-            shake256Digest.doFinal(rhoPrime, 0, CrhBytes);
-        }
+
+        byte[] keyMu = Arrays.copyOf(key, SeedBytes + RndBytes + CrhBytes);
+        System.arraycopy(rnd, 0, keyMu, SeedBytes, RndBytes);
+        System.arraycopy(mu, 0, keyMu, SeedBytes + RndBytes, CrhBytes);
+        shake256Digest.update(keyMu, 0, SeedBytes + RndBytes + CrhBytes);
+        shake256Digest.doFinal(rhoPrime, 0, CrhBytes);
 
         aMatrix.expandMatrix(rho);
 
@@ -460,11 +462,11 @@ class DilithiumEngine
         // Compute crh(crh(rho, t1), msg)
         shake256Digest.update(rho, 0, rho.length);
         shake256Digest.update(encT1, 0, encT1.length);
-        shake256Digest.doFinal(mu, 0, SeedBytes);
+        shake256Digest.doFinal(mu, 0, TrBytes);
         // System.out.println("mu before = ");
         // Helper.printByteArray(mu);
 
-        shake256Digest.update(mu, 0, SeedBytes);
+        shake256Digest.update(mu, 0, TrBytes);
         shake256Digest.update(msg, 0, msglen);
         shake256Digest.doFinal(mu, 0);
 
