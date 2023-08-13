@@ -219,16 +219,10 @@ class Utils
         kyberOids.put(KyberParameters.kyber512, BCObjectIdentifiers.kyber512);
         kyberOids.put(KyberParameters.kyber768, BCObjectIdentifiers.kyber768);
         kyberOids.put(KyberParameters.kyber1024, BCObjectIdentifiers.kyber1024);
-        kyberOids.put(KyberParameters.kyber512_aes, BCObjectIdentifiers.kyber512_aes);
-        kyberOids.put(KyberParameters.kyber768_aes, BCObjectIdentifiers.kyber768_aes);
-        kyberOids.put(KyberParameters.kyber1024_aes, BCObjectIdentifiers.kyber1024_aes);
 
         kyberParams.put(BCObjectIdentifiers.kyber512, KyberParameters.kyber512);
         kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
         kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
-        kyberParams.put(BCObjectIdentifiers.kyber512_aes, KyberParameters.kyber512_aes);
-        kyberParams.put(BCObjectIdentifiers.kyber768_aes, KyberParameters.kyber768_aes);
-        kyberParams.put(BCObjectIdentifiers.kyber1024_aes, KyberParameters.kyber1024_aes);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
@@ -261,16 +255,10 @@ class Utils
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
         dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
-        dilithiumOids.put(DilithiumParameters.dilithium2_aes, BCObjectIdentifiers.dilithium2_aes);
-        dilithiumOids.put(DilithiumParameters.dilithium3_aes, BCObjectIdentifiers.dilithium3_aes);
-        dilithiumOids.put(DilithiumParameters.dilithium5_aes, BCObjectIdentifiers.dilithium5_aes);
 
         dilithiumParams.put(BCObjectIdentifiers.dilithium2, DilithiumParameters.dilithium2);
         dilithiumParams.put(BCObjectIdentifiers.dilithium3, DilithiumParameters.dilithium3);
         dilithiumParams.put(BCObjectIdentifiers.dilithium5, DilithiumParameters.dilithium5);
-        dilithiumParams.put(BCObjectIdentifiers.dilithium2_aes, DilithiumParameters.dilithium2_aes);
-        dilithiumParams.put(BCObjectIdentifiers.dilithium3_aes, DilithiumParameters.dilithium3_aes);
-        dilithiumParams.put(BCObjectIdentifiers.dilithium5_aes, DilithiumParameters.dilithium5_aes);
 
         bikeParams.put(BCObjectIdentifiers.bike128, BIKEParameters.bike128);
         bikeParams.put(BCObjectIdentifiers.bike192, BIKEParameters.bike192);

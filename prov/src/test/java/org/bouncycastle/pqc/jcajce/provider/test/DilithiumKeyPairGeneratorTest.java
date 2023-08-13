@@ -38,9 +38,6 @@ public class DilithiumKeyPairGeneratorTest
                         DilithiumParameterSpec.dilithium2,
                         DilithiumParameterSpec.dilithium3,
                         DilithiumParameterSpec.dilithium5,
-                        DilithiumParameterSpec.dilithium2_aes,
-                        DilithiumParameterSpec.dilithium3_aes,
-                        DilithiumParameterSpec.dilithium5_aes,
                 };
         kf = KeyFactory.getInstance("Dilithium", "BC");
 

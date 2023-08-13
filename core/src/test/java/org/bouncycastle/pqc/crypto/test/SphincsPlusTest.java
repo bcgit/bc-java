@@ -35,14 +35,14 @@ public class SphincsPlusTest
     public void testVectors()
         throws Exception
     {
-        String files = "sha2-128f-robust.rsp sha2-192f-robust.rsp sha2-256f-robust.rsp shake-128f-robust.rsp shake-192f-robust.rsp" +
-            " shake-256f-robust.rsp sha2-128f-simple.rsp sha2-192f-simple.rsp sha2-256f-simple.rsp shake-128f-simple.rsp" +
-            " shake-192f-simple.rsp shake-256f-simple.rsp sha2-128s-robust.rsp sha2-192s-robust.rsp sha2-256s-robust.rsp" +
-            " shake-128s-robust.rsp shake-192s-robust.rsp shake-256s-robust.rsp sha2-128s-simple.rsp sha2-192s-simple.rsp" +
+        String files =
+            " sha2-128f-simple.rsp sha2-192f-simple.rsp sha2-256f-simple.rsp shake-128f-simple.rsp" +
+            " shake-192f-simple.rsp shake-256f-simple.rsp " +
+            " sha2-128s-simple.rsp sha2-192s-simple.rsp" +
             " sha2-256s-simple.rsp shake-128s-simple.rsp shake-192s-simple.rsp shake-256s-simple.rsp" +
-            " haraka-128f-robust.rsp  haraka-192s-robust.rsp haraka-128f-simple.rsp  haraka-192s-simple.rsp" +
-            " haraka-128s-robust.rsp  haraka-256f-robust.rsp haraka-128s-simple.rsp  haraka-256f-simple.rsp" +
-            " haraka-192f-robust.rsp  haraka-256s-robust.rsp haraka-192f-simple.rsp  haraka-256s-simple.rsp";
+            " haraka-128f-simple.rsp  haraka-192s-simple.rsp" +
+            " haraka-128s-simple.rsp  haraka-256f-simple.rsp" +
+            " haraka-192f-simple.rsp  haraka-256s-simple.rsp";
 
         TestSampler sampler = new TestSampler();
 

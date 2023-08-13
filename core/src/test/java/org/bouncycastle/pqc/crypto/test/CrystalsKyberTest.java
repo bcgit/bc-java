@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -27,9 +29,6 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
 
 public class CrystalsKyberTest
     extends TestCase
@@ -134,18 +133,12 @@ public class CrystalsKyberTest
             KyberParameters.kyber512,
             KyberParameters.kyber768,
             KyberParameters.kyber1024,
-            KyberParameters.kyber512_aes,
-            KyberParameters.kyber768_aes,
-            KyberParameters.kyber1024_aes,
         };
 
         String[] files = new String[]{
             "kyber512.rsp",
             "kyber768.rsp",
             "kyber1024.rsp",
-            "kyber512aes.rsp",
-            "kyber768aes.rsp",
-            "kyber1024aes.rsp",
         };
 
         TestSampler sampler = new TestSampler();

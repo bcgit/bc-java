@@ -14,9 +14,6 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.falcon.FalconKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
-import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyPairGeneratorSpi;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Strings;
@@ -31,9 +28,6 @@ public class KyberKeyPairGeneratorSpi
         parameters.put(KyberParameterSpec.kyber512.getName(), KyberParameters.kyber512);
         parameters.put(KyberParameterSpec.kyber768.getName(), KyberParameters.kyber768);
         parameters.put(KyberParameterSpec.kyber1024.getName(), KyberParameters.kyber1024);
-        parameters.put(KyberParameterSpec.kyber512_aes.getName(), KyberParameters.kyber512_aes);
-        parameters.put(KyberParameterSpec.kyber768_aes.getName(), KyberParameters.kyber768_aes);
-        parameters.put(KyberParameterSpec.kyber1024_aes.getName(), KyberParameters.kyber1024_aes);
     }
 
     KyberKeyGenerationParameters param;
@@ -150,33 +144,6 @@ public class KyberKeyPairGeneratorSpi
         public Kyber1024()
         {
             super(KyberParameters.kyber1024);
-        }
-    }
-
-    public static class Kyber512_AES
-        extends KyberKeyPairGeneratorSpi
-    {
-        public Kyber512_AES()
-        {
-            super(KyberParameters.kyber512_aes);
-        }
-    }
-
-    public static class Kyber768_AES
-        extends KyberKeyPairGeneratorSpi
-    {
-        public Kyber768_AES()
-        {
-            super(KyberParameters.kyber768_aes);
-        }
-    }
-
-    public static class Kyber1024_AES
-        extends KyberKeyPairGeneratorSpi
-    {
-        public Kyber1024_AES()
-        {
-            super(KyberParameters.kyber1024_aes);
         }
     }
 }

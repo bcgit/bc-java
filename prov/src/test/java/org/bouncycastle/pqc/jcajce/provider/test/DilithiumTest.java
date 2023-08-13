@@ -122,9 +122,6 @@ public class DilithiumTest
         doTestRestrictedSignature("DILITHIUM2", DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
         doTestRestrictedSignature("DILITHIUM3", DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
         doTestRestrictedSignature("DILITHIUM5", DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
-        doTestRestrictedSignature("DILITHIUM2-AES", DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestrictedSignature("DILITHIUM3-AES", DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestrictedSignature("DILITHIUM5-AES", DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
     }
 
     private void doTestRestrictedSignature(String sigName, DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)
@@ -177,9 +174,6 @@ public class DilithiumTest
         doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium2, DilithiumParameterSpec.dilithium5);
         doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium3, DilithiumParameterSpec.dilithium5);
         doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium5, DilithiumParameterSpec.dilithium2);
-        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium2_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium3_aes, DilithiumParameterSpec.dilithium5);
-        doTestRestrictedKeyPairGen(DilithiumParameterSpec.dilithium5_aes, DilithiumParameterSpec.dilithium5);
     }
 
     private void doTestRestrictedKeyPairGen(DilithiumParameterSpec spec, DilithiumParameterSpec altSpec)

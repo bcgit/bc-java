@@ -5,13 +5,8 @@ import java.security.SecureRandom;
 public class DilithiumParameters
 {
     public static final DilithiumParameters dilithium2 = new DilithiumParameters("dilithium2", 2, false);
-    public static final DilithiumParameters dilithium2_aes = new DilithiumParameters("dilithium2-aes", 2, true);
-
     public static final DilithiumParameters dilithium3 = new DilithiumParameters("dilithium3", 3, false);
-    public static final DilithiumParameters dilithium3_aes = new DilithiumParameters("dilithium3-aes", 3, true);
-
     public static final DilithiumParameters dilithium5 = new DilithiumParameters("dilithium5", 5, false);
-    public static final DilithiumParameters dilithium5_aes = new DilithiumParameters("dilithium5-aes", 5, true);
 
     private final int k;
     private final String name;

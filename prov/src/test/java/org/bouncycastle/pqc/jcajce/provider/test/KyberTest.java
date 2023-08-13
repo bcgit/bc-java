@@ -167,9 +167,6 @@ public class KyberTest
         doTestRestrictedKeyPairGen(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024);
         doTestRestrictedKeyPairGen(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024);
         doTestRestrictedKeyPairGen(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512);
-        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024);
-        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024);
-        doTestRestrictedKeyPairGen(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024);
     }
 
     private void doTestRestrictedKeyPairGen(KyberParameterSpec spec, KyberParameterSpec altSpec)
@@ -204,9 +201,6 @@ public class KyberTest
         doTestRestrictedKeyGen(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024);
         doTestRestrictedKeyGen(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024);
         doTestRestrictedKeyGen(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512);
-        doTestRestrictedKeyGen(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024);
-        doTestRestrictedKeyGen(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024);
-        doTestRestrictedKeyGen(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024);
     }
 
     private void doTestRestrictedKeyGen(KyberParameterSpec spec, KyberParameterSpec altSpec)
@@ -269,9 +263,6 @@ public class KyberTest
         doTestRestrictedCipher(KyberParameterSpec.kyber512, KyberParameterSpec.kyber1024, new byte[16]);
         doTestRestrictedCipher(KyberParameterSpec.kyber768, KyberParameterSpec.kyber1024, new byte[24]);
         doTestRestrictedCipher(KyberParameterSpec.kyber1024, KyberParameterSpec.kyber512, new byte[32]);
-        doTestRestrictedCipher(KyberParameterSpec.kyber512_aes, KyberParameterSpec.kyber1024, new byte[16]);
-        doTestRestrictedCipher(KyberParameterSpec.kyber768_aes, KyberParameterSpec.kyber1024, new byte[24]);
-        doTestRestrictedCipher(KyberParameterSpec.kyber1024_aes, KyberParameterSpec.kyber1024, new byte[32]);
     }
 
     private void doTestRestrictedCipher(KyberParameterSpec spec, KyberParameterSpec altSpec, byte[] keyBytes)
