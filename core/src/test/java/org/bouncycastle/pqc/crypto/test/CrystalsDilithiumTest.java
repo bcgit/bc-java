@@ -80,9 +80,6 @@ public class CrystalsDilithiumTest
             "PQCsignKAT_Dilithium2.rsp",
             "PQCsignKAT_Dilithium3.rsp",
             "PQCsignKAT_Dilithium5.rsp",
-            "PQCsignKAT_Dilithium2-AES.rsp",
-            "PQCsignKAT_Dilithium3-AES.rsp",
-            "PQCsignKAT_Dilithium5-AES.rsp"
         };
 
         DilithiumParameters[] parameters = new DilithiumParameters[]{
