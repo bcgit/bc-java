@@ -60,12 +60,13 @@ public class AlgorithmParametersSpi
                 v.add(new DERTaggedObject(false, 1, new DEROctetString(currentSpec.getEncodingV())));
             }
             v.add(new ASN1Integer(currentSpec.getMacKeySize()));
-            if (currentSpec.getNonce() != null)
+            byte[] currentSpecNonce = currentSpec.getNonce();
+            if (currentSpecNonce != null)
             {
                 ASN1EncodableVector cV = new ASN1EncodableVector();
 
                 cV.add(new ASN1Integer(currentSpec.getCipherKeySize()));
-                cV.add(new DEROctetString(currentSpec.getNonce()));
+                cV.add(new DEROctetString(currentSpecNonce));
 
                 v.add(new DERSequence(cV));
             }
