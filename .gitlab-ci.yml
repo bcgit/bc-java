@@ -5,29 +5,27 @@ stages:
 check-code:
   stage: check
   script:
-    - "apply_overlay bc-java ./"
-    - ". cienv.sh; \ gradle check -x test;"
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/check_java.sh\""
   
 test-code-8:
   stage: test
   script:
-    - "apply_overlay bc-java ./"
-    - "sh gettestdata.sh"
-    - "sh gettestlibs.sh"
-    - ". cienv-8.sh; \ gradle -stacktrace clean build;"
+   - "ecr_login"
+   - "ecr_pull vm_base_intel latest"
+   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
   
 test-code-11:
   stage: test
   script:
-    - "apply_overlay bc-java ./"
-    - "sh gettestdata.sh"
-    - "sh gettestlibs.sh"
-    - ". cienv-11.sh; \ gradle -stacktrace clean build;"
+   - "ecr_login"
+   - "ecr_pull vm_base_intel latest"
+   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_11.sh\""
   
 test-code-17:
   stage: test
   script:
-    - "apply_overlay bc-java ./"
-    - "sh gettestdata.sh"
-    - "sh gettestlibs.sh"
-    - ". cienv-17.sh; \ gradle -stacktrace clean build;"
+   - "ecr_login"
+   - "ecr_pull vm_base_intel latest"
+   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_17.sh\""
