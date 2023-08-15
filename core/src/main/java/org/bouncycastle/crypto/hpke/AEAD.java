@@ -44,9 +44,16 @@ public class AEAD
 
 
     // used by Sender
-    public byte[] seal(byte[] aad, byte[] pt)
+    public byte[] seal(byte[] aad, byte[] pt, int ptOffset, int ptLength)
             throws InvalidCipherTextException
     {
+        if (ptOffset < 0 || ptOffset > pt.length) {
+            throw new IllegalStateException("Invalid offset");
+        }
+        if (ptOffset + ptLength > pt.length) {
+            throw new IllegalStateException("Invalid length");
+        }
+
         CipherParameters params;
         switch (aeadId)
         {
@@ -61,19 +68,32 @@ public class AEAD
         }
         cipher.init(true, params);
         cipher.processAADBytes(aad, 0, aad.length);
-        byte[] ct = new byte[cipher.getOutputSize(pt.length)];
-        int len = cipher.processBytes(pt, 0, pt.length, ct, 0);
+        byte[] ct = new byte[cipher.getOutputSize(ptLength)];
+        int len = cipher.processBytes(pt, ptOffset, ptLength, ct, 0);
         cipher.doFinal(ct, len);
 
         seq++;
         return ct;
     }
 
+    // used by Sender
+    public byte[] seal(byte[] aad, byte[] pt)
+            throws InvalidCipherTextException
+    {
+        return this.seal(aad, pt, 0, pt.length);
+    }
 
     // used by Receiver
-    public byte[] open(byte[] aad, byte[] ct)
+    public byte[] open(byte[] aad, byte[] ct, int ctOffset, int ctLength)
         throws InvalidCipherTextException
     {
+        if (ctOffset < 0 || ctOffset > ct.length) {
+            throw new IllegalStateException("Invalid offset");
+        }
+        if (ctOffset + ctLength > ct.length) {
+            throw new IllegalStateException("Invalid length");
+        }
+
         CipherParameters params;
         switch (aeadId)
         {
@@ -90,12 +110,19 @@ public class AEAD
         cipher.init(false, params);
         cipher.processAADBytes(aad, 0, aad.length);
 
-        byte[] pt = new byte[cipher.getOutputSize(ct.length)];
-        int len = cipher.processBytes(ct, 0, ct.length, pt, 0);
+        byte[] pt = new byte[cipher.getOutputSize(ctLength)];
+        int len = cipher.processBytes(ct, ctOffset, ctLength, pt, 0);
         len += cipher.doFinal(pt, len);
 
         seq++;
         return pt;
+    }
+
+    // used by Receiver
+    public byte[] open(byte[] aad, byte[] ct)
+            throws InvalidCipherTextException
+    {
+        return this.open(aad, ct, 0, ct.length);
     }
 
     private byte[] ComputeNonce()
