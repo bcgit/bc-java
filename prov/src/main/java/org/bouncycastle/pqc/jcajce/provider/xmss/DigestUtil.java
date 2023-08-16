@@ -3,12 +3,10 @@ package org.bouncycastle.pqc.jcajce.provider.xmss;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
-import org.bouncycastle.util.Properties;
 
 class DigestUtil
 {
@@ -58,24 +56,9 @@ class DigestUtil
 
     public static byte[] getDigestResult(Digest digest)
     {
-        byte[] hash;
-        if (digest instanceof Xof && Properties.isOverrideSet("org.bouncycastle.xmss.old_style_prehash_xof"))
-        {
-            hash = new byte[digest.getDigestSize() * 2];
-        }
-        else
-        {
-            hash = new byte[digest.getDigestSize()];
-        }
+        byte[] hash = new byte[digest.getDigestSize()];
 
-        if (digest instanceof Xof)
-        {
-            ((Xof)digest).doFinal(hash, 0, hash.length);
-        }
-        else
-        {
-            digest.doFinal(hash, 0);
-        }
+        digest.doFinal(hash, 0);
 
         return hash;
     }
@@ -100,5 +83,52 @@ class DigestUtil
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + treeDigest);
+    }
+
+    static class DoubleDigest
+        implements Digest
+    {
+        private SHAKEDigest digest;
+
+        DoubleDigest(SHAKEDigest digest)
+        {
+             this.digest = digest;
+        }
+
+        @Override
+        public String getAlgorithmName()
+        {
+            return digest.getAlgorithmName() + "/" + (digest.getDigestSize() * 2 * 8);
+        }
+
+        @Override
+        public int getDigestSize()
+        {
+            return digest.getDigestSize() * 2;
+        }
+
+        @Override
+        public void update(byte in)
+        {
+             digest.update(in);
+        }
+
+        @Override
+        public void update(byte[] in, int inOff, int len)
+        {
+            digest.update(in, inOff, len);
+        }
+
+        @Override
+        public int doFinal(byte[] out, int outOff)
+        {
+            return digest.doFinal(out, outOff, this.getDigestSize());
+        }
+
+        @Override
+        public void reset()
+        {
+            digest.reset();
+        }
     }
 }

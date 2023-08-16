@@ -27,7 +27,6 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -505,8 +504,10 @@ public class XMSSMTTest
 
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA256ph, BCObjectIdentifiers.xmss_mt_SHA256, "SHA256", new SHA256Digest());
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE128ph, BCObjectIdentifiers.xmss_mt_SHAKE128, "SHAKE128", new SHAKEDigest(128));
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE128_512ph, BCObjectIdentifiers.xmss_mt_SHAKE128, "SHAKE128", new DoubleDigest(new SHAKEDigest(128)));
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHA512ph, BCObjectIdentifiers.xmss_mt_SHA512, "SHA512", new SHA512Digest());
         testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE256", new SHAKEDigest(256));
+        testPrehashAndWithoutPrehash(BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph, BCObjectIdentifiers.xmss_mt_SHAKE256, "SHAKE128", new DoubleDigest(new SHAKEDigest(256)));
     }
 
     public void testExhaustion()
@@ -674,14 +675,8 @@ public class XMSSMTTest
 
         byte[] dig = new byte[digest.getDigestSize()];
 
-        if (digest instanceof Xof)
-        {
-            ((Xof)digest).doFinal(dig, 0, dig.length);
-        }
-        else
-        {
-            digest.doFinal(dig, 0);
-        }
+        digest.doFinal(dig, 0);
+
         s2.update(dig);
 
         assertTrue(s2.verify(sig));
@@ -791,6 +786,53 @@ public class XMSSMTTest
             verifier.initVerify(publicKey);
             verifier.update(payload);
             assertTrue(verifier.verify(signature));
+        }
+    }
+
+    static class DoubleDigest
+        implements Digest
+    {
+        private SHAKEDigest digest;
+
+        DoubleDigest(SHAKEDigest digest)
+        {
+             this.digest = digest;
+        }
+
+        @Override
+        public String getAlgorithmName()
+        {
+            return digest.getAlgorithmName() + "/" + (digest.getDigestSize() * 2 * 8);
+        }
+
+        @Override
+        public int getDigestSize()
+        {
+            return digest.getDigestSize() * 2;
+        }
+
+        @Override
+        public void update(byte in)
+        {
+             digest.update(in);
+        }
+
+        @Override
+        public void update(byte[] in, int inOff, int len)
+        {
+            digest.update(in, inOff, len);
+        }
+
+        @Override
+        public int doFinal(byte[] out, int outOff)
+        {
+            return digest.doFinal(out, outOff, this.getDigestSize());
+        }
+
+        @Override
+        public void reset()
+        {
+            digest.reset();
         }
     }
 }

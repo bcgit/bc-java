@@ -227,7 +227,16 @@ public class XMSSSignatureSpi
     {
         public withShake128andPrehash()
         {
-            super("SHAKE128withXMSSMT-SHAKE128", new SHAKEDigest(128), new XMSSSigner());
+            super("SHAKE128withXMSS-SHAKE128", new SHAKEDigest(128), new XMSSSigner());
+        }
+    }
+
+    static public class withShake128_512andPrehash
+        extends XMSSSignatureSpi
+    {
+        public withShake128_512andPrehash()
+        {
+            super("SHAKE128(512)withXMSS-SHAKE128", new DigestUtil.DoubleDigest(new SHAKEDigest(128)), new XMSSSigner());
         }
     }
 
@@ -246,6 +255,15 @@ public class XMSSSignatureSpi
         public withShake256andPrehash()
         {
             super("SHAKE256withXMSS-SHAKE256", new SHAKEDigest(256), new XMSSSigner());
+        }
+    }
+
+    static public class withShake256_1024andPrehash
+        extends XMSSSignatureSpi
+    {
+        public withShake256_1024andPrehash()
+        {
+            super("SHAKE256(1024)withXMSS-SHAKE256", new DigestUtil.DoubleDigest(new SHAKEDigest(256)), new XMSSSigner());
         }
     }
 }
