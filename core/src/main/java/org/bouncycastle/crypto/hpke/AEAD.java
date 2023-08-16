@@ -51,7 +51,7 @@ public class AEAD
             throw new IndexOutOfBoundsException("Invalid offset");
         }
         if (ptOffset + ptLength > pt.length) {
-            throw new IllegalStateException("Invalid length");
+            throw new IndexOutOfBoundsException("Invalid length");
         }
 
         CipherParameters params;
