@@ -48,7 +48,7 @@ public class AEAD
             throws InvalidCipherTextException
     {
         if (ptOffset < 0 || ptOffset > pt.length) {
-            throw new IllegalStateException("Invalid offset");
+            throw new IndexOutOfBoundsException("Invalid offset");
         }
         if (ptOffset + ptLength > pt.length) {
             throw new IllegalStateException("Invalid length");
