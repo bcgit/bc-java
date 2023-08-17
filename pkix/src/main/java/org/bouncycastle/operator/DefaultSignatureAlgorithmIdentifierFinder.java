@@ -158,6 +158,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHXMSS", BCObjectIdentifiers.xmss_SHA512ph);
         algorithms.put("SHAKE128WITHXMSS", BCObjectIdentifiers.xmss_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSS", BCObjectIdentifiers.xmss_SHAKE256ph);
+        algorithms.put("SHAKE128(512)WITHXMSS", BCObjectIdentifiers.xmss_SHAKE128_512ph);
+        algorithms.put("SHAKE256(1024)WITHXMSS", BCObjectIdentifiers.xmss_SHAKE256_1024ph);
 
         algorithms.put("SHA256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA256ph);
         algorithms.put("SHA512WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA512ph);
@@ -173,6 +175,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHXMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512ph);
         algorithms.put("SHAKE128WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
+        algorithms.put("SHAKE128(256)WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128_256ph);
+        algorithms.put("SHAKE256(1024)WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph);
 
         algorithms.put("LMS", PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
 
@@ -311,6 +315,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.xmss_SHAKE256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHA256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHA512ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
