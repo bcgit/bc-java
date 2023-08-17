@@ -114,12 +114,14 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier xmss = bc_sig.branch("2");
     ASN1ObjectIdentifier xmss_SHA256ph = xmss.branch("1");
     ASN1ObjectIdentifier xmss_SHA512ph = xmss.branch("2");
-    ASN1ObjectIdentifier xmss_SHAKE128ph = xmss.branch("3");
-    ASN1ObjectIdentifier xmss_SHAKE256ph = xmss.branch("4");
+    ASN1ObjectIdentifier xmss_SHAKE128_512ph = xmss.branch("3");
+    ASN1ObjectIdentifier xmss_SHAKE256_1024ph = xmss.branch("4");
     ASN1ObjectIdentifier xmss_SHA256 = xmss.branch("5");
     ASN1ObjectIdentifier xmss_SHA512 = xmss.branch("6");
     ASN1ObjectIdentifier xmss_SHAKE128 = xmss.branch("7");
     ASN1ObjectIdentifier xmss_SHAKE256 = xmss.branch("8");
+    ASN1ObjectIdentifier xmss_SHAKE128ph = xmss.branch("9");
+    ASN1ObjectIdentifier xmss_SHAKE256ph = xmss.branch("10");
 
     /**
      * XMSS^MT
@@ -127,12 +129,14 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier xmss_mt = bc_sig.branch("3");
     ASN1ObjectIdentifier xmss_mt_SHA256ph = xmss_mt.branch("1");
     ASN1ObjectIdentifier xmss_mt_SHA512ph = xmss_mt.branch("2");
-    ASN1ObjectIdentifier xmss_mt_SHAKE128ph = xmss_mt.branch("3");
-    ASN1ObjectIdentifier xmss_mt_SHAKE256ph = xmss_mt.branch("4");
+    ASN1ObjectIdentifier xmss_mt_SHAKE128_512ph = xmss_mt.branch("3");
+    ASN1ObjectIdentifier xmss_mt_SHAKE256_1024ph = xmss_mt.branch("4");
     ASN1ObjectIdentifier xmss_mt_SHA256 = xmss_mt.branch("5");
     ASN1ObjectIdentifier xmss_mt_SHA512 = xmss_mt.branch("6");
     ASN1ObjectIdentifier xmss_mt_SHAKE128 = xmss_mt.branch("7");
     ASN1ObjectIdentifier xmss_mt_SHAKE256 = xmss_mt.branch("8");
+    ASN1ObjectIdentifier xmss_mt_SHAKE128ph = xmss_mt.branch("9");
+    ASN1ObjectIdentifier xmss_mt_SHAKE256ph = xmss_mt.branch("10");
 
     /**
      * qTESLA
