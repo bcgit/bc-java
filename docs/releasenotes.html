@@ -29,6 +29,11 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>BCJSSE: Added org.bouncycastle.jsse.client.omitSigAlgsCertExtension and org.bouncycastle.jsse.server.omitSigAlgsCertExtension boolean system properties
 to control (for client and server resp.) whether the signature_algorithms_cert extension should be omitted if it would be identical to signature_algorithms.
 Defaults to true, the historical behaviour.</li>
+<li>The low-level HPKE API now allows the sender to specify an ephemeral key pair.</li>
+</ul>
+<h3>2.1.3 Notes.</h3>
+<ul>
+<li>Kyber and Dilithium have been updated according to the latest draft of the standard. Dilithium-AES and Kyber-AES have now been removed.</li>
 </ul>
 
 <a id="r1rv76"><h3>2.2.1 Version</h3></a>
