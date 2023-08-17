@@ -45,26 +45,28 @@ public class AEAD
 
     // used by Sender
     public byte[] seal(byte[] aad, byte[] pt, int ptOffset, int ptLength)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
-        if (ptOffset < 0 || ptOffset > pt.length) {
+        if (ptOffset < 0 || ptOffset > pt.length)
+        {
             throw new IndexOutOfBoundsException("Invalid offset");
         }
-        if (ptOffset + ptLength > pt.length) {
+        if (ptOffset + ptLength > pt.length)
+        {
             throw new IndexOutOfBoundsException("Invalid length");
         }
 
         CipherParameters params;
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-            case HPKE.aead_AES_GCM256:
-            case HPKE.aead_CHACHA20_POLY1305:
-                params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
-                break;
-            case HPKE.aead_EXPORT_ONLY:
-            default:
-                throw new IllegalStateException("Export only mode, cannot be used to seal/open");
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+        case HPKE.aead_CHACHA20_POLY1305:
+            params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
+            break;
+        case HPKE.aead_EXPORT_ONLY:
+        default:
+            throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
         cipher.init(true, params);
         cipher.processAADBytes(aad, 0, aad.length);
@@ -78,7 +80,7 @@ public class AEAD
 
     // used by Sender
     public byte[] seal(byte[] aad, byte[] pt)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         return this.seal(aad, pt, 0, pt.length);
     }
@@ -87,24 +89,26 @@ public class AEAD
     public byte[] open(byte[] aad, byte[] ct, int ctOffset, int ctLength)
         throws InvalidCipherTextException
     {
-        if (ctOffset < 0 || ctOffset > ct.length) {
+        if (ctOffset < 0 || ctOffset > ct.length)
+        {
             throw new IndexOutOfBoundsException("Invalid offset");
         }
-        if (ctOffset + ctLength > ct.length) {
+        if (ctOffset + ctLength > ct.length)
+        {
             throw new IndexOutOfBoundsException("Invalid length");
         }
 
         CipherParameters params;
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-            case HPKE.aead_AES_GCM256:
-            case HPKE.aead_CHACHA20_POLY1305:
-                params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
-                break;
-            case HPKE.aead_EXPORT_ONLY:
-            default:
-                throw new IllegalStateException("Export only mode, cannot be used to seal/open");
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+        case HPKE.aead_CHACHA20_POLY1305:
+            params = new ParametersWithIV(new KeyParameter(key), ComputeNonce());
+            break;
+        case HPKE.aead_EXPORT_ONLY:
+        default:
+            throw new IllegalStateException("Export only mode, cannot be used to seal/open");
         }
 
         cipher.init(false, params);
@@ -120,7 +124,7 @@ public class AEAD
 
     // used by Receiver
     public byte[] open(byte[] aad, byte[] ct)
-            throws InvalidCipherTextException
+        throws InvalidCipherTextException
     {
         return this.open(aad, ct, 0, ct.length);
     }
@@ -133,7 +137,7 @@ public class AEAD
         //xor
         for (int i = 0; i < 8; i++)
         {
-            nonce[Nn-8+i] ^= seq_bytes[i];
+            nonce[Nn - 8 + i] ^= seq_bytes[i];
         }
         return nonce;
     }
