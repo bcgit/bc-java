@@ -248,10 +248,19 @@ public class HPKE
         return ctx.open(aad, ct);
     }
 
-
     public HPKEContextWithEncapsulation setupBaseS(AsymmetricKeyParameter pkR, byte[] info)
     {
         byte[][] output = dhkem.Encap(pkR); // sharedSecret, enc
+        HPKEContext ctx = keySchedule(mode_base, output[0], info, default_psk, default_psk_id);
+
+        return new HPKEContextWithEncapsulation(ctx, output[1]);
+    }
+
+    // Variant of setupBaseS() where caller can provide their own ephemeral key pair.
+    // This should only be used to validate test vectors.
+    public HPKEContextWithEncapsulation setupBaseS(AsymmetricKeyParameter pkR, byte[] info, AsymmetricCipherKeyPair kpE)
+    {
+        byte[][] output = dhkem.Encap(pkR, kpE); // sharedSecret, enc
         HPKEContext ctx = keySchedule(mode_base, output[0], info, default_psk, default_psk_id);
 
         return new HPKEContextWithEncapsulation(ctx, output[1]);

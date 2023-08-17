@@ -299,11 +299,14 @@ class DHKEM
         }
     }
 
-
     protected byte[][] Encap(AsymmetricKeyParameter pkR)
     {
+        return Encap(pkR, kpGen.generateKeyPair());// todo: can be replaced with deriveKeyPair(random)
+    }
+
+    protected byte[][] Encap(AsymmetricKeyParameter pkR, AsymmetricCipherKeyPair kpE)
+    {
         byte[][] output = new byte[2][];
-        AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair();// todo: can be replaced with deriveKeyPair(random)
 
         //DH
         agreement.init(kpE.getPrivate());
