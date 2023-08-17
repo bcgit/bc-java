@@ -71,4 +71,30 @@ class HKDF
 
         return rv;
     }
+
+    protected byte[] Extract(byte[] salt, byte[] ikm)
+    {
+        if (salt == null)
+        {
+            salt = new byte[hashLength];
+        }
+
+        return kdf.extractPRK(salt, ikm);
+    }
+
+    protected byte[] Expand(byte[] prk, byte[] info, int L)
+    {
+        if (L > (1 << 16))
+        {
+            throw new IllegalArgumentException("Expand length cannot be larger than 2^16");
+        }
+
+        kdf.init(HKDFParameters.skipExtractParameters(prk, info));
+
+        byte[] rv = new byte[L];
+
+        kdf.generateBytes(rv, 0, rv.length);
+
+        return rv;
+    }
 }
