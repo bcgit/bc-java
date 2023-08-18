@@ -49,19 +49,19 @@ public class X25519Test
         for (int i = 1; i <= 100; ++i)
         {
             // Each party generates an ephemeral private key, ...
-            RANDOM.nextBytes(kA);
-            RANDOM.nextBytes(kB);
+            X25519.generatePrivateKey(RANDOM, kA);
+            X25519.generatePrivateKey(RANDOM, kB);
 
             // ... publishes their public key, ...
-            X25519.scalarMultBase(kA, 0, qA, 0);
-            X25519.scalarMultBase(kB, 0, qB, 0);
+            X25519.generatePublicKey(kA, 0, qA, 0);
+            X25519.generatePublicKey(kB, 0, qB, 0);
 
             // ... computes the shared secret, ...
-            X25519.scalarMult(kA, 0, qB, 0, sA, 0);
-            X25519.scalarMult(kB, 0, qA, 0, sB, 0);
+            boolean rA = X25519.calculateAgreement(kA, 0, qB, 0, sA, 0);
+            boolean rB = X25519.calculateAgreement(kB, 0, qA, 0, sB, 0);
 
             // ... which is the same for both parties.
-            assertTrue("ECDH #" + i, Arrays.areEqual(sA, sB));
+            assertTrue("ECDH #" + i, rA == rB && Arrays.areEqual(sA, sB));
         }
     }
 
