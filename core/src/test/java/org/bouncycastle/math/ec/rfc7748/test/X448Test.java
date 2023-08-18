@@ -50,19 +50,19 @@ public class X448Test
         for (int i = 1; i <= 100; ++i)
         {
             // Each party generates an ephemeral private key, ...
-            RANDOM.nextBytes(kA);
-            RANDOM.nextBytes(kB);
+            X448.generatePrivateKey(RANDOM, kA);
+            X448.generatePrivateKey(RANDOM, kB);
 
             // ... publishes their public key, ...
-            X448.scalarMultBase(kA, 0, qA, 0);
-            X448.scalarMultBase(kB, 0, qB, 0);
+            X448.generatePublicKey(kA, 0, qA, 0);
+            X448.generatePublicKey(kB, 0, qB, 0);
 
             // ... computes the shared secret, ...
-            X448.scalarMult(kA, 0, qB, 0, sA, 0);
-            X448.scalarMult(kB, 0, qA, 0, sB, 0);
+            boolean rA = X448.calculateAgreement(kA, 0, qB, 0, sA, 0);
+            boolean rB = X448.calculateAgreement(kB, 0, qA, 0, sB, 0);
 
             // ... which is the same for both parties.
-            assertTrue("ECDH #" + i, Arrays.areEqual(sA, sB));
+            assertTrue("ECDH #" + i, rA == rB && Arrays.areEqual(sA, sB));
         }
     }
 
