@@ -7,6 +7,8 @@ abstract class Scalar25519
 {
     static final int SIZE = 8;
 
+    private static final int SCALAR_BYTES = SIZE * 4;
+
     private static final long M08L = 0x000000FFL;
     private static final long M28L = 0x0FFFFFFFL;
     private static final long M32L = 0xFFFFFFFFL;
@@ -186,7 +188,7 @@ abstract class Scalar25519
         x07 += (x06 >> 28); x06 &= M28L;
         x08 += (x07 >> 28); x07 &= M28L;
 
-        byte[] r = new byte[64];
+        byte[] r = new byte[SCALAR_BYTES];
         Codec.encode56(x00 | (x01 << 28), r,  0);
         Codec.encode56(x02 | (x03 << 28), r,  7);
         Codec.encode56(x04 | (x05 << 28), r, 14);
@@ -247,13 +249,13 @@ abstract class Scalar25519
         System.arraycopy(v1, 0, z1, 0, 4);
     }
 
-    static void toSignedDigits(int bits, int[] x, int[] z)
+    static void toSignedDigits(int bits, int[] z)
     {
 //        assert bits == 256;
 //        assert z.length >= SIZE;
 
 //        int c1 =
-        Nat.cadd(SIZE, ~x[0] & 1, x, L, z);     //assert c1 == 0;
+        Nat.caddTo(SIZE, ~z[0] & 1, L, z);     //assert c1 == 0;
 //        int c2 =
         Nat.shiftDownBit(SIZE, z, 1);           //assert c2 == (1 << 31);
     }
