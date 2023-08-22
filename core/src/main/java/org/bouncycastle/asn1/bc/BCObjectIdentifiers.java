@@ -199,6 +199,18 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sphincsPlus_haraka_256s_r3_simple = sphincsPlus.branch("35");
     ASN1ObjectIdentifier sphincsPlus_haraka_256f_r3_simple = sphincsPlus.branch("36");
 
+    ASN1ObjectIdentifier sphincsPlus_sha2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.16");
+    ASN1ObjectIdentifier sphincsPlus_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.13");
+    ASN1ObjectIdentifier sphincsPlus_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.4");
+
+    ASN1ObjectIdentifier sphincsPlus_sha2_192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.12");
+    ASN1ObjectIdentifier sphincsPlus_sha2_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.10");
+    ASN1ObjectIdentifier sphincsPlus_shake_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.3");
+    
+    ASN1ObjectIdentifier sphincsPlus_sha2_256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.12");
+    ASN1ObjectIdentifier sphincsPlus_sha2_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.10");
+    ASN1ObjectIdentifier sphincsPlus_shake_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.3");
+
     /**
      * Picnic
      */

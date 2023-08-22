@@ -36,6 +36,6 @@ public class SPHINCSPlusPublicKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(getParameters().getEncoded(), pk.seed, pk.root);
+        return Arrays.concatenate(pk.seed, pk.root);
     }
 }
