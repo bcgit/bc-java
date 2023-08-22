@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -33,6 +34,25 @@ public class SPHINCSPlus
             {
                 provider.addAlgorithm("Alg.Alias.Signature." + BCObjectIdentifiers.sphincsPlus + "." + i, "SPHINCSPLUS");
                 provider.addAlgorithm("Alg.Alias.Signature.OID." + BCObjectIdentifiers.sphincsPlus + "." + i, "SPHINCSPLUS");
+            }
+
+            ASN1ObjectIdentifier[] libOQSOids = new ASN1ObjectIdentifier[]
+            {
+                BCObjectIdentifiers.sphincsPlus_sha2_128s_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_128f_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_128f_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_192s_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_192f_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_192f_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_256s_simple,
+                BCObjectIdentifiers.sphincsPlus_sha2_256f_simple,
+                BCObjectIdentifiers.sphincsPlus_shake_256f_simple
+            };
+            
+            for (int i = 0; i != libOQSOids.length; i++)
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + libOQSOids[i], "SPHINCSPLUS");
+                provider.addAlgorithm("Alg.Alias.Signature.OID." + libOQSOids[i], "SPHINCSPLUS");
             }
 
             provider.addAlgorithm("Alg.Alias.Signature.SPHINCS+", "SPHINCSPLUS");
@@ -77,6 +97,11 @@ public class SPHINCSPlus
             registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCSPLUS", keyFact);
             registerOid(provider, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCSPLUS", keyFact);
 
+            for (int i = 0; i != libOQSOids.length; i++)
+            {
+                registerOid(provider, libOQSOids[i], "SPHINCSPLUS", keyFact);
+            }
+            
             registerOidAlgorithmParameters(provider, BCObjectIdentifiers.sphincsPlus, "SPHINCSPLUS");
         }
     }
