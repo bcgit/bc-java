@@ -1,4 +1,4 @@
-package org.bouncycastle.asn1.util;
+package org.bouncycastle.asn1.examples;
 
 import java.io.FileInputStream;
 
@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 /**
  * Command line ASN.1 Dump utility.
  * <p>
- *     Usage: org.bouncycastle.asn1.util.Dump [-v] ber_encoded_file
+ *     Usage: org.bouncycastle.asn1.examples.Dump [-v] ber_encoded_file
  * </p>
  */
 public class Dump
