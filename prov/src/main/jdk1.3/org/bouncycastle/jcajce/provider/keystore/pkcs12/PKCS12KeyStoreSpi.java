@@ -59,7 +59,6 @@ import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
