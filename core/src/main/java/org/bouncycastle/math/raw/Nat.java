@@ -232,6 +232,19 @@ public abstract class Nat
         return (int)c;
     }
 
+    public static int caddTo(int len, int mask, int[] x, int[] z)
+    {
+        long MASK = -(mask & 1) & M;
+        long c = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            c += (z[i] & M) + (x[i] & MASK);
+            z[i] = (int)c;
+            c >>>= 32;
+        }
+        return (int)c;
+    }
+
     public static void cmov(int len, int mask, int[] x, int xOff, int[] z, int zOff)
     {
         mask = -(mask & 1);
