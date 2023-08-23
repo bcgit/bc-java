@@ -1180,7 +1180,7 @@ public abstract class Ed25519
     {
         int[] n = new int[SCALAR_INTS];
         Scalar25519.decode(k, n);
-        Scalar25519.toSignedDigits(256, n, n);
+        Scalar25519.toSignedDigits(256, n);
 
         PointPrecompZ q = new PointPrecompZ();
         PointTemp t = new PointTemp();
@@ -1218,7 +1218,7 @@ public abstract class Ed25519
 
         int[] n = new int[SCALAR_INTS];
         Scalar25519.decode(k, n);
-        Scalar25519.toSignedDigits(PRECOMP_RANGE, n, n);
+        Scalar25519.toSignedDigits(PRECOMP_RANGE, n);
         groupCombBits(n);
 
         PointPrecomp p = new PointPrecomp();

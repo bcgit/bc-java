@@ -161,6 +161,12 @@ public abstract class X448
 
     public static void scalarMultBase(byte[] k, int kOff, byte[] r, int rOff)
     {
+        // Equivalent (but much slower)
+//        byte[] u = new byte[POINT_SIZE];
+//        u[0] = 5;
+//
+//        scalarMult(k, kOff, u, 0, r, rOff);
+
         int[] x = F.create();
         int[] y = F.create();
 
