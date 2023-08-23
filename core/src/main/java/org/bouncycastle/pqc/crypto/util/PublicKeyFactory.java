@@ -440,7 +440,7 @@ public class PublicKeyFactory
 
                 return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
@@ -576,7 +576,7 @@ public class PublicKeyFactory
 
                 return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 // we're a raw encoding
                 return new KyberPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
@@ -643,7 +643,7 @@ public class PublicKeyFactory
                     return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
                 }
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 // we're a raw encoding
                 return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
@@ -665,7 +665,7 @@ public class PublicKeyFactory
 
                 return new BIKEPublicKeyParameters(bikeParams, keyEnc);
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
