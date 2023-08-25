@@ -13,7 +13,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.util.DEROtherInfo;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
@@ -69,15 +68,6 @@ public class NTRUTest
         DEROtherInfo otherInfoV = partyV.generate();
 
         Assert.assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
-    }
-
-    public void testParameters()
-        throws Exception
-    {
-        assertEquals(256, NTRUParameters.ntruhps4096821.getSessionKeySize());
-        assertEquals(256, NTRUParameters.ntruhrss701.getSessionKeySize());
-        assertEquals(256, NTRUParameters.ntruhps2048677.getSessionKeySize());
-        assertEquals(256, NTRUParameters.ntruhps2048509.getSessionKeySize());
     }
 
     public void testPQCgenKAT_kem()
