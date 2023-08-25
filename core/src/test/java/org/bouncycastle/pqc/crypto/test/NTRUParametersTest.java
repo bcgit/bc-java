@@ -11,11 +11,11 @@ public class NTRUParametersTest
     public void testParameters()
         throws Exception
     {
-        assertEquals(128, NTRUParameters.ntruhps2048509.getSessionKeySize());
-        assertEquals(192, NTRUParameters.ntruhps2048677.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps2048509.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps2048677.getSessionKeySize());
         assertEquals(256, NTRUParameters.ntruhps4096821.getSessionKeySize());
 
-        assertEquals(192, NTRUParameters.ntruhrss701.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhrss701.getSessionKeySize());
     }
 
     public void testHpsParameters()
