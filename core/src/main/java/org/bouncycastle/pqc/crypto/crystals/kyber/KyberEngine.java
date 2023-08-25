@@ -1,8 +1,8 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.util.Arrays;
+
+import java.security.SecureRandom;
 
 class KyberEngine
 {
@@ -176,6 +176,7 @@ class KyberEngine
         this.CryptoSecretKeyBytes = KyberSecretKeyBytes;
         this.CryptoPublicKeyBytes = KyberPublicKeyBytes;
         this.CryptoCipherTextBytes = KyberCipherTextBytes;
+
 
         if(usingAes)
         {
