@@ -5,8 +5,8 @@ import org.bouncycastle.pqc.crypto.KEMParameters;
 public class KyberParameters
     implements KEMParameters
 {
-    public static final KyberParameters kyber512 = new KyberParameters("kyber512", 2, 128, false);
-    public static final KyberParameters kyber768 = new KyberParameters("kyber768", 3, 192, false);
+    public static final KyberParameters kyber512 = new KyberParameters("kyber512", 2, 256, false);
+    public static final KyberParameters kyber768 = new KyberParameters("kyber768", 3, 256, false);
     public static final KyberParameters kyber1024 = new KyberParameters("kyber1024", 4, 256, false);
 
     private final String name;

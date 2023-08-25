@@ -125,8 +125,8 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
     public void testParameters()
         throws Exception
     {
-        assertEquals(128, KyberParameters.kyber512.getSessionKeySize());
-        assertEquals(192, KyberParameters.kyber768.getSessionKeySize());
+        assertEquals(256, KyberParameters.kyber512.getSessionKeySize());
+        assertEquals(256, KyberParameters.kyber768.getSessionKeySize());
         assertEquals(256, KyberParameters.kyber1024.getSessionKeySize());
     }
 

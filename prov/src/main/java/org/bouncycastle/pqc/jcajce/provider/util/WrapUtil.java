@@ -36,7 +36,7 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(true, new KeyParameter(secret));
+            kWrap.init(true, new KeyParameter(Arrays.copyOfRange(secret, 0, (ktsParameterSpec.getKeySize() + 7) / 8)));
         }
         else
         {
@@ -54,7 +54,7 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(false, new KeyParameter(secret));
+            kWrap.init(false, new KeyParameter(secret, 0, (ktsParameterSpec.getKeySize()+ 7) / 8));
         }
         else
         {
@@ -141,8 +141,6 @@ public class WrapUtil
         {
             throw new InvalidKeyException("Unrecognized KDF: " + kdfAlgorithm.getAlgorithm());
         }
-
-        Arrays.fill(secret, (byte)0);
 
         return keyBytes;
     }

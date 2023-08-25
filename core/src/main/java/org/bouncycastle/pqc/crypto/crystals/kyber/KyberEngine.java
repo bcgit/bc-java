@@ -145,13 +145,13 @@ class KyberEngine
             KyberEta1 = 3;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
-            sessionKeyLength = 16;
+            sessionKeyLength = 32;
             break;
         case 3:
             KyberEta1 = 2;
             KyberPolyCompressedBytes = 128;
             KyberPolyVecCompressedBytes = k * 320;
-            sessionKeyLength = 24;
+            sessionKeyLength = 32;
             break;
         case 4:
             KyberEta1 = 2;

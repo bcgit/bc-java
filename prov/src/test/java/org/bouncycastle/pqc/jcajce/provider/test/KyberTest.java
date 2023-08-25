@@ -18,6 +18,7 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -57,8 +58,8 @@ public class KyberTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
         kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("Camellia"));
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("Camellia-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("Camellia", 128).withNoKdf().build());
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("Camellia-KWP", 128).withNoKdf().build());
     }
 
     public void testBasicKEMSEED()
@@ -67,7 +68,7 @@ public class KyberTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
         kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("SEED"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("SEED", 128).build());
     }
 
     public void testBasicKEMARIA()
@@ -76,11 +77,11 @@ public class KyberTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Kyber", "BCPQC");
         kpg.initialize(KyberParameterSpec.kyber512, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("ARIA"));
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("ARIA-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("ARIA", 256).build());
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("ARIA-KWP", 256).build());
     }
 
-    private void performKEMScipher(KeyPair kp, String algorithm, KEMParameterSpec ktsParameterSpec)
+    private void performKEMScipher(KeyPair kp, String algorithm, KTSParameterSpec ktsParameterSpec)
             throws Exception
     {
         Cipher w1 = Cipher.getInstance(algorithm, "BCPQC");
@@ -119,14 +120,14 @@ public class KyberTest
 
         KeyGenerator keyGen = KeyGenerator.getInstance("Kyber", "BCPQC");
 
-        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
+        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES", 128), new SecureRandom());
 
         SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
         assertEquals("AES", secEnc1.getAlgorithm());
         assertEquals(16, secEnc1.getEncoded().length);
 
-        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES", 128));
 
         SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 

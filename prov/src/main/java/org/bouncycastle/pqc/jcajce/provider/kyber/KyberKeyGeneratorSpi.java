@@ -92,7 +92,12 @@ public class KyberKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] sharedSecret = secEnc.getSecret();
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
 
             try
             {
@@ -111,7 +116,10 @@ public class KyberKeyGeneratorSpi
             KyberKEMExtractor kemExt = new KyberKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] secret = kemExt.extractSecret(encapsulation);
+            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
 
             SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
 
