@@ -236,8 +236,8 @@ class KyberCipherSpi
     }
 
     protected byte[] engineWrap(
-            Key key)
-            throws IllegalBlockSizeException, InvalidKeyException
+        Key key)
+        throws IllegalBlockSizeException, InvalidKeyException
     {
         byte[] encoded = key.getEncoded();
         if (encoded == null)
@@ -245,15 +245,14 @@ class KyberCipherSpi
             throw new InvalidKeyException("Cannot wrap key, null encoding.");
         }
 
+        SecretWithEncapsulation secEnc = null;
         try
         {
-            SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
+            secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
             Wrapper kWrap = WrapUtil.getKeyWrapper(kemParameterSpec, secEnc.getSecret());
 
             byte[] encapsulation = secEnc.getEncapsulation();
-
-            secEnc.destroy();
 
             byte[] keyToWrap = key.getEncoded();
 
@@ -267,9 +266,19 @@ class KyberCipherSpi
         {
             throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
         }
-        catch (DestroyFailedException e)
+        finally
         {
-            throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+            try
+            {
+                if (secEnc != null)
+                {
+                    secEnc.destroy();
+                }
+            }
+            catch (DestroyFailedException e)
+            {
+                throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+            }
         }
     }
 
@@ -284,15 +293,14 @@ class KyberCipherSpi
         {
             throw new InvalidKeyException("only SECRET_KEY supported");
         }
+        byte[] secret = null;
         try
         {
             KyberKEMExtractor kemExt = new KyberKEMExtractor(unwrapKey.getKeyParams());
 
-            byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
+            secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
             Wrapper kWrap = WrapUtil.getKeyUnwrapper(kemParameterSpec, secret);
-
-            Arrays.clear(secret);
 
             byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
@@ -307,6 +315,13 @@ class KyberCipherSpi
         catch (InvalidCipherTextException e)
         {
             throw new InvalidKeyException("unable to extract KTS secret: " + e.getMessage());
+        }
+        finally
+        {
+            if (secret != null)
+            {
+                Arrays.clear(secret);
+            }
         }
     }
 

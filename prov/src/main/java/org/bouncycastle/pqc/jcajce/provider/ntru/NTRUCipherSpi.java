@@ -25,8 +25,8 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -227,15 +227,14 @@ class NTRUCipherSpi
             throw new InvalidKeyException("Cannot wrap key, null encoding.");
         }
 
+        SecretWithEncapsulation secEnc = null;
         try
         {
-            SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
+            secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
             Wrapper kWrap = WrapUtil.getKeyWrapper(kemParameterSpec, secEnc.getSecret());
 
             byte[] encapsulation = secEnc.getEncapsulation();
-
-            secEnc.destroy();
 
             byte[] keyToWrap = key.getEncoded();
 
@@ -249,9 +248,19 @@ class NTRUCipherSpi
         {
             throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
         }
-        catch (DestroyFailedException e)
+        finally
         {
-            throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+            try
+            {
+                if (secEnc != null)
+                {
+                    secEnc.destroy();
+                }
+            }
+            catch (DestroyFailedException e)
+            {
+                throw new IllegalBlockSizeException("unable to destroy interim values: " + e.getMessage());
+            }
         }
     }
 
@@ -266,15 +275,14 @@ class NTRUCipherSpi
         {
             throw new InvalidKeyException("only SECRET_KEY supported");
         }
+        byte[] secret = null;
         try
         {
             NTRUKEMExtractor kemExt = new NTRUKEMExtractor(unwrapKey.getKeyParams());
 
-            byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
+            secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
             Wrapper kWrap = WrapUtil.getKeyUnwrapper(kemParameterSpec, secret);
-
-            Arrays.clear(secret);
 
             byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
@@ -289,6 +297,13 @@ class NTRUCipherSpi
         catch (InvalidCipherTextException e)
         {
             throw new InvalidKeyException("unable to extract KTS secret: " + e.getMessage());
+        }
+        finally
+        {
+            if (secret != null)
+            {
+                Arrays.clear(secret);
+            }
         }
     }
 

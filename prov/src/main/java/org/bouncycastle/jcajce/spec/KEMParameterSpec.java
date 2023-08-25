@@ -8,7 +8,7 @@ public class KEMParameterSpec
 {
     public KEMParameterSpec(String keyAlgorithmName)
     {
-        this(keyAlgorithmName, -1);
+        this(keyAlgorithmName, 256);
     }
 
     public KEMParameterSpec(String keyAlgorithmName, int keySizeInBits)

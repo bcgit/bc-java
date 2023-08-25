@@ -65,7 +65,7 @@ public class NTRUTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("SEED"));
+        performKEMScipher(kpg.generateKeyPair(), "NTRU", new KEMParameterSpec("SEED", 128));
     }
 
     public void testBasicKEMARIA()
@@ -108,7 +108,7 @@ public class NTRUTest
     }
 
     public void testGenerateAES()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", "BC");
         kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
@@ -117,14 +117,14 @@ public class NTRUTest
 
         KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", "BC");
 
-        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
+        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES", 128), new SecureRandom());
 
         SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
         assertEquals("AES", secEnc1.getAlgorithm());
         assertEquals(16, secEnc1.getEncoded().length);
 
-        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES", 128), new SecureRandom());
 
         SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 

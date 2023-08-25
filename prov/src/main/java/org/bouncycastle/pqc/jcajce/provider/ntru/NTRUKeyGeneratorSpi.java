@@ -63,7 +63,12 @@ public class NTRUKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] sharedSecret = secEnc.getSecret();
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
 
             try
             {
@@ -82,7 +87,10 @@ public class NTRUKeyGeneratorSpi
             NTRUKEMExtractor kemExt = new NTRUKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] secret = kemExt.extractSecret(encapsulation);
+            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
 
             SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
 

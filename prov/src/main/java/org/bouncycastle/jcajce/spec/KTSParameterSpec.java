@@ -71,7 +71,20 @@ public class KTSParameterSpec
         }
 
         /**
-         * Set the KDF algorithm and digest algorithm for wrap key generation.
+         * Use the shared secret directly for key wrap generation.
+         *
+         * @return the current Builder instance.
+         */
+        public Builder withNoKdf()
+        {
+            this.kdfAlgorithm = null;
+
+            return this;
+        }
+
+        /**
+         * Set the KDF algorithm and digest algorithm for wrap key generation. The default KDF is X9.44 KDF-3, also
+         * known as the NIST concatenation KDF.
          *
          * @param kdfAlgorithm the KDF algorithm to apply.
          * @return the current Builder instance.
