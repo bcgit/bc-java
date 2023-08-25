@@ -100,6 +100,11 @@ abstract class Symmetric
         }
     }
 
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     static class AesSymmetric
         extends Symmetric
     {

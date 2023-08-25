@@ -12,6 +12,12 @@ public class KyberParameters
     private final String name;
     private final int k;
     private final int sessionKeySize;
+
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     private final boolean usingAes;
 
     private KyberParameters(String name, int k, int sessionKeySize, boolean usingAes)
