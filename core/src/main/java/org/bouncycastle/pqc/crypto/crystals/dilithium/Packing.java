@@ -86,8 +86,8 @@ class Packing
         int i, j, k, end = 0;
         byte[] outBytes = new byte[engine.getCryptoBytes()];
 
-        System.arraycopy(c, 0, outBytes, 0, DilithiumEngine.SeedBytes);
-        end += DilithiumEngine.SeedBytes;
+        System.arraycopy(c, 0, outBytes, 0, engine.getDilithiumCTilde());
+        end += engine.getDilithiumCTilde();
 
         for (i = 0; i < engine.getDilithiumL(); ++i)
         {
@@ -121,7 +121,7 @@ class Packing
     {
         int i, j, k;
 
-        int end = DilithiumEngine.SeedBytes;
+        int end = engine.getDilithiumCTilde();
         for (i = 0; i < engine.getDilithiumL(); ++i)
         {
             z.getVectorIndex(i).zUnpack(Arrays.copyOfRange(sig, end + i * engine.getDilithiumPolyZPackedBytes(), end + (i + 1) * engine.getDilithiumPolyZPackedBytes()));
