@@ -150,7 +150,8 @@ public class X500NameTest
         throws Exception
     {
         ietfUtilsTest();
-        
+        bogusEqualsTest();
+
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");
         testEncodingPrintableString(BCStyle.DN_QUALIFIER, "123456");
@@ -674,6 +675,20 @@ public class X500NameTest
         throws Exception
     {
         IETFUtils.valueToString(new DERUTF8String(" "));
+    }
+
+    private void bogusEqualsTest()
+        throws Exception
+    {
+        try
+        {
+            new X500Name("CN=foo=bar");
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("badly formatted directory string", e.getMessage());
+        }
     }
 
     public static class DNQStyle
