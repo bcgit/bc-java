@@ -148,6 +148,12 @@ public class IETFUtils
                 }
 
                 String               value = vTok.nextToken();
+
+                if (vTok.hasMoreTokens())
+                {
+                    throw new IllegalArgumentException("badly formatted directory string");
+                }
+
                 ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
 
                 if (pTok.hasMoreTokens())
@@ -170,6 +176,12 @@ public class IETFUtils
                         }
 
                         value = vTok.nextToken();
+
+                        if (vTok.hasMoreTokens())
+                        {
+                            throw new IllegalArgumentException("badly formatted directory string");
+                        }
+
                         oid = x500Style.attrNameToOID(attr.trim());
 
 
@@ -196,6 +208,12 @@ public class IETFUtils
                 }
 
                 String               value = vTok.nextToken();
+
+                if (vTok.hasMoreTokens())
+                {
+                    throw new IllegalArgumentException("badly formatted directory string");
+                }
+
                 ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
 
                 builder.addRDN(oid, unescape(value));
