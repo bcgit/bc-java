@@ -150,6 +150,11 @@ public class X509v3CertificateBuilder
 
     private Extension doGetExtension(ASN1ObjectIdentifier oid)
     {
+        if (extGenerator.isEmpty())
+        {
+            return null;
+        }
+        
         Extensions exts = extGenerator.generate();
 
         return exts.getExtension(oid);
