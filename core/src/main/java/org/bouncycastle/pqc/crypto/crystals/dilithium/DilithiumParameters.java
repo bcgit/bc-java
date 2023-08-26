@@ -11,6 +11,11 @@ public class DilithiumParameters
     private final int k;
     private final String name;
 
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     private final boolean usingAES;// or shake
 
     private DilithiumParameters(String name, int k, boolean usingAES)

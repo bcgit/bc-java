@@ -15,6 +15,11 @@ import org.bouncycastle.util.Pack;
 
 abstract class SPHINCSPlusEngine
 {
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     final boolean robust;
 
     final int N;
