@@ -71,6 +71,11 @@ public class Extensions
     private Extensions(
         ASN1Sequence seq)
     {
+        if (seq.size() == 0)
+        {
+            throw new IllegalArgumentException("empty extension sequence found");
+        }
+
         Enumeration e = seq.getObjects();
 
         while (e.hasMoreElements())
@@ -110,6 +115,11 @@ public class Extensions
     public Extensions(
         Extension[] extensions)
     {
+        if (extensions == null || extensions.length == 0)
+        {
+            throw new IllegalArgumentException("extension array cannot be null or empty");
+        }
+
         for (int i = 0; i != extensions.length; i++)
         {
             Extension ext = extensions[i];
