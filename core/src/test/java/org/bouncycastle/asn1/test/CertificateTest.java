@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
 import org.bouncycastle.asn1.x509.AttCertValidityPeriod;
@@ -553,7 +554,37 @@ public class CertificateTest
             // expected - anything else is not!
         }
     }
-    
+
+    private void checkExtensions()
+    {
+        try
+        {
+            new Extensions((Extension[])null);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(e.getMessage(), "extension array cannot be null or empty");
+        }
+
+        try
+        {
+            new Extensions(new Extension[0]);
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(e.getMessage(), "extension array cannot be null or empty");
+        }
+
+        try
+        {
+            Extensions.getInstance(new DERSequence());
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(e.getMessage(), "empty extension sequence found");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -568,6 +599,7 @@ public class CertificateTest
         checkV1AttributeCertificate(9, attrCertv1);
         checkDudCertificate();
         checkMalformed();
+        checkExtensions();
     }
 
     public static void main(
