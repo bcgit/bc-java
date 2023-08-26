@@ -27,6 +27,12 @@ abstract class Symmetric
 
     abstract void stream256squeezeBlocks(byte[] output, int offset, int size);
 
+
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     static class AesSymmetric
         extends Symmetric
     {

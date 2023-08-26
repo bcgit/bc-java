@@ -8,6 +8,16 @@ check-code:
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/check_java.sh\""
+  artifacts:
+    when: always
+    paths:
+      - "core/build/reports"
+      - "prov/build/reports"
+      - "pg/build/reports"
+      - "pkix/build/reports"
+      - "mail/build/reports"
+      - "util/build/reports"
+      - "tls/build/reports"  
   
 test-code-8:
   stage: test
@@ -15,6 +25,16 @@ test-code-8:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
+  artifacts:
+    when: always
+    paths:
+      - "core/build/reports"
+      - "prov/build/reports"
+      - "pg/build/reports"
+      - "pkix/build/reports"
+      - "mail/build/reports"
+      - "util/build/reports"
+      - "tls/build/reports"  
   
 test-code-11:
   stage: test
@@ -22,6 +42,16 @@ test-code-11:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_11.sh\""
+  artifacts:
+    when: always
+    paths:
+      - "core/build/reports"
+      - "prov/build/reports"
+      - "pg/build/reports"
+      - "pkix/build/reports"
+      - "mail/build/reports"
+      - "util/build/reports"
+      - "tls/build/reports"  
   
 test-code-17:
   stage: test
