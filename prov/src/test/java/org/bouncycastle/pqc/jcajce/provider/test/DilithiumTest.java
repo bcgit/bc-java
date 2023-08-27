@@ -17,7 +17,7 @@ import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -260,19 +260,9 @@ sm = 3D7F3A26A1A6DC133D036981F7406AE0858C74121BDA303DD5DA8D9ACB68409F1051C88C4B1
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
-        ASN1Sequence seq = ASN1Sequence.getInstance(privInfo.parsePrivateKey());
+        ASN1OctetString seq = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
 
-        byte[] concKey = Arrays.concatenate(new byte[][]
-            {
-                ASN1BitString.getInstance(seq.getObjectAt(1)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(2)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(3)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(4)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(5)).getOctets(),
-                ASN1BitString.getInstance(seq.getObjectAt(6)).getOctets()
-            });
-
-        assertTrue(Arrays.areEqual(concKey, privK));
+        assertTrue(Arrays.areEqual(seq.getOctets(), privK));
 
         Signature sig = Signature.getInstance("Dilithium", "BC");
 

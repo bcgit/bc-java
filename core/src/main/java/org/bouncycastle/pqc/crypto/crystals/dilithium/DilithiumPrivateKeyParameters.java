@@ -26,6 +26,32 @@ public class DilithiumPrivateKeyParameters
         this.t1 = Arrays.clone(t1);
     }
 
+    public DilithiumPrivateKeyParameters(DilithiumParameters params, byte[] encoding, DilithiumPublicKeyParameters pubKey)
+    {
+        super(true, params);
+
+        DilithiumEngine eng = params.getEngine(null);
+        int index = 0;
+        this.rho = Arrays.copyOfRange(encoding, 0, DilithiumEngine.SeedBytes); index += DilithiumEngine.SeedBytes;
+        this.k = Arrays.copyOfRange(encoding, index, index + DilithiumEngine.SeedBytes); index += DilithiumEngine.SeedBytes;
+        this.tr = Arrays.copyOfRange(encoding, index, index + DilithiumEngine.TrBytes); index += DilithiumEngine.TrBytes;
+        int delta = eng.getDilithiumL() * eng.getDilithiumPolyEtaPackedBytes();
+        this.s1 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+        delta = eng.getDilithiumK() * eng.getDilithiumPolyEtaPackedBytes();
+        this.s2 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+        delta = eng.getDilithiumK() * DilithiumEngine.DilithiumPolyT0PackedBytes;
+        this.t0 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+
+        if (pubKey != null)
+        {
+            this.t1 = pubKey.getT1();
+        }
+        else
+        {
+            this.t1 = null;
+        }
+    }
+
     public byte[] getEncoded()
     {
         return Arrays.concatenate(new byte[][]{ rho, k, tr, s1, s2, t0 });
