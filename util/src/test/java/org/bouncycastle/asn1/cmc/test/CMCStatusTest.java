@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.cmc.CMCStatus;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.test.SimpleTest;
 
 
@@ -26,14 +27,14 @@ public class CMCStatusTest
 
     // From Page 68, CMC: Structures RFC 5272
     private static Object[][] types = new Object[][]{
-        {"success", new Long(0L) },
+        {"success", Longs.valueOf(0L) },
         // -- reserved            (1),
-        {"failed", new Long(2L) },
-        {"pending", new Long(3L) },
-        {"noSupport", new Long(4L) },
-        {"confirmRequired", new Long(5L) },
-        {"popRequired", new Long(6L) },
-        {"partial", new Long(7L) }
+        {"failed", Longs.valueOf(2L) },
+        {"pending", Longs.valueOf(3L) },
+        {"noSupport", Longs.valueOf(4L) },
+        {"confirmRequired", Longs.valueOf(5L) },
+        {"popRequired", Longs.valueOf(6L) },
+        {"partial", Longs.valueOf(7L) }
     };
     private static Map typesMap = new HashMap();
 
@@ -66,7 +67,7 @@ public class CMCStatusTest
         for (Iterator rangeKeys = range.keySet().iterator(); rangeKeys.hasNext(); )
         {
             Object j = rangeKeys.next();
-            if (!typesMap.containsKey(new Long(((ASN1Integer)j).getValue().longValue())))
+            if (!typesMap.containsKey(Longs.valueOf(((ASN1Integer)j).getValue().longValue())))
             {
                 fail("The 'range' map in CMCStatus contains a value not in the test ('typesMap') map, value was: " + j.toString());
             }
