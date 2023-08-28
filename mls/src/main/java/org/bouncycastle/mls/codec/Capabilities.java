@@ -9,7 +9,7 @@ public class Capabilities
 {
     List<Short> versions;
     List<Short> cipherSuites;
-    List<Short> extensions;
+    public List<Short> extensions;
     List<Short> proposals;
     List<Short> credentials;
 

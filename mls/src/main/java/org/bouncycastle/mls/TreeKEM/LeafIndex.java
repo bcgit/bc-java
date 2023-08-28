@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.List;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 public class LeafIndex
         implements MLSInputStream.Readable, MLSOutputStream.Writable

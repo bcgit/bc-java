@@ -1,19 +1,14 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.TreeKEM.LeafNode;
-import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
 import org.bouncycastle.util.Pack;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MLSMessage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    ProtocolVersion version;
+    public ProtocolVersion version;
     public WireFormat wireFormat;
     public PublicMessage publicMessage;
     public PrivateMessage privateMessage;
@@ -124,24 +119,6 @@ public class MLSMessage
                 //TODO: change and throw
                 return -1;
         }
-    }
-}
-
-enum ProtocolVersion
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((short) 0),
-    mls10((short) 1);
-    final short value;
-
-    ProtocolVersion(short value)
-    {
-        this.value = value;
-    }
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
     }
 }
 
@@ -285,85 +262,6 @@ class FramedContentTBS
     }
 }
 
-
-enum ExtensionType
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((short)0),
-    APPLICATION_ID((short)1),
-    RATCHET_TREE((short)2),
-    REQUIRED_CAPABILITIES((short)3),
-    EXTERNAL_PUB((short)4),
-    EXTERNAL_SENDERS((short)5);
-    final short value;
-    ExtensionType(short value)
-    {
-        this.value = value;
-    }
-
-    @SuppressWarnings("unused")
-    ExtensionType(MLSInputStream stream) throws IOException
-    {
-        this.value = (short) stream.read(short.class);
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-        stream.write(value);
-    }
-}
-
-enum ProposalOrRefType
-{
-    RESERVED((byte) 0),
-    PROPOSAL((byte) 1),
-    REFERENCE((byte) 2);
-
-    final byte value;
-
-    ProposalOrRefType(byte value)
-    {
-        this.value = value;
-    }
-}
-
-class ProposalOrRef
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    ProposalOrRefType type;
-    Proposal proposal;
-
-    //opaque HashReference<V>;
-    //HashReference ProposalRef;
-    //MakeProposalRef(value)   = RefHash("MLS 1.0 Proposal Reference", value)
-    //RefHash(label, value) = Hash(RefHashInput)
-    //For a ProposalRef, the value input is the AuthenticatedContent carrying the proposal.
-
-    // opaque reference = RefHash("MLS 1.0 Proposal Reference", auth.proposal
-    byte[] reference; // TODO ProposalRef
-
-    ProposalOrRef(MLSInputStream stream) throws IOException
-    {
-        this.type = ProposalOrRefType.values()[(byte) stream.read(byte.class)];
-        switch (type)
-        {
-            case PROPOSAL:
-                proposal = (Proposal) stream.read(Proposal.class);
-                break;
-            case REFERENCE:
-                //TODO
-                reference = stream.readOpaque();
-                break;
-        }
-    }
-
-    @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
-    {
-
-    }
-}
 
 class SenderData
     implements MLSInputStream.Readable, MLSOutputStream.Writable

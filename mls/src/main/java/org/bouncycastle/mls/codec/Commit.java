@@ -1,29 +1,70 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.client.CachedProposal;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Commit
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    List<ProposalOrRef> proposals;
+    public List<ProposalOrRef> proposals;
 
     byte[] proposalsBytes;
-    UpdatePath updatePath;
+    public UpdatePath updatePath;
+    public byte[] validityExternal()
+    {
+        // External Commits MUST contain a path field (and is therefore a "full"
+        // Commit). The joiner is added at the leftmost free leaf node (just as if
+        // they were added with an Add proposal), and the path is calculated relative
+        // to that leaf node.
+
+        // The Commit MUST NOT include any proposals by reference, since an external
+        // joiner cannot determine the validity of proposals sent within the group
+        for (ProposalOrRef p: proposals)
+        {
+            if (p.type == ProposalOrRefType.REFERENCE)
+            {
+                return null;
+            }
+        }
+        if (updatePath == null)
+        {
+            return null;
+        }
+
+        int extIndex;
+        for (extIndex = 0; extIndex < proposals.size(); extIndex++)
+        {
+            if (proposals.get(extIndex).proposal.getProposalType() == ProposalType.EXTERNAL_INIT)
+            {
+                break;
+            }
+        }
+        if (extIndex == proposals.size())
+        {
+            return null;
+        }
+
+        return proposals.get(extIndex).proposal.externalInit.kemOutput;
+    }
 
     Commit(MLSInputStream stream) throws IOException
     {
-//        proposals = new ArrayList<>();
-//        stream.readList(proposals ,ProposalOrRef.class);
-        proposalsBytes = stream.readOpaque();
+        proposals = new ArrayList<>();
+        stream.readList(proposals ,ProposalOrRef.class);
+//        proposalsBytes = stream.readOpaque();
         updatePath = (UpdatePath) stream.readOptional(UpdatePath.class);
     }
 
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.writeOpaque(proposalsBytes);
-//        stream.writeList(proposals);
+//        stream.writeOpaque(proposalsBytes);
+        stream.writeList(proposals);
         stream.writeOptional(updatePath);
     }
 }

@@ -6,8 +6,8 @@ import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.mls.*;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
-import org.bouncycastle.mls.protocol.ResumptionPSKUsage;
+import org.bouncycastle.mls.codec.PreSharedKeyID;
+import org.bouncycastle.mls.codec.ResumptionPSKUsage;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;

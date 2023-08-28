@@ -1,4 +1,4 @@
-package org.bouncycastle.mls.protocol;
+package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;

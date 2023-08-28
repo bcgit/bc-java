@@ -14,21 +14,16 @@ import org.bouncycastle.mls.codec.Commit;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.GroupInfo;
 import org.bouncycastle.mls.codec.GroupSecrets;
-import org.bouncycastle.mls.codec.KeyPackage;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
-import org.bouncycastle.mls.codec.Optional;
 import org.bouncycastle.mls.codec.PathSecret;
-import org.bouncycastle.mls.codec.PrivateMessage;
 import org.bouncycastle.mls.codec.Proposal;
-import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.UpdatePath;
-import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.codec.MLSMessage;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
+import org.bouncycastle.mls.codec.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -37,12 +32,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class VectorTest
         extends TestCase
@@ -711,10 +704,10 @@ public class VectorTest
                     assertEquals(kpMessage.getCipherSuite(), cipherSuite);
                     assertEquals(kpMessage.getCipherSuite(), cipherSuite);
 
-                    int kpi = welcomeMessage.welcome.find(suite, kpMessage.keyPackage);
+                    int kpi = welcomeMessage.welcome.find(kpMessage.keyPackage);
                     assertTrue(kpi != -1);
-                    GroupSecrets groupSecrets = welcomeMessage.welcome.decryptSecrets(suite, kpi, init_priv);
-                    GroupInfo groupInfo = welcomeMessage.welcome.decrypt(suite, groupSecrets.joiner_secret, new ArrayList<>());
+                    GroupSecrets groupSecrets = welcomeMessage.welcome.decryptSecrets(kpi, init_priv);
+                    GroupInfo groupInfo = welcomeMessage.welcome.decrypt(groupSecrets.joiner_secret, new ArrayList<>());
 
                     boolean verified = groupInfo.verify(suite, signer_pub);
                     assertTrue(verified);
@@ -794,7 +787,7 @@ public class VectorTest
                             beforeTree.updateLeaf(new LeafIndex(proposal_sender), proposalObj.getLeafNode());
                             break;
                         case REMOVE:
-                            beforeTree.blankPath(new LeafIndex(proposalObj.remove.removed));
+                            beforeTree.blankPath(proposalObj.remove.removed);
                             beforeTree.truncate();
                             break;
                     }
@@ -1342,4 +1335,5 @@ public class VectorTest
             }
         }
     }
+
 }

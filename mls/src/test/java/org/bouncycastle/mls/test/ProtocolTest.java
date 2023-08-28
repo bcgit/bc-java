@@ -3,9 +3,9 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestSuite;
 import org.bouncycastle.PrintTestResult;
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.mls.protocol.PSKType;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
-import org.bouncycastle.mls.protocol.ResumptionPSKUsage;
+import org.bouncycastle.mls.codec.PSKType;
+import org.bouncycastle.mls.codec.PreSharedKeyID;
+import org.bouncycastle.mls.codec.ResumptionPSKUsage;
 import org.bouncycastle.util.encoders.Hex;
 
 public class ProtocolTest

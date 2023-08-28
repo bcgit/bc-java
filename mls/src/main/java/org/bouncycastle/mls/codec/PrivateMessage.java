@@ -95,6 +95,7 @@ public class PrivateMessage
                 contentCt
         );
     }
+    //TODO: change senderDataSecretBytes to Secret class?
     public AuthenticatedContent unprotect(CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
     {
         // Decrypt and parse the sender data

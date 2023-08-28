@@ -32,6 +32,12 @@ public class Secret {
         return Arrays.equals(value, secret.value) && Arrays.equals(parents, secret.parents);
     }
 
+    @Override
+    public int hashCode()
+    {
+        return Arrays.hashCode(value);
+    }
+
     public final byte[] value() {
         return value;
     }

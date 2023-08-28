@@ -1,11 +1,13 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+
 import java.io.IOException;
 
 public class Extension
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    ExtensionType extensionType;
+    public ExtensionType extensionType;
     byte[] extension_data;
 
     public Extension(ExtensionType extensionType, byte[] extension_data)
@@ -18,6 +20,15 @@ public class Extension
     {
         this.extensionType = ExtensionType.values()[(short) stream.read(short.class)];
         this.extension_data = stream.readOpaque();
+    }
+
+    public TreeKEMPublicKey getRatchetTree() throws IOException
+    {
+        if (extensionType == ExtensionType.RATCHET_TREE)
+        {
+            return (TreeKEMPublicKey) MLSInputStream.decode(extension_data, TreeKEMPublicKey.class);
+        }
+        return null;
     }
 
 

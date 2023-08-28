@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
+import org.bouncycastle.mls.codec.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
@@ -212,6 +212,11 @@ psk_secret (or 0) --> KDF.Extract
     // Further dervied products
     final AsymmetricCipherKeyPair externalKeyPair;
     final GroupKeySet groupKeySet;
+
+    public GroupKeySet getEncryptionKeys(TreeSize size) throws IOException, IllegalAccessException
+    {
+        return new GroupKeySet(suite, size, encryptionSecret);
+    }
 
     public static KeyGeneration senderDataKeys(CipherSuite suite, byte[] senderDataSecretBytes, byte[] ciphertext) throws IOException
     {

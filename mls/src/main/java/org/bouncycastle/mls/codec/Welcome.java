@@ -5,7 +5,6 @@ import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,11 +14,13 @@ import java.util.List;
 public class Welcome
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    short cipher_suite;
+    public short cipher_suite;
+
+    CipherSuite suite;
     List<EncryptedGroupSecrets> secrets;
     byte[] encrypted_group_info;
 
-    public int find(CipherSuite suite, KeyPackage kp) throws IOException
+    public int find(KeyPackage kp) throws IOException
     {
 
         byte[] ref = suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference");
@@ -34,9 +35,9 @@ public class Welcome
         return -1;
     }
 
-    public GroupInfo decrypt(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException, InvalidCipherTextException
+    public GroupInfo decrypt(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException, InvalidCipherTextException
     {
-        KeyGeneration keyAndNonce = getGroupInforKeyNonce(suite, joinerSecret, psks);
+        KeyGeneration keyAndNonce = getGroupInforKeyNonce(joinerSecret, psks);
         byte[] groupInfoData = suite.getAEAD().open(
                 keyAndNonce.key,
                 keyAndNonce.nonce,
@@ -45,7 +46,7 @@ public class Welcome
         return (GroupInfo) MLSInputStream.decode(groupInfoData, GroupInfo.class);
     }
 
-    private KeyGeneration getGroupInforKeyNonce(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException
+    private KeyGeneration getGroupInforKeyNonce(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException
     {
         Secret welcomeSecret = KeyScheduleEpoch.welcomeSecret(suite, joinerSecret, psks);
         Secret key = welcomeSecret.expandWithLabel(suite, "key", new byte[0], suite.getAEAD().getKeySize());
@@ -53,7 +54,7 @@ public class Welcome
         return new KeyGeneration(-1, key, nonce);
     }
 
-    public GroupSecrets decryptSecrets(CipherSuite suite, int kpIndex, byte[] initPrivKey) throws InvalidCipherTextException, IOException
+    public GroupSecrets decryptSecrets(int kpIndex, byte[] initPrivKey) throws InvalidCipherTextException, IOException
     {
         HPKECiphertext ct = secrets.get(kpIndex).encrypted_group_secrets;
         byte[] secretsData = suite.decryptWithLabel(initPrivKey, "Welcome", encrypted_group_info, ct.kem_output, ct.ciphertext);
@@ -64,6 +65,7 @@ public class Welcome
     Welcome(MLSInputStream stream) throws IOException
     {
         cipher_suite = (short) stream.read(short.class);
+        suite = new CipherSuite(cipher_suite);
         secrets = new ArrayList<>();
         stream.readList(secrets, EncryptedGroupSecrets.class);
         encrypted_group_info = stream.readOpaque();

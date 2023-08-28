@@ -39,4 +39,9 @@ public class TranscriptHash
         byte[] transcript = Arrays.concatenate(confirmed, auth.getInterimTranscriptHashInput());
         interim = suite.hash(transcript);
     }
+    public void updateInterim(byte[] confirmationTag) throws IOException
+    {
+        byte[] transcript = Arrays.concatenate(confirmed, confirmationTag);
+        interim = suite.hash(transcript);
+    }
 }

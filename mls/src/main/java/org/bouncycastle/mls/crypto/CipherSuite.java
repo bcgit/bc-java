@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.hpke.AEAD;
 import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
@@ -28,7 +27,6 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class CipherSuite {
     public static final short MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519  = 0x0001 ;
@@ -357,7 +355,6 @@ public class CipherSuite {
 
     public byte[] serializeSignaturePublicKey(AsymmetricKeyParameter key)
     {
-
         switch (sigAlgo)
         {
             case ecdsa:
@@ -370,37 +367,27 @@ public class CipherSuite {
                 throw new IllegalStateException("invalid sig algorithm");
         }
     }
-    public AsymmetricKeyParameter deserializeSignaturePrivateKey(byte[] priv)
+    public AsymmetricCipherKeyPair deserializeSignaturePrivateKey(byte[] priv)
     {
         switch (sigAlgo)
         {
             case ecdsa:
                 BigInteger d = new BigInteger(1, priv);
-                return new ECPrivateKeyParameters(d, domainParams);
+                ECPrivateKeyParameters ec = new ECPrivateKeyParameters(d, domainParams);
+
+                ECPoint Q = new FixedPointCombMultiplier().multiply(domainParams.getG(), ec.getD());
+                return new AsymmetricCipherKeyPair(new ECPublicKeyParameters(Q, domainParams), ec);
             case ed25519:
-                return new Ed25519PrivateKeyParameters(priv);
+                Ed25519PrivateKeyParameters ed25519 = new Ed25519PrivateKeyParameters(priv);
+                return new AsymmetricCipherKeyPair(ed25519.generatePublicKey(), ed25519);
             case ed448:
-               return new Ed448PrivateKeyParameters(priv);
+                Ed448PrivateKeyParameters ed448 = new Ed448PrivateKeyParameters(priv);
+                return new AsymmetricCipherKeyPair(ed448.generatePublicKey(), ed448);
             default:
                 throw new IllegalStateException("invalid sig algorithm");
         }
     }
 
-    public AsymmetricKeyParameter getSignaturePublicKey(AsymmetricKeyParameter priv)
-    {
-        switch (sigAlgo)
-        {
-            case ecdsa:
-                ECPoint Q = new FixedPointCombMultiplier().multiply(domainParams.getG(), ((ECPrivateKeyParameters)priv).getD());
-                return new ECPublicKeyParameters(Q, domainParams);
-            case ed25519:
-                return ((Ed25519PrivateKeyParameters)priv).generatePublicKey();
-            case ed448:
-                return ((Ed448PrivateKeyParameters)priv).generatePublicKey();
-            default:
-                return null;
-        }
-    }
     public byte[] signWithLabel(byte[] priv, String label, byte[] content) throws IOException, CryptoException
     {
         GenericContent signContent = new GenericContent(label, content);

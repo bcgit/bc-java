@@ -266,6 +266,20 @@ public class TreeKEMPublicKey
         setHashAll();
     }
 
+    public int find(LeafNode leaf)
+    {
+        for (int i = 0; i < size.leafCount(); i++)
+        {
+            LeafIndex index = new LeafIndex(i);
+            OptionalNode node = nodeAt(index);
+            if (!node.isBlank() && node.isLeaf() && node.getLeafNode().equals(leaf))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public boolean hasLeaf(LeafIndex index)
     {
         return !nodeAt(index).isBlank();

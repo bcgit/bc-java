@@ -1,6 +1,5 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 

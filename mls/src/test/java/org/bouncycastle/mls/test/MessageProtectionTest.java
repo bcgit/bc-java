@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.GroupKeySet;
@@ -180,9 +181,8 @@ public class MessageProtectionTest
 
                     suite = new CipherSuite(cipher_suite);
 
-                    AsymmetricKeyParameter sigPriv = suite.deserializeSignaturePrivateKey(signature_priv);
-                    AsymmetricKeyParameter sigPub = suite.getSignaturePublicKey(sigPriv);
-                    byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigPub);
+                    AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
+                    byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
 
                     // Sanity Check
                     assertTrue(Arrays.areEqual(signature_pub, sigPubBytes));

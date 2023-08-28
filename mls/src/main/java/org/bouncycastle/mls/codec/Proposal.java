@@ -1,8 +1,8 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
-import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,12 +13,12 @@ public class Proposal
 {
     ProposalType proposalType;
     Add add;
-    Update update;
+    public Update update;
     public Remove remove;
-    PreSharedKey preSharedKey;
+    public PreSharedKey preSharedKey;
     ReInit reInit;
     ExternalInit externalInit;
-    GroupContextExtensions groupContextExtensions;
+    public GroupContextExtensions groupContextExtensions;
 
     public LeafNode getLeafNode()
     {
@@ -184,16 +184,21 @@ public class Proposal
         {
             this.leafNode = leafNode;
         }
+
+        public LeafNode getLeafNode()
+        {
+            return leafNode;
+        }
     }
 
     public static class Remove
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        public int removed;
+        public LeafIndex removed;
 
         public Remove(MLSInputStream stream) throws IOException
         {
-            removed = (int) stream.read(int.class);
+            removed = (LeafIndex) stream.read(LeafIndex.class);
         }
 
         @Override
@@ -201,17 +206,12 @@ public class Proposal
         {
             stream.write(removed);
         }
-
-        public Remove(int removed)
-        {
-            this.removed = removed;
-        }
     }
 
     public static class PreSharedKey
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        PreSharedKeyID psk;
+        public PreSharedKeyID psk;
 
         PreSharedKey(MLSInputStream stream) throws IOException
         {
@@ -291,12 +291,12 @@ public class Proposal
     public static class GroupContextExtensions
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        public GroupContextExtensions(List<Extension> extensions)
+        public GroupContextExtensions(ArrayList<Extension> extensions)
         {
             this.extensions = extensions;
         }
 
-        List<Extension> extensions;
+        public ArrayList<Extension> extensions;
 
         GroupContextExtensions(MLSInputStream stream) throws IOException
         {

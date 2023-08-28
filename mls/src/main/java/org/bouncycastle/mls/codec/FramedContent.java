@@ -5,16 +5,16 @@ import java.io.IOException;
 public class FramedContent
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    byte[] group_id;
-    long epoch;
-    Sender sender;
+    public byte[] group_id;
+    public long epoch;
+    public Sender sender;
     byte[] authenticated_data;
     byte[] application_data;
 
     final ContentType contentType;
 
     Proposal proposal;
-    Commit commit;
+    public Commit commit;
 
     public ContentType getContentType()
     {

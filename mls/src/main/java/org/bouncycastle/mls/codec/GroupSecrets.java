@@ -1,7 +1,5 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.protocol.PreSharedKeyID;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +9,8 @@ public class GroupSecrets
 {
 
     public byte[] joiner_secret;
-    PathSecret path_secret;
-    List<PreSharedKeyID> psks;
+    public PathSecret path_secret;
+    public List<PreSharedKeyID> psks;
 
     GroupSecrets(MLSInputStream stream) throws IOException
     {

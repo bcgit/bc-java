@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.TreeKEM;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.crypto.CipherSuite;
@@ -99,6 +100,35 @@ public class TreeKEMPrivateKey
             System.out.println("    " + n.value() + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
         }
     }
+
+    public void truncate(TreeSize size)
+    {
+        NodeIndex ni = new NodeIndex(new LeafIndex((int) (size.leafCount() - 1)));
+        List<NodeIndex> toRemove = new ArrayList<>();
+        for (NodeIndex n : pathSecrets.keySet())
+        {
+            if (n.value() > ni.value())
+            {
+                toRemove.add(ni);
+            }
+        }
+
+        for (NodeIndex n : toRemove)
+        {
+            pathSecrets.remove(n);
+            privateKeyCache.remove(n);
+        }
+    }
+
+    public void setLeafKey(byte[] leafSkBytes)
+    {
+        NodeIndex n = new NodeIndex(index);
+        pathSecrets.remove(n);
+
+        AsymmetricCipherKeyPair leafSk = suite.deserializeSignaturePrivateKey(leafSkBytes);
+        privateKeyCache.put(n, leafSk);
+    }
+
     public void decap(LeafIndex from, TreeKEMPublicKey pub, byte[] context, UpdatePath path, List<LeafIndex> except) throws Exception
     {
         // find decap target

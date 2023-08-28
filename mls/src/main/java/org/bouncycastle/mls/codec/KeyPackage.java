@@ -11,8 +11,8 @@ public class KeyPackage
 {
     ProtocolVersion version;
     public short cipher_suite;
-    byte[] init_key;
-    LeafNode leaf_node;
+    public byte[] init_key;
+    public LeafNode leaf_node;
     List<Extension> extensions;
     /* SignWithLabel(., "KeyPackageTBS", KeyPackageTBS) */
     byte[] signature; // KeyPackageTBS (without signature)

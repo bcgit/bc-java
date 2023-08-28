@@ -5,8 +5,8 @@ import java.io.IOException;
 public class Sender
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    SenderType senderType;
-    int node_index; // leaf or sender
+    public SenderType senderType;
+    public int node_index; // leaf or sender
 
     public Sender(SenderType senderType, int node_index)
     {

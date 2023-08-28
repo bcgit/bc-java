@@ -9,6 +9,8 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,19 +18,19 @@ import java.util.List;
 public class LeafNode
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    byte[] encryption_key;
-    byte[] signature_key;
+    public byte[] encryption_key;
+    public byte[] signature_key;
     Credential credential;
-    Capabilities capabilities;
+    public Capabilities capabilities;
     LeafNodeSource leaf_node_source;
 
     //in switch
     LifeTime lifeTime;
     byte[] parent_hash;
 
-    List<Extension> extensions;
+    public List<Extension> extensions;
     /* SignWithLabel(., "LeafNodeTBS", LeafNodeTBS) */
-    byte[] signature; // not in TBS
+    public byte[] signature; // not in TBS
 
     public LeafNode()
     {
@@ -55,8 +57,6 @@ public class LeafNode
         extensions = new ArrayList<>();
         stream.readList(extensions, Extension.class);
         signature = stream.readOpaque();
-
-
     }
 
     @Override
@@ -81,6 +81,12 @@ public class LeafNode
         stream.writeList(extensions);
         stream.writeOpaque(signature);
     }
+
+    public LeafNodeSource getSource()
+    {
+        return leaf_node_source;
+    }
+
     public byte[] toBeSigned(byte[] groupId, int leafIndex) throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
@@ -114,6 +120,26 @@ public class LeafNode
         return stream.toByteArray();
     }
 
+    public boolean verifyExtensionSupport(List<Extension> extensions)
+    {
+        //TODO: Verify that extensions in the list are supported
+
+        //TODO: Verify Required Capability extension is supported (if there is one)
+
+        return true;
+    }
+
+    public boolean verifyLifetime()
+    {
+        //TODO: check
+        if (leaf_node_source != LeafNodeSource.KEY_PACKAGE)
+        {
+            return true;
+        }
+        long now = Instant.now().getLong(ChronoField.INSTANT_SECONDS);
+        return (now > lifeTime.not_before) && (now < lifeTime.not_after);
+    }
+
     public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
     {
         if (credential.credentialType == CredentialType.x509)
@@ -137,7 +163,7 @@ public class LeafNode
 
     private void sign(CipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
     {
-        byte[] sigPub = suite.serializeSignaturePublicKey(suite.getSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv)));
+        byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
         if (!Arrays.equals(sigPub, signature_key))
         {
             throw new Exception("Signature key mismatch");
@@ -173,27 +199,32 @@ public class LeafNode
         clone.signature = this.signature.clone();
         return clone;
     }
-}
-
-enum LeafNodeSource
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
-{
-    RESERVED((byte) 0),
-    KEY_PACKAGE((byte) 1),
-    UPDATE((byte) 2),
-    COMMIT((byte) 3);
-
-    final byte value;
-
-    LeafNodeSource(byte value)
-    {
-        this.value = value;
-    }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public boolean equals(Object o)
     {
-        stream.write(value);
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        LeafNode leafNode = (LeafNode) o;
+
+        //TODO: check other variables?
+
+        if (!Arrays.equals(encryption_key, leafNode.encryption_key))
+        {
+            return false;
+        }
+        if (!Arrays.equals(signature_key, leafNode.signature_key))
+        {
+            return false;
+        }
+        return Arrays.equals(signature, leafNode.signature);
     }
 }
 

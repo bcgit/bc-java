@@ -1,18 +1,16 @@
-package org.bouncycastle.mls.protocol;
+package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.codec.ContentType;
-import org.bouncycastle.mls.codec.MLSInputStream;
-import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
 
 public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.Writable {
 
     public static class External {
-        public final byte[] externalPSKID;
+        public final Secret externalPSKID;
 
         public External(byte[] externalPSKID) {
-            this.externalPSKID = externalPSKID;
+            this.externalPSKID = new Secret(externalPSKID);
         }
     }
 
@@ -82,7 +80,7 @@ public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.
         stream.write(pskType);
         switch (pskType) {
             case EXTERNAL:
-                stream.writeOpaque(external.externalPSKID);
+                stream.writeOpaque(external.externalPSKID.value());
                 break;
 
             case RESUMPTION:
