@@ -4,6 +4,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 public interface GMObjectIdentifiers
 {
+    //1.2.156.10197: Chinese Cryptography Standardization Technology Committee (CCSTC)
+    //1.2.156.11235: China Broadband Wireless IP Standard Group
     ASN1ObjectIdentifier sm_scheme = new ASN1ObjectIdentifier("1.2.156.10197.1");
 
     ASN1ObjectIdentifier sm6_ecb = sm_scheme.branch("101.1");
@@ -46,7 +48,20 @@ public interface GMObjectIdentifiers
     ASN1ObjectIdentifier sm2exchange = sm_scheme.branch("301.2");
     ASN1ObjectIdentifier sm2encrypt = sm_scheme.branch("301.3");
 
-    ASN1ObjectIdentifier wapip192v1 = sm_scheme.branch("301.101");
+    /**
+     * <Information security technology — Cryptographic application identifier criterion specification>
+     * <url>http&#058;//c.gb688.cn/bzgk/gb/showGb&#63;type=online&hcno=252CF0F72A7BE339A56DEA7D774E8994</url>,
+     * Page 21 only cover from 301.1 to 301.3
+     * */
+    ASN1ObjectIdentifier wapip192v1 =  sm_scheme.branch("301.101");
+    /**
+     * <WAPI certificate management—Part 5: Example of certificate format (draft)>
+     * <url>http&#058;//www.chinabwips.org.cn/zqyjgs1.htm</url> and
+     * <url>http&#058;//www.chinabwips.org.cn/doc/101.pdf</url>,
+     * Page 9 and page 10 states the OID of ECDSA-192 algorithm based on SHA-256 is 1.2.156.11235.1.1.1
+     * */
+    ASN1ObjectIdentifier wapi192v1 =  new ASN1ObjectIdentifier("1.2.156.11235.1.1.1");
+    ASN1ObjectIdentifier wapi192v1_parameters =  new ASN1ObjectIdentifier("1.2.156.11235.1.1.2.1");
 
     ASN1ObjectIdentifier sm2encrypt_recommendedParameters = sm2encrypt.branch("1");
     ASN1ObjectIdentifier sm2encrypt_specifiedParameters = sm2encrypt.branch("2");
