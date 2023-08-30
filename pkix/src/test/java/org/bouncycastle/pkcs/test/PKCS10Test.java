@@ -2,27 +2,39 @@ package org.bouncycastle.pkcs.test;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.pkcs.DeltaCertAttributeUtils;
+import org.bouncycastle.pkcs.DeltaCertificateRequestAttributeValue;
+import org.bouncycastle.pkcs.DeltaCertificateRequestAttributeValueBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -175,7 +187,44 @@ public class PKCS10Test
             fail("expected name 2");
         }
     }
-    
+
+    public void testDeltaRequestAttribute()
+        throws Exception
+    {
+        KeyPairGenerator p256Kpg = KeyPairGenerator.getInstance("EC", "BC");
+        p256Kpg.initialize(new ECGenParameterSpec("P-256"));
+        KeyPair p256Kp = p256Kpg.generateKeyPair();
+
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        dilKpg.initialize(DilithiumParameterSpec.dilithium2);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), p256Kp.getPublic());
+
+        ContentSigner deltaSigner = new JcaContentSignerBuilder("Dilithium2").setProvider("BC").build(dilKp.getPrivate());
+
+        DeltaCertificateRequestAttributeValueBuilder deltaAttrBldr = new DeltaCertificateRequestAttributeValueBuilder(
+            SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()));
+
+        deltaAttrBldr.setSignatureAlgorithm(deltaSigner.getAlgorithmIdentifier());
+        deltaAttrBldr.setSubject(new X500Name("CN=Dil2 Cert Req Test"));
+
+        DeltaCertificateRequestAttributeValue deltaAttr = deltaAttrBldr.build();
+
+        pkcs10Builder.addAttribute(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2"), deltaAttr);
+
+        PKCS10CertificationRequest deltaReq = pkcs10Builder.build(deltaSigner);
+
+        pkcs10Builder.addAttribute(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.3"), new DERBitString(deltaReq.getSignature()));
+
+        PKCS10CertificationRequest request = pkcs10Builder.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(p256Kp.getPrivate()));
+
+        assertTrue(DeltaCertAttributeUtils.isDeltaRequestSignatureValid(request, new JcaContentVerifierProviderBuilder().setProvider("BC").build(dilKp.getPublic())));
+
+        assertTrue(request.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(p256Kp.getPublic())));
+    }
+
+
     public static void main(String args[])
     {
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
