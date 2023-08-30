@@ -279,15 +279,15 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128f_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192s_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192f_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_192f_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256s_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256f_simple);
-        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f_simple);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_192f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f);
         //
         // Dilithium
         //
@@ -479,15 +479,15 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, NISTObjectIdentifiers.id_shake256);
 
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128f_simple, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192f_simple, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_simple, NISTObjectIdentifiers.id_sha256);
-        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128f, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192f, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f, NISTObjectIdentifiers.id_shake256);
         
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);

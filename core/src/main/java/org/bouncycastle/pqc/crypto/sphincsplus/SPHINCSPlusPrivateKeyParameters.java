@@ -59,11 +59,11 @@ public class SPHINCSPlusPrivateKeyParameters
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{ getParameters().getEncoded(), sk.seed, sk.prf, pk.seed, pk.root });
+        return Arrays.concatenate(new byte[][]{ sk.seed, sk.prf, pk.seed, pk.root });
     }
 
     public byte[] getEncodedPublicKey()
     {
-        return Arrays.concatenate(getParameters().getEncoded(), pk.seed, pk.root);
+        return Arrays.concatenate(pk.seed, pk.root);
     }
 }

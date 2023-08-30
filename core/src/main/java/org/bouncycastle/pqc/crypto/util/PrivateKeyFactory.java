@@ -172,13 +172,22 @@ public class PrivateKeyFactory
                 return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
-        else if (algOID.on(BCObjectIdentifiers.sphincsPlus))
+        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop))
         {
-            SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(keyInfo.parsePrivateKey());
             SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
-            SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
-            return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
-                publicKey.getPkseed(), publicKey.getPkroot());
+
+            ASN1Encodable obj = keyInfo.parsePrivateKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(obj);
+                SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
+                return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
+                    publicKey.getPkseed(), publicKey.getPkroot());
+            }
+            else
+            {
+                return new SPHINCSPlusPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
+            }
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))
         {
