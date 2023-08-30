@@ -125,15 +125,15 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, new SPHINCSPlusConverter());
 
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
         
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());

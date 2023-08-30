@@ -38,15 +38,18 @@ public class SPHINCSPlus
 
             ASN1ObjectIdentifier[] libOQSOids = new ASN1ObjectIdentifier[]
             {
-                BCObjectIdentifiers.sphincsPlus_sha2_128s_simple,
-                BCObjectIdentifiers.sphincsPlus_sha2_128f_simple,
-                BCObjectIdentifiers.sphincsPlus_shake_128f_simple,
-                BCObjectIdentifiers.sphincsPlus_sha2_192s_simple,
-                BCObjectIdentifiers.sphincsPlus_sha2_192f_simple,
-                BCObjectIdentifiers.sphincsPlus_shake_192f_simple,
-                BCObjectIdentifiers.sphincsPlus_sha2_256s_simple,
-                BCObjectIdentifiers.sphincsPlus_sha2_256f_simple,
-                BCObjectIdentifiers.sphincsPlus_shake_256f_simple
+                BCObjectIdentifiers.sphincsPlus_sha2_128s,
+                BCObjectIdentifiers.sphincsPlus_sha2_128f,
+                BCObjectIdentifiers.sphincsPlus_shake_128s,
+                BCObjectIdentifiers.sphincsPlus_shake_128f,
+                BCObjectIdentifiers.sphincsPlus_sha2_192s,
+                BCObjectIdentifiers.sphincsPlus_sha2_192f,
+                BCObjectIdentifiers.sphincsPlus_shake_192s,
+                BCObjectIdentifiers.sphincsPlus_shake_192f,
+                BCObjectIdentifiers.sphincsPlus_sha2_256s,
+                BCObjectIdentifiers.sphincsPlus_sha2_256f,
+                BCObjectIdentifiers.sphincsPlus_shake_256s,
+                BCObjectIdentifiers.sphincsPlus_shake_256f
             };
             
             for (int i = 0; i != libOQSOids.length; i++)

@@ -17,8 +17,6 @@ import org.bouncycastle.pqc.asn1.FalconPublicKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPrivateKey;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPublicKey;
 import org.bouncycastle.pqc.asn1.XMSSKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
@@ -140,10 +138,8 @@ public class PrivateKeyInfoFactory
             SPHINCSPlusPrivateKeyParameters params = (SPHINCSPlusPrivateKeyParameters)privateKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
-            SPHINCSPLUSPublicKey spPub = new SPHINCSPLUSPublicKey(params.getPublicSeed(), params.getRoot());
-            SPHINCSPLUSPrivateKey spPriv = new SPHINCSPLUSPrivateKey(0, params.getSeed(), params.getPrf(), spPub);
 
-            return new PrivateKeyInfo(algorithmIdentifier, spPriv, attributes);
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
