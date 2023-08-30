@@ -16,7 +16,7 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 
 public class DeltaCertAttributeUtils
 {
-    public static Extension makeDeltaCertificateExtension(DeltaCertificateRequestAttribute deltaReqAttr)
+    public static Extension makeDeltaCertificateExtension(DeltaCertificateRequestAttributeValue deltaReqAttr)
         throws IOException
     {
          return null;
@@ -27,7 +27,7 @@ public class DeltaCertAttributeUtils
     {
         Attribute[] attributes = baseRequest.getAttributes(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.2"));
 
-        DeltaCertificateRequestAttribute deltaReq = new DeltaCertificateRequestAttribute(attributes[0]);
+        DeltaCertificateRequestAttributeValue deltaReq = new DeltaCertificateRequestAttributeValue(attributes[0]);
 
         attributes = baseRequest.getAttributes(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.3"));
 
