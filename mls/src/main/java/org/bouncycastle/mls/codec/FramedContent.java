@@ -13,7 +13,7 @@ public class FramedContent
 
     final ContentType contentType;
 
-    Proposal proposal;
+    public Proposal proposal;
     public Commit commit;
 
     public ContentType getContentType()

@@ -12,12 +12,12 @@ public class Proposal
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProposalType proposalType;
-    Add add;
+    public Add add;
     public Update update;
     public Remove remove;
     public PreSharedKey preSharedKey;
-    ReInit reInit;
-    ExternalInit externalInit;
+    public ReInit reInit;
+    public ExternalInit externalInit;
     public GroupContextExtensions groupContextExtensions;
 
     public LeafNode getLeafNode()
@@ -145,7 +145,7 @@ public class Proposal
     public static class Add
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        KeyPackage keyPackage;
+        public KeyPackage keyPackage;
 
         public Add(KeyPackage keyPackage)
         {
@@ -234,7 +234,7 @@ public class Proposal
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
         byte[] group_id;
-        ProtocolVersion version;
+        public ProtocolVersion version;
         short cipherSuite;
         List<Extension> extensions;
 
@@ -269,7 +269,7 @@ public class Proposal
     public static class ExternalInit
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        byte[] kemOutput;
+        public byte[] kemOutput;
 
         ExternalInit(MLSInputStream stream) throws IOException
         {

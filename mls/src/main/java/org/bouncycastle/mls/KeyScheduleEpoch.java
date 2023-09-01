@@ -305,6 +305,59 @@ psk_secret (or 0) --> KDF.Extract
         this.encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
         this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
     }
+//    public KeyScheduleEpoch copy()
+//    {
+//        return new KeyScheduleEpoch(suite, groupKeySet.secretTree.treeSize, )
+//        this.suite = suite;
+//        this.initSecret = epochSecret.deriveSecret(suite, "init");
+//        this.senderDataSecret = epochSecret.deriveSecret(suite, "sender data");
+//        this.exporterSecret = epochSecret.deriveSecret(suite, "exporter");
+//        this.confirmationKey = epochSecret.deriveSecret(suite, "confirm");
+//        this.membershipKey = epochSecret.deriveSecret(suite, "membership");
+//        this.resumptionPSK = epochSecret.deriveSecret(suite, "resumption");
+//        this.epochAuthenticator = epochSecret.deriveSecret(suite, "authentication");
+//
+//        this.externalSecret = epochSecret.deriveSecret(suite, "external");
+//        this.externalKeyPair = suite.getHPKE().deriveKeyPair(externalSecret.value());
+//
+//        this.encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
+//        this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
+//    }
+
+
+    public KeyScheduleEpoch(CipherSuite suite, TreeSize treeSize, Secret joinerSecret, Secret pskSecret, byte[] context) throws IOException, IllegalAccessException {
+        this.suite = suite;
+
+        Secret memSecret = Secret.extract(suite, joinerSecret, pskSecret);
+        Secret epochSecret = memSecret.expandWithLabel(suite, "epoch", context, suite.getKDF().getHashLength());
+
+        this.senderDataSecret = epochSecret.deriveSecret(suite, "sender data");
+        this.encryptionSecret = epochSecret.deriveSecret(suite, "encryption");
+        this.exporterSecret = epochSecret.deriveSecret(suite, "exporter");
+        this.epochAuthenticator = epochSecret.deriveSecret(suite, "authentication");
+        this.externalSecret = epochSecret.deriveSecret(suite, "external");
+        this.confirmationKey = epochSecret.deriveSecret(suite, "confirm");
+        this.membershipKey = epochSecret.deriveSecret(suite, "membership");
+        this.resumptionPSK = epochSecret.deriveSecret(suite, "resumption");
+        this.initSecret = epochSecret.deriveSecret(suite, "init");
+
+        this.externalKeyPair = suite.getHPKE().deriveKeyPair(externalSecret.value());
+
+        this.groupKeySet = new GroupKeySet(suite, treeSize, encryptionSecret);
+    }
+    public KeyScheduleEpoch nextG(TreeSize treeSize, byte[] externalInit, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
+        Secret currentSecret = initSecret;
+        if (externalInit != null)
+        {
+            currentSecret = new Secret(externalInit);
+        }
+        Secret preJoinerSecret = Secret.extract(suite, currentSecret, commitSecret);
+        Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
+
+        return new KeyScheduleEpoch(this.suite, treeSize, joinerSecret, JoinSecrets.pskSecret(suite, psks), context);
+
+
+    }
 
     public KeyScheduleEpoch next(TreeSize treeSize, byte[] externalInit, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
         Secret currInitSecret = initSecret;

@@ -60,6 +60,7 @@ public class TreeKEMPrivateKey
                                            NodeIndex intersect, Secret pathSecret) throws IOException
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, index);
+
         priv.privateKeyCache.put(new NodeIndex(index), leafPriv);
 
         if (pathSecret != null)
@@ -74,7 +75,7 @@ public class TreeKEMPrivateKey
         for (NodeIndex node :
                 pathSecrets.keySet())
         {
-            setPrivateKey(node);
+            setPrivateKey(node, true);
         }
 
         System.out.println("Tree (priv)");
@@ -179,7 +180,7 @@ public class TreeKEMPrivateKey
         }
 
         // decrypt and implant
-        AsymmetricCipherKeyPair priv = getPrivateKey(res.get(resi));
+        AsymmetricCipherKeyPair priv = setPrivateKey(res.get(resi), false);
         HPKECiphertext ct = path.nodes.get(dpi).encrypted_path_secret.get(resi);
 
         Secret pathSecret = new Secret(suite.decryptWithLabel(
@@ -203,7 +204,7 @@ public class TreeKEMPrivateKey
         return pathSecrets.containsKey(n) || privateKeyCache.containsKey(n);
     }
 
-    public boolean consistent(TreeKEMPublicKey other) throws IOException
+    public final boolean consistent(TreeKEMPublicKey other) throws IOException
     {
         if (suite.getSuiteId() != other.suite.getSuiteId())
         {
@@ -212,7 +213,7 @@ public class TreeKEMPrivateKey
 
         for (NodeIndex node : pathSecrets.keySet())
         {
-            setPrivateKey(node);
+            setPrivateKey(node, true);
         }
 
         for (NodeIndex key : privateKeyCache.keySet())
@@ -233,17 +234,16 @@ public class TreeKEMPrivateKey
         return true;
     }
 
-    private AsymmetricCipherKeyPair setPrivateKey(NodeIndex n) throws IOException
+    protected AsymmetricCipherKeyPair setPrivateKey(NodeIndex n, boolean isConst) throws IOException
     {
         AsymmetricCipherKeyPair priv = getPrivateKey(n);
-        if (priv != null)
+        if (priv != null && !isConst)
         {
-            //TODO: Why is this adding more than what we want???
             privateKeyCache.put(n, priv);
         }
         return priv;
     }
-    protected AsymmetricCipherKeyPair getPrivateKey(NodeIndex n) throws IOException
+    private AsymmetricCipherKeyPair getPrivateKey(NodeIndex n) throws IOException
     {
         if (privateKeyCache.containsKey(n))
         {

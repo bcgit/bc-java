@@ -177,7 +177,7 @@ public class TreeKEMPublicKey
         for (NodeIndex n: dp.parents)
         {
             Secret pathSecret = priv.pathSecrets.get(n);
-            AsymmetricCipherKeyPair nodePriv = priv.getPrivateKey(n);
+            AsymmetricCipherKeyPair nodePriv = priv.setPrivateKey(n, false);
 
             pathNodes.add(new UpdatePathNode(suite.getHPKE().serializePublicKey(nodePriv.getPublic()), new ArrayList<>()));
         }
@@ -190,7 +190,7 @@ public class TreeKEMPublicKey
             ph0 = ph[0];
         }
 
-        byte[] leafPub = suite.getHPKE().serializePublicKey(priv.getPrivateKey(new NodeIndex(from)).getPublic());
+        byte[] leafPub = suite.getHPKE().serializePublicKey(priv.setPrivateKey(new NodeIndex(from), false).getPublic());
         LeafNode newLeaf = leafNode.getLeafNode().forCommit(suite, groupId, from, leafPub, ph0, sigPriv);
 
         // Merge the changes into the tree
@@ -206,11 +206,11 @@ public class TreeKEMPublicKey
         for (int i = 0; i < dp.parents.size(); i++)
         {
             NodeIndex n = dp.parents.get(i);
-            List<NodeIndex> res = dp.resolutions.get(i);
+            List<NodeIndex> res = (List<NodeIndex>) dp.resolutions.get(i).clone();
             removeLeaves(res, except);
 
             Secret pathSecret = priv.pathSecrets.get(n);
-            AsymmetricCipherKeyPair nodePriv = priv.getPrivateKey(n);
+            AsymmetricCipherKeyPair nodePriv = priv.setPrivateKey(n, false);
 
             List<HPKECiphertext> cts = new ArrayList<>();
             for (NodeIndex nr: res)
@@ -408,7 +408,7 @@ public class TreeKEMPublicKey
         List<NodeIndex> dp = index.directPath(size);
 
         // Update the unmerged list
-        for (NodeIndex n : index.directPath(size))
+        for (NodeIndex n : dp)
         {
             if (nodeAt(n).node == null)
             {

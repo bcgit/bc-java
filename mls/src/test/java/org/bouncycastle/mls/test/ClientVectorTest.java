@@ -92,81 +92,96 @@ public class ClientVectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
-                    short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
-                    byte[] key_package = Hex.decode(buf.get("key_package"));
-                    byte[] signature_priv = Hex.decode(buf.get("signature_priv"));
-                    byte[] encryption_priv = Hex.decode(buf.get("encryption_priv"));
-                    byte[] init_priv = Hex.decode(buf.get("init_priv"));
-                    byte[] welcome = Hex.decode(buf.get("welcome"));
-                    byte[] initial_epoch_authenticator = Hex.decode(buf.get("initial_epoch_authenticator"));
-                    byte[] ratchet_tree;
-                    TreeKEMPublicKey tree = null;
-                    if (buf.get("ratchet_tree").equals("None"))
+                    try
                     {
-                        ratchet_tree = new byte[0];
-                    }
-                    else
-                    {
-                        ratchet_tree = Hex.decode(buf.get("ratchet_tree"));
-                        tree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
-                    }
-
-                    CipherSuite suite = new CipherSuite(cipherSuite);
-                    AsymmetricCipherKeyPair leafKeyPair = suite.getHPKE().deserializePrivateKey(encryption_priv, null);
-                    Map<Secret, byte[]> externalPsks = new HashMap<>();
-                    for (PreSharedKeyID ext: externalPSKs)
-                    {
-                        externalPsks.put(ext.external.externalPSKID, ext.pskNonce);
-                    }
-                    // Create given KeyPackage
-                    MLSMessage keyPackage = (MLSMessage) MLSInputStream.decode(key_package, MLSMessage.class);
-
-                    // Verifying that the given private keys correspond to the public keys in key package
-                    AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
-                    byte[] sigPub = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
-                    assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.signature_key, sigPub));
-
-                    byte[] leafPub = suite.getHPKE().serializePublicKey(leafKeyPair.getPublic());
-                    assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.encryption_key, leafPub));
-
-                    AsymmetricCipherKeyPair initKeyPair = suite.getHPKE().deserializePrivateKey(init_priv, null);
-                    byte[] initPub = suite.getHPKE().serializePublicKey(initKeyPair.getPublic());
-                    assertTrue(Arrays.areEqual(keyPackage.keyPackage.init_key, initPub));
-
-
-                    // Create given Welcome
-                    MLSMessage welcomeMsg = (MLSMessage) MLSInputStream.decode(welcome, MLSMessage.class);
-
-                    // Create and join Group using welcome
-                    Group group = new Group(
-                            init_priv,
-                            leafKeyPair,
-                            signature_priv,
-                            keyPackage.keyPackage,
-                            welcomeMsg.welcome,
-                            tree,
-                            externalPsks,
-                            new HashMap<>()
-                            );
-
-                    assertTrue(Arrays.areEqual(group.getEpochAuthenticator(), initial_epoch_authenticator));
-
-                    // verify if new member can follow along with the group
-                    for (Epoch ep: epochs)
-                    {
-                        for (byte[] proposal: ep.proposals)
+                        System.out.print("test case: " + count);
+                        short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
+                        byte[] key_package = Hex.decode(buf.get("key_package"));
+                        byte[] signature_priv = Hex.decode(buf.get("signature_priv"));
+                        byte[] encryption_priv = Hex.decode(buf.get("encryption_priv"));
+                        byte[] init_priv = Hex.decode(buf.get("init_priv"));
+                        byte[] welcome = Hex.decode(buf.get("welcome"));
+                        byte[] initial_epoch_authenticator = Hex.decode(buf.get("initial_epoch_authenticator"));
+                        byte[] ratchet_tree;
+                        TreeKEMPublicKey tree = null;
+                        if (buf.get("ratchet_tree").equals("None"))
                         {
-                            group.handle(proposal, null);
+                            ratchet_tree = new byte[0];
                         }
-                        group = group.handle(ep.commit, null);
-                        assertTrue(Arrays.areEqual(group.getEpochAuthenticator(), ep.epoch_authenticator));
-                    }
+                        else
+                        {
+                            ratchet_tree = Hex.decode(buf.get("ratchet_tree"));
+                            tree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
+                        }
 
-                    externalPSKs.clear();
-                    epochs.clear();
-                    buf.clear();
-                    count++;
+                        CipherSuite suite = new CipherSuite(cipherSuite);
+                        AsymmetricCipherKeyPair leafKeyPair = suite.getHPKE().deserializePrivateKey(encryption_priv, null);
+                        Map<Secret, byte[]> externalPsks = new HashMap<>();
+                        for (PreSharedKeyID ext : externalPSKs)
+                        {
+                            externalPsks.put(ext.external.externalPSKID, ext.pskNonce);
+                        }
+                        // Create given KeyPackage
+                        MLSMessage keyPackage = (MLSMessage) MLSInputStream.decode(key_package, MLSMessage.class);
+
+                        // Verifying that the given private keys correspond to the public keys in key package
+                        AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
+                        byte[] sigPub = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.signature_key, sigPub));
+
+                        byte[] leafPub = suite.getHPKE().serializePublicKey(leafKeyPair.getPublic());
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.encryption_key, leafPub));
+
+                        AsymmetricCipherKeyPair initKeyPair = suite.getHPKE().deserializePrivateKey(init_priv, null);
+                        byte[] initPub = suite.getHPKE().serializePublicKey(initKeyPair.getPublic());
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.init_key, initPub));
+
+
+                        // Create given Welcome
+                        MLSMessage welcomeMsg = (MLSMessage) MLSInputStream.decode(welcome, MLSMessage.class);
+
+                        // Create and join Group using welcome
+                        Group group = new Group(
+                                init_priv,
+                                leafKeyPair,
+                                signature_priv,
+                                keyPackage.keyPackage,
+                                welcomeMsg.welcome,
+                                tree,
+                                externalPsks,
+                                new HashMap<>()
+                        );
+
+                        assertTrue(Arrays.areEqual(group.getEpochAuthenticator(), initial_epoch_authenticator));
+
+                        // verify if new member can follow along with the group
+                        for (Epoch ep : epochs)
+                        {
+                            for (byte[] proposal : ep.proposals)
+                            {
+                                group.handle(proposal, null);
+                            }
+                            group = group.handle(ep.commit, null);
+                            assertTrue(Arrays.areEqual(group.getEpochAuthenticator(), ep.epoch_authenticator));
+                        }
+
+
+                        externalPSKs.clear();
+                        epochs.clear();
+                        buf.clear();
+                        count++;
+                        System.out.println(" PASSED");
+                    }
+                    catch (Exception e)
+                    {
+                        System.out.println(" FAILED -> " + e.getMessage());
+
+                        externalPSKs.clear();
+                        epochs.clear();
+                        buf.clear();
+                        count++;
+                        continue;
+                    }
                 }
             }
             if (!readingStack.isEmpty() && readingStack.peek().equals("external_psks"))

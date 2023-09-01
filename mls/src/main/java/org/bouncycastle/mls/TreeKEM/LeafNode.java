@@ -32,6 +32,11 @@ public class LeafNode
     /* SignWithLabel(., "LeafNodeTBS", LeafNodeTBS) */
     public byte[] signature; // not in TBS
 
+    public CredentialType getCredentialType()
+    {
+        return credential.credentialType;
+    }
+
     public LeafNode()
     {
     }
@@ -142,7 +147,7 @@ public class LeafNode
 
     public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
     {
-        if (credential.credentialType == CredentialType.x509)
+        if (getCredentialType() == CredentialType.x509)
         {
             //TODO: get credential and check if it's signature scheme matches the cipher suite signature scheme
         }

@@ -12,6 +12,10 @@ public class UpdatePath
     public LeafNode leaf_node;
     public List<UpdatePathNode> nodes;
 
+    public UpdatePath clone()
+    {
+        return new UpdatePath(leaf_node, new ArrayList<>(nodes));
+    }
     public UpdatePath(LeafNode leaf_node, List<UpdatePathNode> nodes)
     {
         this.leaf_node = leaf_node;
