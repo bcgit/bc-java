@@ -37,7 +37,7 @@ public class Ed448Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed448.generatePrivateKey(RANDOM, sk);
             Ed448.PublicPoint publicPoint = Ed448.generatePublicKey(sk, 0);
             Ed448.encodePublicPoint(publicPoint, pk, 0);
 
@@ -97,7 +97,7 @@ public class Ed448Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed448.generatePrivateKey(RANDOM, sk);
             Ed448.PublicPoint publicPoint = Ed448.generatePublicKey(sk, 0);
             Ed448.encodePublicPoint(publicPoint, pk, 0);
 
@@ -516,7 +516,7 @@ public class Ed448Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed448.generatePrivateKey(RANDOM, sk);
             Ed448.generatePublicKey(sk, 0, pk, 0);
             assertTrue(Ed448.validatePublicKeyFull(pk, 0));
         }
@@ -569,7 +569,7 @@ public class Ed448Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed448.generatePrivateKey(RANDOM, sk);
             Ed448.generatePublicKey(sk, 0, pk, 0);
             assertTrue(Ed448.validatePublicKeyPartial(pk, 0));
         }
