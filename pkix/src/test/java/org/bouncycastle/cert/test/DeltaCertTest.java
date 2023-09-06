@@ -11,8 +11,10 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.DeltaCertificateTool;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -782,6 +784,66 @@ public class DeltaCertTest
      
         assertTrue(exDeltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
     }
+
+    public void testDeltaCertWithExtensions()
+        throws Exception
+    {
+        X500Name subject = new X500Name("CN=Test Subject");
+
+        KeyPairGenerator kpgA = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpgA.initialize(2048);
+
+        KeyPair kpA = kpgA.generateKeyPair();
+
+        KeyPairGenerator kpgB = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpgB.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        KeyPair kpB = kpgB.generateKeyPair();
+
+        ContentSigner signerA = new JcaContentSignerBuilder("SHA256withRSA").build(kpA.getPrivate());
+
+        Date notBefore = new Date(System.currentTimeMillis() - 5000);
+        Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60);
+        X509v3CertificateBuilder bldr = new X509v3CertificateBuilder(
+            new X500Name("CN=Chameleon CA 1"),
+            BigInteger.valueOf(System.currentTimeMillis()),
+            notBefore,
+            notAfter,
+            subject,
+            SubjectPublicKeyInfo.getInstance(kpA.getPublic().getEncoded()));
+
+        bldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+
+        ContentSigner signerB = new JcaContentSignerBuilder("SHA256withECDSA").build(kpB.getPrivate());
+
+        X509v3CertificateBuilder deltaBldr = new X509v3CertificateBuilder(
+                    new X500Name("CN=Chameleon CA 2"),
+                    BigInteger.valueOf(System.currentTimeMillis()),
+                    notBefore,
+                    notAfter,
+                    subject,
+                    SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
+        
+        deltaBldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+
+        X509CertificateHolder deltaCert = deltaBldr.build(signerB);
+
+        Extension deltaExt = DeltaCertificateTool.makeDeltaCertificateExtension(
+            false,
+            DeltaCertificateTool.signature | DeltaCertificateTool.issuer | DeltaCertificateTool.subject | DeltaCertificateTool.extensions,
+            deltaCert);
+        bldr.addExtension(deltaExt);
+
+        X509CertificateHolder chameleonCert = bldr.build(signerA);
+
+        assertTrue(chameleonCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpA.getPublic())));
+
+        X509CertificateHolder exDeltaCert = DeltaCertificateTool.extractDeltaCertificate(chameleonCert);
+      
+        assertTrue(exDeltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
+    }
     /*
     public void testDraftDilithiumRoot()
         throws Exception
@@ -834,4 +896,14 @@ public class DeltaCertTest
         assertTrue(deltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecRootCert.getSubjectPublicKeyInfo())));
     }
      */
+
+//    public static void main(String[] args)
+//        throws Exception
+//    {
+//        X509CertificateHolder x509cert = (X509CertificateHolder)new PEMParser(new FileReader("../bc-kotlin/ta_dil_cert.pem")).readObject();
+//
+//        Extension ext = x509cert.getExtension(new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1"));
+//
+//        System.err.println(ASN1Dump.dumpAsString(ext.getParsedValue()));
+//    }
 }

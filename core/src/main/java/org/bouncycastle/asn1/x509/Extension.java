@@ -195,6 +195,11 @@ public class Extension
      */
     public static final ASN1ObjectIdentifier altSignatureValue = new ASN1ObjectIdentifier("2.5.29.74").intern();
 
+    /**
+     * delta certificate extension - prototype value will change!
+     */
+    public static final ASN1ObjectIdentifier deltaCertificateDescriptor = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1");
+
     private ASN1ObjectIdentifier extnId;
     private boolean             critical;
     private ASN1OctetString      value;
