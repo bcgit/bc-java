@@ -1249,6 +1249,14 @@ public abstract class Ed448
         int bit = 225;
         while (--bit >= 0)
         {
+            if ((ws_b[bit] | ws_b[225 + bit] | ws_p[bit] | ws_q[bit]) != 0)
+            {
+                break;
+            }
+        }
+
+        for (; bit >= 0; --bit)            
+        {
             int wb = ws_b[bit];
             if (wb != 0)
             {
