@@ -248,9 +248,9 @@ public class X509CertificateHolder
     }
 
     /**
-     * Return the bytes making up the signature associated with this attribute certificate.
+     * Return the bytes making up the signature associated with this certificate.
      *
-     * @return the attribute certificate signature bytes.
+     * @return the certificate signature bytes.
      */
     public byte[] getSignature()
     {
