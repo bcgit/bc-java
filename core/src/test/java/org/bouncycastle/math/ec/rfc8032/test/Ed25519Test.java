@@ -36,7 +36,7 @@ public class Ed25519Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed25519.generatePrivateKey(RANDOM, sk);
             Ed25519.PublicPoint publicPoint = Ed25519.generatePublicKey(sk, 0);
             Ed25519.encodePublicPoint(publicPoint, pk, 0);
 
@@ -95,7 +95,7 @@ public class Ed25519Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed25519.generatePrivateKey(RANDOM, sk);
             Ed25519.PublicPoint publicPoint = Ed25519.generatePublicKey(sk, 0);
             Ed25519.encodePublicPoint(publicPoint, pk, 0);
 
@@ -155,7 +155,7 @@ public class Ed25519Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed25519.generatePrivateKey(RANDOM, sk);
             Ed25519.PublicPoint publicPoint = Ed25519.generatePublicKey(sk, 0);
             Ed25519.encodePublicPoint(publicPoint, pk, 0);
 
@@ -443,7 +443,7 @@ public class Ed25519Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed25519.generatePrivateKey(RANDOM, sk);
             Ed25519.generatePublicKey(sk, 0, pk, 0);
             assertTrue(Ed25519.validatePublicKeyFull(pk, 0));
         }
@@ -498,7 +498,7 @@ public class Ed25519Test
 
         for (int i = 0; i < 10; ++i)
         {
-            RANDOM.nextBytes(sk);
+            Ed25519.generatePrivateKey(RANDOM, sk);
             Ed25519.generatePublicKey(sk, 0, pk, 0);
             assertTrue(Ed25519.validatePublicKeyPartial(pk, 0));
         }
