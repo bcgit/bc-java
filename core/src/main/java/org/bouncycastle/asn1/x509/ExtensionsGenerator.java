@@ -243,51 +243,6 @@ public class ExtensionsGenerator
         for (int i = 0; i != extOrdering.size(); i++)
         {
             exts[i] = (Extension)extensions.get(extOrdering.elementAt(i));
-            // if the delta descriptor is present we check it to remove extensions that exist
-            // in the main certificate
-            if (exts[i].getExtnId().equals(Extension.deltaCertificateDescriptor))
-            {
-                DeltaCertificateDescriptor deltaCertDesc = DeltaCertificateDescriptor.getInstance(exts[i].getParsedValue());
-
-                Extensions deltaExts = deltaCertDesc.getExtensions();
-                ExtensionsGenerator deltaExtGen = new ExtensionsGenerator();
-                if (deltaExts != null)
-                {
-                    for (Enumeration en = deltaExts.oids(); en.hasMoreElements(); )
-                    {
-                        Extension deltaExt = deltaExts.getExtension((ASN1ObjectIdentifier)en.nextElement());
-
-                        if (this.hasExtension(deltaExt.getExtnId()))
-                        {
-                            Extension primaryExt = this.getExtension(deltaExt.getExtnId());
-                            if (!deltaExt.equals(primaryExt))
-                            {
-                                deltaExtGen.addExtension(deltaExt);
-                            }
-                        }
-                    }
-
-                    DeltaCertificateDescriptor trimmedDeltaCertDesc;
-                    if (deltaExtGen.isEmpty())
-                    {
-                        trimmedDeltaCertDesc = new DeltaCertificateDescriptor(deltaCertDesc, null);
-                    }
-                    else
-                    {
-                        trimmedDeltaCertDesc = new DeltaCertificateDescriptor(deltaCertDesc, deltaExtGen.generate());
-                    }
-
-                    try
-                    {
-                        exts[i] = new Extension(Extension.deltaCertificateDescriptor, exts[i].isCritical(),
-                                                                    trimmedDeltaCertDesc.getEncoded(ASN1Encoding.DER));
-                    }
-                    catch (IOException e)
-                    {
-                        throw new IllegalStateException("unable to encode DeltaCertificateDescriptor!");
-                    }
-                }
-            }
         }
 
         return new Extensions(exts);

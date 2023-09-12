@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -772,7 +773,6 @@ public class DeltaCertTest
 
         Extension deltaExt = DeltaCertificateTool.makeDeltaCertificateExtension(
             false,
-            DeltaCertificateTool.signature | DeltaCertificateTool.issuer | DeltaCertificateTool.subject,
             deltaCert);
         bldr.addExtension(deltaExt);
         
@@ -832,13 +832,18 @@ public class DeltaCertTest
 
         Extension deltaExt = DeltaCertificateTool.makeDeltaCertificateExtension(
             false,
-            DeltaCertificateTool.signature | DeltaCertificateTool.issuer | DeltaCertificateTool.subject | DeltaCertificateTool.extensions,
             deltaCert);
         bldr.addExtension(deltaExt);
 
         X509CertificateHolder chameleonCert = bldr.build(signerA);
 
         assertTrue(chameleonCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpA.getPublic())));
+
+        DeltaCertificateDescriptor deltaCertDesc = DeltaCertificateDescriptor.fromExtensions(chameleonCert.getExtensions());
+
+        assertNull(deltaCertDesc.getExtensions());
+        assertNull(deltaCertDesc.getSubject());
+        assertNotNull(deltaCertDesc.getIssuer());
 
         X509CertificateHolder exDeltaCert = DeltaCertificateTool.extractDeltaCertificate(chameleonCert);
       

@@ -22,49 +22,25 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
  */
 public class DeltaCertificateTool
 {
-    public static final int signature = 0x01;
-    public static final int issuer = 0x02;
-    public static final int validity = 0x04;
-    public static final int subject = 0x08;
-    public static final int extensions = 0x10;
-
-    public static Extension makeDeltaCertificateExtension(boolean isCritical, int includeFlags, X509CertificateHolder deltaCert)
+    public static Extension makeDeltaCertificateExtension(boolean isCritical, X509CertificateHolder deltaCert)
         throws IOException
     {
         ASN1EncodableVector deltaV = new ASN1EncodableVector();
 
         deltaV.add(new ASN1Integer(deltaCert.getSerialNumber()));
-        if ((includeFlags & signature) != 0)
-        {
-            deltaV.add(new DERTaggedObject(false, 0, deltaCert.getSignatureAlgorithm()));
-        }
-        if ((includeFlags & issuer) != 0)
-        {
-            deltaV.add(new DERTaggedObject(false, 1, deltaCert.getIssuer()));
-        }
+        deltaV.add(new DERTaggedObject(false, 0, deltaCert.getSignatureAlgorithm()));
+        deltaV.add(new DERTaggedObject(false, 1, deltaCert.getIssuer()));
 
-        //
-        // before and after dates
-        //
-        if ((includeFlags & validity) != 0)
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(deltaCert.toASN1Structure().getStartDate());
-            validity.add(deltaCert.toASN1Structure().getEndDate());
+        ASN1EncodableVector validity = new ASN1EncodableVector(2);
+        validity.add(deltaCert.toASN1Structure().getStartDate());
+        validity.add(deltaCert.toASN1Structure().getEndDate());
 
-            deltaV.add(new DERTaggedObject(false, 2, new DERSequence(validity)));
-        }
-        if ((includeFlags & subject) != 0)
-        {
-            deltaV.add(new DERTaggedObject(false, 3, deltaCert.getSubject()));
-        }
+        deltaV.add(new DERTaggedObject(false, 2, new DERSequence(validity)));
+        deltaV.add(new DERTaggedObject(false, 3, deltaCert.getSubject()));
         deltaV.add(deltaCert.getSubjectPublicKeyInfo());
-        if ((includeFlags & extensions) != 0)
+        if (deltaCert.getExtensions() != null)
         {
-            if (deltaCert.getExtensions() != null)
-            {
-                deltaV.add(new DERTaggedObject(false, 4, deltaCert.getExtensions()));
-            }
+            deltaV.add(new DERTaggedObject(false, 4, deltaCert.getExtensions()));
         }
         deltaV.add(new DERBitString(deltaCert.getSignature()));
 
