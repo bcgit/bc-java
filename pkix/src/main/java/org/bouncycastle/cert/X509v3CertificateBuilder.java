@@ -18,6 +18,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -378,6 +379,21 @@ public class X509v3CertificateBuilder
 
         if (!extGenerator.isEmpty())
         {
+            if (extGenerator.hasExtension(Extension.deltaCertificateDescriptor))
+            {
+                Extension deltaExt = extGenerator.getExtension(Extension.deltaCertificateDescriptor);
+                DeltaCertificateDescriptor deltaDesc = DeltaCertificateDescriptor.getInstance(deltaExt.getParsedValue());
+
+                try
+                {
+                    extGenerator.replaceExtension(Extension.deltaCertificateDescriptor, deltaExt.isCritical(),
+                        deltaDesc.trimTo(tbsGen.generateTBSCertificate(), extGenerator.generate()));
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage()) ;
+                }
+            }
             tbsGen.setExtensions(extGenerator.generate());
         }
 

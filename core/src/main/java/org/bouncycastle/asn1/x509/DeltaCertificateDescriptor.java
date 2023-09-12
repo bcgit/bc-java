@@ -1,10 +1,13 @@
 package org.bouncycastle.asn1.x509;
 
+import java.util.Enumeration;
+
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -68,24 +71,6 @@ public class DeltaCertificateDescriptor
         return getInstance(Extensions.getExtensionParsedValue(extensions, Extension.deltaCertificateDescriptor));
     }
 
-    /**
-     * Create a new trimmed descriptor based on the passed in base but using the extensions from newExtensions.
-     *
-     * @param base Base DeltaCertificateDescriptor
-     * @param newExtensions extension to use with new descriptor (can be null)
-     */
-    DeltaCertificateDescriptor(DeltaCertificateDescriptor base, Extensions newExtensions)
-    {
-        this.serialNumber = base.serialNumber;
-        this.signature = base.signature;
-        this.issuer = base.issuer;
-        this.validity = base.validity;
-        this.subject = base.subject;
-        this.subjectPublicKeyInfo = base.subjectPublicKeyInfo;
-        this.extensions = newExtensions;
-        this.signatureValue = base.signatureValue;
-    }
-
     private DeltaCertificateDescriptor(ASN1Sequence seq)
     {
         this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(0));
@@ -122,7 +107,7 @@ public class DeltaCertificateDescriptor
             switch (tagged.getTagNo())
             {
             case 4:
-                extensions = Extensions.getInstance(tagged, false);   // subject
+                extensions = Extensions.getInstance(tagged, false); 
                 break;
             }
             next = seq.getObjectAt(idx++);
@@ -169,6 +154,98 @@ public class DeltaCertificateDescriptor
     public ASN1BitString getSignatureValue()
     {
         return signatureValue;
+    }
+
+    public DeltaCertificateDescriptor trimTo(TBSCertificate baseTbsCertificate, Extensions tbsExtensions)
+    {
+        AlgorithmIdentifier signature = baseTbsCertificate.signature;
+        X500Name issuer = baseTbsCertificate.issuer;
+        ASN1Sequence validity = new DERSequence(new ASN1Encodable[]
+        {
+            baseTbsCertificate.startDate, baseTbsCertificate.endDate
+        });
+        X500Name subject = baseTbsCertificate.subject;
+        ASN1Sequence s = ASN1Sequence.getInstance(toASN1Primitive());
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        Enumeration en = s.getObjects();
+        v.add((ASN1Encodable)en.nextElement());
+
+        ASN1Encodable next = (ASN1Encodable)en.nextElement();
+        while (next instanceof ASN1TaggedObject)
+        {
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
+            switch (tagged.getTagNo())
+            {
+            case 0:
+                AlgorithmIdentifier sig = AlgorithmIdentifier.getInstance(tagged, false);
+                if (!sig.equals(signature))
+                {
+                    v.add(next);
+                }
+                break;
+            case 1:
+                X500Name iss = X500Name.getInstance(tagged, true);   // issuer
+                if (!iss.equals(issuer))
+                {
+                    v.add(next);
+                }
+                break;
+            case 2:
+                ASN1Sequence val = ASN1Sequence.getInstance(tagged, false);
+                if (!val.equals(validity))
+                {
+                    v.add(next);
+                }
+                break;
+            case 3:
+                X500Name sub = X500Name.getInstance(tagged, true);   // subject
+                if (!sub.equals(subject))
+                {
+                    v.add(next);
+                }
+                break;
+            }
+            next = (ASN1Encodable)en.nextElement();
+        }
+
+        v.add(next);
+
+        next = (ASN1Encodable)en.nextElement();
+        while (next instanceof ASN1TaggedObject)
+        {
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
+            switch (tagged.getTagNo())
+            {
+            case 4:
+                Extensions deltaExts = Extensions.getInstance(tagged, false);
+                ExtensionsGenerator deltaExtGen = new ExtensionsGenerator();
+                for (Enumeration extEn = deltaExts.oids(); extEn.hasMoreElements(); )
+                {
+                    Extension deltaExt = deltaExts.getExtension((ASN1ObjectIdentifier)extEn.nextElement());
+                    Extension primaryExt = tbsExtensions.getExtension(deltaExt.getExtnId());
+
+                    if (primaryExt != null)
+                    {
+                        if (!deltaExt.equals(primaryExt))
+                        {
+                            deltaExtGen.addExtension(deltaExt);
+                        }
+                    }
+                }
+
+                DeltaCertificateDescriptor trimmedDeltaCertDesc;
+                if (!deltaExtGen.isEmpty())
+                {
+                    v.add(new DERTaggedObject(false, 4, deltaExtGen.generate()));
+                }
+            }
+            next = (ASN1Encodable)en.nextElement();
+        }
+
+        v.add(next);
+
+        return new DeltaCertificateDescriptor(new DERSequence(v));
     }
 
     private void addOptional(ASN1EncodableVector v, int tag, boolean explicit, ASN1Object obj)
