@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -422,8 +423,6 @@ public class X509v3CertificateBuilder
         boolean isCritical,
         ContentSigner altSigner)
     {
-        tbsGen.setSignature(null);
-
         try
         {
             extGenerator.addExtension(Extension.altSignatureAlgorithm, isCritical, altSigner.getAlgorithmIdentifier());
@@ -432,6 +431,32 @@ public class X509v3CertificateBuilder
         {
             throw Exceptions.illegalStateException("cannot add altSignatureAlgorithm extension", e);
         }
+
+        if (extGenerator.hasExtension(Extension.deltaCertificateDescriptor))
+        {
+            tbsGen.setSignature(signer.getAlgorithmIdentifier());
+            
+            Extension deltaExt = extGenerator.getExtension(Extension.deltaCertificateDescriptor);
+            DeltaCertificateDescriptor deltaDesc = DeltaCertificateDescriptor.getInstance(deltaExt.getParsedValue());
+
+            try
+            {
+                // the altSignatureValue is not present yet, but it must be in the deltaCertificate and
+                // it must be different (by definition!). We add a dummy one to trigger inclusion.
+                ExtensionsGenerator tmpExtGen = new ExtensionsGenerator();
+                tmpExtGen.addExtension(extGenerator.generate());
+                tmpExtGen.addExtension(Extension.altSignatureValue, false, DERNull.INSTANCE);
+
+                extGenerator.replaceExtension(Extension.deltaCertificateDescriptor, deltaExt.isCritical(),
+                    deltaDesc.trimTo(tbsGen.generateTBSCertificate(), tmpExtGen.generate()));
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage());
+            }
+        }
+
+        tbsGen.setSignature(null);
 
         tbsGen.setExtensions(extGenerator.generate());
 

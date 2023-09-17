@@ -3,7 +3,11 @@ package org.bouncycastle.cert.test;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
 
@@ -15,10 +19,14 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.SubjectAltPublicKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.DeltaCertificateTool;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.operator.ContentSigner;
@@ -28,6 +36,7 @@ import org.bouncycastle.pkcs.DeltaCertAttributeUtils;
 import org.bouncycastle.pkcs.DeltaCertificateRequestAttributeValue;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.encoders.Base64;
 
 public class DeltaCertTest
@@ -849,6 +858,114 @@ public class DeltaCertTest
       
         assertTrue(exDeltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
     }
+
+    public void testCheckCreationAltCertWithDelta()
+        throws Exception
+    {
+        if (Security.getProvider("BCPQC") == null)
+        {
+            Security.addProvider(new BouncyCastlePQCProvider());
+        }
+
+        KeyPairGenerator kpgB = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpgB.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        KeyPair kpB = kpgB.generateKeyPair();
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+
+        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new SecureRandom());
+
+        KeyPair ecKp = ecKpGen.generateKeyPair();
+
+        PrivateKey ecPrivKey = ecKp.getPrivate();
+        PublicKey ecPubKey = ecKp.getPublic();
+
+        Date notBefore = new Date(System.currentTimeMillis() - 5000);
+        Date notAfter = new Date(System.currentTimeMillis() + 1000 * 60 * 60);
+
+        //
+        // distinguished name table.
+        //
+        X500Name issuer = new X500Name("CN=Chameleon Base Issuer");
+        X500Name subject = new X500Name("CN=Chameleon Base Subject");
+
+        //
+        // create base certificate - version 3
+        //
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPrivKey);
+
+        ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(privKey);
+
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
+            issuer,
+            BigInteger.valueOf(1),
+            notBefore,
+            notAfter,
+            subject,
+            ecPubKey)
+            .addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
+            .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+
+        ContentSigner signerB = new JcaContentSignerBuilder("SHA256withECDSA").build(kpB.getPrivate());
+
+        X509v3CertificateBuilder deltaBldr = new X509v3CertificateBuilder(
+                    new X500Name("CN=Chameleon CA 2"),
+                    BigInteger.valueOf(System.currentTimeMillis()),
+                    notBefore,
+                    notAfter,
+                    subject,
+                    SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
+
+        deltaBldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
+                 .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+        
+        X509CertificateHolder deltaCert = deltaBldr.build(signerB, false, altSigGen);
+
+        assertTrue(deltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
+
+        Extension deltaExt = DeltaCertificateTool.makeDeltaCertificateExtension(
+            false,
+            deltaCert);
+        certGen.addExtension(deltaExt);
+
+        X509CertificateHolder certHldr = certGen.build(sigGen, false, altSigGen);
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHldr);
+
+        //
+        // copy certificate           exDeltaCert
+        //
+
+        cert.checkValidity(new Date());
+
+        cert.verify(cert.getPublicKey());
+
+        // check encoded works
+        cert.getEncoded();
+
+        X509CertificateHolder certHolder = new JcaX509CertificateHolder(cert);
+
+       // assertTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(pubKey)));
+
+        X509CertificateHolder exDeltaCert = DeltaCertificateTool.extractDeltaCertificate(new X509CertificateHolder(cert.getEncoded()));
+
+        assertTrue(exDeltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
+        assertTrue(exDeltaCert.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(pubKey)));
+
+        assertTrue(certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPubKey)));
+        assertTrue(certHldr.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(pubKey)));
+    }
+
     /*
     public void testDraftDilithiumRoot()
         throws Exception
