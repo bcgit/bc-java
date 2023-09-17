@@ -129,7 +129,9 @@ public class DeltaCertificateTool
 
             for (int i = 0; i != deltaExts.size(); i++)
             {
-                extGen.replaceExtension(Extension.getInstance(deltaExts.getObjectAt(i)));
+                Extension ext = Extension.getInstance(deltaExts.getObjectAt(i));
+
+                extGen.replaceExtension(ext);
             }
 
             extracted[7] = new DERTaggedObject(3, extGen.generate());
