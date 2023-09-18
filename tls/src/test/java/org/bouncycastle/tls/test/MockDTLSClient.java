@@ -30,6 +30,8 @@ class MockDTLSClient
 {
     TlsSession session;
 
+    private int handshakeTimeoutMillis = 0;
+
     MockDTLSClient(TlsSession session)
     {
         super(new BcTlsCrypto());
@@ -40,6 +42,16 @@ class MockDTLSClient
     public TlsSession getSessionToResume()
     {
         return this.session;
+    }
+
+    public int getHandshakeTimeoutMillis()
+    {
+        return handshakeTimeoutMillis;
+    }
+
+    public void setHandshakeTimeoutMillis(int millis)
+    {
+        handshakeTimeoutMillis = millis;
     }
 
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
