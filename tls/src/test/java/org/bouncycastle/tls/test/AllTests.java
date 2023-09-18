@@ -23,6 +23,8 @@ public class AllTests
         suite.addTestSuite(BasicTlsTest.class);
         suite.addTestSuite(ByteQueueInputStreamTest.class);
         suite.addTestSuite(DTLSProtocolTest.class);
+        suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
+        suite.addTestSuite(DTLSAggregatedHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSPSKProtocolTest.class);
         suite.addTestSuite(DTLSRawKeysProtocolTest.class);
         suite.addTestSuite(OCSPTest.class);
