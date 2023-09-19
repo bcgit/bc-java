@@ -19,6 +19,8 @@ public class MinimalHandshakeAggregator
 
     byte[] receiveBuf, sendBuf;
 
+    int receiveRecordCount, sendRecordCount;
+
     private byte[] addToBuf(byte[] baseBuf, byte[] buf, int off, int len)
     {
         byte[] ret = new byte[baseBuf.length + len];
@@ -30,21 +32,25 @@ public class MinimalHandshakeAggregator
     private void addToReceiveBuf(byte[] buf, int off, int len)
     {
         receiveBuf = addToBuf(receiveBuf, buf, off, len);
+        receiveRecordCount++;
     }
 
     private void resetReceiveBuf()
     {
         receiveBuf = new byte[0];
+        receiveRecordCount = 0;
     }
 
     private void addToSendBuf(byte[] buf, int off, int len)
     {
         sendBuf = addToBuf(sendBuf, buf, off, len);
+        sendRecordCount++;
     }
 
     private void resetSendBuf()
     {
         sendBuf = new byte[0];
+        sendRecordCount = 0;
     }
 
     /** Whether the buffered aggregated data should be flushed after this packet.
@@ -109,6 +115,10 @@ public class MinimalHandshakeAggregator
             addToReceiveBuf(buf, off, length);
 
             if (flushAfterThisPacket(buf, off, length)) {
+                if (receiveRecordCount > 1)
+                {
+                    System.out.println("RECEIVING " + receiveRecordCount + " RECORDS IN " + length + " BYTE PACKET");
+                }
                 System.arraycopy(receiveBuf, 0, buf, off, min(len, receiveBuf.length));
                 resetReceiveBuf();
                 return length;
@@ -136,6 +146,10 @@ public class MinimalHandshakeAggregator
 
         if (flushAfterThisPacket(buf, off, len))
         {
+            if (sendRecordCount > 1)
+            {
+                System.out.println("SENDING " + sendRecordCount + " RECORDS IN " + sendBuf.length + " BYTE PACKET");
+            }
             transport.send(sendBuf, 0, sendBuf.length);
             resetSendBuf();
         }
