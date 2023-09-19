@@ -52,6 +52,8 @@ module org.bouncycastle.pkix
     exports org.bouncycastle.pkcs.jcajce;
     exports org.bouncycastle.pkix;
     exports org.bouncycastle.pkix.jcajce;
+    exports org.bouncycastle.pkix.util;
+    exports org.bouncycastle.pkix.util.filter;
     exports org.bouncycastle.tsp;
     exports org.bouncycastle.tsp.cms;
     exports org.bouncycastle.tsp.ers;
