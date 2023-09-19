@@ -874,8 +874,7 @@ class DTLSRecordLayer
             {
                 recordEpoch = readEpoch;
             }
-            else if (recordType == ContentType.handshake && null != retransmitEpoch
-                && epoch == retransmitEpoch.getEpoch())
+            else if (null != retransmitEpoch && epoch == retransmitEpoch.getEpoch())
             {
                 recordEpoch = retransmitEpoch;
             }
@@ -920,8 +919,7 @@ class DTLSRecordLayer
             {
                 recordEpoch = readEpoch;
             }
-            else if (recordType == ContentType.handshake && null != retransmitEpoch
-                && epoch == retransmitEpoch.getEpoch())
+            else if (null != retransmitEpoch && epoch == retransmitEpoch.getEpoch())
             {
                 recordEpoch = retransmitEpoch;
             }
