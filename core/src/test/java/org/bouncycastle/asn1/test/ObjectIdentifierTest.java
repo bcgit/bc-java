@@ -15,6 +15,16 @@ public class ObjectIdentifierTest
     public void performTest()
         throws Exception
     {
+        try
+        {
+            ASN1ObjectIdentifier.fromContents(new byte[0]);
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("empty OBJECT IDENTIFIER with no sub-identifiers", e.getMessage());
+        }
+        
         // exercise the object cache
         for (int i = 0; i < 100; i++)
         {
