@@ -58,7 +58,7 @@ public class ExternalPublicKey
      */
     public ExternalPublicKey(ExternalValue extKey)
     {
-        this(extKey.getLocation(), extKey.getHashAlg(), extKey.getHashVal().getBytes());
+        this(extKey.getLocation(), extKey.getHashAlg(), extKey.getHashValue());
     }
 
     /**
