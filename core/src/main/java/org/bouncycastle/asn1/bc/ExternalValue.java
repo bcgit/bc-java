@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -18,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  * draft-ounsworth-pq-external-pubkeys-00
  * <pre>
  *  ExternalValue ::= SEQUENCE {
- *      location GeneralName,    # MUST refer to a DER encoded SubjectPublicKeyInfo/Signature  (may be Base64)
+ *      location GeneralNames,    # MUST refer to a DER encoded SubjectPublicKeyInfo/Signature  (may be Base64)
  *      hashAlg AlgorithmIdentifier,
  *      hashVal OCTET STRING }
  * </pre>
@@ -26,13 +27,13 @@ import org.bouncycastle.util.Arrays;
 public class ExternalValue
     extends ASN1Object
 {
-    private final GeneralName location;
+    private final GeneralNames location;
     private final AlgorithmIdentifier hashAlg;
     private final byte[] hashValue;
 
     public ExternalValue(GeneralName location, AlgorithmIdentifier hashAlg, byte[] hashVal)
     {
-        this.location = location;
+        this.location = new GeneralNames(location);
         this.hashAlg = hashAlg;
         this.hashValue = Arrays.clone(hashVal);
     }
@@ -41,7 +42,7 @@ public class ExternalValue
     {
         if (seq.size() == 3)
         {
-            location = GeneralName.getInstance(seq.getObjectAt(0));
+            location = GeneralNames.getInstance(seq.getObjectAt(0));
             hashAlg = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
             if (seq.getObjectAt(2) instanceof ASN1BitString)    // legacy implementation on 2021 draft
             {
@@ -74,7 +75,12 @@ public class ExternalValue
 
     public GeneralName getLocation()
     {
-        return location;
+        return location.getNames()[0];
+    }
+
+    public GeneralName[] getLocations()
+    {
+        return location.getNames();
     }
 
     public AlgorithmIdentifier getHashAlg()
