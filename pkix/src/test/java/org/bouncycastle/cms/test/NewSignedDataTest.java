@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import junit.framework.Assert;
@@ -1623,70 +1624,86 @@ public class NewSignedDataTest
         rsaPSSTest("SHA3-384withRSAandMGF1");
     }
 
-    public void testSHA1WithRSADigest()
+    public void testSHA1WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA1withRSA");
+        rsaSignatureTest("SHA1withRSA");
     }
 
-    public void testSHA224WithRSADigest()
-        throws Exception
+    public void testSHA256WithRSASignatureAndSHA1WithRSAEncryptionDigest()
+            throws Exception
     {
-        rsaDigestTest("SHA224withRSA");
+        rsaSignatureAndDigestTest("SHA256withRSA",
+            // sha-1WithRSAEncryption (RFC 3279 2.2.1)
+            Optional.of(new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.3.14.3.2.29"))));
     }
 
-    public void testSHA256WithRSADigest()
-        throws Exception
+    public void testSHA256WithRSASignatureAndSHA1WithRSASignatureDigest()
+            throws Exception
     {
-        rsaDigestTest("SHA256withRSA");
+        rsaSignatureAndDigestTest("SHA256withRSA",
+                // sha-1WithRSASignature (RFC 8017 A.2.4)
+                Optional.of(new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.840.113549.1.1.5"))));
     }
 
-    public void testSHA384WithRSADigest()
+    public void testSHA224WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA384withRSA");
+        rsaSignatureTest("SHA224withRSA");
     }
 
-    public void testSHA512WithRSADigest()
+    public void testSHA256WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA512withRSA");
+        rsaSignatureTest("SHA256withRSA");
     }
 
-    public void testSHA3_224WithRSADigest()
+    public void testSHA384WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA3-224withRSA");
+        rsaSignatureTest("SHA384withRSA");
     }
 
-    public void testSHA3_256WithRSADigest()
+    public void testSHA512WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA3-256withRSA");
+        rsaSignatureTest("SHA512withRSA");
     }
 
-    public void testSHA3_384WithRSADigest()
+    public void testSHA3_224WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA3-384withRSA");
+        rsaSignatureTest("SHA3-224withRSA");
     }
 
-    public void testSHA3_512WithRSADigest()
+    public void testSHA3_256WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA3-512withRSA");
+        rsaSignatureTest("SHA3-256withRSA");
     }
 
-    public void testSHA512_224ithRSADigest()
+    public void testSHA3_384WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA512(224)withRSA");
+        rsaSignatureTest("SHA3-384withRSA");
     }
 
-    public void testSHA512_256ithRSADigest()
+    public void testSHA3_512WithRSASignature()
         throws Exception
     {
-        rsaDigestTest("SHA512(256)withRSA");
+        rsaSignatureTest("SHA3-512withRSA");
+    }
+
+    public void testSHA512_224ithRSASignature()
+        throws Exception
+    {
+        rsaSignatureTest("SHA512(224)withRSA");
+    }
+
+    public void testSHA512_256ithRSASignature()
+        throws Exception
+    {
+        rsaSignatureTest("SHA512(256)withRSA");
     }
 
     public void testEd25519()
@@ -2207,8 +2224,14 @@ public class NewSignedDataTest
         verifySignatures(s, md.digest("Hello world!".getBytes()));
     }
 
-    private void rsaDigestTest(String signatureAlgorithmName)
+    private void rsaSignatureTest(String signatureAlgorithmName)
         throws Exception
+    {
+        rsaSignatureAndDigestTest(signatureAlgorithmName, Optional.empty());
+    }
+
+    private void rsaSignatureAndDigestTest(String signatureAlgorithmName, Optional<AlgorithmIdentifier> digestAlgorithm)
+            throws Exception
     {
         List certList = new ArrayList();
         CMSTypedData msg = new CMSProcessableByteArray("Hello world!".getBytes());
@@ -2225,6 +2248,8 @@ public class NewSignedDataTest
         JcaSignerInfoGeneratorBuilder siBuilder = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
 
         gen.addSignerInfoGenerator(siBuilder.build(contentSigner, _origCert));
+
+        digestAlgorithm.ifPresent(siBuilder::setContentDigest);
 
         gen.addCertificates(certs);
 
