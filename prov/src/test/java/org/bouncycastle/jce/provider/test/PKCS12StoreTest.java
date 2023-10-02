@@ -941,6 +941,8 @@ public class PKCS12StoreTest
             + "TK5wp093iTAxMCEwCQYFKw4DAhoFAAQU1SGg9xV7jfLcJh3tzd+phZTMN38E"
             + "CL6WgCtEom7kAgIIAA==");
 
+    private static byte[] rawKeyBagStore = Base64.decode("MIIFlgIBAzCCBY8GCSqGSIb3DQEHAaCCBYAEggV8MIIFeDCCAv4GCSqGSIb3DQEHAaCCAu8EggLrMIIC5zCCAuMGCyqGSIb3DQEMCgEBoIICejCCAnYCAQAwDQYJKoZIhvcNAQEBBQAEggJgMIICXAIBAAKBgQCF4Tw78b8eDuwY+FomQazkPFuAxDbWTs//AozC4MvzBatdJeDu+s9WyK3PdU+gI7wFish0r2FP8M5dj/rA0ieCJ9UDTGWVKm06DB0y7zmAO3SS/3TXGQRekMmOXBtVlZa4AYVy8Tr+Ls69gfo3sgqJU8uH0ebWuoQTKJz/mpst0wIDAQABAoGBAIJbpu/jWylkdEV4BSd9CWCO2LYP2CliQirXC8JxaoTuf0ZKrLNlqd+htYPsgSS3xstKsBbV8hYJrpbxq8J2npok973j0bm9sW9RL8XmAYJbaat27IzQQkGj2j4CNWPJzQC3NsDWQJPMJMFHvT1ZIj5ASwvOHwKpM6haLPxX24o5AkEA/zBVPpO6Ic9Yfd8Fk+BN/DykpPbLMUNZFl/I2MavoXTh5Ng7J4/S5ABxkvvQdqKf1Nhal5CznakU4BjFUGr+dwJBAIZOLwlfToFgekV4SmcPnq4aNGdetDfEettRGJLrKf+qrZrTzW3Rj6N2cjxKHsE5/xOpyjOtgVv3cTQm0x//VoUCQAdQBUFTzmOlo22H9Ir2RIXT3wvzHoN84JKpkAHWP7YquUZrg9ZwYqSx9o81tBWSN25L/NyXAu6jp7t8OjtBtaUCQCILB1k0001wCw4444MkLnCrK8VX+A56uzmEYNo8ybSIquCn91Zy3BnvGB24G/uWm9V8IEjhHf0Vx5gUj0d5DZECQGRs4BMYE+y2Tpn7/zbjhZh/iAdttDq5/b2BBMbSiosSKRIGkOyHTu0SJKoxoDnHA5ryLK8NoSwoGjID5qESjA8xVjAjBgkqhkiG9w0BCRUxFgQU3U3Taaj7rCAV2GyyVEnAUZvc4JkwLwYJKoZIhvcNAQkUMSIeIABPAE4AVgBJAEYAXwBUAGUAcwB0AF8AQQBsAGkAYQBzMIICcgYJKoZIhvcNAQcBoIICYwSCAl8wggJbMIICVwYLKoZIhvcNAQwKAQOgggHuMIIB6gYKKoZIhvcNAQkWAaCCAdoEggHWMIIB0jCCATugAwIBAgIICNurBKCCK6gwDQYJKoZIhvcNAQEFBQAwIDERMA8GA1UEAwwIT05WSUYgVFQxCzAJBgNVBAYTAlVTMCAXDTcwMDEwMTAwMDAwMFoYDzk5OTkxMjMxMjM1OTU5WjAgMREwDwYDVQQDDAhPTlZJRiBUVDELMAkGA1UEBhMCVVMwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAIXhPDvxvx4O7Bj4WiZBrOQ8W4DENtZOz/8CjMLgy/MFq10l4O76z1bIrc91T6AjvAWKyHSvYU/wzl2P+sDSJ4In1QNMZZUqbToMHTLvOYA7dJL/dNcZBF6QyY5cG1WVlrgBhXLxOv4uzr2B+jeyColTy4fR5ta6hBMonP+amy3TAgMBAAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEARmnQ9q/lUycK5P4shGFlwK0Uy3dHZs4VxOBSinejSTTy1FL4+SRzwA+YDMmfRrI0WHY/upUCYyugDj5kDg5K6/mSiIWGr0PDjl+8qw352fpUQgY4vnpGBaJoLQf/KRFilVhZJz0QDq5iHo16UkibDDHYQqdt6la5SHKx4U6AJwYxVjAjBgkqhkiG9w0BCRUxFgQU3U3Taaj7rCAV2GyyVEnAUZvc4JkwLwYJKoZIhvcNAQkUMSIeIABPAE4AVgBJAEYAXwBUAGUAcwB0AF8AQQBsAGkAYQBz");
+
     /**
      * we generate a self signed certificate for the sake of testing - RSA
      */
@@ -1121,6 +1123,16 @@ public class PKCS12StoreTest
         Certificate[] certs = pkcs12.getCertificateChain("test");
 
         certs[0].verify(certs[0].getPublicKey());
+    }
+
+    private void testRawKeyBagStore()
+        throws Exception
+    {
+        KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+
+        store.load(new ByteArrayInputStream(rawKeyBagStore), null);
+
+        isTrue(store.isKeyEntry("ONVIF_Test_Alias"));
     }
 
     private void testNTRUStore()
@@ -2135,6 +2147,7 @@ public class PKCS12StoreTest
         testFalconStore();
         testNTRUStore();
         testSphincsPlusStore();
+        testRawKeyBagStore();
         // converter tests
 
         KeyStore kS = KeyStore.getInstance("PKCS12", BC);
