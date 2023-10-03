@@ -61,6 +61,8 @@ public class JcaTlsCryptoProvider
     {
         try
         {
+            JcaJceHelper helper = getHelper();
+
             if (random == null)
             {
                 if (helper instanceof DefaultJcaJceHelper)
@@ -90,7 +92,7 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new JcaTlsCrypto(helper, keyRandom, nonceRandom);
+        return new JcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
     }
 
     public JcaJceHelper getHelper()
