@@ -1108,6 +1108,24 @@ public final class Arrays
         }
     }
 
+    public static short[] reverseInPlace(short[] a)
+    {
+        if (null == a)
+        {
+            return null;
+        }
+
+        int p1 = 0, p2 = a.length - 1;
+        while (p1 < p2)
+        {
+            short t1 = a[p1], t2 = a[p2];
+            a[p1++] = t2;
+            a[p2--] = t1;
+        }
+
+        return a;
+    }
+
     public static int[] reverseInPlace(int[] a)
     {
         if (null == a)
