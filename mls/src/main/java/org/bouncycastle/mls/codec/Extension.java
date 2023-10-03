@@ -18,7 +18,15 @@ public class Extension
 
     Extension(MLSInputStream stream) throws IOException
     {
-        this.extensionType = ExtensionType.values()[(short) stream.read(short.class)];
+        short extType = (short) stream.read(short.class);
+        if (Grease.isGrease(extType) == -1)
+        {
+            this.extensionType = ExtensionType.values()[extType];
+        }
+        else
+        {
+            this.extensionType = ExtensionType.values()[6 + Grease.isGrease(extType)];
+        }
         this.extension_data = stream.readOpaque();
     }
 

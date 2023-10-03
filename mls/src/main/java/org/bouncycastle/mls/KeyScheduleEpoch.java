@@ -26,6 +26,16 @@ public class KeyScheduleEpoch {
         }
     }
 
+    public byte[] receiveExternalInit(byte[] kemOut) throws IOException
+    {
+        // do export (private key)
+        final int L = suite.getKDF().getHashLength();
+        final byte[] labelData = "MLS 1.0 external init secret".getBytes(StandardCharsets.UTF_8);
+        HPKEContext ctx = suite.getHPKE().setupBaseR(kemOut, externalKeyPair, new byte[0]);
+
+        return ctx.export(labelData, L);
+    }
+
     public static class JoinSecrets {
         // Cached values
         private final CipherSuite suite;
@@ -360,12 +370,27 @@ psk_secret (or 0) --> KDF.Extract
     }
 
     public KeyScheduleEpoch next(TreeSize treeSize, byte[] externalInit, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
+
+        /*
+            Secret currentSecret = initSecret;
+            if (externalInit != null)
+            {
+                currentSecret = new Secret(externalInit);
+            }
+            Secret preJoinerSecret = Secret.extract(suite, currentSecret, commitSecret);
+            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
+
+            return new KeyScheduleEpoch(this.suite, treeSize, joinerSecret, JoinSecrets.pskSecret(suite, psks), context);
+
+
+         */
         Secret currInitSecret = initSecret;
         if (externalInit != null) {
-            final byte[] exportContext = "MLS 1.0 external init secret".getBytes(StandardCharsets.UTF_8);
-            final int L = suite.getKDF().getHashLength();
-            HPKEContext ctx = suite.getHPKE().setupBaseR(externalInit, externalKeyPair, null);
-            currInitSecret = new Secret(ctx.export(exportContext, L));
+//            final byte[] exportContext = "MLS 1.0 external init secret".getBytes(StandardCharsets.UTF_8);
+//            final int L = suite.getKDF().getHashLength();
+//            HPKEContext ctx = suite.getHPKE().setupBaseR(externalInit, externalKeyPair, new byte[0]);
+//            currInitSecret = new Secret(ctx.export(exportContext, L));
+            currInitSecret = new Secret(externalInit);
         }
 
         JoinSecrets joinSecrets = JoinSecrets.forMember(suite, currInitSecret, commitSecret, psks, context);

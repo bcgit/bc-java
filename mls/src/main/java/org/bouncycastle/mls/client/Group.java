@@ -351,6 +351,7 @@ public class Group
         {
             // Add the joiner
 //            UpdatePath path = commit.updatePath.clone();
+//            senderLocation = next.tree.addLeaf(path.leaf_node);
             senderLocation = next.tree.addLeaf(commit.updatePath.leaf_node);
 
             // Extract the forced init secret
@@ -359,8 +360,8 @@ public class Group
             {
                 throw new Exception("Invalid external commit");
             }
-            KeyScheduleEpoch.ExternalInitParams extParams = new KeyScheduleEpoch.ExternalInitParams(suite, suite.getHPKE().deserializePublicKey(kemOut));
-            forceInitSecret = extParams.getKEMOutput();
+//            KeyScheduleEpoch.ExternalInitParams extParams = new KeyScheduleEpoch.ExternalInitParams(suite, suite.getHPKE().deserializePublicKey(kemOut));
+            forceInitSecret = keySchedule.receiveExternalInit(kemOut);
         }
 
         // Decapsulate and apply the UpdatePath, if provided
@@ -398,7 +399,6 @@ public class Group
                 );
             commitSecret = next.treePriv.updateSecret.value().clone();
         }
-
         // Update the transcripts and advance the key schedule
 
         next.transcriptHash.update(auth);
@@ -407,6 +407,7 @@ public class Group
 
         // Verify the confirmation MAC
         byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
+
         if (!Arrays.equals(auth.getConfirmationTag(), confirmationTag))
         {
             throw new Exception("Confirmation failed to verify");

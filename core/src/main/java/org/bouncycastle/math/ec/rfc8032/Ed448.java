@@ -212,6 +212,11 @@ public abstract class Ed448
     {
         PointProjective r = new PointProjective();
         scalarMultOrderVar(p, r);
+
+        print("r.x", r.x);
+        print("r.y", r.y);
+        print("r.z", r.z);
+
         return normalizeToNeutralElementVar(r);
     }
 
@@ -816,21 +821,25 @@ public abstract class Ed448
         int[] h = t.r7;
         int[] j = t.r0;
 
-        F.add(r.x, r.y, b);
-        F.sqr(b, b);
-        F.sqr(r.x, c);
-        F.sqr(r.y, d);
-        F.add(c, d, e);
-        F.carry(e);
-        F.sqr(r.z, h);
-        F.add(h, h, h);
-        F.carry(h);
-        F.sub(e, h, j);
-        F.sub(b, e, b);
-        F.sub(c, d, c);
-        F.mul(b, j, r.x);
-        F.mul(e, c, r.y);
-        F.mul(e, j, r.z);
+//        print("r.x", r.x);
+//        print("r.y", r.y);
+//        print("r.z", r.z);
+
+        F.add(r.x, r.y, b); /*print("b", b);*/
+        F.sqr(b, b);        /*print("b", b);*/
+        F.sqr(r.x, c);      /*print("c", c);*/
+        F.sqr(r.y, d);      /*print("d", d);*/
+        F.add(c, d, e);     /*print("e", e);*/
+        F.carry(e);         /*print("e", e);*/
+        F.sqr(r.z, h);      /*print("h", h);*/
+        F.add(h, h, h);     /*print("h", h);*/
+        F.carry(h);         /*print("h", h);*/
+        F.sub(e, h, j);     /*print("j", j);*/
+        F.sub(b, e, b);     /*print("b", b);*/
+        F.sub(c, d, c);     /*print("c", c);*/
+        F.mul(b, j, r.x);   /*print("r.x", r.x);*/
+        F.mul(e, c, r.y);   /*print("r.y", r.y);*/
+        F.mul(e, j, r.z);   /*print("r.z", r.z);*/
     }
 
     private static void pointLookup(int block, int index, PointAffine p)
@@ -880,16 +889,38 @@ public abstract class Ed448
         F.copy(table, off, r.z, 0);
     }
 
+    private static void print(String name, int[] x)
+    {
+        F.normalize(x);
+        System.out.print(name + ": " + "BaseField([");
+//        for (int i = 0; i < x.length; i++)
+//        {
+//            System.out.printf("%x, ", x[i]);
+//
+//        }
+        for (int i = 0; i < x.length; i += 2)
+        {
+            System.out.printf("%x%07x, ", x[i+1], x[i]);
+
+        }
+        System.out.println("])");
+    }
     private static int[] pointPrecompute(PointProjective p, int count, PointTemp t)
     {
 //        assert count > 0;
 
+
         PointProjective q = new PointProjective();
         pointCopy(p, q);
+
+//        print("q.x", q.x);
+//        print("q.y", q.y);
+//        print("q.z", q.z);
 
         PointProjective d = new PointProjective();
         pointCopy(q, d);
         pointDouble(d, t);
+
 
         int[] table = F.createTable(count * 3);
         int off = 0;
@@ -920,6 +951,10 @@ public abstract class Ed448
         PointProjective d = new PointProjective();
         pointCopy(p, d);
         pointDouble(d, t);
+
+//        print("d.x", d.x);
+//        print("d.y", d.y);
+//        print("d.z", d.z);
 
         points[pointsOff] = new PointProjective();
         pointCopy(p, points[pointsOff]);
@@ -1079,6 +1114,7 @@ public abstract class Ed448
 
         PointProjective q = new PointProjective();
         PointTemp t = new PointTemp();
+
         int[] table = pointPrecompute(p, 8, t);
 
         // Replace first 4 doublings (2^4 * P) with 1 addition (P + 15 * P)
@@ -1106,59 +1142,64 @@ public abstract class Ed448
     private static void scalarMultBase(byte[] k, PointProjective r)
     {
         // Equivalent (but much slower)
-//        PointProjective p = new PointProjective();
-//        F.copy(B_x, 0, p.x, 0);
-//        F.copy(B_y, 0, p.y, 0);
-//        F.one(p.z);
-//        scalarMult(k, p, r);
+        PointProjective p = new PointProjective();
+        F.copy(B_x, 0, p.x, 0);
+        F.copy(B_y, 0, p.y, 0);
+        F.one(p.z);
 
-        precompute();
+        scalarMult(k, p, r);
 
-        int[] n = new int[SCALAR_INTS + 1];
-        Scalar448.decode(k, n);
-        Scalar448.toSignedDigits(PRECOMP_RANGE, n, n);
+//        print("r.x", r.x);
+//        print("r.y", r.y);
+//        print("r.z", r.z);
 
-        PointAffine p = new PointAffine();
-        PointTemp t = new PointTemp();
-
-        pointSetNeutral(r);
-
-        int cOff = PRECOMP_SPACING - 1;
-        for (;;)
-        {
-            int tPos = cOff;
-
-            for (int block = 0; block < PRECOMP_BLOCKS; ++block)
-            {
-                int w = 0;
-                for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
-                {
-                    int tBit = n[tPos >>> 5] >>> (tPos & 0x1F);
-                    w &= ~(1 << tooth);
-                    w ^= (tBit << tooth);
-                    tPos += PRECOMP_SPACING;
-                }
-
-                int sign = (w >>> (PRECOMP_TEETH - 1)) & 1;
-                int abs = (w ^ -sign) & PRECOMP_MASK;
-
-//                assert sign == 0 || sign == 1;
-//                assert 0 <= abs && abs < PRECOMP_POINTS;
-
-                pointLookup(block, abs, p);
-
-                F.cnegate(sign, p.x);
-
-                pointAdd(p, r, t);
-            }
-
-            if (--cOff < 0)
-            {
-                break;
-            }
-
-            pointDouble(r, t);
-        }
+//        precompute();
+//
+//        int[] n = new int[SCALAR_INTS + 1];
+//        Scalar448.decode(k, n);
+//        Scalar448.toSignedDigits(PRECOMP_RANGE, n, n);
+//
+//        PointAffine p = new PointAffine();
+//        PointTemp t = new PointTemp();
+//
+//        pointSetNeutral(r);
+//
+//        int cOff = PRECOMP_SPACING - 1;
+//        for (;;)
+//        {
+//            int tPos = cOff;
+//
+//            for (int block = 0; block < PRECOMP_BLOCKS; ++block)
+//            {
+//                int w = 0;
+//                for (int tooth = 0; tooth < PRECOMP_TEETH; ++tooth)
+//                {
+//                    int tBit = n[tPos >>> 5] >>> (tPos & 0x1F);
+//                    w &= ~(1 << tooth);
+//                    w ^= (tBit << tooth);
+//                    tPos += PRECOMP_SPACING;
+//                }
+//
+//                int sign = (w >>> (PRECOMP_TEETH - 1)) & 1;
+//                int abs = (w ^ -sign) & PRECOMP_MASK;
+//
+////                assert sign == 0 || sign == 1;
+////                assert 0 <= abs && abs < PRECOMP_POINTS;
+//
+//                pointLookup(block, abs, p);
+//
+//                F.cnegate(sign, p.x);
+//
+//                pointAdd(p, r, t);
+//            }
+//
+//            if (--cOff < 0)
+//            {
+//                break;
+//            }
+//
+//            pointDouble(r, t);
+//        }
     }
 
     private static void scalarMultBaseEncoded(byte[] k, byte[] r, int rOff)
@@ -1207,17 +1248,30 @@ public abstract class Ed448
         PointTemp t = new PointTemp();
         pointPrecompute(p, tp, 0, count, t);
 
+        print("t.r0", t.r0);
+        print("t.r1", t.r1);
+        print("t.r2", t.r2);
+        print("t.r3", t.r3);
+        print("t.r4", t.r4);
+        print("t.r5", t.r5);
+        print("t.r6", t.r6);
+        print("t.r7", t.r7);
+
         pointSetNeutral(r);
 
         for (int bit = 446;;)
         {
+            System.out.printf("bit: %x ", bit);
             int wp = ws_p[bit];
             if (wp != 0)
             {
                 int index = (wp >> 1) ^ (wp >> 31);
+                System.out.printf("_ i: %x", index);
+
                 pointAddVar(wp < 0, tp[index], r, t);
             }
 
+            System.out.println();
             if (--bit < 0)
             {
                 break;
@@ -1365,6 +1419,9 @@ public abstract class Ed448
         {
             return false;
         }
+
+//        print("pA.x", pA.x);
+//        print("pA.y", pA.y);
 
         return checkPointOrderVar(pA);
     }

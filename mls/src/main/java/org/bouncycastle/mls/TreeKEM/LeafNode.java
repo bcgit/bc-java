@@ -142,6 +142,10 @@ public class LeafNode
             return true;
         }
         long now = Instant.now().getLong(ChronoField.INSTANT_SECONDS);
+        if (lifeTime.not_after == -1)
+        {
+            return (now > lifeTime.not_before) && (now < Long.MAX_VALUE);
+        }
         return (now > lifeTime.not_before) && (now < lifeTime.not_after);
     }
 

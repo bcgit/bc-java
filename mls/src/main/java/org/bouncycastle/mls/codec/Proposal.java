@@ -50,7 +50,15 @@ public class Proposal
 
     public Proposal(MLSInputStream stream) throws IOException
     {
-        proposalType = ProposalType.values()[(short) stream.read(short.class)];
+        short propType = (short) stream.read(short.class);
+        if(Grease.isGrease(propType) == -1)
+        {
+            proposalType = ProposalType.values()[propType];
+        }
+        else
+        {
+            proposalType = ProposalType.values()[8 + Grease.isGrease(propType)];
+        }
         switch (proposalType)
         {
             case ADD:

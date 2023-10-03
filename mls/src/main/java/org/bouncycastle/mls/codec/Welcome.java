@@ -5,6 +5,7 @@ import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ public class Welcome
     {
 
         byte[] ref = suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference");
-
         for (int i = 0; i < secrets.size(); i++)
         {
             if(Arrays.equals(ref, secrets.get(i).new_member))

@@ -14,7 +14,15 @@ public class Credential
 
     Credential(MLSInputStream stream) throws IOException
     {
-        this.credentialType = CredentialType.values()[(short) stream.read(short.class)];
+        short credType = (short) stream.read(short.class);
+        if (Grease.isGrease(credType) == -1)
+        {
+            this.credentialType = CredentialType.values()[credType];
+        }
+        else
+        {
+            this.credentialType = CredentialType.values()[3 + Grease.isGrease(credType)];
+        }
         switch (credentialType)
         {
             case basic:

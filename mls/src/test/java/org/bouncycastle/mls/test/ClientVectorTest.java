@@ -2,6 +2,7 @@ package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
@@ -33,7 +34,34 @@ import java.util.Stack;
 public class ClientVectorTest
         extends TestCase
 {
-
+    public void testpassive_application() throws Exception
+    {
+        runPassiveClientTest("passive_application.txt");
+    }
+    public void testpassive_branch() throws Exception
+    {
+        runPassiveClientTest("passive_branch.txt");
+    }
+    public void testpassive_commit() throws Exception
+    {
+        runPassiveClientTest("passive_commit.txt");
+    }
+    public void testpassive_external_join() throws Exception
+    {
+        runPassiveClientTest("passive_external_join.txt");
+    }
+    public void testpassive_external_proposals() throws Exception
+    {
+        runPassiveClientTest("passive_external_proposals.txt");
+    }
+    public void testpassive_reinit() throws Exception
+    {
+        runPassiveClientTest("passive_reinit.txt");
+    }
+    public void testpassive_welcome_join() throws Exception
+    {
+        runPassiveClientTest("passive_welcome_join.txt");
+    }
     public void testPassiveClientWelcome() throws Exception
     {
         runPassiveClientTest("passive-client-welcome.txt");
@@ -92,8 +120,8 @@ public class ClientVectorTest
             {
                 if (buf.size() > 0)
                 {
-                    try
-                    {
+//                    try
+//                    {
                         System.out.print("test case: " + count);
                         short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                         byte[] key_package = Hex.decode(buf.get("key_package"));
@@ -171,17 +199,17 @@ public class ClientVectorTest
                         buf.clear();
                         count++;
                         System.out.println(" PASSED");
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println(" FAILED -> " + e.getMessage());
-
-                        externalPSKs.clear();
-                        epochs.clear();
-                        buf.clear();
-                        count++;
-                        continue;
-                    }
+//                    }
+//                    catch (Exception e)
+//                    {
+//                        System.out.println(" FAILED -> " + e.getMessage());
+//
+//                        externalPSKs.clear();
+//                        epochs.clear();
+//                        buf.clear();
+//                        count++;
+//                        continue;
+//                    }
                 }
             }
             if (!readingStack.isEmpty() && readingStack.peek().equals("external_psks"))
