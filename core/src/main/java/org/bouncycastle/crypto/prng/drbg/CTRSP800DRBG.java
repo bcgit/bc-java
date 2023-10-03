@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.prng.EntropySource;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -109,7 +110,7 @@ public class CTRSP800DRBG
             ++i;
         }
 
-        XOR(temp, seed, temp, 0);
+        Bytes.xorTo(seed.length, seed, temp);
 
         System.arraycopy(temp, 0, key, 0, key.length);
         System.arraycopy(temp, key.length, v, 0, v.length);
@@ -126,14 +127,6 @@ public class CTRSP800DRBG
         _reseedCounter = 1;
     }
 
-    private void XOR(byte[] out, byte[] a, byte[] b, int bOff)
-    {
-        for (int i=0; i< out.length; i++) 
-        {
-            out[i] = (byte)(a[i] ^ b[i+bOff]);
-        }
-    }
-    
     private void addOneTo(byte[] longer)
     {
         int carry = 1;
@@ -294,11 +287,11 @@ public class CTRSP800DRBG
      */
     private void BCC(byte[] bccOut, byte[] k, byte[] iV, byte[] data)
     {
-        int outlen = _engine.getBlockSize();
-        byte[] chainingValue = new byte[outlen]; // initial values = 0
-        int n = data.length / outlen;
+        int blockSize = _engine.getBlockSize();
+        byte[] chainingValue = new byte[blockSize]; // initial values = 0
+        int n = data.length / blockSize;
 
-        byte[] inputBlock = new byte[outlen];
+        byte[] inputBlock = new byte[blockSize];
 
         _engine.init(true, new KeyParameter(expandKey(k)));
 
@@ -306,7 +299,7 @@ public class CTRSP800DRBG
 
         for (int i = 0; i < n; i++)
         {
-            XOR(inputBlock, chainingValue, data, i*outlen);
+            Bytes.xor(blockSize, chainingValue, 0, data, i * blockSize, inputBlock, 0);
             _engine.processBlock(inputBlock, 0, chainingValue, 0);
         }
 

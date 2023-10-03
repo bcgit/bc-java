@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Longs;
 
 /**
@@ -589,9 +590,6 @@ public class OCBBlockCipher
 
     protected static void xor(byte[] block, byte[] val)
     {
-        for (int i = 15; i >= 0; --i)
-        {
-            block[i] ^= val[i];
-        }
+        Bytes.xorTo(16, val, block);
     }
 }

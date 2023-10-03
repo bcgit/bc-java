@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Haraka-256 v2, https://eprint.iacr.org/2016/098.pdf
@@ -64,11 +65,8 @@ public class Haraka256Digest
         s1[1] = aesEnc(s1[1], RC[19]);
         mix256(s1, s2);
 
-        s1[0] = xor(s2[0], msg, 0);
-        s1[1] = xor(s2[1], msg, 16);
-
-        System.arraycopy(s1[0], 0, out, outOff, 16);
-        System.arraycopy(s1[1], 0, out, outOff + 16, 16);
+        Bytes.xor(16, s2[0], 0, msg,  0, out, outOff);
+        Bytes.xor(16, s2[1], 0, msg, 16, out, outOff + 16);
 
         return DIGEST_SIZE;
     }

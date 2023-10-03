@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 class BIKEEngine
 {
@@ -166,7 +167,7 @@ class BIKEEngine
 
         //calculate c1
         functionL(e0Bytes, e1Bytes, c1);
-        BIKEUtils.xorTo(m, c1, L_BYTE);
+        Bytes.xorTo(L_BYTE, m, c1);
 
         // 4. Calculate K
         functionK(m, c0, c1, k);
@@ -207,7 +208,7 @@ class BIKEEngine
         // 2. Compute m'
         byte[] mPrime = new byte[L_BYTE];
         functionL(e0Bytes, e1Bytes, mPrime);
-        BIKEUtils.xorTo(c1, mPrime, L_BYTE);
+        Bytes.xorTo(L_BYTE, c1, mPrime);
 
         // 3. Compute K
         byte[] wlist = functionH(mPrime);

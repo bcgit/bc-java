@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
@@ -121,11 +122,11 @@ public class PhotonBeetleDigest
             for (i = 0; i < Dlen_inblocks - 1; i++)
             {
                 PHOTON_Permutation();
-                XOR(input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, RATE_INBYTES);
+                Bytes.xorTo(RATE_INBYTES, input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, state, 0);
             }
             PHOTON_Permutation();
             LastDBlocklen = inlen - i * RATE_INBYTES;
-            XOR(input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, LastDBlocklen);
+            Bytes.xorTo(LastDBlocklen, input, INITIAL_RATE_INBYTES + i * RATE_INBYTES, state, 0);
             if (LastDBlocklen < RATE_INBYTES)
             {
                 state[LastDBlocklen] ^= 0x01; // ozs
@@ -137,14 +138,6 @@ public class PhotonBeetleDigest
         PHOTON_Permutation();
         System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, TAG_INBYTES - SQUEEZE_RATE_INBYTES);
         return TAG_INBYTES;
-    }
-
-    void XOR(byte[] in_right, int rOff, int iolen_inbytes)
-    {
-        for (int i = 0; i < iolen_inbytes; i++)
-        {
-            state[i] ^= in_right[i + rOff];
-        }
     }
 
     @Override

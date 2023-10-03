@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Haraka-512 v2, https://eprint.iacr.org/2016/098.pdf
@@ -122,10 +123,10 @@ public class Haraka512Digest
         s1[3] = aesEnc(s1[3], RC[39]);
         mix512(s1, s2);
 
-        s1[0] = xor(s2[0], msg, 0);
-        s1[1] = xor(s2[1], msg, 16);
-        s1[2] = xor(s2[2], msg, 32);
-        s1[3] = xor(s2[3], msg, 48);
+        Bytes.xor(16, s2[0], 0, msg,  0, s1[0], 0);
+        Bytes.xor(16, s2[1], 0, msg, 16, s1[1], 0);
+        Bytes.xor(16, s2[2], 0, msg, 32, s1[2], 0);
+        Bytes.xor(16, s2[3], 0, msg, 48, s1[3], 0);
 
         System.arraycopy(s1[0], 8, out, outOff, 8);
         System.arraycopy(s1[1], 8, out, outOff + 8, 8);
