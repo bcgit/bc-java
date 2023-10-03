@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -425,10 +426,7 @@ public class ARIAEngine
 
     protected static void xor(byte[] z, byte[] x)
     {
-        for (int i = 0; i < 16; ++i)
-        {
-            z[i] ^= x[i];
-        }
+        Bytes.xorTo(16, x, z);
     }
 
     private int bitsOfSecurity()

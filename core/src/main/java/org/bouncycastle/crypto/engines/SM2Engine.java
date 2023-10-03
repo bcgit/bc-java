@@ -22,6 +22,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -288,16 +289,8 @@ public class SM2Engine
             digest.doFinal(buf, 0);
 
             int xorLen = Math.min(digestSize, encData.length - off);
-            xor(encData, buf, off, xorLen);
+            Bytes.xorTo(xorLen, buf, 0, encData, off);
             off += xorLen;
-        }
-    }
-
-    private void xor(byte[] data, byte[] kdfOut, int dOff, int dRemaining)
-    {
-        for (int i = 0; i != dRemaining; i++)
-        {
-            data[dOff + i] ^= kdfOut[i];
         }
     }
 

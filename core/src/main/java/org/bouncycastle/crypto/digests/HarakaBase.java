@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Base class for Haraka v2, https://eprint.iacr.org/2016/098.pdf
@@ -116,31 +117,13 @@ public abstract class HarakaBase
         s = subBytes(s);
         s = shiftRows(s);
         s = mixColumns(s);
-        xorWith(rk, s);
+        Bytes.xorTo(16, rk, s);
         return s;
     }
 
     static byte mulX(byte p)
     {
         return (byte)(((p & 0x7F) << 1) ^ (((p & 0x80) >> 7) * 0x1B));
-    }
-
-    static byte[] xor(byte[] x, byte[] y, int yStart)
-    {
-        byte[] out = new byte[16];
-        for (int i = 0; i < out.length; i++)
-        {
-            out[i] = (byte)(x[i] ^ y[yStart++]);
-        }
-        return out;
-    }
-
-    static void xorWith(byte[] x, byte[] z)
-    {
-        for (int i = 0; i < 16; ++i)
-        {
-            z[i] ^= x[i];
-        }
     }
 
     private static byte[] mixColumns(byte[] s)

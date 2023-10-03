@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.MGFParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
@@ -296,53 +297,29 @@ abstract class SPHINCSPlusEngine
         protected byte[] bitmask(byte[] key, byte[] m)
         {
             byte[] mask = new byte[m.length];
-
             mgf1.init(new MGFParameters(key));
-
             mgf1.generateBytes(mask, 0, mask.length);
-
-            for (int i = 0; i < m.length; ++i)
-            {
-                mask[i] ^= m[i];
-            }
-
+            Bytes.xorTo(m.length, m, mask);
             return mask;
         }
 
         protected byte[] bitmask(byte[] key, byte[] m1, byte[] m2)
         {
             byte[] mask = new byte[m1.length + m2.length];
-
             mgf1.init(new MGFParameters(key));
-
             mgf1.generateBytes(mask, 0, mask.length);
-
-            for (int i = 0; i < m1.length; ++i)
-            {
-                mask[i] ^= m1[i];
-            }
-            for (int i = 0; i < m2.length; ++i)
-            {
-                mask[i + m1.length] ^= m2[i];
-            }
+            Bytes.xorTo(m1.length, m1, mask);
+            Bytes.xorTo(m2.length, m2, 0, mask, m1.length);
             return mask;
         }
 
         protected byte[] bitmask256(byte[] key, byte[] m)
         {
             byte[] mask = new byte[m.length];
-
             MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest());
-
             mgf1.init(new MGFParameters(key));
-
             mgf1.generateBytes(mask, 0, mask.length);
-
-            for (int i = 0; i < m.length; ++i)
-            {
-                mask[i] ^= m[i];
-            }
-
+            Bytes.xorTo(m.length, m, mask);
             return mask;
         }
     }
@@ -482,38 +459,21 @@ abstract class SPHINCSPlusEngine
         protected byte[] bitmask(byte[] pkSeed, ADRS adrs, byte[] m)
         {
             byte[] mask = new byte[m.length];
-
             maskDigest.update(pkSeed, 0, pkSeed.length);
             maskDigest.update(adrs.value, 0, adrs.value.length);
-
             maskDigest.doFinal(mask, 0, mask.length);
-
-            for (int i = 0; i < m.length; ++i)
-            {
-                mask[i] ^= m[i];
-            }
-
+            Bytes.xorTo(m.length, m, mask);
             return mask;
         }
 
         protected byte[] bitmask(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2)
         {
             byte[] mask = new byte[m1.length + m2.length];
-
             maskDigest.update(pkSeed, 0, pkSeed.length);
             maskDigest.update(adrs.value, 0, adrs.value.length);
-
             maskDigest.doFinal(mask, 0, mask.length);
-
-            for (int i = 0; i < m1.length; ++i)
-            {
-                mask[i] ^= m1[i];
-            }
-            for (int i = 0; i < m2.length; ++i)
-            {
-                mask[i + m1.length] ^= m2[i];
-            }
-
+            Bytes.xorTo(m1.length, m1, mask);
+            Bytes.xorTo(m2.length, m2, 0, mask, m1.length);
             return mask;
         }
     }
@@ -545,10 +505,7 @@ abstract class SPHINCSPlusEngine
             {
                 harakaS256Digest.update(adrs.value, 0, adrs.value.length);
                 harakaS256Digest.doFinal(hash, 0);
-                for (int i = 0; i < m1.length; ++i)
-                {
-                    hash[i] ^= m1[i];
-                }
+                Bytes.xorTo(m1.length, m1, hash);
                 harakaS512Digest.update(hash, 0, m1.length);
             }
             else
@@ -634,11 +591,7 @@ abstract class SPHINCSPlusEngine
                 byte[] mask = new byte[m.length];
                 harakaSXof.update(adrs.value, 0, adrs.value.length);
                 harakaSXof.doFinal(mask, 0, mask.length);
-                for (int i = 0; i < m.length; ++i)
-                {
-                    m[i] ^= mask[i];
-                }
-                return m;
+                Bytes.xorTo(m.length, mask, m);
             }
             return m;
         }

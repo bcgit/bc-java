@@ -5,14 +5,6 @@ import org.bouncycastle.util.Pack;
 
 class BIKEUtils
 {
-    static void xorTo(byte[] x, byte[] z, int zLen)
-    {
-        for (int i = 0; i < zLen; ++i)
-        {
-            z[i] ^= x[i];
-        }
-    }
-
     static int getHammingWeight(byte[] bytes)
     {
         int hammingWeight = 0;

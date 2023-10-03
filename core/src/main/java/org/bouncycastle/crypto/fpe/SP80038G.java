@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.util.RadixConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
@@ -608,19 +609,11 @@ class SP80038G
 
         for (int i = 0; i < m; ++i)
         {
-            xor(x, i * BLOCK_SIZE, y, 0, BLOCK_SIZE);
+            Bytes.xorTo(BLOCK_SIZE, x, i * BLOCK_SIZE, y, 0);
             c.processBlock(y, 0, y, 0);
         }
 
         return y;
-    }
-
-    protected static void xor(byte[] x, int xOff, byte[] y, int yOff, int len)
-    {
-        for (int i = 0; i < len; ++i)
-        {
-            y[yOff + i] ^= x[xOff + i];
-        }
     }
 
     private static byte[] toByte(short[] buf)

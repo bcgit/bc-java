@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Memoable;
 
 /**
@@ -333,12 +334,9 @@ public abstract class GOST3411_2012Digest
         V[56] = (byte)(r);
     }
 
-    private void xor512(byte[] A, byte[] B)
+    private static void xor512(byte[] A, byte[] B)
     {
-        for (int i = 0; i < 64; ++i)
-        {
-            A[i] ^= B[i];
-        }
+        Bytes.xorTo(64, B, A);
     }
 
     private void E(byte[] K, byte[] m)
