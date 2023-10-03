@@ -420,11 +420,10 @@ abstract class Scalar448
 //        assert 448 < bits && bits < 480;
 //        assert z.length > SIZE;
 
-        int mask = ~x[0] & 1;
         z[SIZE] = (1 << (bits - 448))
                 + Nat.cadd(SIZE, ~x[0] & 1, x, L, z);
-        int c =
+//        int c =
         Nat.shiftDownBit(SIZE + 1, z, 0);
-        assert c == (1 << 31);
+//        assert c == (1 << 31);
     }
 }

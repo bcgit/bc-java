@@ -91,22 +91,6 @@ public abstract class X448
         Ed448.precompute();
     }
 
-    private static void print(String name, int[] x)
-    {
-        F.normalize(x);
-        System.out.print(name + ": " + "Basefield([");
-//        for (int i = 0; i < x.length; i++)
-//        {
-//            System.out.printf("%x, ", x[i]);
-//
-//        }
-        for (int i = 0; i < x.length; i += 2)
-        {
-            System.out.printf("%x%07x, ", x[i+1], x[i]);
-
-        }
-        System.out.println("])");
-    }
     public static void scalarMult(byte[] k, int kOff, byte[] u, int uOff, byte[] r, int rOff)
     {
         int[] n = new int[14];      decodeScalar(k, kOff, n);
@@ -125,75 +109,30 @@ public abstract class X448
         int bit = 447, swap = 1;
         do
         {
-//            System.out.println("Bit " + bit);
-
-            //print("x1", x1);
-            //print("x2", x2);
-            //print("z2", z2);
-            //print("x3", x3);
-            //print("z3", z3);
-            //print("t1", t1);
-            //print("t2", t2);
 //            F.apm(x3, z3, t1, x3);
             F.add(x3, z3, t1);
-            //print("t1", t1);
-
             F.sub(x3, z3, x3);
-            //print("x3", x3);
-
 //            F.apm(x2, z2, z3, x2);
             F.add(x2, z2, z3);
-            //print("z3", z3);
-
             F.sub(x2, z2, x2);
-            //print("x2", x2);
-
 
             F.mul(t1, x2, t1);
-            //print("t1", t1);
-
             F.mul(x3, z3, x3);
-            //print("x3", x3);
-
             F.sqr(z3, z3);
-            //print("z3", z3);
-
             F.sqr(x2, x2);
-            //print("x2", x2);
-
 
             F.sub(z3, x2, t2);
-            //print("t2", t2);
-
             F.mul(t2, C_A24, z2);
-            //print("z2", z2);
-
             F.add(z2, x2, z2);
-            //print("z2", z2);
-
             F.mul(z2, t2, z2);
-            //print("z2", z2);
-
             F.mul(x2, z3, x2);
-            //print("x2", x2);
-
 
 //            F.apm(t1, x3, x3, z3);
             F.sub(t1, x3, z3);
-            //print("z3", z3);
-
             F.add(t1, x3, x3);
-            //print("x3", x3);
-
             F.sqr(x3, x3);
-            //print("x3", x3);
-
             F.sqr(z3, z3);
-            //print("z3", z3);
-
             F.mul(z3, x1, z3);
-            //print("z3", z3);
-
 
             --bit;
 

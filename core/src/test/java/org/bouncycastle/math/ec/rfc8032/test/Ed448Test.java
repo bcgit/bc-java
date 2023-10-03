@@ -514,36 +514,12 @@ public class Ed448Test
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
 
-        String[] sks = {"d8db97c47cdc9ea4572834861ded8b8999925d52612b854081dbe4ac07c098ef79ef94ae2ef68193fce0abed1d51938871bf6ad609e7ca7834",
-        "385ddde4244f8fdce7e2b39f6e61fe4dfa957216984cb0d24b6185ccdfc0efaf2c1ad7648a698726ce256dcd1df6160973599fb9e069923d97",
-        "a940f4e983d56336517e2837dbd36728a21cd869c234ba90da10048c24c57ae8fb4e4be2bfb8a4159fbec1f9854efe46bad41a258a2da97304",
-        "f58bd97ab9f86d38d0ae122f2062b1df19a634640efa2eebefef37e872a174931e9e65362caae34a36af424b1728c9ef676e45b8a538ac4fa2",
-        "3a4f1a1be3e32f685821fdc36c2f51a304432a420a1313e8d66a77e2f2f5c3bc5189eb6a292a0a2017ddd407f6bde24b9e8f39ff8b6668190d",
-        "ec18c9645bc1ac670f3ccfe51c12a7806ff45ecca39b679b18bbb17c05bca3a131eb2b125d38f8073b61ab697e8d1397f6af99d45aff98e44c",
-        "7e3959f98a0c80d5dd3980baa21cf427c7ca22e1845b7308bafbafe0b598a4dc1846fc2e9b250f29bad7611e23520f6ca14bb1427d46919115",
-        "f3b7171675eca956b68798880a17b38f7f33109823e4ffd4c7cc1522a3dc269a3ac20a39e5512a55f37c3729cb1fdf26ce04157097811b2376",
-        "3130d8e9f8b9e1b34364d41b0488e4b1ae1c98d9f616ce676084e51a1abcafa8803c16381fc53a6045761a908b97e5f9975c89fef1b3c30f66",
-        "ddc7cd1fe26ed0e0f6169e0ad712ca77916d55f35e8c2980adf88939107eeb2dd6dc9de609ad389dd10f783bdfc9623e4d190e082ecb721385"};
-
-        for (int i = 0; i < sks.length; i++)
+        for (int i = 0; i < 10; ++i)
         {
-            sk = Hex.decode(sks[i]);
-            System.out.println(i + " : \"" + Hex.toHexString(sk) + "\"");
+            RANDOM.nextBytes(sk);
             Ed448.generatePublicKey(sk, 0, pk, 0);
-//            System.out.println("pk : " + Hex.toHexString(pk) );
-
             assertTrue(Ed448.validatePublicKeyFull(pk, 0));
         }
-
-//        for (int i = 0; i < 10; ++i)
-//        {
-//            RANDOM.nextBytes(sk);
-//            System.out.println("\"" + Hex.toHexString(sk) + "\"");
-//            Ed448.generatePublicKey(sk, 0, pk, 0);
-//            assertTrue(Ed448.validatePublicKeyFull(pk, 0));
-//        }
-
-
 
         // Small order points (canonical encodings)
         assertFalse(Ed448.validatePublicKeyFull(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
@@ -591,14 +567,14 @@ public class Ed448Test
         byte[] sk = new byte[Ed448.SECRET_KEY_SIZE];
         byte[] pk = new byte[Ed448.PUBLIC_KEY_SIZE];
 
-//        for (int i = 0; i < 10; ++i)
-//        {
-//            RANDOM.nextBytes(sk);
-//            Ed448.generatePublicKey(sk, 0, pk, 0);
-//            assertTrue(Ed448.validatePublicKeyPartial(pk, 0));
-//        }
+        for (int i = 0; i < 10; ++i)
+        {
+            RANDOM.nextBytes(sk);
+            Ed448.generatePublicKey(sk, 0, pk, 0);
+            assertTrue(Ed448.validatePublicKeyPartial(pk, 0));
+        }
 
-//         Small order points (canonical encodings)
+        // Small order points (canonical encodings)
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"), 0));
@@ -615,7 +591,7 @@ public class Ed448Test
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("00000000000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000081"), 0));
-//
+
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("C784B7238BDDDB84C44FB80936FB103FCF39C1F74EE83163A57DB4AD3946FDC81BF0504D6EC1DBABABDB750997BCA465D5FCD3A45F8E183D00"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("149578BCA53F7D199B472D6D367D22A35942BBCA2051F833122D4DC12FE758A16D672A54D5F8C390C44C2F8B32F21121DA69E9DE8FF9675780"), 0));
         assertFalse(Ed448.validatePublicKeyPartial(Hex.decodeStrict("9E9F6E7A8576E8D7C286C493FE76559419012B164589DF764E735CFFDE21BFCAF4D7553F9B37178A2F20C77473E4195E3E1E327F3174C14500"), 0));
