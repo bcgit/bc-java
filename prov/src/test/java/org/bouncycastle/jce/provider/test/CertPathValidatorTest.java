@@ -582,7 +582,7 @@ public class CertPathValidatorTest
     {
         checkInvalidPath(extInvTrust, extInvCA, extInvEE, "version 1 certificate contains extra data");
         checkInvalidPath(extInvV2Trust, extInvV2CA, extInvV2EE, "version 2 certificate cannot contain extensions");
-        checkInvalidPath(extInvVersionTrust, extInvVersionCA, extInvVersionEE, "version number not recognised");
+        checkInvalidPath(extInvVersionTrust, extInvVersionCA, extInvVersionEE, "Certificate version number value 5 not 0, 1 or 2");
         checkInvalidPath(extInvExtTrust, extInvExtCA, extInvExtEE, "repeated extension found: 2.5.29.15");
     }
 
@@ -621,7 +621,7 @@ public class CertPathValidatorTest
         }
         catch (CertPathValidatorException e)
         {
-            isTrue(e.getMessage().equals(expected));
+          isEquals(e.getMessage(), expected);
         }
 
         // check that our cert factory also rejects - the EE is always the invalid one
@@ -633,7 +633,7 @@ public class CertPathValidatorTest
         }
         catch (CertificateException e)
         {
-            isTrue(e.getMessage().equals("parsing issue: " + expected));
+          isEquals(e.getMessage(), "parsing issue: " + expected);
         }
     }
 
