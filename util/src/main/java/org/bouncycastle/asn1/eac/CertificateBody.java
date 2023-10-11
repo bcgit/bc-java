@@ -355,7 +355,7 @@ public class CertificateBody
             CertificateBody.CExD)
         {
             return new PackedDate(
-                ASN1OctetString.getInstance(certificateEffectiveDate.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets());
+                ASN1OctetString.getInstance(certificateExpirationDate.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets());
         }
         throw new IOException("certificate Expiration Date not set");
     }
