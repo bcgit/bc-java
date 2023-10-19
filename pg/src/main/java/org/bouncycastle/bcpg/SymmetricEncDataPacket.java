@@ -12,12 +12,12 @@ public class SymmetricEncDataPacket
     public SymmetricEncDataPacket(
         BCPGInputStream  in)
     {
-        super(in);
+        super(in, SYMMETRIC_KEY_ENC);
     }
 
     public SymmetricEncDataPacket()
     {
-        super(null);
+        super(null, SYMMETRIC_KEY_ENC);
     }
 
     @Override

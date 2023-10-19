@@ -19,7 +19,7 @@ public class LiteralDataPacket
         BCPGInputStream    in)
         throws IOException
     {
-        super(in);
+        super(in, LITERAL_DATA);
 
         format = in.read();
         int    l = in.read();

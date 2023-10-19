@@ -24,6 +24,9 @@ import org.bouncycastle.asn1.DERSequence;
 public class PKIResponse
     extends ASN1Object
 {
+    public static final TaggedContentInfo[] EMPTY_CMS_SEQUENCE = new TaggedContentInfo[0];
+    public static final OtherMsg[] EMPTY_OTHER_MSG = new OtherMsg[0];
+
     private final ASN1Sequence controlSequence;
     private final ASN1Sequence cmsSequence;
     private final ASN1Sequence otherMsgSequence;
@@ -38,7 +41,6 @@ public class PKIResponse
         this.cmsSequence = ASN1Sequence.getInstance(seq.getObjectAt(1));
         this.otherMsgSequence = ASN1Sequence.getInstance(seq.getObjectAt(2));
     }
-
 
     public static PKIResponse getInstance(Object o)
     {
@@ -60,6 +62,20 @@ public class PKIResponse
         boolean explicit)
     {
         return getInstance(ASN1Sequence.getInstance(obj, explicit));
+    }
+
+    public PKIResponse(TaggedAttribute controlSequence)
+    {
+        this.controlSequence = new DERSequence(controlSequence);
+        this.cmsSequence = new DERSequence();
+        this.otherMsgSequence = new DERSequence();
+    }
+
+    public PKIResponse(TaggedAttribute[] controlSequence, TaggedContentInfo[] cmsSequence, OtherMsg[] otherMsgSequence)
+    {
+        this.controlSequence = new DERSequence(controlSequence);
+        this.cmsSequence = new DERSequence(cmsSequence);
+        this.otherMsgSequence = new DERSequence(otherMsgSequence);
     }
 
     public ASN1Primitive toASN1Primitive()

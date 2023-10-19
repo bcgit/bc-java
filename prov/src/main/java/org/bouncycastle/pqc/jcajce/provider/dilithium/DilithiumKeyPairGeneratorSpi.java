@@ -15,9 +15,6 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
-import org.bouncycastle.pqc.crypto.falcon.FalconKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.util.Strings;
@@ -32,9 +29,6 @@ public class DilithiumKeyPairGeneratorSpi
         parameters.put(DilithiumParameterSpec.dilithium2.getName(), DilithiumParameters.dilithium2);
         parameters.put(DilithiumParameterSpec.dilithium3.getName(), DilithiumParameters.dilithium3);
         parameters.put(DilithiumParameterSpec.dilithium5.getName(), DilithiumParameters.dilithium5);
-        parameters.put(DilithiumParameterSpec.dilithium2_aes.getName(), DilithiumParameters.dilithium2_aes);
-        parameters.put(DilithiumParameterSpec.dilithium3_aes.getName(), DilithiumParameters.dilithium3_aes);
-        parameters.put(DilithiumParameterSpec.dilithium5_aes.getName(), DilithiumParameters.dilithium5_aes);
     }
 
     private final DilithiumParameters dilithiumParameters;
@@ -155,36 +149,6 @@ public class DilithiumKeyPairGeneratorSpi
             throws NoSuchAlgorithmException
         {
             super(DilithiumParameters.dilithium5);
-        }
-    }
-
-    public static class Base2_AES
-        extends DilithiumKeyPairGeneratorSpi
-    {
-        public Base2_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(DilithiumParameters.dilithium2_aes);
-        }
-    }
-
-    public static class Base3_AES
-        extends DilithiumKeyPairGeneratorSpi
-    {
-        public Base3_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(DilithiumParameters.dilithium3_aes);
-        }
-    }
-
-    public static class Base5_AES
-        extends DilithiumKeyPairGeneratorSpi
-    {
-        public Base5_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(DilithiumParameters.dilithium5_aes);
         }
     }
 }

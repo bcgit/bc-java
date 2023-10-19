@@ -34,7 +34,7 @@ public class SymmetricEncIntegrityPacket
         BCPGInputStream in)
         throws IOException
     {
-        super(in);
+        super(in, SYM_ENC_INTEGRITY_PRO);
 
         version = in.read();
 
@@ -57,14 +57,14 @@ public class SymmetricEncIntegrityPacket
      */
     public SymmetricEncIntegrityPacket()
     {
-        super(null);
+        super(null, SYM_ENC_INTEGRITY_PRO);
 
         version = VERSION_1;
     }
 
     private SymmetricEncIntegrityPacket(int version, int algorithm, int aeadAlgorithm, int chunkSize, byte[] salt)
     {
-        super(null);
+        super(null, SYM_ENC_INTEGRITY_PRO);
         this.version = version;
         this.cipherAlgorithm = algorithm;
         this.aeadAlgorithm = aeadAlgorithm;

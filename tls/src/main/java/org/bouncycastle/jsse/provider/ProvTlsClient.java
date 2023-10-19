@@ -66,6 +66,9 @@ class ProvTlsClient
     private static final boolean provClientEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.client.enableTrustedCAKeysExtension", false);
 
+    private static final boolean provClientOmitSigAlgsCert = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.client.omitSigAlgsCertExtension", true);
+
     private static final boolean provEnableSNIExtension = PropertyUtils
         .getBooleanSystemProperty("jsse.enableSNIExtension", true);
 
@@ -214,24 +217,21 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        ContextData contextData = manager.getContextData();
-        ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
-
-        jsseSecurityParameters.signatureSchemes = contextData.getSignatureSchemesClient(sslParameters,
-            activeProtocolVersions, jsseSecurityParameters.namedGroups);
-
         return jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
     }
 
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithmsCert()
     {
-//        if (jsseSecurityParameters.localSigSchemes != jsseSecurityParameters.localSigSchemesCert)
-//        {
-//            return SignatureSchemeInfo.getSignatureAndHashAlgorithms(jsseSecurityParameters.localSigSchemesCert);
-//        }
+        Vector<SignatureAndHashAlgorithm> result = jsseSecurityParameters.signatureSchemes
+            .getLocalSignatureAndHashAlgorithmsCert();
 
-        return null;
+        if (result == null && !provClientOmitSigAlgsCert)
+        {
+            result = jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+        }
+
+        return result;
     }
 
     @Override
@@ -498,6 +498,9 @@ class ProvTlsClient
         ProtocolVersion[] activeProtocolVersions = getProtocolVersions();
 
         jsseSecurityParameters.namedGroups = contextData.getNamedGroupsClient(sslParameters, activeProtocolVersions);
+
+        jsseSecurityParameters.signatureSchemes = contextData.getSignatureSchemesClient(sslParameters,
+            activeProtocolVersions, jsseSecurityParameters.namedGroups);
     }
 
     @Override
@@ -654,6 +657,12 @@ class ProvTlsClient
     }
 
     @Override
+    public boolean shouldUseCompatibilityMode()
+    {
+        return JsseUtils.useCompatibilityMode();
+    }
+
+    @Override
     public boolean shouldUseExtendedMasterSecret()
     {
         return JsseUtils.useExtendedMasterSecret();
@@ -683,14 +692,19 @@ class ProvTlsClient
 
         {
             if (null == sessionParameters ||
-                !ProtocolVersion.contains(getProtocolVersions(), sessionParameters.getNegotiatedVersion()) ||
                 !Arrays.contains(getCipherSuites(), sessionParameters.getCipherSuite()))
             {
                 return null;
             }
 
+            ProtocolVersion sessionVersion = sessionParameters.getNegotiatedVersion();
+            if (!ProtocolVersion.contains(getProtocolVersions(), sessionVersion))
+            {
+                return null;
+            }
+
             // TODO[tls13] Resumption/PSK 
-            if (TlsUtils.isTLSv13(sessionParameters.getNegotiatedVersion()))
+            if (TlsUtils.isTLSv13(sessionVersion))
             {
                 return null;
             }

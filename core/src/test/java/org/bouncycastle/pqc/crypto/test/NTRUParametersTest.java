@@ -11,11 +11,11 @@ public class NTRUParametersTest
     public void testParameters()
         throws Exception
     {
-        assertEquals(128, NTRUParameters.ntruhps2048509.getSessionKeySize());
-        assertEquals(192, NTRUParameters.ntruhps2048677.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps2048509.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps2048677.getSessionKeySize());
         assertEquals(256, NTRUParameters.ntruhps4096821.getSessionKeySize());
 
-        assertEquals(192, NTRUParameters.ntruhrss701.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhrss701.getSessionKeySize());
     }
 
     public void testHpsParameters()
@@ -48,7 +48,7 @@ public class NTRUParametersTest
         // kem_ciphertext_bytes
         assertEquals(699, hps2048509.ntruCiphertextBytes());
         // kem_shared_key_bytes - category 1
-        assertEquals(128, hps2048509.sharedKeyBytes() * 8);
+        assertEquals(256, hps2048509.sharedKeyBytes() * 8);
         // prf_key_bits
         assertEquals(256, hps2048509.prfKeyBytes() * 8);
     }
@@ -81,7 +81,7 @@ public class NTRUParametersTest
         // kem_ciphertext_bytes
         assertEquals(1138, hrss701.ntruCiphertextBytes());
         // kem_shared_key_bytes  - category 3
-        assertEquals(192, hrss701.sharedKeyBytes() * 8);
+        assertEquals(256, hrss701.sharedKeyBytes() * 8);
         // prf_key_bits
         assertEquals(256, hrss701.prfKeyBytes() * 8);
     }

@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -29,13 +30,16 @@ public class CertStatus
 {
     private final ASN1OctetString certHash;
     private final ASN1Integer certReqId;
-    private PKIStatusInfo statusInfo;
-    private AlgorithmIdentifier hashAlg;
+    private final PKIStatusInfo statusInfo;
+    private final AlgorithmIdentifier hashAlg;
 
     private CertStatus(ASN1Sequence seq)
     {
-        certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
-        certReqId = ASN1Integer.getInstance(seq.getObjectAt(1));
+        this.certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        this.certReqId = ASN1Integer.getInstance(seq.getObjectAt(1));
+
+        PKIStatusInfo statusInfo = null;
+        AlgorithmIdentifier hashAlg = null;
 
         if (seq.size() > 2)
         {
@@ -49,14 +53,17 @@ public class CertStatus
                 if (p instanceof ASN1TaggedObject)
                 {
                     ASN1TaggedObject dto = (ASN1TaggedObject)p;
-                    if (dto.getTagNo() != 0)
+                    if (!dto.hasContextTag(0))
                     {
-                        throw new IllegalArgumentException("unknown tag " + dto.getTagNo());
+                        throw new IllegalArgumentException("unknown tag " + ASN1Util.getTagText(dto));
                     }
                     hashAlg = AlgorithmIdentifier.getInstance(dto, true);
                 }
             }
         }
+
+        this.statusInfo = statusInfo;
+        this.hashAlg = hashAlg;
     }
 
     public CertStatus(byte[] certHash, BigInteger certReqId)
@@ -68,6 +75,8 @@ public class CertStatus
     {
         this.certHash = new DEROctetString(certHash);
         this.certReqId = certReqId;
+        this.statusInfo = null;
+        this.hashAlg = null;
     }
 
     public CertStatus(byte[] certHash, BigInteger certReqId, PKIStatusInfo statusInfo)
@@ -75,6 +84,7 @@ public class CertStatus
         this.certHash = new DEROctetString(certHash);
         this.certReqId = new ASN1Integer(certReqId);
         this.statusInfo = statusInfo;
+        this.hashAlg = null;
     }
 
     public CertStatus(byte[] certHash, BigInteger certReqId, PKIStatusInfo statusInfo, AlgorithmIdentifier hashAlg)

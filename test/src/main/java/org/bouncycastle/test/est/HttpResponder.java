@@ -17,6 +17,7 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.List;
 import java.util.Random;
@@ -27,7 +28,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -256,7 +256,7 @@ public class HttpResponder
         return out;
     }
 
-    public HttpResponder withCreds(java.security.cert.X509Certificate cert, PrivateKey aPrivate)
+    public HttpResponder withCreds(X509Certificate cert, PrivateKey aPrivate)
     {
         this.creds = new Object[]{cert, aPrivate};
 
@@ -264,21 +264,21 @@ public class HttpResponder
     }
 
 
-    public java.security.cert.X509Certificate toJavaX509Certificate(Object o)
+    public X509Certificate toJavaX509Certificate(Object o)
         throws Exception
     {
         CertificateFactory fac = CertificateFactory.getInstance("X509");
         if (o instanceof X509CertificateHolder)
         {
-            return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded()));
+            return (X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded()));
+        }
+        else if (o instanceof javax.security.cert.X509Certificate)
+        {
+            return (X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((javax.security.cert.X509Certificate)o).getEncoded()));
         }
         else if (o instanceof X509Certificate)
         {
-            return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded()));
-        }
-        else if (o instanceof java.security.cert.X509Certificate)
-        {
-            return (java.security.cert.X509Certificate)o;
+            return (X509Certificate)o;
         }
         throw new IllegalArgumentException("Object not X509CertificateHolder, javax..X509Certificate or java...X509Certificate");
     }

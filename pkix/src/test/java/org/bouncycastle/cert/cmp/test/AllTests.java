@@ -273,7 +273,7 @@ public class AllTests
 
         CertReqMsg reqMsg = reqMsgs.toCertReqMsgArray()[0];
 
-        assertEquals(ProofOfPossession.TYPE_KEY_ENCIPHERMENT, reqMsg.getPopo().getType());
+        assertEquals(ProofOfPossession.TYPE_KEY_ENCIPHERMENT, reqMsg.getPop().getType());
     }
 
     public void testServerSideKey()

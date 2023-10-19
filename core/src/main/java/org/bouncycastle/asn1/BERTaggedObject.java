@@ -97,11 +97,6 @@ public class BERTaggedObject
         }
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.BER;
-    }
-
     ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
     {
         return new BERSequence(primitive);

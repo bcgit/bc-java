@@ -11,12 +11,19 @@ public class KEMExtractSpec
     private final PrivateKey privateKey;
     private final byte[] encapsulation;
     private final String keyAlgorithmName;
+    private final int keySizeInBits;
 
     public KEMExtractSpec(PrivateKey privateKey, byte[] encapsulation, String keyAlgorithmName)
+    {
+        this(privateKey, encapsulation, keyAlgorithmName, 256);
+    }
+
+    public KEMExtractSpec(PrivateKey privateKey, byte[] encapsulation, String keyAlgorithmName, int keySizeInBits)
     {
         this.privateKey = privateKey;
         this.encapsulation = Arrays.clone(encapsulation);
         this.keyAlgorithmName = keyAlgorithmName;
+        this.keySizeInBits = keySizeInBits;
     }
 
     public byte[] getEncapsulation()
@@ -32,5 +39,10 @@ public class KEMExtractSpec
     public String getKeyAlgorithmName()
     {
         return keyAlgorithmName;
+    }
+
+    public int getKeySize()
+    {
+        return keySizeInBits;
     }
 }

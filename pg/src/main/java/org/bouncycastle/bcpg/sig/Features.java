@@ -8,18 +8,26 @@ public class Features
 {
     /**
      * Identifier for the Modification Detection (packets 18 and 19)
+     * Symmetrically Encrypted Integrity Protected Data packet version 1.
      */
     public static final byte FEATURE_MODIFICATION_DETECTION = 0x01;
+
     /**
      * Identifier for the AEAD Encrypted Data Packet (packet 20) and version 5
      * Symmetric-Key Encrypted Session Key Packets (packet 3)
      */
     public static final byte FEATURE_AEAD_ENCRYPTED_DATA = 0x02;
+
     /**
      * Identifier for the Version 5 Public-Key Packet format and corresponding new
      * fingerprint format
      */
     public static final byte FEATURE_VERSION_5_PUBLIC_KEY = 0x04;
+
+    /**
+     * Symmetrically Encrypted Integrity Protected Data packet version 2.
+     */
+    public static final byte FEATURE_SEIPD_V2 = 0x08;
 
     private static final byte[] featureToByteArray(byte feature)
     {
@@ -57,6 +65,11 @@ public class Features
     public boolean supportsModificationDetection()
     {
         return supportsFeature(FEATURE_MODIFICATION_DETECTION);
+    }
+
+    public boolean supportsSEIPDv2()
+    {
+        return supportsFeature(FEATURE_SEIPD_V2);
     }
 
     /**

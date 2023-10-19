@@ -211,6 +211,11 @@ public abstract class ASN1TaggedObject
         return tagNo;
     }
 
+    public boolean hasContextTag()
+    {
+        return this.tagClass == BERTags.CONTEXT_SPECIFIC;
+    }
+
     public boolean hasContextTag(int tagNo)
     {
         return this.tagClass == BERTags.CONTEXT_SPECIFIC && this.tagNo == tagNo;
@@ -219,6 +224,11 @@ public abstract class ASN1TaggedObject
     public boolean hasTag(int tagClass, int tagNo)
     {
         return this.tagClass == tagClass && this.tagNo == tagNo;
+    }
+
+    public boolean hasTagClass(int tagClass)
+    {
+        return this.tagClass == tagClass;
     }
 
     /**
@@ -411,8 +421,6 @@ public abstract class ASN1TaggedObject
     {
         return this;
     }
-
-    abstract String getASN1Encoding();
 
     abstract ASN1Sequence rebuildConstructed(ASN1Primitive primitive);
 

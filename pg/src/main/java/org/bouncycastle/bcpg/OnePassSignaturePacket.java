@@ -20,6 +20,8 @@ public class OnePassSignaturePacket
         BCPGInputStream    in)
         throws IOException
     {
+        super(ONE_PASS_SIGNATURE);
+
         version = in.read();
         sigType = in.read();
         hashAlgorithm = in.read();
@@ -44,6 +46,8 @@ public class OnePassSignaturePacket
         long       keyID,
         boolean    isNested)
     {
+        super(ONE_PASS_SIGNATURE);
+
         this.version = 3;
         this.sigType = sigType;
         this.hashAlgorithm = hashAlgorithm;

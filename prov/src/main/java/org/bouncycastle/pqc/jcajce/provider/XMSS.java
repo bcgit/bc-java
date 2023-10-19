@@ -35,12 +35,16 @@ public class XMSS
 
             addSignatureAlgorithm(provider, "SHA256", "XMSS-SHA256", PREFIX + "XMSSSignatureSpi$withSha256andPrehash", BCObjectIdentifiers.xmss_SHA256ph);
             addSignatureAlgorithm(provider, "SHAKE128", "XMSS-SHAKE128", PREFIX + "XMSSSignatureSpi$withShake128andPrehash", BCObjectIdentifiers.xmss_SHAKE128ph);
+            addSignatureAlgorithm(provider, "SHAKE128(512)", "XMSS-SHAKE128", PREFIX + "XMSSSignatureSpi$withShake128_512andPrehash", BCObjectIdentifiers.xmss_SHAKE128_512ph);
             addSignatureAlgorithm(provider, "SHA512", "XMSS-SHA512", PREFIX + "XMSSSignatureSpi$withSha512andPrehash", BCObjectIdentifiers.xmss_SHA512ph);
             addSignatureAlgorithm(provider, "SHAKE256", "XMSS-SHAKE256", PREFIX + "XMSSSignatureSpi$withShake256andPrehash", BCObjectIdentifiers.xmss_SHAKE256ph);
+            addSignatureAlgorithm(provider, "SHAKE256(1024)", "XMSS-SHAKE256", PREFIX + "XMSSSignatureSpi$withShake256_1024andPrehash", BCObjectIdentifiers.xmss_SHAKE256_1024ph);
             provider.addAlgorithm("Alg.Alias.Signature.SHA256WITHXMSS", "SHA256WITHXMSS-SHA256");
             provider.addAlgorithm("Alg.Alias.Signature.SHAKE128WITHXMSS", "SHAKE128WITHXMSS-SHAKE128");
+            provider.addAlgorithm("Alg.Alias.Signature.SHAKE128(512)WITHXMSS", "SHAKE128(512)WITHXMSS-SHAKE128");
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHXMSS", "SHA512WITHXMSS-SHA512");
             provider.addAlgorithm("Alg.Alias.Signature.SHAKE256WITHXMSS", "SHAKE256WITHXMSS-SHAKE256");
+            provider.addAlgorithm("Alg.Alias.Signature.SHAKE256(1024)WITHXMSS", "SHAKE256(1024)WITHXMSS-SHAKE256");
 
             provider.addAlgorithm("KeyFactory.XMSSMT", PREFIX + "XMSSMTKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.XMSSMT", PREFIX + "XMSSMTKeyPairGeneratorSpi");
@@ -56,12 +60,16 @@ public class XMSS
 
             addSignatureAlgorithm(provider, "SHA256", "XMSSMT-SHA256", PREFIX + "XMSSMTSignatureSpi$withSha256andPrehash", BCObjectIdentifiers.xmss_mt_SHA256ph);
             addSignatureAlgorithm(provider, "SHAKE128", "XMSSMT-SHAKE128", PREFIX + "XMSSMTSignatureSpi$withShake128andPrehash", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+            addSignatureAlgorithm(provider, "SHAKE128(512)", "XMSSMT-SHAKE128", PREFIX + "XMSSMTSignatureSpi$withShake128_512andPrehash", BCObjectIdentifiers.xmss_mt_SHAKE128_512ph);
             addSignatureAlgorithm(provider, "SHA512", "XMSSMT-SHA512", PREFIX + "XMSSMTSignatureSpi$withSha512andPrehash", BCObjectIdentifiers.xmss_mt_SHA512ph);
             addSignatureAlgorithm(provider, "SHAKE256", "XMSSMT-SHAKE256", PREFIX + "XMSSMTSignatureSpi$withShake256andPrehash", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
+            addSignatureAlgorithm(provider, "SHAKE256(1024)", "XMSSMT-SHAKE256", PREFIX + "XMSSMTSignatureSpi$withShake256_1024andPrehash", BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph);
             provider.addAlgorithm("Alg.Alias.Signature.SHA256WITHXMSSMT", "SHA256WITHXMSSMT-SHA256");
             provider.addAlgorithm("Alg.Alias.Signature.SHAKE128WITHXMSSMT", "SHAKE128WITHXMSSMT-SHAKE128");
+            provider.addAlgorithm("Alg.Alias.Signature.SHAKE128(512)WITHXMSSMT", "SHAKE128(512)WITHXMSSMT-SHAKE128");
             provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHXMSSMT", "SHA512WITHXMSSMT-SHA512");
             provider.addAlgorithm("Alg.Alias.Signature.SHAKE256WITHXMSSMT", "SHAKE256WITHXMSSMT-SHAKE256");
+            provider.addAlgorithm("Alg.Alias.Signature.SHAKE256(1024)WITHXMSSMT", "SHAKE256(1024)WITHXMSSMT-SHAKE256");
 
             registerOid(provider, PQCObjectIdentifiers.xmss, "XMSS", new XMSSKeyFactorySpi());
             registerOid(provider, IsaraObjectIdentifiers.id_alg_xmss, "XMSS", new XMSSKeyFactorySpi());

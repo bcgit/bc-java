@@ -5,10 +5,12 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.CTRModeCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -126,7 +128,7 @@ public class AESTest
     private void testNullSIC()
         throws InvalidCipherTextException
     {
-        BufferedBlockCipher b = new BufferedBlockCipher(new SICBlockCipher(AESEngine.newInstance()));
+        BufferedBlockCipher b = new DefaultBufferedBlockCipher(SICBlockCipher.newInstance(AESEngine.newInstance()));
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         b.init(true, new ParametersWithIV(kp, new byte[16]));
@@ -157,7 +159,7 @@ public class AESTest
     private void testNullCBC()
         throws InvalidCipherTextException
     {
-        BufferedBlockCipher b = new BufferedBlockCipher(new CBCBlockCipher(AESEngine.newInstance()));
+        BufferedBlockCipher b = new DefaultBufferedBlockCipher(new CBCBlockCipher(AESEngine.newInstance()));
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         b.init(true, new ParametersWithIV(kp, new byte[16]));
@@ -188,7 +190,7 @@ public class AESTest
     private void testNullOFB()
         throws InvalidCipherTextException
     {
-        BufferedBlockCipher b = new BufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128));
+        BufferedBlockCipher b = new DefaultBufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128));
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         b.init(true, new ParametersWithIV(kp, new byte[16]));
@@ -219,7 +221,7 @@ public class AESTest
     private void testNullCFB()
         throws InvalidCipherTextException
     {
-        BufferedBlockCipher b = new BufferedBlockCipher(new CFBBlockCipher(AESEngine.newInstance(), 128));
+        BufferedBlockCipher b = new DefaultBufferedBlockCipher(new CFBBlockCipher(AESEngine.newInstance(), 128));
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         b.init(true, new ParametersWithIV(kp, new byte[16]));
@@ -263,7 +265,7 @@ public class AESTest
     private void skipTest()
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("00000000000000000000000000000000"));
-        SICBlockCipher engine = new SICBlockCipher(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
 
         engine.init(true, params);
 
@@ -392,7 +394,7 @@ public class AESTest
     private void ctrCounterTest()
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917")), Hex.decode("000000000000000000000000000000"));
-        SICBlockCipher engine = new SICBlockCipher(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
 
         engine.init(true, params);
 
@@ -425,7 +427,7 @@ public class AESTest
     private void testLastByte()
         throws Exception
     {
-        SICBlockCipher cipher = new SICBlockCipher(AESEngine.newInstance());
+        CTRModeCipher cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         byte[] iv = new byte[15];
         byte[] key = new byte[16];
 
@@ -463,7 +465,7 @@ public class AESTest
     private void ctrFragmentedTest()
         throws InvalidCipherTextException
     {
-        SICBlockCipher engine = new SICBlockCipher(AESEngine.newInstance());
+        CTRModeCipher engine = SICBlockCipher.newInstance(AESEngine.newInstance());
         KeyParameter kp = new KeyParameter(Hex.decode("5F060D3716B345C253F6749ABAC10917"));
 
         byte[] out = new byte[tData.length];

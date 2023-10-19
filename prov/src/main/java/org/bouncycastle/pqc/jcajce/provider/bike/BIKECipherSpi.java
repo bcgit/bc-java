@@ -25,30 +25,38 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.bike.BIKEKEMExtractor;
 import org.bouncycastle.pqc.crypto.bike.BIKEKEMGenerator;
-import org.bouncycastle.pqc.crypto.cmce.CMCEKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPrivateKey;
-import org.bouncycastle.pqc.jcajce.provider.cmce.BCCMCEPublicKey;
+import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Strings;
 
 class BIKECipherSpi
         extends CipherSpi
 {
     private final String algorithmName;
     private BIKEKEMGenerator kemGen;
-    private KEMParameterSpec kemParameterSpec;
+    private KTSParameterSpec kemParameterSpec;
     private BCBIKEPublicKey wrapKey;
     private BCBIKEPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
+    private BIKEParameters bikeParameters;
 
     BIKECipherSpi(String algorithmName)
             throws NoSuchAlgorithmException
     {
+        this.bikeParameters = null;
         this.algorithmName = algorithmName;
+    }
+
+    BIKECipherSpi(BIKEParameters bikeParameters)
+    {
+        this.bikeParameters = bikeParameters;
+        this.algorithmName = Strings.toUpperCase(bikeParameters.getName());
     }
 
     @Override
@@ -135,12 +143,12 @@ class BIKECipherSpi
         }
         else
         {
-            if (!(paramSpec instanceof KEMParameterSpec))
+            if (!(paramSpec instanceof KTSParameterSpec))
             {
                 throw new InvalidAlgorithmParameterException(algorithmName + " can only accept KTSParameterSpec");
             }
 
-            kemParameterSpec = (KEMParameterSpec)paramSpec;
+            kemParameterSpec = (KTSParameterSpec)paramSpec;
         }
 
         if (opmode == Cipher.WRAP_MODE)
@@ -169,6 +177,15 @@ class BIKECipherSpi
         else
         {
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
+        }
+
+        if (bikeParameters != null)
+        {
+            String canonicalAlgName = Strings.toUpperCase(bikeParameters.getName());
+            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            {
+                throw new InvalidKeyException("cipher locked to " + canonicalAlgName + " " + key.getAlgorithm());
+            }
         }
     }
 
@@ -312,6 +329,33 @@ class BIKECipherSpi
                 throws NoSuchAlgorithmException
         {
             super("BIKE");
+        }
+    }
+
+    public static class BIKE128
+        extends BIKECipherSpi
+    {
+        public BIKE128()
+        {
+            super(BIKEParameters.bike128);
+        }
+    }
+
+    public static class BIKE192
+        extends BIKECipherSpi
+    {
+        public BIKE192()
+        {
+            super(BIKEParameters.bike192);
+        }
+    }
+
+    public static class BIKE256
+        extends BIKECipherSpi
+    {
+        public BIKE256()
+        {
+            super(BIKEParameters.bike256);
         }
     }
 }

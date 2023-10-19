@@ -157,7 +157,7 @@ public abstract class Ed25519
 
         byte[] result = new byte[SCALAR_BYTES * 2];
         Codec.encode32(t, 0, t.length, result, 0);
-        return Scalar25519.reduce(result);
+        return Scalar25519.reduce512(result);
     }
 
     private static boolean checkContextVar(byte[] ctx , byte phflag)
@@ -443,7 +443,7 @@ public abstract class Ed25519
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] r = Scalar25519.reduce(h);
+        byte[] r = Scalar25519.reduce512(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncoded(r, R, 0);
 
@@ -456,7 +456,7 @@ public abstract class Ed25519
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] k = Scalar25519.reduce(h);
+        byte[] k = Scalar25519.reduce512(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -556,7 +556,7 @@ public abstract class Ed25519
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] k = Scalar25519.reduce(h);
+        byte[] k = Scalar25519.reduce512(h);
 
         int[] nA = new int[SCALAR_INTS];
         Scalar25519.decode(k, nA);
@@ -618,7 +618,7 @@ public abstract class Ed25519
         d.update(m, mOff, mLen);
         d.doFinal(h, 0);
 
-        byte[] k = Scalar25519.reduce(h);
+        byte[] k = Scalar25519.reduce512(h);
 
         int[] nA = new int[SCALAR_INTS];
         Scalar25519.decode(k, nA);
@@ -1180,7 +1180,7 @@ public abstract class Ed25519
     {
         int[] n = new int[SCALAR_INTS];
         Scalar25519.decode(k, n);
-        Scalar25519.toSignedDigits(256, n, n);
+        Scalar25519.toSignedDigits(256, n);
 
         PointPrecompZ q = new PointPrecompZ();
         PointTemp t = new PointTemp();
@@ -1218,7 +1218,7 @@ public abstract class Ed25519
 
         int[] n = new int[SCALAR_INTS];
         Scalar25519.decode(k, n);
-        Scalar25519.toSignedDigits(PRECOMP_RANGE, n, n);
+        Scalar25519.toSignedDigits(PRECOMP_RANGE, n);
         groupCombBits(n);
 
         PointPrecomp p = new PointPrecomp();
@@ -1354,6 +1354,14 @@ public abstract class Ed25519
 
         int bit = 128;
         while (--bit >= 0)
+        {
+            if ((ws_b[bit] | ws_b[128 + bit] | ws_p[bit] | ws_q[bit]) != 0)
+            {
+                break;
+            }
+        }
+
+        for (; bit >= 0; --bit)            
         {
             int wb = ws_b[bit];
             if (wb != 0)

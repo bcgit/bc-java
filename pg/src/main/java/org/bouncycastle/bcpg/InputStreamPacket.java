@@ -8,9 +8,22 @@ public class InputStreamPacket
 {
     private BCPGInputStream        in;
 
+    // it's unlikely this is being used, but just in case we'll mark
+    // unknown inputs as reserved.
     public InputStreamPacket(
         BCPGInputStream  in)
     {
+        super(RESERVED);
+
+        this.in = in;
+    }
+
+    InputStreamPacket(
+        BCPGInputStream  in,
+        int packetTag)
+    {
+        super(packetTag);
+        
         this.in = in;
     }
 

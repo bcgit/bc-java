@@ -1,6 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -19,19 +20,22 @@ public class JceBlockCipherWithCBCImplicitIVImpl
 {
     private static final int BUF_SIZE = 32 * 1024;
 
+    private final JcaTlsCrypto crypto;
     private final Cipher cipher;
     private final String algorithm;
-    private final boolean isEncrypting;
+    private final int cipherMode;
 
     private SecretKey key;
     private byte[] nextIV;
 
-    public JceBlockCipherWithCBCImplicitIVImpl(Cipher cipher, String algorithm, boolean isEncrypting)
+    public JceBlockCipherWithCBCImplicitIVImpl(JcaTlsCrypto crypto, Cipher cipher, String algorithm,
+        boolean isEncrypting)
         throws GeneralSecurityException
     {
+        this.crypto = crypto;
         this.cipher = cipher;
         this.algorithm = algorithm;
-        this.isEncrypting = isEncrypting;
+        this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
     }
 
     public void setKey(byte[] key, int keyOff, int keyLen)
@@ -51,13 +55,16 @@ public class JceBlockCipherWithCBCImplicitIVImpl
 
     public int doFinal(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset)
     {
+        // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
+        SecureRandom random = crypto.getSecureRandom();
+        
         try
         {
-            cipher.init(isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE, key, new IvParameterSpec(nextIV), null);
+            cipher.init(cipherMode, key, new IvParameterSpec(nextIV), random);
 
             nextIV = null;
 
-            if (!isEncrypting)
+            if (Cipher.ENCRYPT_MODE != cipherMode)
             {
                 nextIV = TlsUtils.copyOfRangeExact(input, inputOffset + inputLength - cipher.getBlockSize(), inputOffset + inputLength);
             }
@@ -75,7 +82,7 @@ public class JceBlockCipherWithCBCImplicitIVImpl
             totLen += cipher.update(input, inputOffset, inputLength, output, outputOffset + totLen);
             totLen += cipher.doFinal(output, outputOffset + totLen);
 
-            if (isEncrypting)
+            if (Cipher.ENCRYPT_MODE == cipherMode)
             {
                 nextIV = TlsUtils.copyOfRangeExact(output, outputOffset + totLen - cipher.getBlockSize(), outputOffset + totLen);
             }

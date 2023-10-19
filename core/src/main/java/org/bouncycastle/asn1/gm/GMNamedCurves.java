@@ -103,6 +103,7 @@ public class GMNamedCurves
     static
     {
         defineCurve("wapip192v1", GMObjectIdentifiers.wapip192v1, wapip192v1);
+        defineCurve("wapi192v1", GMObjectIdentifiers.wapi192v1, wapip192v1);
         defineCurve("sm2p256v1", GMObjectIdentifiers.sm2p256v1, sm2p256v1);
     }
 

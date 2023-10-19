@@ -13,7 +13,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.util.DEROtherInfo;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;

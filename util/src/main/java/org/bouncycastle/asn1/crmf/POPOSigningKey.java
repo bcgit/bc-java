@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -24,14 +25,10 @@ public class POPOSigningKey
 
         if (seq.getObjectAt(index) instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject tagObj
-                = ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC);
-            if (tagObj.getTagNo() != 0)
-            {
-                throw new IllegalArgumentException(
-                    "Unknown POPOSigningKeyInput tag: " + tagObj.getTagNo());
-            }
-            poposkInput = POPOSigningKeyInput.getInstance(tagObj.getBaseUniversal(false, BERTags.SEQUENCE));
+            ASN1TaggedObject tagObj = (ASN1TaggedObject)seq.getObjectAt(index++);
+
+            poposkInput = POPOSigningKeyInput.getInstance(
+                ASN1Util.getContextBaseUniversal(tagObj, 0, false, BERTags.SEQUENCE));
         }
         algorithmIdentifier = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
         signature = ASN1BitString.getInstance(seq.getObjectAt(index));

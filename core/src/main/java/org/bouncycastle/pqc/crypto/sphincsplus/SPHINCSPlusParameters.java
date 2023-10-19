@@ -1,10 +1,10 @@
 package org.bouncycastle.pqc.crypto.sphincsplus;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SPHINCSPlusParameters
 {
@@ -74,18 +74,26 @@ public class SPHINCSPlusParameters
 
     // Haraka.
 
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_128f = new SPHINCSPlusParameters(
         Integers.valueOf(0x030101), "haraka-128f-robust", new HarakaSEngineProvider(true, 16, 16, 22, 6, 33, 66));
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_128s = new SPHINCSPlusParameters(
         Integers.valueOf(0x030102), "haraka-128s-robust", new HarakaSEngineProvider(true, 16, 16, 7, 12, 14, 63));
-
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_192f = new SPHINCSPlusParameters(
         Integers.valueOf(0x030103), "haraka-192f-robust", new HarakaSEngineProvider(true, 24, 16, 22, 8, 33, 66));
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_192s = new SPHINCSPlusParameters(
         Integers.valueOf(0x030104), "haraka-192s-robust", new HarakaSEngineProvider(true, 24, 16, 7, 14, 17, 63));
-
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_256f = new SPHINCSPlusParameters(
         Integers.valueOf(0x030105), "haraka-256f-robust", new HarakaSEngineProvider(true, 32, 16, 17, 9, 35, 68));
+    @Deprecated
     public static final SPHINCSPlusParameters haraka_256s = new SPHINCSPlusParameters(
         Integers.valueOf(0x030106), "haraka-256s-robust", new HarakaSEngineProvider(true, 32, 16, 8, 14, 22, 64));
 

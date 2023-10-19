@@ -88,11 +88,6 @@ public class DLTaggedObject
         primitive.encode(out.getDLSubStream(), explicit);
     }
 
-    String getASN1Encoding()
-    {
-        return ASN1Encoding.DL;
-    }
-
     ASN1Sequence rebuildConstructed(ASN1Primitive primitive)
     {
         return new DLSequence(primitive);

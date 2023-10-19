@@ -31,7 +31,8 @@ public class PKMACBuilder
 
     public PKMACBuilder(PKMACValuesCalculator calculator)
     {
-        this(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), 1000, new AlgorithmIdentifier(IANAObjectIdentifiers.hmacSHA1, DERNull.INSTANCE), calculator);
+        this(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), 1000,
+            new AlgorithmIdentifier(IANAObjectIdentifiers.hmacSHA1, DERNull.INSTANCE), calculator);
     }
 
     /**
@@ -46,7 +47,8 @@ public class PKMACBuilder
         this.calculator = calculator;
     }
 
-    private PKMACBuilder(AlgorithmIdentifier hashAlgorithm, int iterationCount, AlgorithmIdentifier macAlgorithm, PKMACValuesCalculator calculator)
+    private PKMACBuilder(AlgorithmIdentifier hashAlgorithm, int iterationCount, AlgorithmIdentifier macAlgorithm,
+        PKMACValuesCalculator calculator)
     {
         this.owf = hashAlgorithm;
         this.iterationCount = iterationCount;
@@ -124,23 +126,13 @@ public class PKMACBuilder
     public MacCalculator build(char[] password)
         throws CRMFException
     {
-        if (parameters != null)
+        PBMParameter pbmParameter = parameters;        
+        if (pbmParameter == null)
         {
-            return genCalculator(parameters, password);
+            pbmParameter = genParameters();
         }
-        else
-        {
-            byte[] salt = new byte[saltLength];
 
-            if (random == null)
-            {
-                this.random = new SecureRandom();
-            }
-
-            random.nextBytes(salt);
-
-            return genCalculator(new PBMParameter(salt, owf, iterationCount, mac), password);
-        }
+        return genCalculator(pbmParameter, password);
     }
 
     private void checkIterationCountCeiling(int iterationCount)
@@ -218,5 +210,19 @@ public class PKMACBuilder
                 }
             }
         };
+    }
+
+    private PBMParameter genParameters()
+    {
+        byte[] salt = new byte[saltLength];
+
+        if (random == null)
+        {
+            random = new SecureRandom();
+        }
+
+        random.nextBytes(salt);
+
+        return new PBMParameter(salt, owf, iterationCount, mac);
     }
 }

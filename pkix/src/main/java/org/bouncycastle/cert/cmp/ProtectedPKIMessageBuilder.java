@@ -192,7 +192,7 @@ public class ProtectedPKIMessageBuilder
     {
         if (!CertificateRepMessage.isCertificateRepMessage(bodyType))
         {
-            throw new IllegalArgumentException("body type " + bodyType + " does not match CMP type CertReqMessages");
+            throw new IllegalArgumentException("body type " + bodyType + " does not match CMP type CertRepMessage");
         }
 
         this.body = new PKIBody(bodyType, certificateRepMessage.toASN1Structure());

@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
 import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -99,19 +100,24 @@ abstract class Symmetric
         }
     }
 
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     static class AesSymmetric
         extends Symmetric
     {
         private final SHA256Digest sha256Digest;
         private final SHA512Digest sha512Digest;
-        private final SICBlockCipher cipher;
+        private final StreamCipher cipher;
 
         AesSymmetric()
         {
             super(64);
             this.sha256Digest = new SHA256Digest();
             this.sha512Digest = new SHA512Digest();
-            this.cipher = new SICBlockCipher(new AESEngine());
+            this.cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         }
 
         private void doDigest(ExtendedDigest digest, byte[] out, byte[] in, int outOffset)

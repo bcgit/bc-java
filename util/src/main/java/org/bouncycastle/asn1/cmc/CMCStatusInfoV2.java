@@ -89,7 +89,14 @@ public class CMCStatusInfoV2
         }
     }
 
+    public CMCStatus getCMCStatus()
+    {
+        return cMCStatus;
+    }
 
+    /**
+     * @deprecated use  getCMCStatus();
+     */
     public CMCStatus getcMCStatus()
     {
         return cMCStatus;

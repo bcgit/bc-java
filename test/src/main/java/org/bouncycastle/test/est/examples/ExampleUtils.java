@@ -16,6 +16,7 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,8 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -50,6 +49,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.openssl.MiscPEMGenerator;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -114,15 +114,15 @@ public class ExampleUtils
         {
             if (o instanceof X509CertificateHolder)
             {
-                out.add(new TrustAnchor((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded())), null));
+                out.add(new TrustAnchor((X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded())), null));
+            }
+            else if (o instanceof javax.security.cert.X509Certificate)
+            {
+                out.add(new TrustAnchor((X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded())), null));
             }
             else if (o instanceof X509Certificate)
             {
-                out.add(new TrustAnchor((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded())), null));
-            }
-            else if (o instanceof java.security.cert.X509Certificate)
-            {
-                out.add(new TrustAnchor((java.security.cert.X509Certificate)o, null));
+                out.add(new TrustAnchor((X509Certificate)o, null));
             }
             else if (o instanceof TrustAnchor)
             {
@@ -137,26 +137,26 @@ public class ExampleUtils
         return out;
     }
 
-    public static List<java.security.cert.X509Certificate> toCertList(X509Certificate[] certs)
+    public static List<X509Certificate> toCertList(X509Certificate[] certs)
         throws Exception
     {
         CertificateFactory fac = CertificateFactory.getInstance("X509");
 
-        ArrayList<java.security.cert.X509Certificate> c = new ArrayList<java.security.cert.X509Certificate>();
+        ArrayList<X509Certificate> c = new ArrayList<java.security.cert.X509Certificate>();
         for (X509Certificate cc : certs)
         {
-            c.add((java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(cc.getEncoded())));
+            c.add((X509Certificate)fac.generateCertificate(new ByteArrayInputStream(cc.getEncoded())));
         }
         return c;
     }
 
 
-    public static List<java.security.cert.X509Certificate> toCertList(Object[] certs)
+    public static List<X509Certificate> toCertList(Object[] certs)
         throws Exception
     {
         CertificateFactory fac = CertificateFactory.getInstance("X509");
 
-        ArrayList<java.security.cert.X509Certificate> c = new ArrayList<java.security.cert.X509Certificate>();
+        ArrayList<X509Certificate> c = new ArrayList<java.security.cert.X509Certificate>();
         for (Object cc : certs)
         {
             c.add(toJavaX509Certificate(cc));
@@ -165,21 +165,21 @@ public class ExampleUtils
     }
 
 
-    public static java.security.cert.X509Certificate toJavaX509Certificate(Object o)
+    public static X509Certificate toJavaX509Certificate(Object o)
         throws Exception
     {
         CertificateFactory fac = CertificateFactory.getInstance("X509");
         if (o instanceof X509CertificateHolder)
         {
-            return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded()));
+            return (X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509CertificateHolder)o).getEncoded()));
+        }
+        else if (o instanceof javax.security.cert.X509Certificate)
+        {
+            return (X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((javax.security.cert.X509Certificate)o).getEncoded()));
         }
         else if (o instanceof X509Certificate)
         {
-            return (java.security.cert.X509Certificate)fac.generateCertificate(new ByteArrayInputStream(((X509Certificate)o).getEncoded()));
-        }
-        else if (o instanceof java.security.cert.X509Certificate)
-        {
-            return (java.security.cert.X509Certificate)o;
+            return (X509Certificate)o;
         }
         throw new IllegalArgumentException("Object not X509CertificateHolder, javax..X509Certificate or java...X509Certificate");
     }
@@ -195,7 +195,7 @@ public class ExampleUtils
      * @return A (java) X509Certificate.
      * @throws Exception
      */
-    public static java.security.cert.X509Certificate createASignedCert(
+    public static X509Certificate createASignedCert(
         String sigName,
         X500Name subjectDN,
         SubjectPublicKeyInfo subjectPublicKeyInfo,
@@ -251,7 +251,7 @@ public class ExampleUtils
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (java.security.cert.X509Certificate)
+        return (X509Certificate)
             CertificateFactory.getInstance("X.509", "BC")
                 .generateCertificate(
                     new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
@@ -268,7 +268,7 @@ public class ExampleUtils
      * @return A (java) X509Certificate.
      * @throws Exception
      */
-    public static java.security.cert.X509Certificate createSelfsignedCert(
+    public static X509Certificate createSelfsignedCert(
         String sigName,
         X500Name subjectDN,
         SubjectPublicKeyInfo subjectPublicKeyInfo,
@@ -309,7 +309,7 @@ public class ExampleUtils
         v.add((AlgorithmIdentifier)algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
-        return (java.security.cert.X509Certificate)
+        return (X509Certificate)
             CertificateFactory.getInstance("X.509", "BC")
                 .generateCertificate(
                     new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)
@@ -413,7 +413,7 @@ public class ExampleUtils
             throw new IllegalArgumentException(label + ": Missing Integer argument");
         }
 
-        return new Integer(args[t + 1]);
+        return Integers.valueOf(Integer.parseInt(args[t + 1]));
     }
 
 

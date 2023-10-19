@@ -7,6 +7,8 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * A parser for indefinite-length BIT STRINGs.
+ * 
+ * @deprecated Check for 'ASN1BitStringParser' instead 
  */
 public class BERBitStringParser
     implements ASN1BitStringParser

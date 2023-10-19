@@ -107,6 +107,11 @@ public class ASN1ObjectIdentifier
         BigInteger bigValue = null;
         boolean first = true;
 
+        if (contents.length == 0)
+        {
+            throw new IllegalArgumentException("empty OBJECT IDENTIFIER with no sub-identifiers");
+        }
+        
         for (int i = 0; i != contents.length; i++)
         {
             int b = contents[i] & 0xff;

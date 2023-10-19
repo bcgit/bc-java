@@ -49,6 +49,14 @@ public class SubjectPublicKeyInfo
 
     public SubjectPublicKeyInfo(
         AlgorithmIdentifier algId,
+        ASN1BitString publicKey)
+    {
+        this.keyData = publicKey;
+        this.algId = algId;
+    }
+
+    public SubjectPublicKeyInfo(
+        AlgorithmIdentifier algId,
         ASN1Encodable       publicKey)
         throws IOException
     {

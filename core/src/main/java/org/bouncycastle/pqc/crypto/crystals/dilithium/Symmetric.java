@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
@@ -26,16 +27,22 @@ abstract class Symmetric
 
     abstract void stream256squeezeBlocks(byte[] output, int offset, int size);
 
+
+    /**
+     * @deprecated
+     * obsolete to be removed
+     */
+    @Deprecated
     static class AesSymmetric
         extends Symmetric
     {
 
-        private final SICBlockCipher cipher;
+        private final StreamCipher cipher;
 
         AesSymmetric()
         {
             super(64, 64);
-            cipher = new SICBlockCipher(new AESEngine());
+            cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
         }
 
         private void aes128(byte[] out, int offset, int size)

@@ -74,7 +74,7 @@ public class DTLSPSKProtocolTest
                 byte[] buf = new byte[dtlsServer.getReceiveLimit()];
                 while (!isShutdown)
                 {
-                    int length = dtlsServer.receive(buf, 0, buf.length, 1000);
+                    int length = dtlsServer.receive(buf, 0, buf.length, 100);
                     if (length >= 0)
                     {
                         dtlsServer.send(buf, 0, length);

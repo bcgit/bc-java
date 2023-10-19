@@ -7,6 +7,8 @@ abstract class Scalar25519
 {
     static final int SIZE = 8;
 
+    private static final int SCALAR_BYTES = SIZE * 4;
+
     private static final long M08L = 0x000000FFL;
     private static final long M28L = 0x0FFFFFFFL;
     private static final long M32L = 0xFFFFFFFFL;
@@ -52,14 +54,112 @@ abstract class Scalar25519
             Nat256.subFrom(x, 0, tt, 4, 0);
         }
 
-        byte[] bytes = new byte[64];
+        byte[] bytes = new byte[48];
         Codec.encode32(tt, 0, 12, bytes, 0);
 
-        byte[] r = reduce(bytes);
+        byte[] r = reduce384(bytes);
         decode(r, z);
     }
 
-    static byte[] reduce(byte[] n)
+    static byte[] reduce384(byte[] n)
+    {
+        long x00 =  Codec.decode32(n,  0)       & M32L;         // x00:32/--
+        long x01 = (Codec.decode24(n,  4) << 4) & M32L;         // x01:28/--
+        long x02 =  Codec.decode32(n,  7)       & M32L;         // x02:32/--
+        long x03 = (Codec.decode24(n, 11) << 4) & M32L;         // x03:28/--
+        long x04 =  Codec.decode32(n, 14)       & M32L;         // x04:32/--
+        long x05 = (Codec.decode24(n, 18) << 4) & M32L;         // x05:28/--
+        long x06 =  Codec.decode32(n, 21)       & M32L;         // x06:32/--
+        long x07 = (Codec.decode24(n, 25) << 4) & M32L;         // x07:28/--
+        long x08 =  Codec.decode32(n, 28)       & M32L;         // x08:32/--
+        long x09 = (Codec.decode24(n, 32) << 4) & M32L;         // x09:28/--
+        long x10 =  Codec.decode32(n, 35)       & M32L;         // x10:32/--
+        long x11 = (Codec.decode24(n, 39) << 4) & M32L;         // x11:28/--
+        long x12 =  Codec.decode32(n, 42)       & M32L;         // x12:32/--
+        long x13 = (Codec.decode16(n, 46) << 4) & M32L;         // x13:20/--
+        long t;
+
+        // TODO Fix bounds calculations which were copied from Reduce512
+
+        x13 += (x12 >> 28); x12 &= M28L;            // x13:28/22, x12:28/--
+        x04 -= x13 * L0;                            // x04:54/49
+        x05 -= x13 * L1;                            // x05:54/53
+        x06 -= x13 * L2;                            // x06:56/--
+        x07 -= x13 * L3;                            // x07:56/52
+        x08 -= x13 * L4;                            // x08:56/52
+
+        x12 += (x11 >> 28); x11 &= M28L;            // x12:28/24, x11:28/--
+        x03 -= x12 * L0;                            // x03:54/49
+        x04 -= x12 * L1;                            // x04:54/51
+        x05 -= x12 * L2;                            // x05:56/--
+        x06 -= x12 * L3;                            // x06:56/52
+        x07 -= x12 * L4;                            // x07:56/53
+
+        x11 += (x10 >> 28); x10 &= M28L;            // x11:29/--, x10:28/--
+        x02 -= x11 * L0;                            // x02:55/32
+        x03 -= x11 * L1;                            // x03:55/--
+        x04 -= x11 * L2;                            // x04:56/55
+        x05 -= x11 * L3;                            // x05:56/52
+        x06 -= x11 * L4;                            // x06:56/53
+
+        x10 += (x09 >> 28); x09 &= M28L;            // x10:29/--, x09:28/--
+        x01 -= x10 * L0;                            // x01:55/28
+        x02 -= x10 * L1;                            // x02:55/54
+        x03 -= x10 * L2;                            // x03:56/55
+        x04 -= x10 * L3;                            // x04:57/--
+        x05 -= x10 * L4;                            // x05:56/53
+
+        x08 += (x07 >> 28); x07 &= M28L;            // x08:56/53, x07:28/--
+        x09 += (x08 >> 28); x08 &= M28L;            // x09:29/25, x08:28/--
+
+        t    = x08 >>> 27;
+        x09 += t;                                   // x09:29/26
+
+        x00 -= x09 * L0;                            // x00:55/53
+        x01 -= x09 * L1;                            // x01:55/54
+        x02 -= x09 * L2;                            // x02:57/--
+        x03 -= x09 * L3;                            // x03:57/--
+        x04 -= x09 * L4;                            // x04:57/42
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+        x09  = (x08 >> 28); x08 &= M28L;
+
+        x09 -= t;
+
+//        assert x09 == 0L || x09 == -1L;
+
+        x00 += x09 & L0;
+        x01 += x09 & L1;
+        x02 += x09 & L2;
+        x03 += x09 & L3;
+        x04 += x09 & L4;
+
+        x01 += (x00 >> 28); x00 &= M28L;
+        x02 += (x01 >> 28); x01 &= M28L;
+        x03 += (x02 >> 28); x02 &= M28L;
+        x04 += (x03 >> 28); x03 &= M28L;
+        x05 += (x04 >> 28); x04 &= M28L;
+        x06 += (x05 >> 28); x05 &= M28L;
+        x07 += (x06 >> 28); x06 &= M28L;
+        x08 += (x07 >> 28); x07 &= M28L;
+
+        byte[] r = new byte[64];
+        Codec.encode56(x00 | (x01 << 28), r,  0);
+        Codec.encode56(x02 | (x03 << 28), r,  7);
+        Codec.encode56(x04 | (x05 << 28), r, 14);
+        Codec.encode56(x06 | (x07 << 28), r, 21);
+        Codec.encode32((int)x08,          r, 28);
+        return r;
+    }
+
+    static byte[] reduce512(byte[] n)
     {
         long x00 =  Codec.decode32(n,  0)       & M32L;         // x00:32/--
         long x01 = (Codec.decode24(n,  4) << 4) & M32L;         // x01:28/--
@@ -186,7 +286,7 @@ abstract class Scalar25519
         x07 += (x06 >> 28); x06 &= M28L;
         x08 += (x07 >> 28); x07 &= M28L;
 
-        byte[] r = new byte[64];
+        byte[] r = new byte[SCALAR_BYTES];
         Codec.encode56(x00 | (x01 << 28), r,  0);
         Codec.encode56(x02 | (x03 << 28), r,  7);
         Codec.encode56(x04 | (x05 << 28), r, 14);
@@ -247,13 +347,13 @@ abstract class Scalar25519
         System.arraycopy(v1, 0, z1, 0, 4);
     }
 
-    static void toSignedDigits(int bits, int[] x, int[] z)
+    static void toSignedDigits(int bits, int[] z)
     {
 //        assert bits == 256;
 //        assert z.length >= SIZE;
 
 //        int c1 =
-        Nat.cadd(SIZE, ~x[0] & 1, x, L, z);     //assert c1 == 0;
+        Nat.caddTo(SIZE, ~z[0] & 1, L, z);     //assert c1 == 0;
 //        int c2 =
         Nat.shiftDownBit(SIZE, z, 1);           //assert c2 == (1 << 31);
     }

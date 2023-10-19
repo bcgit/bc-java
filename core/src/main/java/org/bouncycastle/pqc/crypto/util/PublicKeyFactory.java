@@ -105,6 +105,37 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, new SPHINCSPlusConverter());
+
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, new SPHINCSPlusConverter());
+
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
+        converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
+        
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
@@ -401,11 +432,22 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+                return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+            }
+            catch (Exception e)
+            {
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new SPHINCSPlusPublicKeyParameters(spParams, keyEnc);
+            }
         }
     }
 
@@ -415,11 +457,22 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = CMCEPublicKey.getInstance(keyInfo.parsePublicKey()).getT();
+            try
+            {
+                byte[] keyEnc = CMCEPublicKey.getInstance(keyInfo.parsePublicKey()).getT();
 
-            CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new CMCEPublicKeyParameters(spParams, keyEnc);
+                return new CMCEPublicKeyParameters(spParams, keyEnc);
+            }
+            catch (Exception e)
+            {        
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new CMCEPublicKeyParameters(spParams, keyEnc);
+            }
         }
     }
 
@@ -523,7 +576,7 @@ public class PublicKeyFactory
 
                 return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 // we're a raw encoding
                 return new KyberPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
@@ -590,7 +643,7 @@ public class PublicKeyFactory
                     return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
                 }
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 // we're a raw encoding
                 return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
@@ -604,11 +657,22 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
                 throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+                return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+            }
+            catch (Exception e)
+            {
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+            }
         }
     }
 
@@ -618,11 +682,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
                 throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
-            HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+                HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            return new HQCPublicKeyParameters(hqcParams, keyEnc);
+                return new HQCPublicKeyParameters(hqcParams, keyEnc);
+            }
+            catch (Exception e)
+            {
+                // raw encoding
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new HQCPublicKeyParameters(hqcParams, keyEnc);
+            }
         }
     }
 

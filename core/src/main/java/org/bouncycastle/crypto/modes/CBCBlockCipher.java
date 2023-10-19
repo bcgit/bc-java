@@ -36,6 +36,7 @@ public class CBCBlockCipher
      * Basic constructor.
      *
      * @param cipher the block cipher to be used as the basis of chaining.
+     * @deprecated use the CBCBlockCipher.newInstance() static method.
      */
     public CBCBlockCipher(
         BlockCipher cipher)
@@ -89,31 +90,23 @@ public class CBCBlockCipher
 
             System.arraycopy(iv, 0, IV, 0, iv.length);
 
-            reset();
-
-            // if null it's an IV changed only.
-            if (ivParam.getParameters() != null)
-            {
-                cipher.init(encrypting, ivParam.getParameters());
-            }
-            else if (oldEncrypting != encrypting)
-            {
-                throw new IllegalArgumentException("cannot change encrypting state without providing key.");
-            }
+            params = ivParam.getParameters();
         }
         else
         {
-            reset();
+            Arrays.fill(IV, (byte)0);
+        }
 
-            // if it's null, key is to be reused.
-            if (params != null)
-            {
-                cipher.init(encrypting, params);
-            }
-            else if (oldEncrypting != encrypting)
-            {
-                throw new IllegalArgumentException("cannot change encrypting state without providing key.");
-            }
+        reset();
+
+        // if null it's an IV changed only (key is to be reused).
+        if (params != null)
+        {
+            cipher.init(encrypting, params);
+        }
+        else if (oldEncrypting != encrypting)
+        {
+            throw new IllegalArgumentException("cannot change encrypting state without providing key.");
         }
     }
 

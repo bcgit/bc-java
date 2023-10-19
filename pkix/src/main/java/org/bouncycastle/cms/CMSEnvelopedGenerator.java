@@ -5,9 +5,11 @@ import java.util.List;
 
 import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 /**
@@ -17,8 +19,8 @@ public class CMSEnvelopedGenerator
 {
     public static final String  DES_EDE3_CBC    = PKCSObjectIdentifiers.des_EDE3_CBC.getId();
     public static final String  RC2_CBC         = PKCSObjectIdentifiers.RC2_CBC.getId();
-    public static final String  IDEA_CBC        = "1.3.6.1.4.1.188.7.1.1.2";
-    public static final String  CAST5_CBC       = "1.2.840.113533.7.66.10";
+    public static final String  IDEA_CBC        = MiscObjectIdentifiers.as_sys_sec_alg_ideaCBC.getId();
+    public static final String  CAST5_CBC       = MiscObjectIdentifiers.cast5CBC.getId();
     public static final String  AES128_CBC      = NISTObjectIdentifiers.id_aes128_CBC.getId();
     public static final String  AES192_CBC      = NISTObjectIdentifiers.id_aes192_CBC.getId();
     public static final String  AES256_CBC      = NISTObjectIdentifiers.id_aes256_CBC.getId();
@@ -38,6 +40,10 @@ public class CMSEnvelopedGenerator
 
     public static final String  ECDH_SHA1KDF    = X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme.getId();
     public static final String  ECMQV_SHA1KDF   = X9ObjectIdentifiers.mqvSinglePass_sha1kdf_scheme.getId();
+    public static final String  ECMQV_SHA224KDF = SECObjectIdentifiers.mqvSinglePass_sha224kdf_scheme.getId();
+    public static final String  ECMQV_SHA256KDF = SECObjectIdentifiers.mqvSinglePass_sha256kdf_scheme.getId();
+    public static final String  ECMQV_SHA384KDF = SECObjectIdentifiers.mqvSinglePass_sha384kdf_scheme.getId();
+    public static final String  ECMQV_SHA512KDF = SECObjectIdentifiers.mqvSinglePass_sha512kdf_scheme.getId();
 
     final List recipientInfoGenerators = new ArrayList();
 

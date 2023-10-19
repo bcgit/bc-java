@@ -30,6 +30,7 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
@@ -93,14 +94,14 @@ public class BaseBlockCipher
     // specs we can handle.
     //
     private static final Class[] availableSpecs =
-    {
-        RC2ParameterSpec.class,
-        RC5ParameterSpec.class,
-        GcmSpecUtil.gcmSpecClass,
-        GOST28147ParameterSpec.class,
-        IvParameterSpec.class,
-        PBEParameterSpec.class
-    };
+        {
+            RC2ParameterSpec.class,
+            RC5ParameterSpec.class,
+            GcmSpecUtil.gcmSpecClass,
+            GOST28147ParameterSpec.class,
+            IvParameterSpec.class,
+            PBEParameterSpec.class
+        };
 
     private BlockCipher baseEngine;
     private BlockCipherProvider engineProvider;
@@ -374,12 +375,12 @@ public class BaseBlockCipher
                 int wordSize = Integer.parseInt(modeName.substring(3));
 
                 cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, wordSize));
+                    CFBBlockCipher.newInstance(baseEngine, wordSize));
             }
             else
             {
                 cipher = new BufferedGenericBlockCipher(
-                    new CFBBlockCipher(baseEngine, 8 * baseEngine.getBlockSize()));
+                    CFBBlockCipher.newInstance(baseEngine, 8 * baseEngine.getBlockSize()));
             }
         }
         else if (modeName.startsWith("PGPCFB"))
@@ -421,8 +422,8 @@ public class BaseBlockCipher
                 throw new IllegalArgumentException("Warning: SIC-Mode can become a twotime-pad if the blocksize of the cipher is too small. Use a cipher with a block size of at least 128 bits (e.g. AES)");
             }
             fixedIv = false;
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                new SICBlockCipher(baseEngine)));
+            cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
+                SICBlockCipher.newInstance(baseEngine)));
         }
         else if (modeName.equals("CTR"))
         {
@@ -430,25 +431,25 @@ public class BaseBlockCipher
             fixedIv = false;
             if (baseEngine instanceof DSTU7624Engine)
             {
-                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+                cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
                     new KCTRBlockCipher(baseEngine)));
             }
             else
             {
-                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
-                    new SICBlockCipher(baseEngine)));
+                cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
+                    SICBlockCipher.newInstance(baseEngine)));
             }
         }
         else if (modeName.equals("GOFB"))
         {
             ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+            cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
                 new GOFBBlockCipher(baseEngine)));
         }
         else if (modeName.equals("GCFB"))
         {
             ivLength = baseEngine.getBlockSize();
-            cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(
+            cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(
                 new GCFBBlockCipher(baseEngine)));
         }
         else if (modeName.equals("CTS"))
@@ -465,7 +466,7 @@ public class BaseBlockCipher
             }
             else
             {
-                cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(CCMBlockCipher.newInstance(baseEngine));
             }
         }
         else if (modeName.equals("OCB"))
@@ -503,7 +504,7 @@ public class BaseBlockCipher
             else
             {
                 ivLength = 12;
-                cipher = new AEADGenericBlockCipher(new GCMBlockCipher(baseEngine));
+                cipher = new AEADGenericBlockCipher(GCMBlockCipher.newInstance(baseEngine));
             }
         }
         else
@@ -527,7 +528,7 @@ public class BaseBlockCipher
         {
             if (cipher.wrapOnNoPadding())
             {
-                cipher = new BufferedGenericBlockCipher(new BufferedBlockCipher(cipher.getUnderlyingCipher()));
+                cipher = new BufferedGenericBlockCipher(new DefaultBufferedBlockCipher(cipher.getUnderlyingCipher()));
             }
         }
         else if (paddingName.equals("WITHCTS") || paddingName.equals("CTSPADDING") || paddingName.equals("CS3PADDING"))

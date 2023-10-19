@@ -60,36 +60,19 @@ public class CertificateConfirmationContentBuilder
     public CertificateConfirmationContent build(DigestCalculatorProvider digesterProvider)
         throws CMPException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(acceptedCerts.size());
 
         for (int i = 0; i != acceptedCerts.size(); i++)
         {
-            CMPCertificate certHolder = (CMPCertificate)acceptedCerts.get(i);
+            byte[] certHash = CMPUtil.calculateCertHash((CMPCertificate)acceptedCerts.get(i),
+                (AlgorithmIdentifier)acceptedSignatureAlgorithms.get(i), digesterProvider, digestAlgFinder);
             ASN1Integer reqID = (ASN1Integer)acceptedReqIds.get(i);
 
-            AlgorithmIdentifier digAlg = digestAlgFinder.find((AlgorithmIdentifier)acceptedSignatureAlgorithms.get(i));
-            if (digAlg == null)
-            {
-                throw new CMPException("cannot find algorithm for digest from signature");
-            }
-
-            DigestCalculator digester;
-
-            try
-            {
-                digester = digesterProvider.get(digAlg);
-            }
-            catch (OperatorCreationException e)
-            {
-                throw new CMPException("unable to create digest: " + e.getMessage(), e);
-            }
-
-            CMPUtil.derEncodeToStream(certHolder, digester.getOutputStream());
-
-            v.add(new CertStatus(digester.getDigest(), reqID));
+            v.add(new CertStatus(certHash, reqID));
         }
 
-        return new CertificateConfirmationContent(CertConfirmContent.getInstance(new DERSequence(v)), digestAlgFinder);
-    }
+        CertConfirmContent content = CertConfirmContent.getInstance(new DERSequence(v));
 
+        return new CertificateConfirmationContent(content, digestAlgFinder);
+    }
 }

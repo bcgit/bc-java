@@ -20,6 +20,7 @@ import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
 
+import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyEncoder;
@@ -44,6 +45,7 @@ import org.bouncycastle.crypto.parsers.DHIESPublicKeyParser;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -83,16 +85,9 @@ public class IESCipher
 
     public int engineGetBlockSize()
     {
-        if (engine.getCipher() != null)
-        {
-            return engine.getCipher().getBlockSize();
-        }
-        else
-        {
-            return 0;
-        }
+        BufferedBlockCipher cipher = engine.getCipher();
+        return cipher == null ? 0 : cipher.getBlockSize();
     }
-
 
     public int engineGetKeySize(Key key)
     {
@@ -105,7 +100,6 @@ public class IESCipher
             throw new IllegalArgumentException("not a DH key");
         }
     }
-
 
     public byte[] engineGetIV()
     {
@@ -262,18 +256,11 @@ public class IESCipher
         throws InvalidAlgorithmParameterException, InvalidKeyException
     {
         // NOTE: For secure usage, sender and receiver should agree on a fixed value for the nonce.
-//        if (engineSpec == null)
-//        {
-//            byte[] nonce = null;
-//            if (ivLength != 0 && opmode == Cipher.ENCRYPT_MODE)
-//            {
-//                nonce = new byte[ivLength];
-//                random.nextBytes(nonce);
-//            }
-//            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher(), nonce);
-//        }
-//        else
-        if (engineSpec instanceof IESParameterSpec)
+        if (engineSpec == null && ivLength == 0)
+        {
+            this.engineSpec = IESUtil.guessParameterSpec(engine.getCipher(), null);
+        }
+        else if (engineSpec instanceof IESParameterSpec)
         {
             this.engineSpec = (IESParameterSpec)engineSpec;
         }
@@ -402,9 +389,10 @@ public class IESCipher
             engineSpec.getMacKeySize(),
             engineSpec.getCipherKeySize());
 
-        if (engineSpec.getNonce() != null)
+        byte[] engineSpecNonce = engineSpec.getNonce();
+        if (engineSpecNonce != null)
         {
-            params = new ParametersWithIV(params, engineSpec.getNonce());
+            params = new ParametersWithIV(params, engineSpecNonce);
         }
 
         DHParameters dhParams = ((DHKeyParameters)key).getParameters();

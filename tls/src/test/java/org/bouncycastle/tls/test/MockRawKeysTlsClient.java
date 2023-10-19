@@ -1,7 +1,6 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;

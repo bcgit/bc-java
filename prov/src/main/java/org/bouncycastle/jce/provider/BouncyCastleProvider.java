@@ -29,8 +29,11 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
@@ -71,7 +74,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.75";
+    private static String info = "BouncyCastle Security Provider v1.76";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -164,7 +167,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.75, info);
+        super(PROVIDER_NAME, 1.76, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -254,10 +257,10 @@ public final class BouncyCastleProvider extends Provider
         getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
     }
 
-    public final Service getService(String type, String algorithm)
+    public final Service getService(final String type, final String algorithm)
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
-        String key = type + "." + upperCaseAlgName;
+        final String key = type + "." + upperCaseAlgName;
 
         Service service = serviceMap.get(key);
 
@@ -267,15 +270,24 @@ public final class BouncyCastleProvider extends Provider
             {
                 if (!serviceMap.containsKey(key))
                 {
-                    service = super.getService(type, algorithm);
-                    if (service == null)
+                    service = AccessController.doPrivileged(new PrivilegedAction<Service>()
                     {
-                        return null;
-                    }
-                    serviceMap.put(key, service);
-                    // remove legacy entry and swap to service entry
-                    super.remove(service.getType() + "." + service.getAlgorithm());
-                    super.putService(service);
+                        @Override
+                        public Service run()
+                        {
+                            Service service = BouncyCastleProvider.super.getService(type, algorithm);
+                            if (service == null)
+                            {
+                                return null;
+                            }
+                            serviceMap.put(key, service);
+                            // remove legacy entry and swap to service entry
+                            BouncyCastleProvider.super.remove(service.getType() + "." + service.getAlgorithm());
+                            BouncyCastleProvider.super.putService(service);
+
+                            return service;
+                        }
+                    });
                 }
                 else
                 {
@@ -355,6 +367,33 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, new SPHINCSPlusKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_192s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_256s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_128f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_192f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusKeyFactorySpi());
+
         addKeyInfoConverter(PQCObjectIdentifiers.sphincs256, new Sphincs256KeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.newHope, new NHKeyFactorySpi());
         addKeyInfoConverter(PQCObjectIdentifiers.xmss, new XMSSKeyFactorySpi());
@@ -373,6 +412,18 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.dilithium5_aes, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber512, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber768, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mceliece348864_r3, new CMCEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mceliece460896_r3, new CMCEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mceliece6688128_r3, new CMCEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mceliece6960119_r3, new CMCEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mceliece8192128_r3, new CMCEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.bike128, new BIKEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.bike192, new BIKEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.bike256, new BIKEKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc128, new HQCKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc192, new HQCKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.hqc256, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi());

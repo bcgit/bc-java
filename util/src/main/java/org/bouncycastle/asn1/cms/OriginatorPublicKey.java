@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -24,14 +25,22 @@ public class OriginatorPublicKey
     extends ASN1Object
 {
     private AlgorithmIdentifier algorithm;
-    private DERBitString        publicKey;
-    
+    private ASN1BitString publicKey;
+
     public OriginatorPublicKey(
         AlgorithmIdentifier algorithm,
         byte[]              publicKey)
     {
         this.algorithm = algorithm;
         this.publicKey = new DERBitString(publicKey);
+    }
+
+    public OriginatorPublicKey(
+        AlgorithmIdentifier algorithm,
+        ASN1BitString publicKey)
+    {
+        this.algorithm = algorithm;
+        this.publicKey = publicKey;
     }
 
     private OriginatorPublicKey(
@@ -54,7 +63,7 @@ public class OriginatorPublicKey
         ASN1TaggedObject    obj,
         boolean             explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return new OriginatorPublicKey(ASN1Sequence.getInstance(obj, explicit));
     }
     
     /**
@@ -91,7 +100,15 @@ public class OriginatorPublicKey
         return algorithm;
     }
 
+    /**
+     * @deprecated Use {@link #getPublicKeyData()} instead.
+     */
     public DERBitString getPublicKey()
+    {
+        return DERBitString.convert(publicKey);
+    }
+
+    public ASN1BitString getPublicKeyData()
     {
         return publicKey;
     }

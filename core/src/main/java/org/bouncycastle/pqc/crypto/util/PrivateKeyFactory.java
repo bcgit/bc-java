@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -18,8 +19,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPrivateKey;
-import org.bouncycastle.pqc.asn1.KyberPrivateKey;
-import org.bouncycastle.pqc.asn1.KyberPublicKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
@@ -173,13 +172,22 @@ public class PrivateKeyFactory
                 return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
-        else if (algOID.on(BCObjectIdentifiers.sphincsPlus))
+        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop))
         {
-            SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(keyInfo.parsePrivateKey());
             SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
-            SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
-            return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
-                publicKey.getPkseed(), publicKey.getPkroot());
+
+            ASN1Encodable obj = keyInfo.parsePrivateKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(obj);
+                SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
+                return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
+                    publicKey.getPkseed(), publicKey.getPkroot());
+            }
+            else
+            {
+                return new SPHINCSPlusPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
+            }
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))
         {
@@ -218,17 +226,10 @@ public class PrivateKeyFactory
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
         {
-            KyberPrivateKey kyberKey = KyberPrivateKey.getInstance(keyInfo.parsePrivateKey());
+            ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
             KyberParameters kyberParams = Utils.kyberParamsLookup(algOID);
 
-            KyberPublicKey pubKey = kyberKey.getPublicKey();
-            if(pubKey != null)
-            {
-                return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(),
-                    kyberKey.getNonce(), pubKey.getT(), pubKey.getRho());
-            }
-            return new KyberPrivateKeyParameters(kyberParams, kyberKey.getS(), kyberKey.getHpk(), kyberKey.getNonce(),
-                null, null);
+            return new KyberPrivateKeyParameters(kyberParams, kyberKey.getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
@@ -256,9 +257,7 @@ public class PrivateKeyFactory
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
-            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5)
-            || algOID.equals(BCObjectIdentifiers.dilithium2_aes)
-            || algOID.equals(BCObjectIdentifiers.dilithium3_aes) || algOID.equals(BCObjectIdentifiers.dilithium5_aes))
+            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(algOID);
@@ -298,18 +297,19 @@ public class PrivateKeyFactory
                         null);
                 }
             }
+            else if (keyObj instanceof DEROctetString)
+            {
+                byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
+                if (keyInfo.getPublicKeyData() != null)
+                {
+                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+                    return new DilithiumPrivateKeyParameters(spParams, data, pubParams);
+                }
+                return new DilithiumPrivateKeyParameters(spParams, data, null);
+            }
             else
             {
-                // TODO
                 throw new IOException("not supported");
-//                return new DilithiumPrivateKeyParameters(spParams,
-//                    new byte[1],
-//                    new byte[1],
-//                    new byte[1],
-//                    new byte[1],
-//                    new byte[1],
-//                    new byte[1],
-//                    null);
             }
         }
         else if (algOID.equals(BCObjectIdentifiers.falcon_512) || algOID.equals(BCObjectIdentifiers.falcon_1024))

@@ -37,15 +37,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
     private static Set pkcs15RsaEncryption = new HashSet();
     private static Map digestOids = new HashMap();
 
-    private static final ASN1ObjectIdentifier ENCRYPTION_RSA = PKCSObjectIdentifiers.rsaEncryption;
-    private static final ASN1ObjectIdentifier ENCRYPTION_DSA = X9ObjectIdentifiers.id_dsa_with_sha1;
-    private static final ASN1ObjectIdentifier ENCRYPTION_ECDSA = X9ObjectIdentifiers.ecdsa_with_SHA1;
-    private static final ASN1ObjectIdentifier ENCRYPTION_RSA_PSS = PKCSObjectIdentifiers.id_RSASSA_PSS;
-    private static final ASN1ObjectIdentifier ENCRYPTION_GOST3410 = CryptoProObjectIdentifiers.gostR3410_94;
-    private static final ASN1ObjectIdentifier ENCRYPTION_ECGOST3410 = CryptoProObjectIdentifiers.gostR3410_2001;
-    private static final ASN1ObjectIdentifier ENCRYPTION_ECGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
-    private static final ASN1ObjectIdentifier ENCRYPTION_ECGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512;
-
     static
     {
         algorithms.put("COMPOSITE", MiscObjectIdentifiers.id_alg_composite);
@@ -167,6 +158,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHXMSS", BCObjectIdentifiers.xmss_SHA512ph);
         algorithms.put("SHAKE128WITHXMSS", BCObjectIdentifiers.xmss_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSS", BCObjectIdentifiers.xmss_SHAKE256ph);
+        algorithms.put("SHAKE128(512)WITHXMSS", BCObjectIdentifiers.xmss_SHAKE128_512ph);
+        algorithms.put("SHAKE256(1024)WITHXMSS", BCObjectIdentifiers.xmss_SHAKE256_1024ph);
 
         algorithms.put("SHA256WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA256ph);
         algorithms.put("SHA512WITHXMSSMT", BCObjectIdentifiers.xmss_mt_SHA512ph);
@@ -182,6 +175,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHXMSSMT-SHA512", BCObjectIdentifiers.xmss_mt_SHA512ph);
         algorithms.put("SHAKE128WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         algorithms.put("SHAKE256WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256ph);
+        algorithms.put("SHAKE128(512)WITHXMSSMT-SHAKE128", BCObjectIdentifiers.xmss_mt_SHAKE128_512ph);
+        algorithms.put("SHAKE256(1024)WITHXMSSMT-SHAKE256", BCObjectIdentifiers.xmss_mt_SHAKE256_1024ph);
 
         algorithms.put("LMS", PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
 
@@ -284,7 +279,15 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
-
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_192f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f);
         //
         // Dilithium
         //
@@ -320,6 +323,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.xmss_SHAKE256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHA256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHA512ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128ph);
+        noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE128ph);
         noParams.add(BCObjectIdentifiers.xmss_mt_SHAKE256ph);
 
@@ -370,6 +375,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha256WithRSAEncryption);
         pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha384WithRSAEncryption);
         pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha512WithRSAEncryption);
+        pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha512_224WithRSAEncryption);
+        pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha512_256WithRSAEncryption);
         pkcs15RsaEncryption.add(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd128);
         pkcs15RsaEncryption.add(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd160);
         pkcs15RsaEncryption.add(TeleTrusTObjectIdentifiers.rsaSignatureWithripemd256);
@@ -415,6 +422,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(PKCSObjectIdentifiers.sha256WithRSAEncryption, NISTObjectIdentifiers.id_sha256);
         digestOids.put(PKCSObjectIdentifiers.sha384WithRSAEncryption, NISTObjectIdentifiers.id_sha384);
         digestOids.put(PKCSObjectIdentifiers.sha512WithRSAEncryption, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(PKCSObjectIdentifiers.sha512_224WithRSAEncryption, NISTObjectIdentifiers.id_sha512_224);
+        digestOids.put(PKCSObjectIdentifiers.sha512_256WithRSAEncryption, NISTObjectIdentifiers.id_sha512_256);
         digestOids.put(NISTObjectIdentifiers.dsa_with_sha224, NISTObjectIdentifiers.id_sha224);
         digestOids.put(NISTObjectIdentifiers.dsa_with_sha256, NISTObjectIdentifiers.id_sha256);
         digestOids.put(NISTObjectIdentifiers.dsa_with_sha384, NISTObjectIdentifiers.id_sha384);
@@ -457,6 +466,29 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, NISTObjectIdentifiers.id_shake256);
 
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, NISTObjectIdentifiers.id_shake256);
+
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128f, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192f, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f, NISTObjectIdentifiers.id_shake256);
+        
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha224, NISTObjectIdentifiers.id_sha224);
@@ -471,17 +503,25 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(CMSObjectIdentifiers.id_ecdsa_with_shake256, NISTObjectIdentifiers.id_shake256);
     }
 
-    private static AlgorithmIdentifier generate(String signatureAlgorithm)
+    private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
     {
-        AlgorithmIdentifier sigAlgId;
+        return new RSASSAPSSparams(
+            hashAlgId,
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
+            new ASN1Integer(saltSize),
+            new ASN1Integer(1));
+    }
 
-        String algorithmName = Strings.toUpperCase(signatureAlgorithm);
+    public AlgorithmIdentifier find(String sigAlgName)
+    {
+        String algorithmName = Strings.toUpperCase(sigAlgName);
         ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier)algorithms.get(algorithmName);
         if (sigOID == null)
         {
-            throw new IllegalArgumentException("Unknown signature type requested: " + algorithmName);
+            throw new IllegalArgumentException("Unknown signature type requested: " + sigAlgName);
         }
 
+        AlgorithmIdentifier sigAlgId;
         if (noParams.contains(sigOID))
         {
             sigAlgId = new AlgorithmIdentifier(sigOID);
@@ -494,21 +534,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         {
             sigAlgId = new AlgorithmIdentifier(sigOID, DERNull.INSTANCE);
         }
-
         return sigAlgId;
-    }
-
-    private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
-    {
-        return new RSASSAPSSparams(
-            hashAlgId,
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
-            new ASN1Integer(1));
-    }
-
-    public AlgorithmIdentifier find(String sigAlgName)
-    {
-        return generate(sigAlgName);
     }
 }

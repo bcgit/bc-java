@@ -34,7 +34,9 @@ public class PublicKeyEncSessionPacket
     PublicKeyEncSessionPacket(
         BCPGInputStream    in)
         throws IOException
-    {      
+    {
+        super(PUBLIC_KEY_ENC_SESSION);
+
         version = in.read();
 
         if (version == VERSION_3)
@@ -111,6 +113,8 @@ public class PublicKeyEncSessionPacket
         int            algorithm,
         byte[][]       data)
     {
+        super(PUBLIC_KEY_ENC_SESSION);
+
         this.version = VERSION_3;
         this.keyID = keyID;
         this.algorithm = algorithm;
@@ -136,6 +140,9 @@ public class PublicKeyEncSessionPacket
             int algorithm,
             byte[][] data)
     {
+
+        super(PUBLIC_KEY_ENC_SESSION);
+
         this.version = VERSION_6;
         this.keyVersion = keyVersion;
         this.keyFingerprint = Arrays.clone(keyFingerprint);

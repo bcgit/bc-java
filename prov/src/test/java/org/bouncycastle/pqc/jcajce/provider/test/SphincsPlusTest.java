@@ -356,6 +356,32 @@ public class SphincsPlusTest
         assertTrue(sig.verify(s));
     }
 
+    public void testSphincsRandomSigSHAKE_Simple()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
+
+        kpg.initialize(SPHINCSPlusParameterSpec.shake_256f_simple, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SPHINCSPlus", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+
+        sig.update(msg, 0, msg.length);
+
+        byte[] s = sig.sign();
+
+        sig = Signature.getInstance("SPHINCSPlus", "BCPQC");
+
+        sig.initVerify(kp.getPublic());
+
+        sig.update(msg, 0, msg.length);
+
+        assertTrue(sig.verify(s));
+    }
+
     private static class RiggedRandom
         extends SecureRandom
     {

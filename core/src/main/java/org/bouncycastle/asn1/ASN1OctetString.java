@@ -212,6 +212,11 @@ public abstract class ASN1OctetString
         return string;
     }
 
+    public int getOctetsLength()
+    {
+        return getOctets().length;
+    }
+
     public int hashCode()
     {
         return Arrays.hashCode(this.getOctets());

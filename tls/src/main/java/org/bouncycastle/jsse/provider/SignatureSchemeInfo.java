@@ -235,7 +235,7 @@ class SignatureSchemeInfo
         ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
         if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(latest))
         {
-            return null;
+            return new PerConnection(null);
         }
 
         ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
@@ -248,7 +248,7 @@ class SignatureSchemeInfo
     {
         if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
         {
-            return null;
+            return new PerConnection(null);
         }
 
         return createPerConnection(perContext, true, sslParameters, negotiatedVersion, negotiatedVersion, namedGroups);

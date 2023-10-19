@@ -29,6 +29,10 @@ public class BIKE
             provider.addAlgorithm("Cipher.BIKE", PREFIX + "BIKECipherSpi$Base");
             provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_bike, "BIKE");
 
+            addCipherAlgorithm(provider, "BIKE128", PREFIX + "BIKECipherSpi$BIKE128", BCObjectIdentifiers.bike128);
+            addCipherAlgorithm(provider, "BIKE192", PREFIX + "BIKECipherSpi$BIKE192", BCObjectIdentifiers.bike192);
+            addCipherAlgorithm(provider, "BIKE256", PREFIX + "BIKECipherSpi$BIKE256", BCObjectIdentifiers.bike256);
+
             registerOid(provider, BCObjectIdentifiers.pqc_kem_bike, "BIKE", keyFact);
         }
     }

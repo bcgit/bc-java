@@ -108,6 +108,16 @@ public class CertificateRequestMessageBuilder
         return this;
     }
 
+    public CertificateRequestMessageBuilder setSerialNumber(ASN1Integer serialNumber)
+    {
+        if (serialNumber != null)
+        {
+            templateBuilder.setSerialNumber(serialNumber);
+        }
+
+        return this;
+    }
+
     /**
      * Request a validity period for the certificate. Either, but not both, of the date parameters may be null.
      *
@@ -193,7 +203,7 @@ public class CertificateRequestMessageBuilder
         }
         if (type != ProofOfPossession.TYPE_KEY_ENCIPHERMENT && type != ProofOfPossession.TYPE_KEY_AGREEMENT)
         {
-            throw new IllegalArgumentException("type must be ProofOfPossession.TYPE_KEY_ENCIPHERMENT || ProofOfPossession.TYPE_KEY_AGREEMENT");
+            throw new IllegalArgumentException("type must be ProofOfPossession.TYPE_KEY_ENCIPHERMENT or ProofOfPossession.TYPE_KEY_AGREEMENT");
         }
 
         this.popoType = type;
@@ -249,7 +259,7 @@ public class CertificateRequestMessageBuilder
     public CertificateRequestMessage build()
         throws CRMFException
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(new ASN1Integer(certReqId));
 
@@ -276,15 +286,16 @@ public class CertificateRequestMessageBuilder
 
         CertRequest request = CertRequest.getInstance(new DERSequence(v));
 
-        ProofOfPossession proofOfPossession = new ProofOfPossession();
+        ProofOfPossession proofOfPossession;
         if (popSigner != null)
         {
             CertTemplate template = request.getCertTemplate();
 
+            ProofOfPossessionSigningKeyBuilder builder;
             if (template.getSubject() == null || template.getPublicKey() == null)
             {
                 SubjectPublicKeyInfo pubKeyInfo = request.getCertTemplate().getPublicKey();
-                ProofOfPossessionSigningKeyBuilder builder = new ProofOfPossessionSigningKeyBuilder(pubKeyInfo);
+                builder = new ProofOfPossessionSigningKeyBuilder(pubKeyInfo);
 
                 if (sender != null)
                 {
@@ -292,17 +303,15 @@ public class CertificateRequestMessageBuilder
                 }
                 else
                 {
-                    PKMACValueGenerator pkmacGenerator = new PKMACValueGenerator(pkmacBuilder);
-
-                    builder.setPublicKeyMac(pkmacGenerator, password);
+                    builder.setPublicKeyMac(pkmacBuilder, password);
                 }
-                proofOfPossession = new ProofOfPossession(builder.build(popSigner));
             }
             else
             {
-                ProofOfPossessionSigningKeyBuilder builder = new ProofOfPossessionSigningKeyBuilder(request);
-                proofOfPossession = new ProofOfPossession(builder.build(popSigner));
+                builder = new ProofOfPossessionSigningKeyBuilder(request);
             }
+
+            proofOfPossession = new ProofOfPossession(builder.build(popSigner));
         }
         else if (popoPrivKey != null)
         {
@@ -313,6 +322,10 @@ public class CertificateRequestMessageBuilder
             proofOfPossession = new ProofOfPossession(ProofOfPossession.TYPE_KEY_AGREEMENT, new POPOPrivKey(agreeMAC));
         }
         else if (popRaVerified != null)
+        {
+            proofOfPossession = new ProofOfPossession();
+        }
+        else
         {
             proofOfPossession = new ProofOfPossession();
         }

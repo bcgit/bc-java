@@ -9,7 +9,7 @@ import org.bouncycastle.asn1.cmp.CertResponse;
 import org.bouncycastle.cert.X509CertificateHolder;
 
 /**
- * Builder for a CertRepMessage.
+ * Builder for a CertificateRepMessage.
  */
 public class CertificateRepMessageBuilder
 {

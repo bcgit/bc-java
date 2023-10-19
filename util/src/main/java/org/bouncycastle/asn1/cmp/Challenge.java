@@ -41,7 +41,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 public class Challenge
     extends ASN1Object
 {
-    private AlgorithmIdentifier owf;
+    private final AlgorithmIdentifier owf;
     private final ASN1OctetString witness;
     private final ASN1OctetString challenge;
 
@@ -52,6 +52,10 @@ public class Challenge
         if (seq.size() == 3)
         {
             owf = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
+        }
+        else
+        {
+            owf = null;
         }
 
         witness = ASN1OctetString.getInstance(seq.getObjectAt(index++));

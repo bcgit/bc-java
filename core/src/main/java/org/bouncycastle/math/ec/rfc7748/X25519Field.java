@@ -12,8 +12,8 @@ public abstract class X25519Field
 
     private static final int[] P32 = new int[]{ 0xFFFFFFED, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
         0xFFFFFFFF, 0x7FFFFFFF };
-    private static final int[] ROOT_NEG_ONE = new int[]{ 0x020EA0B0, 0x0386C9D2, 0x00478C4E, 0x0035697F, 0x005E8630,
-        0x01FBD7A7, 0x0340264F, 0x01F0B2B4, 0x00027E0E, 0x00570649 };
+    private static final int[] ROOT_NEG_ONE = new int[]{ -0x01F15F50, -0x0079362D, 0x00478C4F, 0x0035697F, 0x005E8630,
+        0x01FBD7A7, -0x00BFD9B1, -0x000F4D4B, 0x00027E0F, 0x00570649 };
 
     protected X25519Field() {}
 
@@ -519,7 +519,7 @@ public abstract class X25519Field
 
     public static void normalize(int[] z)
     {
-        int x = ((z[9] >>> 23) & 1);
+        int x = ((z[9] >>> (24 - 1)) & 1);
         reduce(z, x);
         reduce(z, -x);
 //        assert z[9] >>> 24 == 0;

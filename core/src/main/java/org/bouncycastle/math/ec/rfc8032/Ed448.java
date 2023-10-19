@@ -125,7 +125,7 @@ public abstract class Ed448
 
         byte[] result = new byte[SCALAR_BYTES * 2];
         Codec.encode32(t, 0, t.length, result, 0);
-        return Scalar448.reduce(result);
+        return Scalar448.reduce912(result);
     }
 
     private static boolean checkContextVar(byte[] ctx)
@@ -393,7 +393,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] r = Scalar448.reduce(h);
+        byte[] r = Scalar448.reduce912(h);
         byte[] R = new byte[POINT_BYTES];
         scalarMultBaseEncoded(r, R, 0);
 
@@ -403,7 +403,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = Scalar448.reduce(h);
+        byte[] k = Scalar448.reduce912(h);
         byte[] S = calculateS(r, k, s);
 
         System.arraycopy(R, 0, sig, sigOff, POINT_BYTES);
@@ -500,7 +500,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = Scalar448.reduce(h);
+        byte[] k = Scalar448.reduce912(h);
 
         int[] nA = new int[SCALAR_INTS];
         Scalar448.decode(k, nA);
@@ -559,7 +559,7 @@ public abstract class Ed448
         d.update(m, mOff, mLen);
         d.doFinal(h, 0, h.length);
 
-        byte[] k = Scalar448.reduce(h);
+        byte[] k = Scalar448.reduce912(h);
 
         int[] nA = new int[SCALAR_INTS];
         Scalar448.decode(k, nA);
@@ -1248,6 +1248,14 @@ public abstract class Ed448
 
         int bit = 225;
         while (--bit >= 0)
+        {
+            if ((ws_b[bit] | ws_b[225 + bit] | ws_p[bit] | ws_q[bit]) != 0)
+            {
+                break;
+            }
+        }
+
+        for (; bit >= 0; --bit)            
         {
             int wb = ws_b[bit];
             if (wb != 0)

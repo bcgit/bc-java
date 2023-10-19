@@ -92,7 +92,12 @@ public class KyberKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] sharedSecret = secEnc.getSecret();
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
 
             try
             {
@@ -111,7 +116,10 @@ public class KyberKeyGeneratorSpi
             KyberKEMExtractor kemExt = new KyberKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] secret = kemExt.extractSecret(encapsulation);
+            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
 
             SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
 
@@ -145,33 +153,6 @@ public class KyberKeyGeneratorSpi
         public Kyber1024()
         {
             super(KyberParameters.kyber1024);
-        }
-    }
-
-    public static class Kyber512_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber512_AES()
-        {
-            super(KyberParameters.kyber512_aes);
-        }
-    }
-
-    public static class Kyber768_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber768_AES()
-        {
-            super(KyberParameters.kyber768_aes);
-        }
-    }
-
-    public static class Kyber1024_AES
-        extends KyberKeyGeneratorSpi
-    {
-        public Kyber1024_AES()
-        {
-            super(KyberParameters.kyber1024_aes);
         }
     }
 }

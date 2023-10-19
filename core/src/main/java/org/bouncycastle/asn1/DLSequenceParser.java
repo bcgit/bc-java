@@ -4,8 +4,8 @@ import java.io.IOException;
 
 /**
  * Parser class for DL SEQUENCEs.
- *
- * TODO The class is only publicly visible to support 'instanceof' checks; provide an alternative
+ * 
+ * @deprecated Check for 'ASN1SequenceParser' instead 
  */
 public class DLSequenceParser
     implements ASN1SequenceParser

@@ -82,6 +82,9 @@ class ProvTlsServer
     private static final boolean provServerEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableTrustedCAKeysExtension", false);
 
+    private static final boolean provServerOmitSigAlgsCert = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.server.omitSigAlgsCertExtension", true);
+
     private static DHGroup[] getDefaultDHEParameters()
     {
         String propertyValue = PropertyUtils.getStringSecurityProperty(PROPERTY_DEFAULT_DHE_PARAMETERS);
@@ -454,6 +457,11 @@ class ProvTlsServer
 
             Vector<SignatureAndHashAlgorithm> serverSigAlgsCert =
                 jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithmsCert();
+
+            if (serverSigAlgsCert == null && !provServerOmitSigAlgsCert)
+            {
+                serverSigAlgsCert = jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+            }
 
             return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
                 certificateAuthorities);
@@ -844,10 +852,10 @@ class ProvTlsServer
             ProvSSLSessionContext sslSessionContext = manager.getContextData().getServerSessionContext();
             String peerHost = manager.getPeerHost();
             int peerPort = manager.getPeerPort();
-            JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(null, matchedSNIServerName);
+            JsseSessionParameters jsseSessionParameters = new JsseSessionParameters(
+                sslParameters.getEndpointIdentificationAlgorithm(), matchedSNIServerName);
             // TODO[tls13] Resumption/PSK
-            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context)
-                && context.getSecurityParametersConnection().isExtendedMasterSecret();
+            boolean addToCache = provServerEnableSessionResumption && !TlsUtils.isTLSv13(context);
 
             this.sslSession = sslSessionContext.reportSession(peerHost, peerPort, connectionTlsSession,
                 jsseSessionParameters, addToCache);
@@ -978,10 +986,27 @@ class ProvTlsServer
                 return false;
             }
 
-            // TODO[resumption] Consider support for related system properties
-            if (!sessionParameters.isExtendedMasterSecret())
+            if (sslParameters.getNeedClientAuth() && sessionParameters.getPeerCertificate() == null)
             {
                 return false;
+            }
+
+            {
+                String connectionEndpointID = sslParameters.getEndpointIdentificationAlgorithm();
+                if (null != connectionEndpointID)
+                {
+                    JsseSessionParameters jsseSessionParameters = provSSLSession.getJsseSessionParameters();
+                    String sessionEndpointID = jsseSessionParameters.getEndpointIDAlgorithm();
+                    if (!connectionEndpointID.equalsIgnoreCase(sessionEndpointID))
+                    {
+                        if (LOG.isLoggable(Level.FINER))
+                        {
+                            LOG.finer(serverID + ": Session not resumable - endpoint ID algorithm mismatch; connection: "
+                                + connectionEndpointID + ", session: " + sessionEndpointID);
+                        }
+                        return false;
+                    }
+                }
             }
         }
 

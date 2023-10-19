@@ -23,13 +23,17 @@ public class ExperimentalPacket
         BCPGInputStream    in)
         throws IOException
     {
-        this.tag = tag;
+        super(tag);
+
         this.contents = in.readAll();
     }
 
+    /**
+     * @deprecated use getPacketTag();
+     */
     public int getTag()
     {
-        return tag;
+        return getPacketTag();
     }
     
     public byte[] getContents()

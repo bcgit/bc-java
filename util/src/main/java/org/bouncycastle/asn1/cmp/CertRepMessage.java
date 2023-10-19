@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 public class CertRepMessage
     extends ASN1Object
 {
-    private ASN1Sequence caPubs;
+    private final ASN1Sequence caPubs;
     private final ASN1Sequence response;
 
     private CertRepMessage(ASN1Sequence seq)
@@ -28,6 +28,10 @@ public class CertRepMessage
         if (seq.size() > 1)
         {
             caPubs = ASN1Sequence.getInstance((ASN1TaggedObject)seq.getObjectAt(index++), true);
+        }
+        else
+        {
+            caPubs = null;
         }
 
         response = ASN1Sequence.getInstance(seq.getObjectAt(index));
@@ -43,6 +47,10 @@ public class CertRepMessage
         if (caPubs != null && caPubs.length != 0)
         {
             this.caPubs = new DERSequence(caPubs);
+        }
+        else
+        {
+            this.caPubs = null;
         }
 
         this.response = new DERSequence(response);

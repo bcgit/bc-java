@@ -5,22 +5,24 @@ import java.io.IOException;
 /**
  * Basic type for a marker packet
  */
-public class MarkerPacket 
+public class MarkerPacket
     extends ContainedPacket
-{    
+{
     // "PGP"
-        
-    byte[]    marker = { (byte)0x50, (byte)0x47, (byte)0x50 };
-    
+
+    byte[] marker = {(byte)0x50, (byte)0x47, (byte)0x50};
+
     public MarkerPacket(
-        BCPGInputStream  in)
+        BCPGInputStream in)
         throws IOException
     {
-         in.readFully(marker);
+        super(MARKER);
+
+        in.readFully(marker);
     }
-    
+
     public void encode(
-        BCPGOutputStream    out)
+        BCPGOutputStream out)
         throws IOException
     {
         out.writePacket(MARKER, marker);

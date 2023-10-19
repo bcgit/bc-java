@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -519,7 +520,6 @@ public abstract class TlsProtocol
 
                 this.sessionParameters = new SessionParameters.Builder()
                     .setCipherSuite(securityParameters.getCipherSuite())
-                    .setCompressionAlgorithm(securityParameters.getCompressionAlgorithm())
                     .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
                     .setLocalCertificate(securityParameters.getLocalCertificate())
                     .setMasterSecret(context.getCrypto().adoptSecret(this.sessionMasterSecret))
@@ -1576,22 +1576,30 @@ public abstract class TlsProtocol
             return false;
         }
 
-        if (!sessionParameters.isExtendedMasterSecret())
+        ProtocolVersion sessionVersion = sessionParameters.getNegotiatedVersion();
+        if (null == sessionVersion || !sessionVersion.isTLS())
         {
-            TlsPeer peer = getPeer();
-            if (!peer.allowLegacyResumption() || peer.requiresExtendedMasterSecret())
+            return false;
+        }
+
+        boolean isEMS = sessionParameters.isExtendedMasterSecret();
+        if (sessionVersion.isSSL())
+        {
+            if (isEMS)
             {
                 return false;
             }
-
-            /*
-             * NOTE: For session resumption without extended_master_secret, renegotiation MUST be disabled
-             * (see RFC 7627 5.4).
-             */
+        }
+        else if (!TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
+        {
+            if (!isEMS)
+            {
+                return false;
+            }
         }
 
-        TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(getContext().getCrypto(),
-            sessionParameters.getMasterSecret());
+        TlsCrypto crypto = getContext().getCrypto();
+        TlsSecret sessionMasterSecret = TlsUtils.getSessionMasterSecret(crypto, sessionParameters.getMasterSecret());
         if (null == sessionMasterSecret)
         {
             return false;
@@ -1604,7 +1612,7 @@ public abstract class TlsProtocol
         return true;
     }
 
-    protected void invalidateSession()
+    protected void cancelSession()
     {
         if (this.sessionMasterSecret != null)
         {
@@ -1618,11 +1626,17 @@ public abstract class TlsProtocol
             this.sessionParameters = null;
         }
 
+        this.tlsSession = null;
+    }
+
+    protected void invalidateSession()
+    {
         if (this.tlsSession != null)
         {
             this.tlsSession.invalidate();
-            this.tlsSession = null;
         }
+
+        cancelSession();
     }
 
     protected void processFinishedMessage(ByteArrayInputStream buf)
@@ -1932,21 +1946,14 @@ public abstract class TlsProtocol
         return null != context && context.isHandshaking();
     }
 
+    /**
+     * @deprecated Will be removed.
+     */
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException
     {
-        short maxFragmentLength = TlsExtensionsUtils.getMaxFragmentLengthExtension(serverExtensions);
-        if (maxFragmentLength >= 0)
-        {
-            if (!MaxFragmentLength.isValid(maxFragmentLength) ||
-                (clientExtensions != null &&
-                    maxFragmentLength != TlsExtensionsUtils.getMaxFragmentLengthExtension(clientExtensions)))
-            {
-                throw new TlsFatalAlert(alertDescription);
-            }
-        }
-        return maxFragmentLength;
+        return TlsUtils.processMaxFragmentLengthExtension(clientExtensions, serverExtensions, alertDescription);
     }
 
     protected void refuseRenegotiation() throws IOException

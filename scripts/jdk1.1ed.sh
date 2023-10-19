@@ -636,7 +636,19 @@ w
 q
 %
 
+ed org/bouncycastle/bcpg/Packet.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
 ed org/bouncycastle/bcpg/SignatureSubpacketInputStream.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+ed org/bouncycastle/bcpg/sig/PreferredAEADCiphersuites.java <<%
 g/private.*final.*;/s/final//
 w
 q

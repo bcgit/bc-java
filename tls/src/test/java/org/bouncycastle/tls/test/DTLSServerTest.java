@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
-import java.security.SecureRandom;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DTLSRequest;

@@ -12,6 +12,8 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.bouncycastle.util.Arrays;
+
 import junit.framework.TestCase;
 
 public class CipherSuitesEngineTestCase extends TestCase
@@ -136,6 +138,16 @@ public class CipherSuitesEngineTestCase extends TestCase
                 dataDone = true;
             }
         }
+
+        byte[] clientTlsUnique = TestUtils.getChannelBinding(clientEngine, "tls-unique");
+        byte[] serverTlsUnique = TestUtils.getChannelBinding(serverEngine, "tls-unique");
+
+        if (TestUtils.isTlsUniqueProtocol(config.protocol))
+        {
+            TestCase.assertNotNull(clientTlsUnique);
+            TestCase.assertNotNull(serverTlsUnique);
+        }
+        TestCase.assertTrue(Arrays.areEqual(clientTlsUnique, serverTlsUnique));
     }
 
     private static void checkData(ByteBuffer a, ByteBuffer b) throws Exception

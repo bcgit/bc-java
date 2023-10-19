@@ -294,6 +294,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -f  org/bouncycastle/jcajce/provider/asymmetric/NTRU.java
     rm -f  org/bouncycastle/jcajce/provider/asymmetric/Falcon.java
     rm -f  org/bouncycastle/test/PrintTestResult.java
+    rm  org/bouncycastle/openpgp/test/PGPAeadTest.java
 
     sh ../../scripts/jdk1.2ed.sh > /dev/null 2>&1
     sh ../../scripts/jdk1.1ed.sh > /dev/null 2>&1
@@ -680,6 +681,7 @@ then
     rm  src/org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
     rm -f src/org/bouncycastle/openpgp/examples/DSAElGamalKeyRingGenerator.java
     rm -f src/org/bouncycastle/openpgp/examples/EllipticCurveKeyPairGenerator.java
+    rm  src/org/bouncycastle/openpgp/test/PGPAeadTest.java
 
     find src -name AllTests.java -exec rm {} \;
 
@@ -729,6 +731,12 @@ q
 %
 
     ed src/org/bouncycastle/bcpg/SignatureSubpacketInputStream.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+    ed src/org/bouncycastle/bcpg/sig/PreferredAEADCiphersuites.java <<%
 g/private.*final.*;/s/final//
 w
 q

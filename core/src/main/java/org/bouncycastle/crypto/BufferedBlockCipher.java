@@ -24,7 +24,7 @@ public class BufferedBlockCipher
     /**
      * constructor for subclasses
      */
-    protected BufferedBlockCipher()
+    BufferedBlockCipher()
     {
     }
 
@@ -32,6 +32,7 @@ public class BufferedBlockCipher
      * Create a buffered block cipher without padding.
      *
      * @param cipher the underlying block cipher this buffering object wraps.
+     * @deprecated use the constructor on DefaultBufferedBlockCipher.
      */
     public BufferedBlockCipher(
         BlockCipher     cipher)

@@ -38,6 +38,6 @@ class PKMACValueVerifier
             throw new CRMFException("exception encoding mac input: " + e.getMessage(), e);
         }
 
-        return Arrays.constantTimeAreEqual(calculator.getMac(), value.getValue().getBytes());
+        return Arrays.constantTimeAreEqual(calculator.getMac(), value.getValue().getOctets());
     }
 }

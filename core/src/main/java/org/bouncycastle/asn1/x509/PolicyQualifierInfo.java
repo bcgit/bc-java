@@ -114,4 +114,9 @@ public class PolicyQualifierInfo
 
       return new DERSequence(dev);
    }
+
+    public String toString()
+    {
+        return "PolicyQualifierInfo[" + policyQualifierId + ", " + qualifier + "]";
+    }
 }

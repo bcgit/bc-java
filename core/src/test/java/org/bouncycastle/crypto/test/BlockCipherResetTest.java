@@ -67,18 +67,18 @@ public class BlockCipherResetTest
         testReset("XTEAEngine", new XTEAEngine(), new XTEAEngine(), new KeyParameter(new byte[16]));
 
         // primitive block cipher modes (don't reset on processBlock)
-        testModeReset("AES/CBC", new CBCBlockCipher(new AESEngine()), new CBCBlockCipher(new AESEngine()),
+        testModeReset("AES/CBC", CBCBlockCipher.newInstance(AESEngine.newInstance()), CBCBlockCipher.newInstance(AESEngine.newInstance()),
             new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
-        testModeReset("AES/SIC", new SICBlockCipher(new AESEngine()), new SICBlockCipher(new AESEngine()),
+        testModeReset("AES/SIC", SICBlockCipher.newInstance(AESEngine.newInstance()), SICBlockCipher.newInstance(AESEngine.newInstance()),
             new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
-        testModeReset("AES/CFB", new CFBBlockCipher(new AESEngine(), 128), new CFBBlockCipher(new AESEngine(), 128),
+        testModeReset("AES/CFB", CFBBlockCipher.newInstance(AESEngine.newInstance(), 128), CFBBlockCipher.newInstance(AESEngine.newInstance(), 128),
             new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
-        testModeReset("AES/OFB", new OFBBlockCipher(new AESEngine(), 128), new OFBBlockCipher(new AESEngine(), 128),
+        testModeReset("AES/OFB", new OFBBlockCipher(AESEngine.newInstance(), 128), new OFBBlockCipher(AESEngine.newInstance(), 128),
             new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
         testModeReset("AES/GCTR", new GOFBBlockCipher(new DESEngine()), new GOFBBlockCipher(new DESEngine()),
             new ParametersWithIV(new KeyParameter(new byte[8]), new byte[8]));
-        testModeReset("AES/OpenPGPCFB", new OpenPGPCFBBlockCipher(new AESEngine()), new OpenPGPCFBBlockCipher(
-            new AESEngine()), new KeyParameter(new byte[16]));
+        testModeReset("AES/OpenPGPCFB", new OpenPGPCFBBlockCipher(AESEngine.newInstance()), new OpenPGPCFBBlockCipher(
+            AESEngine.newInstance()), new KeyParameter(new byte[16]));
         testModeReset("AES/PGPCFB", new PGPCFBBlockCipher(new AESEngine(), false), new PGPCFBBlockCipher(
             new AESEngine(), false), new KeyParameter(new byte[16]));
 

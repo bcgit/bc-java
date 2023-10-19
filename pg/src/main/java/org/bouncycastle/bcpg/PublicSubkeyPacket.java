@@ -13,11 +13,11 @@ public class PublicSubkeyPacket
         BCPGInputStream    in)
         throws IOException
     {      
-        super(in);
+        super(PUBLIC_SUBKEY, in);
     }
     
     /**
-     * Construct version 4 public key packet.
+     * Construct version 4 public sub-key packet.
      * 
      * @param algorithm
      * @param time
@@ -28,13 +28,23 @@ public class PublicSubkeyPacket
         Date      time,
         BCPGKey   key)
     {
-        super(algorithm, time, key);
+        this(VERSION_4, algorithm, time, key);
     }
-    
-    public void encode(
-        BCPGOutputStream    out)
-        throws IOException
+
+    /**
+     * Construct a public sub-key packet.
+     *
+     * @param version
+     * @param algorithm
+     * @param time
+     * @param key
+     */
+    public PublicSubkeyPacket(
+        int version,
+        int       algorithm,
+        Date      time,
+        BCPGKey   key)
     {
-        out.writePacket(PUBLIC_SUBKEY, getEncodedContents());
+        super(PUBLIC_SUBKEY, version, algorithm, time, key);
     }
 }

@@ -23,6 +23,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.jcajce.ExternalPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -62,7 +63,7 @@ public class ExternalKeyTest
 
         isEquals(new GeneralName(GeneralName.uniformResourceIdentifier, "http://localhost"), extValue.getLocation());
         isEquals(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), extValue.getHashAlg());
-        isTrue(areEqual(keyDigest, extValue.getHashVal().getOctets()));
+        isTrue(areEqual(keyDigest, extValue.getHashValue()));
     }
 
     private void checkCertificate()
@@ -88,9 +89,28 @@ public class ExternalKeyTest
 
     public static void main(
         String[] args)
+        throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 
         runTest(new ExternalKeyTest());
+
+        Security.addProvider(new BouncyCastlePQCProvider());
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("CMCE");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        ExternalPublicKey externalKey = new ExternalPublicKey(kp.getPublic(),
+            new GeneralName(GeneralName.uniformResourceIdentifier, "https://localhost"),
+            MessageDigest.getInstance("SHA256"));
+
+        X500Name name = new X500Name("CN=Test");
+        long time = System.currentTimeMillis();
+        JcaX509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
+            name, BigIntegers.ONE, new Date(time - 5000), new Date(time + 50000), name, externalKey);
+
+        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("SHA256withECDSA").build(kp.getPrivate()));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
     }
 }

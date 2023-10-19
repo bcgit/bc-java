@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.IllegalArgumentWarningException;
+import org.bouncycastle.util.Properties;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -71,6 +72,11 @@ public class Extensions
     private Extensions(
         ASN1Sequence seq)
     {
+        if (seq.size() == 0)
+        {
+            throw new IllegalArgumentException("empty extension sequence found");
+        }
+
         Enumeration e = seq.getObjects();
         String error = null;
 
@@ -80,8 +86,11 @@ public class Extensions
 
             if (extensions.containsKey(ext.getExtnId()))
             {
-                error = "repeated extension found: " + ext.getExtnId();
-                continue;
+                if (!Properties.isOverrideSet("org.bouncycastle.x509.ignore_repeated_extensions"))
+                {
+                    error = "repeated extension found: " + ext.getExtnId();
+                    continue;
+                }
             }
             
             extensions.put(ext.getExtnId(), ext);
@@ -113,6 +122,11 @@ public class Extensions
     public Extensions(
         Extension[] extensions)
     {
+        if (extensions == null || extensions.length == 0)
+        {
+            throw new IllegalArgumentException("extension array cannot be null or empty");
+        }
+
         for (int i = 0; i != extensions.length; i++)
         {
             Extension ext = extensions[i];

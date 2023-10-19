@@ -14,11 +14,15 @@ public class PaddingPacket
     public PaddingPacket(BCPGInputStream in)
         throws IOException
     {
+        super(PADDING);
+
         padding = Streams.readAll(in);
     }
 
     public PaddingPacket(byte[] padding)
     {
+        super(PADDING);
+
         this.padding = padding;
     }
 

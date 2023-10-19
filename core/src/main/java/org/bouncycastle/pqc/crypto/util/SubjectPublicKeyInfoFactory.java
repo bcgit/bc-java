@@ -9,7 +9,6 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
@@ -108,7 +107,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof CMCEPublicKeyParameters)
         {
@@ -118,8 +117,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
 
-            // https://datatracker.ietf.org/doc/draft-uni-qsckeys/
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new CMCEPublicKey(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof XMSSPublicKeyParameters)
         {
@@ -263,7 +261,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.bikeOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof HQCPublicKeyParameters)
         {
@@ -273,7 +271,7 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.hqcOidLookup(params.getParameters()));
 
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof RainbowPublicKeyParameters)
         {

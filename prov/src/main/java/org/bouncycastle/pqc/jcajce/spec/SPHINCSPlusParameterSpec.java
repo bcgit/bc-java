@@ -86,6 +86,13 @@ public class SPHINCSPlusParameterSpec
         parameters.put(SPHINCSPlusParameterSpec.sha2_256f_simple.getName(), SPHINCSPlusParameterSpec.sha2_256f_simple);
         parameters.put(SPHINCSPlusParameterSpec.sha2_256s_simple.getName(), SPHINCSPlusParameterSpec.sha2_256s_simple);
         
+        parameters.put("sha2-128f", SPHINCSPlusParameterSpec.sha2_128f_simple);
+        parameters.put("sha2-128s", SPHINCSPlusParameterSpec.sha2_128s_simple);
+        parameters.put("sha2-192f", SPHINCSPlusParameterSpec.sha2_192f_simple);
+        parameters.put("sha2-192s", SPHINCSPlusParameterSpec.sha2_192s_simple);
+        parameters.put("sha2-256f", SPHINCSPlusParameterSpec.sha2_256f_simple);
+        parameters.put("sha2-256s", SPHINCSPlusParameterSpec.sha2_256s_simple);
+        
         parameters.put(SPHINCSPlusParameterSpec.shake_128f.getName(), SPHINCSPlusParameterSpec.shake_128f);
         parameters.put(SPHINCSPlusParameterSpec.shake_128s.getName(), SPHINCSPlusParameterSpec.shake_128s);
         parameters.put(SPHINCSPlusParameterSpec.shake_192f.getName(), SPHINCSPlusParameterSpec.shake_192f);
@@ -99,6 +106,13 @@ public class SPHINCSPlusParameterSpec
         parameters.put(SPHINCSPlusParameterSpec.shake_192s_simple.getName(), SPHINCSPlusParameterSpec.shake_192s_simple);
         parameters.put(SPHINCSPlusParameterSpec.shake_256f_simple.getName(), SPHINCSPlusParameterSpec.shake_256f_simple);
         parameters.put(SPHINCSPlusParameterSpec.shake_256s_simple.getName(), SPHINCSPlusParameterSpec.shake_256s_simple);
+        
+        parameters.put("shake-128f", SPHINCSPlusParameterSpec.shake_128f_simple);
+        parameters.put("shake-128s", SPHINCSPlusParameterSpec.shake_128s_simple);
+        parameters.put("shake-192f", SPHINCSPlusParameterSpec.shake_192f_simple);
+        parameters.put("shake-192s", SPHINCSPlusParameterSpec.shake_192s_simple);
+        parameters.put("shake-256f", SPHINCSPlusParameterSpec.shake_256f_simple);
+        parameters.put("shake-256s", SPHINCSPlusParameterSpec.shake_256s_simple);
         
         parameters.put(SPHINCSPlusParameterSpec.haraka_128f.getName(), SPHINCSPlusParameterSpec.haraka_128f);
         parameters.put(SPHINCSPlusParameterSpec.haraka_128s.getName(), SPHINCSPlusParameterSpec.haraka_128s);

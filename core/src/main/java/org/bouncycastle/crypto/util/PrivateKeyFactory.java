@@ -185,10 +185,22 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X25519))
         {
+            // Java 11 bug: exact length of X25519/X448 secret used in Java 11
+            if (X25519PrivateKeyParameters.KEY_SIZE == keyInfo.getPrivateKeyLength())
+            {
+                return new X25519PrivateKeyParameters(keyInfo.getPrivateKey().getOctets());
+            }
+
             return new X25519PrivateKeyParameters(getRawKey(keyInfo));
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X448))
         {
+            // Java 11 bug: exact length of X25519/X448 secret used in Java 11
+            if (X448PrivateKeyParameters.KEY_SIZE == keyInfo.getPrivateKeyLength())
+            {
+                return new X448PrivateKeyParameters(keyInfo.getPrivateKey().getOctets());
+            }
+
             return new X448PrivateKeyParameters(getRawKey(keyInfo));
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_Ed25519))
@@ -219,11 +231,12 @@ public class PrivateKeyFactory
                     gostParams.getPublicKeyParamSet(),
                     gostParams.getDigestParamSet(),
                     gostParams.getEncryptionParamSet());
-                ASN1OctetString privEnc = keyInfo.getPrivateKey();
 
-                if (privEnc.getOctets().length == 32 || privEnc.getOctets().length == 64)
+                int privateKeyLength = keyInfo.getPrivateKeyLength();
+
+                if (privateKeyLength == 32 || privateKeyLength == 64)
                 {
-                    d = new BigInteger(1, Arrays.reverse(privEnc.getOctets()));
+                    d = new BigInteger(1, Arrays.reverse(keyInfo.getPrivateKey().getOctets()));
                 }
                 else
                 {

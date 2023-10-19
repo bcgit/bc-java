@@ -15,7 +15,10 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PaddingPacket;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
@@ -125,6 +128,8 @@ public class PGPAeadTest
         roundTripEncryptionDecryptionTests();
 
         paddingPacketTests();
+
+        preferredAEADAlgorithmsTests();
     }
 
     private void roundTripEncryptionDecryptionTests()
@@ -528,6 +533,67 @@ public class PGPAeadTest
 
         PGPPadding padding = (PGPPadding)factory.nextObject();
         isTrue(Arrays.areEqual(packet.getPadding(), padding.getPadding()));
+    }
+
+    private void preferredAEADAlgorithmsTests()
+        throws IOException
+    {
+        preferredAEADAlgorithmsImplicitlySupportAES128OCB();
+        preferredAEADAlgorithmsRoundtrip();
+        preferredAEADAlgorithmsInvalidConstructor();
+    }
+
+    private void preferredAEADAlgorithmsImplicitlySupportAES128OCB()
+    {
+        PreferredAEADCiphersuites.Combination implicit = new PreferredAEADCiphersuites.Combination(
+            SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB);
+
+        PreferredAEADCiphersuites preferences = new PreferredAEADCiphersuites(false,
+            new PreferredAEADCiphersuites.Combination[0]);
+
+        isTrue(preferences.isSupported(implicit));
+        isTrue(Arrays.areEqual(new PreferredAEADCiphersuites.Combination[0], preferences.getRawAlgorithms()));
+        isTrue(Arrays.areEqual(new PreferredAEADCiphersuites.Combination[]{implicit}, preferences.getAlgorithms()));
+    }
+
+    private void preferredAEADAlgorithmsRoundtrip()
+        throws IOException
+    {
+        PreferredAEADCiphersuites preferences = new PreferredAEADCiphersuites(false, new PreferredAEADCiphersuites.Combination[]
+            {
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB),
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.GCM),
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.CAMELLIA_256, AEADAlgorithmTags.OCB)
+            });
+        isTrue(Arrays.areEqual(new byte[]{0x09, 0x02, 0x09, 0x03, 0x0d, 0x02}, preferences.getData()));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream bcpgOut = new BCPGOutputStream(bOut);
+
+        preferences.encode(bcpgOut);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        SignatureSubpacketInputStream subpacketIn = new SignatureSubpacketInputStream(bIn);
+        SignatureSubpacket subpacket = subpacketIn.readPacket();
+        assert subpacket != null;
+        assert subpacket instanceof PreferredAEADCiphersuites;
+
+        PreferredAEADCiphersuites parsed = (PreferredAEADCiphersuites)subpacket;
+        isTrue(Arrays.areEqual(preferences.getRawAlgorithms(), parsed.getRawAlgorithms()));
+    }
+
+    private void preferredAEADAlgorithmsInvalidConstructor()
+    {
+        // odd number of data bytes
+        try
+        {
+            new PreferredAEADCiphersuites(false, false, new byte[]{0x09, 0x02, 0x09});
+            fail("Odd number of data bytes must throw.");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
     }
 
     public static void main(String[] args)

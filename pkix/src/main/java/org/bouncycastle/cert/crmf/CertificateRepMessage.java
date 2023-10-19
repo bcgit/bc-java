@@ -102,7 +102,7 @@ public class CertificateRepMessage
         return certs;
     }
 
-    public ASN1Encodable toASN1Structure()
+    public CertRepMessage toASN1Structure()
     {
         return new CertRepMessage(caCerts, resps);
     }

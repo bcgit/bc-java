@@ -3,6 +3,7 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -22,14 +23,17 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
 {
     private static final byte[] ZEROES = new byte[15];
 
+    protected final JcaTlsCrypto crypto;
     protected final Cipher cipher;
     protected final Mac mac;
     protected final int cipherMode;
 
     protected SecretKey cipherKey;
 
-    public JceChaCha20Poly1305(JcaJceHelper helper, boolean isEncrypting) throws GeneralSecurityException
+    public JceChaCha20Poly1305(JcaTlsCrypto crypto, JcaJceHelper helper, boolean isEncrypting)
+        throws GeneralSecurityException
     {
+        this.crypto = crypto;
         this.cipher = helper.createCipher("ChaCha7539");
         this.mac = helper.createMac("Poly1305");
         this.cipherMode = isEncrypting ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
@@ -135,9 +139,12 @@ public class JceChaCha20Poly1305 implements TlsAEADCipherImpl
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        // NOTE: Shouldn't need a SecureRandom, but this is cheaper if the provider would auto-create one
+        SecureRandom random = crypto.getSecureRandom();
+
         try
         {
-            cipher.init(cipherMode, cipherKey, new IvParameterSpec(nonce), null);
+            cipher.init(cipherMode, cipherKey, new IvParameterSpec(nonce), random);
         }
         catch (GeneralSecurityException e)
         {
