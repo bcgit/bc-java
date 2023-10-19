@@ -52,7 +52,7 @@ public class TBSCertificate
     ASN1BitString           issuerUniqueId;
     ASN1BitString           subjectUniqueId;
     Extensions              extensions;
-    List<String> errors;
+    List<String>            errors;
 
     public static TBSCertificate getInstance(
         ASN1TaggedObject obj,
@@ -98,7 +98,7 @@ public class TBSCertificate
 
         boolean isV1 = false;
         boolean isV2 = false;
- 
+
         if (version.hasValue(0))
         {
             isV1 = true;
@@ -109,8 +109,8 @@ public class TBSCertificate
         }
         else if (!version.hasValue(2))
         {
-          addError(
-              String.format("Certificate version number value %d not 0, 1 or 2", version.getValue()));
+            addError(
+                String.format("Certificate version number value %d not 0, 1 or 2", version.getValue()));
         }
 
         serialNumber = ASN1Integer.getInstance(seq.getObjectAt(seqStart + 1));
@@ -136,10 +136,10 @@ public class TBSCertificate
         int extras = seq.size() - (seqStart + 6) - 1;
         if (extras != 0 && isV1)
         {
-          addError("version 1 certificate contains extra data");
-          extras = 0; // Ignore the extra data
+            addError("version 1 certificate contains extra data");
+            extras = 0; // Ignore the extra data
         }
-        
+
         while (extras > 0)
         {
             ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
@@ -155,43 +155,43 @@ public class TBSCertificate
             case 3:
                 if (isV2)
                 {
-                  addError("version 2 certificate cannot contain extensions");
-                  throw new IllegalArgumentWarningException(errors, this);
+                    addError("version 2 certificate cannot contain extensions");
+                    throw new IllegalArgumentWarningException(errors, this);
                 }
                 try {
-                  extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
+                    extensions = Extensions.getInstance(ASN1Sequence.getInstance(extra, true));
                 } catch (IllegalArgumentWarningException ex) {
-                  extensions = ex.getObject(Extensions.class);
-                  addErrors(ex.getMessages());
+                    extensions = ex.getObject(Extensions.class);
+                    addErrors(ex.getMessages());
                 }
                 break;
             default:
-              addError("Unknown tag encountered in structure: " + extra.getTagNo());
-              throw new IllegalArgumentWarningException(errors, this);
+                addError("Unknown tag encountered in structure: " + extra.getTagNo());
+                throw new IllegalArgumentWarningException(errors, this);
             }
             extras--;
         }
-        
+
         if (errors != null) {
-          throw new IllegalArgumentWarningException(errors, this);
+            throw new IllegalArgumentWarningException(errors, this);
         }
     }
-    
+
     private void addError(String error) {
-      if (errors == null) {
-        errors = new ArrayList<>();
-      }
-      errors.add(error);
+        if (errors == null) {
+            errors = new ArrayList<>();
+        }
+        errors.add(error);
     }
-    
+
     private void addErrors(List<String> errors) {
-      for (String error : errors) {
-        addError(error);
-      }
+        for (String error : errors) {
+            addError(error);
+        }
     }
 
     public Collection<String> getErrors() {
-      return errors;
+        return errors;
     }
 
     public int getVersionNumber()

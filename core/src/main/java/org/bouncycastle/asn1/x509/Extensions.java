@@ -1,5 +1,9 @@
 package org.bouncycastle.asn1.x509;
 
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -10,10 +14,6 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.IllegalArgumentWarningException;
 import org.bouncycastle.util.Properties;
-
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * <pre>
@@ -96,9 +96,9 @@ public class Extensions
             extensions.put(ext.getExtnId(), ext);
             ordering.addElement(ext.getExtnId());
         }
-        
+
         if (error != null) {
-          throw new IllegalArgumentWarningException(error, this);
+            throw new IllegalArgumentWarningException(error, this);
         }
     }
 

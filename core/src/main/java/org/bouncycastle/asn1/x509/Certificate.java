@@ -61,12 +61,12 @@ public class Certificate
         //
         if (seq.size() == 3)
         {
-          try {
-            tbsCert = TBSCertificate.getInstance(seq.getObjectAt(0));
-          } catch (IllegalArgumentWarningException ex) {
-            tbsCert = (TBSCertificate) ex.getObject(TBSCertificate.class);
-            exception = ex;
-          }
+            try {
+                tbsCert = TBSCertificate.getInstance(seq.getObjectAt(0));
+            } catch (IllegalArgumentWarningException ex) {
+                tbsCert = (TBSCertificate) ex.getObject(TBSCertificate.class);
+                exception = ex;
+            }
             sigAlgId = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
 
             sig = ASN1BitString.getInstance(seq.getObjectAt(2));
@@ -77,7 +77,7 @@ public class Certificate
         }
 
         if (exception != null) {
-          throw new IllegalArgumentWarningException(this, exception);
+            throw new IllegalArgumentWarningException(this, exception);
         }
     }
 

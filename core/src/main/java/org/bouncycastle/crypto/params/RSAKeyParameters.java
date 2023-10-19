@@ -1,14 +1,14 @@
 package org.bouncycastle.crypto.params;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.math.Primes;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.IllegalArgumentWarningException;
 import org.bouncycastle.util.Properties;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RSAKeyParameters
     extends AsymmetricKeyParameter
@@ -106,7 +106,7 @@ public class RSAKeyParameters
             }
 
             if (!issues.isEmpty()) {
-              throw new IllegalArgumentWarningException(issues, this);
+                throw new IllegalArgumentWarningException(issues, this);
             }
 
             validated.add(modulus);

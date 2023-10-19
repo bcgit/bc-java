@@ -621,7 +621,7 @@ public class CertPathValidatorTest
         }
         catch (CertPathValidatorException e)
         {
-          isEquals(e.getMessage(), expected);
+            isEquals(e.getMessage(), expected);
         }
 
         // check that our cert factory also rejects - the EE is always the invalid one
@@ -633,7 +633,7 @@ public class CertPathValidatorTest
         }
         catch (CertificateException e)
         {
-          isEquals(e.getMessage(), "parsing issue: " + expected);
+            isEquals(e.getMessage(), "parsing issue: " + expected);
         }
     }
 
