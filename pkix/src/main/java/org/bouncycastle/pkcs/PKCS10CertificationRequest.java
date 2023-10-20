@@ -302,10 +302,10 @@ public class PKCS10CertificationRequest
     }
 
     /**
-     * Validate the signature on the PKCS10 certification request in this holder.
+     * Validate the alternate signature on the PKCS10 certification request in this holder.
      *
      * @param verifierProvider a ContentVerifierProvider that can generate a verifier for the signature.
-     * @return true if the signature is valid, false otherwise.
+     * @return true if the alternate signature is valid, false otherwise.
      * @throws PKCSException if the signature cannot be processed or is inappropriate.
      */
     public boolean isAltSignatureValid(ContentVerifierProvider verifierProvider)
