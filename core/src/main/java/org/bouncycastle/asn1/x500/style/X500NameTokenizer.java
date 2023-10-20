@@ -8,21 +8,19 @@ package org.bouncycastle.asn1.x500.style;
  */
 public class X500NameTokenizer
 {
-    private String          value;
-    private int             index;
-    private char            separator;
-    private StringBuffer    buf = new StringBuffer();
+    private final String value;
+    private final char separator;
 
-    public X500NameTokenizer(
-        String  oid)
+    private int index;
+
+    public X500NameTokenizer(String oid)
     {
         this(oid, ',');
     }
-    
-    public X500NameTokenizer(
-        String  oid,
-        char    separator)
+
+    public X500NameTokenizer(String oid, char separator)
     {
+        // TODO Null or empty value should return zero tokens?
         this.value = oid;
         this.index = -1;
         this.separator = separator;
@@ -30,61 +28,47 @@ public class X500NameTokenizer
 
     public boolean hasMoreTokens()
     {
-        return (index != value.length());
+        return index < value.length();
     }
 
     public String nextToken()
     {
-        if (index == value.length())
+        if (index >= value.length())
         {
             return null;
         }
 
-        int     end = index + 1;
         boolean quoted = false;
         boolean escaped = false;
 
-        buf.setLength(0);
-
-        while (end != value.length())
+        int initialIndex = index;
+        while (++index < value.length())
         {
-            char    c = value.charAt(end);
+            char c = value.charAt(index);
 
-            if (c == '"')
+            if (escaped)
             {
-                if (!escaped)
-                {
-                    quoted = !quoted;
-                }
-                buf.append(c);
                 escaped = false;
             }
-            else
+            else if (c == '"')
             {
-                if (escaped || quoted)
-                {
-                    buf.append(c);
-                    escaped = false;
-                }
-                else if (c == '\\')
-                {
-                    buf.append(c);
-                    escaped = true;
-                }
-                else if (c == separator)
-                {
-                    break;
-                }
-                else
-                {
-                    buf.append(c);
-                }
+                quoted = !quoted;
             }
-            end++;
+            else if (quoted)
+            {
+            }
+            else if (c == '\\')
+            {
+                escaped = true;
+            }
+            else if (c == separator)
+            {
+                break;
+            }
         }
 
-        index = end;
+        // TODO Error if still escaped or quoted?
 
-        return buf.toString();
+        return value.substring(initialIndex + 1, index);
     }
 }
