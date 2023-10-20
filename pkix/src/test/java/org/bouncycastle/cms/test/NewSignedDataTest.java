@@ -584,6 +584,31 @@ public class NewSignedDataTest
                                                      List crlList = new ArrayList();
     private static final Set noParams = new HashSet();
 
+    private static byte[] ecPublicKeyExample = Base64.decode(
+        "MIIEdwYJKoZIhvcNAQcCoIIEaDCCBGQCAQExDzANBglghkgBZQMEAgEFADAUBgkqhki" +
+            "G9w0BBwGgBwQFAQIDBAWgggMPMIIDCzCCAm6gAwIBAgIJALt88oa4pHaNMAkGByqGSM" +
+            "49BAEwYzELMAkGA1UEBhMCR0ExCzAJBgNVBAgTAkFXMRAwDgYDVQQHEwdBdGxhbnRhM" +
+            "QwwCgYDVQQKEwNWTVcxDzANBgNVBAsTBkFXIEVNTTEWMBQGA1UEAxMNd3d3LmF3bWRt" +
+            "LmNvbTAeFw0xNjA2MDgxNjQ2MTdaFw0xNjA3MDgxNjQ2MTdaMGMxCzAJBgNVBAYTAkd" +
+            "BMQswCQYDVQQIEwJBVzEQMA4GA1UEBxMHQXRsYW50YTEMMAoGA1UEChMDVk1XMQ8wDQ" +
+            "YDVQQLEwZBVyBFTU0xFjAUBgNVBAMTDXd3dy5hd21kbS5jb20wgZswEAYHKoZIzj0CA" +
+            "QYFK4EEACMDgYYABAAAlWsasReERY0vzpm6WvDuznypGIyXfaf8Q/sieuHOdUxhzcMS" +
+            "8Gg4qxry9voSKozDn3vI1sFQ3ZPxDgIouHSKZAA8G4aP72k/gQ7G8wnHx2DF+UgchfI" +
+            "L0GypTZqmjo0c7jb8ZDgklfGr+arFeL8gIVH+EqmUdJoYzBW0FX9RZmerjKOByDCBxT" +
+            "AdBgNVHQ4EFgQUHkakN+xGDRr7GCER2OSy0FvvN7QwgZUGA1UdIwSBjTCBioAUHkakN" +
+            "+xGDRr7GCER2OSy0FvvN7ShZ6RlMGMxCzAJBgNVBAYTAkdBMQswCQYDVQQIEwJBVzEQ" +
+            "MA4GA1UEBxMHQXRsYW50YTEMMAoGA1UEChMDVk1XMQ8wDQYDVQQLEwZBVyBFTU0xFjA" +
+            "UBgNVBAMTDXd3dy5hd21kbS5jb22CCQC7fPKGuKR2jTAMBgNVHRMEBTADAQH/MAkGBy" +
+            "qGSM49BAEDgYsAMIGHAkIByvkebPlDlHVbZT+G+beFDwBzuSbTLp5cae0R+qUxbd24s" +
+            "XD5wozRiMs3GVRGd7L0sDeHbq8iJrLrKv7UJuh7HqECQVJVwthEuknri/pIajiuolJo" +
+            "dLgVnaTqcCaOshuMejK1qT38yCqX/G5W/STw6iBv1/Dg6pwaIsmtrTn3NMDZkH+1MYI" +
+            "BIzCCAR8CAQEwcDBjMQswCQYDVQQGEwJHQTELMAkGA1UECBMCQVcxEDAOBgNVBAcTB0" +
+            "F0bGFudGExDDAKBgNVBAoTA1ZNVzEPMA0GA1UECxMGQVcgRU1NMRYwFAYDVQQDEw13d" +
+            "3cuYXdtZG0uY29tAgkAu3zyhrikdo0wDQYJYIZIAWUDBAIBBQAwCwYHKoZIzj0CAQUA" +
+            "BIGLMIGIAkIAth4AncbHuAVpUqiie/nY3E/2jarczGI4HfMHci4a+yLbsMaAfU6baty" +
+            "0Ei6VUCWX7je5dmV/wb1gcU0RogDu9AwCQgFuI0qfrnXiC8Rfir7PpYl66P6eD7bGT3" +
+            "XK+2UlfIO0N05yYZAaHu7jCIdHIhi1wwtq9dsHwpcEJhLlJ8LyifAxDw==");
+
     static
     {
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA1);
@@ -1432,6 +1457,14 @@ public class NewSignedDataTest
         {
             fail("raw sig failed");
         }
+    }
+
+    public void testEcPublicKeyAlgorithm()
+        throws Exception
+    {
+        CMSSignedData cms = new CMSSignedData(ecPublicKeyExample);
+
+         verifySignatures(cms, null);
     }
 
     public void testLwSHA1WithRSAAndAttributeTable()
