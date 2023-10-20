@@ -6,19 +6,24 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -33,7 +38,11 @@ public class PKCS10CertificationRequest
 {
     private static Attribute[] EMPTY_ARRAY = new Attribute[0];
 
-    private CertificationRequest certificationRequest;
+    private final CertificationRequest certificationRequest;
+    private final boolean isAltRequest;
+    private final AlgorithmIdentifier altSignature;
+    private final SubjectPublicKeyInfo altPublicKey;
+    private final ASN1BitString altSignatureValue;
 
     private static CertificationRequest parseBytes(byte[] encoding)
         throws IOException
@@ -59,6 +68,17 @@ public class PKCS10CertificationRequest
         }
     }
 
+    private static ASN1Encodable getSingleValue(Attribute at)
+    {
+        ASN1Encodable[] attrValues = at.getAttributeValues();
+        if (attrValues.length!= 1)
+        {
+            throw new IllegalArgumentException("single value attribute value not size of 1");
+        }
+
+        return attrValues[0];
+    }
+
     /**
      * Create a PKCS10CertificationRequestHolder from an underlying ASN.1 structure.
      *
@@ -71,6 +91,46 @@ public class PKCS10CertificationRequest
             throw new NullPointerException("certificationRequest cannot be null");
         }
         this.certificationRequest = certificationRequest;
+
+        ASN1Set attributes = certificationRequest.getCertificationRequestInfo().getAttributes();
+
+        AlgorithmIdentifier altSig = null;
+        SubjectPublicKeyInfo altPub = null;
+        ASN1BitString altSigValue = null;
+
+        if (attributes != null)
+        {
+            for (Enumeration en = attributes.getObjects(); en.hasMoreElements();)
+            {
+                Attribute at = Attribute.getInstance(en.nextElement());
+
+                if (Extension.altSignatureAlgorithm.equals(at.getAttrType()))
+                {
+                    altSig = AlgorithmIdentifier.getInstance(getSingleValue(at));
+                }
+                if (Extension.subjectAltPublicKeyInfo.equals(at.getAttrType()))
+                {
+                    altPub = SubjectPublicKeyInfo.getInstance(getSingleValue(at));
+                }
+                if (Extension.altSignatureValue.equals(at.getAttrType()))
+                {
+                    altSigValue = ASN1BitString.getInstance(getSingleValue(at));
+                }
+            }
+        }
+
+        this.isAltRequest = (altSig != null) | (altPub != null) | (altSigValue != null);
+        if (isAltRequest)
+        {
+            if (!((altSig != null) & (altPub != null) & (altSigValue != null)))
+            {
+                throw new IllegalArgumentException("invalid alternate public key details found");
+            }
+        }
+
+        this.altSignature = altSig;
+        this.altPublicKey = altPub;
+        this.altSignatureValue = altSigValue;
     }
 
     /**
@@ -229,6 +289,68 @@ public class PKCS10CertificationRequest
         }
 
         return verifier.verify(this.getSignature());
+    }
+
+    /**
+     * Return true if the certification request has an alternate public key present.
+     *
+     * @return true if this is a dual key request, false otherwise.
+     */
+    public boolean hasAltPublicKey()
+    {
+        return isAltRequest;
+    }
+
+    /**
+     * Validate the signature on the PKCS10 certification request in this holder.
+     *
+     * @param verifierProvider a ContentVerifierProvider that can generate a verifier for the signature.
+     * @return true if the signature is valid, false otherwise.
+     * @throws PKCSException if the signature cannot be processed or is inappropriate.
+     */
+    public boolean isAltSignatureValid(ContentVerifierProvider verifierProvider)
+        throws PKCSException
+    {
+        if (!isAltRequest)
+        {
+            throw new IllegalStateException("no alternate public key present");
+        }
+
+        CertificationRequestInfo requestInfo = certificationRequest.getCertificationRequestInfo();
+        ASN1Set attributes = requestInfo.getAttributes();
+        ASN1EncodableVector atV = new ASN1EncodableVector();
+
+        for (Enumeration en = attributes.getObjects(); en.hasMoreElements();)
+        {
+            Attribute at = Attribute.getInstance(en.nextElement());
+
+            if (Extension.altSignatureValue.equals(at.getAttrType()))
+            {
+                continue;
+            }
+
+            atV.add(at);
+        }
+
+        requestInfo = new CertificationRequestInfo(requestInfo.getSubject(), requestInfo.getSubjectPublicKeyInfo(), new DERSet(atV));
+        ContentVerifier verifier;
+
+        try
+        {
+            verifier = verifierProvider.get(this.altSignature);
+
+            OutputStream sOut = verifier.getOutputStream();
+
+            sOut.write(requestInfo.getEncoded(ASN1Encoding.DER));
+
+            sOut.close();
+        }
+        catch (Exception e)
+        {
+            throw new PKCSException("unable to process signature: " + e.getMessage(), e);
+        }
+
+        return verifier.verify(this.altSignatureValue.getOctets());
     }
 
     /**
