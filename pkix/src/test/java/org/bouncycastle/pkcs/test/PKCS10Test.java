@@ -188,6 +188,30 @@ public class PKCS10Test
         }
     }
 
+    public void testAltRequestAttributes()
+        throws Exception
+    {
+        KeyPairGenerator p256Kpg = KeyPairGenerator.getInstance("EC", "BC");
+        p256Kpg.initialize(new ECGenParameterSpec("P-256"));
+        KeyPair p256Kp = p256Kpg.generateKeyPair();
+
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        dilKpg.initialize(DilithiumParameterSpec.dilithium2);
+        KeyPair dilKp = dilKpg.generateKeyPair();
+
+        JcaPKCS10CertificationRequestBuilder jcaPkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), p256Kp.getPublic());
+
+        ContentSigner altSigner = new JcaContentSignerBuilder("Dilithium2").setProvider("BC").build(dilKp.getPrivate());
+        
+        PKCS10CertificationRequest request = jcaPkcs10Builder.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(p256Kp.getPrivate()), dilKp.getPublic(), altSigner);
+
+        assertTrue(request.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(p256Kp.getPublic())));
+
+        assertTrue(request.hasAltPublicKey());
+
+        assertTrue(request.isAltSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(dilKp.getPublic())));
+    }
+
     public void testDeltaRequestAttribute()
         throws Exception
     {
