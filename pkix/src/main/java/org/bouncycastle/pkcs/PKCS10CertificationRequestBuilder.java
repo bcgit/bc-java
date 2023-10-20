@@ -161,7 +161,7 @@ public class PKCS10CertificationRequestBuilder
     /**
      * Generate an PKCS#10 request based on the past in signer.
      *
-     * @param signer the content signer to be used to generate the signature validating the certificate.
+     * @param signer the content signer to be used to generate the signature validating the certification request.
      * @return a holder containing the resulting PKCS#10 certification request.
      */
     public PKCS10CertificationRequest build(
@@ -209,11 +209,12 @@ public class PKCS10CertificationRequestBuilder
     }
 
     /**
-     * Generate an X.509 certificate, based on the current issuer and subject
-     * using the passed in signer and containing altSignatureAlgorithm and altSignatureValue extensions
+     * Generate a PKCS10 certificate request, based on the current issuer and subject
+     * using the passed in signer and containing altSignatureAlgorithm. altSubjectPublicKeyInfo, and altSignatureValue attributes
      * based on the passed altSigner.
      *
-     * @param signer    the content signer to be used to generate the signature validating the certificate.
+     * @param signer    the content signer to be used to generate the signature validating the certification request.
+     * @param altPublicKey the public key to verify the altSignatureValue generated as part of this build.
      * @param altSigner the content signer used to create the altSignatureAlgorithm and altSignatureValue extension.
      * @return a holder containing the resulting signed certificate.
      */
