@@ -1373,7 +1373,7 @@ public class BcSignedDataTest
 
             if (digestAlgorithm != null)
             {
-                assertTrue(signer.getDigestAlgorithmID().equals(digestAlgorithm));
+                assertTrue(signer.getDigestAlgorithmID().getAlgorithm().toString() + " " + digestAlgorithm.getAlgorithm(), signer.getDigestAlgorithmID().equals(digestAlgorithm));
             }
 
             if (signatureAlgorithm.indexOf("RSA") > 0)
