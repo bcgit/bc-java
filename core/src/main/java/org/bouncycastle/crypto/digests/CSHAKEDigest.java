@@ -47,7 +47,7 @@ public class CSHAKEDigest
         }
     }
 
-    CSHAKEDigest(CSHAKEDigest source)
+    public CSHAKEDigest(CSHAKEDigest source)
     {
         super(source);
 
