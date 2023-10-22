@@ -24,6 +24,8 @@ import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.SignerIdentifier;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.cms.Time;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -353,11 +355,12 @@ public class SignerInformation
         throws CMSException
     {
         String encName = CMSSignedHelper.INSTANCE.getEncryptionAlgName(this.getEncryptionAlgOID());
+        AlgorithmIdentifier realDigestAlgorithm = translateBrokenRSAPkcs7(encryptionAlgorithm, info.getDigestAlgorithm());
         ContentVerifier contentVerifier;
 
         try
         {
-            contentVerifier = verifier.getContentVerifier(encryptionAlgorithm, info.getDigestAlgorithm());
+            contentVerifier = verifier.getContentVerifier(encryptionAlgorithm, realDigestAlgorithm);
         }
         catch (OperatorCreationException e)
         {
@@ -370,7 +373,7 @@ public class SignerInformation
 
             if (resultDigest == null)
             {
-                DigestCalculator calc = verifier.getDigestCalculator(this.getDigestAlgorithmID());
+                DigestCalculator calc = verifier.getDigestCalculator(realDigestAlgorithm);
                 if (content != null)
                 {
                     OutputStream digOut = calc.getOutputStream();
@@ -460,7 +463,7 @@ public class SignerInformation
 
                     if (encName.equals("RSA"))
                     {
-                        DigestInfo digInfo = new DigestInfo(new AlgorithmIdentifier(digestAlgorithm.getAlgorithm(), DERNull.INSTANCE), resultDigest);
+                        DigestInfo digInfo = new DigestInfo(new AlgorithmIdentifier(realDigestAlgorithm.getAlgorithm(), DERNull.INSTANCE), resultDigest);
 
                         return rawVerifier.verify(digInfo.getEncoded(ASN1Encoding.DER), this.getSignature());
                     }
@@ -794,5 +797,20 @@ public class SignerInformation
             new SignerInfo(sInfo.getSID(), sInfo.getDigestAlgorithm(),
                 sInfo.getAuthenticatedAttributes(), sInfo.getDigestEncryptionAlgorithm(), sInfo.getEncryptedDigest(), new DERSet(v)),
             signerInformation.contentType, signerInformation.content, null);
+    }
+
+    private static AlgorithmIdentifier translateBrokenRSAPkcs7(AlgorithmIdentifier encryptionAlgorithm, AlgorithmIdentifier digestAlgorithm)
+    {
+        if (PKCSObjectIdentifiers.rsaEncryption.equals(encryptionAlgorithm.getAlgorithm()))
+        {
+            // Yes, some people really did this.
+            if (OIWObjectIdentifiers.sha1WithRSA.equals(digestAlgorithm.getAlgorithm())
+                || PKCSObjectIdentifiers.sha1WithRSAEncryption.equals(digestAlgorithm.getAlgorithm()))
+            {
+                return new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+            }
+        }
+
+        return digestAlgorithm;
     }
 }
