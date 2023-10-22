@@ -121,7 +121,7 @@ abstract class JsseUtils
         sb.append(Hex.toHexString(new byte[]{ (byte)cipherSuite }));
         sb.append('}');
 
-        String name = context.getCipherSuiteName(cipherSuite);
+        String name = ProvSSLContextSpi.getCipherSuiteName(cipherSuite);
         if (name == null)
         {
             sb.append('?');
