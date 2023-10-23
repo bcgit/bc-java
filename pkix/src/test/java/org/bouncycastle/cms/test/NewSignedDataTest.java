@@ -609,6 +609,47 @@ public class NewSignedDataTest
             "0Ei6VUCWX7je5dmV/wb1gcU0RogDu9AwCQgFuI0qfrnXiC8Rfir7PpYl66P6eD7bGT3" +
             "XK+2UlfIO0N05yYZAaHu7jCIdHIhi1wwtq9dsHwpcEJhLlJ8LyifAxDw==");
 
+    // old-school PKCS#7 message but with SHA1withRSA in the hash oid
+    private static byte[] wrongRSASHA1Message = Base64.decode(
+            "MIAGCSqGSIb3DQEHAqCAMIACAQExCTAHBgUrDgMCHTCABgkqhkiG9w0BBwGggCSA\n" +
+            "BBNNeSBzcGVjaWFsIG1lc3NhZ2UyAAAAAAAAoIAwggSZMIIDTaADAgECAhQAoX1E\n" +
+            "JJLxftRRUu06RXzDwMewAzBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUA\n" +
+            "oRwwGgYJKoZIhvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASAwSDELMAkGA1UEBhMC\n" +
+            "VVMxEzARBgNVBAoTCkdvb2dsZSBMTEMxJDAiBgNVBAMTG0dFTS1XaW5kb3dzLXVz\n" +
+            "LXdlc3QxLUdZSm8yNTAeFw0yMzEwMTcyMTU2MjlaFw0yNDAxMjUyMTU2MjhaMBQx\n" +
+            "EjAQBgNVBAMMCWRldmljZV9pZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC\n" +
+            "ggEBALGMmPlHHlrXysf43O6cKbDta0zmo5bWwCzir78rkfyUsSdBDC+GLRhq2bxr\n" +
+            "AW8nYn6wDy0a2r2QMoj9SS4my38o2Urtu+XtsQHu0NG+hKxm7KLSRncpvqcfFc6A\n" +
+            "FQ8eYbbkYRVRJm5r7jsYWE9IB7Kv46rUWofieuYHdDyPvKU3unmxlegKFDWcFVmo\n" +
+            "cx4BiMGZ5zv+BtLfHxCRTf5k9r1y13gmTnwZzI+iwc9ZixTHJD6OejvvEcbjqPUm\n" +
+            "q9OhBrx/eUZqDCjHoBcjtYuj24RAhZu55/GP0xQedvZfasEA70XLD5wkF1oM/vQl\n" +
+            "Cu9STP0en4y75YMefDjRmygpVdcCAwEAAaOCAUUwggFBMA4GA1UdDwEB/wQEAwID\n" +
+            "uDATBgNVHSUEDDAKBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQ7\n" +
+            "eoXi4IwFUvD++kLjKcWIbZM+tDAfBgNVHSMEGDAWgBTs9EezkU1W31lKwtOxtGEI\n" +
+            "RaJSuTCBjQYIKwYBBQUHAQEEgYAwfjB8BggrBgEFBQcwAoZwaHR0cDovL3ByaXZh\n" +
+            "dGVjYS1jb250ZW50LTY1MGE2MmE2LTAwMDAtMmU3Mi1hZGY1LWQ0ZjU0N2ZhY2Fh\n" +
+            "MC5zdG9yYWdlLmdvb2dsZWFwaXMuY29tLzZiYjBlZmIwZjk5MmZmNmZkYTFkL2Nh\n" +
+            "LmNydDA8BgNVHREENTAzhjFkYXRhOkNnbGtaWFpwWTJWZmFXUWdxK09QeVBvU09n\n" +
+            "WUlnT0xKckFaQWdhK05BZz09MEEGCSqGSIb3DQEBCjA0oA8wDQYJYIZIAWUDBAIB\n" +
+            "BQChHDAaBgkqhkiG9w0BAQgwDQYJYIZIAWUDBAIBBQCiAwIBIAOCAQEAroRz0SiP\n" +
+            "2IMkwcZ0ffz/d4Z9RE9x7lDve2hsmwKqYnKzYmiueVognNGfI3zp613+NJN73Au4\n" +
+            "qeCHUMmq+rik2m2qMy/1PqzUHthqpGONXfckw18+XpTqmSsBm+wGBvfjFAFi1e/Q\n" +
+            "x64ABjLyGfws9/fiZgOkCc/ewDo+BI2S8vaYMRTVhKtfLZQODXTLQlalFX2JM0B6\n" +
+            "KYOfOmfmNM/W0FQLOetbprSqCsA2Di2e3/obnh0N+ft2q3Ayvh9dEPNOnp0W1hAD\n" +
+            "VAHhoq4HQKCsaJuc93pjIDgoFnFg5jBeKq2ZUDJc32N21iEPK2ylrUVnUVZx87wK\n" +
+            "laDjdqbmrN0R2gAAMYICDjCCAgoCAQEwYDBIMQswCQYDVQQGEwJVUzETMBEGA1UE\n" +
+            "ChMKR29vZ2xlIExMQzEkMCIGA1UEAxMbR0VNLVdpbmRvd3MtdXMtd2VzdDEtR1lK\n" +
+            "bzI1AhQAoX1EJJLxftRRUu06RXzDwMewAzAHBgUrDgMCHaCBhjAYBgkqhkiG9w0B\n" +
+            "CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yMzEwMjMwMzE0NDRaMCMG\n" +
+            "CSqGSIb3DQEJBDEWBBQ6a3vz6YBI8hq0TwAbAhqRH2Ry0TAnBgkqhkiG9w0BCTQx\n" +
+            "GjAYMAcGBSsOAwIdoQ0GCSqGSIb3DQEBAQUAMA0GCSqGSIb3DQEBAQUABIIBAJc+\n" +
+            "27Uik2JfE5xloR5Ry2FZsslXRrrO7PdhlXvwgPpgicma3AYvD9os7fk6nTieEaVB\n" +
+            "fWkesz7fFOthP/UG5KvpsyE1hmXMqUpCPQfFE1XfzaSgBeMTRWtPqzagVojJw+3i\n" +
+            "LrCy0Kgw+wKBwmyVkd0zHLQEF5aUA+ovCTNGje11qNpdCwUKfal7uz8TD4V0hWwJ\n" +
+            "zAYME3itle90ztUh3NcEYQxJOQNZRGhkTMsXHKNPDCGS+erpU8BERkU+FOCH9+wS\n" +
+            "CiwhMCLDeeEBOdxWZHVbIiFnnRTQqyIDGAOSSIUmjE/pMPKpPvumkCGq2r9GxPV9\n" +
+            "YlpnThaYbDCnWg8tbWYAAAAAAAA=");
+
     static
     {
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA1);
@@ -983,6 +1024,14 @@ public class NewSignedDataTest
         MessageDigest md = MessageDigest.getInstance("SHA1", BC);
 
         verifySignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    public void testSHA1WithRSAWrongDigestOID()
+        throws Exception
+    {
+        CMSSignedData s = new CMSSignedData(wrongRSASHA1Message);
+        
+        verifySignatures(s);
     }
 
     public void testSHA1WithRSANoAttributes()
