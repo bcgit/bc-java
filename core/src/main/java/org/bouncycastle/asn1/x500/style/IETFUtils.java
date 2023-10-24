@@ -136,15 +136,15 @@ public class IETFUtils
 
         addRDNs(x500Style, builder, tokenizer);
 
+        // TODO There's an unnecessary clone of the RDNs array happening here
         return builder.build().getRDNs();
     }
 
     private static void addRDNs(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
-        while (tokenizer.hasMoreTokens())
+        String token;
+        while ((token = tokenizer.nextToken()) != null)
         {
-            String token = nextToken(tokenizer);
-
             if (token.indexOf('+') >= 0)
             {
                 addMultiValuedRDN(style, builder, new X500NameTokenizer(token, '+'));
@@ -158,7 +158,12 @@ public class IETFUtils
 
     private static void addMultiValuedRDN(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
     {
-        String token = nextToken(tokenizer);
+        String token = tokenizer.nextToken();
+        if (token == null)
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
+
         if (!tokenizer.hasMoreTokens())
         {
             addRDN(style, builder, token);
@@ -203,16 +208,6 @@ public class IETFUtils
 
         oids.addElement(oid);
         values.addElement(value);
-    }
-
-    private static String nextToken(X500NameTokenizer tokenizer)
-    {
-        String token = tokenizer.nextToken();
-        if (token == null)
-        {
-            throw new IllegalArgumentException("badly formatted directory string");
-        }
-        return token;
     }
 
     private static String nextToken(X500NameTokenizer tokenizer, boolean expectMoreTokens)

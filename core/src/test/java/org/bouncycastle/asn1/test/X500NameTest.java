@@ -67,7 +67,7 @@ public class X500NameTest
 
     private static X500Name fromBytes(byte[] bytes) throws IOException
     {
-        return X500Name.getInstance(ASN1Primitive.fromByteArray(bytes));
+        return X500Name.getInstance(bytes);
     }
 
     private ASN1Encodable createEntryValue(ASN1ObjectIdentifier oid, String value)
@@ -78,9 +78,9 @@ public class X500NameTest
         
         X500Name name = builder.build();
 
-        ASN1Sequence seq = (ASN1Sequence)name.toASN1Primitive();
+        ASN1Sequence seq = ASN1Sequence.getInstance(name.toASN1Primitive());
         ASN1Set set = ASN1Set.getInstance(seq.getObjectAt(0).toASN1Primitive());
-        seq = (ASN1Sequence)set.getObjectAt(0);
+        seq = ASN1Sequence.getInstance(set.getObjectAt(0));
 
         return seq.getObjectAt(1);
     }
@@ -93,9 +93,9 @@ public class X500NameTest
 
         X500Name name = new X500Name(builder.build().toString());
 
-        ASN1Sequence seq = (ASN1Sequence)name.toASN1Primitive();
+        ASN1Sequence seq = ASN1Sequence.getInstance(name.toASN1Primitive());
         ASN1Set set = ASN1Set.getInstance(seq.getObjectAt(0).toASN1Primitive());
-        seq = (ASN1Sequence)set.getObjectAt(0);
+        seq = ASN1Sequence.getInstance(set.getObjectAt(0));
 
         return seq.getObjectAt(1);
     }
@@ -335,7 +335,7 @@ public class X500NameTest
         for (int i = 0; i != subjects.length; i++)
         {
             X500Name name = new X500Name(subjects[i]);
-            name = X500Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
+            name = fromBytes(name.getEncoded());
             if (!name.toString().equals(subjects[i]))
             {
                 fail("failed regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
@@ -345,7 +345,7 @@ public class X500NameTest
         for (int i = 0; i < hexSubjects.length; i += 2)
         {
             X500Name name = new X500Name(hexSubjects[i]);
-            name = X500Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
+            name = fromBytes(name.getEncoded());
             if (!name.toString().equals(hexSubjects[i + 1]))
             {
                 fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
@@ -405,8 +405,8 @@ public class X500NameTest
 
         n1 = new X500Name("2.5.4.5=#130138,CN=SSC Class 3 CA,O=UAB Skaitmeninio sertifikavimo centras,C=LT");
         n2 = new X500Name("SERIALNUMBER=#130138,CN=SSC Class 3 CA,O=UAB Skaitmeninio sertifikavimo centras,C=LT");
-        n3 = X500Name.getInstance(ASN1Primitive.fromByteArray(Hex.decode("3063310b3009060355040613024c54312f302d060355040a1326"
-            + "55414220536b6169746d656e696e696f20736572746966696b6176696d6f2063656e74726173311730150603550403130e53534320436c6173732033204341310a30080603550405130138")));
+        n3 = fromBytes(Hex.decode("3063310b3009060355040613024c54312f302d060355040a1326"
+            + "55414220536b6169746d656e696e696f20736572746966696b6176696d6f2063656e74726173311730150603550403130e53534320436c6173732033204341310a30080603550405130138"));
 
         equalityTest(n1, n2);
         equalityTest(n2, n3);
@@ -729,9 +729,8 @@ public class X500NameTest
       // composite test
       //
       byte[]  enc = Hex.decode("305e310b300906035504061302415531283026060355040a0c1f546865204c6567696f6e206f662074686520426f756e637920436173746c653125301006035504070c094d656c626f75726e653011060355040b0c0a4173636f742056616c65");
-      ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(enc));
 
-      X500Name    n = X500Name.getInstance(aIn.readObject());
+      X500Name n = fromBytes(enc);
 
       if (!n.toString().equals("C=AU,O=The Legion of the Bouncy Castle,L=Melbourne+OU=Ascot Vale"))
       {
@@ -751,12 +750,7 @@ public class X500NameTest
 
       n = new X500Name("C=AU, O=The Legion of the Bouncy Castle, L=Melbourne + OU=Ascot Vale");
 
-      ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-      ASN1OutputStream aOut = ASN1OutputStream.create(bOut);
-
-      aOut.writeObject(n);
-
-      byte[]  enc2 = bOut.toByteArray();
+      byte[] enc2 = n.getEncoded();
 
       if (!Arrays.areEqual(enc, enc2))
       {
@@ -768,7 +762,7 @@ public class X500NameTest
       //
       n = new X500Name("C=CH,O=,OU=dummy,CN=mail@dummy.com");
 
-      n = X500Name.getInstance(ASN1Object.fromByteArray(n.getEncoded()));
+      n = fromBytes(n.getEncoded());
   }
     */
     private void equalityTest(X500Name name1, X500Name name2)
