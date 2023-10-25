@@ -70,7 +70,7 @@ public abstract class Ed448
         0x03AC222B, 0x0304DB8E, 0x083EE319, 0x05E5DB0B, 0x0ECA503B, 0x0B1C6539, 0x078A8DCE, 0x02D256BC, 0x04A8B05E,
         0x0BD9FD57, 0x0A1C3CB8 };
 
-    private static final int C_d = -39081;
+    private static final int C_d = 39081;
 
 //    private static final int WNAF_WIDTH = 6;
     private static final int WNAF_WIDTH_225 = 5;
@@ -143,7 +143,7 @@ public abstract class Ed448
         F.sqr(p.y, v);
         F.mul(u, v, t);
         F.add(u, v, u);
-        F.mul(t, -C_d, t);
+        F.mul(t, C_d, t);
         F.subOne(t);
         F.add(t, u, t);
         F.normalize(t);
@@ -166,7 +166,7 @@ public abstract class Ed448
         F.add(u, v, u);
         F.mul(u, w, u);
         F.sqr(w, w);
-        F.mul(t, -C_d, t);
+        F.mul(t, C_d, t);
         F.sub(t, w, t);
         F.add(t, u, t);
         F.normalize(t);
@@ -261,7 +261,7 @@ public abstract class Ed448
         int[] v = F.create();
 
         F.sqr(r.y, u);
-        F.mul(u, -C_d, v);
+        F.mul(u, C_d, v);
         F.negate(u, u);
         F.addOne(u);
         F.addOne(v);
@@ -642,7 +642,7 @@ public abstract class Ed448
         F.mul(p.x, r.x, c);
         F.mul(p.y, r.y, d);
         F.mul(c, d, e);
-        F.mul(e, -C_d, e);
+        F.mul(e, C_d, e);
 //        F.apm(b, e, f, g);
         F.add(b, e, f);
         F.sub(b, e, g);
@@ -677,7 +677,7 @@ public abstract class Ed448
         F.mul(p.x, r.x, c);
         F.mul(p.y, r.y, d);
         F.mul(c, d, e);
-        F.mul(e, -C_d, e);
+        F.mul(e, C_d, e);
 //        F.apm(b, e, f, g);
         F.add(b, e, f);
         F.sub(b, e, g);
@@ -722,7 +722,7 @@ public abstract class Ed448
         F.mul(p.x, r.x, c);
         F.mul(p.y, r.y, d);
         F.mul(c, d, e);
-        F.mul(e, -C_d, e);
+        F.mul(e, C_d, e);
 //        F.apm(b, e, nf, ng);
         F.add(b, e, nf);
         F.sub(b, e, ng);
@@ -768,7 +768,7 @@ public abstract class Ed448
         F.mul(p.x, r.x, c);
         F.mul(p.y, r.y, d);
         F.mul(c, d, e);
-        F.mul(e, -C_d, e);
+        F.mul(e, C_d, e);
 //        F.apm(b, e, nf, ng);
         F.add(b, e, nf);
         F.sub(b, e, ng);
@@ -881,7 +881,7 @@ public abstract class Ed448
         pointCopy(p, q);
 
         PointProjective d = new PointProjective();
-        pointCopy(q, d);
+        pointCopy(p, d);
         pointDouble(d, t);
 
         int[] table = F.createTable(count * 3);
