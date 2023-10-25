@@ -39,6 +39,8 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -60,6 +62,11 @@ public class SubjectPublicKeyInfoFactory
     public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey)
         throws IOException
     {
+        // #tls-injection:
+        if (InjectionPoint.sigAlgs().asn1Bridge().isSupportedParameter(publicKey)) {
+            return InjectionPoint.sigAlgs().asn1Bridge().createSubjectPublicKeyInfo(publicKey);
+        }
+
         if (publicKey instanceof QTESLAPublicKeyParameters)
         {
             QTESLAPublicKeyParameters keyParams = (QTESLAPublicKeyParameters)publicKey;

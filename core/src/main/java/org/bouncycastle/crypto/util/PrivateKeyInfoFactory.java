@@ -41,6 +41,7 @@ import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.tls.injection.InjectionPoint;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -87,6 +88,11 @@ public class PrivateKeyInfoFactory
     public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes)
         throws IOException
     {
+        // #tls-injection
+        if (InjectionPoint.sigAlgs().asn1Bridge().isSupportedParameter(privateKey)) {
+            return InjectionPoint.sigAlgs().asn1Bridge().createPrivateKeyInfo(privateKey, attributes);
+        }
+
         if (privateKey instanceof RSAKeyParameters)
         {
             RSAPrivateCrtKeyParameters priv = (RSAPrivateCrtKeyParameters)privateKey;

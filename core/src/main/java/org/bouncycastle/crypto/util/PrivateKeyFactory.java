@@ -47,6 +47,7 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -106,6 +107,11 @@ public class PrivateKeyFactory
 
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
+
+        // #tls-injection
+        if (InjectionPoint.sigAlgs().contain(algOID)) {
+            return InjectionPoint.sigAlgs().asn1Bridge().createPrivateKeyParameter(keyInfo);
+        }
 
         if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption)
             || algOID.equals(PKCSObjectIdentifiers.id_RSASSA_PSS)

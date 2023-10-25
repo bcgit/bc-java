@@ -1,9 +1,12 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -23,12 +26,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.tls.AlertDescription;
-import org.bouncycastle.tls.HashAlgorithm;
-import org.bouncycastle.tls.SignatureAlgorithm;
-import org.bouncycastle.tls.SignatureScheme;
-import org.bouncycastle.tls.TlsFatalAlert;
-import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
 import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsCertificateRole;
@@ -37,6 +35,9 @@ import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
+import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.tls.injection.sigalgs.InjectedSigVerifiers;
+import org.bouncycastle.tls.injection.sigalgs.SignatureAndHashAlgorithmFactory;
 
 /**
  * Implementation class for a single X.509 certificate based on the JCA.
@@ -137,6 +138,10 @@ public class JcaTlsCertificate
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
     {
+        if (InjectionPoint.sigAlgs().contain(signatureAlgorithm)) {
+            // #tls-injection
+            return InjectionPoint.sigAlgs().tlsVerifierFor(crypto, getPublicKey(), signatureAlgorithm);
+        }
         switch (signatureAlgorithm)
         {
         case SignatureAlgorithm.ed25519:
@@ -270,6 +275,18 @@ public class JcaTlsCertificate
 //        case SignatureScheme.sm2sig_sm3:
 
         default:
+            // #tls-injection
+            if (InjectionPoint.sigAlgs().contain(signatureScheme)) {
+
+                try {
+                    return InjectionPoint.sigAlgs().tls13VerifierFor(getPublicKey());
+                } catch (InvalidKeyException e) {
+                    throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                }
+
+
+            }
+
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
     }
