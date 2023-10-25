@@ -1,5 +1,8 @@
 package org.bouncycastle.tls;
 
+
+import org.bouncycastle.tls.injection.InjectionPoint;
+
 /**
  * RFC 7919
  */
@@ -119,6 +122,8 @@ public class NamedGroup
     {
         if (TlsUtils.isTLSv13(version))
         {
+            if (InjectionPoint.kems().contain(namedGroup))
+                return true; // #tls-injection
             if ((namedGroup >= sect163k1 && namedGroup <= secp256k1)
                 || (namedGroup >= brainpoolP256r1 && namedGroup <= brainpoolP512r1)
                 || (namedGroup >= GC256A && namedGroup <= GC512C)
@@ -342,6 +347,13 @@ public class NamedGroup
         if (null != finiteFieldName)
         {
             return finiteFieldName;
+        }
+
+        // #tls-injection
+        String injectedKEMName = InjectionPoint.kems().kemByCodePoint(namedGroup).standardName();
+        if (null != injectedKEMName)
+        {
+            return injectedKEMName;
         }
 
         return null;
