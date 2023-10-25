@@ -44,6 +44,8 @@ import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.injection.InjectableKEMs;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.IPAddress;
 import org.bouncycastle.util.encoders.Hex;
@@ -163,7 +165,15 @@ class ProvTlsClient
 //        @SuppressWarnings("unchecked")
 //        Vector<Integer> namedGroupRoles = namedGroupRolesRaw;
 
-        return NamedGroupInfo.getSupportedGroupsLocalClient(jsseSecurityParameters.namedGroups);
+        Vector<Integer> defaultGroups = NamedGroupInfo.getSupportedGroupsLocalClient(jsseSecurityParameters.namedGroups);
+
+
+        // #tls-injection
+        Vector<Integer> result = new Vector<>();
+        result.addAll(InjectionPoint.kems().asCodePointCollection(InjectableKEMs.Ordering.BEFORE));
+        result.addAll(NamedGroupInfo.getSupportedGroupsLocalClient(jsseSecurityParameters.namedGroups));
+        result.addAll(InjectionPoint.kems().asCodePointCollection(InjectableKEMs.Ordering.AFTER));
+        return result;
     }
 
     @Override
@@ -217,7 +227,14 @@ class ProvTlsClient
     @Override
     protected Vector<SignatureAndHashAlgorithm> getSupportedSignatureAlgorithms()
     {
-        return jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+        Vector<SignatureAndHashAlgorithm> result = jsseSecurityParameters.signatureSchemes.getLocalSignatureAndHashAlgorithms();
+        if (result == null)
+            result = new Vector<>();
+        // #tls-injection
+        // adding injected sig algorithms (to TLS client hello)
+        result.addAll(0, InjectionPoint.sigAlgs().asSigAndHashCollection());
+
+        return result;
     }
 
     @Override
