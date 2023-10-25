@@ -147,8 +147,9 @@ public abstract class Ed448
         F.subOne(t);
         F.add(t, u, t);
         F.normalize(t);
+        F.normalize(v);
 
-        return F.isZero(t);
+        return F.isZero(t) & ~F.isZero(v);
     }
 
     private static int checkPoint(PointProjective p)
@@ -169,8 +170,10 @@ public abstract class Ed448
         F.sub(t, w, t);
         F.add(t, u, t);
         F.normalize(t);
+        F.normalize(v);
+        F.normalize(w);
 
-        return F.isZero(t);
+        return F.isZero(t) & ~F.isZero(v) & ~F.isZero(w);
     }
 
     private static boolean checkPointFullVar(byte[] p)
@@ -622,7 +625,7 @@ public abstract class Ed448
         F.normalize(p.y);
         F.normalize(p.z);
 
-        return F.isZeroVar(p.x) && F.areEqualVar(p.y, p.z);
+        return F.isZeroVar(p.x) && !F.isZeroVar(p.y) && F.areEqualVar(p.y, p.z);
     }
 
     private static void pointAdd(PointAffine p, PointProjective r, PointTemp t)
