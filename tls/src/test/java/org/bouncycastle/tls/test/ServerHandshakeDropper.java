@@ -1,6 +1,8 @@
 package org.bouncycastle.tls.test;
 
-import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.ContentType;
+import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.TlsUtils;
 
 /** This is a [Transport] wrapper which causes the first retransmission of the second flight of a server
  * handshake to be dropped. */
@@ -26,7 +28,7 @@ public class ServerHandshakeDropper extends FilteredDatagramTransport
         private boolean isChangeCipherSpec(byte[] buf, int off, int len)
         {
             short contentType = TlsUtils.readUint8(buf, off);
-            return (ContentType.change_cipher_spec == contentType);
+            return ContentType.change_cipher_spec == contentType;
         }
 
         private boolean isEpoch1Handshake(byte[] buf, int off, int len)
@@ -38,10 +40,9 @@ public class ServerHandshakeDropper extends FilteredDatagramTransport
             }
 
             int epoch = TlsUtils.readUint16(buf, off + 3);
-            return (1 == epoch);
+            return 1 == epoch;
         }
 
-        @Override
         public boolean allowPacket(byte[] buf, int off, int len)
         {
             if (!sawChangeCipherSpec && isChangeCipherSpec(buf, off, len))

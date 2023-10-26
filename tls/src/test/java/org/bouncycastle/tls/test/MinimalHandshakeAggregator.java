@@ -1,10 +1,11 @@
 package org.bouncycastle.tls.test;
 
-import org.bouncycastle.tls.*;
+import java.io.IOException;
 
-import java.io.*;
-
-import static java.lang.Math.min;
+import org.bouncycastle.tls.ContentType;
+import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.HandshakeType;
+import org.bouncycastle.tls.TlsUtils;
 
 /**
  * A very minimal and stupid class to aggregate DTLS handshake messages.  Only sufficient for unit tests.
@@ -12,7 +13,6 @@ import static java.lang.Math.min;
 public class MinimalHandshakeAggregator
     implements DatagramTransport
 {
-
     private final DatagramTransport transport;
 
     private final boolean aggregateReceiving, aggregateSending;
@@ -104,7 +104,7 @@ public class MinimalHandshakeAggregator
         throws IOException
     {
         long endMillis = System.currentTimeMillis() + waitMillis;
-        for (; ; )
+        for (;;)
         {
             int length = transport.receive(buf, off, len, waitMillis);
             if (length < 0 || !aggregateReceiving)
@@ -119,9 +119,10 @@ public class MinimalHandshakeAggregator
                 {
                     System.out.println("RECEIVING " + receiveRecordCount + " RECORDS IN " + length + " BYTE PACKET");
                 }
-                System.arraycopy(receiveBuf, 0, buf, off, min(len, receiveBuf.length));
+                int resultLength = Math.min(len, receiveBuf.length);
+                System.arraycopy(receiveBuf, 0, buf, off, resultLength);
                 resetReceiveBuf();
-                return length;
+                return resultLength;
             }
 
             long now = System.currentTimeMillis();

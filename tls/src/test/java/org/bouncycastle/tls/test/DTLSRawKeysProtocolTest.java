@@ -376,7 +376,7 @@ public class DTLSRawKeysProtocolTest
 
                 // NOTE: A real server would handle each DTLSRequest in a new task/thread and continue accepting
                 {
-                    DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);                
+                    DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);
                     byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                     while (!isShutdown)
                     {

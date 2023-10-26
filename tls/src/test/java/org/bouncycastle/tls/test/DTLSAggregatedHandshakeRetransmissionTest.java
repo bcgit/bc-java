@@ -1,10 +1,17 @@
 package org.bouncycastle.tls.test;
 
-import junit.framework.*;
-import org.bouncycastle.tls.*;
-import org.bouncycastle.tls.crypto.*;
-import org.bouncycastle.tls.crypto.impl.bc.*;
-import org.bouncycastle.util.*;
+import org.bouncycastle.tls.DTLSClientProtocol;
+import org.bouncycastle.tls.DTLSRequest;
+import org.bouncycastle.tls.DTLSServerProtocol;
+import org.bouncycastle.tls.DTLSTransport;
+import org.bouncycastle.tls.DTLSVerifier;
+import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+
+import junit.framework.TestCase;
 
 public class DTLSAggregatedHandshakeRetransmissionTest
     extends TestCase
@@ -29,14 +36,14 @@ public class DTLSAggregatedHandshakeRetransmissionTest
 
         MockDTLSClient client = new MockDTLSClient(null);
 
-        client.setHandshakeTimeoutMillis(30000); /* Test gets stuck, so we need it to time out. */
+        client.setHandshakeTimeoutMillis(30000);    // Test gets stuck, so we need it to time out.
 
         DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
 
         for (int i = 1; i <= 10; ++i)
         {
             byte[] data = new byte[i];
-            Arrays.fill(data, (byte) i);
+            Arrays.fill(data, (byte)i);
             dtlsClient.send(data, 0, data.length);
         }
 
@@ -54,9 +61,7 @@ public class DTLSAggregatedHandshakeRetransmissionTest
         extends Thread
     {
         private final DTLSServerProtocol serverProtocol;
-
         private final DatagramTransport serverTransport;
-
         private volatile boolean isShutdown = false;
 
         ServerThread(DTLSServerProtocol serverProtocol, DatagramTransport serverTransport)

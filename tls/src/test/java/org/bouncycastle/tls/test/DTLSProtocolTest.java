@@ -106,7 +106,7 @@ public class DTLSProtocolTest
                 // NOTE: A real server would handle each DTLSRequest in a new task/thread and continue accepting
                 {
                     MockDTLSServer server = new MockDTLSServer(serverCrypto);
-                    DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);                
+                    DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);
                     byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                     while (!isShutdown)
                     {
