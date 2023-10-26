@@ -47,7 +47,7 @@ public class UnreliableDatagramTransport
         throws IOException
     {
         long endMillis = System.currentTimeMillis() + waitMillis;
-        for (; ; )
+        for (;;)
         {
             int length = transport.receive(buf, off, len, waitMillis);
             if (length < 0 || !lostPacket(percentPacketLossReceiving))
