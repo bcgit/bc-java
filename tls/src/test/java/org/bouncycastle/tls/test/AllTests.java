@@ -1,10 +1,11 @@
 package org.bouncycastle.tls.test;
 
+import org.bouncycastle.test.PrintTestResult;
+
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
     extends TestCase
@@ -22,9 +23,9 @@ public class AllTests
 
         suite.addTestSuite(BasicTlsTest.class);
         suite.addTestSuite(ByteQueueInputStreamTest.class);
-        suite.addTestSuite(DTLSProtocolTest.class);
-        suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSAggregatedHandshakeRetransmissionTest.class);
+        suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
+        suite.addTestSuite(DTLSProtocolTest.class);
         suite.addTestSuite(DTLSPSKProtocolTest.class);
         suite.addTestSuite(DTLSRawKeysProtocolTest.class);
         suite.addTestSuite(OCSPTest.class);

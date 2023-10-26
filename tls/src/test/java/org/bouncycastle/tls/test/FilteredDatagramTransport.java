@@ -1,18 +1,31 @@
 package org.bouncycastle.tls.test;
 
-import org.bouncycastle.tls.*;
+import java.io.IOException;
 
-import java.io.*;
+import org.bouncycastle.tls.DatagramTransport;
 
 public class FilteredDatagramTransport
     implements DatagramTransport
 {
+    public interface FilterPredicate
+    {
+        boolean allowPacket(byte[] buf, int off, int len);
+    }
+
+    public static final FilterPredicate ALWAYS_ALLOW = new FilterPredicate()
+    {
+        public boolean allowPacket(byte[] buf, int off, int len)
+        {
+            return true;
+        }
+    };
 
     private final DatagramTransport transport;
 
     private final FilterPredicate allowReceiving, allowSending;
 
-    public FilteredDatagramTransport(DatagramTransport transport, FilterPredicate allowReceiving, FilterPredicate allowSending)
+    public FilteredDatagramTransport(DatagramTransport transport, FilterPredicate allowReceiving,
+        FilterPredicate allowSending)
     {
         this.transport = transport;
         this.allowReceiving = allowReceiving;
@@ -35,7 +48,7 @@ public class FilteredDatagramTransport
         throws IOException
     {
         long endMillis = System.currentTimeMillis() + waitMillis;
-        for (; ; )
+        for (;;)
         {
             int length = transport.receive(buf, off, len, waitMillis);
             if (length < 0 || allowReceiving.allowPacket(buf, off, len))
@@ -72,17 +85,5 @@ public class FilteredDatagramTransport
         throws IOException
     {
         transport.close();
-    }
-
-    static FilterPredicate ALWAYS_ALLOW = new FilterPredicate() {
-        @Override
-        public boolean allowPacket(byte[] buf, int off, int len)
-        {
-            return true;
-        }
-    };
-
-    interface FilterPredicate {
-        boolean allowPacket(byte[] buf, int off, int len);
     }
 }
