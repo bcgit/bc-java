@@ -43,7 +43,6 @@ import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.injection.InjectionPoint;
-import org.bouncycastle.tls.injection.sigalgs.InjectedSigners;
 
 class ProvX509KeyManager
     extends BCX509ExtendedKeyManager

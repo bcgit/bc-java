@@ -62,7 +62,6 @@ import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParamet
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**

@@ -1,9 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -36,8 +34,6 @@ import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 import org.bouncycastle.tls.injection.InjectionPoint;
-import org.bouncycastle.tls.injection.sigalgs.InjectedSigVerifiers;
-import org.bouncycastle.tls.injection.sigalgs.SignatureAndHashAlgorithmFactory;
 
 /**
  * Implementation class for a single X.509 certificate based on the JCA.

@@ -13,7 +13,6 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
 import org.bouncycastle.tls.injection.InjectionPoint;
-import org.bouncycastle.tls.injection.sigalgs.InjectedSigners; // #tls-injection
 
 /**
  * Credentialed class for generating signatures based on the use of primitives from the JCA.
