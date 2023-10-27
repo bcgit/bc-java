@@ -1,19 +1,9 @@
 package org.bouncycastle.tls.injection.sigalgs;
 
-import lv.lumii.pqc.InjectablePQC;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
-import org.bouncycastle.tls.crypto.TlsSigner;
-import org.bouncycastle.tls.crypto.TlsStreamSigner;
-import org.bouncycastle.util.Pack;
-
-import java.io.IOException;
-import java.util.Arrays;
 
 public class MyMessageSigner implements MessageSigner {
 
