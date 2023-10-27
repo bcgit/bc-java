@@ -26,8 +26,8 @@ public class InjectableAlgorithms {
     }
 
 
-    public InjectableAlgorithms withKEM(int kemCodePoint,
-                                        String standardName, KemFactory kemFactory, InjectableKEMs.Ordering ordering) {
+    public InjectableAlgorithms withKEM(String standardName, int kemCodePoint,
+                                        KemFactory kemFactory, InjectableKEMs.Ordering ordering) {
         return new InjectableAlgorithms(
                 this.kems.withKEM(kemCodePoint, standardName, kemFactory, ordering),
                 new InjectableSigAlgs(this.sigAlgs)
