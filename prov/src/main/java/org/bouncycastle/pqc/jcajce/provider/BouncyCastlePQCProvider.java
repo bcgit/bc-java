@@ -17,6 +17,7 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.tls.injection.InjectionPoint;
 
 public class BouncyCastlePQCProvider
     extends Provider
@@ -42,6 +43,19 @@ public class BouncyCastlePQCProvider
             "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
             "Dilithium", "NTRUPrime", "BIKE", "HQC", "Rainbow"
         };
+
+    /**
+     * #tls-injection
+     * ALGORITHM_MAPPING_CLASSES contains real classes corresponding to the names given in ALGORITHMS.
+     * We rely on ALGORITHM_MAPPING_CLASSES when we are unable to load classes by names via reflection
+     * (important, since we cannot rely fully on reflection in NativeImage from GraalVM).
+     * #pqc-tls
+     */
+    private static final Class<?>[] ALGORITHM_MAPPING_CLASSES = {
+            SPHINCS.Mappings.class, LMS.Mappings.class, NH.Mappings.class, XMSS.Mappings.class, SPHINCSPlus.Mappings.class,
+            CMCE.Mappings.class, Frodo.Mappings.class, SABER.Mappings.class, Picnic.Mappings.class, NTRU.Mappings.class, Falcon.Mappings.class, Kyber.Mappings.class,
+            Dilithium.Mappings.class, NTRUPrime.Mappings.class, BIKE.Mappings.class, HQC.Mappings.class, Rainbow.Mappings.class
+    };
 
     /**
      * Construct a new provider.  This should only be required when
@@ -71,13 +85,20 @@ public class BouncyCastlePQCProvider
     {
         for (int i = 0; i != names.length; i++)
         {
-            Class clazz = loadClass(BouncyCastlePQCProvider.class, packageName + names[i] + "$Mappings");
+            Class clazz;
+            if (i<ALGORITHM_MAPPING_CLASSES.length && ALGORITHM_MAPPING_CLASSES[i].getSimpleName().equals(ALGORITHMS[i])) {
+                // if ALGORITHM_CLASSES[i] indeed corresponds to ALGORITHM[i], we do not use reflection #pqc-tls
+                clazz = ALGORITHM_MAPPING_CLASSES[i];
+            }
+            else
+                clazz = loadClass(BouncyCastlePQCProvider.class, packageName + names[i] + "$Mappings");
 
             if (clazz != null)
             {
                 try
                 {
-                    ((AlgorithmProvider)clazz.newInstance()).configure(this);
+                    ((AlgorithmProvider)clazz.getConstructor().newInstance()).configure(this);
+                    // ^^^ replaces deprecated: ((AlgorithmProvider)clazz.newInstance()).configure(this);
                 }
                 catch (Exception e)
                 {   // this should never ever happen!!
@@ -85,7 +106,10 @@ public class BouncyCastlePQCProvider
                         + packageName + names[i] + "$Mappings : " + e);
                 }
             }
+
         }
+        // Add also injected algorithms to our provider: #tls-injection
+        InjectionPoint.configureProvider(this);
     }
 
     public void setParameter(String parameterName, Object parameter)

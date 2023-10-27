@@ -63,6 +63,7 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -163,6 +164,12 @@ public class PublicKeyFactory
         }
 
         AlgorithmIdentifier algID = keyInfo.getAlgorithm();
+        ASN1ObjectIdentifier algOID = algID.getAlgorithm();
+
+        // #tls-injection
+        if (InjectionPoint.sigAlgs().contain((algOID))) {
+            return InjectionPoint.sigAlgs().asn1Bridge().createPublicKeyParameter(keyInfo, defaultParams);
+        }
 
         SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter)converters.get(algID.getAlgorithm());
         if (null == converter)
