@@ -23,7 +23,9 @@ public class ClassUtil
                     {
                         try
                         {
-                            return Class.forName(className);
+                            ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+
+                            return classLoader.loadClass(className);
                         }
                         catch (Exception e)
                         {
