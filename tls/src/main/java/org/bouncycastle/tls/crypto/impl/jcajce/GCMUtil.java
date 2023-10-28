@@ -44,11 +44,16 @@ class GCMUtil
                 try
                 {
                     String className = "javax.crypto.spec.GCMParameterSpec";
-
+                    //
+                    // needs to be exactly the same as in provider
+                    //
                     ClassLoader classLoader = GCMUtil.class.getClassLoader();
-                    Class<?> clazz = (null == classLoader)
-                        ?   Class.forName(className)
-                        :   classLoader.loadClass(className);
+                    if (classLoader == null)
+                    {
+                        classLoader = ClassLoader.getSystemClassLoader();
+                    }
+
+                    Class<?> clazz = classLoader.loadClass(className);
                     if (clazz != null && AlgorithmParameterSpec.class.isAssignableFrom(clazz))
                     {
                         @SuppressWarnings("unchecked")
