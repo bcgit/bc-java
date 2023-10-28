@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -67,6 +68,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 
 /**
  * Class for providing cryptographic services for TLS based on implementations in the JCA/JCE.
@@ -887,7 +889,7 @@ public class JcaTlsCrypto
     protected TlsHash createHash(String digestName)
         throws GeneralSecurityException
     {
-        return new JcaTlsHash(helper.createMessageDigest(digestName));
+        return new JcaTlsHash(helper.createDigest(digestName));
     }
 
     /**
@@ -921,20 +923,38 @@ public class JcaTlsCrypto
             SecureRandom random = needsRandom ? getSecureRandom() : null;
 
             JcaJceHelper helper = getHelper();
-            if (null != parameter)
-            {
-                Signature dummySigner = helper.createSignature(algorithmName);
-                dummySigner.initSign(privateKey, random);
-                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
-            }
 
-            Signature signer = helper.createSignature(algorithmName);
-            if (null != parameter)
+            try
             {
-                signer.setParameter(parameter);
+                if (null != parameter)
+                {
+                    Signature dummySigner = helper.createSignature(algorithmName);
+                    dummySigner.initSign(privateKey, random);
+                    helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+                }
+
+                Signature signer = helper.createSignature(algorithmName);
+                if (null != parameter)
+                {
+                    signer.setParameter(parameter);
+                }
+                signer.initSign(privateKey, random);
+                return new JcaTlsStreamSigner(signer);
             }
-            signer.initSign(privateKey, random);
-            return new JcaTlsStreamSigner(signer);
+            catch (InvalidKeyException e)
+            {
+                String upperAlg = Strings.toUpperCase(algorithmName);
+                if (upperAlg.endsWith("MGF1"))
+                {
+                    // ANDMGF1 has vanished from the Sun PKCS11 provider.
+                    algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
+                    return createStreamSigner(algorithmName, parameter, privateKey, needsRandom);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
         }
         catch (GeneralSecurityException e)
         {
