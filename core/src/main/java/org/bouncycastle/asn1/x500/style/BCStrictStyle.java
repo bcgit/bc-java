@@ -15,13 +15,13 @@ public class BCStrictStyle
 
     public boolean areEqual(X500Name name1, X500Name name2)
     {
-        RDN[] rdns1 = name1.getRDNs();
-        RDN[] rdns2 = name2.getRDNs();
-
-        if (rdns1.length != rdns2.length)
+        if (name1.size() != name2.size())
         {
             return false;
         }
+
+        RDN[] rdns1 = name1.getRDNs();
+        RDN[] rdns2 = name2.getRDNs();
 
         for (int i = 0; i != rdns1.length; i++)
         {

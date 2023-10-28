@@ -20,10 +20,18 @@ public class X500NameTokenizer
 
     public X500NameTokenizer(String oid, char separator)
     {
-        // TODO Null or empty value should return zero tokens?
+        if (oid == null)
+        {
+            throw new NullPointerException();
+        }
+        if (separator == '"' || separator == '\\')
+        {
+            throw new IllegalArgumentException("reserved separator character");
+        }
+
         this.value = oid;
-        this.index = -1;
         this.separator = separator;
+        this.index = oid.length() < 1 ? 0 : -1;
     }
 
     public boolean hasMoreTokens()
@@ -41,7 +49,7 @@ public class X500NameTokenizer
         boolean quoted = false;
         boolean escaped = false;
 
-        int initialIndex = index;
+        int beginIndex = index + 1;
         while (++index < value.length())
         {
             char c = value.charAt(index);
@@ -63,12 +71,15 @@ public class X500NameTokenizer
             }
             else if (c == separator)
             {
-                break;
+                return value.substring(beginIndex, index);
             }
         }
 
-        // TODO Error if still escaped or quoted?
+        if (escaped || quoted)
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
 
-        return value.substring(initialIndex + 1, index);
+        return value.substring(beginIndex, index);
     }
 }

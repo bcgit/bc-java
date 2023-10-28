@@ -1,7 +1,5 @@
 package org.bouncycastle.tls.test;
 
-import java.security.SecureRandom;
-
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
@@ -15,13 +13,11 @@ import org.bouncycastle.util.Strings;
 
 import junit.framework.TestCase;
 
-public class DTLSProtocolTest
+public class DTLSHandshakeRetransmissionTest
     extends TestCase
 {
     public void testClientServer() throws Exception
     {
-        SecureRandom secureRandom = new SecureRandom();
-
         DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
         DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
@@ -32,7 +28,7 @@ public class DTLSProtocolTest
 
         DatagramTransport clientTransport = network.getClient();
 
-        clientTransport = new UnreliableDatagramTransport(clientTransport, secureRandom, 0, 0);
+        clientTransport = new ServerHandshakeDropper(clientTransport, true);
 
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
