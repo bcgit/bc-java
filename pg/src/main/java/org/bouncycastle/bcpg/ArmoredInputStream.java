@@ -617,7 +617,7 @@ public class ArmoredInputStream
 
     public static class Builder
     {
-        private boolean hasHeaders = false;
+        private boolean hasHeaders = true;
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
 
@@ -627,7 +627,7 @@ public class ArmoredInputStream
         }
 
         /**
-         * Turn on header parsing (default value false).
+         * Enable or disable header parsing (default value true).
          *
          * @param hasHeaders true if headers should be expected, false otherwise.
          * @return the current builder instance.
