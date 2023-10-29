@@ -17,7 +17,6 @@ public class KyberParameters
      * @deprecated
      * obsolete to be removed
      */
-    @Deprecated
     private final boolean usingAes;
 
     private KyberParameters(String name, int k, int sessionKeySize, boolean usingAes)

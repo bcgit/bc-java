@@ -102,16 +102,16 @@ public class ASN1ObjectIdentifier
 
     ASN1ObjectIdentifier(byte[] contents, boolean clone)
     {
-        StringBuffer objId = new StringBuffer();
-        long value = 0;
-        BigInteger bigValue = null;
-        boolean first = true;
-
         if (contents.length == 0)
         {
             throw new IllegalArgumentException("empty OBJECT IDENTIFIER with no sub-identifiers");
         }
-        
+
+        StringBuilder objId = new StringBuilder();
+        long value = 0;
+        BigInteger bigValue = null;
+        boolean first = true;
+
         for (int i = 0; i != contents.length; i++)
         {
             int b = contents[i] & 0xff;
