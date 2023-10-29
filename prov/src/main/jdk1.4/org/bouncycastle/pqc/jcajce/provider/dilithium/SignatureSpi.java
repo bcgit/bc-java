@@ -209,34 +209,4 @@ public class SignatureSpi
             super(new DilithiumSigner(), DilithiumParameters.dilithium5);
         }
     }
-
-    public static class Base2_AES
-        extends SignatureSpi
-    {
-        public Base2_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium2_aes);
-        }
-    }
-
-    public static class Base3_AES
-        extends SignatureSpi
-    {
-        public Base3_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium3_aes);
-        }
-    }
-
-    public static class Base5_AES
-        extends SignatureSpi
-    {
-        public Base5_AES()
-            throws NoSuchAlgorithmException
-        {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium5_aes);
-        }
-    }
 }
