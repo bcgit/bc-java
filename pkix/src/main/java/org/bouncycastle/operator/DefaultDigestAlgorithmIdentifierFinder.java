@@ -270,6 +270,12 @@ public class DefaultDigestAlgorithmIdentifierFinder
 
         if (shake256oids.contains(sigAlgOid))
         {
+            // TODO: it seems it's very hard to find people accepting SHAKE256-len at the moment...
+            if (!sigAlgOid.equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+            }
+
             return new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512));
         }
 

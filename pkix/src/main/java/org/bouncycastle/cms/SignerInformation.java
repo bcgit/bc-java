@@ -355,7 +355,8 @@ public class SignerInformation
         throws CMSException
     {
         String encName = CMSSignedHelper.INSTANCE.getEncryptionAlgName(this.getEncryptionAlgOID());
-        AlgorithmIdentifier realDigestAlgorithm = translateBrokenRSAPkcs7(encryptionAlgorithm, info.getDigestAlgorithm());
+        AlgorithmIdentifier realDigestAlgorithm = signedAttributeSet != null ?
+            info.getDigestAlgorithm() : translateBrokenRSAPkcs7(encryptionAlgorithm, info.getDigestAlgorithm());
         ContentVerifier contentVerifier;
 
         try
