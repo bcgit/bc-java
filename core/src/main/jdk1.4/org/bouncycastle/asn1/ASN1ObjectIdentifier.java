@@ -101,6 +101,11 @@ public class ASN1ObjectIdentifier
 
     ASN1ObjectIdentifier(byte[] contents, boolean clone)
     {
+        if (contents.length == 0)
+        {
+            throw new IllegalArgumentException("empty OBJECT IDENTIFIER with no sub-identifiers");
+        }
+
         StringBuffer objId = new StringBuffer();
         long value = 0;
         BigInteger bigValue = null;
