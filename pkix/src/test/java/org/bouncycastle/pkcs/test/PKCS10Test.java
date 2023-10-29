@@ -7,7 +7,6 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
@@ -24,6 +23,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
@@ -192,7 +192,7 @@ public class PKCS10Test
         throws Exception
     {
         KeyPairGenerator p256Kpg = KeyPairGenerator.getInstance("EC", "BC");
-        p256Kpg.initialize(new ECGenParameterSpec("P-256"));
+        p256Kpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
         KeyPair p256Kp = p256Kpg.generateKeyPair();
 
         KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
@@ -216,7 +216,7 @@ public class PKCS10Test
         throws Exception
     {
         KeyPairGenerator p256Kpg = KeyPairGenerator.getInstance("EC", "BC");
-        p256Kpg.initialize(new ECGenParameterSpec("P-256"));
+        p256Kpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
         KeyPair p256Kp = p256Kpg.generateKeyPair();
 
         KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
