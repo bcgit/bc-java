@@ -68,7 +68,7 @@ public class KeyAgreementSpi
         }
         else
         {
-            throw new IllegalStateException("unsupported private key type");
+            throw new InvalidKeyException("unsupported private key type");
         }
 
         ukmParameters = null;
