@@ -28,7 +28,6 @@ public class LMSTest
     public void testKeyGenAndSign()
         throws Exception
     {
-        failing build test
         byte[] msg = Strings.toByteArray("Hello, world!");
         AsymmetricCipherKeyPairGenerator kpGen = new LMSKeyPairGenerator();
 
