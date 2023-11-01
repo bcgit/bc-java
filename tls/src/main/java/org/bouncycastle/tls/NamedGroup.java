@@ -358,6 +358,11 @@ public class NamedGroup
             || (namedGroup == arbitrary_explicit_char2_curves);
     }
 
+    public static boolean isFiniteField(int namedGroup)
+    {
+        return (namedGroup & 0xFFFFFF00) == 0x00000100;
+    }
+
     public static boolean isPrimeCurve(int namedGroup)
     {
         return (namedGroup >= secp160k1 && namedGroup <= curveSM2)
