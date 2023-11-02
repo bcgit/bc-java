@@ -21,6 +21,25 @@ public class Welcome
     List<EncryptedGroupSecrets> secrets;
     byte[] encrypted_group_info;
 
+    //
+    private Secret joinerSecret;
+    private List<PreSharedKeyID> psks;
+
+
+    public Welcome(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] encrypted_group_info)
+    {
+//        this.cipher_suite = suite.getSuiteId();
+//        this.suite = suite;
+//        // Cache the list of PSK IDs
+//        for (KeyScheduleEpoch.PSKWithSecret psk : psks)
+//        {
+//            //TODO::
+//        }
+//
+//        this.secrets = secrets;
+//        this.encrypted_group_info = encrypted_group_info;
+    }
+
     public int find(KeyPackage kp) throws IOException
     {
 
@@ -33,6 +52,22 @@ public class Welcome
             }
         }
         return -1;
+    }
+
+    public void encrypt(KeyPackage kp, Secret pathSecret) throws IOException, InvalidCipherTextException
+    {
+        GroupSecrets gs = new GroupSecrets(joinerSecret.value(), new PathSecret(pathSecret.value()), psks);
+
+        byte[] gsBytes = MLSOutputStream.encode(gs);
+        //todo: get rid of new suite
+        CipherSuite suite = new CipherSuite(kp.cipher_suite);
+        byte[][] ctAndEnc = suite.encryptWithLabel(kp.init_key, "Welcome", encrypted_group_info, gsBytes);
+        secrets.add(
+                new EncryptedGroupSecrets(
+                    suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference"),
+                    new HPKECiphertext(ctAndEnc[1], ctAndEnc[0])
+                )
+        );
     }
 
     public GroupInfo decrypt(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException, InvalidCipherTextException

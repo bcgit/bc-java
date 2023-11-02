@@ -1,5 +1,6 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
 import org.bouncycastle.mls.crypto.CipherSuite;
@@ -53,6 +54,18 @@ public class KeyPackage
         stream.write(leaf_node);
         stream.writeList(extensions);
         return stream.toByteArray();
+    }
+
+    public KeyPackage(CipherSuite suite, byte[] init_key, LeafNode leaf_node, List<Extension> extensions, byte[] sigSk) throws IOException, CryptoException
+    {
+        this.version = ProtocolVersion.mls10;
+        this.cipher_suite = suite.getSuiteId();
+        this.init_key = init_key;
+        this.leaf_node = leaf_node;
+        this.extensions = new ArrayList<>(extensions);
+
+        //sign(sigSk)
+        this.signature = suite.signWithLabel(sigSk, "KeyPackageTBS", toBeSigned());
     }
 
     KeyPackage(MLSInputStream stream) throws IOException

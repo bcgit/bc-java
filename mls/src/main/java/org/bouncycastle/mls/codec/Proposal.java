@@ -85,39 +85,47 @@ public class Proposal
         }
     }
 
-    public static Proposal add()
+    //TODO: this looks so bad, make this cleaner
+    // maybe inheritance?
+    public static Proposal add(KeyPackage newMember)
     {
-        return null;
+        return new Proposal(ProposalType.ADD,
+                new Add(newMember), null, null, null, null, null, null);
     }
 
-    public static Proposal update()
+    public static Proposal update(LeafNode leafNode)
     {
-        return null;
+        return new Proposal(ProposalType.UPDATE, null,
+                new Update(leafNode), null, null, null, null, null);
     }
 
-    public static Proposal remove()
+    public static Proposal remove(LeafIndex removed)
     {
-        return null;
+        return new Proposal(ProposalType.REMOVE,null, null,
+                new Remove(removed), null, null, null, null);
     }
 
-    public static Proposal preSharedKey()
+    public static Proposal preSharedKey(PreSharedKeyID pskID)
     {
-        return null;
+        return new Proposal(ProposalType.PSK,null, null, null,
+                new PreSharedKey(pskID), null, null, null);
+    }
+    public static Proposal reInit(byte[] group_id, ProtocolVersion version, short cipherSuite, List<Extension> extensions)
+    {
+        return new Proposal(ProposalType.REINIT,null, null, null, null,
+                new ReInit(group_id, version, cipherSuite, extensions), null, null);
     }
 
-    public static Proposal reInit()
+    public static Proposal externalInit(byte[] kemOutput)
     {
-        return null;
+        return new Proposal(ProposalType.EXTERNAL_INIT,null, null, null, null, null,
+                new ExternalInit(kemOutput), null);
     }
 
-    public static Proposal externalInit()
+    public static Proposal groupContextExtensions(List<Extension> extensions)
     {
-        return null;
-    }
-
-    public static Proposal groupContextExtensions()
-    {
-        return null;
+        return new Proposal(ProposalType.GROUP_CONTEXT_EXTENSIONS,null, null, null, null, null, null,
+                new GroupContextExtensions(extensions));
     }
 
     @Override
@@ -204,6 +212,11 @@ public class Proposal
     {
         public LeafIndex removed;
 
+        public Remove(LeafIndex removed)
+        {
+            this.removed = removed;
+        }
+
         public Remove(MLSInputStream stream) throws IOException
         {
             removed = (LeafIndex) stream.read(LeafIndex.class);
@@ -243,8 +256,23 @@ public class Proposal
     {
         byte[] group_id;
         public ProtocolVersion version;
-        short cipherSuite;
+        public short cipherSuite;
         List<Extension> extensions;
+
+        public byte[] getGroup_id()
+        {
+            return group_id;
+        }
+
+        public short getCipherSuite()
+        {
+            return cipherSuite;
+        }
+
+        public List<Extension> getExtensions()
+        {
+            return extensions;
+        }
 
         public ReInit(byte[] group_id, ProtocolVersion version, short cipherSuite, List<Extension> extensions)
         {
@@ -292,19 +320,19 @@ public class Proposal
 
         public ExternalInit(byte[] kemOutput)
         {
-            this.kemOutput = kemOutput;
+            this.kemOutput = kemOutput.clone();
         }
     }
 
     public static class GroupContextExtensions
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
-        public GroupContextExtensions(ArrayList<Extension> extensions)
+        public GroupContextExtensions(List<Extension> extensions)
         {
             this.extensions = extensions;
         }
 
-        public ArrayList<Extension> extensions;
+        public List<Extension> extensions;
 
         GroupContextExtensions(MLSInputStream stream) throws IOException
         {

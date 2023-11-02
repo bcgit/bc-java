@@ -16,6 +16,11 @@ public class LifeTime
         not_before = (long) stream.read(long.class);
         not_after = (long) stream.read(long.class);
     }
+    public LifeTime()
+    {
+        //TODO: should be Long.MAX_VALUE but this might interfere up testing with test vectors using unsigned long
+        this(Long.MIN_VALUE, 0xffffffffffffffffL);
+    }
 
     public LifeTime(long not_before, long not_after)
     {

@@ -52,6 +52,11 @@ public class Commit
         return proposals.get(extIndex).proposal.externalInit.kemOutput;
     }
 
+    public Commit()
+    {
+        this.proposals = new ArrayList<>();
+    }
+
     Commit(MLSInputStream stream) throws IOException
     {
         proposals = new ArrayList<>();

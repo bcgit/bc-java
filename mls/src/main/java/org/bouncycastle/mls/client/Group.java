@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.client;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TranscriptHash;
@@ -11,8 +12,13 @@ import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
+import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Commit;
+import org.bouncycastle.mls.codec.ContentType;
+import org.bouncycastle.mls.codec.Credential;
 import org.bouncycastle.mls.codec.Extension;
+import org.bouncycastle.mls.codec.ExtensionType;
+import org.bouncycastle.mls.codec.ExternalSender;
 import org.bouncycastle.mls.codec.FramedContent;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.GroupInfo;
@@ -22,19 +28,25 @@ import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
+import org.bouncycastle.mls.codec.PrivateMessage;
 import org.bouncycastle.mls.codec.Proposal;
 import org.bouncycastle.mls.codec.ProposalOrRef;
 import org.bouncycastle.mls.codec.ProposalType;
 import org.bouncycastle.mls.codec.ProtocolVersion;
+import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.ResumptionPSKUsage;
+import org.bouncycastle.mls.codec.Sender;
 import org.bouncycastle.mls.codec.SenderType;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.codec.Welcome;
+import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,6 +55,200 @@ import java.util.Map;
 
 public class Group
 {
+
+    class GroupWithMessage
+    {
+        Group group;
+        MLSMessage message;
+
+        public GroupWithMessage(Group group, MLSMessage message)
+        {
+            this.group = group;
+            this.message = message;
+        }
+    }
+    class Tombstone
+    {
+        //const
+        final byte[] epochAuthenticator;
+        final Proposal.ReInit reinit;
+
+        //private
+        byte[] priorGroupID;
+        long priorEpoch;
+        byte[] resumptionPsk;
+
+        public Tombstone(Group group, Proposal.ReInit reinit)
+        {
+            epochAuthenticator = group.getEpochAuthenticator();
+            this.reinit = reinit;
+            priorGroupID = group.groupID;
+            priorEpoch = group.epoch;
+            resumptionPsk = group.keySchedule.resumptionPSK.value();
+        }
+
+        public GroupWithMessage createWelcome(AsymmetricCipherKeyPair encSk, byte[] sigSk, LeafNode leafNode, List<KeyPackage> keyPackages, byte[] leafSecret, CommitOptions options) throws Exception
+        {
+            // Create new empty group with the appropriate PSK
+            Group newGroup = new Group(
+                    reinit.getGroup_id(),
+                    new CipherSuite(reinit.getCipherSuite()),
+                    encSk,
+                    sigSk,
+                    leafNode,
+                    reinit.getExtensions()
+            );
+            newGroup.resumptionPSKs.put(new EpochRef(groupID, epoch), leafSecret);
+
+            // Create Add proposals
+            List<Proposal> proposals = new ArrayList<>();
+            for (KeyPackage kp : keyPackages)
+            {
+                proposals.add(newGroup.addProposal(kp));
+            }
+
+            // Create PSK proposal
+            byte[] nonce = new byte[suite.getKDF().getHashLength()];
+            SecureRandom random = new SecureRandom();
+            random.nextBytes(nonce);
+            proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.REINIT, priorGroupID, priorEpoch, nonce)));
+
+            // Commit the Add and PSK proposals
+            CommitOptions opts = new CommitOptions(
+                    proposals,
+                    options.inlineTree,
+                    options.forcePath,
+                    options.leafNodeOptions
+            );
+            GroupWithMessage gwm = newGroup.commit(new Secret(leafSecret), opts, null, new CommitParameters(ResumptionPSKUsage.REINIT));
+            gwm.message.wireFormat = WireFormat.mls_welcome;
+            return gwm;
+
+        }
+        public Group handleWelcome(AsymmetricCipherKeyPair initSk, AsymmetricCipherKeyPair encSk, AsymmetricCipherKeyPair sigSk, KeyPackage keyPackage, MLSMessage welcome, TreeKEMPublicKey tree) throws Exception
+        {
+            Map<EpochRef, byte[]> resumptionPsks = new HashMap<>();
+            resumptionPsks.put(new EpochRef(priorGroupID, priorEpoch), resumptionPsk);
+
+            Group newGroup = new Group(
+                    suite.getHPKE().serializePrivateKey(initSk.getPrivate()),
+                    encSk,
+                    suite.serializeSignaturePrivateKey(sigSk.getPrivate()),
+                    keyPackage,
+                    welcome.welcome,
+                    tree,
+                    null,
+                    resumptionPsks
+            );
+
+            if (newGroup.suite.getSuiteId() != reinit.cipherSuite)
+            {
+                throw new Exception("Attempt to reinit with the wrong ciphersuite");
+            }
+
+            if (newGroup.epoch != 1)
+            {
+                throw new Exception("Reinit not done at the beginning of the group");
+            }
+
+            return newGroup;
+        }
+    }
+    class TombstoneWithMessage
+        extends Tombstone
+    {
+
+        MLSMessage message;
+        public TombstoneWithMessage(Group group, Proposal.ReInit reinit, MLSMessage message)
+        {
+            super(group, reinit);
+            this.message = message;
+        }
+    }
+
+    public static short NORMAL_COMMIT_PARAMS = 0;
+    public static short EXTERNAL_COMMIT_PARAMS = 1;
+    public static short RESTART_COMMIT_PARAMS = 2;
+    public static short REINIT_COMMIT_PARAMS = 3;
+    static public class CommitParameters
+    {
+        short paramID;
+        // External
+        KeyPackage joinerKeyPackage;
+        Secret forceInitSecret;
+
+        // Restart
+        ResumptionPSKUsage allowedUsage;
+
+       public CommitParameters(short paramID)
+       {
+           this.paramID = paramID;
+       }
+        public CommitParameters(KeyPackage joinerKeyPackage, Secret forceInitSecret)
+        {
+            this.paramID = EXTERNAL_COMMIT_PARAMS;
+            this.joinerKeyPackage = joinerKeyPackage;
+            this.forceInitSecret = forceInitSecret;
+        }
+        public CommitParameters(short paramID, KeyPackage joinerKeyPackage, Secret forceInitSecret, ResumptionPSKUsage allowedUsage)
+        {
+            this.paramID = paramID;
+            this.joinerKeyPackage = joinerKeyPackage;
+            this.forceInitSecret = forceInitSecret;
+            this.allowedUsage = allowedUsage;
+        }
+
+        public CommitParameters(ResumptionPSKUsage reinit)
+        {
+            paramID = RESTART_COMMIT_PARAMS;
+            allowedUsage = reinit;
+        }
+    }
+    static class MessageOptions
+    {
+        boolean encrypt = false;
+        byte[] authenticatedData;
+        int paddingSize = 0;
+
+        public MessageOptions(boolean encrypt, byte[] authenticatedData, int paddingSize)
+        {
+            this.encrypt = encrypt;
+            this.authenticatedData = authenticatedData;
+            this.paddingSize = paddingSize;
+        }
+    }
+    class LeafNodeOptions
+    {
+        Credential credential;
+        Capabilities capabilities;
+        List<Extension> extensions;
+
+        public LeafNodeOptions(Credential credential, Capabilities capabilities, List<Extension> extensions)
+        {
+            this.credential = credential;
+            this.capabilities = capabilities;
+            this.extensions = extensions;
+        }
+    }
+    public static class CommitOptions
+    {
+        List<Proposal> extraProposals;
+        boolean inlineTree;
+        boolean forcePath;
+        LeafNodeOptions leafNodeOptions;
+
+        public CommitOptions()
+        {
+            this.extraProposals = new ArrayList<>();
+        }
+        public CommitOptions(List<Proposal> extraProposals, boolean inlineTree, boolean forcePath, LeafNodeOptions leafNodeOptions)
+        {
+            this.extraProposals = extraProposals;
+            this.inlineTree = inlineTree;
+            this.forcePath = forcePath;
+            this.leafNodeOptions = leafNodeOptions;
+        }
+    }
     class JoinersWithPSKS
     {
         List<LeafIndex> joiners;
@@ -100,32 +306,128 @@ public class Group
     private long epoch;
     private byte[] groupID;
     private TranscriptHash transcriptHash;
-    private ArrayList<Extension> extensions;
-    private KeyScheduleEpoch keySchedule;
-    private TreeKEMPublicKey tree;
+    public ArrayList<Extension> extensions;
+    KeyScheduleEpoch keySchedule;
+    public TreeKEMPublicKey tree;
     private TreeKEMPrivateKey treePriv;
     private GroupKeySet keys;
-    private CipherSuite suite;
+    public CipherSuite suite;
     private LeafIndex index;
-    private byte[] identitySk;
+    private byte[] identitySk; // TODO: maybe make this AsymmetricCipherKeyPair
 //    private ArrayList<CachedProposal> proposalQueue;
     private ArrayList<CachedProposal> pendingProposals;
     private CachedUpdate cachedUpdate;
 
-    //TODO: maybe make this an ordered map
-    List<Client> members;
+    public long getEpoch()
+    {
+        return epoch;
+    }
+
+    public byte[] getGroupID()
+    {
+        return groupID;
+    }
+
+    public LeafIndex getIndex()
+    {
+        return index;
+    }
+
+    public GroupInfo getGroupInfo(boolean inlineTree) throws Exception
+    {
+        GroupInfo groupInfo = new GroupInfo(
+                new GroupContext(
+                        suite.getSuiteId(),
+                        groupID,
+                        epoch,
+                        tree.getRootHash(),
+                        transcriptHash.confirmed,
+                        extensions
+                ),
+                new ArrayList<>(),
+                keySchedule.confirmationTag(transcriptHash.confirmed)
+        );
+
+        groupInfo.extensions.add(new Extension(ExtensionType.EXTERNAL_PUB, suite.getHPKE().serializePublicKey(keySchedule.getExternalPublicKey())));
+
+        if (inlineTree)
+        {
+            groupInfo.extensions.add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(tree)));
+        }
+
+        groupInfo.sign(tree, index, suite.deserializeSignaturePrivateKey(identitySk));
+        return groupInfo;
+    }
 
     public Group()
     {
     }
 
-    public Group(Client creator)
+    public Group(AsymmetricCipherKeyPair sigSk, GroupInfo groupInfo, TreeKEMPublicKey tree) throws Exception
     {
-        members = new ArrayList<>();
-        members.add(creator);
+        this.suite = new CipherSuite(groupInfo.groupContext.ciphersuite);
+        this.groupID = groupInfo.groupContext.groupID.clone();
+        this.epoch = groupInfo.groupContext.epoch;
+        this.tree = TreeKEMPublicKey.clone(importTree(groupInfo.groupContext.treeHash, tree, groupInfo.extensions));
+        this.transcriptHash = new TranscriptHash(this.suite, groupInfo.groupContext.confirmedTranscriptHash, groupInfo.confirmationTag);
+        this.extensions = new ArrayList<>(groupInfo.groupContext.extensions);
+        this.keySchedule = new KeyScheduleEpoch(this.suite);
+        this.index = new LeafIndex(0);
+        this.identitySk = suite.serializeSignaturePrivateKey(sigSk.getPrivate());
+    }
+    // Create a new group
+    public Group(
+            byte[] groupID,
+            CipherSuite suite,
+            AsymmetricCipherKeyPair encSk,
+            byte[] sigSk,
+            LeafNode leafNode,
+            List<Extension> extensions
+    ) throws Exception
+    {
+        this.suite = suite;
+        this.groupID = groupID;
+        this.epoch = 0;
+        //init lem tree pub
+        this.transcriptHash = new TranscriptHash(suite);
+        this.extensions = new ArrayList<>();
+        this.extensions.addAll(extensions);
+        this.index = new LeafIndex(0);
+        this.identitySk = sigSk;
+
+        //TODO: verify client supports the proposed group extensions
+        //
+
+        tree = new TreeKEMPublicKey(suite);
+        index = tree.addLeaf(leafNode);
+        tree.setHashAll();
+        treePriv = TreeKEMPrivateKey.solo(suite, index, encSk);
+        if (!treePriv.consistent(tree))
+        {
+            throw new Exception("LeafNode inconsistent with private key");
+        }
+
+        byte[] ctx = MLSOutputStream.encode(getGroupContext());
+        KeyScheduleEpoch.forCreator(suite, ctx);
+        this.keys = keySchedule.getEncryptionKeys(tree.size);
+
+        // Update the interim transcript hash with a virtual confirmation tag
+        transcriptHash.updateInterim(keySchedule.confirmationTag(transcriptHash.confirmed));
     }
 
     // Creates a group from a welcome message
+    /**
+     *
+     * @param initSk HPKE private key
+     * @param leafSk HPKE private key for leaf node
+     * @param sigSk signature private key
+     * @param keyPackage key package
+     * @param welcome welcome
+     * @param treeIn public kem tree (optional)
+     * @param externalPsks map of external psks
+     * @param resumptionPsks map of resumptions psks
+     * @throws Exception
+     */
     public Group(
             byte[] initSk,
             AsymmetricCipherKeyPair leafSk,
@@ -416,6 +718,853 @@ public class Group
         return next;
     }
 
+    public GroupWithMessage createBranch(byte[] groupID, AsymmetricCipherKeyPair encryptionKeyPair, AsymmetricCipherKeyPair signatureKeyPair, LeafNode leafNode, List<Extension> extList, List<KeyPackage> keyPackages, byte[] leafSecret, CommitOptions commitOptions) throws Exception
+    {
+        // Create a new empty group with the appropriate PSK
+        Group newGroup = new Group(groupID, suite, encryptionKeyPair,suite.serializeSignaturePrivateKey(signatureKeyPair.getPrivate()), leafNode, extensions);
+        newGroup.resumptionPSKs.put(new EpochRef(this.groupID, this.epoch), this.keySchedule.resumptionPSK.value());
+
+        // Create Add proposals
+        List<Proposal> proposals = new ArrayList<>();
+        for (KeyPackage kp : keyPackages)
+        {
+            proposals.add(newGroup.addProposal(kp));
+        }
+
+        // Create PSK Proposal
+        byte[] nonce = new byte[suite.getKDF().getHashLength()];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(nonce);
+        proposals.add(Proposal.preSharedKey(PreSharedKeyID.resumption(ResumptionPSKUsage.BRANCH, this.groupID, this.epoch, nonce)));
+
+        // Commit the Add and PSK proposals
+        CommitOptions opts = new CommitOptions(
+                proposals,
+                commitOptions.inlineTree,
+                commitOptions.forcePath,
+                commitOptions.leafNodeOptions
+        );
+        GroupWithMessage gwm = newGroup.commit(new Secret(leafSecret), opts, null, new CommitParameters(ResumptionPSKUsage.BRANCH));
+        gwm.message.wireFormat = WireFormat.mls_welcome;
+        return gwm;
+    }
+
+    public Group handleBranch(AsymmetricCipherKeyPair initSk, AsymmetricCipherKeyPair encSk, AsymmetricCipherKeyPair sigSk, KeyPackage keyPackage, MLSMessage welcome, TreeKEMPublicKey tree) throws Exception
+    {
+        Map<EpochRef, byte[]> resumptionPsks = new HashMap<>();
+        resumptionPsks.put(new EpochRef(this.groupID, this.epoch), this.keySchedule.resumptionPSK.value());
+
+        Group branchGroup = new Group(
+                suite.getHPKE().serializePrivateKey(initSk.getPrivate()),
+                encSk,
+                suite.serializeSignaturePrivateKey(sigSk.getPrivate()),
+                keyPackage,
+                welcome.welcome,
+                tree,
+                new HashMap<>(),
+                resumptionPsks
+        );
+
+        if (branchGroup.suite.getSuiteId() != suite.getSuiteId())
+        {
+            throw new Exception("Attempt to branch with a different ciphersuite");
+        }
+        if (branchGroup.epoch != 1)
+        {
+            throw new Exception("Branch not done at the beginning of the group");
+        }
+
+        return branchGroup;
+    }
+
+    public Group handle(AuthenticatedContent auth, Group cachedGroup, CommitParameters commitParameters) throws Exception
+    {
+        // Validate the GroupContent
+        FramedContent content = auth.content;
+        if (!Arrays.equals(content.group_id, groupID))
+        {
+            throw new Exception("GroupID mismatch");
+        }
+
+        if (content.epoch != epoch)
+        {
+            throw new Exception("epoch mismatch");
+        }
+
+        // Dispatch on content type
+        switch (content.getContentType())
+        {
+            case PROPOSAL:
+                // Proposals get queued, do not result in a state transition
+                cacheProposal(auth);
+                return null;
+            case COMMIT:
+                // Commits are handled in the remainder of this method
+                break;
+            default:
+                // Any other content type in this method is an error
+                throw new Exception("Invalid content type");
+        }
+
+        switch (content.sender.senderType)
+        {
+            case MEMBER:
+            case NEW_MEMBER_COMMIT:
+                break;
+            default:
+                throw new Exception("Invalid commit sender type");
+        }
+
+        LeafIndex sender = null;
+        if (content.sender.senderType == SenderType.MEMBER)
+        {
+            sender = new LeafIndex(content.sender.node_index);
+        }
+
+        if (index.equals(sender))
+        {
+            if (cachedGroup != null)
+            {
+                // Verify that the cached state is a plausible successor to this state
+                if (!Arrays.equals(cachedGroup.groupID, groupID) || cachedGroup.epoch != epoch + 1 || !cachedGroup.index.equals(index))
+                {
+                    throw new Exception("Invalid successor state");
+                }
+
+                return cachedGroup;
+            }
+
+            throw new Exception("Handle own commits with caching");
+        }
+
+        // Apply the commit
+        Commit commit = content.commit;
+        List<CachedProposal> proposals = mustResolve(commit.proposals, sender);
+
+        //TODO: get CommitParams according to the sender proposals and expected params
+
+        // Check that a path is present when required
+        if (pathRequired(proposals) && commit.updatePath == null)
+        {
+            throw new Exception("Path required but not present");
+        }
+
+        // Apply the proposals
+        Group next = successor();
+        JoinersWithPSKS joinersWithPSKS = next.apply(proposals);
+
+        // If this is an external commit, add the joiner to the tree and note the
+        // location where they were added.  Also, compute the "externally forced"
+        // value that we will use for the init_secret (as opposed to the init_secret
+        // from the key schedule).
+        boolean externalcommit = false;
+        for (CachedProposal cached: proposals)
+        {
+            if (cached.proposal.getProposalType() == ProposalType.EXTERNAL_INIT)
+            {
+                externalcommit = true;
+            }
+        }
+
+        byte[] forceInitSecret = null;
+        LeafIndex senderLocation = new LeafIndex(0);
+        if (!externalcommit)
+        {
+            senderLocation = sender;
+        }
+        else
+        {
+            // Add the joiner
+            senderLocation = next.tree.addLeaf(commit.updatePath.leaf_node);
+
+            // Extract the forced init secret
+            byte[] kemOut = commit.validityExternal();
+            if (kemOut == null)
+            {
+                throw new Exception("Invalid external commit");
+            }
+            forceInitSecret = keySchedule.receiveExternalInit(kemOut);
+        }
+
+        // Decapsulate and apply the UpdatePath, if provided
+        byte[] commitSecret = new byte[suite.getKDF().getHashLength()];
+        if (commit.updatePath != null)
+        {
+            if (!validateLeafNode(commit.updatePath.leaf_node, LeafNodeSource.COMMIT, senderLocation))
+            {
+                throw new Exception("Commit path has invalid leaf node");
+            }
+
+//            next.tree.dump();
+            if (!next.tree.verifyParentHash(senderLocation, commit.updatePath))
+            {
+                throw new Exception("Commit path has invalid parent hash");
+            }
+
+            next.tree.merge(senderLocation, commit.updatePath);
+//            next.tree.dump();
+
+            byte[] ctx = MLSOutputStream.encode(new GroupContext(
+                    next.suite.getSuiteId(),
+                    next.groupID,
+                    next.epoch + 1,
+                    next.tree.getRootHash(),
+                    next.transcriptHash.confirmed,
+                    next.extensions
+            ));
+            next.treePriv.decap(
+                    senderLocation,
+                    next.tree,
+                    ctx,
+                    commit.updatePath,
+                    joinersWithPSKS.joiners
+            );
+            commitSecret = next.treePriv.updateSecret.value().clone();
+        }
+        // Update the transcripts and advance the key schedule
+
+        next.transcriptHash.update(auth);
+        next.epoch += 1;
+        next.updateEpochSecrets(commitSecret, joinersWithPSKS.psks, forceInitSecret);
+
+        // Verify the confirmation MAC
+        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
+
+        if (!Arrays.equals(auth.getConfirmationTag(), confirmationTag))
+        {
+            throw new Exception("Confirmation failed to verify");
+        }
+
+        return next;
+
+    }
+
+    public Tombstone handleReinitCommit(MLSMessage commitMessage) throws Exception
+    {
+        // Verify the signature and process the commit
+        AuthenticatedContent auth = unprotectToContentAuth(commitMessage);
+        if (!verifyAuth(auth))
+        {
+            throw new Exception("Message signature failed to verify");
+        }
+
+        Group newGroup = handle(auth, null, new CommitParameters(REINIT_COMMIT_PARAMS));
+
+        // Extract the reinit and create the tombstone
+        Commit commit = auth.content.commit;
+        List<CachedProposal> proposals = mustResolve(commit.proposals, null);
+        if (!validateReinitProposals(proposals))
+        {
+            throw new Exception("Invalid proposals for reinit");
+        }
+
+        CachedProposal reinitProposal = proposals.get(0);
+        return new Tombstone(newGroup, reinitProposal.proposal.reInit);
+    }
+
+    public static GroupWithMessage externalJoin(Secret leafSecret,
+                             AsymmetricCipherKeyPair sigSk,
+                             KeyPackage keyPackage,
+                             GroupInfo groupInfo,
+                             TreeKEMPublicKey tree,
+                             MessageOptions msgOptions,
+                             LeafIndex removePrior,
+                             Map<Secret, byte[]> psks)
+            throws Exception
+    {
+        // Create a preliminary group
+        Group initialGroup = new Group(sigSk, groupInfo, tree);
+        
+        CipherSuite suite = new CipherSuite(keyPackage.cipher_suite);
+
+        // Look up the external public key for the group
+        byte[] extPub = null;
+        for (Extension ext : groupInfo.extensions)
+        {
+            if (ext.extensionType == ExtensionType.EXTERNAL_PUB)
+            {
+                extPub = ext.extension_data;
+            }
+        }
+        if (extPub == null)
+        {
+            throw new Exception("No external pub in GroupInfo");
+        }
+
+        // Insert an ExternalInit proposal
+        CommitOptions options = new CommitOptions();
+        KeyScheduleEpoch.ExternalInitParams extParams = new KeyScheduleEpoch.ExternalInitParams(
+                suite, suite.getHPKE().deserializePublicKey(extPub));
+        options.extraProposals.add(Proposal.externalInit(extParams.getKEMOutput()));
+
+        // Evict a prior appearance if required
+        if (removePrior != null) {
+            Proposal remove = initialGroup.removeProposal(removePrior);
+            options.extraProposals.add(remove);
+        }
+
+        // Inject PKSs
+        for (Secret id : psks.keySet())
+        {
+            initialGroup.externalPSKs.put(id, psks.get(id));
+            options.extraProposals.add(initialGroup.preSharedKeyPorposal(id));
+        }
+
+        // Use the preliminary state to create a commit and advance to a real state
+        CommitParameters commitParameters = new CommitParameters(keyPackage, extParams.getInitSecret());
+        GroupWithMessage gwm = initialGroup.commit(leafSecret, options, msgOptions, commitParameters);
+        gwm.message.welcome = null;
+        return gwm;
+    }
+
+    public GroupWithMessage commit(Secret leafSecret, CommitOptions commitOptions, MessageOptions msgOptions, CommitParameters params) throws Exception
+    {
+        Commit commit = new Commit();
+        List<KeyPackage> joiners = new ArrayList<>();
+        for (CachedProposal cached : pendingProposals)
+        {
+            if (cached.proposal.getProposalType() == ProposalType.ADD)
+            {
+                joiners.add(cached.proposal.add.keyPackage);
+            }
+
+            commit.proposals.add(ProposalOrRef.forRef(cached.proposalRef));
+        }
+
+        // add the extra proposals to those we had cached
+        if (commitOptions != null)
+        {
+            for (Proposal p : commitOptions.extraProposals)
+            {
+                if (p.getProposalType() == ProposalType.ADD)
+                {
+                    joiners.add(p.add.keyPackage);
+                }
+
+                commit.proposals.add(ProposalOrRef.forProposal(p));
+            }
+        }
+
+        // for external commit insert an external init proposal
+        byte[] forceInitSecret = null;
+        if (params.paramID == EXTERNAL_COMMIT_PARAMS)
+        {
+            forceInitSecret = params.forceInitSecret.value();
+        }
+
+        // Apply proposals
+        Group next = successor();
+
+        List<CachedProposal> proposals = mustResolve(commit.proposals, index);
+        if (!validateExternalCachedProposals(proposals, index, params))
+        {
+            throw new Exception("Invalid proposal list");
+        }
+
+        JoinersWithPSKS joinersWithpsks = next.apply(proposals);
+
+        if (params.paramID == EXTERNAL_COMMIT_PARAMS)
+        {
+            next.index = next.tree.addLeaf(params.joinerKeyPackage.leaf_node);
+        }
+
+        // If this is an external commit, indicate it in the sender field
+        Sender sender = new Sender(SenderType.MEMBER, index.value());
+        if (params.paramID == EXTERNAL_COMMIT_PARAMS)
+        {
+            sender = new Sender(SenderType.NEW_MEMBER_COMMIT, -1);
+        }
+
+        // KEM new entropy to the group and the new joiners
+        Secret commitSecret = Secret.zero(suite);
+        List<Secret> pathSecrets = new ArrayList<>(joinersWithpsks.joiners.size());
+        boolean forcePath = (commitOptions != null) && commitOptions.forcePath;
+        if (forcePath || pathRequired(proposals))
+        {
+            LeafNodeOptions leafNodeOptions;
+            if (commitOptions != null)
+            {
+                leafNodeOptions = commitOptions.leafNodeOptions;
+            }
+            TreeKEMPrivateKey newPriv = next.tree.update(next.index, leafSecret, next.groupID, identitySk/*TODO: , leafNodeOptions*/);
+
+            GroupContext ctx = new GroupContext(
+                    next.suite.getSuiteId(),
+                    next.groupID,
+                    next.epoch + 1,
+                    next.tree.getRootHash(),
+                    next.transcriptHash.confirmed,
+                    next.extensions
+            );
+            byte[] ctxBytes = MLSOutputStream.encode(ctx);
+            UpdatePath path = next.tree.encap(newPriv, ctxBytes, joinersWithpsks.joiners);
+
+            next.treePriv = newPriv;
+            commit.updatePath = path;
+            commitSecret = newPriv.updateSecret;
+
+            for (int i = 0; i < joinersWithpsks.joiners.size(); i++)
+            {
+                pathSecrets.set(i, newPriv.getSharedPathSecret(joinersWithpsks.joiners.get(i)));
+            }
+        }
+
+        // Create the Commit message and advance the transcripts / key schedule
+        AuthenticatedContent commitContentAuth = sign(sender, commit, msgOptions.authenticatedData, msgOptions.encrypt);
+
+        next.transcriptHash.updateConfirmed(commitContentAuth);
+        next.epoch += 1;
+        next.updateEpochSecrets(commitSecret.value(), joinersWithpsks.psks, forceInitSecret);
+
+        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
+        commitContentAuth.setConfirmationTag(confirmationTag);
+
+        next.transcriptHash.updateInterim(commitContentAuth);
+
+        MLSMessage commitMessage = protect(commitContentAuth, msgOptions.paddingSize);
+
+        // Complete the GroupInfo and form the Welcome
+        GroupInfo groupInfo = new GroupInfo(
+                new GroupContext(
+                        next.suite.getSuiteId(),
+                        next.groupID,
+                        next.epoch,
+                        next.tree.getRootHash(),
+                        next.transcriptHash.confirmed,
+                        next.extensions
+                ),
+                new ArrayList<>(),
+                confirmationTag
+        );
+        if (commitOptions != null && commitOptions.inlineTree)
+        {
+            groupInfo.extensions.add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(next.tree)));
+        }
+        groupInfo.sign(next.tree, next.index, suite.deserializeSignaturePrivateKey(next.identitySk));
+
+        //TODO: should have a way to retrieve joiner secret from key schedule
+        Welcome welcome = new Welcome(suite,
+                next.keySchedule.getJoinerSecret().value(),
+                joinersWithpsks.psks,
+                MLSOutputStream.encode(groupInfo));
+
+        for (int i = 0; i < joiners.size(); i++)
+        {
+            welcome.encrypt(joiners.get(i), pathSecrets.get(i));
+        }
+
+//        this.replace(next); //TODO: return instead of replace
+        //TODO: separate welcome and commit message
+        commitMessage.welcome = welcome;
+        return new GroupWithMessage(next, commitMessage);
+    }
+
+    public TombstoneWithMessage reinitCommit(byte[] leafSecret, CommitOptions commitOptions, MessageOptions messageOptions) throws Exception
+    {
+        Proposal reinitProposal = null;
+        if (pendingProposals.size() == 1)
+        {
+            reinitProposal = pendingProposals.get(0).proposal;
+        }
+        else if (commitOptions != null && commitOptions.extraProposals.size() == 1)
+        {
+            reinitProposal = commitOptions.extraProposals.get(0);
+        }
+        else
+        {
+            throw new Exception("Illegal proposals for reinitialization");
+        }
+
+        Proposal.ReInit reinit = reinitProposal.reInit;
+
+        // Create the Commit
+        GroupWithMessage gwm = commit(new Secret(leafSecret), commitOptions, messageOptions, new CommitParameters(REINIT_COMMIT_PARAMS));
+        gwm.message.welcome = null;
+        return new TombstoneWithMessage(gwm.group, reinit, gwm.message);
+    }
+
+    static public PublicMessage newMemberAdd(byte[] groupID, long epoch, KeyPackage newMember, AsymmetricCipherKeyPair sigSk) throws Exception
+    {
+        //TODO: check if null should be new byte[0] instead
+        CipherSuite suite = new CipherSuite(newMember.cipher_suite);
+        Proposal proposal = Proposal.add(newMember);
+        FramedContent content = new FramedContent(
+                groupID,
+                epoch,
+                new Sender(SenderType.NEW_MEMBER_PROPOSAL, -1),
+                null,
+                null,
+                ContentType.PROPOSAL,
+                proposal,
+                null
+        );
+        AuthenticatedContent contentAuth = AuthenticatedContent.sign(
+                WireFormat.mls_public_message,
+                content,
+                suite,
+                suite.serializeSignaturePrivateKey(sigSk.getPrivate()),
+                null
+        );
+
+        return PublicMessage.protect(contentAuth, suite, null, null);
+    }
+
+    public MLSMessage protect(byte[] applicationData, byte[] pt, int paddingSize) throws Exception
+    {
+        Group.MessageOptions msgOptions = new Group.MessageOptions(true, applicationData, paddingSize);
+
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                pt,
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+    public byte[][] unprotect(MLSMessage ct) throws Exception
+    {
+        AuthenticatedContent auth = unprotectToContentAuth(ct);
+        if (!verifyAuth(auth))
+        {
+            throw new Exception("Message signature failed to verify");
+        }
+
+        if(auth.content.getContentType() != ContentType.APPLICATION)
+        {
+            throw new Exception("Unprotected of handshake message");
+        }
+
+        if (auth.wireFormat != WireFormat.mls_private_message)
+        {
+            throw new Exception("Application data not sent as PrivateMessage");
+        }
+        byte[][] authAndContent = new byte[2][];
+        authAndContent[0] = auth.content.getAuthenticated_data();
+        authAndContent[1] = auth.content.getContentBytes();
+        return authAndContent;
+    }
+
+    private boolean verifyAuth(AuthenticatedContent auth) throws Exception
+    {
+        switch (auth.content.sender.senderType)
+        {
+            case MEMBER:
+                return verifyInternal(auth);
+            case EXTERNAL:
+                return verifyExternal(auth);
+            case NEW_MEMBER_PROPOSAL:
+                return verifyNewMemberProposal(auth);
+            case NEW_MEMBER_COMMIT:
+                return verifyNewMemberCommit(auth);
+            default:
+                throw new Exception("Invalid sender type");
+        }
+    }
+
+    private boolean verifyInternal(AuthenticatedContent auth) throws Exception
+    {
+        LeafNode leaf = tree.getLeafNode(new LeafIndex(auth.content.sender.node_index));
+        if (leaf == null)
+        {
+            throw new Exception("Signature from blank node");
+        }
+        return auth.verify(suite, leaf.signature_key, MLSOutputStream.encode(getGroupContext()));
+    }
+
+    private boolean verifyExternal(AuthenticatedContent auth) throws Exception
+    {
+        Extension sendersExt = null;
+        for (Extension ext : extensions)
+        {
+            if (ext.extensionType == ExtensionType.EXTERNAL_SENDERS)
+            {
+                sendersExt = ext;
+            }
+        }
+        List<ExternalSender> senders = sendersExt.getSenders();
+
+        return auth.verify(suite,
+                senders.get(auth.content.sender.node_index).signatureKey,
+                MLSOutputStream.encode(getGroupContext()));
+    }
+
+    private boolean verifyNewMemberProposal(AuthenticatedContent auth) throws Exception
+    {
+        Proposal proposal = auth.content.proposal;
+        Proposal.Add add = proposal.add;
+        byte[] pub = add.keyPackage.leaf_node.signature_key;
+        return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));
+    }
+
+    private boolean verifyNewMemberCommit(AuthenticatedContent auth) throws Exception
+    {
+        Commit commit = auth.content.commit;
+        UpdatePath path = commit.updatePath;
+        byte[] pub = path.leaf_node.signature_key;
+        return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));
+    }
+
+    private AuthenticatedContent unprotectToContentAuth(MLSMessage msg) throws Exception
+    {
+        if (msg.version != ProtocolVersion.mls10)
+        {
+            throw new Exception("Unsupported version");
+        }
+        AuthenticatedContent auth = null;
+        switch (msg.wireFormat)
+        {
+
+            case mls_public_message:
+                auth = msg.publicMessage.unprotect(suite, keySchedule.membershipKey, getGroupContext());
+                if (auth == null)
+                {
+                    throw new Exception("Membership tag failed to verify");
+                }
+                break;
+            case mls_private_message:
+                auth = msg.privateMessage.unprotect(suite, keys, keySchedule.senderDataSecret.value());
+                if (auth == null)
+                {
+                    throw new Exception("PrivateMessage decryption failure");
+                }
+                break;
+            case mls_welcome:
+            case mls_group_info:
+            case mls_key_package:
+                throw new Exception("Invalid wire format");
+        }
+        return auth;
+    }
+    public MLSMessage add(KeyPackage keyPackage, MessageOptions msgOptions) throws Exception
+    {
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                addProposal(keyPackage),
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+    public MLSMessage update(Proposal update, MessageOptions msgOptions) throws Exception
+    {
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                update,
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+    public MLSMessage remove(LeafIndex removeIndex, MessageOptions msgOptions) throws Exception
+    {
+        // leaf for roster
+        Proposal remove = Proposal.remove(leafForRoster(removeIndex));
+
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                remove,
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+
+
+    public MLSMessage reinit(byte[] groupID, ProtocolVersion version, CipherSuite suite, List<Extension> extList, MessageOptions msgOptions) throws Exception
+    {
+        // reinitProposal
+        Proposal reinit = Proposal.reInit(groupID, version, suite.getSuiteId(), extList);
+
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                reinit,
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+
+    public MLSMessage preSharedKey(byte[] externalPskId, MessageOptions msgOptions) throws Exception
+    {
+        if (!externalPSKs.containsKey(new Secret(externalPskId)))
+        {
+            throw new Exception("Unknown PSK");
+        }
+        SecureRandom random = new SecureRandom();
+        byte[] nonce = new byte[suite.getKDF().getHashLength()];
+        random.nextBytes(nonce);
+        PreSharedKeyID pskId = PreSharedKeyID.external(externalPskId, nonce);
+
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                Proposal.preSharedKey(pskId),
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+    public MLSMessage preSharedKey(byte[] groupID, long epoch, MessageOptions msgOptions) throws Exception
+    {
+        if (epoch != this.epoch && resumptionPSKs.containsKey(new EpochRef(groupID, epoch)))
+        {
+            throw new Exception("Unknown PSK");
+        }
+        SecureRandom random = new SecureRandom();
+        byte[] nonce = new byte[suite.getKDF().getHashLength()];
+        random.nextBytes(nonce);
+        PreSharedKeyID pskId = PreSharedKeyID.resumption(ResumptionPSKUsage.APPLICATION, groupID, epoch, nonce);
+
+        AuthenticatedContent contentAuth = sign(
+                new Sender(SenderType.MEMBER, index.value()),
+                Proposal.preSharedKey(pskId),
+                msgOptions.authenticatedData,
+                msgOptions.encrypt
+        );
+        return protect(contentAuth, msgOptions.paddingSize);
+    }
+
+    private LeafIndex leafForRoster(LeafIndex index) throws Exception
+    {
+        int nonBlankLeaves = 0;
+        for (int i = 0; i < tree.size.leafCount(); i++)
+        {
+            LeafNode leaf = tree.getLeafNode(new LeafIndex(i));
+            if (leaf == null)
+            {
+                continue;
+            }
+            if (nonBlankLeaves == index.value())
+            {
+                return new LeafIndex(i);
+            }
+            nonBlankLeaves++;
+        }
+        throw new Exception("Invalid roster index");
+    }
+
+    public Proposal updateProposal(AsymmetricCipherKeyPair leafSk, LeafNodeOptions leafOptions) throws Exception
+    {
+        LeafNode leaf = tree.getLeafNode(index);
+        LeafNode newLeaf = leaf.forUpdate(suite, groupID, index, suite.serializeSignaturePublicKey(leafSk.getPublic()), identitySk);
+
+        Proposal update = Proposal.update(newLeaf);
+        cachedUpdate = new CachedUpdate(suite.serializeSignaturePrivateKey(leafSk.getPrivate()), update.update);
+        return update;
+    }
+
+
+    private Proposal addProposal(KeyPackage keyPackage) throws Exception
+    {
+        //TODO: Check that  validity of the signed key package
+        if(!keyPackage.verify())
+        {
+            throw new Exception("Invalid signature on key package");
+        }
+
+        //TODO: Check if the Key Package supports the group (capabilities)
+
+        //TODO: Check if the Key Package supports the group extensions
+
+        return Proposal.add(keyPackage);
+    }
+
+    private MLSMessage protect(AuthenticatedContent contentAuth, int paddingSize) throws Exception
+    {
+        MLSMessage message = new MLSMessage();
+        switch (contentAuth.wireFormat)
+        {
+
+            case mls_public_message:
+                message.publicMessage = PublicMessage.protect(contentAuth, suite, keySchedule.membershipKey.value(), MLSOutputStream.encode(getGroupContext()));
+                return message;
+            case mls_private_message:
+                message.privateMessage = PrivateMessage.protect(contentAuth, suite, keys, keySchedule.senderDataSecret.value(), paddingSize);
+                return message;
+            default:
+                throw new Exception("Malformed AuthenticatedContent");
+        }
+    }
+
+    //TODO: check if innerContent should be mlsMessage or commit
+    private AuthenticatedContent sign(Sender sender, Commit innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+    {
+        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.COMMIT, MLSOutputStream.encode(innerContent));
+        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+        return authContent;
+    }
+
+    private AuthenticatedContent sign(Sender sender, Proposal innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+    {
+
+        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
+        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+        return authContent;
+    }
+//    private AuthenticatedContent sign(Sender sender, Proposal.Add innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+//    {
+//
+//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
+//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+//        return authContent;
+//    }
+//    private AuthenticatedContent sign(Sender sender, Proposal.Update innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+//    {
+//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
+//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+//        return authContent;
+//    }
+//    private AuthenticatedContent sign(Sender sender, Proposal.Remove innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+//    {
+//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
+//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+//        return authContent;
+//    }
+//    private AuthenticatedContent sign(Sender sender, PreSharedKeyID innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+//    {
+//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
+//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+//        return authContent;
+//    }
+
+    private AuthenticatedContent sign(Sender sender, byte[] innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
+    {
+        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.APPLICATION, innerContent);
+        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
+        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
+        return authContent;
+    }
+
+    private Proposal preSharedKeyPorposal(Secret externalPskID)
+            throws Exception
+    {
+        if (!externalPSKs.containsKey(externalPskID))
+        {
+            throw new Exception("Unknown PSK");
+        }
+        SecureRandom random = new SecureRandom();
+        byte[] nonce = new byte[suite.getKDF().getHashLength()];
+        random.nextBytes(nonce);
+
+        return Proposal.preSharedKey(PreSharedKeyID.external(externalPskID.value(), nonce));
+    }
+
+    private Proposal removeProposal(LeafIndex removed) throws Exception
+    {
+        if (!tree.hasLeaf(removed))
+        {
+            throw new Exception("Removed on blank leaf");
+        }
+
+        return Proposal.remove(removed);
+    }
+
     private void updateEpochSecrets(byte[] commitSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] forceInitSecret) throws Exception
     {
         byte[] ctx = MLSOutputStream.encode(new GroupContext(
@@ -529,7 +1678,7 @@ public class Group
             {
                 throw new Exception("Unsupported extensions in GroupContextExtensions");
             }
-            extensions = cached.proposal.groupContextExtensions.extensions;
+            extensions = new ArrayList<>(cached.proposal.groupContextExtensions.extensions);
 //            locations.add(tree.addLeaf(cached.proposal.getLeafNode()));
         }
 //        return locations;
@@ -608,6 +1757,25 @@ public class Group
         next.resumptionPSKs.put(new EpochRef(groupID, epoch), keySchedule.resumptionPSK.value());
 
         return next;
+    }
+    private void replace(Group g) throws IOException
+    {
+        //TODO: instead of replacement, return the group
+        this.externalPSKs = g.externalPSKs = new HashMap<>(externalPSKs);
+        this.resumptionPSKs = g.resumptionPSKs = new HashMap<>(resumptionPSKs);
+        this.epoch = g.epoch;
+        this.groupID = g.groupID;
+        this.transcriptHash = g.transcriptHash;
+        this.extensions = new ArrayList<>(g.extensions);
+        this.keySchedule = g.keySchedule; // check
+        this.tree = TreeKEMPublicKey.clone(g.tree);
+        this.treePriv = g.treePriv.copy();
+        this.keys = g.keys; // check
+        this.suite = g.suite;
+        this.index = g.index;
+        this.identitySk = g.identitySk.clone();
+        this.pendingProposals = new ArrayList<>(g.pendingProposals);
+        this.cachedUpdate = g.cachedUpdate;
     }
 
     private boolean pathRequired(List<CachedProposal> proposals)
@@ -715,6 +1883,18 @@ public class Group
         boolean supportedSuite = true; //TODO: make a list of supported cipher suites
 
         return supportedSuite && supportedVersion;
+    }
+
+    private boolean validateReinitProposals(List<CachedProposal> proposals)
+    {
+        boolean hasReinit = false;
+        boolean hasDisallowed = false;
+        for (CachedProposal cached : proposals)
+        {
+            hasReinit = hasReinit || cached.proposal.getProposalType() == ProposalType.REINIT;
+            hasDisallowed = hasDisallowed || cached.proposal.getProposalType() != ProposalType.REINIT;
+        }
+        return  hasReinit && !hasDisallowed;
     }
     private boolean validatePSK(Proposal.PreSharedKey psk)
     {
@@ -868,6 +2048,38 @@ public class Group
 
         return (isCorrectSource && isSignatureValid && isLifetimeValid && supportsAllExtensions
                 && isUniqueSigKey && isUniqueEncKey && mutualCredentialSupport && supportsGroupExtensions);
+    }
+
+    private boolean validateExternalCachedProposals(List<CachedProposal> proposals, LeafIndex commitSender, CommitParameters params)
+    {
+        //TODO: do for other parameters
+        // this is for external commit parameters
+        int extInitCount = 0;
+        int removeCount = 0;
+        boolean noDisallowed = true;
+        for (CachedProposal cached : proposals)
+        {
+            switch (cached.proposal.getProposalType())
+            {
+
+                case EXTERNAL_INIT:
+                    extInitCount++;
+                    break;
+                case REMOVE:
+                    removeCount++;
+                    break;
+                case PSK:
+                    noDisallowed = noDisallowed && validatePSK(cached.proposal.preSharedKey);
+                    break;
+                default:
+                    noDisallowed = false;
+                    break;
+            }
+        }
+        boolean hasOneExtInit = (extInitCount == 1);
+        boolean noDupRemove = (removeCount <= 1);
+
+        return (hasOneExtInit && noDupRemove && noDisallowed);
     }
 
     private List<CachedProposal> mustResolve(List<ProposalOrRef> proposals,  LeafIndex senderIndex)

@@ -12,6 +12,23 @@ public class Credential
     byte[] identity;
     List<Certificate> certificates;
 
+    public byte[] getIdentity()
+    {
+        return identity;
+    }
+
+    static public Credential forBasic(byte[] identity)
+    {
+        return new Credential(CredentialType.basic, identity, new ArrayList<>());
+    }
+
+    public Credential(CredentialType credentialType, byte[] identity, List<Certificate> certificates)
+    {
+        this.credentialType = credentialType;
+        this.identity = identity;
+        this.certificates = certificates;
+    }
+
     Credential(MLSInputStream stream) throws IOException
     {
         short credType = (short) stream.read(short.class);

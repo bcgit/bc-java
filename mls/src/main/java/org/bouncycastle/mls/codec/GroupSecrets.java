@@ -12,6 +12,13 @@ public class GroupSecrets
     public PathSecret path_secret;
     public List<PreSharedKeyID> psks;
 
+    public GroupSecrets(byte[] joiner_secret, PathSecret path_secret, List<PreSharedKeyID> psks)
+    {
+        this.joiner_secret = joiner_secret;
+        this.path_secret = path_secret;
+        this.psks = new ArrayList<>(psks);
+    }
+
     GroupSecrets(MLSInputStream stream) throws IOException
     {
         joiner_secret = stream.readOpaque();

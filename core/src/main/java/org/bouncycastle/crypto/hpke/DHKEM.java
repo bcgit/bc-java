@@ -331,7 +331,7 @@ class DHKEM
         agreement.init(kpE.getPrivate());
 
         byte[] temp = agreement.calculateAgreement(pkR).toByteArray();
-        byte [] secret = formatBigIntegerBytes(temp, agreement.getFieldSize());
+        byte[] secret = formatBigIntegerBytes(temp, agreement.getFieldSize());
 
         byte[] enc = SerializePublicKey(kpE.getPublic());
         byte[] pkRm = SerializePublicKey(pkR);

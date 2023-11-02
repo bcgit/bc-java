@@ -18,6 +18,7 @@ import java.util.List;
 public class LeafNode
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
+    CipherSuite suite;
     public byte[] encryption_key;
     public byte[] signature_key;
     Credential credential;
@@ -35,6 +36,28 @@ public class LeafNode
     public CredentialType getCredentialType()
     {
         return credential.credentialType;
+    }
+
+    public LeafNode(
+            CipherSuite suite,
+            byte[] encryption_key,
+            byte[] signature_key,
+            Credential credential,
+            Capabilities capabilities,
+            LifeTime lifeTime,
+            List<Extension> extensions,
+            byte[] sigSk) throws Exception
+    {
+        this.suite = suite;
+        this.encryption_key = encryption_key;
+        this.signature_key = signature_key;
+        this.credential = credential;
+        this.capabilities = capabilities; //TODO: grease
+        this.lifeTime = lifeTime;
+        this.extensions = new ArrayList<>(extensions); //TODO: grease
+        this.leaf_node_source = LeafNodeSource.KEY_PACKAGE; //TODO: check
+
+        sign(suite, sigSk, new byte[0]);
     }
 
     public LeafNode()
@@ -92,6 +115,10 @@ public class LeafNode
         return leaf_node_source;
     }
 
+    public Credential getCredential()
+    {
+        return credential;
+    }
     public byte[] toBeSigned(byte[] groupId, int leafIndex) throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
@@ -159,11 +186,22 @@ public class LeafNode
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
     }
 
+    //TODO: add leaf node options
     public LeafNode forCommit(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, byte[] sigPriv) throws Exception
     {
         LeafNode clone = copy(encKeyIn);
         clone.leaf_node_source = LeafNodeSource.COMMIT;
         clone.parent_hash = parentHash.clone();
+
+        clone.sign(suite, sigPriv, toBeSigned(groupId, leafIndex.value));
+
+        return clone;
+    }
+    //TODO: add leaf node options
+    public LeafNode forUpdate(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] sigPriv) throws Exception
+    {
+        LeafNode clone = copy(encKeyIn);
+        clone.leaf_node_source = LeafNodeSource.UPDATE;
 
         clone.sign(suite, sigPriv, toBeSigned(groupId, leafIndex.value));
 

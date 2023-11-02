@@ -3,17 +3,26 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Extension
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     public ExtensionType extensionType;
-    byte[] extension_data;
+    public byte[] extension_data;
 
     public Extension(ExtensionType extensionType, byte[] extension_data)
     {
         this.extensionType = extensionType;
         this.extension_data = extension_data;
+    }
+
+    static public Extension externalSender(List<ExternalSender> list) throws IOException
+    {
+        MLSOutputStream stream = new MLSOutputStream();
+        stream.writeList(list);
+        return new Extension(ExtensionType.EXTERNAL_SENDERS, stream.toByteArray());
     }
 
     Extension(MLSInputStream stream) throws IOException
@@ -30,6 +39,17 @@ public class Extension
         this.extension_data = stream.readOpaque();
     }
 
+    public List<ExternalSender> getSenders() throws IOException
+    {
+        if (extensionType == ExtensionType.EXTERNAL_SENDERS)
+        {
+            List<ExternalSender> senders = new ArrayList<>();
+            MLSInputStream stream = new MLSInputStream(extension_data);
+            stream.readList(senders, ExternalSender.class);
+            return senders;
+        }
+        return null;
+    }
     public TreeKEMPublicKey getRatchetTree() throws IOException
     {
         if (extensionType == ExtensionType.RATCHET_TREE)

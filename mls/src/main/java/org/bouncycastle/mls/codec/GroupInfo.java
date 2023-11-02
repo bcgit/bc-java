@@ -1,5 +1,6 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
@@ -7,6 +8,7 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class GroupInfo
@@ -18,6 +20,13 @@ public class GroupInfo
     public byte[] confirmationTag;
     public LeafIndex signer;
     byte[] signature;
+
+    public GroupInfo(GroupContext groupContext, List<Extension> extensions, byte[] confirmationTag)
+    {
+        this.groupContext = groupContext;
+        this.extensions = new ArrayList<>(extensions);
+        this.confirmationTag = confirmationTag;
+    }
 
     private byte[] toBeSigned() throws IOException
     {
@@ -61,5 +70,22 @@ public class GroupInfo
         stream.writeOpaque(confirmationTag);
         stream.write(signer);
         stream.writeOpaque(signature);
+    }
+
+    public void sign(TreeKEMPublicKey tree, LeafIndex signerIndex, AsymmetricCipherKeyPair sk) throws Exception
+    {
+        LeafNode leaf = tree.getLeafNode(signerIndex);
+        if (leaf == null)
+        {
+            throw new Exception("Cannot sign from a blank leaf");
+        }
+
+        if (!Arrays.equals(tree.suite.serializeSignaturePublicKey(sk.getPublic()), leaf.signature_key))
+        {
+            throw new Exception("Bad key for index");
+        }
+
+        signer = signerIndex;
+        signature = tree.suite.signWithLabel(tree.suite.serializeSignaturePrivateKey(sk.getPrivate()), "GroupInfoTBS", toBeSigned());
     }
 }

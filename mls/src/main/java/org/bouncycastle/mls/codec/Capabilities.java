@@ -13,6 +13,16 @@ public class Capabilities
     List<Short> proposals;
     List<Short> credentials;
 
+    public Capabilities()
+    {
+        //TODO: make default to support all
+        versions = new ArrayList<>();
+        cipherSuites = new ArrayList<>();
+        extensions = new ArrayList<>();
+        proposals = new ArrayList<>();
+        credentials = new ArrayList<>();
+    }
+
     Capabilities(MLSInputStream stream) throws IOException
     {
         versions = new ArrayList<>();

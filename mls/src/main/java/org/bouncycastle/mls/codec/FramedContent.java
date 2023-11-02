@@ -21,6 +21,11 @@ public class FramedContent
         return contentType;
     }
 
+    public byte[] getAuthenticated_data()
+    {
+        return authenticated_data;
+    }
+
     public byte[] getContentBytes() throws IOException
     {
         switch (contentType)
@@ -58,7 +63,7 @@ public class FramedContent
         }
     }
 
-    FramedContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data, ContentType content_type, Proposal proposal, Commit commit)
+    public FramedContent(byte[] group_id, long epoch, Sender sender, byte[] authenticated_data, byte[] application_data, ContentType content_type, Proposal proposal, Commit commit)
     {
         this.group_id = group_id;
         this.epoch = epoch;

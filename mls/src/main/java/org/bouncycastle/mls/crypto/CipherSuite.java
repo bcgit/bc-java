@@ -5,6 +5,9 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.modes.AEADCipher;
@@ -27,6 +30,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 
 public class CipherSuite {
     public static final short MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519  = 0x0001 ;
@@ -353,6 +357,34 @@ public class CipherSuite {
 
     }
 
+    public AsymmetricCipherKeyPair generateSignatureKeyPair()
+    {
+        SecureRandom random = new SecureRandom();
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                ECKeyPairGenerator pGen = new ECKeyPairGenerator();
+                ECKeyGenerationParameters genParam = new ECKeyGenerationParameters(
+                        domainParams,
+                        random);
+                pGen.init(genParam);
+                return pGen.generateKeyPair();
+            case ed448:
+                Ed448KeyPairGenerator kpg448 = new Ed448KeyPairGenerator();
+                kpg448.init(new Ed448KeyGenerationParameters(random));
+                return kpg448.generateKeyPair();
+
+            case ed25519:
+                Ed25519KeyPairGenerator kpg25519 = new Ed25519KeyPairGenerator();
+                kpg25519.init(new Ed25519KeyGenerationParameters(random));
+                return kpg25519.generateKeyPair();
+            default:
+                throw new IllegalStateException("invalid sig algorithm");
+        }
+
+
+    }
+
     public byte[] serializeSignaturePublicKey(AsymmetricKeyParameter key)
     {
         switch (sigAlgo)
@@ -366,6 +398,34 @@ public class CipherSuite {
             default:
                 throw new IllegalStateException("invalid sig algorithm");
         }
+    }
+    public byte[] serializeSignaturePrivateKey(AsymmetricKeyParameter key)
+    {
+        switch (sigAlgo)
+        {
+            case ecdsa:
+                return ((ECPrivateKeyParameters)key).getD().toByteArray();
+            case ed448:
+                return ((Ed448PrivateKeyParameters)key).getEncoded();
+            case ed25519:
+                return ((Ed25519PrivateKeyParameters)key).getEncoded();
+            default:
+                throw new IllegalStateException("invalid sig algorithm");
+        }
+    }
+
+    private byte[] formatBigIntegerBytes(byte[] bigIntBytes, int outputSize)
+    {
+        byte[] output = new byte[outputSize];
+        if (bigIntBytes.length <= outputSize)
+        {
+            System.arraycopy(bigIntBytes, 0, output, outputSize - bigIntBytes.length, bigIntBytes.length);
+        }
+        else
+        {
+            System.arraycopy(bigIntBytes, bigIntBytes.length - outputSize, output, 0, outputSize);
+        }
+        return output;
     }
     public AsymmetricCipherKeyPair deserializeSignaturePrivateKey(byte[] priv)
     {

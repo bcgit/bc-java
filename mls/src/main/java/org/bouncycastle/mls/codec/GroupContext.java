@@ -8,7 +8,7 @@ public class GroupContext
 {
 
     ProtocolVersion version = ProtocolVersion.mls10;
-    public short ciphersuite;
+    public short ciphersuite; //TODO: change to static cipher instead
     public byte[] groupID;
     public long epoch;
     public byte[] treeHash;

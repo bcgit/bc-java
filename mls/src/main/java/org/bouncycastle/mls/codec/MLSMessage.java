@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
+import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.util.Pack;
 
 import java.io.IOException;
@@ -13,8 +14,57 @@ public class MLSMessage
     public PublicMessage publicMessage;
     public PrivateMessage privateMessage;
     public Welcome welcome;
-    GroupInfo groupInfo;
+    public GroupInfo groupInfo;
     public KeyPackage keyPackage;
+
+    public MLSMessage()
+    {
+    }
+
+    static public MLSMessage externalProposal(CipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk) throws Exception
+    {
+        //TODO check new byte[0] or null
+        switch (proposal.getProposalType())
+        {
+            case ADD:
+            case REMOVE:
+            case PSK:
+            case REINIT:
+            case GROUP_CONTEXT_EXTENSIONS:
+                break;
+            case EXTERNAL_INIT:
+            case UPDATE:
+            default:
+                throw new Exception("External proposal has invalid type");
+        }
+
+        FramedContent content = FramedContent.proposal(
+                groupID,
+                epoch,
+                new Sender(SenderType.EXTERNAL, signerIndex),
+                null,
+                MLSOutputStream.encode(proposal)
+        );
+        AuthenticatedContent auth = AuthenticatedContent.sign(
+                WireFormat.mls_public_message,
+                content,
+                suite,
+                sigSk,
+                null
+        );
+        MLSMessage message = new MLSMessage();
+        message.publicMessage = PublicMessage.protect(auth, suite, new byte[0], new byte[0]);
+        return message;
+    }
+
+    static public MLSMessage keyPackage(KeyPackage keyPackage)
+    {
+        MLSMessage message = new MLSMessage();
+        message.version = ProtocolVersion.mls10;
+        message.wireFormat = WireFormat.mls_key_package;
+        message.keyPackage = keyPackage;
+        return message;
+    }
 
     public MLSMessage(MLSInputStream stream) throws IOException
     {
@@ -419,6 +469,11 @@ class EncryptedGroupSecrets
     byte[] new_member; // KeyPackageRaf
     HPKECiphertext encrypted_group_secrets;
 
+    public EncryptedGroupSecrets(byte[] new_member, HPKECiphertext encrypted_group_secrets)
+    {
+        this.new_member = new_member;
+        this.encrypted_group_secrets = encrypted_group_secrets;
+    }
 
     EncryptedGroupSecrets(MLSInputStream stream) throws IOException
     {

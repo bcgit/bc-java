@@ -7,7 +7,7 @@ import java.io.IOException;
 public class AuthenticatedContent
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    WireFormat wireFormat;
+    public WireFormat wireFormat;
     public FramedContent content;
     FramedContentAuthData auth;
 

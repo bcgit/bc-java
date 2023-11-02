@@ -52,7 +52,7 @@ class FilteredDirectPath
 public class TreeKEMPublicKey
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    CipherSuite suite;
+    public CipherSuite suite;
     public TreeSize size;
     Map<NodeIndex, byte[]> hashes;
     private final Map<NodeIndex, byte[]> treeHashCache;
@@ -65,6 +65,25 @@ public class TreeKEMPublicKey
         tree.setSuite(other.suite);
         tree.setHashAll();
         return tree;
+    }
+    public TreeKEMPublicKey(CipherSuite suite) throws IOException
+    {
+        this.suite = suite;
+        hashes = new HashMap<>();
+        nodes = new ArrayList<>();
+        treeHashCache = new HashMap<>();
+        exceptCache = new HashMap<>();
+
+        size = TreeSize.forLeaves(0);
+        while(size.width() < nodes.size())
+        {
+            size = TreeSize.forLeaves(size.leafCount() * 2);
+        }
+
+        while (nodes.size() < size.width())
+        {
+            nodes.add(OptionalNode.blankNode());
+        }
     }
 
     public TreeKEMPublicKey(MLSInputStream stream) throws IOException

@@ -41,12 +41,12 @@ public class TranscriptHash
         updateInterim(auth);
     }
 
-    private void updateConfirmed(AuthenticatedContent auth) throws IOException
+    public void updateConfirmed(AuthenticatedContent auth) throws IOException
     {
         byte[] transcript = Arrays.concatenate(interim, auth.getConfirmedTranscriptHashInput());
         confirmed = suite.hash(transcript);
     }
-    private void updateInterim(AuthenticatedContent auth) throws IOException
+    public void updateInterim(AuthenticatedContent auth) throws IOException
     {
         byte[] transcript = Arrays.concatenate(confirmed, auth.getInterimTranscriptHashInput());
         interim = suite.hash(transcript);
