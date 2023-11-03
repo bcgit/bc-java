@@ -1216,7 +1216,7 @@ public class PKCS12StoreTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCS+", "BC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f);
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust);
 
         KeyPair kp = kpg.generateKeyPair();
 

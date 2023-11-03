@@ -1,76 +1,76 @@
 package org.bouncycastle.pqc.crypto.sphincsplus;
 
-import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Pack;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Pack;
 
 public class SPHINCSPlusParameters
 {
     // SHA-2
 
-    public static final SPHINCSPlusParameters sha2_128f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_128f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010101), "sha2-128f-robust", new Sha2EngineProvider(true, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters sha2_128s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_128s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010102), "sha2-128s-robust", new Sha2EngineProvider(true, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters sha2_192f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_192f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010103), "sha2-192f-robust", new Sha2EngineProvider(true, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters sha2_192s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_192s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010104), "sha2-192s-robust", new Sha2EngineProvider(true, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters sha2_256f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_256f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010105), "sha2-256f-robust", new Sha2EngineProvider(true, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters sha2_256s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters sha2_256s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x010106), "sha2-256s-robust", new Sha2EngineProvider(true, 32, 16, 8, 14, 22, 64));
 
-    public static final SPHINCSPlusParameters sha2_128f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010201), "sha2-128f-simple", new Sha2EngineProvider(false, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters sha2_128s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010202), "sha2-128s-simple", new Sha2EngineProvider(false, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters sha2_128f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010201), "sha2-128f", new Sha2EngineProvider(false, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters sha2_128s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010202), "sha2-128s", new Sha2EngineProvider(false, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters sha2_192f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010203), "sha2-192f-simple", new Sha2EngineProvider(false, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters sha2_192s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010204), "sha2-192s-simple", new Sha2EngineProvider(false, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters sha2_192f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010203), "sha2-192f", new Sha2EngineProvider(false, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters sha2_192s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010204), "sha2-192s", new Sha2EngineProvider(false, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters sha2_256f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010205), "sha2-256f-simple", new Sha2EngineProvider(false, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters sha2_256s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x010206), "sha2-256s-simple", new Sha2EngineProvider(false, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters sha2_256f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010205), "sha2-256f", new Sha2EngineProvider(false, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters sha2_256s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x010206), "sha2-256s", new Sha2EngineProvider(false, 32, 16, 8, 14, 22, 64));
 
     // SHAKE-256.
 
-    public static final SPHINCSPlusParameters shake_128f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_128f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020101), "shake-128f-robust", new Shake256EngineProvider(true, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters shake_128s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_128s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020102), "shake-128s-robust", new Shake256EngineProvider(true, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters shake_192f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_192f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020103), "shake-192f-robust", new Shake256EngineProvider(true, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters shake_192s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_192s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020104), "shake-192s-robust", new Shake256EngineProvider(true, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters shake_256f = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_256f_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020105), "shake-256f-robust", new Shake256EngineProvider(true, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters shake_256s = new SPHINCSPlusParameters(
+    public static final SPHINCSPlusParameters shake_256s_robust = new SPHINCSPlusParameters(
         Integers.valueOf(0x020106), "shake-256s-robust", new Shake256EngineProvider(true, 32, 16, 8, 14, 22, 64));
 
-    public static final SPHINCSPlusParameters shake_128f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020201), "shake-128f-simple", new Shake256EngineProvider(false, 16, 16, 22, 6, 33, 66));
-    public static final SPHINCSPlusParameters shake_128s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020202), "shake-128s-simple", new Shake256EngineProvider(false, 16, 16, 7, 12, 14, 63));
+    public static final SPHINCSPlusParameters shake_128f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020201), "shake-128f", new Shake256EngineProvider(false, 16, 16, 22, 6, 33, 66));
+    public static final SPHINCSPlusParameters shake_128s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020202), "shake-128s", new Shake256EngineProvider(false, 16, 16, 7, 12, 14, 63));
 
-    public static final SPHINCSPlusParameters shake_192f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020203), "shake-192f-simple", new Shake256EngineProvider(false, 24, 16, 22, 8, 33, 66));
-    public static final SPHINCSPlusParameters shake_192s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020204), "shake-192s-simple", new Shake256EngineProvider(false, 24, 16, 7, 14, 17, 63));
+    public static final SPHINCSPlusParameters shake_192f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020203), "shake-192f", new Shake256EngineProvider(false, 24, 16, 22, 8, 33, 66));
+    public static final SPHINCSPlusParameters shake_192s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020204), "shake-192s", new Shake256EngineProvider(false, 24, 16, 7, 14, 17, 63));
 
-    public static final SPHINCSPlusParameters shake_256f_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020205), "shake-256f-simple", new Shake256EngineProvider(false, 32, 16, 17, 9, 35, 68));
-    public static final SPHINCSPlusParameters shake_256s_simple = new SPHINCSPlusParameters(
-        Integers.valueOf(0x020206), "shake-256s-simple", new Shake256EngineProvider(false, 32, 16, 8, 14, 22, 64));
+    public static final SPHINCSPlusParameters shake_256f = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020205), "shake-256f", new Shake256EngineProvider(false, 32, 16, 17, 9, 35, 68));
+    public static final SPHINCSPlusParameters shake_256s = new SPHINCSPlusParameters(
+        Integers.valueOf(0x020206), "shake-256s", new Shake256EngineProvider(false, 32, 16, 8, 14, 22, 64));
 
     // Haraka.
 
@@ -117,18 +117,18 @@ public class SPHINCSPlusParameters
     static
     {
         SPHINCSPlusParameters[] all = new SPHINCSPlusParameters[]{
+            SPHINCSPlusParameters.sha2_128f_robust, SPHINCSPlusParameters.sha2_128s_robust,
+            SPHINCSPlusParameters.sha2_192f_robust, SPHINCSPlusParameters.sha2_192s_robust,
+            SPHINCSPlusParameters.sha2_256f_robust, SPHINCSPlusParameters.sha2_256s_robust,
             SPHINCSPlusParameters.sha2_128f, SPHINCSPlusParameters.sha2_128s,
             SPHINCSPlusParameters.sha2_192f, SPHINCSPlusParameters.sha2_192s,
             SPHINCSPlusParameters.sha2_256f, SPHINCSPlusParameters.sha2_256s,
-            SPHINCSPlusParameters.sha2_128f_simple, SPHINCSPlusParameters.sha2_128s_simple,
-            SPHINCSPlusParameters.sha2_192f_simple, SPHINCSPlusParameters.sha2_192s_simple,
-            SPHINCSPlusParameters.sha2_256f_simple, SPHINCSPlusParameters.sha2_256s_simple,
+            SPHINCSPlusParameters.shake_128f_robust, SPHINCSPlusParameters.shake_128s_robust,
+            SPHINCSPlusParameters.shake_192f_robust, SPHINCSPlusParameters.shake_192s_robust,
+            SPHINCSPlusParameters.shake_256f_robust, SPHINCSPlusParameters.shake_256s_robust,
             SPHINCSPlusParameters.shake_128f, SPHINCSPlusParameters.shake_128s,
             SPHINCSPlusParameters.shake_192f, SPHINCSPlusParameters.shake_192s,
             SPHINCSPlusParameters.shake_256f, SPHINCSPlusParameters.shake_256s,
-            SPHINCSPlusParameters.shake_128f_simple, SPHINCSPlusParameters.shake_128s_simple,
-            SPHINCSPlusParameters.shake_192f_simple, SPHINCSPlusParameters.shake_192s_simple,
-            SPHINCSPlusParameters.shake_256f_simple, SPHINCSPlusParameters.shake_256s_simple,
             SPHINCSPlusParameters.haraka_128f, SPHINCSPlusParameters.haraka_128s,
             SPHINCSPlusParameters.haraka_192f, SPHINCSPlusParameters.haraka_192s,
             SPHINCSPlusParameters.haraka_256f, SPHINCSPlusParameters.haraka_256s,
