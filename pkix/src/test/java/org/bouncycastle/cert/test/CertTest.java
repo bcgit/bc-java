@@ -61,7 +61,6 @@ import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAPublicKey;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -3610,7 +3609,7 @@ public class CertTest
         //
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256s_simple, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256s, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -3661,7 +3660,7 @@ public class CertTest
         //
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f_simple, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 

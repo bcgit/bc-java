@@ -73,7 +73,7 @@ public class SphincsPlusTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f, new RiggedRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, new RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -103,7 +103,7 @@ public class SphincsPlusTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f, new RiggedRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, new RiggedRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -240,7 +240,7 @@ public class SphincsPlusTest
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f, random);
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, random);
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -273,7 +273,7 @@ public class SphincsPlusTest
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f, random);
+        kpg.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, random);
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -335,7 +335,7 @@ public class SphincsPlusTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.shake_256f, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.shake_256f_robust, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -361,7 +361,7 @@ public class SphincsPlusTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpg.initialize(SPHINCSPlusParameterSpec.shake_256f_simple, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.shake_256f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 

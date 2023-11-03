@@ -12,43 +12,43 @@ import org.bouncycastle.util.Strings;
 public class SPHINCSPlusParameterSpec
     implements AlgorithmParameterSpec
 {
-    public static final SPHINCSPlusParameterSpec sha2_128f = new SPHINCSPlusParameterSpec("sha2-128f-robust");
-    public static final SPHINCSPlusParameterSpec sha2_128s = new SPHINCSPlusParameterSpec("sha2-128s-robust");
+    public static final SPHINCSPlusParameterSpec sha2_128f_robust = new SPHINCSPlusParameterSpec("sha2-128f-robust");
+    public static final SPHINCSPlusParameterSpec sha2_128s_robust = new SPHINCSPlusParameterSpec("sha2-128s-robust");
 
-    public static final SPHINCSPlusParameterSpec sha2_192f = new SPHINCSPlusParameterSpec("sha2-192f-robust");
-    public static final SPHINCSPlusParameterSpec sha2_192s = new SPHINCSPlusParameterSpec("sha2-192s-robust");
+    public static final SPHINCSPlusParameterSpec sha2_192f_robust = new SPHINCSPlusParameterSpec("sha2-192f-robust");
+    public static final SPHINCSPlusParameterSpec sha2_192s_robust = new SPHINCSPlusParameterSpec("sha2-192s-robust");
 
-    public static final SPHINCSPlusParameterSpec sha2_256f = new SPHINCSPlusParameterSpec("sha2-256f-robust");
-    public static final SPHINCSPlusParameterSpec sha2_256s = new SPHINCSPlusParameterSpec("sha2-256s-robust");
+    public static final SPHINCSPlusParameterSpec sha2_256f_robust = new SPHINCSPlusParameterSpec("sha2-256f-robust");
+    public static final SPHINCSPlusParameterSpec sha2_256s_robust = new SPHINCSPlusParameterSpec("sha2-256s-robust");
 
-    public static final SPHINCSPlusParameterSpec sha2_128f_simple = new SPHINCSPlusParameterSpec("sha2-128s-simple");
-    public static final SPHINCSPlusParameterSpec sha2_128s_simple = new SPHINCSPlusParameterSpec("sha2-128f-simple");
+    public static final SPHINCSPlusParameterSpec sha2_128f = new SPHINCSPlusParameterSpec("sha2-128s");
+    public static final SPHINCSPlusParameterSpec sha2_128s = new SPHINCSPlusParameterSpec("sha2-128f");
 
-    public static final SPHINCSPlusParameterSpec sha2_192f_simple = new SPHINCSPlusParameterSpec("sha2-192f-simple");
-    public static final SPHINCSPlusParameterSpec sha2_192s_simple = new SPHINCSPlusParameterSpec("sha2-192s-simple");
+    public static final SPHINCSPlusParameterSpec sha2_192f = new SPHINCSPlusParameterSpec("sha2-192f");
+    public static final SPHINCSPlusParameterSpec sha2_192s = new SPHINCSPlusParameterSpec("sha2-192s");
 
-    public static final SPHINCSPlusParameterSpec sha2_256f_simple = new SPHINCSPlusParameterSpec("sha2-256f-simple");
-    public static final SPHINCSPlusParameterSpec sha2_256s_simple = new SPHINCSPlusParameterSpec("sha2-256s-simple");
+    public static final SPHINCSPlusParameterSpec sha2_256f = new SPHINCSPlusParameterSpec("sha2-256f");
+    public static final SPHINCSPlusParameterSpec sha2_256s = new SPHINCSPlusParameterSpec("sha2-256s");
 
     // SHAKE-256.
 
-    public static final SPHINCSPlusParameterSpec shake_128f = new SPHINCSPlusParameterSpec("shake-128f-robust");
-    public static final SPHINCSPlusParameterSpec shake_128s = new SPHINCSPlusParameterSpec("shake-128s-robust");
+    public static final SPHINCSPlusParameterSpec shake_128f_robust = new SPHINCSPlusParameterSpec("shake-128f-robust");
+    public static final SPHINCSPlusParameterSpec shake_128s_robust = new SPHINCSPlusParameterSpec("shake-128s-robust");
 
-    public static final SPHINCSPlusParameterSpec shake_192f = new SPHINCSPlusParameterSpec("shake-192f-robust");
-    public static final SPHINCSPlusParameterSpec shake_192s = new SPHINCSPlusParameterSpec("shake-192s-robust");
+    public static final SPHINCSPlusParameterSpec shake_192f_robust = new SPHINCSPlusParameterSpec("shake-192f-robust");
+    public static final SPHINCSPlusParameterSpec shake_192s_robust = new SPHINCSPlusParameterSpec("shake-192s-robust");
 
-    public static final SPHINCSPlusParameterSpec shake_256f = new SPHINCSPlusParameterSpec("shake-256f-robust");
-    public static final SPHINCSPlusParameterSpec shake_256s = new SPHINCSPlusParameterSpec("shake-256s-robust");
+    public static final SPHINCSPlusParameterSpec shake_256f_robust = new SPHINCSPlusParameterSpec("shake-256f-robust");
+    public static final SPHINCSPlusParameterSpec shake_256s_robust = new SPHINCSPlusParameterSpec("shake-256s-robust");
 
-    public static final SPHINCSPlusParameterSpec shake_128f_simple = new SPHINCSPlusParameterSpec("shake-128f-simple");
-    public static final SPHINCSPlusParameterSpec shake_128s_simple = new SPHINCSPlusParameterSpec("shake-128s-simple");
+    public static final SPHINCSPlusParameterSpec shake_128f = new SPHINCSPlusParameterSpec("shake-128f");
+    public static final SPHINCSPlusParameterSpec shake_128s = new SPHINCSPlusParameterSpec("shake-128s");
 
-    public static final SPHINCSPlusParameterSpec shake_192f_simple = new SPHINCSPlusParameterSpec("shake-192f-simple");
-    public static final SPHINCSPlusParameterSpec shake_192s_simple = new SPHINCSPlusParameterSpec("shake-192s-simple");
+    public static final SPHINCSPlusParameterSpec shake_192f = new SPHINCSPlusParameterSpec("shake-192f");
+    public static final SPHINCSPlusParameterSpec shake_192s = new SPHINCSPlusParameterSpec("shake-192s");
 
-    public static final SPHINCSPlusParameterSpec shake_256f_simple = new SPHINCSPlusParameterSpec("shake-256f-simple");
-    public static final SPHINCSPlusParameterSpec shake_256s_simple = new SPHINCSPlusParameterSpec("shake-256s-simple");
+    public static final SPHINCSPlusParameterSpec shake_256f = new SPHINCSPlusParameterSpec("shake-256f");
+    public static final SPHINCSPlusParameterSpec shake_256s = new SPHINCSPlusParameterSpec("shake-256s");
 
     public static final SPHINCSPlusParameterSpec haraka_128f = new SPHINCSPlusParameterSpec("haraka-128f-robust");
     public static final SPHINCSPlusParameterSpec haraka_128s = new SPHINCSPlusParameterSpec("haraka-128s-robust");
@@ -72,6 +72,13 @@ public class SPHINCSPlusParameterSpec
     
     static
     {
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128f_robust.getName(), SPHINCSPlusParameterSpec.sha2_128f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_128s_robust.getName(), SPHINCSPlusParameterSpec.sha2_128s_robust);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192f_robust.getName(), SPHINCSPlusParameterSpec.sha2_192f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_192s_robust.getName(), SPHINCSPlusParameterSpec.sha2_192s_robust);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256f_robust.getName(), SPHINCSPlusParameterSpec.sha2_256f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.sha2_256s_robust.getName(), SPHINCSPlusParameterSpec.sha2_256s_robust);
+        
         parameters.put(SPHINCSPlusParameterSpec.sha2_128f.getName(), SPHINCSPlusParameterSpec.sha2_128f);
         parameters.put(SPHINCSPlusParameterSpec.sha2_128s.getName(), SPHINCSPlusParameterSpec.sha2_128s);
         parameters.put(SPHINCSPlusParameterSpec.sha2_192f.getName(), SPHINCSPlusParameterSpec.sha2_192f);
@@ -79,19 +86,19 @@ public class SPHINCSPlusParameterSpec
         parameters.put(SPHINCSPlusParameterSpec.sha2_256f.getName(), SPHINCSPlusParameterSpec.sha2_256f);
         parameters.put(SPHINCSPlusParameterSpec.sha2_256s.getName(), SPHINCSPlusParameterSpec.sha2_256s);
         
-        parameters.put(SPHINCSPlusParameterSpec.sha2_128f_simple.getName(), SPHINCSPlusParameterSpec.sha2_128f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha2_128s_simple.getName(), SPHINCSPlusParameterSpec.sha2_128s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha2_192f_simple.getName(), SPHINCSPlusParameterSpec.sha2_192f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha2_192s_simple.getName(), SPHINCSPlusParameterSpec.sha2_192s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha2_256f_simple.getName(), SPHINCSPlusParameterSpec.sha2_256f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.sha2_256s_simple.getName(), SPHINCSPlusParameterSpec.sha2_256s_simple);
+        parameters.put("sha2-128f", SPHINCSPlusParameterSpec.sha2_128f);
+        parameters.put("sha2-128s", SPHINCSPlusParameterSpec.sha2_128s);
+        parameters.put("sha2-192f", SPHINCSPlusParameterSpec.sha2_192f);
+        parameters.put("sha2-192s", SPHINCSPlusParameterSpec.sha2_192s);
+        parameters.put("sha2-256f", SPHINCSPlusParameterSpec.sha2_256f);
+        parameters.put("sha2-256s", SPHINCSPlusParameterSpec.sha2_256s);
         
-        parameters.put("sha2-128f", SPHINCSPlusParameterSpec.sha2_128f_simple);
-        parameters.put("sha2-128s", SPHINCSPlusParameterSpec.sha2_128s_simple);
-        parameters.put("sha2-192f", SPHINCSPlusParameterSpec.sha2_192f_simple);
-        parameters.put("sha2-192s", SPHINCSPlusParameterSpec.sha2_192s_simple);
-        parameters.put("sha2-256f", SPHINCSPlusParameterSpec.sha2_256f_simple);
-        parameters.put("sha2-256s", SPHINCSPlusParameterSpec.sha2_256s_simple);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128f_robust.getName(), SPHINCSPlusParameterSpec.shake_128f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.shake_128s_robust.getName(), SPHINCSPlusParameterSpec.shake_128s_robust);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192f_robust.getName(), SPHINCSPlusParameterSpec.shake_192f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.shake_192s_robust.getName(), SPHINCSPlusParameterSpec.shake_192s_robust);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256f_robust.getName(), SPHINCSPlusParameterSpec.shake_256f_robust);
+        parameters.put(SPHINCSPlusParameterSpec.shake_256s_robust.getName(), SPHINCSPlusParameterSpec.shake_256s_robust);
         
         parameters.put(SPHINCSPlusParameterSpec.shake_128f.getName(), SPHINCSPlusParameterSpec.shake_128f);
         parameters.put(SPHINCSPlusParameterSpec.shake_128s.getName(), SPHINCSPlusParameterSpec.shake_128s);
@@ -100,19 +107,12 @@ public class SPHINCSPlusParameterSpec
         parameters.put(SPHINCSPlusParameterSpec.shake_256f.getName(), SPHINCSPlusParameterSpec.shake_256f);
         parameters.put(SPHINCSPlusParameterSpec.shake_256s.getName(), SPHINCSPlusParameterSpec.shake_256s);
         
-        parameters.put(SPHINCSPlusParameterSpec.shake_128f_simple.getName(), SPHINCSPlusParameterSpec.shake_128f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake_128s_simple.getName(), SPHINCSPlusParameterSpec.shake_128s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake_192f_simple.getName(), SPHINCSPlusParameterSpec.shake_192f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake_192s_simple.getName(), SPHINCSPlusParameterSpec.shake_192s_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake_256f_simple.getName(), SPHINCSPlusParameterSpec.shake_256f_simple);
-        parameters.put(SPHINCSPlusParameterSpec.shake_256s_simple.getName(), SPHINCSPlusParameterSpec.shake_256s_simple);
-        
-        parameters.put("shake-128f", SPHINCSPlusParameterSpec.shake_128f_simple);
-        parameters.put("shake-128s", SPHINCSPlusParameterSpec.shake_128s_simple);
-        parameters.put("shake-192f", SPHINCSPlusParameterSpec.shake_192f_simple);
-        parameters.put("shake-192s", SPHINCSPlusParameterSpec.shake_192s_simple);
-        parameters.put("shake-256f", SPHINCSPlusParameterSpec.shake_256f_simple);
-        parameters.put("shake-256s", SPHINCSPlusParameterSpec.shake_256s_simple);
+        parameters.put("shake-128f", SPHINCSPlusParameterSpec.shake_128f);
+        parameters.put("shake-128s", SPHINCSPlusParameterSpec.shake_128s);
+        parameters.put("shake-192f", SPHINCSPlusParameterSpec.shake_192f);
+        parameters.put("shake-192s", SPHINCSPlusParameterSpec.shake_192s);
+        parameters.put("shake-256f", SPHINCSPlusParameterSpec.shake_256f);
+        parameters.put("shake-256s", SPHINCSPlusParameterSpec.shake_256s);
         
         parameters.put(SPHINCSPlusParameterSpec.haraka_128f.getName(), SPHINCSPlusParameterSpec.haraka_128f);
         parameters.put(SPHINCSPlusParameterSpec.haraka_128s.getName(), SPHINCSPlusParameterSpec.haraka_128s);

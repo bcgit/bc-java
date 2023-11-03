@@ -12,6 +12,7 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SPHINCSPlusPublicKey;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class BCSPHINCSPlusPublicKey
     implements SPHINCSPlusPublicKey
@@ -67,11 +68,11 @@ public class BCSPHINCSPlusPublicKey
     }
 
     /**
-     * @return name of the algorithm - "SPHINCS+"
+     * @return name of the algorithm - "SPHINCS+" followed by the parameter type.
      */
     public final String getAlgorithm()
     {
-        return "SPHINCS+";
+        return "SPHINCS+" + "-" + Strings.toUpperCase(params.getParameters().getName());
     }
 
     public byte[] getEncoded()
