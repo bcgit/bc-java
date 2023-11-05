@@ -247,8 +247,8 @@ public interface BCObjectIdentifiers
      */
     ASN1ObjectIdentifier falcon = bc_sig.branch("7");
 
-    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.1");  // falcon.branch("1");
-    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.4"); // falcon.branch("2");
+    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
+    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
 
     /*
      * Dilithium
