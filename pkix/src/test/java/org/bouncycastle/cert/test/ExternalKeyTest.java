@@ -112,24 +112,24 @@ public class ExternalKeyTest
         X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("Dilithium5").build(kp.getPrivate()));
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(cert.getEncoded())));
-
-        StringWriter sWrt = new StringWriter();
-        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
-
-        pWrt.writeObject(cert);
-
-        pWrt.writeObject(kp.getPublic());
-
-        pWrt.close();
-
-        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(externalKey.getEncoded());
-
-        System.err.println(externalKey.getEncoded().length + " " + kp.getPublic().getEncoded().length);
-        System.err.println(ASN1Dump.dumpAsString(info, true));
-        
-        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(info.getPublicKeyData().getOctets())));
-        System.err.println(sWrt.toString());
+//        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(cert.getEncoded())));
+//
+//        StringWriter sWrt = new StringWriter();
+//        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
+//
+//        pWrt.writeObject(cert);
+//
+//        pWrt.writeObject(kp.getPublic());
+//
+//        pWrt.close();
+//
+//        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(externalKey.getEncoded());
+//
+//        System.err.println(externalKey.getEncoded().length + " " + kp.getPublic().getEncoded().length);
+//        System.err.println(ASN1Dump.dumpAsString(info, true));
+//
+//        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(info.getPublicKeyData().getOctets())));
+//        System.err.println(sWrt.toString());
     }
 
     public static void main(
