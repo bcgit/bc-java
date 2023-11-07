@@ -4530,7 +4530,7 @@ public class CertTest
         CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider("BC").build(compPrivKey);
 
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
@@ -4563,11 +4563,11 @@ public class CertTest
             isTrue(e.getCause().getMessage().equals("no matching signature found in composite"));
         }
 
-        vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
+        vProv = new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub);
 
         isTrue("ec failed", certHldr.isSignatureValid(vProv));
 
-        vProv = new JcaContentVerifierProviderBuilder().build(lmsPub);
+        vProv = new JcaContentVerifierProviderBuilder().setProvider("BC").build(lmsPub);
 
         isTrue("lms failed", certHldr.isSignatureValid(vProv));
 
