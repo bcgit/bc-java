@@ -4530,7 +4530,7 @@ public class CertTest
         CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider("BC").build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider(BC).build(compPrivKey);
 
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
@@ -4541,11 +4541,13 @@ public class CertTest
         X509CertificateHolder certHldr = certGen.build(sigGen);
 
         ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
+            .setProvider(BC)
             .build(compPub);
 
         isTrue("multi failed", certHldr.isSignatureValid(vProv));
 
         vProv = new JcaContentVerifierProviderBuilder()
+            .setProvider(BC)
             .build(new CompositePublicKey(ecPub, null));
 
         isTrue("multi failed with null", certHldr.isSignatureValid(vProv));
@@ -4554,6 +4556,7 @@ public class CertTest
         try
         {
             vProv = new JcaContentVerifierProviderBuilder()
+                .setProvider(BC)
                 .build(new CompositePublicKey(null, null));
 
             certHldr.isSignatureValid(vProv);
@@ -4563,11 +4566,11 @@ public class CertTest
             isTrue(e.getCause().getMessage().equals("no matching signature found in composite"));
         }
 
-        vProv = new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub);
+        vProv = new JcaContentVerifierProviderBuilder().setProvider(BC).build(ecPub);
 
         isTrue("ec failed", certHldr.isSignatureValid(vProv));
 
-        vProv = new JcaContentVerifierProviderBuilder().setProvider("BC").build(lmsPub);
+        vProv = new JcaContentVerifierProviderBuilder().setProvider(BC).build(lmsPub);
 
         isTrue("lms failed", certHldr.isSignatureValid(vProv));
 
@@ -4622,7 +4625,7 @@ public class CertTest
         isTrue(MiscObjectIdentifiers.id_composite_key.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
 
-        KeyFactory kFact = KeyFactory.getInstance("Composite", "BC");
+        KeyFactory kFact = KeyFactory.getInstance("Composite", BC);
 
         CompositePublicKey pubKey = (CompositePublicKey)kFact.generatePublic(new X509EncodedKeySpec(compPub.getEncoded()));
         CompositePrivateKey privKey = (CompositePrivateKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivKey.getEncoded()));
