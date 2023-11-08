@@ -200,6 +200,7 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -r org/bouncycastle/math/raw/test/InterleaveTest.java
     rm -rf org/bouncycastle/cert/jcajce/JcaAttributeCertificateIssuer.java
     rm -rf org/bouncycastle/cert/test/ConverterTest*
+    rm -rf org/bouncycastle/cert/test/ExternalKeyTest*
     rm -rf org/bouncycastle/cert/test/CertPathLoopTest.java
     rm -rf org/bouncycastle/cert/test/Bc*
     rm -rf org/bouncycastle/cert/test/DeltaCertTest*

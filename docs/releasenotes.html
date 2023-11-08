@@ -29,6 +29,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>(D)TLS: Fixed compliance for supported_groups extension. Server will no longer negotiate an EC cipher suite using a default curve when the ClientHello includes
 the supported_groups extension but it contains no curves in common with the server. Similarly, a DH cipher suite will not be negotiated when the ClientHello includes
 supported_groups, containing at least one FFDHE group, but none in common with the server.</li>
+<li>IllegalStateException was being thrown by the Ed25519/Ed448 SignatureSpi. This has been fixed.</li>
+<li>TLS: class annotation issues that could occur between the BC provider and the TLS API for the GCMParameterSpec class when the jars were loaded on the boot class path have been addressed.</li>
+<li>Attempt to create an ASN.1 OID from a zero length byte array is now caught at construction time.</li>
+<li>Attempt to create an X.509 extension block which is empty will now be blocked cause an exception.</li>
+<li>IES implementation will now accept a null ParameterSpec if no nonce is needed.</li>
+<li>An internal method in Arrays was failing to construct its failure message coorrectly on an error. This has been fixed.</li>
+<li>HSSKeyPublicParameters.generateLMSContext() would fail for a unit depth key. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
@@ -36,11 +43,18 @@ supported_groups, containing at least one FFDHE group, but none in common with t
 to control (for client and server resp.) whether the signature_algorithms_cert extension should be omitted if it would be identical to signature_algorithms.
 Defaults to true, the historical behaviour.</li>
 <li>The low-level HPKE API now allows the sender to specify an ephemeral key pair.</li>
+<li>Support has been added for the delta-certificate requests in line with the current Chameleon Cert draft from the IETF.</li>
+<li>Some accomodation has been added for historical systems to accomodate variations in the SHA-1 digest OID for CMS SignedDatat.</li>
+<li>TLS: the TLS API will now try "RSAwithDigestAndMFG1" as well as the newer RSAPSS algorithm names when used with the JCA.</li>
+<li>Support has been added for PKCS#10 requests to allow certificates using the altSignature/altPublicKey extensions.</li>
 </ul>
 <h3>2.1.3 Notes.</h3>
 <ul>
 <li>Kyber and Dilithium have been updated according to the latest draft of the standard. Dilithium-AES and Kyber-AES have now been removed. Kyber now produces 256 bit secrets for all parameter sets (in line with the draft standard).</li>
-<li>NTRU has been updated to produce 256 bit secrets.</li>
+<li>NTRU has been updated to produce 256 bit secrets in line with Kyber.</li>
+<li>SPHINCS+ can now be used to generate certificates in line with those used by (Open Quantum Safe) OQS.</li>
+<li>Falcon object idenitifiers are now in line with OQS as well.</li>
+<li>PQC CMS SignedData now defaults to SHA-256 for signed attributes rather than SHAKE-256. This is also a compatibility change, but may change further again as the IETF standard for CMS is updated.</li>
 </ul>
 
 <a id="r1rv76"><h3>2.2.1 Version</h3></a>
