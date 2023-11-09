@@ -185,36 +185,43 @@ class RSACoreEngine
             //
             RSAPrivateCrtKeyParameters crtKey = (RSAPrivateCrtKeyParameters)key;
 
-            BigInteger p = crtKey.getP();
-            BigInteger q = crtKey.getQ();
-            BigInteger dP = crtKey.getDP();
-            BigInteger dQ = crtKey.getDQ();
-            BigInteger qInv = crtKey.getQInv();
+            BigInteger e = crtKey.getPublicExponent();
+            if (e != null)   // can't apply fault-attack countermeasure without public exponent
+            {
+                BigInteger p = crtKey.getP();
+                BigInteger q = crtKey.getQ();
+                BigInteger dP = crtKey.getDP();
+                BigInteger dQ = crtKey.getDQ();
+                BigInteger qInv = crtKey.getQInv();
 
-            BigInteger mP, mQ, h, m;
+                BigInteger mP, mQ, h, m;
 
-            // mP = ((input mod p) ^ dP)) mod p
-            mP = (input.remainder(p)).modPow(dP, p);
+                // mP = ((input mod p) ^ dP)) mod p
+                mP = (input.remainder(p)).modPow(dP, p);
 
-            // mQ = ((input mod q) ^ dQ)) mod q
-            mQ = (input.remainder(q)).modPow(dQ, q);
+                // mQ = ((input mod q) ^ dQ)) mod q
+                mQ = (input.remainder(q)).modPow(dQ, q);
 
-            // h = qInv * (mP - mQ) mod p
-            h = mP.subtract(mQ);
-            h = h.multiply(qInv);
-            h = h.mod(p);               // mod (in Java) returns the positive residual
+                // h = qInv * (mP - mQ) mod p
+                h = mP.subtract(mQ);
+                h = h.multiply(qInv);
+                h = h.mod(p);               // mod (in Java) returns the positive residual
 
-            // m = h * q + mQ
-            m = h.multiply(q);
-            m = m.add(mQ);
+                // m = h * q + mQ
+                m = h.multiply(q).add(mQ);
 
-            return m;
+                // defence against Arjen Lenstra’s CRT attack
+                BigInteger check = m.modPow(e, crtKey.getModulus()); 
+                if (!check.equals(input))
+                {
+                    throw new IllegalStateException("RSA engine faulty decryption/signing detected");
+                }
+
+                return m;
+            }
         }
-        else
-        {
-            return input.modPow(
-                key.getExponent(), key.getModulus());
-        }
+
+        return input.modPow(key.getExponent(), key.getModulus());
     }
 
     private CryptoServicePurpose getPurpose(boolean isPrivate, boolean forEncryption)
