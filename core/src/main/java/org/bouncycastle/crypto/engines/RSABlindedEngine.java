@@ -110,39 +110,31 @@ public class RSABlindedEngine
         }
 
         BigInteger input = core.convertInput(in, inOff, inLen);
+        BigInteger result = processInput(input);
+        return core.convertOutput(result);
+    }
 
-        BigInteger result;
+    private BigInteger processInput(BigInteger input)
+    {
         if (key instanceof RSAPrivateCrtKeyParameters)
         {
-            RSAPrivateCrtKeyParameters k = (RSAPrivateCrtKeyParameters)key;
+            RSAPrivateCrtKeyParameters crtKey = (RSAPrivateCrtKeyParameters)key;
 
-            BigInteger e = k.getPublicExponent();
+            BigInteger e = crtKey.getPublicExponent();
             if (e != null)   // can't do blinding without a public exponent
             {
-                BigInteger m = k.getModulus();
+                BigInteger m = crtKey.getModulus();
+
                 BigInteger r = BigIntegers.createRandomInRange(ONE, m.subtract(ONE), random);
+                BigInteger blind = r.modPow(e, m);
+                BigInteger unblind = BigIntegers.modOddInverse(m, r);
 
-                BigInteger blindedInput = r.modPow(e, m).multiply(input).mod(m);
+                BigInteger blindedInput = blind.multiply(input).mod(m);
                 BigInteger blindedResult = core.processBlock(blindedInput);
-
-                BigInteger rInv = BigIntegers.modOddInverse(m, r);
-                result = blindedResult.multiply(rInv).mod(m);
-                // defence against Arjen Lenstra’s CRT attack
-                if (!input.equals(result.modPow(e, m)))
-                {
-                    throw new IllegalStateException("RSA engine faulty decryption/signing detected");
-                }
-            }
-            else
-            {
-                result = core.processBlock(input);
+                return unblind.multiply(blindedResult).mod(m);
             }
         }
-        else
-        {
-            result = core.processBlock(input);
-        }
 
-        return core.convertOutput(result);
+        return core.processBlock(input);
     }
 }
