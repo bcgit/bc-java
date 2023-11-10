@@ -135,15 +135,6 @@ class ProvSSLContextSpi
         cs.add("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
         cs.add("TLS_DHE_DSS_WITH_AES_128_CBC_SHA");
 
-        // Deprecated (not forward secret)
-
-        cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
-        cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
-        cs.add("TLS_RSA_WITH_AES_256_CBC_SHA256");
-        cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
-        cs.add("TLS_RSA_WITH_AES_256_CBC_SHA");
-        cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
-
         cs.retainAll(supportedCipherSuiteSet);
         cs.trimToSize();
         return Collections.unmodifiableList(cs);

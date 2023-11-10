@@ -44,8 +44,9 @@ to control (for client and server resp.) whether the signature_algorithms_cert e
 Defaults to true, the historical behaviour.</li>
 <li>The low-level HPKE API now allows the sender to specify an ephemeral key pair.</li>
 <li>Support has been added for the delta-certificate requests in line with the current Chameleon Cert draft from the IETF.</li>
-<li>Some accomodation has been added for historical systems to accomodate variations in the SHA-1 digest OID for CMS SignedDatat.</li>
+<li>Some accommodation has been added for historical systems to accommodate variations in the SHA-1 digest OID for CMS SignedDatat.</li>
 <li>TLS: the TLS API will now try "RSAwithDigestAndMFG1" as well as the newer RSAPSS algorithm names when used with the JCA.</li>
+<li>TLS: RSA key exchange cipher suites are now disabled by default.</li>
 <li>Support has been added for PKCS#10 requests to allow certificates using the altSignature/altPublicKey extensions.</li>
 </ul>
 <h3>2.1.3 Notes.</h3>
