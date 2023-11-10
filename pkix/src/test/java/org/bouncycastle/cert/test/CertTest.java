@@ -2869,7 +2869,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpg.initialize(new ECGenParameterSpec("P-256"));
 
@@ -2902,7 +2902,7 @@ public class CertTest
         CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).build(compPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider(BC).build(compPrivKey);
 
         Date now = new Date();
 
@@ -3000,7 +3000,7 @@ public class CertTest
             fail("CRL entry reasonCode not found");
         }
 
-        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).build(compPrivKey);
+        sigGen = new JcaContentSignerBuilder("SHA256withECDSA", compAlgSpec).setProvider(BC).build(compPrivKey);
 
         crlHolder = crlGen.build(sigGen);
 
@@ -3016,7 +3016,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpg.initialize(new ECGenParameterSpec("P-256"));
 
@@ -3042,7 +3042,7 @@ public class CertTest
         //
         // create the CRL - version 2
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPriv);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecPriv);
         ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(dlPriv);
 
         Date now = new Date();
@@ -3083,7 +3083,7 @@ public class CertTest
         // verify with provider
         crl.verify(ecPub, BC);
 
-        isTrue("crl primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecPub)));
+        isTrue("crl primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(ecPub)));
         isTrue("crl secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
@@ -3607,7 +3607,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", BC);
 
         kpg.initialize(SPHINCSPlusParameterSpec.sha2_256s, new SecureRandom());
 
@@ -3624,7 +3624,7 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BC").build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -3658,7 +3658,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", BC);
 
         kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f, new SecureRandom());
 
@@ -3675,7 +3675,7 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider("BC").build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder(pubKey.getAlgorithm()).setProvider(BC).build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -3920,7 +3920,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS", BC);
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -3935,7 +3935,7 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withRSAandMGF1").setProvider("BC").build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withRSAandMGF1").setProvider(BC).build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
@@ -4358,7 +4358,7 @@ public class CertTest
         PrivateKey privKey = kp.getPrivate();
         PublicKey pubKey = kp.getPublic();
 
-        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new SecureRandom());
 
@@ -4375,7 +4375,7 @@ public class CertTest
         //
         // create base certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecPrivKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             builder.build(), BigInteger.valueOf(1),
             new Date(System.currentTimeMillis() - 50000),
@@ -4429,7 +4429,7 @@ public class CertTest
         PrivateKey privKey = kp.getPrivate();
         PublicKey pubKey = kp.getPublic();
 
-        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpGen = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpGen.initialize(new ECNamedCurveGenParameterSpec("P-256"), new SecureRandom());
 
@@ -4446,7 +4446,7 @@ public class CertTest
         //
         // create base certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(ecPrivKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecPrivKey);
 
         ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(privKey);
 
@@ -4495,7 +4495,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpg.initialize(new ECGenParameterSpec("P-256"));
 
@@ -4597,7 +4597,7 @@ public class CertTest
 
         cert.verify(lmsPub);     // lms key only
 
-        cert.verify(ecPub, "BC");      // ec key only
+        cert.verify(ecPub, BC);      // ec key only
 
         cert.verify(lmsPub, "BCPQC");     // lms key only
 
@@ -4640,7 +4640,7 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", BC);
 
         ecKpg.initialize(new ECGenParameterSpec("P-256"));
 
@@ -4705,7 +4705,7 @@ public class CertTest
 
         cert.verify(ecPub);      // ec key only
 
-        cert.verify(ecPub, "BC");      // ec key only
+        cert.verify(ecPub, BC);      // ec key only
 
         if (System.getProperty("java.version").indexOf("1.5.") < 0)
         {
@@ -4727,7 +4727,7 @@ public class CertTest
         isTrue(MiscObjectIdentifiers.id_composite_key.equals(crt.getSubjectPublicKeyInfo().getAlgorithm().getAlgorithm()));
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
 
-        KeyFactory kFact = KeyFactory.getInstance("Composite", "BC");
+        KeyFactory kFact = KeyFactory.getInstance("Composite", BC);
 
         CompositePublicKey pubKey = (CompositePublicKey)kFact.generatePublic(new X509EncodedKeySpec(compPub.getEncoded()));
         CompositePrivateKey privKey = (CompositePrivateKey)kFact.generatePrivate(new PKCS8EncodedKeySpec(compPrivKey.getEncoded()));
@@ -5057,7 +5057,7 @@ public class CertTest
                 X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
 
                 x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
-                    .setProvider("BC").build(cert));
+                    .setProvider(BC).build(cert));
                 fail("no exception - CertHolder");
             }
             catch (CertException e)
@@ -5072,7 +5072,7 @@ public class CertTest
             X509CertificateHolder x509CertHldr = new JcaX509CertificateHolder(cert);
 
             x509CertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
-                .setProvider("BC").build(cert));
+                .setProvider(BC).build(cert));
         }
         catch (Exception e)
         {
@@ -5474,7 +5474,7 @@ public class CertTest
 
         try
         {
-            CertificateFactory fact = CertificateFactory.getInstance("X.509", "BC");
+            CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
 
             Certificate cert = fact.generateCertificate(new ByteArrayInputStream(x25519Cert));
 
