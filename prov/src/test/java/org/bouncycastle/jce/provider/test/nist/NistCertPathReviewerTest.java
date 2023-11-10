@@ -33,7 +33,9 @@ import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.i18n.ErrorBundle;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.x509.PKIXCertPathReviewer;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 
@@ -43,6 +45,8 @@ import org.bouncycastle.x509.extension.X509ExtensionUtil;
 public class NistCertPathReviewerTest
     extends TestCase
 {
+    private static final String NNBSP = Strings.fromUTF8ByteArray(Hex.decode("e280af"));
+
     private static final String GOOD_CA_CERT = "GoodCACert";
 
     private static final String GOOD_CA_CRL = "GoodCACRL";
@@ -522,7 +526,7 @@ public class NistCertPathReviewerTest
         {
             ErrorBundle msg = (ErrorBundle) result.getErrors(index).iterator().next();
             assertEquals(messageId,msg.getId());
-            assertEquals(message,msg.getText(Locale.ENGLISH,TimeZone.getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT"));
+            assertEquals(message,msg.getText(Locale.ENGLISH,TimeZone.getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT").replace(NNBSP, " "));
         }
     }
     
