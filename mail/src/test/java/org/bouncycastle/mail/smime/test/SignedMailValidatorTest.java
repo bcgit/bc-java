@@ -44,10 +44,14 @@ import org.bouncycastle.mail.smime.validator.SignedMailValidator;
 import org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer;
 import org.bouncycastle.pkix.util.ErrorBundle;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 public class SignedMailValidatorTest extends TestCase
 {
+    private static final String NNBSP = Strings.fromUTF8ByteArray(Hex.decode("e280af"));
+
     static String TEST_TRUST_ACHOR = "validator.root.crt";
 
     static byte[] multiEmailCert = Base64.decode(
@@ -457,7 +461,7 @@ public class SignedMailValidatorTest extends TestCase
             {
                 found = true;
                 assertEquals(text, message.getText(Locale.ENGLISH, TimeZone
-                        .getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT"));
+                        .getTimeZone("GMT")).replace("Greenwich Mean Time", "GMT").replaceAll(NNBSP, " "));
                 break;
             }
         }
