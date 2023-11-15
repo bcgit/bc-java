@@ -77,7 +77,7 @@ do
    --add-exports org.bouncycastle.provider/org.bouncycastle.internal.asn1.cms=ALL-UNNAMED \
    --add-exports org.bouncycastle.provider/org.bouncycastle.internal.asn1.bsi=ALL-UNNAMED \
    --add-exports org.bouncycastle.provider/org.bouncycastle.internal.asn1.eac=ALL-UNNAMED \
-   -cp "$testJar:libs/junit.jar:libs/mail.jar:libs/activation.jar" \
+   -cp "$testJar:libs/junit-4.13.2.jar:libs/javax.mail-1.4.7.jar:libs/activation-1.1.1.jar" \
    -Dbc.test.data.home=core/src/test/data \
     $i
 
