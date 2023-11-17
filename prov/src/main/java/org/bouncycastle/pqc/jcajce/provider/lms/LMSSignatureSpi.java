@@ -50,7 +50,7 @@ public class LMSSignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to XMSS");
+            throw new InvalidKeyException("unknown public key passed to LMS");
         }
     }
 
