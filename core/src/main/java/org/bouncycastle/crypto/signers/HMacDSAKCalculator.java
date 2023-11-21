@@ -91,6 +91,7 @@ public class HMacDSAKCalculator
         hMac.update((byte)0x01);
         hMac.update(x, 0, x.length);
         hMac.update(m, 0, m.length);
+        initAdditionalInput1(hMac);
 
         hMac.doFinal(K, 0);
 
@@ -141,6 +142,8 @@ public class HMacDSAKCalculator
     }
 
     /**
+     * Supply additional input to HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1)).
+     * <p/>
      * RFC 6979 3.6. Additional data may be added to the input of HMAC [..]. A use case may be a protocol that
      * requires a non-deterministic signature algorithm on a system that does not have access to a
      * high-quality random source. It suffices that the additional data [..] is non-repeating (e.g., a
@@ -153,6 +156,17 @@ public class HMacDSAKCalculator
      * @param hmac0 the {@link HMac} to which the additional input should be added.
      */
     protected void initAdditionalInput0(HMac hmac0)
+    {
+    }
+
+    /**
+     * Supply additional input to HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1)).
+     * <p/>
+     * Refer to comments for {@link #initAdditionalInput0(HMac)}.
+     *
+     * @param hmac1 the {@link HMac} to which the additional input should be added.
+     */
+    protected void initAdditionalInput1(HMac hmac1)
     {
     }
 
