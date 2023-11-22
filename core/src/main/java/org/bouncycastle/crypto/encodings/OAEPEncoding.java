@@ -7,10 +7,13 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
+import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -19,10 +22,21 @@ import org.bouncycastle.util.Pack;
 public class OAEPEncoding
     implements AsymmetricBlockCipher
 {
-    private byte[]                  defHash;
-    private Digest                  mgf1Hash;
+    private static int getMGF1NoMemoLimit(Digest d)
+    {
+        if (d instanceof Memoable && d instanceof ExtendedDigest)
+        {
+            return ((ExtendedDigest)d).getByteLength() - 1;
+        }
 
-    private AsymmetricBlockCipher   engine;
+        return Integer.MAX_VALUE;
+    }
+
+    private final AsymmetricBlockCipher   engine;
+    private final Digest                  mgf1Hash;
+    private final int                     mgf1NoMemoLimit;
+    private final byte[]                  defHash;
+
     private SecureRandom            random;
     private boolean                 forEncryption;
 
@@ -55,6 +69,7 @@ public class OAEPEncoding
     {
         this.engine = cipher;
         this.mgf1Hash = mgf1Hash;
+        this.mgf1NoMemoLimit = getMGF1NoMemoLimit(mgf1Hash);
         this.defHash = new byte[hash.getDigestSize()];
 
         hash.reset();
@@ -72,24 +87,19 @@ public class OAEPEncoding
         return engine;
     }
 
-    public void init(
-        boolean             forEncryption,
-        CipherParameters    param)
+    public void init(boolean forEncryption, CipherParameters param)
     {
+        SecureRandom initRandom = null;
         if (param instanceof ParametersWithRandom)
         {
-            ParametersWithRandom  rParam = (ParametersWithRandom)param;
+            ParametersWithRandom rParam = (ParametersWithRandom)param;
+            initRandom = rParam.getRandom();
+        }
 
-            this.random = rParam.getRandom();
-        }
-        else
-        {   
-            this.random = CryptoServicesRegistrar.getSecureRandom();
-        }
+        this.random = forEncryption ? CryptoServicesRegistrar.getSecureRandom(initRandom) : null;
+        this.forEncryption = forEncryption;
 
         engine.init(forEncryption, param);
-
-        this.forEncryption = forEncryption;
     }
 
     public int getInputBlockSize()
@@ -136,18 +146,15 @@ public class OAEPEncoding
         }
     }
 
-    public byte[] encodeBlock(
-        byte[]  in,
-        int     inOff,
-        int     inLen)
-        throws InvalidCipherTextException
+    public byte[] encodeBlock(byte[] in, int inOff, int inLen) throws InvalidCipherTextException
     {
-        if (inLen > getInputBlockSize())
+        int inputBlockSize = getInputBlockSize();
+        if (inLen > inputBlockSize)
         {
             throw new DataLengthException("input data too long");
         }
 
-        byte[]  block = new byte[getInputBlockSize() + 1 + 2 * defHash.length];
+        byte[] block = new byte[inputBlockSize + 1 + 2 * defHash.length];
 
         //
         // copy in the message
@@ -171,35 +178,21 @@ public class OAEPEncoding
         //
         // generate the seed.
         //
-        byte[]  seed = new byte[defHash.length];
-
+        byte[] seed = new byte[defHash.length];
         random.nextBytes(seed);
+        System.arraycopy(seed, 0, block, 0, defHash.length);
+
+        mgf1Hash.reset();
 
         //
         // mask the message block.
         //
-        byte[]  mask = maskGeneratorFunction1(seed, 0, seed.length, block.length - defHash.length);
-
-        for (int i = defHash.length; i != block.length; i++)
-        {
-            block[i] ^= mask[i - defHash.length];
-        }
-
-        //
-        // add in the seed
-        //
-        System.arraycopy(seed, 0, block, 0, defHash.length);
+        maskGeneratorFunction1(seed, 0, seed.length, block, defHash.length, block.length - defHash.length);
 
         //
         // mask the seed.
         //
-        mask = maskGeneratorFunction1(
-                        block, defHash.length, block.length - defHash.length, defHash.length);
-
-        for (int i = 0; i != defHash.length; i++)
-        {
-            block[i] ^= mask[i];
-        }
+        maskGeneratorFunction1(block, defHash.length, block.length - defHash.length, block, 0, defHash.length);
 
         return engine.processBlock(block, 0, block.length);
     }
@@ -208,54 +201,37 @@ public class OAEPEncoding
      * @exception InvalidCipherTextException if the decrypted block turns out to
      * be badly formatted.
      */
-    public byte[] decodeBlock(
-        byte[]  in,
-        int     inOff,
-        int     inLen)
-        throws InvalidCipherTextException
+    public byte[] decodeBlock(byte[] in, int inOff, int inLen) throws InvalidCipherTextException
     {
-        byte[]  data = engine.processBlock(in, inOff, inLen);
-        byte[]  block = new byte[engine.getOutputBlockSize()];
+        // i.e. wrong when block.length < (2 * defHash.length) + 1
+        int wrongMask = getOutputBlockSize() >> 31;
 
         //
         // as we may have zeros in our leading bytes for the block we produced
         // on encryption, we need to make sure our decrypted block comes back
         // the same size.
         //
-
-        // i.e. wrong when block.length < (2 * defHash.length) + 1
-        int wrongMask = (block.length - ((2 * defHash.length) + 1)) >> 31;
-
-        if (data.length <= block.length)
+        byte[] block = new byte[engine.getOutputBlockSize()];
         {
-            System.arraycopy(data, 0, block, block.length - data.length, data.length);
+            byte[] data = engine.processBlock(in, inOff, inLen);
+            wrongMask |= (block.length - data.length) >> 31;
+
+            int copyLen = Math.min(block.length, data.length);
+            System.arraycopy(data, 0, block, block.length - copyLen, copyLen);
+            Arrays.fill(data, (byte)0);
         }
-        else
-        {
-            System.arraycopy(data, 0, block, 0, block.length);
-            wrongMask |= 1;
-        }
+
+        mgf1Hash.reset();
 
         //
         // unmask the seed.
         //
-        byte[] mask = maskGeneratorFunction1(
-                    block, defHash.length, block.length - defHash.length, defHash.length);
-
-        for (int i = 0; i != defHash.length; i++)
-        {
-            block[i] ^= mask[i];
-        }
+        maskGeneratorFunction1(block, defHash.length, block.length - defHash.length, block, 0, defHash.length);
 
         //
         // unmask the message block.
         //
-        mask = maskGeneratorFunction1(block, 0, defHash.length, block.length - defHash.length);
-
-        for (int i = defHash.length; i != block.length; i++)
-        {
-            block[i] ^= mask[i - defHash.length];
-        }
+        maskGeneratorFunction1(block, 0, defHash.length, block, defHash.length, block.length - defHash.length);
 
         //
         // check the hash of the encoding params.
@@ -296,7 +272,7 @@ public class OAEPEncoding
         //
         // extract the data block
         //
-        byte[]  output = new byte[block.length - start];
+        byte[] output = new byte[block.length - start];
 
         System.arraycopy(block, start, output, 0, output.length);
         Arrays.fill(block, (byte)0);
@@ -307,43 +283,51 @@ public class OAEPEncoding
     /**
      * mask generator function, as described in PKCS1v2.
      */
-    private byte[] maskGeneratorFunction1(
-        byte[]  Z,
-        int     zOff,
-        int     zLen,
-        int     length)
+    private void maskGeneratorFunction1(byte[] z, int zOff, int zLen, byte[] mask, int maskOff, int maskLen)
     {
-        byte[]  mask = new byte[length];
-        byte[]  hashBuf = new byte[mgf1Hash.getDigestSize()];
-        byte[]  C = new byte[4];
-        int     counter = 0;
+        int digestSize = mgf1Hash.getDigestSize();
 
-        mgf1Hash.reset();
+        byte[] hash = new byte[digestSize];
+        byte[] C = new byte[4];
+        int counter = 0;
 
-        while (counter < (length / hashBuf.length))
+        int maskEnd = maskOff + maskLen;
+        int maskLimit = maskEnd - digestSize;
+        int maskPos = maskOff;
+
+        mgf1Hash.update(z, zOff, zLen);
+
+        if (zLen > mgf1NoMemoLimit)
         {
-            Pack.intToBigEndian(counter, C, 0);
+            Memoable memoable = (Memoable)mgf1Hash;
+            Memoable memo = memoable.copy();
 
-            mgf1Hash.update(Z, zOff, zLen);
-            mgf1Hash.update(C, 0, C.length);
-            mgf1Hash.doFinal(hashBuf, 0);
-
-            System.arraycopy(hashBuf, 0, mask, counter * hashBuf.length, hashBuf.length);
-
-            counter++;
+            while (maskPos < maskLimit)
+            {
+                Pack.intToBigEndian(counter++, C, 0);
+                mgf1Hash.update(C, 0, C.length);
+                mgf1Hash.doFinal(hash, 0);
+                memoable.reset(memo);
+                Bytes.xorTo(digestSize, hash, 0, mask, maskPos);
+                maskPos += digestSize;
+            }
+        }
+        else
+        {
+            while (maskPos < maskLimit)
+            {
+                Pack.intToBigEndian(counter++, C, 0);
+                mgf1Hash.update(C, 0, C.length);
+                mgf1Hash.doFinal(hash, 0);
+                mgf1Hash.update(z, zOff, zLen);
+                Bytes.xorTo(digestSize, hash, 0, mask, maskPos);
+                maskPos += digestSize;
+            }
         }
 
-        if ((counter * hashBuf.length) < length)
-        {
-            Pack.intToBigEndian(counter, C, 0);
-
-            mgf1Hash.update(Z, zOff, zLen);
-            mgf1Hash.update(C, 0, C.length);
-            mgf1Hash.doFinal(hashBuf, 0);
-
-            System.arraycopy(hashBuf, 0, mask, counter * hashBuf.length, mask.length - (counter * hashBuf.length));
-        }
-
-        return mask;
+        Pack.intToBigEndian(counter, C, 0);
+        mgf1Hash.update(C, 0, C.length);
+        mgf1Hash.doFinal(hash, 0);
+        Bytes.xorTo(maskEnd - maskPos, hash, 0, mask, maskPos);
     }
 }

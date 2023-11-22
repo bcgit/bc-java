@@ -15,8 +15,6 @@ import org.bouncycastle.util.BigIntegers;
 public class HMacDSAKCalculator
     implements DSAKCalculator
 {
-    private static final BigInteger ZERO = BigInteger.valueOf(0);
-
     private final HMac hMac;
     private final byte[] K;
     private final byte[] V;
@@ -31,8 +29,10 @@ public class HMacDSAKCalculator
     public HMacDSAKCalculator(Digest digest)
     {
         this.hMac = new HMac(digest);
-        this.V = new byte[hMac.getMacSize()];
-        this.K = new byte[hMac.getMacSize()];
+
+        int macSize = hMac.getMacSize();
+        this.V = new byte[macSize];
+        this.K = new byte[macSize];
     }
 
     public boolean isDeterministic()
@@ -49,27 +49,19 @@ public class HMacDSAKCalculator
     {
         this.n = n;
 
-        Arrays.fill(V, (byte)0x01);
-        Arrays.fill(K, (byte)0);
-
-        int size = BigIntegers.getUnsignedByteLength(n);
-        byte[] x = new byte[size];
-        byte[] dVal = BigIntegers.asUnsignedByteArray(d);
-
-        System.arraycopy(dVal, 0, x, x.length - dVal.length, dVal.length);
-
-        byte[] m = new byte[size];
-
         BigInteger mInt = bitsToInt(message);
-
         if (mInt.compareTo(n) >= 0)
         {
             mInt = mInt.subtract(n);
         }
 
-        byte[] mVal = BigIntegers.asUnsignedByteArray(mInt);
+        int size = BigIntegers.getUnsignedByteLength(n);
 
-        System.arraycopy(mVal, 0, m, m.length - mVal.length, mVal.length);
+        byte[] x = BigIntegers.asUnsignedByteArray(size, d);
+        byte[] m = BigIntegers.asUnsignedByteArray(size, mInt);
+
+        Arrays.fill(K, (byte)0x00);
+        Arrays.fill(V, (byte)0x01);
 
         hMac.init(new KeyParameter(K));
 
@@ -78,26 +70,21 @@ public class HMacDSAKCalculator
         hMac.update(x, 0, x.length);
         hMac.update(m, 0, m.length);
         initAdditionalInput0(hMac);
-
         hMac.doFinal(K, 0);
 
         hMac.init(new KeyParameter(K));
-
         hMac.update(V, 0, V.length);
-
         hMac.doFinal(V, 0);
 
         hMac.update(V, 0, V.length);
         hMac.update((byte)0x01);
         hMac.update(x, 0, x.length);
         hMac.update(m, 0, m.length);
-
+        initAdditionalInput1(hMac);
         hMac.doFinal(K, 0);
 
         hMac.init(new KeyParameter(K));
-
         hMac.update(V, 0, V.length);
-
         hMac.doFinal(V, 0);
     }
 
@@ -112,7 +99,6 @@ public class HMacDSAKCalculator
             while (tOff < t.length)
             {
                 hMac.update(V, 0, V.length);
-
                 hMac.doFinal(V, 0);
 
                 int len = Math.min(t.length - tOff, V.length);
@@ -122,25 +108,24 @@ public class HMacDSAKCalculator
 
             BigInteger k = bitsToInt(t);
 
-            if (k.compareTo(ZERO) > 0 && k.compareTo(n) < 0)
+            if (k.signum() > 0 && k.compareTo(n) < 0)
             {
                 return k;
             }
 
             hMac.update(V, 0, V.length);
             hMac.update((byte)0x00);
-
             hMac.doFinal(K, 0);
 
             hMac.init(new KeyParameter(K));
-
             hMac.update(V, 0, V.length);
-
             hMac.doFinal(V, 0);
         }
     }
 
     /**
+     * Supply additional input to HMAC_K(V || 0x00 || int2octets(x) || bits2octets(h1)).
+     * <p/>
      * RFC 6979 3.6. Additional data may be added to the input of HMAC [..]. A use case may be a protocol that
      * requires a non-deterministic signature algorithm on a system that does not have access to a
      * high-quality random source. It suffices that the additional data [..] is non-repeating (e.g., a
@@ -156,15 +141,27 @@ public class HMacDSAKCalculator
     {
     }
 
+    /**
+     * Supply additional input to HMAC_K(V || 0x01 || int2octets(x) || bits2octets(h1)).
+     * <p/>
+     * Refer to comments for {@link #initAdditionalInput0(HMac)}.
+     *
+     * @param hmac1 the {@link HMac} to which the additional input should be added.
+     */
+    protected void initAdditionalInput1(HMac hmac1)
+    {
+    }
+
     private BigInteger bitsToInt(byte[] t)
     {
-        BigInteger v = new BigInteger(1, t);
+        int blen = t.length * 8;
+        int qlen = n.bitLength();
 
-        if (t.length * 8 > n.bitLength())
+        BigInteger v = BigIntegers.fromUnsignedByteArray(t);
+        if (blen > qlen)
         {
-            v = v.shiftRight(t.length * 8 - n.bitLength());
+            v = v.shiftRight(blen - qlen);
         }
-
         return v;
     }
 }
