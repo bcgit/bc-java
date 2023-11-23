@@ -42,7 +42,7 @@ public class InjectableKEMs {
         InjectableKEMs clone = new InjectableKEMs(this);
         clone.code2kem.put(kemCodePoint, kem);
         if (ordering == Ordering.BEFORE)
-            clone.kemsBefore.add(kemCodePoint);
+            clone.kemsBefore.add(0,kemCodePoint); // adding BEFORE all
         else
             clone.kemsAfter.add(kemCodePoint);
         return clone;

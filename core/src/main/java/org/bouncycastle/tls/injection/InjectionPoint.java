@@ -60,12 +60,14 @@ public class InjectionPoint {
 
     /**
      * Withdraws (pops) the current set of algorithms and restores the previously injected algorithms (if any).
-     *
+     * @param current the currently used injected algorithms (act as a key to withdraw)
      * @throws IllegalStateException if no InjectableAlgorithms have been pushed
      */
-    public synchronized void pop() throws IllegalStateException {
+    public synchronized void pop(InjectableAlgorithms current) throws IllegalStateException {
         if (injectionStack.isEmpty())
             throw new IllegalStateException("No previously injected (pushed) algorithms found.");
+        if (!injectionStack.peek().equals(current))
+            throw new IllegalStateException("The currently used injected (pushed) algorithms do not match the current argument.");
         injectionStack.pop();
     }
 
