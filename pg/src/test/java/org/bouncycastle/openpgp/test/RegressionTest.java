@@ -54,7 +54,8 @@ public class RegressionTest
         new CRC24Test(),
         new WildcardKeyIDTest(),
         new ArmorCRCTest(),
-        new UnknownPacketTest()
+        new UnknownPacketTest(),
+        new ExSExprTest()
     };
 
     public static void main(String[] args)
