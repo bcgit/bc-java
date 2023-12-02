@@ -196,6 +196,10 @@ class OcspCache
                 if (markerRef != null)
                 {
                     responseMap = markerRef.get();
+                }
+
+                if (responseMap != null)
+                {
                     responseMap.put(certID, response);
                 }
                 else
