@@ -270,6 +270,48 @@ public final class BigIntegers
         return Nat.toBigInteger(len, z);
     }
 
+    public static boolean modOddIsCoprime(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'M' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        {
+            X = X.mod(M);
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        return 0 != Mod.modOddIsCoprime(m, x);
+    }
+
+    public static boolean modOddIsCoprimeVar(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'M' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        {
+            X = X.mod(M);
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        return Mod.modOddIsCoprimeVar(m, x);
+    }
+
     public static int getUnsignedByteLength(BigInteger n)
     {
         if (n.equals(ZERO))

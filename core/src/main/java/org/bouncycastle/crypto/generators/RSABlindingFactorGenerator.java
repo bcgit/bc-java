@@ -17,8 +17,7 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class RSABlindingFactorGenerator
 {
-    private static BigInteger ZERO = BigInteger.valueOf(0);
-    private static BigInteger ONE = BigInteger.valueOf(1);
+    private static BigInteger TWO = BigInteger.valueOf(2);
 
     private RSAKeyParameters key;
     private SecureRandom random;
@@ -64,15 +63,13 @@ public class RSABlindingFactorGenerator
 
         BigInteger m = key.getModulus();
         int length = m.bitLength() - 1; // must be less than m.bitLength()
-        BigInteger factor;
-        BigInteger gcd;
 
+        BigInteger factor;
         do
         {
             factor = BigIntegers.createRandomBigInteger(length, random);
-            gcd = factor.gcd(m);
         }
-        while (factor.equals(ZERO) || factor.equals(ONE) || !gcd.equals(ONE));
+        while (factor.compareTo(TWO) < 0 || !BigIntegers.modOddIsCoprime(m, factor));
 
         return factor;
     }

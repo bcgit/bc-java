@@ -142,7 +142,7 @@ public class NaccacheSternKeyPairGenerator
                 }
             }
 
-            if (!sigma.gcd(p_.multiply(q_)).equals(ONE))
+            if (!BigIntegers.modOddIsCoprime(p_.multiply(q_), sigma))
             {
                 // System.out.println("sigma.gcd(p_.mult(q_)) != 1!\n p_: " + p_
                 // +"\n q_: "+ q_ );
