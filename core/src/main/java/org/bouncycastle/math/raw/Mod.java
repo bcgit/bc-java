@@ -114,11 +114,11 @@ public abstract class Mod
         encode30(bits, m, 0, M, 0);
         System.arraycopy(M, 0, F, 0, len30);
 
-        int clzG = Integers.numberOfLeadingZeros(G[len30 - 1] | 1) - (len30 * 30 + 2 - bits);
-        int eta = -1 - clzG;
+        int clz = Math.max(0, bits - 1 - Nat.getBitLength(len32, x));
+        int eta = -1 - clz;
         int lenDE = len30, lenFG = len30;
         int m0Inv32 = inverse32(M[0]);
-        int maxDivsteps = getMaximumDivsteps(bits);
+        int maxDivsteps = getMaximumDivsteps(bits) - clz;
 
         int divsteps = 0;
         while (!Nat.isZero(lenFG, G))
@@ -133,20 +133,7 @@ public abstract class Mod
             eta = divsteps30Var(eta, F[0], G[0], t);
             updateDE30(lenDE, D, E, t, m0Inv32, M);
             updateFG30(lenFG, F, G, t);
-
-            int fn = F[lenFG - 1];
-            int gn = G[lenFG - 1];
-
-            int cond = (lenFG - 2) >> 31;
-            cond |= fn ^ (fn >> 31);
-            cond |= gn ^ (gn >> 31);
-
-            if (cond == 0)
-            {
-                F[lenFG - 2] |= fn << 30;
-                G[lenFG - 2] |= gn << 30;
-                --lenFG;
-            }
+            lenFG = trimFG30(lenFG, F, G);
         }
 
         int signF = F[lenFG - 1] >> 31;
@@ -451,6 +438,29 @@ public abstract class Mod
         c -= D[last];
         D[last] = c; c >>= 30;
         return c;
+    }
+
+    private static int trimFG30(int len30, int[] F, int[] G)
+    {
+//        assert len30 > 0;
+//        assert F.length >= len30;
+//        assert G.length >= len30;
+
+        int fn = F[len30 - 1];
+        int gn = G[len30 - 1];
+
+        int cond = (len30 - 2) >> 31;
+        cond |= fn ^ (fn >> 31);
+        cond |= gn ^ (gn >> 31);
+
+        if (cond == 0)
+        {
+            F[len30 - 2] |= fn << 30;
+            G[len30 - 2] |= gn << 30;
+            --len30;
+        }
+
+        return len30;
     }
 
     private static void updateDE30(int len30, int[] D, int[] E, int[] t, int m0Inv32, int[] M)
