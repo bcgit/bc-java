@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.util.Strings;
 
 public class DefaultSignatureAlgorithmIdentifierFinder
@@ -233,6 +234,12 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         algorithms.put("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
+
+        //Load composite signatures
+        for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers) {
+            algorithms.put(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(oid).toUpperCase(), oid);
+            algorithms.put(oid.toString(), oid);
+        }
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
