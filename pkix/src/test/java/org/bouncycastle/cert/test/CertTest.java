@@ -2513,6 +2513,16 @@ public class CertTest
         {
             fail("CRL entry reasonCode not found");
         }
+
+        crlGen = new X509v2CRLBuilder(crlHolder);
+
+        crlGen.setThisUpdate(new Date(crlHolder.getThisUpdate().getTime() + 50000));
+        crlGen.setNextUpdate(new Date(crlHolder.getNextUpdate().getTime() + 100000));
+
+        X509CRLHolder hldr2 = crlGen.build(new JcaContentSignerBuilder("SHA256withRSAEncryption").setProvider(BC).build(pair.getPrivate()));
+
+        isEquals(hldr2.getThisUpdate().getTime(), crlHolder.getThisUpdate().getTime() + 50000);
+        isEquals(hldr2.getNextUpdate().getTime(), crlHolder.getNextUpdate().getTime() + 100000);
     }
 
     public void checkCRLCreation3()
