@@ -218,7 +218,7 @@ public final class BigIntegers
         {
             throw new ArithmeticException("BigInteger: modulus not positive");
         }
-        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
         {
             X = X.mod(M);
         }
@@ -249,7 +249,7 @@ public final class BigIntegers
         {
             return ZERO;
         }
-        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
         {
             X = X.mod(M);
         }
@@ -280,7 +280,7 @@ public final class BigIntegers
         {
             throw new ArithmeticException("BigInteger: modulus not positive");
         }
-        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
         {
             X = X.mod(M);
         }
@@ -301,9 +301,13 @@ public final class BigIntegers
         {
             throw new ArithmeticException("BigInteger: modulus not positive");
         }
-        if (X.signum() < 0 || X.compareTo(M) >= 0)
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
         {
             X = X.mod(M);
+        }
+        if (X.equals(ONE))
+        {
+            return true;
         }
 
         int bits = M.bitLength();

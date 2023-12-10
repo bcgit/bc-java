@@ -54,7 +54,7 @@ public class RSAKeyParameters
     private static boolean hasAnySmallFactors(BigInteger modulus)
     {
         BigInteger M = modulus, X = SMALL_PRIMES_PRODUCT;
-        if (modulus.compareTo(SMALL_PRIMES_PRODUCT) < 0)
+        if (modulus.bitLength() < SMALL_PRIMES_PRODUCT.bitLength())
         {
             M = SMALL_PRIMES_PRODUCT;
             X = modulus;
