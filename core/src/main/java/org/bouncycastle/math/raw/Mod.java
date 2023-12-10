@@ -4,11 +4,13 @@ import java.util.Random;
 
 import org.bouncycastle.util.Integers;
 
-/*
+/**
  * Modular inversion as implemented in this class is based on the paper "Fast constant-time gcd
  * computation and modular inversion" by Daniel J. Bernstein and Bo-Yin Yang.
+ * <p/>
+ * In some cases (when it is faster) we use the "half delta" variant of safegcd based on
+ * <a href="https://github.com/sipa/safegcd-bounds">hddivsteps</a>.
  */
-
 public abstract class Mod
 {
     private static final int M30 = 0x3FFFFFFF;
@@ -61,17 +63,18 @@ public abstract class Mod
         int[] M = new int[len30];
 
         E[0] = 1;
-        encode30(bits, x, 0, G, 0);
-        encode30(bits, m, 0, M, 0);
+        encode30(bits, x, G);
+        encode30(bits, m, M);
         System.arraycopy(M, 0, F, 0, len30);
 
-        int delta = 0;
+        // We use the "half delta" variant here, with theta == delta - 1/2
+        int theta = 0;
         int m0Inv32 = inverse32(M[0]);
-        int maxDivsteps = getMaximumDivsteps(bits);
+        int maxDivsteps = getMaximumHDDivsteps(bits);
 
         for (int divSteps = 0; divSteps < maxDivsteps; divSteps += 30)
         {
-            delta = divsteps30(delta, F[0], G[0], t);
+            theta = hddivsteps30(theta, F[0], G[0], t);
             updateDE30(len30, D, E, t, m0Inv32, M);
             updateFG30(len30, F, G, t);
         }
@@ -86,7 +89,7 @@ public abstract class Mod
          */
         cnormalize30(len30, signF, D, M);
 
-        decode30(bits, D, 0, z, 0);
+        decode30(bits, D, z);
 //        assert 0 != Nat.lessThan(len32, z, m);
 
         return equalTo(len30, F, 1) & equalTo(len30, G, 0);
@@ -102,6 +105,9 @@ public abstract class Mod
         int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
+        int clz = bits - Nat.getBitLength(len32, x);
+//        assert clz >= 0;
+
         int[] t = new int[4];
         int[] D = new int[len30];
         int[] E = new int[len30];
@@ -110,17 +116,18 @@ public abstract class Mod
         int[] M = new int[len30];
 
         E[0] = 1;
-        encode30(bits, x, 0, G, 0);
-        encode30(bits, m, 0, M, 0);
+        encode30(bits, x, G);
+        encode30(bits, m, M);
         System.arraycopy(M, 0, F, 0, len30);
 
-        int clz = Math.max(0, bits - 1 - Nat.getBitLength(len32, x));
-        int eta = -1 - clz;
+        // We use the original safegcd here, with eta == 1 - delta
+        // For shorter x, configure as if low zeros of x had been shifted away by divsteps
+        int eta = -clz;
         int lenDE = len30, lenFG = len30;
         int m0Inv32 = inverse32(M[0]);
-        int maxDivsteps = getMaximumDivsteps(bits) - clz;
+        int maxDivsteps = getMaximumDivsteps(bits);
 
-        int divsteps = 0;
+        int divsteps = clz;
         while (!equalToVar(lenFG, G, 0))
         {
             if (divsteps >= maxDivsteps)
@@ -166,7 +173,7 @@ public abstract class Mod
         }
 //        assert 0 == signD;
 
-        decode30(bits, D, 0, z, 0);
+        decode30(bits, D, z);
 //        assert !Nat.gte(len32, z, m);
 
         return true;
@@ -187,16 +194,17 @@ public abstract class Mod
         int[] G = new int[len30];
         int[] M = new int[len30];
 
-        encode30(bits, x, 0, G, 0);
-        encode30(bits, m, 0, M, 0);
+        encode30(bits, x, G);
+        encode30(bits, m, M);
         System.arraycopy(M, 0, F, 0, len30);
 
-        int delta = 0;
-        int maxDivsteps = getMaximumDivsteps(bits);
+        // We use the "half delta" variant here, with theta == delta - 1/2
+        int theta = 0;
+        int maxDivsteps = getMaximumHDDivsteps(bits);
 
         for (int divSteps = 0; divSteps < maxDivsteps; divSteps += 30)
         {
-            delta = divsteps30(delta, F[0], G[0], t);
+            theta = hddivsteps30(theta, F[0], G[0], t);
             updateFG30(len30, F, G, t);
         }
 
@@ -216,21 +224,25 @@ public abstract class Mod
         int bits = (len32 << 5) - Integers.numberOfLeadingZeros(m[len32 - 1]);
         int len30 = (bits + 29) / 30;
 
+        int clz = bits - Nat.getBitLength(len32, x);
+//        assert clz >= 0;
+
         int[] t = new int[4];
         int[] F = new int[len30];
         int[] G = new int[len30];
         int[] M = new int[len30];
 
-        encode30(bits, x, 0, G, 0);
-        encode30(bits, m, 0, M, 0);
+        encode30(bits, x, G);
+        encode30(bits, m, M);
         System.arraycopy(M, 0, F, 0, len30);
 
-        int clz = Math.max(0, bits - 1 - Nat.getBitLength(len32, x));
-        int eta = -1 - clz;
+        // We use the original safegcd here, with eta == 1 - delta
+        // For shorter x, configure as if low zeros of x had been shifted away by divsteps
+        int eta = -clz;
         int lenFG = len30;
-        int maxDivsteps = getMaximumDivsteps(bits) - clz;
+        int maxDivsteps = getMaximumDivsteps(bits);
 
-        int divsteps = 0;
+        int divsteps = clz;
         while (!equalToVar(lenFG, G, 0))
         {
             if (divsteps >= maxDivsteps)
@@ -351,7 +363,7 @@ public abstract class Mod
         }
     }
 
-    private static void decode30(int bits, int[] x, int xOff, int[] z, int zOff)
+    private static void decode30(int bits, int[] x, int[] z)
     {
 //        assert bits > 0;
 //        assert x != z;
@@ -359,6 +371,7 @@ public abstract class Mod
         int avail = 0;
         long data = 0L;
 
+        int xOff = 0, zOff = 0;
         while (bits > 0)
         {
             while (avail < Math.min(32, bits))
@@ -371,48 +384,6 @@ public abstract class Mod
             avail -= 32;
             bits -= 32;
         }
-    }
-
-    private static int divsteps30(int delta, int f0, int g0, int[] t)
-    {
-        int u = 1 << 30, v = 0, q = 0, r = 1 << 30;
-        int f = f0, g = g0;
-
-        for (int i = 0; i < 30; ++i)
-        {
-//            assert (f & 1) == 1;
-//            assert ((u >> (30 - i)) * f0 + (v >> (30 - i)) * g0) == f << i;
-//            assert ((q >> (30 - i)) * f0 + (r >> (30 - i)) * g0) == g << i;
-
-            int c1 = delta >> 31;
-            int c2 = -(g & 1);
-
-            int x = f ^ c1;
-            int y = u ^ c1;
-            int z = v ^ c1;
-
-            g -= x & c2;
-            q -= y & c2;
-            r -= z & c2;
-
-            c2 &= ~c1;
-            delta = (delta ^ c2) - (c2 - 1);
-
-            f += g & c2;
-            u += q & c2;
-            v += r & c2;
-
-            g >>= 1;
-            q >>= 1;
-            r >>= 1;
-        }
-
-        t[0] = u;
-        t[1] = v;
-        t[2] = q;
-        t[3] = r;
-
-        return delta;
     }
 
     private static int divsteps30Var(int eta, int f0, int g0, int[] t)
@@ -442,15 +413,15 @@ public abstract class Mod
 //            assert (u * f0 + v * g0) == f << (30 - i);
 //            assert (q * f0 + r * g0) == g << (30 - i);
 
-            if (eta < 0)
+            if (eta <= 0)
             {
-                eta = -eta;
+                eta = 2 - eta;
                 x = f; f = g; g = -x;
                 y = u; u = q; q = -y;
                 z = v; v = r; r = -z;
 
                 // Handle up to 6 divsteps at once, subject to eta and i.
-                limit = (eta + 1) > i ? i : (eta + 1);
+                limit = eta > i ? i : eta;
                 m = (-1 >>> (32 - limit)) & 63;
 
                 w = (f * g * (f * f - 2)) & m;
@@ -458,11 +429,11 @@ public abstract class Mod
             else
             {
                 // Handle up to 4 divsteps at once, subject to eta and i.
-                limit = (eta + 1) > i ? i : (eta + 1);
+                limit = eta > i ? i : eta;
                 m = (-1 >>> (32 - limit)) & 15;
 
                 w = f + (((f + 1) & 4) << 1);
-                w = (-w * g) & m;
+                w = (w * -g) & m;
             }
 
             g += f * w;
@@ -480,7 +451,7 @@ public abstract class Mod
         return eta;
     }
 
-    private static void encode30(int bits, int[] x, int xOff, int[] z, int zOff)
+    private static void encode30(int bits, int[] x, int[] z)
     {
 //        assert bits > 0;
 //        assert x != z;
@@ -488,6 +459,7 @@ public abstract class Mod
         int avail = 0;
         long data = 0L;
 
+        int xOff = 0, zOff = 0;
         while (bits > 0)
         {
             if (avail < Math.min(30, bits))
@@ -528,7 +500,56 @@ public abstract class Mod
 
     private static int getMaximumDivsteps(int bits)
     {
-        return (49 * bits + (bits < 46 ? 80 : 47)) / 17;
+        //return (49 * bits + (bits < 46 ? 80 : 47)) / 17;
+        return (int)((188898L * bits + (bits < 46 ? 308405 : 181188)) >>> 16);
+    }
+
+    private static int getMaximumHDDivsteps(int bits)
+    {
+        //return (int)((45907L * bits + 30179) / 19929);
+        return (int)((150964L * bits + 99243) >>> 16);
+    }
+
+    private static int hddivsteps30(int theta, int f0, int g0, int[] t)
+    {
+        int u = 1 << 30, v = 0, q = 0, r = 1 << 30;
+        int f = f0, g = g0;
+
+        for (int i = 0; i < 30; ++i)
+        {
+//            assert (f & 1) == 1;
+//            assert ((u >> (30 - i)) * f0 + (v >> (30 - i)) * g0) == f << i;
+//            assert ((q >> (30 - i)) * f0 + (r >> (30 - i)) * g0) == g << i;
+
+            int c1 = theta >> 31;
+            int c2 = -(g & 1);
+
+            int x = f ^ c1;
+            int y = u ^ c1;
+            int z = v ^ c1;
+
+            g -= x & c2;
+            q -= y & c2;
+            r -= z & c2;
+
+            int c3 = c2 & ~c1;
+            theta = (theta ^ c3) + 1;
+
+            f += g & c3;
+            u += q & c3;
+            v += r & c3;
+
+            g >>= 1;
+            q >>= 1;
+            r >>= 1;
+        }
+
+        t[0] = u;
+        t[1] = v;
+        t[2] = q;
+        t[3] = r;
+
+        return theta;
     }
 
     private static int negate30(int len30, int[] D)
