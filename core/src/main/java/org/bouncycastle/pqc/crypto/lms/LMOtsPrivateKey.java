@@ -12,7 +12,7 @@ class LMOtsPrivateKey
     private final int q;
     private final byte[] masterSecret;
 
-    public LMOtsPrivateKey(LMOtsParameters parameter, byte[] i, int q, byte[] masterSecret)
+    LMOtsPrivateKey(LMOtsParameters parameter, byte[] i, int q, byte[] masterSecret)
     {
         this.parameter = parameter;
         I = i;

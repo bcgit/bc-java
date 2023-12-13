@@ -17,7 +17,7 @@ public class LMSContext
     private LMSSignedPubKey[] signedPubKeys;
     private volatile Digest digest;
 
-    public LMSContext(LMOtsPrivateKey key, LMSigParameters sigParams, Digest digest, byte[] C, byte[][] path)
+    LMSContext(LMOtsPrivateKey key, LMSigParameters sigParams, Digest digest, byte[] C, byte[][] path)
     {
         this.key = key;
         this.sigParams = sigParams;
@@ -28,7 +28,7 @@ public class LMSContext
         this.signature = null;
     }
 
-    public LMSContext(LMOtsPublicKey publicKey, Object signature, Digest digest)
+    LMSContext(LMOtsPublicKey publicKey, Object signature, Digest digest)
     {
         this.publicKey = publicKey;
         this.signature = signature;
@@ -65,7 +65,7 @@ public class LMSContext
         return key;
     }
 
-    public LMOtsPublicKey getPublicKey()
+    LMOtsPublicKey getPublicKey()
     {
         return publicKey;
     }
