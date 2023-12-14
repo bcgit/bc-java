@@ -286,7 +286,7 @@ public class LMSPrivateKeyParameters
 
     public long getUsagesRemaining()
     {
-        return maxQ - q;
+        return maxQ - getIndex();
     }
 
     public LMSPublicKeyParameters getPublicKey()
