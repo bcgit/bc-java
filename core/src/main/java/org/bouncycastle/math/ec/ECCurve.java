@@ -697,15 +697,6 @@ public abstract class ECCurve
         {
             super(q);
 
-            if (order == null)
-            {
-                throw new NullPointerException("order");
-            }
-            if (cofactor == null)
-            {
-                throw new NullPointerException("cofactor");
-            }
-
             if (isInternal)
             {
                 this.q = q;
@@ -750,15 +741,6 @@ public abstract class ECCurve
         protected Fp(BigInteger q, BigInteger r, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
             super(q);
-
-            if (order == null)
-            {
-                throw new NullPointerException("order");
-            }
-            if (cofactor == null)
-            {
-                throw new NullPointerException("cofactor");
-            }
 
             this.q = q;
             this.r = r;
@@ -1269,15 +1251,6 @@ public abstract class ECCurve
         {
             super(m, k1, k2, k3);
 
-            if (order == null)
-            {
-                throw new NullPointerException("order");
-            }
-            if (cofactor == null)
-            {
-                throw new NullPointerException("cofactor");
-            }
-
             this.m = m;
             this.k1 = k1;
             this.k2 = k2;
@@ -1294,15 +1267,6 @@ public abstract class ECCurve
         protected F2m(int m, int k1, int k2, int k3, ECFieldElement a, ECFieldElement b, BigInteger order, BigInteger cofactor)
         {
             super(m, k1, k2, k3);
-
-            if (order == null)
-            {
-                throw new NullPointerException("order");
-            }
-            if (cofactor == null)
-            {
-                throw new NullPointerException("cofactor");
-            }
 
             this.m = m;
             this.k1 = k1;
