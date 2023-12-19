@@ -51,49 +51,53 @@ public abstract class ASN1TaggedObject
 
     public static ASN1TaggedObject getInstance(Object obj, int tagClass)
     {
-        if (obj == null)
-        {
-            throw new NullPointerException("'obj' cannot be null");
-        }
-
-        ASN1TaggedObject taggedObject = getInstance(obj);
-        if (tagClass != taggedObject.getTagClass())
-        {
-            throw new IllegalArgumentException("unexpected tag in getInstance: " + ASN1Util.getTagText(taggedObject));
-        }
-
-        return taggedObject;
+        return ASN1Util.checkTagClass(checkInstance(obj), tagClass);
     }
 
     public static ASN1TaggedObject getInstance(Object obj, int tagClass, int tagNo)
     {
+        return ASN1Util.checkTag(checkInstance(obj), tagClass, tagNo);
+    }
+
+    public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        return ASN1Util.getExplicitContextBaseTagged(checkInstance(taggedObject, declaredExplicit));
+    }
+
+    public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, int tagClass, boolean declaredExplicit)
+    {
+        return ASN1Util.getExplicitBaseTagged(checkInstance(taggedObject, declaredExplicit), tagClass);
+    }
+
+    public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, int tagClass, int tagNo,
+        boolean declaredExplicit)
+    {
+        return ASN1Util.getExplicitBaseTagged(checkInstance(taggedObject, declaredExplicit), tagClass, tagNo);
+    }
+
+    private static ASN1TaggedObject checkInstance(Object obj)
+    {
         if (obj == null)
         {
             throw new NullPointerException("'obj' cannot be null");
         }
 
-        ASN1TaggedObject taggedObject = getInstance(obj);
-        if (!taggedObject.hasTag(tagClass, tagNo))
+        return getInstance(obj);
+    }
+
+    private static ASN1TaggedObject checkInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
+    {
+        if (!declaredExplicit)
         {
-            throw new IllegalArgumentException("unexpected tag in getInstance: " + ASN1Util.getTagText(taggedObject));
+            throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
+        }
+
+        if (taggedObject == null)
+        {
+            throw new NullPointerException("'taggedObject' cannot be null");
         }
 
         return taggedObject;
-    }
-
-    public static ASN1TaggedObject getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
-    {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        if (declaredExplicit)
-        {
-            return taggedObject.getExplicitBaseTagged();
-        }
-
-        throw new IllegalArgumentException("this method not valid for implicitly tagged tagged objects");
     }
 
     final int           explicitness;
