@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.DilithiumPrivateKey;
@@ -54,7 +53,7 @@ public class BCDilithiumPrivateKey
     }
 
     /**
-     * Compare this SPHINCS-256 private key with another object.
+     * Compare this Dilithium private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
