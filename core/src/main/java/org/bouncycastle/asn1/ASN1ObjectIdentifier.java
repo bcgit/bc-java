@@ -80,7 +80,7 @@ public class ASN1ObjectIdentifier
          * 
          * - see https://github.com/bcgit/bc-java/issues/1015
          */
-        if (!explicit && !taggedObject.isParsed() && BERTags.CONTEXT_SPECIFIC == taggedObject.getTagClass())
+        if (!explicit && !taggedObject.isParsed() && taggedObject.hasContextTag())
         {
             ASN1Primitive base = taggedObject.getBaseObject().toASN1Primitive();
             if (!(base instanceof ASN1ObjectIdentifier))
