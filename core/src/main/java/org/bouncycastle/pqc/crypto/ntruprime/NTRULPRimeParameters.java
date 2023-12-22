@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.ntruprime;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.KEMParameters;
 
 /**
@@ -11,19 +10,19 @@ public class NTRULPRimeParameters
 {
     public static final NTRULPRimeParameters ntrulpr653 = new NTRULPRimeParameters("ntrulpr653", 653, 4621, 252, 289,
         2175, 113, 2031, 290,
-        865, 897, 1125, 16);
+        865, 897, 1125, 32);
     public static final NTRULPRimeParameters ntrulpr761 = new NTRULPRimeParameters("ntrulpr761", 761, 4591, 250, 292,
         2156, 114, 2007, 287,
-        1007, 1039, 1294, 16);
+        1007, 1039, 1294, 32);
     public static final NTRULPRimeParameters ntrulpr857 = new NTRULPRimeParameters("ntrulpr857", 857, 5167, 281, 329,
         2433, 101, 2265, 324,
-        1152, 1184, 1463, 16);
+        1152, 1184, 1463, 32);
     public static final NTRULPRimeParameters ntrulpr953 = new NTRULPRimeParameters("ntrulpr953", 953, 6343, 345, 404,
         2997, 82, 2798, 400,
-        1317, 1349, 1652, 24);
+        1317, 1349, 1652, 32);
     public static final NTRULPRimeParameters ntrulpr1013 = new NTRULPRimeParameters("ntrulpr1013", 1013, 7177, 392, 450,
         3367, 73, 3143, 449,
-        1423, 1455, 1773, 24);
+        1423, 1455, 1773, 32);
     public static final NTRULPRimeParameters ntrulpr1277 = new NTRULPRimeParameters("ntrulpr1277", 1277, 7879, 429, 502,
         3724, 66, 3469, 496,
         1815, 1847, 2231, 32);
