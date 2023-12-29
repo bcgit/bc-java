@@ -6,6 +6,8 @@ import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 
@@ -43,13 +45,24 @@ public class PrivateMessage
             throws IOException, IllegalAccessException, InvalidCipherTextException
     {
         // Get KeyGeneration from the secret tree
-        int index = auth.content.sender.node_index;
+        LeafIndex index = auth.content.sender.sender;
         ContentType contentType = auth.content.contentType;
         byte[] reuseGuard = new byte[4];
-        KeyGeneration keyGen = keys.get(contentType, new LeafIndex(index), reuseGuard);
+//        reuseGuard = Hex.decode("b1471132");
+        KeyGeneration keyGen = keys.get(contentType, index, reuseGuard);
+
+
+//        System.out.println("keyGen key: " + Hex.toHexString(keyGen.key));
+//        System.out.println("keyGen nonce: " + Hex.toHexString(keyGen.nonce));
 
         // Encrypt the content
         byte[] contentPt = serializeContentPt(auth.content, auth.auth, paddingSize);
+        if (contentPt.length < 512)
+        {
+            contentPt = Arrays.concatenate(contentPt, new byte[512 - contentPt.length]);//TODO CHECK
+        }
+//        System.out.println("serialized_private_content: " + Hex.toHexString(contentPt));
+
         PrivateContentAAD contentAAD = new PrivateContentAAD(
                 auth.content.group_id,
                 auth.content.epoch,
@@ -63,9 +76,11 @@ public class PrivateMessage
                 MLSOutputStream.encode(contentAAD),
                 contentPt
         );
+//        System.out.println("keyGen key: " + Hex.toHexString(keyGen.key));
+//        System.out.println("keyGen nonce: " + Hex.toHexString(keyGen.nonce));
 
         // Encrypt the sender data
-        int senderIndex = auth.content.sender.node_index;
+        LeafIndex senderIndex = auth.content.sender.sender;
         SenderData senderDataPt = new SenderData(
                 senderIndex,
                 keyGen.generation,
@@ -78,12 +93,16 @@ public class PrivateMessage
         );
 
         KeyGeneration senderDataKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), contentCt);
+//        System.out.println("contentCt: " + Hex.toHexString(contentCt));
+//        System.out.println("sender key: " + Hex.toHexString(senderDataKeys.key));
+//        System.out.println("sender nonce: " + Hex.toHexString(senderDataKeys.nonce));
         byte[] senderDataCt = suite.getAEAD().seal(
                 senderDataKeys.key,
                 senderDataKeys.nonce,
                 MLSOutputStream.encode(senderDataAAD),
                 MLSOutputStream.encode(senderDataPt)
         );
+//        System.out.println("enc sender data: " + Hex.toHexString(senderDataCt));
 
 
         return new PrivateMessage(
@@ -91,18 +110,25 @@ public class PrivateMessage
                 auth.content.epoch,
                 auth.content.contentType,
                 auth.content.authenticated_data,
-                senderDataCt,
-                contentCt
+                senderDataCt.clone(),
+                contentCt.clone()
         );
     }
     //TODO: change senderDataSecretBytes to Secret class?
     public AuthenticatedContent unprotect(CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
     {
+//        System.out.println("\n~~~ Open ~~~");
         // Decrypt and parse the sender data
 
-        KeyGeneration senderKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), ciphertext);
+        KeyGeneration senderKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), ciphertext.clone());
 
         SenderDataAAD senderDataAAD = new SenderDataAAD(group_id, epoch, content_type);
+
+//        System.out.println("senderDataAAD: " + Hex.toHexString(MLSOutputStream.encode(senderDataAAD)));
+
+//        System.out.println("sender key: " + Hex.toHexString(senderKeys.key));
+//        System.out.println("sender nonce: " + Hex.toHexString(senderKeys.nonce));
+
         byte[] senderDataPt = suite.getAEAD().open(
                 senderKeys.key,
                 senderKeys.nonce,
@@ -111,6 +137,8 @@ public class PrivateMessage
         );
 
         SenderData senderData = (SenderData) MLSInputStream.decode(senderDataPt, SenderData.class);
+
+        //Cannot Process Message from self!
         if (!keys.hasLeaf(senderData.sender))
         {
             return null;
@@ -134,7 +162,7 @@ public class PrivateMessage
         FramedContent content = new FramedContent(
                 group_id,
                 epoch,
-                new Sender(SenderType.MEMBER, (int)senderData.sender.value()),
+                Sender.forMember(senderData.sender),
                 authenticated_data,
                 null,
                 content_type,
@@ -220,7 +248,7 @@ public class PrivateMessage
                 break;
         }
         //TODO: write padding;
-//        stream.write(new byte[paddingSize]);
-        return stream.toByteArray();
+        return Arrays.concatenate(stream.toByteArray(), new byte[paddingSize]);
+//        return stream.toByteArray();
     }
 }

@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.hpke.AEAD;
 import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;
@@ -40,6 +41,16 @@ public class CipherSuite {
     public static final short MLS_256_DHKEMP521_AES256GCM_SHA512_P521  = 0x0005 ;
     public static final short MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448  = 0x0006 ;
     public static final short MLS_256_DHKEMP384_AES256GCM_SHA384_P384  = 0x0007 ;
+
+    public static final short[] ALL_SUPPORTED_SUITES = {
+            MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519,
+            MLS_128_DHKEMP256_AES128GCM_SHA256_P256,
+            MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
+            MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
+            MLS_256_DHKEMP521_AES256GCM_SHA512_P521,
+            MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448,
+//            MLS_256_DHKEMP384_AES256GCM_SHA384_P384, TODO disabled for mlspp
+    };
 
     public interface KDF {
         int getHashLength();
@@ -197,6 +208,8 @@ public class CipherSuite {
         }
         public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct) throws InvalidCipherTextException
         {
+//            org.bouncycastle.crypto.hpke.AEAD cipher = new org.bouncycastle.crypto.hpke.AEAD(aeadId,key,nonce);
+//            return cipher.open(aad, ct);
             CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
             cipher.init(false, params);
             if(aad != null)
@@ -212,6 +225,8 @@ public class CipherSuite {
         }
         public byte[] seal(byte[] key, byte[] nonce, byte[] aad, byte[] pt) throws InvalidCipherTextException
         {
+//            org.bouncycastle.crypto.hpke.AEAD cipher = new org.bouncycastle.crypto.hpke.AEAD(aeadId,key,nonce);
+//            return cipher.seal(aad, pt);
             CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
             cipher.init(true, params);
             cipher.processAADBytes(aad, 0, aad.length);
@@ -401,6 +416,7 @@ public class CipherSuite {
     }
     public byte[] serializeSignaturePrivateKey(AsymmetricKeyParameter key)
     {
+
         switch (sigAlgo)
         {
             case ecdsa:
@@ -450,6 +466,7 @@ public class CipherSuite {
 
     public byte[] signWithLabel(byte[] priv, String label, byte[] content) throws IOException, CryptoException
     {
+        System.out.println("!tbs: " + Hex.toHexString(content));
         GenericContent signContent = new GenericContent(label, content);
         byte[] signContentBytes = MLSOutputStream.encode(signContent);
         switch (sigAlgo)
@@ -471,6 +488,7 @@ public class CipherSuite {
     }
     public boolean verifyWithLabel(byte[] pub, String label, byte[] content, byte[] signature) throws IOException
     {
+//        System.out.println(Hex.toHexString(content));
         GenericContent signContent = new GenericContent(label, content);
         byte[] signContentBytes = MLSOutputStream.encode(signContent);
         switch (sigAlgo)

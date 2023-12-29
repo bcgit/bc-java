@@ -1,17 +1,39 @@
 package org.bouncycastle.mls.codec;
 
+import io.grpc.stub.StreamObserver;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
+
 import java.io.IOException;
 
 public class Sender
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     public SenderType senderType;
-    public int node_index; // leaf or sender
+    public LeafIndex sender;
+    public int sender_index;
 
-    public Sender(SenderType senderType, int node_index)
+    public static Sender forNewMemberCommit()
+    {
+        return new Sender(SenderType.NEW_MEMBER_COMMIT, null, -1);
+    }
+    public static Sender forNewMemberProposal()
+    {
+        return new Sender(SenderType.NEW_MEMBER_PROPOSAL, null, -1);
+    }
+    public static Sender forMember(LeafIndex sender)
+    {
+        return new Sender(SenderType.MEMBER, sender, -1);
+    }
+    public static Sender forExternal(int senderIndex)
+    {
+        return new Sender(SenderType.MEMBER, null, senderIndex);
+    }
+
+    public Sender(SenderType senderType, LeafIndex sender, int sender_index)
     {
         this.senderType = senderType;
-        this.node_index = node_index;
+        this.sender = sender;
+        this.sender_index = sender_index;
     }
 
     public Sender(MLSInputStream stream) throws IOException
@@ -21,8 +43,10 @@ public class Sender
         {
 
             case MEMBER:
+                sender = (LeafIndex) stream.read(LeafIndex.class);
+                break;
             case EXTERNAL:
-                node_index = (int) stream.read(int.class);
+                sender_index = (int) stream.read(int.class);
                 break;
             case NEW_MEMBER_PROPOSAL:
             case NEW_MEMBER_COMMIT:
@@ -37,8 +61,10 @@ public class Sender
         switch (senderType)
         {
             case MEMBER:
+                stream.write(sender);
+                break;
             case EXTERNAL:
-                stream.write(node_index);
+                stream.write(sender_index);
                 break;
             case NEW_MEMBER_PROPOSAL:
             case NEW_MEMBER_COMMIT:

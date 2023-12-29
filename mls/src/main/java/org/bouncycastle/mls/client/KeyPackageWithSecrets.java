@@ -4,10 +4,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.codec.KeyPackage;
 
 public class KeyPackageWithSecrets {
-    AsymmetricCipherKeyPair initKeyPair; // HPKE key pair
-    AsymmetricCipherKeyPair encryptionKeyPair; // HPKE key pair
-    AsymmetricCipherKeyPair signatureKeyPair; // sig key pair
-    KeyPackage keyPackage;
+    public AsymmetricCipherKeyPair initKeyPair; // HPKE key pair
+    public AsymmetricCipherKeyPair encryptionKeyPair; // HPKE key pair
+    public AsymmetricCipherKeyPair signatureKeyPair; // sig key pair
+    public KeyPackage keyPackage;
 
     public KeyPackageWithSecrets(AsymmetricCipherKeyPair initKeyPair, AsymmetricCipherKeyPair encryptionKeyPair, AsymmetricCipherKeyPair signatureKeyPair, KeyPackage keyPackage)
     {

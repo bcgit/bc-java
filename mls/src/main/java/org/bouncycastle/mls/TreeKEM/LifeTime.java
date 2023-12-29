@@ -19,7 +19,8 @@ public class LifeTime
     public LifeTime()
     {
         //TODO: should be Long.MAX_VALUE but this might interfere up testing with test vectors using unsigned long
-        this(Long.MIN_VALUE, 0xffffffffffffffffL);
+        this.not_before = System.currentTimeMillis() / 1000L;
+        this.not_after = not_before + 31536000; // one year
     }
 
     public LifeTime(long not_before, long not_after)

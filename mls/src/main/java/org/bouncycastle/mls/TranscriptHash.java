@@ -23,12 +23,21 @@ public class TranscriptHash
     public TranscriptHash(CipherSuite suite)
     {
         this.suite = suite;
+        confirmed = new byte[0];
     }
+
     public TranscriptHash(CipherSuite suite, byte[] confirmed, byte[] interim)
     {
         this.suite = suite;
-        this.confirmed = confirmed.clone();
-        this.interim = interim.clone();
+        this.confirmed = confirmed;
+        this.interim = interim;
+    }
+
+    static public TranscriptHash fromConfirmationTag(CipherSuite suite, byte[] confirmed, byte[] confirmationTag) throws IOException
+    {
+        TranscriptHash out = new TranscriptHash(suite, confirmed.clone(), new byte[0]);
+        out.updateInterim(confirmationTag);
+        return out;
     }
     public TranscriptHash copy()
     {
@@ -44,6 +53,7 @@ public class TranscriptHash
     public void updateConfirmed(AuthenticatedContent auth) throws IOException
     {
         byte[] transcript = Arrays.concatenate(interim, auth.getConfirmedTranscriptHashInput());
+        System.out.println("transcript: " + Hex.toHexString(transcript));
         confirmed = suite.hash(transcript);
     }
     public void updateInterim(AuthenticatedContent auth) throws IOException

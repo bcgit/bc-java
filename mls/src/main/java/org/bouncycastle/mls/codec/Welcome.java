@@ -24,28 +24,44 @@ public class Welcome
     //
     private Secret joinerSecret;
     private List<PreSharedKeyID> psks;
+    //TODO DELETE TEST
+//    public static ArrayList<byte[]> TESTWELCOME = new ArrayList<>(java.util.Arrays.asList(
+//            Hex.decode("6dc8e6518f07a8ff73c37006264393e780ad3bae0271adad4e7afeaca9d0d87b"),
+//            Hex.decode("6b512c0c59ec6b3f4d03608de8f93b08c7afe4cbe95e989e4d81cc81379e34bd2eadbc0cd4f7ef5d38e9e76f8a0666d18803d4")
+//    ));
 
-
-    public Welcome(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] encrypted_group_info)
+    public Welcome(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo) throws IOException, InvalidCipherTextException
     {
-//        this.cipher_suite = suite.getSuiteId();
-//        this.suite = suite;
-//        // Cache the list of PSK IDs
-//        for (KeyScheduleEpoch.PSKWithSecret psk : psks)
-//        {
-//            //TODO::
-//        }
-//
-//        this.secrets = secrets;
-//        this.encrypted_group_info = encrypted_group_info;
+        this.cipher_suite = suite.getSuiteId();
+        this.suite = suite;
+        this.joinerSecret = new Secret(joinerSecret);
+        // Cache the list of PSK IDs
+        this.psks = new ArrayList<>();
+        for (KeyScheduleEpoch.PSKWithSecret psk : psks)
+        {
+            this.psks.add(psk.id);
+        }
+
+        // Pre-encrypt the GroupInfo
+        KeyGeneration keyGen = getGroupInfoKeyNonce(joinerSecret, psks);
+        this.encrypted_group_info = suite.getAEAD().seal(
+                keyGen.key,
+                keyGen.nonce,
+                new byte[0], //TODO Check if aad is needed!
+                groupInfo
+        );
+
+        this.secrets = new ArrayList<>();
     }
 
     public int find(KeyPackage kp) throws IOException
     {
 
         byte[] ref = suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference");
+//        System.out.println("keypackage ref: " +Hex.toHexString(ref));
         for (int i = 0; i < secrets.size(); i++)
         {
+//            System.out.println("secrets[" + i + "]: " +Hex.toHexString(secrets.get(i).new_member));
             if(Arrays.equals(ref, secrets.get(i).new_member))
             {
                 return i;
@@ -56,12 +72,19 @@ public class Welcome
 
     public void encrypt(KeyPackage kp, Secret pathSecret) throws IOException, InvalidCipherTextException
     {
-        GroupSecrets gs = new GroupSecrets(joinerSecret.value(), new PathSecret(pathSecret.value()), psks);
 
+        GroupSecrets gs = new GroupSecrets(joinerSecret.value(), null, psks);
+        if (pathSecret != null)
+        {
+            gs.path_secret = new PathSecret(pathSecret.value());
+        }
         byte[] gsBytes = MLSOutputStream.encode(gs);
         //todo: get rid of new suite
         CipherSuite suite = new CipherSuite(kp.cipher_suite);
         byte[][] ctAndEnc = suite.encryptWithLabel(kp.init_key, "Welcome", encrypted_group_info, gsBytes);
+        //TODO DELETE TEST
+//        ctAndEnc[1] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
+//        ctAndEnc[0] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
         secrets.add(
                 new EncryptedGroupSecrets(
                     suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference"),
@@ -72,16 +95,16 @@ public class Welcome
 
     public GroupInfo decrypt(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException, InvalidCipherTextException
     {
-        KeyGeneration keyAndNonce = getGroupInforKeyNonce(joinerSecret, psks);
+        KeyGeneration keyAndNonce = getGroupInfoKeyNonce(joinerSecret, psks);
         byte[] groupInfoData = suite.getAEAD().open(
                 keyAndNonce.key,
                 keyAndNonce.nonce,
-                null,
+                new byte[0],
                 encrypted_group_info);
         return (GroupInfo) MLSInputStream.decode(groupInfoData, GroupInfo.class);
     }
 
-    private KeyGeneration getGroupInforKeyNonce(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException
+    private KeyGeneration getGroupInfoKeyNonce(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException
     {
         Secret welcomeSecret = KeyScheduleEpoch.welcomeSecret(suite, joinerSecret, psks);
         Secret key = welcomeSecret.expandWithLabel(suite, "key", new byte[0], suite.getAEAD().getKeySize());

@@ -2,6 +2,7 @@ package org.bouncycastle.mls.client;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.codec.Proposal;
+import org.bouncycastle.mls.codec.Sender;
 import org.bouncycastle.util.Arrays;
 
 public class CachedProposal

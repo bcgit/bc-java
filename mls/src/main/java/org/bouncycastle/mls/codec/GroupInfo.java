@@ -5,6 +5,7 @@ import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,6 +87,8 @@ public class GroupInfo
         }
 
         signer = signerIndex;
+        System.out.println("signer: " + signerIndex.value());
+
         signature = tree.suite.signWithLabel(tree.suite.serializeSignaturePrivateKey(sk.getPrivate()), "GroupInfoTBS", toBeSigned());
     }
 }

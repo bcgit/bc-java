@@ -9,6 +9,7 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -120,18 +121,18 @@ public class KeyScheduleEpoch {
                     joiner_secret
 
         */
-        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException
-        {
-            Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
-            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
-            return new JoinSecrets(suite, joinerSecret, psks);
-        }
-        // todo change to
-//        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, Secret pskSecret, byte[] context) throws IOException {
+//        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException
+//        {
 //            Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
-//            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite,"joiner", context, suite.getKDF().getHashLength());
-//            return new JoinSecrets(suite, joinerSecret, pskSecret);
+//            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
+//            return new JoinSecrets(suite, joinerSecret, psks);
 //        }
+        // todo change to
+        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, Secret pskSecret, byte[] context) throws IOException {
+            Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
+            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite,"joiner", context, suite.getKDF().getHashLength());
+            return new JoinSecrets(suite, joinerSecret, pskSecret);
+        }
 
         /*
                      joiner_secret
@@ -181,7 +182,9 @@ psk_secret (or 0) --> KDF.Extract
 
 
         public KeyScheduleEpoch complete(TreeSize treeSize, byte[] context) throws IOException, IllegalAccessException {
+//            memberSecret = new Secret(suite.getKDF().extract(joinerSecret.value(), pskSecret(suite, null).value()));
             Secret epochSecret = memberSecret.expandWithLabel(suite, "epoch", context, suite.getKDF().getHashLength());
+            System.out.println("epochSecret: " + Hex.toHexString(epochSecret.value()));
             KeyScheduleEpoch keySchedule = new KeyScheduleEpoch(suite, treeSize, epochSecret);
             keySchedule.setJoinerSecret(joinerSecret);
             return keySchedule;
@@ -189,8 +192,8 @@ psk_secret (or 0) --> KDF.Extract
     }
 
     public static class ExternalInitParams {
-        final byte[] kemOutput;
-        final Secret initSecret;
+        public byte[] kemOutput;
+        public Secret initSecret;
 
         public ExternalInitParams(CipherSuite suite, AsymmetricKeyParameter externalPub) {
             final byte[] exportContext = "MLS 1.0 external init secret".getBytes(StandardCharsets.UTF_8);
@@ -229,8 +232,8 @@ psk_secret (or 0) --> KDF.Extract
 
     // Further dervied products
     final AsymmetricCipherKeyPair externalKeyPair;
-    final GroupKeySet groupKeySet;
-    Secret joinerSecret;
+    public final GroupKeySet groupKeySet;
+    public Secret joinerSecret;
 
     public Secret getJoinerSecret()
     {
@@ -266,13 +269,22 @@ psk_secret (or 0) --> KDF.Extract
         Secret extract = new Secret(suite.getKDF().extract(joinerSecret, pskSecret.value()));
         return extract.deriveSecret(suite, "welcome");
     }
+    public static KeyScheduleEpoch forCreatorTEST(CipherSuite suite, byte[] groupContext, byte[] initSecret) throws IOException, IllegalAccessException
+    {
+        JoinSecrets joinerSecret = JoinSecrets.forMember(suite, new Secret(initSecret), Secret.zero(suite), new Secret(new byte[0]), groupContext);
+        TreeSize size = TreeSize.forLeaves(1);
+        return joinerSecret.complete(size, groupContext);
+//        return KeyScheduleEpoch.joiner(suite, joinerSecret.joinerSecret.value(), new ArrayList<>(), groupContext);
+    }
     public static KeyScheduleEpoch forCreator(CipherSuite suite, byte[] groupContext) throws IOException, IllegalAccessException
     {
         SecureRandom random = new SecureRandom();
         byte[] initSecret = new byte[suite.getKDF().getHashLength()];
         random.nextBytes(initSecret);
 
-        JoinSecrets joinerSecret = JoinSecrets.forMember(suite, new Secret(initSecret), Secret.zero(suite), new ArrayList<>(), groupContext);
+        JoinSecrets joinerSecret = JoinSecrets.forMember(suite, new Secret(initSecret), Secret.zero(suite), new Secret(new byte[0]), groupContext);
+//        TreeSize size = TreeSize.forLeaves(1);
+//        return joinerSecret.complete(size, groupContext);
         return KeyScheduleEpoch.joiner(suite, joinerSecret.joinerSecret.value(), new ArrayList<>(), groupContext);
     }
     public static KeyScheduleEpoch forCreator(CipherSuite suite) throws IOException, IllegalAccessException {
@@ -293,11 +305,11 @@ psk_secret (or 0) --> KDF.Extract
 //    }
 
     public static KeyScheduleEpoch forExternalJoiner(CipherSuite suite, TreeSize treeSize, ExternalInitParams externalInitParams, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException {
-        return JoinSecrets.forMember(suite, externalInitParams.initSecret, commitSecret, psks, context).complete(treeSize, context);
+        return JoinSecrets.forMember(suite, externalInitParams.initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context).complete(treeSize, context); //TODO external: pskSecret OR new byte [0]
     }
 
     public JoinSecrets startCommit(Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException {
-        return JoinSecrets.forMember(suite, initSecret, commitSecret, psks, context);
+        return JoinSecrets.forMember(suite, initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context);//TODO: pskSecret OR new byte [0]
     }
 
     /*
@@ -317,8 +329,32 @@ psk_secret (or 0) --> KDF.Extract
 
     public byte[] confirmationTag(byte[] confirmedTranscriptHash)
     {
+        System.out.println("confirmationKey: " + Hex.toHexString(confirmationKey.value()));
         return suite.getKDF().extract(confirmationKey.value(), confirmedTranscriptHash);
     }
+
+    public KeyScheduleEpoch(CipherSuite suite, Secret initSecret, Secret senderDataSecret, Secret exporterSecret, Secret confirmationKey, Secret membershipKey, Secret resumptionPSK, Secret epochAuthenticator, Secret encryptionSecret, Secret externalSecret, AsymmetricCipherKeyPair externalKeyPair, GroupKeySet groupKeySet, Secret joinerSecret)
+    {
+        this.suite = suite;
+        this.initSecret = new Secret(initSecret.value());
+        this.senderDataSecret = new Secret(senderDataSecret.value());
+        this.exporterSecret = new Secret(exporterSecret.value());
+        this.confirmationKey = new Secret(confirmationKey.value());
+        this.membershipKey = new Secret(membershipKey.value());
+        this.resumptionPSK = new Secret(resumptionPSK.value());
+        this.epochAuthenticator = new Secret(epochAuthenticator.value());
+        this.encryptionSecret = new Secret(encryptionSecret.value());
+        this.externalSecret = new Secret(externalSecret.value());
+        this.externalKeyPair = externalKeyPair;
+        this.groupKeySet = groupKeySet;
+        this.joinerSecret = new Secret(joinerSecret.value());
+    }
+
+    public KeyScheduleEpoch copy()
+    {
+        return new KeyScheduleEpoch(suite, initSecret, senderDataSecret, exporterSecret, confirmationKey, membershipKey, resumptionPSK, epochAuthenticator, encryptionSecret, externalSecret, externalKeyPair, groupKeySet, joinerSecret);
+    }
+
     public static KeyScheduleEpoch joiner(CipherSuite suite, byte[] joinerSecret, List<PSKWithSecret> psks, byte[] context) throws IOException, IllegalAccessException
     {
         TreeSize size = TreeSize.forLeaves(1);
@@ -328,19 +364,19 @@ psk_secret (or 0) --> KDF.Extract
     }
 
     // ONLY USED BY EXTERNAL JOINER
-    public KeyScheduleEpoch(CipherSuite suite)
+    public KeyScheduleEpoch(CipherSuite suite) throws IOException, IllegalAccessException
     {
         this.suite = suite;
-        this.initSecret = null;
-        this.senderDataSecret = null;
-        this.exporterSecret = null;
+        this.initSecret = new Secret(new byte[0]);
+        this.senderDataSecret = new Secret(new byte[0]);
+        this.exporterSecret = new Secret(new byte[0]);
         this.confirmationKey = null;
-        this.membershipKey = null;
-        this.resumptionPSK = null;
-        this.epochAuthenticator =null;
-        this.externalSecret = null;
-        this.externalKeyPair =null;
-        this.encryptionSecret = null;
+        this.membershipKey = new Secret(new byte[0]);
+        this.resumptionPSK = new Secret(new byte[0]);
+        this.epochAuthenticator = new Secret(new byte[0]);
+        this.externalSecret = new Secret(new byte[0]);
+        this.externalKeyPair = null;
+        this.encryptionSecret = new Secret(new byte[0]);
         this.groupKeySet = null;
     }
     public KeyScheduleEpoch(CipherSuite suite, TreeSize treeSize, Secret epochSecret) throws IOException, IllegalAccessException {
@@ -425,7 +461,7 @@ psk_secret (or 0) --> KDF.Extract
             currInitSecret = new Secret(externalInit);
         }
 
-        JoinSecrets joinSecrets = JoinSecrets.forMember(suite, currInitSecret, commitSecret, psks, context);
+        JoinSecrets joinSecrets = JoinSecrets.forMember(suite, currInitSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context);
         return joinSecrets.complete(treeSize, context);
     }
 

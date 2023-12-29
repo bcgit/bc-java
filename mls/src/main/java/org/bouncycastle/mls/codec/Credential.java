@@ -55,7 +55,14 @@ public class Credential
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.write(credentialType);
+        if (Grease.isGrease(credentialType.value) == -1)
+        {
+            stream.write(credentialType);
+        }
+        else
+        {
+            //TODO: check if we write grease values or not
+        }
         switch (credentialType)
         {
             case basic:

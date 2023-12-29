@@ -3,6 +3,7 @@ package org.bouncycastle.mls.TreeKEM;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.TreeSize;
+import org.bouncycastle.mls.client.Group;
 import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
@@ -177,7 +178,7 @@ public class TreeKEMPublicKey
     }
 
     //TODO: include leaf node options
-    public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv) throws Exception
+    public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv, Group.LeafNodeOptions options) throws Exception
     {
         // Grab information about the sender
         OptionalNode leafNode = nodeAt(from);
@@ -210,7 +211,7 @@ public class TreeKEMPublicKey
         }
 
         byte[] leafPub = suite.getHPKE().serializePublicKey(priv.setPrivateKey(new NodeIndex(from), false).getPublic());
-        LeafNode newLeaf = leafNode.getLeafNode().forCommit(suite, groupId, from, leafPub, ph0, sigPriv);
+        LeafNode newLeaf = leafNode.getLeafNode().forCommit(suite, groupId, from, leafPub, ph0, options, sigPriv);
 
         // Merge the changes into the tree
         merge(from, new UpdatePath(newLeaf, pathNodes));
@@ -218,6 +219,11 @@ public class TreeKEMPublicKey
         return priv;
     }
 
+    //TODO DELETE TEST
+//    public static ArrayList<byte[]> TESTWELCOME = new ArrayList<>(java.util.Arrays.asList(
+//            Hex.decode("779987ce2dc496581cb584e481d7a41c443fbded501cd7e560c05c74850f955b"),
+//            Hex.decode("e0250957f8ad31d90172521c680348c2a00bf6fa10a83c27089b6e520056798a595c9bfd13568c6bb48e3b54e897350d")
+//    ));
     public UpdatePath encap(TreeKEMPrivateKey priv, byte[] context, List<LeafIndex> except) throws IOException, InvalidCipherTextException
     {
         FilteredDirectPath dp = getFilteredDirectPath(new NodeIndex(priv.index));
@@ -236,6 +242,9 @@ public class TreeKEMPublicKey
             {
                 byte[] nodePub = nodeAt(nr).node.getPublicKey();
                 byte[][] ctAndEnc = suite.encryptWithLabel(nodePub, "UpdatePathNode", context, pathSecret.value());
+                //TODO DELETE TEST
+//                ctAndEnc[1] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
+//                ctAndEnc[0] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
                 HPKECiphertext ct = new HPKECiphertext(ctAndEnc[1], ctAndEnc[0]);
                 cts.add(ct);
             }
@@ -394,6 +403,29 @@ public class TreeKEMPublicKey
 
         l.addAll(r);
         return l;
+    }
+
+    public LeafIndex allocateLeaf()
+    {
+        LeafIndex index = new LeafIndex(0);
+        while (index.value < size.leafCount() && !nodeAt(index).isBlank())
+        {
+            index.value++;
+        }
+
+        // Update tree size
+        if (index.value >= size.leafCount())
+        {
+            if (size.leafCount() == 0)
+            {
+                size = TreeSize.forLeaves(1);
+            }
+            else
+            {
+                size = TreeSize.forLeaves(size.leafCount() * 2);
+            }
+        }
+        return index;
     }
     public LeafIndex addLeaf(LeafNode leaf)
     {

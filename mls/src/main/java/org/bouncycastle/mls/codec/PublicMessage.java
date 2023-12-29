@@ -9,7 +9,7 @@ import java.io.IOException;
 public class PublicMessage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    FramedContent content;
+    public FramedContent content;
     FramedContentAuthData auth;
     byte[] membership_tag;
 
@@ -61,7 +61,6 @@ public class PublicMessage
         this.auth = auth;
         switch (content.sender.senderType)
         {
-
             case RESERVED:
             case NEW_MEMBER_COMMIT:
             case EXTERNAL:

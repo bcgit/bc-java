@@ -17,12 +17,36 @@ public class Extension
         this.extensionType = extensionType;
         this.extension_data = extension_data;
     }
+    public Extension(int extensionType, byte[] extension_data)
+    {
+        short extType = (short) extensionType;
+        if (Grease.isGrease(extType) == -1)
+        {
+            this.extensionType = ExtensionType.values()[extType];
+        }
+        else
+        {
+            this.extensionType = ExtensionType.values()[6 + Grease.isGrease(extType)];
+        }
+        this.extension_data = extension_data;
+    }
 
     static public Extension externalSender(List<ExternalSender> list) throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.writeList(list);
         return new Extension(ExtensionType.EXTERNAL_SENDERS, stream.toByteArray());
+    }
+
+    public byte[] getExternalPub() throws IOException
+    {
+        if (extensionType == ExtensionType.EXTERNAL_PUB)
+        {
+            MLSInputStream stream = new MLSInputStream(extension_data);
+            byte[] output = stream.readOpaque();
+            return output;
+        }
+        return null;
     }
 
     Extension(MLSInputStream stream) throws IOException
@@ -63,7 +87,15 @@ public class Extension
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.write(extensionType);
-        stream.writeOpaque(extension_data);
+        if (Grease.isGrease(extensionType.value) == -1)
+        {
+            stream.write(extensionType);
+            stream.writeOpaque(extension_data);
+        }
+        else
+        {
+            //TODO: check should we write grease?
+        }
+
     }
 }

@@ -14,11 +14,12 @@ public class UpdatePath
 
     public UpdatePath clone()
     {
-        return new UpdatePath(leaf_node, new ArrayList<>(nodes));
+        return new UpdatePath(leaf_node, nodes);
     }
     public UpdatePath(LeafNode leaf_node, List<UpdatePathNode> nodes)
     {
-        this.leaf_node = leaf_node;
+//        this.leaf_node = leaf_node;
+        this.leaf_node = leaf_node.copy(leaf_node.encryption_key);
         this.nodes = new ArrayList<>(nodes);
     }
 

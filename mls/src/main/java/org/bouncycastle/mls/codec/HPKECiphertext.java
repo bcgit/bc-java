@@ -1,5 +1,7 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.util.encoders.Hex;
+
 import java.io.IOException;
 
 public class HPKECiphertext
@@ -7,6 +9,7 @@ public class HPKECiphertext
 {
     public byte[] kem_output;
     public byte[] ciphertext;
+
 
     public HPKECiphertext(byte[] kem_output, byte[] ciphertext)
     {

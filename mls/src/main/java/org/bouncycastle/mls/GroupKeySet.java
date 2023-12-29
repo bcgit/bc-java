@@ -5,6 +5,7 @@ import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.codec.ContentType;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -93,9 +94,10 @@ public class GroupKeySet {
             default:
                 return null;
         }
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(reuseGuard);
+//        SecureRandom random = new SecureRandom();
+//        random.nextBytes(reuseGuard);
         KeyGeneration keys = chain.next();
+//        System.out.println(Hex.toHexString(keys.nonce));
         ApplyReuseGuard(reuseGuard, keys.nonce);
         return keys;
     }

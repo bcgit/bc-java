@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,13 +19,13 @@ public class KeyPackage
     public LeafNode leaf_node;
     List<Extension> extensions;
     /* SignWithLabel(., "KeyPackageTBS", KeyPackageTBS) */
-    byte[] signature; // KeyPackageTBS (without signature)
+    public byte[] signature; // KeyPackageTBS (without signature)
 
     public boolean verify() throws IOException
     {
         CipherSuite suite = new CipherSuite(cipher_suite);
         // Verify the inner leaf node
-        if (!leaf_node.verify(suite, leaf_node.toBeSigned(null, -1)))
+        if (!leaf_node.verify(suite, leaf_node.toBeSigned(new byte[0], -1)))
         {
             return false;
         }
@@ -60,8 +61,8 @@ public class KeyPackage
     {
         this.version = ProtocolVersion.mls10;
         this.cipher_suite = suite.getSuiteId();
-        this.init_key = init_key;
-        this.leaf_node = leaf_node;
+        this.init_key = init_key.clone();
+        this.leaf_node = leaf_node.copy(leaf_node.encryption_key);
         this.extensions = new ArrayList<>(extensions);
 
         //sign(sigSk)

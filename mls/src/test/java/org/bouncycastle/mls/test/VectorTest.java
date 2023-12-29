@@ -9,6 +9,7 @@ import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+import org.bouncycastle.mls.client.Group;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.Commit;
 import org.bouncycastle.mls.codec.GroupContext;
@@ -487,7 +488,7 @@ public class VectorTest
                                 prevEpochSecret = new Secret(initial_init_secret);
                             }
 
-                            joinSecrets = KeyScheduleEpoch.JoinSecrets.forMember(suite, prevEpochSecret, new Secret(commit_secret), null, group_context);
+                            joinSecrets = KeyScheduleEpoch.JoinSecrets.forMember(suite, prevEpochSecret, new Secret(commit_secret), new Secret(new byte[0]), group_context);
                             joinSecrets.injectPskSecret(new Secret(psk_secret));
                             assertTrue(Arrays.areEqual(joiner_secret, joinSecrets.joinerSecret.value()));
                             assertTrue(Arrays.areEqual(welcome_secret, joinSecrets.welcomeSecret.value()));
@@ -1117,7 +1118,7 @@ public class VectorTest
 //                        SecureRandom rng = new SecureRandom();
 //                        rng.nextBytes(leafSecret);
                         byte[] sigPriv = sigPrivs.get(from);
-                        TreeKEMPrivateKey newSenderPriv = encapTree.update(from, new Secret(leafSecret), group_id, sigPriv);
+                        TreeKEMPrivateKey newSenderPriv = encapTree.update(from, new Secret(leafSecret), group_id, sigPriv, new Group.LeafNodeOptions());
 
                         UpdatePath newPath = encapTree.encap(newSenderPriv, ctx, new ArrayList<>());
                         assertTrue(tree.verifyParentHash(from, path));
@@ -1221,7 +1222,7 @@ public class VectorTest
         }
     }
 
-    public void testMessages() throws IOException
+    public void testMessages() throws Exception
     {
         InputStream src = VectorTest.class.getResourceAsStream("messages.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));

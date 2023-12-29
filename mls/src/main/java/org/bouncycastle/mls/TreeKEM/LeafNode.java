@@ -1,5 +1,6 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import org.bouncycastle.mls.client.Group;
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Credential;
 import org.bouncycastle.mls.codec.CredentialType;
@@ -7,6 +8,7 @@ import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -38,6 +40,16 @@ public class LeafNode
         return credential.credentialType;
     }
 
+    public CipherSuite getSuite()
+    {
+        return suite;
+    }
+
+    public LifeTime getLifeTime()
+    {
+        return lifeTime;
+    }
+
     public LeafNode(
             CipherSuite suite,
             byte[] encryption_key,
@@ -57,7 +69,7 @@ public class LeafNode
         this.extensions = new ArrayList<>(extensions); //TODO: grease
         this.leaf_node_source = LeafNodeSource.KEY_PACKAGE; //TODO: check
 
-        sign(suite, sigSk, new byte[0]);
+        sign(suite, sigSk, toBeSigned(null, -1));
     }
 
     public LeafNode()
@@ -171,13 +183,16 @@ public class LeafNode
         long now = Instant.now().getLong(ChronoField.INSTANT_SECONDS);
         if (lifeTime.not_after == -1)
         {
-            return (now > lifeTime.not_before) && (now < Long.MAX_VALUE);
+            return (now >= lifeTime.not_before) && (now < Long.MAX_VALUE);
         }
-        return (now > lifeTime.not_before) && (now < lifeTime.not_after);
+        return (now >= lifeTime.not_before) && (now < lifeTime.not_after);
     }
 
     public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
     {
+//        System.out.println("tbs: " + Hex.toHexString(tbs));
+//        System.out.println("sig: " + Hex.toHexString(signature));
+//        System.out.println("sigkey: " + Hex.toHexString(signature_key));
         if (getCredentialType() == CredentialType.x509)
         {
             //TODO: get credential and check if it's signature scheme matches the cipher suite signature scheme
@@ -186,30 +201,29 @@ public class LeafNode
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
     }
 
-    //TODO: add leaf node options
-    public LeafNode forCommit(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, byte[] sigPriv) throws Exception
+    public LeafNode forCommit(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
     {
-        LeafNode clone = copy(encKeyIn);
+        LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.COMMIT;
         clone.parent_hash = parentHash.clone();
 
-        clone.sign(suite, sigPriv, toBeSigned(groupId, leafIndex.value));
+        clone.sign(suite, sigPriv, clone.toBeSigned(groupId, leafIndex.value));
 
         return clone;
     }
-    //TODO: add leaf node options
-    public LeafNode forUpdate(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] sigPriv) throws Exception
+    public LeafNode forUpdate(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
     {
-        LeafNode clone = copy(encKeyIn);
+        LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.UPDATE;
 
-        clone.sign(suite, sigPriv, toBeSigned(groupId, leafIndex.value));
+        clone.sign(suite, sigPriv, clone.toBeSigned(groupId, leafIndex.value));
 
         return clone;
     }
 
     private void sign(CipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
     {
+        System.out.println("tbs: " + Hex.toHexString(tbs));
         byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
         if (!Arrays.equals(sigPub, signature_key))
         {
@@ -223,7 +237,27 @@ public class LeafNode
 
 
     //TODO: add options to clone with credential/capabilities/extensions
-    private LeafNode copy(byte[] encKeyIn)
+    public LeafNode copyWithOptions(byte[] encKeyIn, Group.LeafNodeOptions options)
+    {
+        LeafNode clone = copy(encKeyIn);
+        if (options.getCredential() != null)
+        {
+            clone.credential = options.getCredential();
+        }
+
+        if (options.getCapabilities() != null)
+        {
+            clone.capabilities = options.getCapabilities();
+        }
+
+        if (options.getExtensions() != null)
+        {
+            clone.extensions = options.getExtensions();
+        }
+
+        return clone;
+    }
+    public LeafNode copy(byte[] encKeyIn)
     {
         LeafNode clone = new LeafNode();
         clone.encryption_key = encKeyIn.clone();

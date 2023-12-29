@@ -126,7 +126,7 @@ public class TreeKEMPrivateKey
         NodeIndex n = new NodeIndex(index);
         pathSecrets.remove(n);
 
-        AsymmetricCipherKeyPair leafSk = suite.deserializeSignaturePrivateKey(leafSkBytes);
+        AsymmetricCipherKeyPair leafSk = suite.getHPKE().deserializePrivateKey(leafSkBytes, null);
         privateKeyCache.put(n, leafSk);
     }
 

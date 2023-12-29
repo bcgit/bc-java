@@ -1,8 +1,10 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.Writable {
 
@@ -91,5 +93,35 @@ public class PreSharedKeyID implements MLSInputStream.Readable, MLSOutputStream.
         }
 
         stream.writeOpaque(pskNonce);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        PreSharedKeyID pskid = (PreSharedKeyID) o;
+        if (pskid.pskType != pskType)
+        {
+            return false;
+        }
+
+        switch (pskType)
+        {
+            case EXTERNAL:
+                return Arrays.equals(pskid.external.externalPSKID.value(), external.externalPSKID.value());
+            case RESUMPTION:
+                return Arrays.equals(pskid.resumption.pskGroupID, resumption.pskGroupID) && (pskid.resumption.pskEpoch == resumption.pskEpoch);
+        }
+
+        return false;
     }
 }

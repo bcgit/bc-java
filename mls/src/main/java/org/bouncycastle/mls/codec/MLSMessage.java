@@ -3,6 +3,7 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 
@@ -17,8 +18,10 @@ public class MLSMessage
     public GroupInfo groupInfo;
     public KeyPackage keyPackage;
 
-    public MLSMessage()
+    public MLSMessage(WireFormat wireFormat)
     {
+        version = ProtocolVersion.mls10;
+        this.wireFormat = wireFormat;
     }
 
     static public MLSMessage externalProposal(CipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk) throws Exception
@@ -41,8 +44,8 @@ public class MLSMessage
         FramedContent content = FramedContent.proposal(
                 groupID,
                 epoch,
-                new Sender(SenderType.EXTERNAL, signerIndex),
-                null,
+                Sender.forExternal(signerIndex),
+                new byte[0],
                 MLSOutputStream.encode(proposal)
         );
         AuthenticatedContent auth = AuthenticatedContent.sign(
@@ -52,14 +55,14 @@ public class MLSMessage
                 sigSk,
                 null
         );
-        MLSMessage message = new MLSMessage();
+        MLSMessage message = new MLSMessage(WireFormat.mls_public_message);
         message.publicMessage = PublicMessage.protect(auth, suite, new byte[0], new byte[0]);
         return message;
     }
 
     static public MLSMessage keyPackage(KeyPackage keyPackage)
     {
-        MLSMessage message = new MLSMessage();
+        MLSMessage message = new MLSMessage(WireFormat.mls_key_package);
         message.version = ProtocolVersion.mls10;
         message.wireFormat = WireFormat.mls_key_package;
         message.keyPackage = keyPackage;
@@ -199,7 +202,7 @@ class AuthenticatedContentTBM
 
 
 class FramedContentAuthData
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] signature;
     byte[] confirmation_tag;
@@ -275,6 +278,8 @@ class FramedContentTBS
             case NEW_MEMBER_COMMIT:
                 this.context = (GroupContext) MLSInputStream.decode(context, GroupContext.class);
                 break;
+            default:
+                break;
         }
     }
 
@@ -318,22 +323,19 @@ class SenderData
 {
 
     LeafIndex sender;
-    int leafIndex;
     int generation;
     byte[] reuseGuard;
 
-    public SenderData(int leafIndex, int generation, byte[] reuseGuard)
+    public SenderData(LeafIndex leafIndex, int generation, byte[] reuseGuard)
     {
-        this.leafIndex = leafIndex;
-        this.sender = new LeafIndex(leafIndex);
+        this.sender = leafIndex;
         this.generation = generation;
         this.reuseGuard = reuseGuard;
     }
 
     SenderData(MLSInputStream stream) throws IOException
     {
-        leafIndex = (int) stream.read(int.class);
-        sender = new LeafIndex(leafIndex);
+        sender = (LeafIndex) stream.read(LeafIndex.class);
         generation = (int) stream.read(int.class);
         reuseGuard = Pack.intToBigEndian((int)stream.read(int.class));
     }
@@ -341,7 +343,7 @@ class SenderData
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.write(leafIndex);
+        stream.write(sender);
         stream.write(generation);
         stream.write(Pack.bigEndianToInt(reuseGuard, 0));
     }
@@ -438,10 +440,10 @@ class PrivateContentAAD
 
     public PrivateContentAAD(byte[] group_id, long epoch, ContentType content_type, byte[] authenticated_data)
     {
-        this.group_id = group_id;
+        this.group_id = group_id.clone();
         this.epoch = epoch;
         this.content_type = content_type;
-        this.authenticated_data = authenticated_data;
+        this.authenticated_data = authenticated_data.clone();
     }
 
     PrivateContentAAD(MLSInputStream stream) throws IOException

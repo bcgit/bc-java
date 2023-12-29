@@ -87,7 +87,7 @@ public class Proposal
 
     //TODO: this looks so bad, make this cleaner
     // maybe inheritance?
-    public static Proposal add(KeyPackage newMember)
+    public static Proposal add(KeyPackage newMember) throws IOException
     {
         return new Proposal(ProposalType.ADD,
                 new Add(newMember), null, null, null, null, null, null);
@@ -163,9 +163,10 @@ public class Proposal
     {
         public KeyPackage keyPackage;
 
-        public Add(KeyPackage keyPackage)
+        public Add(KeyPackage keyPackage) throws IOException
         {
-            this.keyPackage = keyPackage;
+//            this.keyPackage = keyPackage;
+            this.keyPackage = (KeyPackage) MLSInputStream.decode(MLSOutputStream.encode(keyPackage), KeyPackage.class); // TODO CHANGE
         }
 
         Add(MLSInputStream stream) throws IOException

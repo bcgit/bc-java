@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.GroupKeySet;
+import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.ContentType;
@@ -60,7 +61,7 @@ public class MessageProtectionTest
 
     private void protect(byte[] content, MLSMessage message) throws Exception
     {
-        Sender sender = new Sender(SenderType.MEMBER, 1);
+        Sender sender = Sender.forMember(new LeafIndex(1));
         byte[] authenticatedData = new byte[0];
 
         if(message.wireFormat == WireFormat.mls_public_message &&

@@ -1,6 +1,7 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 
@@ -9,7 +10,7 @@ public class AuthenticatedContent
 {
     public WireFormat wireFormat;
     public FramedContent content;
-    FramedContentAuthData auth;
+    public FramedContentAuthData auth;
 
     public void setConfirmationTag(byte[] tag)
     {
