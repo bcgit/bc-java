@@ -347,7 +347,7 @@ public class X500NameTest
             name = fromBytes(name.getEncoded());
             if (!name.toString().equals(hexSubjects[i + 1]))
             {
-                fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
+                fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + hexSubjects[i + 1]);
             }
         }
 
