@@ -41,7 +41,7 @@ abstract class ASN1UniversalType
 
     final ASN1Primitive getContextInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        return checkedCast(ASN1Util.checkContextTag(taggedObject).getBaseUniversal(declaredExplicit, this));
+        return checkedCast(ASN1Util.checkContextTagClass(taggedObject).getBaseUniversal(declaredExplicit, this));
     }
 
     final ASN1Tag getTag()

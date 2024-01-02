@@ -373,13 +373,17 @@ public class OEROutputStream
                 if (item instanceof ASN1TaggedObject)
                 {
                     ASN1TaggedObject taggedObject = (ASN1TaggedObject)item;
-                    if (BERTags.APPLICATION == taggedObject.getTagClass())
+                    switch (taggedObject.getTagClass())
                     {
+                    case BERTags.APPLICATION:
                         debugPrint(oerElement.appendLabel("AS"));
-                    }
-                    else
-                    {
+                        break;
+                    case BERTags.CONTEXT_SPECIFIC:
                         debugPrint(oerElement.appendLabel("CS"));
+                        break;
+                    case BERTags.PRIVATE:
+                        debugPrint(oerElement.appendLabel("PR"));
+                        break;
                     }
                 }
             }
