@@ -67,13 +67,22 @@ class PolyVec
                 {
                     for (k = 0; k < 4; k++)
                     {
-                        t[k] = (short)
+                        /*t[k] = (short)
                             (
                                 (
                                     ((this.getVectorIndex(i).getCoeffIndex(4 * j + k) << 10)
                                         + (KyberEngine.KyberQ / 2))
                                         / KyberEngine.KyberQ)
-                                    & 0x3ff);
+                                    & 0x3ff);*/
+                        // Fix for KyberSlash2: division by KyberQ above is not
+                        // constant time.
+                        long t_k = this.getVectorIndex(i).getCoeffIndex(4 * j + k);
+                        t_k <<= 10;
+                        t_k += 1665;
+                        t_k *= 1290167;
+                        t_k >>= 32;
+                        t_k &= 0x3ff;
+                        t[k] = (short)t_k;
                     }
                     r[count + 0] = (byte)(t[0] >> 0);
                     r[count + 1] = (byte)((t[0] >> 8) | (t[1] << 2));
@@ -93,13 +102,22 @@ class PolyVec
                 {
                     for (k = 0; k < 8; k++)
                     {
-                        t[k] = (short)
+                        /*t[k] = (short)
                             (
                                 (
                                     ((this.getVectorIndex(i).getCoeffIndex(8 * j + k) << 11)
                                         + (KyberEngine.KyberQ / 2))
                                         / KyberEngine.KyberQ)
-                                    & 0x7ff);
+                                    & 0x7ff);*/
+                        // Fix for KyberSlash2: division by KyberQ above is not
+                        // constant time.
+                        long t_k = this.getVectorIndex(i).getCoeffIndex(8 * j + k);
+                        t_k <<= 11;
+                        t_k += 1664;
+                        t_k *= 645084;
+                        t_k >>= 31;
+                        t_k &= 0x7ff;
+                        t[k] = (short)t_k;
                     }
                     r[count + 0] = (byte)((t[0] >> 0));
                     r[count + 1] = (byte)((t[0] >> 8) | (t[1] << 3));
