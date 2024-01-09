@@ -26,7 +26,7 @@ public class Sender
     }
     public static Sender forExternal(int senderIndex)
     {
-        return new Sender(SenderType.MEMBER, null, senderIndex);
+        return new Sender(SenderType.EXTERNAL, null, senderIndex);
     }
 
     public Sender(SenderType senderType, LeafIndex sender, int sender_index)

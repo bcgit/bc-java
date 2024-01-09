@@ -223,7 +223,6 @@ public class LeafNode
 
     private void sign(CipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
     {
-        System.out.println("tbs: " + Hex.toHexString(tbs));
         byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
         if (!Arrays.equals(sigPub, signature_key))
         {

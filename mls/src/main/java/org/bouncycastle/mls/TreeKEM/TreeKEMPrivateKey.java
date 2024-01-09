@@ -110,7 +110,7 @@ public class TreeKEMPrivateKey
         {
             if (n.value() > ni.value())
             {
-                toRemove.add(ni);
+                toRemove.add(n);
             }
         }
 

@@ -461,7 +461,7 @@ public class Group
         byte[] ctx = MLSOutputStream.encode(getGroupContext());
         keySchedule = KeyScheduleEpoch.forCreator(suite, ctx);
         //TODO DELETE TEST
-//        keySchedule = KeyScheduleEpoch.forCreatorTEST(suite, ctx, Hex.decode("9e04ff00fb7005136f268d9bb942ceca3085d1a3723b4164a0ad5bfc8de1edb2"));
+//        keySchedule = KeyScheduleEpoch.forCreatorTEST(suite, ctx, Hex.decode("16f4327dd927663cff04663762adb7c4ac48885c07e3d290093c5f72f3a7c275"));
 //        System.out.println("initSecret: " + Hex.toHexString(keySchedule.initSecret.value()));
 //        System.out.println("senderDataSecret: " + Hex.toHexString(keySchedule.senderDataSecret.value()));
 //        System.out.println("exporterSecret: " + Hex.toHexString(keySchedule.exporterSecret.value()));
@@ -552,7 +552,8 @@ public class Group
         transcriptHash.confirmed = groupInfo.groupContext.confirmedTranscriptHash.clone();
         transcriptHash.updateInterim(groupInfo.confirmationTag);
 
-        extensions = groupInfo.groupContext.extensions; // TODO: Check to clone?
+        extensions = new ArrayList<>(); // TODO: Check to clone?
+        extensions.addAll(groupInfo.groupContext.extensions);
 
         // Create the TreeKEMPrivateKey
         int i = tree.find(keyPackage.leaf_node);
@@ -761,6 +762,7 @@ public class Group
                     next.transcriptHash.confirmed,
                     next.extensions
             ));
+//            next.treePriv.dump();
             next.treePriv.decap(
                     senderLocation,
                     next.tree,
@@ -915,6 +917,15 @@ public class Group
         return new Tombstone(newGroup, reinitProposal.proposal.reInit);
     }
 
+
+    //TODO DELETE TEST
+//    public static ArrayList<byte[]> TESTEXTERNALJOIN = new ArrayList<>(java.util.Arrays.asList(
+//            Hex.decode("8533764049808656ae660d3215ab3801c760af269e2b80823d1ebb7f37b89350"),// end
+//            Hex.decode("a347640b9b6b7afb7dfa3bdb1b75c2282ec85374e0291e0a5165a515508cd009"),//force_init_secret
+//            Hex.decode("314568cefcc8d759ee28688f5aaf615b1b9dcbed9d7ee176589c0bfde26aab21"),// end
+//            Hex.decode("bfc0025718870a78d0bdc68e08b40fd72bea0c18584b3b11c74a55c78ffef2dd") //force_init_secret
+//    ));
+
     public static GroupWithMessage externalJoin(Secret leafSecret,
                              AsymmetricCipherKeyPair sigSk,
                              KeyPackage keyPackage,
@@ -954,8 +965,9 @@ public class Group
         KeyScheduleEpoch.ExternalInitParams extParams = new KeyScheduleEpoch.ExternalInitParams(
                 suite, suite.getHPKE().deserializePublicKey(extPub));
 
-//        extParams.kemOutput = Hex.decode("e398076ab0aba9030d08f8cf421b12b815aac97a352b481f44c6ef007bed976b");
-//        extParams.initSecret = new Secret(Hex.decode("d2c320a1b405297143ba70b90762390f7dbb18c618ed02007d56a327ad5ad2d8"));
+        //TODO DELETE TEST
+//        extParams.kemOutput = TESTEXTERNALJOIN.get(0); TESTEXTERNALJOIN.remove(0);
+//        extParams.initSecret = new Secret (TESTEXTERNALJOIN.get(0)); TESTEXTERNALJOIN.remove(0);
 //        System.out.println("ext.kem_out: " + Hex.toHexString(extParams.getKEMOutput()));
 //        System.out.println("ext.init_secret: " + Hex.toHexString(extParams.getInitSecret().value()));
 
@@ -983,7 +995,7 @@ public class Group
 
     public GroupWithMessage commit(Secret leafSecret, CommitOptions commitOptions, MessageOptions msgOptions, CommitParameters params) throws Exception
     {
-        System.out.println();
+//        System.out.println();
         Commit commit = new Commit();
         List<KeyPackage> joiners = new ArrayList<>();
         for (CachedProposal cached : pendingProposals)
@@ -1028,7 +1040,7 @@ public class Group
 
         JoinersWithPSKS joinersWithpsks = next.apply(proposals);
 
-        System.out.println("commitParams: " + params.paramID);
+//        System.out.println("commitParams: " + params.paramID);
         if (params.paramID == EXTERNAL_COMMIT_PARAMS)
         {
             next.index = next.tree.addLeaf(params.joinerKeyPackage.leaf_node);
@@ -1082,18 +1094,18 @@ public class Group
         // Create the Commit message and advance the transcripts / key schedule
         AuthenticatedContent commitContentAuth = sign(sender, commit, msgOptions.authenticatedData, msgOptions.encrypt);
 
-        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
-        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
+//        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
+//        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
         next.transcriptHash.updateConfirmed(commitContentAuth);
         next.epoch += 1;
 
-        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
-        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
+//        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
+//        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
 
         next.updateEpochSecrets(commitSecret.value(), joinersWithpsks.psks, forceInitSecret);
 
         byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
-        System.out.println("confirmationTag: " + Hex.toHexString(confirmationTag));
+//        System.out.println("confirmationTag: " + Hex.toHexString(confirmationTag));
         commitContentAuth.setConfirmationTag(confirmationTag);
 
         next.transcriptHash.updateInterim(commitContentAuth);
@@ -1558,7 +1570,7 @@ public class Group
 
     private void updateEpochSecrets(byte[] commitSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] forceInitSecret) throws Exception
     {
-        System.out.println("commit: " + Hex.toHexString(commitSecret));
+//        System.out.println("commit: " + Hex.toHexString(commitSecret));
         byte[] ctx = MLSOutputStream.encode(new GroupContext(
                 suite.getSuiteId(),
                 groupID,
@@ -1567,7 +1579,7 @@ public class Group
                 transcriptHash.confirmed,
                 extensions
         ));
-        System.out.println("ctx: " + Hex.toHexString(ctx));
+//        System.out.println("ctx: " + Hex.toHexString(ctx));
         keySchedule = keySchedule.next(tree.size, forceInitSecret, new Secret(commitSecret), psks, ctx);
         keys = keySchedule.getEncryptionKeys(tree.size);
     }
@@ -1587,9 +1599,12 @@ public class Group
         List<KeyScheduleEpoch.PSKWithSecret> psks = applyPSK(proposals);
 //        tree.dump();
 
+//        treePriv.dump();
         tree.truncate();
         treePriv.truncate(tree.size);
         tree.setHashAll();
+//        tree.dump();
+//        treePriv.dump();
 
         if (cachedUpdate != null)
         {
@@ -1739,7 +1754,8 @@ public class Group
         next.epoch = epoch;
         next.groupID = groupID.clone();
         next.transcriptHash = transcriptHash.copy();
-        next.extensions = new ArrayList<>(extensions);
+        next.extensions = new ArrayList<>();
+        next.extensions.addAll(extensions);
         next.keySchedule = keySchedule; // check
         next.tree = TreeKEMPublicKey.clone(tree);
         next.treePriv = treePriv.copy();

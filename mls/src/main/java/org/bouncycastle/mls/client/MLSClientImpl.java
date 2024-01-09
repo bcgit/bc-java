@@ -178,7 +178,7 @@ public class MLSClientImpl
         {
             return null;
         }
-//        System.out.println("loadGroup: " + stateID);
+        System.out.println("loadGroup: " + stateID);
 //        System.out.println("groupID: " + Hex.toHexString(groupCache.get(stateID).group.getGroupID()));
 //        System.out.println("encrypt: " + groupCache.get(stateID).messageOptions.encrypt);
 
@@ -203,10 +203,10 @@ public class MLSClientImpl
         return joinCache.get(joinID);
     }
 
-    private int storeSigner(byte[] sigPub)
+    private int storeSigner(byte[] sigPriv)
     {
-        int signerID = 0x07FFFFFF & Pack.littleEndianToInt(sigPub, 0);
-        signerCache.put(signerID, sigPub);
+        int signerID = 0x07FFFFFF & Pack.littleEndianToInt(sigPriv, 0);
+        signerCache.put(signerID, sigPriv);
         return signerID;
     }
 
@@ -216,7 +216,7 @@ public class MLSClientImpl
         {
             return null;
         }
-        return signerCache.get(signerID);
+        return signerCache.get(signerID); // returns private signature key
     }
 
     private int storeReinit(KeyPackageWithSecrets kpSk, Group.Tombstone tombstone, boolean encryptHandshake) throws IOException
@@ -338,7 +338,7 @@ public class MLSClientImpl
                     extList.add(ext);
                 }
 
-                if (desc.getProposalType().toString().equals("reinit"))
+                if (desc.getProposalType().toStringUtf8().equals("reinit"))
                 {
                     return Proposal.reInit(
                             desc.getGroupId().toByteArray(),
@@ -384,7 +384,7 @@ public class MLSClientImpl
     @Override
     public void name(MlsClient.NameRequest request, StreamObserver<MlsClient.NameResponse> responseObserver)
     {
-        System.out.println("function called: name");
+//        System.out.println("function called: name");
         catchWrap(() -> nameImpl(request, responseObserver), responseObserver);
     }
 
@@ -518,6 +518,7 @@ public class MLSClientImpl
             throw new Exception("Unknown transaction ID");
         }
 
+//        System.out.println("join_wlecome: " + Hex.toHexString(request.getWelcome().toByteArray()));
         MLSMessage welcomeMsg = (MLSMessage) MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
         Welcome welcome = welcomeMsg.welcome;
 
@@ -602,8 +603,8 @@ public class MLSClientImpl
 
         LeafIndex removeIndex = null;
         boolean removePrior = request.getRemovePrior();
-        System.out.println("REMOVEPRIOR: " + removePrior);
-        System.out.println("racthetTreeBytes: " + Hex.toHexString(ratchetTreeBytes));
+//        System.out.println("REMOVEPRIOR: " + removePrior);
+//        System.out.println("racthetTreeBytes: " + Hex.toHexString(ratchetTreeBytes));
         if (removePrior)
         {
             // same as importTree()
@@ -640,7 +641,7 @@ public class MLSClientImpl
                 {
                     continue;
                 }
-                System.out.println("removedIndex: " + i);
+//                System.out.println("removedIndex: " + i);
                 removeIndex = index;
             }
             if (removeIndex == null)
@@ -650,14 +651,14 @@ public class MLSClientImpl
         }
         // Install PSKs
         Map<Secret, byte[]> externalPSKs = new HashMap<>();
-        System.out.println("pskCount: " + request.getPsksCount());
+//        System.out.println("pskCount: " + request.getPsksCount());
         for (int i = 0; i < request.getPsksCount(); i++)
         {
             MlsClient.PreSharedKey psk = request.getPsks(i);
             Secret pskID = new Secret(psk.getPskId().toByteArray());
             byte[] pskSecret = psk.getPskSecret().toByteArray();
-            System.out.println("PKSID[" + i + "]: " + Hex.toHexString(pskID.value()));
-            System.out.println("PKSSecret[" + i + "]: " + Hex.toHexString(pskSecret));
+//            System.out.println("PKSID[" + i + "]: " + Hex.toHexString(pskID.value()));
+//            System.out.println("PKSSecret[" + i + "]: " + Hex.toHexString(pskSecret));
             externalPSKs.put(pskID, pskSecret);
         }
 
@@ -676,7 +677,7 @@ public class MLSClientImpl
                 externalPSKs
         );
 
-        System.out.println("commit message: " + Hex.toHexString(MLSOutputStream.encode(gwm.message)));
+//        System.out.println("commit message: " + Hex.toHexString(MLSOutputStream.encode(gwm.message)));
 
         int stateID = storeGroup(gwm.group, false);
         MlsClient.ExternalJoinResponse response = MlsClient.ExternalJoinResponse.newBuilder()
@@ -705,7 +706,7 @@ public class MLSClientImpl
     private void groupInfoImpl(CachedGroup entry, MlsClient.GroupInfoRequest request, StreamObserver<MlsClient.GroupInfoResponse> responseObserver) throws Exception
     {
         boolean inlineTree = !request.getExternalTree();
-        System.out.println("INLINETREE: " + inlineTree);
+//        System.out.println("INLINETREE: " + inlineTree);
         MLSMessage groupInfo = entry.group.getGroupInfo(inlineTree);
         MlsClient.GroupInfoResponse.Builder builder = MlsClient.GroupInfoResponse.newBuilder()
                 .setGroupInfo(ByteString.copyFrom(MLSOutputStream.encode(groupInfo)));
@@ -1016,7 +1017,7 @@ public class MLSClientImpl
         for (int i = 0; i < byRefSize; i++)
         {
             byte[] msg = request.getByReference(i).toByteArray();
-            System.out.println("MSG: "  + Hex.toHexString(msg));
+//            System.out.println("MSG: "  + Hex.toHexString(msg));
             Group shouldBeNull = entry.group.handle(msg, null);
             if (shouldBeNull != null)
             {
@@ -1114,7 +1115,7 @@ public class MLSClientImpl
             }
         }
 
-        System.out.println("handlecommit: " + Hex.toHexString(commitBytes));
+//        System.out.println("handlecommit: " + Hex.toHexString(commitBytes));
         Group next = entry.group.handle(commitBytes, null);
         if (next == null)
         {
@@ -1277,7 +1278,7 @@ public class MLSClientImpl
 
         MlsClient.HandleReInitCommitResponse response = MlsClient.HandleReInitCommitResponse.newBuilder()
                 .setReinitId(reinitID)
-                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(reinit.kpSk.keyPackage)))
+                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(reinit.kpSk.keyPackage))))
                 .setEpochAuthenticator(ByteString.copyFrom(reinit.tombstone.epochAuthenticator))
                 .build();
 
@@ -1320,7 +1321,7 @@ public class MLSClientImpl
 
         MlsClient.HandleReInitCommitResponse response = MlsClient.HandleReInitCommitResponse.newBuilder()
                 .setReinitId(reinitID)
-                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(kpSk.keyPackage)))
+                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(kpSk.keyPackage))))
                 .setEpochAuthenticator(ByteString.copyFrom(tombstone.epochAuthenticator))
                 .build();
 
@@ -1350,9 +1351,9 @@ public class MLSClientImpl
         List<KeyPackage> keyPackages = new ArrayList<>();
         for (int i = 0; i < request.getKeyPackageCount(); i++)
         {
-            byte[] keyPackageData = request.getKeyPackage(i).toByteArray();
-            KeyPackage keyPackage = (KeyPackage) MLSInputStream.decode(keyPackageData, KeyPackage.class);
-            keyPackages.add(keyPackage);
+//            System.out.println("reinitWelcome: " + Hex.toHexString(request.getKeyPackage(i).toByteArray()));
+            MLSMessage message = (MLSMessage) MLSInputStream.decode(request.getKeyPackage(i).toByteArray(), MLSMessage.class);
+            keyPackages.add(message.keyPackage);
         }
 
         // Create the Welcome
@@ -1615,9 +1616,9 @@ public class MLSClientImpl
 
         ExternalSender extSender = new ExternalSender(suite.serializeSignaturePublicKey(sigSk.getPublic()), cred);
 
-        System.out.println("externalSenderBytes: " + Hex.toHexString(MLSOutputStream.encode(extSender)));
+//        System.out.println("externalSenderBytes: " + Hex.toHexString(MLSOutputStream.encode(extSender)));
 
-        int signerID = storeSigner(suite.serializeSignaturePublicKey(sigSk.getPublic()));
+        int signerID = storeSigner(suite.serializeSignaturePrivateKey(sigSk.getPrivate()));
 
         MlsClient.CreateExternalSignerResponse response = MlsClient.CreateExternalSignerResponse.newBuilder()
                 .setExternalSender(ByteString.copyFrom(MLSOutputStream.encode(extSender)))
@@ -1640,9 +1641,9 @@ public class MLSClientImpl
     private void addExternalSignerImpl(CachedGroup entry, MlsClient.AddExternalSignerRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
     {
         byte[] extSender = request.getExternalSender().toByteArray();
-        System.out.println("externalSenderBytes: " + Hex.toHexString(extSender));
+//        System.out.println("externalSenderBytes: " + Hex.toHexString(extSender));
 
-        List<Extension> extList = entry.group.extensions;
+        List<Extension> extList = new ArrayList<>(entry.group.extensions);
         List<ExternalSender> extSenders = new ArrayList<>();
         for (Extension ext : extList)
         {
@@ -1686,11 +1687,13 @@ public class MLSClientImpl
         TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(treeData, TreeKEMPublicKey.class);
 
         // Look up the signer
-        byte[] signer = loadSigner(request.getSignerId());
-        if (signer == null)
+        byte[] sigPriv = loadSigner(request.getSignerId());
+        if (sigPriv == null)
         {
             throw new Exception("Unknown signer ID");
         }
+
+        byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
 
         // Look up the signer index of this signer
         List<ExternalSender> extSenders = new ArrayList<>();
@@ -1704,7 +1707,7 @@ public class MLSClientImpl
         int sigIndex = -1;
         for (int i = 0; i < extSenders.size(); i++)
         {
-            if (Arrays.equals(extSenders.get(i).signatureKey, signer))
+            if (Arrays.equals(extSenders.get(i).signatureKey, sigPub))
             {
                 sigIndex = i;
             }
@@ -1716,7 +1719,7 @@ public class MLSClientImpl
 
         // Sign the proposal
         Proposal proposal = proposalFromDescription(suite, groupID, tree, request.getDescription());
-        MLSMessage signedProposal = MLSMessage.externalProposal(suite, groupID, epoch, proposal, sigIndex, signer);
+        MLSMessage signedProposal = MLSMessage.externalProposal(suite, groupID, epoch, proposal, sigIndex, sigPriv);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
                 .setProposal(ByteString.copyFrom(MLSOutputStream.encode(signedProposal)))

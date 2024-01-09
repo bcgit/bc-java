@@ -22,7 +22,7 @@ public class GroupContext
         this.epoch = epoch;
         this.treeHash = treeHash;
         this.confirmedTranscriptHash = confirmedTranscriptHash;
-        this.extensions = extensions;
+        this.extensions = new ArrayList<>(extensions);
     }
 
     public GroupContext(MLSInputStream stream) throws IOException

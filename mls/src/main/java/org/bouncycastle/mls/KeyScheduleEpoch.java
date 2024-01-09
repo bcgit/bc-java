@@ -184,7 +184,6 @@ psk_secret (or 0) --> KDF.Extract
         public KeyScheduleEpoch complete(TreeSize treeSize, byte[] context) throws IOException, IllegalAccessException {
 //            memberSecret = new Secret(suite.getKDF().extract(joinerSecret.value(), pskSecret(suite, null).value()));
             Secret epochSecret = memberSecret.expandWithLabel(suite, "epoch", context, suite.getKDF().getHashLength());
-            System.out.println("epochSecret: " + Hex.toHexString(epochSecret.value()));
             KeyScheduleEpoch keySchedule = new KeyScheduleEpoch(suite, treeSize, epochSecret);
             keySchedule.setJoinerSecret(joinerSecret);
             return keySchedule;
@@ -329,7 +328,6 @@ psk_secret (or 0) --> KDF.Extract
 
     public byte[] confirmationTag(byte[] confirmedTranscriptHash)
     {
-        System.out.println("confirmationKey: " + Hex.toHexString(confirmationKey.value()));
         return suite.getKDF().extract(confirmationKey.value(), confirmedTranscriptHash);
     }
 

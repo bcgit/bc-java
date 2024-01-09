@@ -330,7 +330,8 @@ public class Proposal
     {
         public GroupContextExtensions(List<Extension> extensions)
         {
-            this.extensions = extensions;
+            this.extensions = new ArrayList<>();
+            this.extensions.addAll(extensions);
         }
 
         public List<Extension> extensions;

@@ -13,7 +13,7 @@ public class MLSServer
                 .addService(new MLSClientImpl())
                 .build();
 
-//        Server server2 = ServerBuilder.forPort(12346)
+//        Server server2 = ServerBuilder.forPort(12347)
 //                .addService(new MLSClientImpl())
 //                .build();
 

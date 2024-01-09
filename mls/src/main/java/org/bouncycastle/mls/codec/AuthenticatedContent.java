@@ -64,6 +64,7 @@ public class AuthenticatedContent
             throw new Exception("Application data cannot be sent as PublicMessage");
         }
         FramedContentTBS tbs = new FramedContentTBS(wireFormat, content, groupContext);
+//        System.out.println("tbs: " + Hex.toHexString(MLSOutputStream.encode(tbs)));
         byte[] signature = suite.signWithLabel(sigPriv, "FramedContentTBS", MLSOutputStream.encode(tbs));
         FramedContentAuthData auth = new FramedContentAuthData(content.contentType, signature, null);
         return new AuthenticatedContent(wireFormat, content, auth);

@@ -53,7 +53,7 @@ public class MLSMessage
                 content,
                 suite,
                 sigSk,
-                null
+                new byte[0]
         );
         MLSMessage message = new MLSMessage(WireFormat.mls_public_message);
         message.publicMessage = PublicMessage.protect(auth, suite, new byte[0], new byte[0]);

@@ -466,7 +466,6 @@ public class CipherSuite {
 
     public byte[] signWithLabel(byte[] priv, String label, byte[] content) throws IOException, CryptoException
     {
-        System.out.println("!tbs: " + Hex.toHexString(content));
         GenericContent signContent = new GenericContent(label, content);
         byte[] signContentBytes = MLSOutputStream.encode(signContent);
         switch (sigAlgo)
@@ -488,7 +487,7 @@ public class CipherSuite {
     }
     public boolean verifyWithLabel(byte[] pub, String label, byte[] content, byte[] signature) throws IOException
     {
-//        System.out.println(Hex.toHexString(content));
+//        System.out.println( "tbs: " + Hex.toHexString(content));
         GenericContent signContent = new GenericContent(label, content);
         byte[] signContentBytes = MLSOutputStream.encode(signContent);
         switch (sigAlgo)

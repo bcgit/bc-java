@@ -53,7 +53,6 @@ public class TranscriptHash
     public void updateConfirmed(AuthenticatedContent auth) throws IOException
     {
         byte[] transcript = Arrays.concatenate(interim, auth.getConfirmedTranscriptHashInput());
-        System.out.println("transcript: " + Hex.toHexString(transcript));
         confirmed = suite.hash(transcript);
     }
     public void updateInterim(AuthenticatedContent auth) throws IOException

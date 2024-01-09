@@ -221,8 +221,8 @@ public class TreeKEMPublicKey
 
     //TODO DELETE TEST
 //    public static ArrayList<byte[]> TESTWELCOME = new ArrayList<>(java.util.Arrays.asList(
-//            Hex.decode("779987ce2dc496581cb584e481d7a41c443fbded501cd7e560c05c74850f955b"),
-//            Hex.decode("e0250957f8ad31d90172521c680348c2a00bf6fa10a83c27089b6e520056798a595c9bfd13568c6bb48e3b54e897350d")
+//            Hex.decode("1b9e3cd2798390d4a1114dbe90247e3846dcce437844878dcd45001bda95a37b"),
+//            Hex.decode("4886803268aa9982cb45ec73e49b124466281f22f6173db334d900f3fbe3d16824727ca9702a2a839d41637f0d48cdd4")
 //    ));
     public UpdatePath encap(TreeKEMPrivateKey priv, byte[] context, List<LeafIndex> except) throws IOException, InvalidCipherTextException
     {
@@ -242,7 +242,7 @@ public class TreeKEMPublicKey
             {
                 byte[] nodePub = nodeAt(nr).node.getPublicKey();
                 byte[][] ctAndEnc = suite.encryptWithLabel(nodePub, "UpdatePathNode", context, pathSecret.value());
-                //TODO DELETE TEST
+//                TODO DELETE TEST
 //                ctAndEnc[1] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
 //                ctAndEnc[0] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
                 HPKECiphertext ct = new HPKECiphertext(ctAndEnc[1], ctAndEnc[0]);

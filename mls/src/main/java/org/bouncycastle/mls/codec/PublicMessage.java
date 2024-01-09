@@ -3,6 +3,7 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 
@@ -78,6 +79,7 @@ public class PublicMessage
         PublicMessage pt = new PublicMessage(authContent.content, authContent.auth, null);
         if (pt.content.sender.senderType == SenderType.MEMBER)
         {
+//            System.out.println("groupcontextbytes: " + Hex.toHexString(groupContextBytes));
             GroupContext context = (GroupContext) MLSInputStream.decode(groupContextBytes, GroupContext.class);
             Secret membershipKey = new Secret(membershipKeyBytes);
             pt.membership_tag = pt.membershipMac(suite, membershipKey, context);
@@ -89,6 +91,9 @@ public class PublicMessage
         if (content.sender.senderType == SenderType.MEMBER)
         {
             byte[] membershipTag = membershipMac(suite, membership_key, context);
+//            System.out.println("context: " + Hex.toHexString(MLSOutputStream.encode(context)));
+//            System.out.println("mtag: " + Hex.toHexString(membershipTag));
+//            System.out.println("mtag: " + Hex.toHexString(membership_tag));
             if (!Arrays.areEqual(membershipTag, membership_tag))
             {
                 // throw tagMisMatch error!

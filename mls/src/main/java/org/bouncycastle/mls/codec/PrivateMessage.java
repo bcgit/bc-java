@@ -57,10 +57,10 @@ public class PrivateMessage
 
         // Encrypt the content
         byte[] contentPt = serializeContentPt(auth.content, auth.auth, paddingSize);
-        if (contentPt.length < 512)
-        {
-            contentPt = Arrays.concatenate(contentPt, new byte[512 - contentPt.length]);//TODO CHECK
-        }
+//        if (contentPt.length < 512)
+//        {
+//            contentPt = Arrays.concatenate(contentPt, new byte[512 - contentPt.length]);//TODO CHECK
+//        }
 //        System.out.println("serialized_private_content: " + Hex.toHexString(contentPt));
 
         PrivateContentAAD contentAAD = new PrivateContentAAD(

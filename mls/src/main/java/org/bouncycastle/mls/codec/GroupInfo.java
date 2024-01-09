@@ -87,8 +87,6 @@ public class GroupInfo
         }
 
         signer = signerIndex;
-        System.out.println("signer: " + signerIndex.value());
-
         signature = tree.suite.signWithLabel(tree.suite.serializeSignaturePrivateKey(sk.getPrivate()), "GroupInfoTBS", toBeSigned());
     }
 }
