@@ -438,6 +438,16 @@ public class JcaTlsCrypto
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
+        else if (NamedGroup.refersToASpecificPQC(namedGroup))
+        {
+            switch (namedGroup)
+            {
+            case NamedGroup.kyber512:
+            case NamedGroup.kyber768:
+            case NamedGroup.kyber1024:
+                return null;
+            }
+        }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }

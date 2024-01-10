@@ -5374,6 +5374,13 @@ public class TlsUtils
                     agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
                 }
             }
+            else if (NamedGroup.refersToASpecificPQC(supportedGroup))
+            {
+                if (crypto.hasPQCAgreement())
+                {
+                    agreement = crypto.createPQCDomain(new TlsPQCConfig(supportedGroup, TlsPQCKemMode.PQC_KEM_CLIENT)).createPQC();
+                }
+            }
 
             if (null != agreement)
             {

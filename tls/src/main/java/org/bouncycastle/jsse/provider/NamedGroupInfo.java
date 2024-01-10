@@ -554,7 +554,8 @@ class NamedGroupInfo
     {
         for (NamedGroupInfo namedGroupInfo : local.values())
         {
-            if (NamedGroup.refersToAnECDSACurve(namedGroupInfo.getNamedGroup()))
+            if (NamedGroup.refersToAnECDSACurve(namedGroupInfo.getNamedGroup())
+                || NamedGroup.refersToASpecificPQC(namedGroupInfo.getNamedGroup()))
             {
                 return true;
             }
