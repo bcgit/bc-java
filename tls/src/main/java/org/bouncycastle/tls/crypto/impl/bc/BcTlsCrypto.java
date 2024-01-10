@@ -54,6 +54,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsPQCConfig;
+import org.bouncycastle.tls.crypto.TlsPQCDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -211,6 +213,11 @@ public class BcTlsCrypto
         }
     }
 
+    public TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig)
+    {
+        return new BcTlsKyberDomain(this, pqcConfig);
+    }
+
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
         int cryptoHashAlgorithm = CryptoHashAlgorithm.sha256;
@@ -300,6 +307,11 @@ public class BcTlsCrypto
     }
 
     public boolean hasECDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasPQCAgreement()
     {
         return true;
     }

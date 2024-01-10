@@ -40,6 +40,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
+import org.bouncycastle.tls.crypto.TlsPQCConfig;
+import org.bouncycastle.tls.crypto.TlsPQCKemMode;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -4022,6 +4024,7 @@ public class TlsUtils
                 // TODO[tls13] We're conservatively adding both here, though maybe only one is needed
                 addToSet(result, NamedGroupRole.dh);
                 addToSet(result, NamedGroupRole.ecdh);
+                addToSet(result, NamedGroupRole.pqc);
                 break;
             }
             }

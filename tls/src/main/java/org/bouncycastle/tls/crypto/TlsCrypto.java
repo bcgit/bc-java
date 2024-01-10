@@ -70,6 +70,13 @@ public interface TlsCrypto
     boolean hasECDHAgreement();
 
     /**
+     * Return true if this TlsCrypto can support PQC key agreement.
+     *
+     * @return true if this instance can support PQC key agreement, false otherwise.
+     */
+    boolean hasPQCAgreement();
+
+    /**
      * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
      *
      * @param encryptionAlgorithm the algorithm of interest.
@@ -212,6 +219,14 @@ public interface TlsCrypto
      * @return a TlsECDomain supporting the parameters in ecConfig.
      */
     TlsECDomain createECDomain(TlsECConfig ecConfig);
+
+    /**
+     * Create a domain object supporting the domain parameters described in pqcConfig.
+     *
+     * @param pqcConfig the config describing the PQC parameters to use.
+     * @return a TlsPQCDomain supporting the parameters in pqcConfig.
+     */
+    TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig);
 
     /**
      * Adopt the passed in secret, creating a new copy of it.
