@@ -48,6 +48,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsPQCConfig;
+import org.bouncycastle.tls.crypto.TlsPQCDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -559,6 +561,11 @@ public class JcaTlsCrypto
     {
         return true;
     }
+    
+    public boolean hasPQCAgreement()
+    {
+        return true;
+    }
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
@@ -822,6 +829,25 @@ public class JcaTlsCrypto
         default:
             return new JceTlsECDomain(this, ecConfig);
         }
+    }
+    
+    public TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig)
+    {
+        return new JceTlsKyberDomain(this, pqcConfig);
+        // switch (pqcConfig.getNamedGroup())
+        // {
+        // case NamedGroup.secp256Kyber512:
+        // case NamedGroup.secp384Kyber768:
+        // case NamedGroup.secp521Kyber1024:
+        //     return new JceTlsECDHKyberHybridDomain(this, pqcConfig);
+        // case NamedGroup.x25519Kyber512:
+        // case NamedGroup.x25519Kyber768:
+        //     return new JceTlsX25519KyberHybridDomain(this, pqcConfig);
+        // case NamedGroup.x448Kyber768:
+        //     return new JceTlsX448KyberHybridDomain(this, pqcConfig);
+        // default:
+        //     return new JceTlsKyberDomain(this, pqcConfig);
+        // }
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
@@ -1147,6 +1173,10 @@ public class JcaTlsCrypto
                     return Boolean.TRUE;
                 }
                 }
+            }
+            else if (NamedGroup.refersToASpecificPQC(namedGroup))
+            {
+                return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {

@@ -73,7 +73,11 @@ class NamedGroupInfo
         ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
         ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),
         ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
-        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman");
+        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman"),
+
+        kyber512(NamedGroup.kyber512, "PQC"),
+        kyber768(NamedGroup.kyber768, "PQC"),
+        kyber1024(NamedGroup.kyber1024, "PQC");
 
         private final int namedGroup;
         private final String name;
