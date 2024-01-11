@@ -844,20 +844,6 @@ public class JcaTlsCrypto
     public TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig)
     {
         return new JceTlsKyberDomain(this, pqcConfig);
-        // switch (pqcConfig.getNamedGroup())
-        // {
-        // case NamedGroup.secp256Kyber512:
-        // case NamedGroup.secp384Kyber768:
-        // case NamedGroup.secp521Kyber1024:
-        //     return new JceTlsECDHKyberHybridDomain(this, pqcConfig);
-        // case NamedGroup.x25519Kyber512:
-        // case NamedGroup.x25519Kyber768:
-        //     return new JceTlsX25519KyberHybridDomain(this, pqcConfig);
-        // case NamedGroup.x448Kyber768:
-        //     return new JceTlsX448KyberHybridDomain(this, pqcConfig);
-        // default:
-        //     return new JceTlsKyberDomain(this, pqcConfig);
-        // }
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
