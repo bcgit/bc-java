@@ -518,7 +518,7 @@ public class MLSClientImpl
             throw new Exception("Unknown transaction ID");
         }
 
-//        System.out.println("join_wlecome: " + Hex.toHexString(request.getWelcome().toByteArray()));
+        System.out.println("join_wlecome: " + Hex.toHexString(request.getWelcome().toByteArray()));
         MLSMessage welcomeMsg = (MLSMessage) MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
         Welcome welcome = welcomeMsg.welcome;
 
@@ -528,6 +528,7 @@ public class MLSClientImpl
         if(ratchetTreeBytes.length > 0)
         {
             ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree.setSuite(new CipherSuite(welcomeMsg.getCipherSuite()));
         }
 
         CipherSuite suite = new CipherSuite(welcome.cipher_suite);
@@ -599,6 +600,7 @@ public class MLSClientImpl
         if (ratchetTreeBytes.length > 0)
         {
             ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree.setSuite(suite);
         }
 
         LeafIndex removeIndex = null;
@@ -1414,6 +1416,7 @@ public class MLSClientImpl
         if (ratchetTreeBytes.length > 0)
         {
             ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree.setSuite(new CipherSuite(welcome.getCipherSuite()));
         }
 
         Group group = reinit.tombstone.handleWelcome(
@@ -1531,6 +1534,7 @@ public class MLSClientImpl
         if (ratchetTreeBytes.length > 0)
         {
             ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree.setSuite(new CipherSuite(welcome.getCipherSuite()));
         }
 
         Group group = entry.group.handleBranch(
@@ -1652,6 +1656,7 @@ public class MLSClientImpl
                 extSenders = ext.getSenders();
             }
         }
+        extList = new ArrayList<>();
         extSenders.add((ExternalSender) MLSInputStream.decode(extSender, ExternalSender.class));
         extList.add(Extension.externalSender(extSenders));
 

@@ -2425,7 +2425,7 @@ public class Group
                     {
                         throw new Exception("Unknown external PSK");
                     }
-                    out.add(new KeyScheduleEpoch.PSKWithSecret(psk, new Secret(externalPSKs.get(psk.external.externalPSKID))));
+                    out.add(new KeyScheduleEpoch.PSKWithSecret(psk, new Secret(externalPSKs.get(psk.external.externalPSKID).clone())));
                     break;
                 case RESUMPTION:
                     if (psk.resumption.pskEpoch == epoch)
