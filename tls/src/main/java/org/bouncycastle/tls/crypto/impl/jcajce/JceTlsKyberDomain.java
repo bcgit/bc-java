@@ -82,7 +82,6 @@ public class JceTlsKyberDomain implements TlsPQCDomain
 
     public byte[] deCap(KyberPrivateKeyParameters kyberPrivateKeyParameters, byte[] cipherText)
     {
-        // CryptoServicesRegistrar.checkConstraints(KyberUtils.getDefaultProperties("Kyber", kyberPrivateKeyParameters));
         KyberKEMExtractor kemExtract = new KyberKEMExtractor(kyberPrivateKeyParameters);
         byte[] secret = kemExtract.extractSecret(cipherText);
         return secret;
