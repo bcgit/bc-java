@@ -136,11 +136,21 @@ public class CertificatePoliciesValidation
 
     public Memoable copy()
     {
-        return new CertificatePoliciesValidation(0);    // TODO:
+        CertificatePoliciesValidation v = new CertificatePoliciesValidation(0);
+
+        v.explicitPolicy = this.explicitPolicy;
+        v.policyMapping = this.policyMapping;
+        v.inhibitAnyPolicy = this.inhibitAnyPolicy;
+
+        return v;
     }
 
     public void reset(Memoable other)
     {
-        CertificatePoliciesValidation v = (CertificatePoliciesValidation)other;      // TODO:
+        CertificatePoliciesValidation v = (CertificatePoliciesValidation) other;
+
+        this.explicitPolicy = v.explicitPolicy;
+        this.policyMapping = v.policyMapping;
+        this.inhibitAnyPolicy = v.inhibitAnyPolicy;
     }
 }
