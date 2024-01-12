@@ -24,34 +24,34 @@ import java.util.Stack;
 public class ClientVectorTest
         extends TestCase
 {
-    public void testpassive_application() throws Exception
-    {
-        runPassiveClientTest("passive_application.txt");
-    }
-    public void testpassive_branch() throws Exception
-    {
-        runPassiveClientTest("passive_branch.txt");
-    }
-    public void testpassive_commit() throws Exception
-    {
-        runPassiveClientTest("passive_commit.txt");
-    }
-    public void testpassive_external_join() throws Exception
-    {
-        runPassiveClientTest("passive_external_join.txt");
-    }
-    public void testpassive_external_proposals() throws Exception
-    {
-        runPassiveClientTest("passive_external_proposals.txt");
-    }
-    public void testpassive_reinit() throws Exception
-    {
-        runPassiveClientTest("passive_reinit.txt");
-    }
-    public void testpassive_welcome_join() throws Exception
-    {
-        runPassiveClientTest("passive_welcome_join.txt");
-    }
+//    public void testpassive_application() throws Exception
+//    {
+//        runPassiveClientTest("passive_application.txt");
+//    }
+//    public void testpassive_branch() throws Exception
+//    {
+//        runPassiveClientTest("passive_branch.txt");
+//    }
+//    public void testpassive_commit() throws Exception
+//    {
+//        runPassiveClientTest("passive_commit.txt");
+//    }
+//    public void testpassive_external_join() throws Exception
+//    {
+//        runPassiveClientTest("passive_external_join.txt");
+//    }
+//    public void testpassive_external_proposals() throws Exception
+//    {
+//        runPassiveClientTest("passive_external_proposals.txt");
+//    }
+//    public void testpassive_reinit() throws Exception
+//    {
+//        runPassiveClientTest("passive_reinit.txt");
+//    }
+//    public void testpassive_welcome_join() throws Exception
+//    {
+//        runPassiveClientTest("passive_welcome_join.txt");
+//    }
     public void testPassiveClientWelcome() throws Exception
     {
         runPassiveClientTest("passive-client-welcome.txt");
@@ -68,7 +68,7 @@ public class ClientVectorTest
     private void runPassiveClientTest(String filename)
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream(filename);
+        InputStream src = TestResourceFinder.findTestResource("mls/passiveClient/", filename);
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<>();

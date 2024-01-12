@@ -1,6 +1,5 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 

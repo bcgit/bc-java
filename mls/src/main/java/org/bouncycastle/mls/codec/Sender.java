@@ -1,6 +1,5 @@
 package org.bouncycastle.mls.codec;
 
-import io.grpc.stub.StreamObserver;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 
 import java.io.IOException;

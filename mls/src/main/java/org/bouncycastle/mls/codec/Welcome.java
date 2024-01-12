@@ -5,7 +5,6 @@ import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;

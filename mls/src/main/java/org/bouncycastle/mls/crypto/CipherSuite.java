@@ -9,7 +9,6 @@ import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.hpke.AEAD;
 import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.modes.ChaCha20Poly1305;

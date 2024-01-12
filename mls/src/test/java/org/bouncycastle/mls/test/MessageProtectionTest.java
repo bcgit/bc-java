@@ -147,7 +147,7 @@ public class MessageProtectionTest
     public void testMessageProtection()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("message-protection.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "message-protection.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();

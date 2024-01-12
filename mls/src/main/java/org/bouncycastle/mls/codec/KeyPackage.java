@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
 import java.util.ArrayList;

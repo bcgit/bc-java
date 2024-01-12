@@ -5,7 +5,6 @@ import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.ArrayList;

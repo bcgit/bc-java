@@ -1,7 +1,6 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 

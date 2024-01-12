@@ -9,7 +9,6 @@ import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

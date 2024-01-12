@@ -44,7 +44,7 @@ public class VectorTest
     public void testTreeMath()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("tree-math.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "tree-math.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -137,7 +137,7 @@ public class VectorTest
     public void testCryptoBasics()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("crypto-basics.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "crypto-basics.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -279,7 +279,8 @@ public class VectorTest
                 this.handshake_nonce = handshake_nonce;
             }
         }
-        InputStream src = VectorTest.class.getResourceAsStream("secret-tree.txt");
+
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "secret-tree.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -397,7 +398,7 @@ public class VectorTest
     public void testKeySchedule()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("key-schedule.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "key-schedule.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -544,7 +545,7 @@ public class VectorTest
                 this.psk_nonce = psk_nonce;
             }
         }
-        InputStream src = VectorTest.class.getResourceAsStream("psk_secret.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "psk_secret.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -620,7 +621,7 @@ public class VectorTest
     public void testTranscriptHashes()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("transcript-hashes.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "transcript-hashes.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -666,7 +667,7 @@ public class VectorTest
     public void testWelcome()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("welcome.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "welcome.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -737,7 +738,7 @@ public class VectorTest
 
     public void testTreeOperations() throws IOException
     {
-        InputStream src = VectorTest.class.getResourceAsStream("tree-operations.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "tree-operations.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();
@@ -806,7 +807,7 @@ public class VectorTest
     public void testTreeValidation()
             throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("tree-validation.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "tree-validation.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<>();
@@ -970,7 +971,7 @@ public class VectorTest
 
 
 
-        InputStream src = VectorTest.class.getResourceAsStream("treekem.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "treekem.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
 
@@ -1207,7 +1208,7 @@ public class VectorTest
 
     public void testMessages() throws Exception
     {
-        InputStream src = VectorTest.class.getResourceAsStream("messages.txt");
+        InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "messages.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> buf = new HashMap<String, String>();

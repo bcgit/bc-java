@@ -1,8 +1,5 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.codec.MLSInputStream;
-import org.bouncycastle.mls.codec.MLSOutputStream;
-
 import java.io.IOException;
 
 public enum ResumptionPSKUsage implements MLSInputStream.Readable, MLSOutputStream.Writable {

@@ -4,7 +4,6 @@ import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 
