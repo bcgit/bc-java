@@ -51,11 +51,22 @@ public class CertPathValidationContext
 
     public Memoable copy()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        CertPathValidationContext c = new CertPathValidationContext(new HashSet(this.criticalExtensions));
+
+        c.handledExtensions = new HashSet(this.handledExtensions);
+        c.endEntity = this.endEntity;
+        c.index = this.index;
+
+        return c;
     }
 
     public void reset(Memoable other)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        CertPathValidationContext c = (CertPathValidationContext) other;
+
+        this.criticalExtensions = new HashSet(c.criticalExtensions);
+        this.handledExtensions = new HashSet(c.handledExtensions);
+        this.endEntity = c.endEntity;
+        this.index = c.index;
     }
 }
