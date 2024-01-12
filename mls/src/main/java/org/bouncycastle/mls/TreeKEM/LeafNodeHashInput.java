@@ -17,6 +17,7 @@ public class LeafNodeHashInput
         this.leafNode = leafNode;
     }
 
+    @SuppressWarnings("unused")
     public LeafNodeHashInput(MLSInputStream stream) throws IOException
     {
         leafIndex = (LeafIndex) stream.read(LeafIndex.class);

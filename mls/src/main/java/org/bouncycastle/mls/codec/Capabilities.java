@@ -15,9 +15,14 @@ public class Capabilities
     static private final Short[] DEFAULT_SUPPORTED_CREDENTIALS = { CredentialType.basic.value, CredentialType.x509.value};
     List<Short> versions;
     List<Short> cipherSuites;
-    public List<Short> extensions;
+    List<Short> extensions;
     List<Short> proposals;
     List<Short> credentials;
+
+    public List<Short> getExtensions()
+    {
+        return extensions;
+    }
 
     public Capabilities()
     {
@@ -32,7 +37,7 @@ public class Capabilities
         proposals = new ArrayList<>();
         credentials = Arrays.asList(DEFAULT_SUPPORTED_CREDENTIALS);
     }
-
+    @SuppressWarnings("unused")
     Capabilities(MLSInputStream stream) throws IOException
     {
         versions = new ArrayList<>();

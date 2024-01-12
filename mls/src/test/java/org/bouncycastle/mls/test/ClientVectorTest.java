@@ -2,16 +2,8 @@ package org.bouncycastle.mls.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.mls.KeyScheduleEpoch;
-import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.TreeKEM.LeafNode;
-import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-import org.bouncycastle.mls.client.Group;
-import org.bouncycastle.mls.codec.AuthenticatedContent;
-import org.bouncycastle.mls.codec.KeyPackage;
+import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
@@ -27,8 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Stack;
 
 public class ClientVectorTest
@@ -155,14 +145,14 @@ public class ClientVectorTest
                         // Verifying that the given private keys correspond to the public keys in key package
                         AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
                         byte[] sigPub = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
-                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.signature_key, sigPub));
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.getLeafNode().getSignatureKey(), sigPub));
 
                         byte[] leafPub = suite.getHPKE().serializePublicKey(leafKeyPair.getPublic());
-                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.leaf_node.encryption_key, leafPub));
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.getLeafNode().getEncryptionKey(), leafPub));
 
                         AsymmetricCipherKeyPair initKeyPair = suite.getHPKE().deserializePrivateKey(init_priv, null);
                         byte[] initPub = suite.getHPKE().serializePublicKey(initKeyPair.getPublic());
-                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.init_key, initPub));
+                        assertTrue(Arrays.areEqual(keyPackage.keyPackage.getInitKey(), initPub));
 
 
                         // Create given Welcome

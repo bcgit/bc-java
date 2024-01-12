@@ -12,6 +12,7 @@ public class ParentHashInput
     byte[] parentHash;
     byte[] originalSiblingTreeHash;
 
+    @SuppressWarnings("unused")
     public ParentHashInput(MLSInputStream stream) throws IOException
     {
         encryptionKey = stream.readOpaque();

@@ -18,7 +18,7 @@ public class GroupSecrets
         this.path_secret = path_secret;
         this.psks = new ArrayList<>(psks);
     }
-
+    @SuppressWarnings("unused")
     GroupSecrets(MLSInputStream stream) throws IOException
     {
         joiner_secret = stream.readOpaque();

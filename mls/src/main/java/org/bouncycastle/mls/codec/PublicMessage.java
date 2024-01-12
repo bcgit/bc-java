@@ -10,7 +10,7 @@ import java.io.IOException;
 public class PublicMessage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public FramedContent content;
+    FramedContent content;
     FramedContentAuthData auth;
     byte[] membership_tag;
 

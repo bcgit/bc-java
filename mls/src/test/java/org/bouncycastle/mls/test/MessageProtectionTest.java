@@ -133,7 +133,7 @@ public class MessageProtectionTest
         boolean verified = auth.verify(suite, signature_pub, groupContextBytes);
         assertTrue(verified);
 
-        return auth.content;
+        return auth.getContent();
     }
     private GroupKeySet getKeys() throws IOException, IllegalAccessException
     {

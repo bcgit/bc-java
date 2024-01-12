@@ -16,12 +16,44 @@ public class GroupInfo
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     //TODO: replace suite with groupContext.suite
-    public GroupContext groupContext;
-    public List<Extension> extensions;
-    public byte[] confirmationTag;
-    public LeafIndex signer;
+    GroupContext groupContext;
+    List<Extension> extensions;
+    byte[] confirmationTag;
+    LeafIndex signer;
     byte[] signature;
 
+    public byte[] getConfirmationTag()
+    {
+        return confirmationTag;
+    }
+
+    public List<Extension> getExtensions()
+    {
+        return extensions;
+    }
+
+    public LeafIndex getSigner()
+    {
+        return signer;
+    }
+
+    public GroupContext getGroupContext()
+    {
+        return groupContext;
+    }
+
+    public byte[] getGroupID()
+    {
+        return groupContext.groupID;
+    }
+    public long getEpoch()
+    {
+        return groupContext.epoch;
+    }
+    public short getCipherSuiteID()
+    {
+        return groupContext.ciphersuite;
+    }
     public GroupInfo(GroupContext groupContext, List<Extension> extensions, byte[] confirmationTag)
     {
         this.groupContext = groupContext;
@@ -46,13 +78,13 @@ public class GroupInfo
         {
             throw new Exception("Signer not found");
         }
-        return verify(suite, leaf.signature_key);
+        return verify(suite, leaf.getSignatureKey());
     }
     public boolean verify(CipherSuite suite, byte[] pub) throws IOException
     {
         return suite.verifyWithLabel(pub, "GroupInfoTBS", toBeSigned(), signature);
     }
-
+    @SuppressWarnings("unused")
     GroupInfo(MLSInputStream stream) throws IOException
     {
         groupContext = (GroupContext) stream.read(GroupContext.class);
@@ -81,12 +113,12 @@ public class GroupInfo
             throw new Exception("Cannot sign from a blank leaf");
         }
 
-        if (!Arrays.equals(tree.suite.serializeSignaturePublicKey(sk.getPublic()), leaf.signature_key))
+        if (!Arrays.equals(tree.getSuite().serializeSignaturePublicKey(sk.getPublic()), leaf.getSignatureKey()))
         {
             throw new Exception("Bad key for index");
         }
 
         signer = signerIndex;
-        signature = tree.suite.signWithLabel(tree.suite.serializeSignaturePrivateKey(sk.getPrivate()), "GroupInfoTBS", toBeSigned());
+        signature = tree.getSuite().signWithLabel(tree.getSuite().serializeSignaturePrivateKey(sk.getPrivate()), "GroupInfoTBS", toBeSigned());
     }
 }

@@ -23,9 +23,24 @@ public class TreeKEMPrivateKey
 {
     CipherSuite suite;
     LeafIndex index;
-    public Secret updateSecret;
-    public Map<NodeIndex, Secret> pathSecrets;
-    public Map<NodeIndex, AsymmetricCipherKeyPair> privateKeyCache;
+    Secret updateSecret;
+    Map<NodeIndex, Secret> pathSecrets;
+    Map<NodeIndex, AsymmetricCipherKeyPair> privateKeyCache;
+
+    public Secret getUpdateSecret()
+    {
+        return updateSecret;
+    }
+
+    public void insertPathSecret(NodeIndex index, Secret secret)
+    {
+        pathSecrets.put(index, secret);
+    }
+
+    public void insertPrivateKey(NodeIndex index, AsymmetricCipherKeyPair keyPair)
+    {
+        privateKeyCache.put(index, keyPair);
+    }
 
     public TreeKEMPrivateKey(CipherSuite suite, LeafIndex index)
     {
@@ -50,14 +65,14 @@ public class TreeKEMPrivateKey
         priv.privateKeyCache.put(new NodeIndex(index), leafPriv);
         return priv;
     }
-    public static TreeKEMPrivateKey create(TreeKEMPublicKey pub, LeafIndex from, Secret leafSecret) throws IOException
+    public static TreeKEMPrivateKey create(TreeKEMPublicKey pub, LeafIndex from, Secret leafSecret) throws Exception
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, from);
         priv.implant(pub, new NodeIndex(from), leafSecret);//todo check
         return priv;
     }
     public static TreeKEMPrivateKey joiner(TreeKEMPublicKey pub, LeafIndex index, AsymmetricCipherKeyPair leafPriv,
-                                           NodeIndex intersect, Secret pathSecret) throws IOException
+                                           NodeIndex intersect, Secret pathSecret) throws Exception
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, index);
 
@@ -135,7 +150,7 @@ public class TreeKEMPrivateKey
         // find decap target
         NodeIndex ni = new NodeIndex(index);
         FilteredDirectPath dp = pub.getFilteredDirectPath(new NodeIndex(from));
-        if (dp.parents.size() != path.nodes.size())
+        if (dp.parents.size() != path.getNodes().size())
         {
             throw new Exception("Malformed direct path");
         }
@@ -160,7 +175,7 @@ public class TreeKEMPrivateKey
 
         // find target in resolution
         removeLeaves(res, except);
-        if (res.size() != path.nodes.get(dpi).encrypted_path_secret.size())
+        if (res.size() != path.getNodes().get(dpi).getEncryptedPathSecret().size())
         {
             throw new Exception("Malformed direct path node");
         }
@@ -181,14 +196,14 @@ public class TreeKEMPrivateKey
 
         // decrypt and implant
         AsymmetricCipherKeyPair priv = setPrivateKey(res.get(resi), false);
-        HPKECiphertext ct = path.nodes.get(dpi).encrypted_path_secret.get(resi);
+        HPKECiphertext ct = path.getNodes().get(dpi).getEncryptedPathSecret().get(resi);
 
         Secret pathSecret = new Secret(suite.decryptWithLabel(
                 suite.getHPKE().serializePrivateKey(priv.getPrivate()),
                 "UpdatePathNode",
                 context,
-                ct.kem_output,
-                ct.ciphertext)
+                ct.getKemOutput(),
+                ct.getCiphertext())
         );
 
         implant(pub, overlapNode, pathSecret);
@@ -258,7 +273,7 @@ public class TreeKEMPrivateKey
         return suite.getHPKE().deriveKeyPair(nodeSecret.value());
     }
 
-    private void implant(TreeKEMPublicKey pub, NodeIndex start, Secret pathSecret) throws IOException
+    private void implant(TreeKEMPublicKey pub, NodeIndex start, Secret pathSecret) throws Exception
     {
         FilteredDirectPath fdp = pub.getFilteredDirectPath(start);
         Secret secret = new Secret(pathSecret.value());

@@ -34,7 +34,7 @@ public enum ExtensionType
         this.value = value;
     }
 
-
+    @SuppressWarnings("unused")
     ExtensionType(MLSInputStream stream) throws IOException
     {
         this.value = (short) stream.read(short.class);

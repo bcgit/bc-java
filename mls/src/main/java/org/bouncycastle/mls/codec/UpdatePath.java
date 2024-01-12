@@ -9,8 +9,18 @@ import java.util.List;
 public class UpdatePath
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public LeafNode leaf_node;
-    public List<UpdatePathNode> nodes;
+    LeafNode leaf_node;
+    List<UpdatePathNode> nodes;
+
+    public LeafNode getLeafNode()
+    {
+        return leaf_node;
+    }
+
+    public List<UpdatePathNode> getNodes()
+    {
+        return nodes;
+    }
 
     public UpdatePath clone()
     {
@@ -19,10 +29,10 @@ public class UpdatePath
     public UpdatePath(LeafNode leaf_node, List<UpdatePathNode> nodes)
     {
 //        this.leaf_node = leaf_node;
-        this.leaf_node = leaf_node.copy(leaf_node.encryption_key);
+        this.leaf_node = leaf_node.copy(leaf_node.getEncryptionKey());
         this.nodes = new ArrayList<>(nodes);
     }
-
+    @SuppressWarnings("unused")
     UpdatePath(MLSInputStream stream) throws IOException
     {
         leaf_node = (LeafNode) stream.read(LeafNode.class);

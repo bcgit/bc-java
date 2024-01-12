@@ -12,8 +12,18 @@ public class TranscriptHash
 {
 
     private CipherSuite suite;
-    public byte[] confirmed;
-    public byte[] interim;
+    byte[] confirmed;
+    byte[] interim;
+
+    public byte[] getConfirmed()
+    {
+        return confirmed;
+    }
+
+    public byte[] getInterim()
+    {
+        return interim;
+    }
 
     public void setInterim(byte[] interim)
     {

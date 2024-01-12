@@ -49,7 +49,7 @@ public class CipherSuite {
             MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
             MLS_256_DHKEMP521_AES256GCM_SHA512_P521,
             MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448,
-//            MLS_256_DHKEMP384_AES256GCM_SHA384_P384, TODO disabled for mlspp
+            MLS_256_DHKEMP384_AES256GCM_SHA384_P384, //TODO disabled for mlspp
     };
 
     public interface KDF {
@@ -555,6 +555,8 @@ public class CipherSuite {
         }
         return hpke.seal(pubKey, encryptContextBytes, "".getBytes(), plaintext, null, null, null);
     }
+
+    //TODO replace with interfaces
 
     public KDF getKDF() {
         return kdf;

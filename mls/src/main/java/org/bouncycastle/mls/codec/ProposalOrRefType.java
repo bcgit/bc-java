@@ -15,7 +15,7 @@ public enum ProposalOrRefType
     {
         this.value = value;
     }
-
+    @SuppressWarnings("unused")
     ProposalOrRefType(MLSInputStream stream) throws IOException
     {
         this.value = (byte) stream.read(byte.class);

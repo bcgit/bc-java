@@ -49,6 +49,7 @@ public class Extension
         return null;
     }
 
+    @SuppressWarnings("unused")
     Extension(MLSInputStream stream) throws IOException
     {
         short extType = (short) stream.read(short.class);

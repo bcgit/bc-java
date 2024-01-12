@@ -40,13 +40,7 @@ public enum CredentialType
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-//        if (value == GREASE.value)
-//        {
-//            stream.write(Grease.getGrease());
-//        }
-//        else
-//        {
-            stream.write(value);
-//        }
+        //TODO write grease?
+        stream.write(value);
     }
 }

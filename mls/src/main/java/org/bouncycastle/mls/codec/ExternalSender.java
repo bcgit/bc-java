@@ -5,8 +5,13 @@ import java.io.IOException;
 public class ExternalSender
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public byte[] signatureKey;
+    byte[] signatureKey;
     Credential credential;
+
+    public byte[] getSignatureKey()
+    {
+        return signatureKey;
+    }
 
     public ExternalSender(byte[] signatureKey, Credential credential)
     {

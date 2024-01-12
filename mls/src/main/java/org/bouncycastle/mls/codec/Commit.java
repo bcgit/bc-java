@@ -1,20 +1,30 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.client.CachedProposal;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Commit
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public List<ProposalOrRef> proposals;
+    List<ProposalOrRef> proposals;
+    UpdatePath updatePath;
 
-    byte[] proposalsBytes;
-    public UpdatePath updatePath;
+    public List<ProposalOrRef> getProposals()
+    {
+        return proposals;
+    }
+
+    public void setUpdatePath(UpdatePath updatePath)
+    {
+        this.updatePath = updatePath;
+    }
+
+    public UpdatePath getUpdatePath()
+    {
+        return updatePath;
+    }
+
     public byte[] validityExternal()
     {
         // External Commits MUST contain a path field (and is therefore a "full"
@@ -57,18 +67,18 @@ public class Commit
         this.proposals = new ArrayList<>();
     }
 
+    @SuppressWarnings("unused")
     Commit(MLSInputStream stream) throws IOException
     {
         proposals = new ArrayList<>();
         stream.readList(proposals ,ProposalOrRef.class);
-//        proposalsBytes = stream.readOpaque();
+
         updatePath = (UpdatePath) stream.readOptional(UpdatePath.class);
     }
 
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-//        stream.writeOpaque(proposalsBytes);
         stream.writeList(proposals);
         stream.writeOptional(updatePath);
     }

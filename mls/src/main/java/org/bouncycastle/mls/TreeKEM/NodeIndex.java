@@ -109,7 +109,7 @@ public class NodeIndex {
         return l;
     }
 
-    public List<NodeIndex> copath(TreeSize size)
+    public List<NodeIndex> copath(TreeSize size) throws Exception
     {
         List<NodeIndex> d = directPath(size);
 
@@ -130,11 +130,11 @@ public class NodeIndex {
         return cp;
     }
 
-    private  List<NodeIndex> directPath(TreeSize size)
+    private  List<NodeIndex> directPath(TreeSize size) throws Exception
     {
         if (value >= size.width())
         {
-            System.out.println("!!!Request for dirpath outside of tree!!!");
+            throw new Exception("!!!Request for dirpath outside of tree!!!");
         }
 
         List<NodeIndex> d = new Vector<>();

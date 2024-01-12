@@ -1,6 +1,6 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.mls.client.Group;
+import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Credential;
 import org.bouncycastle.mls.codec.CredentialType;
@@ -8,11 +8,8 @@ import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.CipherSuite;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,23 +18,28 @@ public class LeafNode
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     CipherSuite suite;
-    public byte[] encryption_key;
-    public byte[] signature_key;
+    byte[] encryption_key;
+    byte[] signature_key;
     Credential credential;
-    public Capabilities capabilities;
+    Capabilities capabilities;
     LeafNodeSource leaf_node_source;
 
     //in switch
     LifeTime lifeTime;
     byte[] parent_hash;
 
-    public List<Extension> extensions;
+    List<Extension> extensions;
     /* SignWithLabel(., "LeafNodeTBS", LeafNodeTBS) */
-    public byte[] signature; // not in TBS
+    byte[] signature; // not in TBS
+
+    public Capabilities getCapabilities()
+    {
+        return capabilities;
+    }
 
     public CredentialType getCredentialType()
     {
-        return credential.credentialType;
+        return credential.getCredentialType();
     }
 
     public CipherSuite getSuite()
@@ -48,6 +50,21 @@ public class LeafNode
     public LifeTime getLifeTime()
     {
         return lifeTime;
+    }
+
+    public byte[] getEncryptionKey()
+    {
+        return encryption_key;
+    }
+
+    public byte[] getSignatureKey()
+    {
+        return signature_key;
+    }
+
+    public List<Extension> getExtensions()
+    {
+        return extensions;
     }
 
     public LeafNode(
@@ -180,19 +197,12 @@ public class LeafNode
         {
             return true;
         }
-        long now = Instant.now().getLong(ChronoField.INSTANT_SECONDS);
-        if (lifeTime.not_after == -1)
-        {
-            return (now >= lifeTime.not_before) && (now < Long.MAX_VALUE);
-        }
-        return (now >= lifeTime.not_before) && (now < lifeTime.not_after);
+
+        return lifeTime.verify();
     }
 
     public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
     {
-//        System.out.println("tbs: " + Hex.toHexString(tbs));
-//        System.out.println("sig: " + Hex.toHexString(signature));
-//        System.out.println("sigkey: " + Hex.toHexString(signature_key));
         if (getCredentialType() == CredentialType.x509)
         {
             //TODO: get credential and check if it's signature scheme matches the cipher suite signature scheme

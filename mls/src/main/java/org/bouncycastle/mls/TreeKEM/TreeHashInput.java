@@ -28,7 +28,7 @@ public class TreeHashInput
     {
         return new TreeHashInput(NodeType.parent, null, parentNode);
     }
-
+    @SuppressWarnings("unused")
     public TreeHashInput(MLSInputStream stream) throws IOException
     {
         nodeType = NodeType.values()[(byte) stream.read(byte.class)];

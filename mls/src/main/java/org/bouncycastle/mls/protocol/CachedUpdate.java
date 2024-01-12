@@ -1,11 +1,11 @@
-package org.bouncycastle.mls.client;
+package org.bouncycastle.mls.protocol;
 
 import org.bouncycastle.mls.codec.Proposal;
 import org.bouncycastle.util.Arrays;
 
 public class CachedUpdate
 {
-    public byte[] updateSk;
+    byte[] updateSk;
     Proposal.Update update;
 
     public CachedUpdate(byte[] updateSk, Proposal.Update update)

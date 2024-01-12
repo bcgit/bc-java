@@ -7,16 +7,25 @@ import java.io.IOException;
 public class HPKECiphertext
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public byte[] kem_output;
-    public byte[] ciphertext;
+    byte[] kem_output;
+    byte[] ciphertext;
 
+    public byte[] getKemOutput()
+    {
+        return kem_output;
+    }
+
+    public byte[] getCiphertext()
+    {
+        return ciphertext;
+    }
 
     public HPKECiphertext(byte[] kem_output, byte[] ciphertext)
     {
         this.kem_output = kem_output;
         this.ciphertext = ciphertext;
     }
-
+    @SuppressWarnings("unused")
     HPKECiphertext(MLSInputStream stream) throws IOException
     {
         kem_output = stream.readOpaque();

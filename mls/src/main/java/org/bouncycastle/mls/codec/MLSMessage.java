@@ -68,7 +68,7 @@ public class MLSMessage
         message.keyPackage = keyPackage;
         return message;
     }
-
+    @SuppressWarnings("unused")
     public MLSMessage(MLSInputStream stream) throws IOException
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
@@ -186,7 +186,7 @@ class AuthenticatedContentTBM
         this.contentTBS = contentTBS;
         this.auth = auth;
     }
-
+    @SuppressWarnings("unused")
     public AuthenticatedContentTBM(MLSInputStream stream) throws IOException
     {
         contentTBS = (FramedContentTBS) stream.read(FramedContentTBS.class);
@@ -282,7 +282,7 @@ class FramedContentTBS
                 break;
         }
     }
-
+    @SuppressWarnings("unused")
     public FramedContentTBS(MLSInputStream stream) throws IOException
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
@@ -332,7 +332,7 @@ class SenderData
         this.generation = generation;
         this.reuseGuard = reuseGuard;
     }
-
+    @SuppressWarnings("unused")
     SenderData(MLSInputStream stream) throws IOException
     {
         sender = (LeafIndex) stream.read(LeafIndex.class);
@@ -361,7 +361,7 @@ class SenderDataAAD
         this.epoch = epoch;
         this.contentType = contentType;
     }
-
+    @SuppressWarnings("unused")
     SenderDataAAD(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();
@@ -445,7 +445,7 @@ class PrivateContentAAD
         this.content_type = content_type;
         this.authenticated_data = authenticated_data.clone();
     }
-
+    @SuppressWarnings("unused")
     PrivateContentAAD(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();
@@ -476,7 +476,7 @@ class EncryptedGroupSecrets
         this.new_member = new_member;
         this.encrypted_group_secrets = encrypted_group_secrets;
     }
-
+    @SuppressWarnings("unused")
     EncryptedGroupSecrets(MLSInputStream stream) throws IOException
     {
         new_member = stream.readOpaque();

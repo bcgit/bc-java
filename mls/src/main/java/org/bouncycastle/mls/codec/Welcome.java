@@ -15,7 +15,7 @@ import java.util.List;
 public class Welcome
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public short cipher_suite;
+    short cipher_suite;
 
     CipherSuite suite;
     List<EncryptedGroupSecrets> secrets;
@@ -24,17 +24,14 @@ public class Welcome
     //
     private Secret joinerSecret;
     private List<PreSharedKeyID> psks;
-    //TODO DELETE TEST
-//    public static ArrayList<byte[]> TESTWELCOME = new ArrayList<>(java.util.Arrays.asList(
-//            Hex.decode("58e6b6d3dcada324422dcfef0c0e67b3f12e6d905fecaeed23822348ffed6672"),
-//            Hex.decode("bb519cbd9130b3b8ac7a201a66b335b6354d121e1be1f0d8cb9f1405f178f9386e7df70fe3565c47e691c44ad335e5069948f2"),
-//            Hex.decode("54ff6b56a4d09d5d45e8e39af8328c879b083f1199001499d6521785dcd5c06e"),
-//            Hex.decode("55324f7ac6d5e74b598b65649cf532ff0de05aebe9dc052d9e906cdfbc09de1adda39282a1ba6bd656f89468b3ccafb1c04bcf")
-//    ));
+
+    public short getCipherSuiteID()
+    {
+        return cipher_suite;
+    }
 
     public Welcome(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo) throws IOException, InvalidCipherTextException
     {
-//        System.out.println("welcome_groupinfo: " + Hex.toHexString(groupInfo));
         this.cipher_suite = suite.getSuiteId();
         this.suite = suite;
         this.joinerSecret = new Secret(joinerSecret);
@@ -50,7 +47,7 @@ public class Welcome
         this.encrypted_group_info = suite.getAEAD().seal(
                 keyGen.key,
                 keyGen.nonce,
-                new byte[0], //TODO Check if aad is needed!
+                new byte[0],
                 groupInfo
         );
 
@@ -61,10 +58,8 @@ public class Welcome
     {
 
         byte[] ref = suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference");
-//        System.out.println("keypackage ref: " +Hex.toHexString(ref));
         for (int i = 0; i < secrets.size(); i++)
         {
-//            System.out.println("secrets[" + i + "]: " +Hex.toHexString(secrets.get(i).new_member));
             if(Arrays.equals(ref, secrets.get(i).new_member))
             {
                 return i;
@@ -85,9 +80,6 @@ public class Welcome
         //todo: get rid of new suite
         CipherSuite suite = new CipherSuite(kp.cipher_suite);
         byte[][] ctAndEnc = suite.encryptWithLabel(kp.init_key, "Welcome", encrypted_group_info, gsBytes);
-        //TODO DELETE TEST
-//        ctAndEnc[1] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
-//        ctAndEnc[0] = TESTWELCOME.get(0); TESTWELCOME.remove(0);
         secrets.add(
                 new EncryptedGroupSecrets(
                     suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference"),
@@ -104,7 +96,6 @@ public class Welcome
                 keyAndNonce.nonce,
                 new byte[0],
                 encrypted_group_info);
-//        System.out.println("groupInfo: " + Hex.toHexString(groupInfoData));
         return (GroupInfo) MLSInputStream.decode(groupInfoData, GroupInfo.class);
     }
 
@@ -123,7 +114,7 @@ public class Welcome
         return (GroupSecrets) MLSInputStream.decode(secretsData, GroupSecrets.class);
     }
 
-
+    @SuppressWarnings("unused")
     Welcome(MLSInputStream stream) throws IOException
     {
         cipher_suite = (short) stream.read(short.class);

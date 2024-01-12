@@ -1,4 +1,4 @@
-package org.bouncycastle.mls.client;
+package org.bouncycastle.mls.protocol;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.codec.Proposal;
@@ -7,7 +7,7 @@ import org.bouncycastle.util.Arrays;
 
 public class CachedProposal
 {
-    public byte[] proposalRef;
+    byte[] proposalRef;
     Proposal proposal;
     LeafIndex sender;
 

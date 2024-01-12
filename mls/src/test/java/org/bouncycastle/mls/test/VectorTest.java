@@ -9,7 +9,7 @@ import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-import org.bouncycastle.mls.client.Group;
+import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.Commit;
 import org.bouncycastle.mls.codec.GroupContext;
@@ -647,10 +647,10 @@ public class VectorTest
 
                     AuthenticatedContent authContent = (AuthenticatedContent) MLSInputStream.decode(authenticated_content, AuthenticatedContent.class);
                     transcript.update(authContent);
-                    assertTrue(Arrays.areEqual(transcript.confirmed, confirmed_transcript_hash_after));
-                    assertTrue(Arrays.areEqual(transcript.interim, interim_transcript_hash_after));
+                    assertTrue(Arrays.areEqual(transcript.getConfirmed(), confirmed_transcript_hash_after));
+                    assertTrue(Arrays.areEqual(transcript.getInterim(), interim_transcript_hash_after));
 
-                    byte[] confirmationTag = suite.getKDF().extract(confirmation_key, transcript.confirmed);
+                    byte[] confirmationTag = suite.getKDF().extract(confirmation_key, transcript.getConfirmed());
                     assertTrue(Arrays.areEqual(confirmationTag, authContent.getConfirmationTag()));
 
                     count++;
@@ -713,7 +713,7 @@ public class VectorTest
                     boolean verified = groupInfo.verify(suite, signer_pub);
                     assertTrue(verified);
 
-                    GroupContext groupContext = groupInfo.groupContext;
+                    GroupContext groupContext = groupInfo.getGroupContext();
                     KeyScheduleEpoch keySchedule = KeyScheduleEpoch.joiner(
                             suite,
                             groupSecrets.joiner_secret,
@@ -721,8 +721,8 @@ public class VectorTest
                             MLSOutputStream.encode(groupContext));
 
 
-                    byte[] confirmationTag = keySchedule.confirmationTag(groupContext.confirmedTranscriptHash);
-                    assertTrue(Arrays.areEqual(confirmationTag, groupInfo.confirmationTag));
+                    byte[] confirmationTag = keySchedule.confirmationTag(groupContext.getConfirmedTranscriptHash());
+                    assertTrue(Arrays.areEqual(confirmationTag, groupInfo.getConfirmationTag()));
 
                     count++;
                 }
@@ -768,15 +768,8 @@ public class VectorTest
                     byte[] afterTreeBytes = MLSOutputStream.encode(afterTree);
                     assertTrue(Arrays.areEqual(tree_after, afterTreeBytes));
 
-
                     beforeTree.setSuite(suite);
                     beforeTree.setHashAll();
-//                    System.out.print("Before");
-//                    beforeTree.dump();
-
-//                    System.out.print("After");
-//                    afterTree.dump();
-
 
                     Proposal proposalObj = (Proposal) MLSInputStream.decode(proposal, Proposal.class);
                     switch (proposalObj.getProposalType())
@@ -788,7 +781,7 @@ public class VectorTest
                             beforeTree.updateLeaf(new LeafIndex(proposal_sender), proposalObj.getLeafNode());
                             break;
                         case REMOVE:
-                            beforeTree.blankPath(proposalObj.remove.removed);
+                            beforeTree.blankPath(proposalObj.getRemove().removed);
                             beforeTree.truncate();
                             break;
                     }
@@ -829,11 +822,6 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-//                    if (count != 59)
-//                    {
-//                        count++;
-//                        continue;
-//                    }
                     System.out.println("test case: " + count);
                     short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] treeBytes = Hex.decode(buf.get("tree"));
@@ -846,7 +834,7 @@ public class VectorTest
 //                    tree.dump();
 
                     // Verify each leaf node is properly signed
-                    for (int i = 0; i < tree.size.leafCount(); i++)
+                    for (int i = 0; i < tree.getSize().leafCount(); i++)
                     {
                         LeafNode leaf = tree.getLeafNode(new LeafIndex(i));
                         if (leaf == null)
@@ -859,7 +847,7 @@ public class VectorTest
                     }
 
                     // Verify the tree hashes
-                    for (int i = 0; i < tree.size.width(); i++)
+                    for (int i = 0; i < tree.getSize().width(); i++)
                     {
                         NodeIndex index = new NodeIndex(i);
                         // Tree hash
@@ -872,7 +860,7 @@ public class VectorTest
                     assertTrue(tree.verifyParentHash());
 
                     // verify resolutions
-                    for (int i = 0; i < tree.size.width(); i++)
+                    for (int i = 0; i < tree.getSize().width(); i++)
                     {
                         NodeIndex n = new NodeIndex(i);
                         assertEquals(tree.resolve(n), resolution.get(i));
@@ -1035,7 +1023,7 @@ public class VectorTest
                     // Validate the public state
                     assertTrue(tree.verifyParentHash());
 
-                    for (int i = 0; i < tree.size.leafCount(); i++)
+                    for (int i = 0; i < tree.getSize().leafCount(); i++)
                     {
                         LeafIndex index = new LeafIndex(i);
                         LeafNode leaf = tree.getLeafNode(index);
@@ -1056,11 +1044,11 @@ public class VectorTest
                         AsymmetricCipherKeyPair encPriv = suite.getHPKE().deserializePrivateKey(info.encryptionPriv, null);
                         byte[] sigPriv = info.signaturePriv;
                         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(suite, info.index);
-                        priv.privateKeyCache.put(new NodeIndex(info.index), encPriv);
+                        priv.insertPrivateKey(new NodeIndex(info.index), encPriv);
 
                         for (PathSecretInfo entry : info.pathSecrets)
                         {
-                            priv.pathSecrets.put(entry.node, new Secret(entry.pathSecret));
+                            priv.insertPathSecret(entry.node, new Secret(entry.pathSecret));
                         }
                         assertTrue(priv.consistent(tree));
 
@@ -1090,7 +1078,7 @@ public class VectorTest
                         );
 
                         byte[] ctx = MLSOutputStream.encode(groupContext);
-                        for (int i = 0; i < treeAfter.size.leafCount(); i++)
+                        for (int i = 0; i < treeAfter.getSize().leafCount(); i++)
                         {
                             LeafIndex to = new LeafIndex(i);
                             if (to.equals(from) || !treeAfter.hasLeaf(to))
@@ -1100,15 +1088,10 @@ public class VectorTest
                             TreeKEMPrivateKey priv = treePrivs.get(to).copy();
                             priv.decap(from, treeAfter, ctx, path, new ArrayList<>());
 
-
-//                            System.out.println("updateSecret: " + Hex.toHexString(priv.updateSecret.value()));
-//                            System.out.println("commitSecret: " + Hex.toHexString(info.commitSecret));
-                            assertTrue(Arrays.areEqual(priv.updateSecret.value(), info.commitSecret));
+                            assertTrue(Arrays.areEqual(priv.getUpdateSecret().value(), info.commitSecret));
 
                             Secret sharedPathSecret = priv.getSharedPathSecret(from);
-//                            System.out.println("sharedPS: " + Hex.toHexString(sharedPathSecret.value()));
-//                            System.out.println("pathSecrets: " + Hex.toHexString(info.pathSecrets.get(to.value()).path_secret));
-                            assertTrue(Arrays.areEqual(sharedPathSecret.value(), info.pathSecrets.get(to.value()).path_secret));
+                            assertTrue(Arrays.areEqual(sharedPathSecret.value(), info.pathSecrets.get(to.value()).getPathSecret()));
 
                         }
 
@@ -1123,7 +1106,7 @@ public class VectorTest
                         UpdatePath newPath = encapTree.encap(newSenderPriv, ctx, new ArrayList<>());
                         assertTrue(tree.verifyParentHash(from, path));
 
-                        for (int i = 0; i < encapTree.size.leafCount(); i++)
+                        for (int i = 0; i < encapTree.getSize().leafCount(); i++)
                         {
                             LeafIndex to = new LeafIndex(i);
                             if (to.equals(from) || !encapTree.hasLeaf(to))
@@ -1134,7 +1117,7 @@ public class VectorTest
                             TreeKEMPrivateKey priv = treePrivs.get(to).copy();
                             priv.decap(from, encapTree, ctx, newPath, new ArrayList<>());
 
-                            assertTrue(Arrays.areEqual(priv.updateSecret.value(), newSenderPriv.updateSecret.value()));
+                            assertTrue(Arrays.areEqual(priv.getUpdateSecret().value(), newSenderPriv.getUpdateSecret().value()));
                         }
 
 

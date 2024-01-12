@@ -5,16 +5,41 @@ import java.io.IOException;
 public class FramedContent
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public byte[] group_id;
-    public long epoch;
-    public Sender sender;
+    byte[] group_id;
+    long epoch;
+    Sender sender;
     byte[] authenticated_data;
     byte[] application_data;
 
     final ContentType contentType;
 
-    public Proposal proposal;
-    public Commit commit;
+    Proposal proposal;
+    Commit commit;
+
+    public Proposal getProposal()
+    {
+        return proposal;
+    }
+
+    public Commit getCommit()
+    {
+        return commit;
+    }
+
+    public Sender getSender()
+    {
+        return sender;
+    }
+
+    public byte[] getGroupID()
+    {
+        return group_id;
+    }
+
+    public long getEpoch()
+    {
+        return epoch;
+    }
 
     public ContentType getContentType()
     {
@@ -41,7 +66,7 @@ public class FramedContent
                 return null;
         }
     }
-
+    @SuppressWarnings("unused")
     public FramedContent(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();

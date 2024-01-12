@@ -12,13 +12,48 @@ public class Proposal
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProposalType proposalType;
-    public Add add;
-    public Update update;
-    public Remove remove;
-    public PreSharedKey preSharedKey;
-    public ReInit reInit;
-    public ExternalInit externalInit;
-    public GroupContextExtensions groupContextExtensions;
+    Add add;
+    Update update;
+    Remove remove;
+    PreSharedKey preSharedKey;
+    ReInit reInit;
+    ExternalInit externalInit;
+    GroupContextExtensions groupContextExtensions;
+
+    public Add getAdd()
+    {
+        return add;
+    }
+
+    public Update getUpdate()
+    {
+        return update;
+    }
+
+    public Remove getRemove()
+    {
+        return remove;
+    }
+
+    public PreSharedKey getPreSharedKey()
+    {
+        return preSharedKey;
+    }
+
+    public ReInit getReInit()
+    {
+        return reInit;
+    }
+
+    public ExternalInit getExternalInit()
+    {
+        return externalInit;
+    }
+
+    public GroupContextExtensions getGroupContextExtensions()
+    {
+        return groupContextExtensions;
+    }
 
     public LeafNode getLeafNode()
     {
@@ -168,7 +203,7 @@ public class Proposal
 //            this.keyPackage = keyPackage;
             this.keyPackage = (KeyPackage) MLSInputStream.decode(MLSOutputStream.encode(keyPackage), KeyPackage.class); // TODO CHANGE
         }
-
+        @SuppressWarnings("unused")
         Add(MLSInputStream stream) throws IOException
         {
             keyPackage = (KeyPackage) stream.read(KeyPackage.class);
@@ -185,7 +220,7 @@ public class Proposal
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
         LeafNode leafNode;
-
+        @SuppressWarnings("unused")
         public Update(MLSInputStream stream) throws IOException
         {
             leafNode = (LeafNode) stream.read(LeafNode.class);
@@ -217,7 +252,7 @@ public class Proposal
         {
             this.removed = removed;
         }
-
+        @SuppressWarnings("unused")
         public Remove(MLSInputStream stream) throws IOException
         {
             removed = (LeafIndex) stream.read(LeafIndex.class);
@@ -234,7 +269,7 @@ public class Proposal
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
         public PreSharedKeyID psk;
-
+        @SuppressWarnings("unused")
         PreSharedKey(MLSInputStream stream) throws IOException
         {
             psk = (PreSharedKeyID) stream.read(PreSharedKeyID.class);
@@ -282,7 +317,7 @@ public class Proposal
             this.cipherSuite = cipherSuite;
             this.extensions = extensions;
         }
-
+        @SuppressWarnings("unused")
         ReInit(MLSInputStream stream) throws IOException
         {
             //TODO: ciphersuite
@@ -307,7 +342,7 @@ public class Proposal
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
         public byte[] kemOutput;
-
+        @SuppressWarnings("unused")
         ExternalInit(MLSInputStream stream) throws IOException
         {
             kemOutput = stream.readOpaque();
@@ -335,7 +370,7 @@ public class Proposal
         }
 
         public List<Extension> extensions;
-
+        @SuppressWarnings("unused")
         GroupContextExtensions(MLSInputStream stream) throws IOException
         {
             extensions = new ArrayList<>();

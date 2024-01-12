@@ -8,10 +8,14 @@ public class Credential
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 
 {
-    public CredentialType credentialType;
+    CredentialType credentialType;
     byte[] identity;
     List<Certificate> certificates;
 
+    public CredentialType getCredentialType()
+    {
+        return credentialType;
+    }
     public byte[] getIdentity()
     {
         return identity;
@@ -28,7 +32,7 @@ public class Credential
         this.identity = identity;
         this.certificates = certificates;
     }
-
+    @SuppressWarnings("unused")
     Credential(MLSInputStream stream) throws IOException
     {
         short credType = (short) stream.read(short.class);

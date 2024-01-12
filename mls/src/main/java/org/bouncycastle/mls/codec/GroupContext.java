@@ -8,12 +8,27 @@ public class GroupContext
 {
 
     ProtocolVersion version = ProtocolVersion.mls10;
-    public short ciphersuite; //TODO: change to static cipher instead
-    public byte[] groupID;
-    public long epoch;
-    public byte[] treeHash;
-    public byte[] confirmedTranscriptHash;
-    public ArrayList<Extension> extensions;
+    short ciphersuite; //TODO: change to static cipher instead
+    byte[] groupID;
+    long epoch;
+    byte[] treeHash;
+    byte[] confirmedTranscriptHash;
+    ArrayList<Extension> extensions;
+
+    public byte[] getTreeHash()
+    {
+        return treeHash;
+    }
+
+    public byte[] getConfirmedTranscriptHash()
+    {
+        return confirmedTranscriptHash;
+    }
+
+    public ArrayList<Extension> getExtensions()
+    {
+        return extensions;
+    }
 
     public GroupContext(short ciphersuit, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)
     {
@@ -24,7 +39,7 @@ public class GroupContext
         this.confirmedTranscriptHash = confirmedTranscriptHash;
         this.extensions = new ArrayList<>(extensions);
     }
-
+    @SuppressWarnings("unused")
     public GroupContext(MLSInputStream stream) throws IOException
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];

@@ -47,24 +47,7 @@ public class Node
         this.parentNode = parentNode;
     }
 
-//    public boolean isLeaf()
-//    {
-//        return nodeType == NodeType.leaf;
-//    }
-//    public boolean isParent()
-//    {
-//        return nodeType == NodeType.parent;
-//    }
-//
-//    public LeafNode getLeafNode()
-//    {
-//        return leafNode;
-//    }
-//    public ParentNode getParentNode()
-//    {
-//        return parentNode;
-//    }
-
+    @SuppressWarnings("unused")
     public Node(MLSInputStream stream) throws IOException
     {
         this.nodeType = NodeType.values()[(byte) stream.read(byte.class)];

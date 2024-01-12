@@ -14,13 +14,26 @@ public class KeyPackage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion version;
-    public short cipher_suite;
-    public byte[] init_key;
-    public LeafNode leaf_node;
+    short cipher_suite;
+    byte[] init_key;
+    LeafNode leaf_node;
     List<Extension> extensions;
     /* SignWithLabel(., "KeyPackageTBS", KeyPackageTBS) */
-    public byte[] signature; // KeyPackageTBS (without signature)
+    byte[] signature; // KeyPackageTBS (without signature)
 
+    public LeafNode getLeafNode()
+    {
+        return leaf_node;
+    }
+
+    public byte[] getInitKey()
+    {
+        return init_key;
+    }
+    public short getCipherSuiteID()
+    {
+        return cipher_suite;
+    }
     public boolean verify() throws IOException
     {
         CipherSuite suite = new CipherSuite(cipher_suite);
@@ -43,7 +56,7 @@ public class KeyPackage
             // and the credential scheme doesn't equal to the tls signature scheme (given the signature id)
         }
 
-        return suite.verifyWithLabel(leaf_node.signature_key, "KeyPackageTBS", toBeSigned(), signature);
+        return suite.verifyWithLabel(leaf_node.getSignatureKey(), "KeyPackageTBS", toBeSigned(), signature);
     }
 
     private byte[] toBeSigned() throws IOException
@@ -62,13 +75,13 @@ public class KeyPackage
         this.version = ProtocolVersion.mls10;
         this.cipher_suite = suite.getSuiteId();
         this.init_key = init_key.clone();
-        this.leaf_node = leaf_node.copy(leaf_node.encryption_key);
+        this.leaf_node = leaf_node.copy(leaf_node.getEncryptionKey());
         this.extensions = new ArrayList<>(extensions);
 
         //sign(sigSk)
         this.signature = suite.signWithLabel(sigSk, "KeyPackageTBS", toBeSigned());
     }
-
+    @SuppressWarnings("unused")
     KeyPackage(MLSInputStream stream) throws IOException
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];

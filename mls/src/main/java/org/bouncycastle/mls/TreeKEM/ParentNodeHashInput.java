@@ -19,6 +19,7 @@ public class ParentNodeHashInput
         this.rightHash = rightHash;
     }
 
+    @SuppressWarnings("unused")
     public ParentNodeHashInput(MLSInputStream stream) throws IOException
     {
         parentNode = (ParentNode) stream.readOptional(ParentNode.class);

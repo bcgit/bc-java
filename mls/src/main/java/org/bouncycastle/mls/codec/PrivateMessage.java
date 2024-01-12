@@ -30,7 +30,7 @@ public class PrivateMessage
         this.encrypted_sender_data = encrypted_sender_data;
         this.ciphertext = ciphertext;
     }
-
+    @SuppressWarnings("unused")
     PrivateMessage(MLSInputStream stream) throws IOException
     {
         group_id = stream.readOpaque();

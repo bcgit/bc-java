@@ -8,9 +8,24 @@ import java.io.IOException;
 public class Sender
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public SenderType senderType;
-    public LeafIndex sender;
-    public int sender_index;
+    SenderType senderType;
+    LeafIndex sender;
+    int sender_index;
+
+    public SenderType getSenderType()
+    {
+        return senderType;
+    }
+
+    public LeafIndex getSender()
+    {
+        return sender;
+    }
+
+    public int getSenderIndex()
+    {
+        return sender_index;
+    }
 
     public static Sender forNewMemberCommit()
     {
@@ -35,7 +50,7 @@ public class Sender
         this.sender = sender;
         this.sender_index = sender_index;
     }
-
+    @SuppressWarnings("unused")
     public Sender(MLSInputStream stream) throws IOException
     {
         this.senderType = SenderType.values()[(byte) stream.read(byte.class)];

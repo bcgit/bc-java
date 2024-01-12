@@ -1,7 +1,6 @@
-package org.bouncycastle.mls.client;
+package org.bouncycastle.mls.protocol;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TranscriptHash;
@@ -11,7 +10,6 @@ import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Commit;
@@ -44,10 +42,8 @@ import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,16 +67,26 @@ public class Group
             this.message = message;
         }
     }
-    class Tombstone
+    public class Tombstone
     {
         //const
         final byte[] epochAuthenticator;
         final Proposal.ReInit reinit;
 
         //private
-        byte[] priorGroupID;
-        long priorEpoch;
-        byte[] resumptionPsk;
+        private byte[] priorGroupID;
+        private long priorEpoch;
+        private byte[] resumptionPsk;
+
+        public byte[] getEpochAuthenticator()
+        {
+            return epochAuthenticator;
+        }
+
+        public short getCipherSuiteID()
+        {
+            return reinit.cipherSuite;
+        }
 
         public Tombstone(Group group, Proposal.ReInit reinit)
         {
@@ -159,11 +165,17 @@ public class Group
             return newGroup;
         }
     }
-    class TombstoneWithMessage
+    public class TombstoneWithMessage
         extends Tombstone
     {
 
         MLSMessage message;
+
+        public MLSMessage getMessage()
+        {
+            return message;
+        }
+
         public TombstoneWithMessage(Group group, Proposal.ReInit reinit, MLSMessage message)
         {
             super(group, reinit);
@@ -343,19 +355,43 @@ public class Group
     private Map<EpochRef, byte[]> resumptionPSKs;
     private long epoch;
     private byte[] groupID;
-    public TranscriptHash transcriptHash;
-    public ArrayList<Extension> extensions;
-    public KeyScheduleEpoch keySchedule;
-    public TreeKEMPublicKey tree;
+    private TranscriptHash transcriptHash;
+    private ArrayList<Extension> extensions;
+    private KeyScheduleEpoch keySchedule;
+    private TreeKEMPublicKey tree;
     private TreeKEMPrivateKey treePriv;
     private GroupKeySet keys;
-    public CipherSuite suite;
+    private CipherSuite suite;
     private LeafIndex index;
     private byte[] identitySk; // TODO: maybe make this AsymmetricCipherKeyPair
 //    private ArrayList<CachedProposal> proposalQueue;
     private ArrayList<CachedProposal> pendingProposals;
     private CachedUpdate cachedUpdate;
 
+
+    public void insertExternalPsk(Secret pskID, byte[] pskSecret)
+    {
+        externalPSKs.put(pskID, pskSecret);
+    }
+
+    public CipherSuite getSuite()
+    {
+        return suite;
+    }
+    public ArrayList<Extension> getExtensions()
+    {
+        return extensions;
+    }
+
+    public KeyScheduleEpoch getKeySchedule()
+    {
+        return keySchedule;
+    }
+
+    public TreeKEMPublicKey getTree()
+    {
+        return tree;
+    }
     public long getEpoch()
     {
         return epoch;
@@ -379,22 +415,22 @@ public class Group
                         groupID,
                         epoch,
                         tree.getRootHash(),
-                        transcriptHash.confirmed,
+                        transcriptHash.getConfirmed(),
                         extensions
                 ),
                 new ArrayList<>(),
-                keySchedule.confirmationTag(transcriptHash.confirmed)
+                keySchedule.confirmationTag(transcriptHash.getConfirmed())
         );
 
         byte[] externalPub = suite.getHPKE().serializePublicKey(keySchedule.getExternalPublicKey());
         MLSOutputStream stream = new MLSOutputStream();
         stream.writeOpaque(externalPub);
 
-        groupInfo.extensions.add(new Extension(ExtensionType.EXTERNAL_PUB, stream.toByteArray()));
+        groupInfo.getExtensions().add(new Extension(ExtensionType.EXTERNAL_PUB, stream.toByteArray()));
 
         if (inlineTree)
         {
-            groupInfo.extensions.add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(tree)));
+            groupInfo.getExtensions().add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(tree)));
         }
 
         groupInfo.sign(tree, index, suite.deserializeSignaturePrivateKey(identitySk));
@@ -409,13 +445,13 @@ public class Group
 
     public Group(AsymmetricCipherKeyPair sigSk, GroupInfo groupInfo, TreeKEMPublicKey tree) throws Exception
     {
-        this.suite = new CipherSuite(groupInfo.groupContext.ciphersuite);
-        this.groupID = groupInfo.groupContext.groupID.clone();
-        this.epoch = groupInfo.groupContext.epoch;
-        this.tree = TreeKEMPublicKey.clone(importTree(groupInfo.groupContext.treeHash, tree, groupInfo.extensions));
+        this.suite = new CipherSuite(groupInfo.getCipherSuiteID());
+        this.groupID = groupInfo.getGroupID().clone();
+        this.epoch = groupInfo.getEpoch();
+        this.tree = TreeKEMPublicKey.clone(importTree(groupInfo.getGroupContext().getTreeHash(), tree, groupInfo.getExtensions()));
         this.treePriv = new TreeKEMPrivateKey(suite, new LeafIndex(0));// check this should be null
-        this.transcriptHash = TranscriptHash.fromConfirmationTag(this.suite, groupInfo.groupContext.confirmedTranscriptHash, groupInfo.confirmationTag);
-        this.extensions = new ArrayList<>(groupInfo.groupContext.extensions);
+        this.transcriptHash = TranscriptHash.fromConfirmationTag(this.suite, groupInfo.getGroupContext().getConfirmedTranscriptHash(), groupInfo.getConfirmationTag());
+        this.extensions = new ArrayList<>(groupInfo.getGroupContext().getExtensions());
         this.keySchedule = new KeyScheduleEpoch(this.suite);
         this.index = new LeafIndex(0);
         this.identitySk = suite.serializeSignaturePrivateKey(sigSk.getPrivate());
@@ -448,7 +484,6 @@ public class Group
         this.pendingProposals = new ArrayList<>();
         this.externalPSKs = new HashMap<>();
         this.resumptionPSKs = new HashMap<>();
-        //TODO: verify client supports the proposed group extensions
 
         index = tree.addLeaf(leafNode);
         tree.setHashAll();
@@ -460,23 +495,10 @@ public class Group
 
         byte[] ctx = MLSOutputStream.encode(getGroupContext());
         keySchedule = KeyScheduleEpoch.forCreator(suite, ctx);
-        //TODO DELETE TEST
-//        keySchedule = KeyScheduleEpoch.forCreatorTEST(suite, ctx, Hex.decode("16f4327dd927663cff04663762adb7c4ac48885c07e3d290093c5f72f3a7c275"));
-//        System.out.println("initSecret: " + Hex.toHexString(keySchedule.initSecret.value()));
-//        System.out.println("senderDataSecret: " + Hex.toHexString(keySchedule.senderDataSecret.value()));
-//        System.out.println("exporterSecret: " + Hex.toHexString(keySchedule.exporterSecret.value()));
-//        System.out.println("confirmationKey: " + Hex.toHexString(keySchedule.confirmationKey.value()));
-//        System.out.println("membershipKey: " + Hex.toHexString(keySchedule.membershipKey.value()));
-//        System.out.println("resumptionPSK: " + Hex.toHexString(keySchedule.resumptionPSK.value()));
-//        System.out.println("epochAuthenticator: " + Hex.toHexString(keySchedule.epochAuthenticator.value()));
-//        System.out.println("encryptionSecret: " + Hex.toHexString(keySchedule.encryptionSecret.value()));
-//        System.out.println("externalSecret: " + Hex.toHexString(keySchedule.externalSecret.value()));
-//        System.out.println("joinerSecret: " + Hex.toHexString(keySchedule.joinerSecret.value()));
-
-        this.keys = keySchedule.getEncryptionKeys(tree.size);
+        this.keys = keySchedule.getEncryptionKeys(tree.getSize());
 
         // Update the interim transcript hash with a virtual confirmation tag
-        transcriptHash.updateInterim(keySchedule.confirmationTag(transcriptHash.confirmed));
+        transcriptHash.updateInterim(keySchedule.confirmationTag(transcriptHash.getConfirmed()));
     }
 
     // Creates a group from a welcome message
@@ -505,9 +527,8 @@ public class Group
             throws Exception
     {
         pendingProposals = new ArrayList<>();
-        suite = new CipherSuite(welcome.cipher_suite);
+        suite = new CipherSuite(welcome.getCipherSuiteID());
         epoch = 0;
-        transcriptHash = new TranscriptHash(suite);
         identitySk = sigSk;
         externalPSKs = new HashMap<>();
         externalPSKs.putAll(externalPsks);
@@ -520,7 +541,7 @@ public class Group
             throw new Exception("Welcome not intended for key package");
         }
 
-        if (keyPackage.cipher_suite != welcome.cipher_suite)
+        if (keyPackage.getCipherSuiteID() != welcome.getCipherSuiteID())
         {
             throw new Exception("Ciphersuite mismatch");
         }
@@ -531,13 +552,13 @@ public class Group
 
         // Decrypting GroupInfo
         GroupInfo groupInfo = welcome.decrypt(secrets.joiner_secret, psks);
-        if (groupInfo.groupContext.ciphersuite != suite.getSuiteId())
+        if (groupInfo.getCipherSuiteID() != suite.getSuiteId())
         {
             throw new Exception("GroupInfo and Welcome ciphersuites disagree");
         }
 
         // Get tree from argument or from extension
-        tree = TreeKEMPublicKey.clone(importTree(groupInfo.groupContext.treeHash, treeIn, groupInfo.extensions));
+        tree = TreeKEMPublicKey.clone(importTree(groupInfo.getGroupContext().getTreeHash(), treeIn, groupInfo.getExtensions()));
 
         // Verifying GroupInfo signature
         if (!groupInfo.verify(suite, tree))
@@ -546,28 +567,28 @@ public class Group
         }
 
         // Set the GroupSecrets and GroupInfo
-        epoch = groupInfo.groupContext.epoch;
-        groupID = groupInfo.groupContext.groupID;
+        epoch = groupInfo.getEpoch();
+        groupID = groupInfo.getGroupID();
 
-        transcriptHash.confirmed = groupInfo.groupContext.confirmedTranscriptHash.clone();
-        transcriptHash.updateInterim(groupInfo.confirmationTag);
+        transcriptHash = new TranscriptHash(suite, groupInfo.getGroupContext().getConfirmedTranscriptHash().clone(), null);
+        transcriptHash.updateInterim(groupInfo.getConfirmationTag());
 
         extensions = new ArrayList<>(); // TODO: Check to clone?
-        extensions.addAll(groupInfo.groupContext.extensions);
+        extensions.addAll(groupInfo.getGroupContext().getExtensions());
 
         // Create the TreeKEMPrivateKey
-        int i = tree.find(keyPackage.leaf_node);
+        int i = tree.find(keyPackage.getLeafNode());
         if (i == -1)
         {
             throw new Exception("New joiner not in tree");
         }
         index = new LeafIndex(i);
 
-        NodeIndex ancestor = index.commonAncestor(groupInfo.signer);
+        NodeIndex ancestor = index.commonAncestor(groupInfo.getSigner());
         Secret pathSecret;
         if (secrets.path_secret != null)
         {
-            pathSecret = new Secret(secrets.path_secret.path_secret);
+            pathSecret = new Secret(secrets.path_secret.getPathSecret());
         }
         else
         {
@@ -579,11 +600,11 @@ public class Group
         byte[] groupCtx = MLSOutputStream.encode(getGroupContext());
 
         keySchedule = KeyScheduleEpoch.joiner(suite, secrets.joiner_secret, psks, groupCtx);
-        keys = keySchedule.getEncryptionKeys(tree.size);
+        keys = keySchedule.getEncryptionKeys(tree.getSize());
 
         // Verify confirmation tag
-        byte[] confirmationTag = keySchedule.confirmationTag(transcriptHash.confirmed);
-        if (!Arrays.equals(confirmationTag, groupInfo.confirmationTag))
+        byte[] confirmationTag = keySchedule.confirmationTag(transcriptHash.getConfirmed());
+        if (!Arrays.equals(confirmationTag, groupInfo.getConfirmationTag()))
         {
             throw new Exception("Confirmation failed to verify");
         }
@@ -632,13 +653,13 @@ public class Group
     public Group handle(AuthenticatedContent auth, Group cachedGroup, CommitParameters expectedParams) throws Exception
     {
         // Validate the GroupContent
-        FramedContent content = auth.content;
-        if (!Arrays.equals(content.group_id, groupID))
+        FramedContent content = auth.getContent();
+        if (!Arrays.equals(content.getGroupID(), groupID))
         {
             throw new Exception("GroupID mismatch");
         }
 
-        if (content.epoch != epoch)
+        if (content.getEpoch() != epoch)
         {
             throw new Exception("epoch mismatch");
         }
@@ -658,7 +679,7 @@ public class Group
                 throw new Exception("Invalid content type");
         }
 
-        switch (content.sender.senderType)
+        switch (content.getSender().getSenderType())
         {
             case MEMBER:
             case NEW_MEMBER_COMMIT:
@@ -668,9 +689,9 @@ public class Group
         }
 
         LeafIndex sender = null;
-        if (content.sender.senderType == SenderType.MEMBER)
+        if (content.getSender().getSenderType() == SenderType.MEMBER)
         {
-            sender = content.sender.sender;
+            sender = content.getSender().getSender();
         }
 
         if (index.equals(sender))
@@ -690,15 +711,14 @@ public class Group
         }
 
         // Apply the commit
-        Commit commit = content.commit;
-        List<CachedProposal> proposals = mustResolve(commit.proposals, sender);
+        Commit commit = content.getCommit();
+        List<CachedProposal> proposals = mustResolve(commit.getProposals(), sender);
 
         CommitParameters params = inferCommitType(sender, proposals, expectedParams);
         boolean externalcommit = params.paramID == EXTERNAL_COMMIT_PARAMS;
-//        System.out.println("Params GOT: " + params.paramID);
 
         // Check that a path is present when required
-        if (pathRequired(proposals) && commit.updatePath == null)
+        if (pathRequired(proposals) && commit.getUpdatePath() == null)
         {
             throw new Exception("Path required but not present");
         }
@@ -720,11 +740,9 @@ public class Group
         }
         else
         {
-//            senderLocation = next.tree.allocateLeaf();
             // Add the joiner
-            UpdatePath path = commit.updatePath.clone();
-            senderLocation = next.tree.addLeaf(path.leaf_node);
-//            senderLocation = next.tree.addLeaf(commit.updatePath.leaf_node);
+            UpdatePath path = commit.getUpdatePath().clone();
+            senderLocation = next.tree.addLeaf(path.getLeafNode());
 
             // Extract the forced init secret
             byte[] kemOut = commit.validityExternal();
@@ -737,32 +755,29 @@ public class Group
 
         // Decapsulate and apply the UpdatePath, if provided
         byte[] commitSecret = new byte[suite.getKDF().getHashLength()];
-        if (commit.updatePath != null)
+        if (commit.getUpdatePath() != null)
         {
-            UpdatePath path = commit.updatePath.clone();
-            if (!validateLeafNode(path.leaf_node, LeafNodeSource.COMMIT, senderLocation))
+            UpdatePath path = commit.getUpdatePath().clone();
+            if (!validateLeafNode(path.getLeafNode(), LeafNodeSource.COMMIT, senderLocation))
             {
                 throw new Exception("Commit path has invalid leaf node");
             }
 
-//            next.tree.dump();
             if (!next.tree.verifyParentHash(senderLocation, path))
             {
                 throw new Exception("Commit path has invalid parent hash");
             }
 
             next.tree.merge(senderLocation, path);
-//            next.tree.dump();
 
             byte[] ctx = MLSOutputStream.encode(new GroupContext(
                     next.suite.getSuiteId(),
                     next.groupID,
                     next.epoch + 1,
                     next.tree.getRootHash(),
-                    next.transcriptHash.confirmed,
+                    next.transcriptHash.getConfirmed(),
                     next.extensions
             ));
-//            next.treePriv.dump();
             next.treePriv.decap(
                     senderLocation,
                     next.tree,
@@ -770,7 +785,7 @@ public class Group
                     path,
                     joinersWithPSKS.joiners
             );
-            commitSecret = next.treePriv.updateSecret.value().clone();
+            commitSecret = next.treePriv.getUpdateSecret().value().clone();
         }
         // Update the transcripts and advance the key schedule
 
@@ -779,7 +794,7 @@ public class Group
         next.updateEpochSecrets(commitSecret, joinersWithPSKS.psks, forceInitSecret);
 
         // Verify the confirmation MAC
-        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
+        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.getConfirmed());
 
         if (!Arrays.equals(auth.getConfirmationTag(), confirmationTag))
         {
@@ -906,25 +921,16 @@ public class Group
         Group newGroup = handle(auth, null, new CommitParameters(REINIT_COMMIT_PARAMS));
 
         // Extract the reinit and create the tombstone
-        Commit commit = auth.content.commit;
-        List<CachedProposal> proposals = mustResolve(commit.proposals, null);
+        Commit commit = auth.getContent().getCommit();
+        List<CachedProposal> proposals = mustResolve(commit.getProposals(), null);
         if (!validateReinitProposals(proposals))
         {
             throw new Exception("Invalid proposals for reinit");
         }
 
         CachedProposal reinitProposal = proposals.get(0);
-        return new Tombstone(newGroup, reinitProposal.proposal.reInit);
+        return new Tombstone(newGroup, reinitProposal.proposal.getReInit());
     }
-
-
-    //TODO DELETE TEST
-//    public static ArrayList<byte[]> TESTEXTERNALJOIN = new ArrayList<>(java.util.Arrays.asList(
-//            Hex.decode("8533764049808656ae660d3215ab3801c760af269e2b80823d1ebb7f37b89350"),// end
-//            Hex.decode("a347640b9b6b7afb7dfa3bdb1b75c2282ec85374e0291e0a5165a515508cd009"),//force_init_secret
-//            Hex.decode("314568cefcc8d759ee28688f5aaf615b1b9dcbed9d7ee176589c0bfde26aab21"),// end
-//            Hex.decode("bfc0025718870a78d0bdc68e08b40fd72bea0c18584b3b11c74a55c78ffef2dd") //force_init_secret
-//    ));
 
     public static GroupWithMessage externalJoin(Secret leafSecret,
                              AsymmetricCipherKeyPair sigSk,
@@ -936,18 +942,13 @@ public class Group
                              Map<Secret, byte[]> psks)
             throws Exception
     {
-//        System.out.println("group_info.group_context.confirmed_transcript_hash: " + Hex.toHexString(groupInfo.groupContext.confirmedTranscriptHash));
-//        System.out.println("group_info.confirmation_tag: " + Hex.toHexString(groupInfo.confirmationTag));
         // Create a preliminary group
         Group initialGroup = new Group(sigSk, groupInfo, tree);
-//        System.out.println("initialGroup interim: " + Hex.toHexString(initialGroup.transcriptHash.interim));
-//        System.out.println("initialGroup confirmed: " + Hex.toHexString(initialGroup.transcriptHash.confirmed));
-
-        CipherSuite suite = new CipherSuite(keyPackage.cipher_suite);
+        CipherSuite suite = new CipherSuite(keyPackage.getCipherSuiteID());
 
         // Look up the external public key for the group
         byte[] extPub = null;
-        for (Extension ext : groupInfo.extensions)
+        for (Extension ext : groupInfo.getExtensions())
         {
             if (extPub != null)
             {
@@ -964,12 +965,6 @@ public class Group
         CommitOptions options = new CommitOptions();
         KeyScheduleEpoch.ExternalInitParams extParams = new KeyScheduleEpoch.ExternalInitParams(
                 suite, suite.getHPKE().deserializePublicKey(extPub));
-
-        //TODO DELETE TEST
-//        extParams.kemOutput = TESTEXTERNALJOIN.get(0); TESTEXTERNALJOIN.remove(0);
-//        extParams.initSecret = new Secret (TESTEXTERNALJOIN.get(0)); TESTEXTERNALJOIN.remove(0);
-//        System.out.println("ext.kem_out: " + Hex.toHexString(extParams.getKEMOutput()));
-//        System.out.println("ext.init_secret: " + Hex.toHexString(extParams.getInitSecret().value()));
 
         options.extraProposals.add(Proposal.externalInit(extParams.getKEMOutput()));
 
@@ -995,17 +990,16 @@ public class Group
 
     public GroupWithMessage commit(Secret leafSecret, CommitOptions commitOptions, MessageOptions msgOptions, CommitParameters params) throws Exception
     {
-//        System.out.println();
         Commit commit = new Commit();
         List<KeyPackage> joiners = new ArrayList<>();
         for (CachedProposal cached : pendingProposals)
         {
             if (cached.proposal.getProposalType() == ProposalType.ADD)
             {
-                joiners.add(cached.proposal.add.keyPackage);
+                joiners.add(cached.proposal.getAdd().keyPackage);
             }
 
-            commit.proposals.add(ProposalOrRef.forRef(cached.proposalRef));
+            commit.getProposals().add(ProposalOrRef.forRef(cached.proposalRef));
         }
 
         // add the extra proposals to those we had cached
@@ -1015,10 +1009,10 @@ public class Group
             {
                 if (p.getProposalType() == ProposalType.ADD)
                 {
-                    joiners.add(p.add.keyPackage);
+                    joiners.add(p.getAdd().keyPackage);
                 }
 
-                commit.proposals.add(ProposalOrRef.forProposal(p));
+                commit.getProposals().add(ProposalOrRef.forProposal(p));
             }
         }
 
@@ -1032,18 +1026,16 @@ public class Group
         // Apply proposals
         Group next = successor();
 
-        List<CachedProposal> proposals = mustResolve(commit.proposals, index); // check should just send index.value()
+        List<CachedProposal> proposals = mustResolve(commit.getProposals(), index); // check should just send index.value()
         if (!validateCachedProposals(proposals, index, params))
         {
             throw new Exception("Invalid proposal list");
         }
 
         JoinersWithPSKS joinersWithpsks = next.apply(proposals);
-
-//        System.out.println("commitParams: " + params.paramID);
         if (params.paramID == EXTERNAL_COMMIT_PARAMS)
         {
-            next.index = next.tree.addLeaf(params.joinerKeyPackage.leaf_node);
+            next.index = next.tree.addLeaf(params.joinerKeyPackage.getLeafNode());
         }
 
         // If this is an external commit, indicate it in the sender field
@@ -1074,15 +1066,15 @@ public class Group
                     next.groupID,
                     next.epoch + 1,
                     next.tree.getRootHash(),
-                    next.transcriptHash.confirmed,
+                    next.transcriptHash.getConfirmed(),
                     next.extensions
             );
             byte[] ctxBytes = MLSOutputStream.encode(ctx);
             UpdatePath path = next.tree.encap(newPriv, ctxBytes, joinersWithpsks.joiners);
 
             next.treePriv = newPriv;
-            commit.updatePath = path;
-            commitSecret = newPriv.updateSecret;
+            commit.setUpdatePath(path);
+            commitSecret = newPriv.getUpdateSecret();
 
             for (int i = 0; i < joinersWithpsks.joiners.size(); i++)
             {
@@ -1094,22 +1086,13 @@ public class Group
         // Create the Commit message and advance the transcripts / key schedule
         AuthenticatedContent commitContentAuth = sign(sender, commit, msgOptions.authenticatedData, msgOptions.encrypt);
 
-//        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
-//        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
         next.transcriptHash.updateConfirmed(commitContentAuth);
         next.epoch += 1;
-
-//        System.out.println("transcriptHash.interim: " + Hex.toHexString(next.transcriptHash.interim));
-//        System.out.println("transcriptHash.confirmed: " + Hex.toHexString(next.transcriptHash.confirmed));
-
         next.updateEpochSecrets(commitSecret.value(), joinersWithpsks.psks, forceInitSecret);
 
-        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.confirmed);
-//        System.out.println("confirmationTag: " + Hex.toHexString(confirmationTag));
+        byte[] confirmationTag = next.keySchedule.confirmationTag(next.transcriptHash.getConfirmed());
         commitContentAuth.setConfirmationTag(confirmationTag);
-
         next.transcriptHash.updateInterim(commitContentAuth);
-
         MLSMessage commitMessage = protect(commitContentAuth, msgOptions.paddingSize);
 
         // Complete the GroupInfo and form the Welcome
@@ -1120,7 +1103,7 @@ public class Group
                         next.groupID,
                         next.epoch,
                         next.tree.getRootHash(),
-                        next.transcriptHash.confirmed,
+                        next.transcriptHash.getConfirmed(),
                         next.extensions
                 ),
                 new ArrayList<>(),
@@ -1128,10 +1111,9 @@ public class Group
         );
         if (commitOptions != null && commitOptions.inlineTree)
         {
-            groupInfo.extensions.add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(next.tree)));
+            groupInfo.getExtensions().add(new Extension(ExtensionType.RATCHET_TREE, MLSOutputStream.encode(next.tree)));
         }
         groupInfo.sign(next.tree, next.index, suite.deserializeSignaturePrivateKey(next.identitySk));
-
 
         //TODO: should have a way to retrieve joiner secret from key schedule
         Welcome welcome = new Welcome(suite,
@@ -1166,7 +1148,7 @@ public class Group
             throw new Exception("Illegal proposals for reinitialization");
         }
 
-        Proposal.ReInit reinit = reinitProposal.reInit;
+        Proposal.ReInit reinit = reinitProposal.getReInit();
 
         // Create the Commit
         GroupWithMessage gwm = commit(new Secret(leafSecret), commitOptions, messageOptions, new CommitParameters(REINIT_COMMIT_PARAMS));
@@ -1176,8 +1158,7 @@ public class Group
 
     static public MLSMessage newMemberAdd(byte[] groupID, long epoch, KeyPackage newMember, AsymmetricCipherKeyPair sigSk) throws Exception
     {
-        //TODO: check if null should be new byte[0] instead
-        CipherSuite suite = new CipherSuite(newMember.cipher_suite);
+        CipherSuite suite = new CipherSuite(newMember.getCipherSuiteID());
         Proposal proposal = Proposal.add(newMember);
         FramedContent content = FramedContent.proposal(
                 groupID,
@@ -1219,24 +1200,24 @@ public class Group
             throw new Exception("Message signature failed to verify");
         }
 
-        if(auth.content.getContentType() != ContentType.APPLICATION)
+        if(auth.getContent().getContentType() != ContentType.APPLICATION)
         {
             throw new Exception("Unprotected of handshake message");
         }
 
-        if (auth.wireFormat != WireFormat.mls_private_message)
+        if (auth.getWireFormat() != WireFormat.mls_private_message)
         {
             throw new Exception("Application data not sent as PrivateMessage");
         }
         byte[][] authAndContent = new byte[2][];
-        authAndContent[0] = auth.content.getAuthenticated_data();
-        authAndContent[1] = auth.content.getContentBytes();
+        authAndContent[0] = auth.getContent().getAuthenticated_data();
+        authAndContent[1] = auth.getContent().getContentBytes();
         return authAndContent;
     }
 
     private boolean verifyAuth(AuthenticatedContent auth) throws Exception
     {
-        switch (auth.content.sender.senderType)
+        switch (auth.getContent().getSender().getSenderType())
         {
             case MEMBER:
                 return verifyInternal(auth);
@@ -1253,17 +1234,17 @@ public class Group
 
     private boolean verifyInternal(AuthenticatedContent auth) throws Exception
     {
-        LeafNode leaf = tree.getLeafNode(auth.content.sender.sender);
+        LeafNode leaf = tree.getLeafNode(auth.getContent().getSender().getSender());
         if (leaf == null)
         {
             throw new Exception("Signature from blank node");
         }
-        return auth.verify(suite, leaf.signature_key, MLSOutputStream.encode(getGroupContext()));
+        return auth.verify(suite, leaf.getSignatureKey(), MLSOutputStream.encode(getGroupContext()));
     }
 
     private boolean verifyExternal(AuthenticatedContent auth) throws Exception
     {
-        Sender extSender = auth.content.sender;
+        Sender extSender = auth.getContent().getSender();
         Extension sendersExt = null;
         for (Extension ext : extensions)
         {
@@ -1275,23 +1256,23 @@ public class Group
         List<ExternalSender> senders = sendersExt.getSenders();
 
         return auth.verify(suite,
-                senders.get(extSender.sender_index).signatureKey,
+                senders.get(extSender.getSenderIndex()).getSignatureKey(),
                 MLSOutputStream.encode(getGroupContext()));
     }
 
     private boolean verifyNewMemberProposal(AuthenticatedContent auth) throws Exception
     {
-        Proposal proposal = auth.content.proposal;
-        Proposal.Add add = proposal.add;
-        byte[] pub = add.keyPackage.leaf_node.signature_key;
+        Proposal proposal = auth.getContent().getProposal();
+        Proposal.Add add = proposal.getAdd();
+        byte[] pub = add.keyPackage.getLeafNode().getSignatureKey();
         return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));
     }
 
     private boolean verifyNewMemberCommit(AuthenticatedContent auth) throws Exception
     {
-        Commit commit = auth.content.commit;
-        UpdatePath path = commit.updatePath;
-        byte[] pub = path.leaf_node.signature_key;
+        Commit commit = auth.getContent().getCommit();
+        UpdatePath path = commit.getUpdatePath();
+        byte[] pub = path.getLeafNode().getSignatureKey();
         return auth.verify(suite, pub, MLSOutputStream.encode(getGroupContext()));
     }
 
@@ -1432,7 +1413,7 @@ public class Group
     private LeafIndex leafForRoster(LeafIndex index) throws Exception
     {
         int nonBlankLeaves = 0;
-        for (int i = 0; i < tree.size.leafCount(); i++)
+        for (int i = 0; i < tree.getSize().leafCount(); i++)
         {
             LeafNode leaf = tree.getLeafNode(new LeafIndex(i));
             if (leaf == null)
@@ -1454,10 +1435,9 @@ public class Group
         LeafNode newLeaf = leaf.forUpdate(suite, groupID, index, suite.getHPKE().serializePublicKey(leafSk.getPublic()), leafOptions, identitySk);
 
         Proposal update = Proposal.update(newLeaf);
-        cachedUpdate = new CachedUpdate(suite.getHPKE().serializePrivateKey(leafSk.getPrivate()), update.update);
+        cachedUpdate = new CachedUpdate(suite.getHPKE().serializePrivateKey(leafSk.getPrivate()), update.getUpdate());
         return update;
     }
-
 
     private Proposal addProposal(KeyPackage keyPackage) throws Exception
     {
@@ -1476,8 +1456,8 @@ public class Group
 
     private MLSMessage protect(AuthenticatedContent contentAuth, int paddingSize) throws Exception
     {
-        MLSMessage message = new MLSMessage(contentAuth.wireFormat); //TODO: change pretect to return MLSMessage instead
-        switch (contentAuth.wireFormat)
+        MLSMessage message = new MLSMessage(contentAuth.getWireFormat()); //TODO: change pretect to return MLSMessage instead
+        switch (contentAuth.getWireFormat())
         {
             case mls_public_message:
                 message.publicMessage = PublicMessage.protect(contentAuth, suite, keySchedule.membershipKey.value(), MLSOutputStream.encode(getGroupContext()));
@@ -1506,36 +1486,6 @@ public class Group
         AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
         return authContent;
     }
-//    private AuthenticatedContent sign(Sender sender, Proposal.Add innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
-//    {
-//
-//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
-//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
-//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
-//        return authContent;
-//    }
-//    private AuthenticatedContent sign(Sender sender, Proposal.Update innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
-//    {
-//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
-//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
-//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
-//        return authContent;
-//    }
-//    private AuthenticatedContent sign(Sender sender, Proposal.Remove innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
-//    {
-//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
-//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
-//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
-//        return authContent;
-//    }
-//    private AuthenticatedContent sign(Sender sender, PreSharedKeyID innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
-//    {
-//        FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.PROPOSAL, MLSOutputStream.encode(innerContent));
-//        WireFormat wireFormat = encrypt ? WireFormat.mls_private_message : WireFormat.mls_public_message;
-//        AuthenticatedContent authContent = AuthenticatedContent.sign(wireFormat, content, suite, identitySk, MLSOutputStream.encode(getGroupContext()));
-//        return authContent;
-//    }
-
     private AuthenticatedContent sign(Sender sender, byte[] innerContent, byte[] authenticatedData, boolean encrypt) throws Exception
     {
         FramedContent content = FramedContent.rawContent(groupID, epoch, sender, authenticatedData, ContentType.APPLICATION, innerContent);
@@ -1570,41 +1520,29 @@ public class Group
 
     private void updateEpochSecrets(byte[] commitSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] forceInitSecret) throws Exception
     {
-//        System.out.println("commit: " + Hex.toHexString(commitSecret));
         byte[] ctx = MLSOutputStream.encode(new GroupContext(
                 suite.getSuiteId(),
                 groupID,
                 epoch,
                 tree.getRootHash(),
-                transcriptHash.confirmed,
+                transcriptHash.getConfirmed(),
                 extensions
         ));
-//        System.out.println("ctx: " + Hex.toHexString(ctx));
-        keySchedule = keySchedule.next(tree.size, forceInitSecret, new Secret(commitSecret), psks, ctx);
-        keys = keySchedule.getEncryptionKeys(tree.size);
+        keySchedule = keySchedule.next(tree.getSize(), forceInitSecret, new Secret(commitSecret), psks, ctx);
+        keys = keySchedule.getEncryptionKeys(tree.getSize());
     }
 
     private JoinersWithPSKS apply(List<CachedProposal> proposals) throws Exception
     {
         applyUpdate(proposals);
-//        tree.dump();
-
         applyRemove(proposals);
-//        tree.dump();
-
         List<LeafIndex> joinerLocs = applyAdd(proposals);
         applyGCE(proposals);
-//        tree.dump();
-
         List<KeyScheduleEpoch.PSKWithSecret> psks = applyPSK(proposals);
-//        tree.dump();
 
-//        treePriv.dump();
         tree.truncate();
-        treePriv.truncate(tree.size);
+        treePriv.truncate(tree.getSize());
         tree.setHashAll();
-//        tree.dump();
-//        treePriv.dump();
 
         if (cachedUpdate != null)
         {
@@ -1615,7 +1553,6 @@ public class Group
 
     private void applyUpdate(List<CachedProposal> proposals) throws Exception
     {
-//        List<LeafIndex> locations = new ArrayList<>();
         for (CachedProposal cached: proposals)
         {
             if (cached.proposal.getProposalType() != ProposalType.UPDATE)
@@ -1645,19 +1582,17 @@ public class Group
 
             tree.updateLeaf(target, cached.proposal.getLeafNode());
             treePriv.setLeafKey(cachedUpdate.updateSk);
-//            locations.add(cached.sender);
         }
 
         if (cachedUpdate != null)
         {
             cachedUpdate.reset();
         }
-//        return locations;
     }
 
     private boolean extensionsSupported(List<Extension> exts)
     {
-        for (int i = 0; i < tree.size.leafCount(); i++)
+        for (int i = 0; i < tree.getSize().leafCount(); i++)
         {
             LeafIndex leafIndex = new LeafIndex(i);
             LeafNode leaf = tree.getLeafNode(leafIndex);
@@ -1676,7 +1611,6 @@ public class Group
 
     private void applyGCE(List<CachedProposal> proposals) throws Exception
     {
-//        List<LeafIndex> locations = new ArrayList<>();
         for (CachedProposal cached: proposals)
         {
             if (cached.proposal.getProposalType() != ProposalType.GROUP_CONTEXT_EXTENSIONS)
@@ -1685,15 +1619,14 @@ public class Group
             }
 
             //TODO: check nex extension is compatible with all members
+            //
 
-            if (!extensionsSupported(cached.proposal.groupContextExtensions.extensions))
+            if (!extensionsSupported(cached.proposal.getGroupContextExtensions().extensions))
             {
                 throw new Exception("Unsupported extensions in GroupContextExtensions");
             }
-            extensions = new ArrayList<>(cached.proposal.groupContextExtensions.extensions);
-//            locations.add(tree.addLeaf(cached.proposal.getLeafNode()));
+            extensions = new ArrayList<>(cached.proposal.getGroupContextExtensions().extensions);
         }
-//        return locations;
     }
     private List<KeyScheduleEpoch.PSKWithSecret> applyPSK(List<CachedProposal> proposals) throws Exception
     {
@@ -1705,7 +1638,7 @@ public class Group
                 continue;
             }
 
-            pskIDs.add(cached.proposal.preSharedKey.psk);
+            pskIDs.add(cached.proposal.getPreSharedKey().psk);
         }
         return resolve(pskIDs);
     }
@@ -1724,7 +1657,6 @@ public class Group
     }
     private void applyRemove(List<CachedProposal> proposals) throws Exception
     {
-//        List<LeafIndex> locations = new ArrayList<>();
         for (CachedProposal cached: proposals)
         {
             if (cached.proposal.getProposalType() != ProposalType.REMOVE)
@@ -1732,16 +1664,13 @@ public class Group
                 continue;
             }
 
-            if(!tree.hasLeaf(cached.proposal.remove.removed))
+            if(!tree.hasLeaf(cached.proposal.getRemove().removed))
             {
                 throw new Exception("Attempt to remove non-member");
             }
 
-            tree.blankPath(cached.proposal.remove.removed);
-
-//            locations.add(cached.proposal.remove.removed);
+            tree.blankPath(cached.proposal.getRemove().removed);
         }
-//        return locations;
     }
 
     private Group successor() throws IOException
@@ -1763,12 +1692,9 @@ public class Group
         next.suite = suite;
         next.index = index;
         next.identitySk = identitySk.clone();
-
-//        next.pendingProposals = new ArrayList<>(pendingProposals);
         next.pendingProposals = new ArrayList<>();
         next.cachedUpdate = cachedUpdate;
 
-//        next.resumptionPSKs = new HashMap<>();
         next.resumptionPSKs.put(new EpochRef(groupID, epoch), keySchedule.resumptionPSK.value().clone());
 
         return next;
@@ -1816,12 +1742,12 @@ public class Group
         }
 //        Sender sender = null;
         LeafIndex senderLocation = null;
-        if (auth.content.sender.senderType == SenderType.MEMBER)
+        if (auth.getContent().getSender().getSenderType() == SenderType.MEMBER)
         {
-            senderLocation = auth.content.sender.sender;
+            senderLocation = auth.getContent().getSender().getSender();
         }
 
-        Proposal proposal = auth.content.proposal;
+        Proposal proposal = auth.getContent().getProposal();
         if (!validateProposal(senderLocation, proposal))
         {
             throw new Exception("Invalid proposal");
@@ -1836,19 +1762,19 @@ public class Group
         switch (proposal.getProposalType())
         {
             case UPDATE:
-                return validateUpdate(sender, proposal.update);
+                return validateUpdate(sender, proposal.getUpdate());
             case ADD:
-                return validateKeyPackage(proposal.add.keyPackage);
+                return validateKeyPackage(proposal.getAdd().keyPackage);
             case REMOVE:
-                return validateRemove(proposal.remove);
+                return validateRemove(proposal.getRemove());
             case PSK:
-                return validatePSK(proposal.preSharedKey);
+                return validatePSK(proposal.getPreSharedKey());
             case REINIT:
-                return validateReinit(proposal.reInit);
+                return validateReinit(proposal.getReInit());
             case EXTERNAL_INIT:
-                return validateExternalInit(proposal.externalInit);
+                return validateExternalInit(proposal.getExternalInit());
             case GROUP_CONTEXT_EXTENSIONS:
-                return validateGCE(proposal.groupContextExtensions);
+                return validateGCE(proposal.getGroupContextExtensions());
             default:
                 return false;
         }
@@ -1857,7 +1783,7 @@ public class Group
     private boolean validateGCE(Proposal.GroupContextExtensions gce)
     {
         // Verify that each extension is supported by all members
-        for (int i = 0; i < tree.size.leafCount(); i++)
+        for (int i = 0; i < tree.getSize().leafCount(); i++)
         {
             LeafIndex index = new LeafIndex(i);
             LeafNode leaf = tree.getLeafNode(index);
@@ -1924,7 +1850,7 @@ public class Group
         // sometimes cause them.  This is OK because this method is only called from
         // the normal proposal list validation method, not the external commit one.
         //TODO: check if tree size leafCount or tree size Width
-        boolean in_tree = (remove.removed.value() < tree.size.leafCount()) && tree.hasLeaf(remove.removed);
+        boolean in_tree = (remove.removed.value() < tree.getSize().leafCount()) && tree.hasLeaf(remove.removed);
         boolean not_me = remove.removed.value() != index.value();
         return in_tree && not_me;
     }
@@ -1933,7 +1859,7 @@ public class Group
     {
         // Verify that the ciphersuite and protocol version of the KeyPackage match
         // those in the GroupContext.
-        boolean correct_ciphersuite = (keyPackage.cipher_suite == suite.getSuiteId());
+        boolean correct_ciphersuite = (keyPackage.getCipherSuiteID() == suite.getSuiteId());
 
         // Verify that the signature on the KeyPackage is valid using the public key
         // in leaf_node.credential.
@@ -1942,19 +1868,11 @@ public class Group
 
         // Verify that the leaf_node of the KeyPackage is valid for a KeyPackage
         // according to Section 7.3.
-        boolean leaf_node_valid = validateLeafNode(keyPackage.leaf_node, LeafNodeSource.KEY_PACKAGE, null);
+        boolean leaf_node_valid = validateLeafNode(keyPackage.getLeafNode(), LeafNodeSource.KEY_PACKAGE, null);
 
         // Verify that the value of leaf_node.encryption_key is different from the
         // value of the init_key field.
-        boolean distinct_keys = !Arrays.equals(keyPackage.init_key, keyPackage.leaf_node.encryption_key);
-
-//        if (!(correct_ciphersuite && valid_signature && leaf_node_valid && distinct_keys))
-//        {
-//            System.out.println("correct_ciphersuite: " + correct_ciphersuite);
-//            System.out.println("valid_signature: " + valid_signature);
-//            System.out.println("leaf_node_valid: " + leaf_node_valid);
-//            System.out.println("distinct_keys: " + distinct_keys);
-//        }
+        boolean distinct_keys = !Arrays.equals(keyPackage.getInitKey(), keyPackage.getLeafNode().getEncryptionKey());
 
         return (correct_ciphersuite && valid_signature && leaf_node_valid && distinct_keys);
     }
@@ -2018,10 +1936,10 @@ public class Group
         // encryption_key
         boolean isUniqueSigKey = true;
         boolean isUniqueEncKey = true;
-        byte[] sigKey = leafNode.signature_key;
-        byte[] encKey = leafNode.encryption_key;
+        byte[] sigKey = leafNode.getSignatureKey();
+        byte[] encKey = leafNode.getEncryptionKey();
 
-        for (int i = 0; i < tree.size.leafCount(); i++)
+        for (int i = 0; i < tree.getSize().leafCount(); i++)
         {
             LeafNode leaf = tree.getLeafNode(new LeafIndex(i));
             if (leaf == null)
@@ -2029,8 +1947,8 @@ public class Group
                 continue;
             }
 
-            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.equals(sigKey, leaf.signature_key)));
-            isUniqueEncKey &= !Arrays.equals(encKey, leaf.encryption_key);
+            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.equals(sigKey, leaf.getSignatureKey())));
+            isUniqueEncKey &= !Arrays.equals(encKey, leaf.getEncryptionKey());
             //TODO:
 //            mutualCredentialSupport &= leaf.capabilities.credentialSupported(leafNode.credential)
 //                    && leafNode.capabilities.credentialSupported(leaf.credential)
@@ -2043,21 +1961,9 @@ public class Group
         // by checking that the ID for each extension in the extensions field is listed in the
         // capabilities.extensions field of the LeafNode.
         boolean supportsAllExtensions = true;
-        for (Extension ext : leafNode.extensions)
+        for (Extension ext : leafNode.getExtensions())
         {
-            supportsAllExtensions &= leafNode.capabilities.extensions.contains(ext.extensionType.getValue());
-        }
-
-        if (!(isCorrectSource && isSignatureValid && isLifetimeValid && supportsAllExtensions
-                && isUniqueSigKey && isUniqueEncKey && mutualCredentialSupport && supportsGroupExtensions))
-        {
-            System.out.println("validLeaf-uniqueSigKey: " + isUniqueSigKey);
-            System.out.println("validLeaf-uniqueEncKey: " + isUniqueEncKey);
-            System.out.println("validLeaf-mutCredSup: " + mutualCredentialSupport);
-            System.out.println("validLeaf-supAllExt: " + supportsAllExtensions);
-            System.out.println("validLeaf-correctSource: " + isCorrectSource);
-            System.out.println("validLeaf-signatureValid: " + isSignatureValid);
-            System.out.println("validLeaf-lifetimeValid: " + isLifetimeValid);
+            supportsAllExtensions &= leafNode.getCapabilities().getExtensions().contains(ext.extensionType.getValue());
         }
 
         return (isCorrectSource && isSignatureValid && isLifetimeValid && supportsAllExtensions
@@ -2108,7 +2014,7 @@ public class Group
                 continue;
             }
 
-            PreSharedKeyID psk = cached.proposal.preSharedKey.psk;
+            PreSharedKeyID psk = cached.proposal.getPreSharedKey().psk;
             if (psk.pskType == PSKType.EXTERNAL)
             {
                 continue;
@@ -2141,7 +2047,7 @@ public class Group
         {
             has_invalid_proposal = has_invalid_proposal || !validateProposal(cached.sender, cached.proposal);
             has_self_update = has_self_update || ((cached.proposal.getProposalType() == ProposalType.UPDATE) && cached.sender.equals(commitSender));
-            has_self_remove = has_self_remove || ((cached.proposal.getProposalType() == ProposalType.REMOVE) && (cached.proposal.remove.removed.equals(commitSender)));
+            has_self_remove = has_self_remove || ((cached.proposal.getProposalType() == ProposalType.REMOVE) && (cached.proposal.getRemove().removed.equals(commitSender)));
         }
 
         // It contains multiple Update and/or Remove proposals that apply to the same
@@ -2159,7 +2065,7 @@ public class Group
                     leafIndex = cached.sender;
                     break;
                 case REMOVE:
-                    leafIndex = cached.proposal.remove.removed;
+                    leafIndex = cached.proposal.getRemove().removed;
                     break;
                 default:
                     continue;
@@ -2184,8 +2090,8 @@ public class Group
             {
                 continue;
             }
-            KeyPackage keyPackage = cached.proposal.add.keyPackage;
-            byte[] signatureKey = keyPackage.leaf_node.signature_key;
+            KeyPackage keyPackage = cached.proposal.getAdd().keyPackage;
+            byte[] signatureKey = keyPackage.getLeafNode().getSignatureKey();
             boolean areEqual = false;
             for (byte[] sig : signatureKeys)
             {
@@ -2220,7 +2126,7 @@ public class Group
             {
                 continue;
             }
-            PreSharedKeyID pskid = cached.proposal.preSharedKey.psk;
+            PreSharedKeyID pskid = cached.proposal.getPreSharedKey().psk;
             if (pskids.contains(pskid))
             {
                 has_dup_psk_id = true;
@@ -2280,10 +2186,10 @@ public class Group
             switch (cached.proposal.getProposalType())
             {
                 case ADD:
-                    encKey = cached.proposal.add.keyPackage.leaf_node.encryption_key.clone();
+                    encKey = cached.proposal.getAdd().keyPackage.getLeafNode().getEncryptionKey().clone();
                     break;
                 case UPDATE:
-                    encKey = cached.proposal.update.getLeafNode().encryption_key.clone();
+                    encKey = cached.proposal.getUpdate().getLeafNode().getEncryptionKey().clone();
                     break;
                 default:
                     continue;
@@ -2314,8 +2220,6 @@ public class Group
     }
     private boolean validateExternalCachedProposals(List<CachedProposal> proposals)
     {
-        //TODO: do for other parameters
-        // this is for external commit parameters
         int extInitCount = 0;
         int removeCount = 0;
         boolean noDisallowed = true;
@@ -2331,7 +2235,7 @@ public class Group
                     removeCount++;
                     break;
                 case PSK:
-                    noDisallowed = noDisallowed && validatePSK(cached.proposal.preSharedKey);
+                    noDisallowed = noDisallowed && validatePSK(cached.proposal.getPreSharedKey());
                     break;
                 default:
                     noDisallowed = false;
@@ -2349,17 +2253,15 @@ public class Group
         List<CachedProposal> out = new ArrayList<>();
         for (ProposalOrRef id : proposals)
         {
-            switch (id.type)
+            switch (id.getType())
             {
                 case PROPOSAL:
-                    out.add(new CachedProposal(new byte[0], id.proposal, sender));
+                    out.add(new CachedProposal(new byte[0], id.getProposal(), sender));
                     break;
                 case REFERENCE:
                     for (CachedProposal cached : pendingProposals)
                     {
-//                        System.out.println("cachedRef: " + Hex.toHexString(cached.proposalRef));
-//                        System.out.println("idRef: " + Hex.toHexString(id.reference));
-                        if (Arrays.equals(cached.proposalRef, id.reference))
+                        if (Arrays.equals(cached.proposalRef, id.getReference()))
                         {
                             out.add(cached);
                             break;
@@ -2373,7 +2275,7 @@ public class Group
 
     private GroupContext  getGroupContext() throws Exception
     {
-        return new GroupContext(suite.getSuiteId(), groupID, epoch, tree.getRootHash(), transcriptHash.confirmed, extensions);
+        return new GroupContext(suite.getSuiteId(), groupID, epoch, tree.getRootHash(), transcriptHash.getConfirmed(), extensions);
     }
 
     private TreeKEMPublicKey importTree(byte[] treeHash, TreeKEMPublicKey external, List<Extension> extensions) throws Exception

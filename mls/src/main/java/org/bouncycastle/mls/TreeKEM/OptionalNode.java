@@ -43,10 +43,9 @@ public class OptionalNode
 
     public ParentNode getParentNode()
     {
-//        if (isLeaf())
-//            return null;
         return node.parentNode;
     }
+    @SuppressWarnings("unused")
     public OptionalNode(MLSInputStream stream) throws IOException
     {
         node = (Node) stream.readOptional(Node.class);

@@ -8,9 +8,20 @@ import java.io.IOException;
 public class AuthenticatedContent
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public WireFormat wireFormat;
-    public FramedContent content;
-    public FramedContentAuthData auth;
+    WireFormat wireFormat;
+
+    FramedContent content;
+    FramedContentAuthData auth;
+
+    public FramedContent getContent()
+    {
+        return content;
+    }
+
+    public WireFormat getWireFormat()
+    {
+        return wireFormat;
+    }
 
     public void setConfirmationTag(byte[] tag)
     {
@@ -64,7 +75,6 @@ public class AuthenticatedContent
             throw new Exception("Application data cannot be sent as PublicMessage");
         }
         FramedContentTBS tbs = new FramedContentTBS(wireFormat, content, groupContext);
-//        System.out.println("tbs: " + Hex.toHexString(MLSOutputStream.encode(tbs)));
         byte[] signature = suite.signWithLabel(sigPriv, "FramedContentTBS", MLSOutputStream.encode(tbs));
         FramedContentAuthData auth = new FramedContentAuthData(content.contentType, signature, null);
         return new AuthenticatedContent(wireFormat, content, auth);
@@ -82,6 +92,7 @@ public class AuthenticatedContent
         return suite.verifyWithLabel(sigPub, "FramedContentTBS", MLSOutputStream.encode(tbs), auth.signature);
     }
 
+    @SuppressWarnings("unused")
     public AuthenticatedContent(MLSInputStream stream) throws IOException
     {
         this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
@@ -110,7 +121,7 @@ class ConfirmedTranscriptHashInput
         this.content = content;
         this.signature = signature;
     }
-
+    @SuppressWarnings("unused")
     public ConfirmedTranscriptHashInput(MLSInputStream stream) throws IOException
     {
         this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
@@ -137,6 +148,7 @@ class InterimTranscriptHashInput
         this.confirmation_tag = confirmation_tag;
     }
 
+    @SuppressWarnings("unused")
     public InterimTranscriptHashInput(MLSInputStream stream) throws IOException
     {
         confirmation_tag = stream.readOpaque();

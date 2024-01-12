@@ -5,17 +5,26 @@ import java.io.IOException;
 public class ProposalOrRef
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    public ProposalOrRefType type;
-    public Proposal proposal;
+    ProposalOrRefType type;
+    Proposal proposal;
 
-    //opaque HashReference<V>;
-    //HashReference ProposalRef;
-    //MakeProposalRef(value)   = RefHash("MLS 1.0 Proposal Reference", value)
-    //RefHash(label, value) = Hash(RefHashInput)
-    //For a ProposalRef, the value input is the AuthenticatedContent carrying the proposal.
+    byte[] reference; // TODO ProposalRef
 
-    // opaque reference = RefHash("MLS 1.0 Proposal Reference", auth.proposal
-    public byte[] reference; // TODO ProposalRef
+    public ProposalOrRefType getType()
+    {
+        return type;
+    }
+
+    public Proposal getProposal()
+    {
+        return proposal;
+    }
+
+    public byte[] getReference()
+    {
+        return reference;
+    }
+
 
     static public ProposalOrRef forRef(byte[] ref)
     {
@@ -31,7 +40,7 @@ public class ProposalOrRef
         this.proposal = proposal;
         this.reference = reference;
     }
-
+    @SuppressWarnings("unused")
     ProposalOrRef(MLSInputStream stream) throws IOException
     {
         this.type = ProposalOrRefType.values()[(byte) stream.read(byte.class)];

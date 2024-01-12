@@ -19,11 +19,6 @@ public enum WireFormat
         this.value = value;
     }
 
-//    WireFormat(MLSInputStream stream) throws IOException
-//    {
-//        this.value = (short) stream.read(short.class);
-//    }
-
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
