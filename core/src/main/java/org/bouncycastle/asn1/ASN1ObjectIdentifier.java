@@ -24,6 +24,11 @@ public class ASN1ObjectIdentifier
 
     public static ASN1ObjectIdentifier fromContents(byte[] contents)
     {
+        if (contents == null)
+        {
+            throw new NullPointerException("'contents' cannot be null");
+        }
+
         return createPrimitive(contents, true);
     }
 
@@ -92,21 +97,193 @@ public class ASN1ObjectIdentifier
         return (ASN1ObjectIdentifier)TYPE.getContextInstance(taggedObject, explicit);
     }
 
+    public static ASN1ObjectIdentifier tryFromID(String identifier)
+    {
+        if (identifier == null)
+        {
+            throw new NullPointerException("'identifier' cannot be null");
+        }
+        if (!isValidIdentifier(identifier))
+        {
+            return null;
+        }
+
+        return new ASN1ObjectIdentifier(parseIdentifier(identifier), identifier);
+    }
+
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7F;
 
     private static final ConcurrentMap<OidHandle, ASN1ObjectIdentifier> pool =
         new ConcurrentHashMap<OidHandle, ASN1ObjectIdentifier>();
 
-    private final String identifier;
-    private byte[] contents;
+    private final byte[] contents;
+    private String identifier;
 
-    ASN1ObjectIdentifier(byte[] contents, boolean clone)
+    /**
+     * Create an OID based on the passed in String.
+     *
+     * @param identifier a string representation of an OID.
+     */
+    public ASN1ObjectIdentifier(String identifier)
     {
-        if (contents.length == 0)
+        if (identifier == null)
         {
-            throw new IllegalArgumentException("empty OBJECT IDENTIFIER with no sub-identifiers");
+            throw new NullPointerException("'identifier' cannot be null");
+        }
+        if (!isValidIdentifier(identifier))
+        {
+            throw new IllegalArgumentException("string " + identifier + " not an OID");
         }
 
+        this.contents = parseIdentifier(identifier);
+        this.identifier = identifier;
+    }
+
+    private ASN1ObjectIdentifier(byte[] contents, boolean clone)
+    {
+        if (!ASN1RelativeOID.isValidContents(contents))
+        {
+            throw new IllegalArgumentException("invalid OID contents");
+        }
+
+        this.contents = clone ? Arrays.clone(contents) : contents;
+        this.identifier = null;
+    }
+
+    private ASN1ObjectIdentifier(byte[] contents, String identifier)
+    {
+        this.contents = contents;
+        this.identifier = identifier;
+    }
+
+    /**
+     * Return an OID that creates a branch under the current one.
+     *
+     * @param branchID node numbers for the new branch.
+     * @return the OID for the new created branch.
+     */
+    public ASN1ObjectIdentifier branch(String branchID)
+    {
+        if (!ASN1RelativeOID.isValidIdentifier(branchID, 0))
+        {
+            throw new IllegalArgumentException("string " + branchID + " not a valid OID branch");
+        }
+
+        byte[] contents = Arrays.concatenate(this.contents, ASN1RelativeOID.parseIdentifier(branchID));
+        String identifier = getId() + "." + branchID; 
+
+        return new ASN1ObjectIdentifier(contents, identifier);
+    }
+
+    /**
+     * Return the OID as a string.
+     *
+     * @return the string representation of the OID carried by this object.
+     */
+    public synchronized String getId()
+    {
+        if (identifier == null)
+        {
+            identifier = parseContents(contents);
+        }
+
+        return identifier;
+    }
+
+    /**
+     * Return true if this oid is an extension of the passed in branch - stem.
+     *
+     * @param stem the arc or branch that is a possible parent.
+     * @return true if the branch is on the passed in stem, false otherwise.
+     */
+    public boolean on(ASN1ObjectIdentifier stem)
+    {
+        byte[] contents = this.contents, stemContents = stem.contents;
+        int stemLength = stemContents.length;
+
+        return contents.length > stemLength
+            && Arrays.areEqual(contents, 0, stemLength, stemContents, 0, stemLength);
+    }
+
+    boolean encodeConstructed()
+    {
+        return false;
+    }
+
+    int encodedLength(boolean withTag)
+    {
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
+    }
+
+    void encode(ASN1OutputStream out, boolean withTag) throws IOException
+    {
+        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, contents);
+    }
+
+    public int hashCode()
+    {
+        return Arrays.hashCode(contents);
+    }
+
+    boolean asn1Equals(ASN1Primitive other)
+    {
+        if (this == other)
+        {
+            return true;
+        }
+        if (!(other instanceof ASN1ObjectIdentifier))
+        {
+            return false;
+        }
+
+        ASN1ObjectIdentifier that = (ASN1ObjectIdentifier)other;
+
+        return Arrays.areEqual(this.contents, that.contents);
+    }
+
+    public String toString()
+    {
+        return getId();
+    }
+
+    private static boolean isValidIdentifier(String identifier)
+    {
+        if (identifier.length() < 3 || identifier.charAt(1) != '.')
+        {
+            return false;
+        }
+
+        char first = identifier.charAt(0);
+        if (first < '0' || first > '2')
+        {
+            return false;
+        }
+
+        if (!ASN1RelativeOID.isValidIdentifier(identifier, 2))
+        {
+            return false;
+        }
+
+        if (first == '2')
+        {
+            return true;
+        }
+
+        if (identifier.length() == 3 || identifier.charAt(3) == '.')
+        {
+            return true;
+        }
+
+        if (identifier.length() == 4 || identifier.charAt(4) == '.')
+        {
+            return identifier.charAt(2) < '4';
+        }
+
+        return false;
+    }
+
+    private static String parseContents(byte[] contents)
+    {
         StringBuilder objId = new StringBuilder();
         long value = 0;
         BigInteger bigValue = null;
@@ -177,92 +354,23 @@ public class ASN1ObjectIdentifier
             }
         }
 
-        this.identifier = objId.toString();
-        this.contents = clone ? Arrays.clone(contents) : contents;
+        return objId.toString();
     }
 
-    /**
-     * Create an OID based on the passed in String.
-     *
-     * @param identifier a string representation of an OID.
-     */
-    public ASN1ObjectIdentifier(
-        String identifier)
+    private static byte[] parseIdentifier(String identifier)
     {
-        if (identifier == null)
-        {
-            throw new NullPointerException("'identifier' cannot be null");
-        }
-        if (!isValidIdentifier(identifier))
-        {
-            throw new IllegalArgumentException("string " + identifier + " not an OID");
-        }
-
-        this.identifier = identifier;
-    }
-
-    /**
-     * Create an OID that creates a branch under the current one.
-     *
-     * @param branchID node numbers for the new branch.
-     * @return the OID for the new created branch.
-     */
-    ASN1ObjectIdentifier(ASN1ObjectIdentifier oid, String branchID)
-    {
-        if (!ASN1RelativeOID.isValidIdentifier(branchID, 0))
-        {
-            throw new IllegalArgumentException("string " + branchID + " not a valid OID branch");
-        }
-
-        this.identifier = oid.getId() + "." + branchID;
-    }
-
-    /**
-     * Return the OID as a string.
-     *
-     * @return the string representation of the OID carried by this object.
-     */
-    public String getId()
-    {
-        return identifier;
-    }
-
-    /**
-     * Return an OID that creates a branch under the current one.
-     *
-     * @param branchID node numbers for the new branch.
-     * @return the OID for the new created branch.
-     */
-    public ASN1ObjectIdentifier branch(String branchID)
-    {
-        return new ASN1ObjectIdentifier(this, branchID);
-    }
-
-    /**
-     * Return true if this oid is an extension of the passed in branch - stem.
-     *
-     * @param stem the arc or branch that is a possible parent.
-     * @return true if the branch is on the passed in stem, false otherwise.
-     */
-    public boolean on(ASN1ObjectIdentifier stem)
-    {
-        String id = getId(), stemId = stem.getId();
-        return id.length() > stemId.length() && id.charAt(stemId.length()) == '.' && id.startsWith(stemId);
-    }
-
-    private void doOutput(ByteArrayOutputStream aOut)
-    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OIDTokenizer tok = new OIDTokenizer(identifier);
         int first = Integer.parseInt(tok.nextToken()) * 40;
 
         String secondToken = tok.nextToken();
         if (secondToken.length() <= 18)
         {
-            ASN1RelativeOID.writeField(aOut, first + Long.parseLong(secondToken));
+            ASN1RelativeOID.writeField(bOut, first + Long.parseLong(secondToken));
         }
         else
         {
-            ASN1RelativeOID.writeField(aOut, new BigInteger(secondToken).add(BigInteger.valueOf(first)));
+            ASN1RelativeOID.writeField(bOut, new BigInteger(secondToken).add(BigInteger.valueOf(first)));
         }
 
         while (tok.hasMoreTokens())
@@ -270,85 +378,15 @@ public class ASN1ObjectIdentifier
             String token = tok.nextToken();
             if (token.length() <= 18)
             {
-                ASN1RelativeOID.writeField(aOut, Long.parseLong(token));
+                ASN1RelativeOID.writeField(bOut, Long.parseLong(token));
             }
             else
             {
-                ASN1RelativeOID.writeField(aOut, new BigInteger(token));
+                ASN1RelativeOID.writeField(bOut, new BigInteger(token));
             }
         }
-    }
 
-    private synchronized byte[] getContents()
-    {
-        if (contents == null)
-        {
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-            doOutput(bOut);
-
-            contents = bOut.toByteArray();
-        }
-
-        return contents;
-    }
-
-    boolean encodeConstructed()
-    {
-        return false;
-    }
-
-    int encodedLength(boolean withTag)
-    {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, getContents().length);
-    }
-
-    void encode(ASN1OutputStream out, boolean withTag) throws IOException
-    {
-        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, getContents());
-    }
-
-    public int hashCode()
-    {
-        return identifier.hashCode();
-    }
-
-    boolean asn1Equals(
-        ASN1Primitive o)
-    {
-        if (o == this)
-        {
-            return true;
-        }
-
-        if (!(o instanceof ASN1ObjectIdentifier))
-        {
-            return false;
-        }
-
-        return identifier.equals(((ASN1ObjectIdentifier)o).identifier);
-    }
-
-    public String toString()
-    {
-        return getId();
-    }
-
-    private static boolean isValidIdentifier(
-        String identifier)
-    {
-        if (identifier.length() < 3 || identifier.charAt(1) != '.')
-        {
-            return false;
-        }
-
-        char first = identifier.charAt(0);
-        if (first < '0' || first > '2')
-        {
-            return false;
-        }
-
-        return ASN1RelativeOID.isValidIdentifier(identifier, 2);
+        return bOut.toByteArray();
     }
 
     /**
@@ -363,7 +401,7 @@ public class ASN1ObjectIdentifier
      */
     public ASN1ObjectIdentifier intern()
     {
-        final OidHandle hdl = new OidHandle(getContents());
+        final OidHandle hdl = new OidHandle(contents);
         ASN1ObjectIdentifier oid = pool.get(hdl);
         if (oid == null)
         {
