@@ -1,5 +1,7 @@
 package org.bouncycastle.mls.codec;
 
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -8,7 +10,8 @@ public class GroupContext
 {
 
     ProtocolVersion version = ProtocolVersion.mls10;
-    short ciphersuite; //TODO: change to static cipher instead
+    short ciphersuite;
+    MlsCipherSuite suite;
     byte[] groupID;
     long epoch;
     byte[] treeHash;
@@ -30,9 +33,10 @@ public class GroupContext
         return extensions;
     }
 
-    public GroupContext(short ciphersuit, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)
+    public GroupContext(MlsCipherSuite ciphersuite, byte[] groupID, long epoch, byte[] treeHash, byte[] confirmedTranscriptHash, ArrayList<Extension> extensions)
     {
-        this.ciphersuite = ciphersuit;
+        this.suite = ciphersuite;
+        this.ciphersuite = ciphersuite.getSuiteID();
         this.groupID = groupID;
         this.epoch = epoch;
         this.treeHash = treeHash;
@@ -40,10 +44,11 @@ public class GroupContext
         this.extensions = new ArrayList<>(extensions);
     }
     @SuppressWarnings("unused")
-    public GroupContext(MLSInputStream stream) throws IOException
+    public GroupContext(MLSInputStream stream) throws Exception
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
         this.ciphersuite = (short) stream.read(short.class);
+        this.suite = MlsCipherSuite.getSuite(ciphersuite);
         this.groupID = stream.readOpaque();
         this.epoch = (long) stream.read(long.class);
         this.treeHash = stream.readOpaque();

@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.UpdatePath;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -18,10 +18,8 @@ import java.util.Map;
 import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
 
 public class TreeKEMPrivateKey
-//    implements MLSInputStream.Readable, MLSOutputStream.Writable
-
 {
-    CipherSuite suite;
+    MlsCipherSuite suite;
     LeafIndex index;
     Secret updateSecret;
     Map<NodeIndex, Secret> pathSecrets;
@@ -42,7 +40,7 @@ public class TreeKEMPrivateKey
         privateKeyCache.put(index, keyPair);
     }
 
-    public TreeKEMPrivateKey(CipherSuite suite, LeafIndex index)
+    public TreeKEMPrivateKey(MlsCipherSuite suite, LeafIndex index)
     {
         this.suite = suite;
         this.index = index;
@@ -58,7 +56,7 @@ public class TreeKEMPrivateKey
         return clone;
     }
 
-    public static TreeKEMPrivateKey solo(CipherSuite suite, LeafIndex index, AsymmetricCipherKeyPair leafPriv)
+    public static TreeKEMPrivateKey solo(MlsCipherSuite suite, LeafIndex index, AsymmetricCipherKeyPair leafPriv)
     {
 
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(suite, index);
@@ -221,7 +219,7 @@ public class TreeKEMPrivateKey
 
     public final boolean consistent(TreeKEMPublicKey other) throws IOException
     {
-        if (suite.getSuiteId() != other.suite.getSuiteId())
+        if (suite.getSuiteID() != other.suite.getSuiteID())
         {
             return false;
         }

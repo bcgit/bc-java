@@ -1,6 +1,6 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
 import java.io.IOException;
 
@@ -66,7 +66,7 @@ public class AuthenticatedContent
         }
     }
 
-    public static AuthenticatedContent sign(WireFormat wireFormat, FramedContent content, CipherSuite suite, byte[] sigPriv, byte[] groupContext) throws Exception
+    public static AuthenticatedContent sign(WireFormat wireFormat, FramedContent content, MlsCipherSuite suite, byte[] sigPriv, byte[] groupContext) throws Exception
     {
         if (wireFormat == WireFormat.mls_public_message &&
             content.contentType == ContentType.APPLICATION)
@@ -79,7 +79,7 @@ public class AuthenticatedContent
         return new AuthenticatedContent(wireFormat, content, auth);
     }
 
-    public boolean verify(CipherSuite suite, byte[] sigPub, byte[] context) throws IOException
+    public boolean verify(MlsCipherSuite suite, byte[] sigPub, byte[] context) throws IOException
     {
         if (wireFormat == WireFormat.mls_public_message &&
                 content.contentType == ContentType.APPLICATION)

@@ -3,7 +3,7 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +13,8 @@ public class KeyPackage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion version;
+
+    MlsCipherSuite suite;
     short cipher_suite;
     byte[] init_key;
     LeafNode leaf_node;
@@ -29,13 +31,12 @@ public class KeyPackage
     {
         return init_key;
     }
-    public short getCipherSuiteID()
+    public MlsCipherSuite getSuite()
     {
-        return cipher_suite;
+        return suite;
     }
     public boolean verify() throws IOException
     {
-        CipherSuite suite = new CipherSuite(cipher_suite);
         // Verify the inner leaf node
         if (!leaf_node.verify(suite, leaf_node.toBeSigned(new byte[0], -1)))
         {
@@ -69,10 +70,11 @@ public class KeyPackage
         return stream.toByteArray();
     }
 
-    public KeyPackage(CipherSuite suite, byte[] init_key, LeafNode leaf_node, List<Extension> extensions, byte[] sigSk) throws IOException, CryptoException
+    public KeyPackage(MlsCipherSuite suite, byte[] init_key, LeafNode leaf_node, List<Extension> extensions, byte[] sigSk) throws IOException, CryptoException
     {
         this.version = ProtocolVersion.mls10;
-        this.cipher_suite = suite.getSuiteId();
+        this.cipher_suite = suite.getSuiteID();
+        this.suite = suite;
         this.init_key = init_key.clone();
         this.leaf_node = leaf_node.copy(leaf_node.getEncryptionKey());
         this.extensions = new ArrayList<>(extensions);
@@ -81,10 +83,11 @@ public class KeyPackage
         this.signature = suite.signWithLabel(sigSk, "KeyPackageTBS", toBeSigned());
     }
     @SuppressWarnings("unused")
-    KeyPackage(MLSInputStream stream) throws IOException
+    KeyPackage(MLSInputStream stream) throws Exception
     {
         this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
         cipher_suite = (short) stream.read(short.class);
+        suite = MlsCipherSuite.getSuite(cipher_suite);
         init_key = stream.readOpaque();
         leaf_node = (LeafNode) stream.read(LeafNode.class);
         extensions = new ArrayList<>();

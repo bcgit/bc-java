@@ -5,10 +5,11 @@ import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 public class PrivateMessage
         implements MLSInputStream.Readable, MLSOutputStream.Writable
@@ -40,7 +41,7 @@ public class PrivateMessage
         ciphertext = stream.readOpaque();
     }
 
-    static public PrivateMessage protect(AuthenticatedContent auth, CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
+    static public PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
             throws IOException, IllegalAccessException, InvalidCipherTextException
     {
         // Get KeyGeneration from the secret tree
@@ -102,7 +103,7 @@ public class PrivateMessage
         );
     }
     //TODO: change senderDataSecretBytes to Secret class?
-    public AuthenticatedContent unprotect(CipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
+    public AuthenticatedContent unprotect(MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
     {
         // Decrypt and parse the sender data
 

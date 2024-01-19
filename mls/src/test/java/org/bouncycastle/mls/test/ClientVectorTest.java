@@ -3,11 +3,11 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
-import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -132,7 +132,7 @@ public class ClientVectorTest
                             tree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
                         }
 
-                        CipherSuite suite = new CipherSuite(cipherSuite);
+                        MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
                         AsymmetricCipherKeyPair leafKeyPair = suite.getHPKE().deserializePrivateKey(encryption_priv, null);
                         Map<Secret, byte[]> externalPsks = new HashMap<>();
                         for (PreSharedKeyID ext : externalPSKs)

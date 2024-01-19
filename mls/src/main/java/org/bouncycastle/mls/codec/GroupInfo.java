@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,7 +14,6 @@ import java.util.List;
 public class GroupInfo
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    //TODO: replace suite with groupContext.suite
     GroupContext groupContext;
     List<Extension> extensions;
     byte[] confirmationTag;
@@ -49,9 +48,9 @@ public class GroupInfo
     {
         return groupContext.epoch;
     }
-    public short getCipherSuiteID()
+    public MlsCipherSuite getSuite()
     {
-        return groupContext.ciphersuite;
+        return groupContext.suite;
     }
     public GroupInfo(GroupContext groupContext, List<Extension> extensions, byte[] confirmationTag)
     {
@@ -70,7 +69,7 @@ public class GroupInfo
         return stream.toByteArray();
     }
 
-    public boolean verify(CipherSuite suite, TreeKEMPublicKey tree) throws Exception
+    public boolean verify(MlsCipherSuite suite, TreeKEMPublicKey tree) throws Exception
     {
         LeafNode leaf = tree.getLeafNode(signer);
         if (leaf == null)
@@ -79,7 +78,7 @@ public class GroupInfo
         }
         return verify(suite, leaf.getSignatureKey());
     }
-    public boolean verify(CipherSuite suite, byte[] pub) throws IOException
+    public boolean verify(MlsCipherSuite suite, byte[] pub) throws IOException
     {
         return suite.verifyWithLabel(pub, "GroupInfoTBS", toBeSigned(), signature);
     }

@@ -20,7 +20,7 @@ public class Secret {
         this.parents = parents;
     }
 
-    public static Secret zero(CipherSuite suite) {
+    public static Secret zero(MlsCipherSuite suite) {
         return new Secret(new byte[suite.getKDF().getHashLength()]);
     }
 
@@ -64,12 +64,12 @@ public class Secret {
         }
     }
 
-    public static Secret extract(CipherSuite suite, Secret salt, Secret ikm) {
+    public static Secret extract(MlsCipherSuite suite, Secret salt, Secret ikm) {
         byte[] prk = suite.getKDF().extract(salt.value(), ikm.value());
         return new Secret(prk, new Secret[] {salt, ikm});
     }
 
-    public Secret expand(CipherSuite suite, String label, int length) {
+    public Secret expand(MlsCipherSuite suite, String label, int length) {
         byte[] labelData = label.getBytes(StandardCharsets.UTF_8);
         byte[] derivedSecret = suite.getKDF().expand(value, labelData, length);
         return new Secret(derivedSecret, new Secret[] {this});
@@ -94,18 +94,18 @@ public class Secret {
         }
     }
 
-    public Secret expandWithLabel(CipherSuite suite, String label, byte[] context, int length) throws IOException {
+    public Secret expandWithLabel(MlsCipherSuite suite, String label, byte[] context, int length) throws IOException {
         KDFLabel kdfLabelStr = new KDFLabel((short) length, label, context);
         byte[] kdfLabel = MLSOutputStream.encode(kdfLabelStr);
         byte[] derivedSecret = suite.getKDF().expand(value, kdfLabel, length);
         return new Secret(derivedSecret, new Secret[] {this});
     }
 
-    public Secret deriveSecret(CipherSuite suite, String label) throws IOException {
+    public Secret deriveSecret(MlsCipherSuite suite, String label) throws IOException {
         return expandWithLabel(suite, label, new byte[] {}, suite.getKDF().getHashLength());
     }
 
-    public Secret deriveTreeSecret(CipherSuite suite, String label, int generation, int length) throws IOException {
+    public Secret deriveTreeSecret(MlsCipherSuite suite, String label, int generation, int length) throws IOException {
         return expandWithLabel(suite, label, MLSOutputStream.encode(generation), length);
     }
 }

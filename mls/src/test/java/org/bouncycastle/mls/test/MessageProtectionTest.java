@@ -3,7 +3,6 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeSize;
@@ -17,14 +16,12 @@ import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.PrivateMessage;
 import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.Sender;
-import org.bouncycastle.mls.codec.SenderType;
 import org.bouncycastle.mls.codec.WireFormat;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +53,7 @@ public class MessageProtectionTest
     byte[] application_priv;
     byte[] groupContextBytes;
     GroupContext groupContext;
-    CipherSuite suite;
+    MlsCipherSuite suite;
 
 
     private void protect(byte[] content, MLSMessage message) throws Exception
@@ -180,7 +177,7 @@ public class MessageProtectionTest
                     application = Hex.decode(buf.get("application"));
                     application_priv = Hex.decode(buf.get("application_priv"));
 
-                    suite = new CipherSuite(cipher_suite);
+                    suite = MlsCipherSuite.getSuite(cipher_suite);
 
                     AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
                     byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
@@ -191,7 +188,7 @@ public class MessageProtectionTest
                     // Construct a GroupContext object with the provided cipher_suite, group_id, epoch, tree_hash,
                     // and confirmed_transcript_hash values, and empty extensions
                     groupContext = new GroupContext(
-                            cipher_suite,
+                            suite,
                             group_id,
                             epoch,
                             tree_hash,

@@ -2,13 +2,13 @@ package org.bouncycastle.mls.TreeKEM;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeSize;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.codec.UpdatePathNode;
-import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -52,14 +52,14 @@ class FilteredDirectPath
 public class TreeKEMPublicKey
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    CipherSuite suite;
+    MlsCipherSuite suite;
     TreeSize size;
     Map<NodeIndex, byte[]> hashes;
     private final Map<NodeIndex, byte[]> treeHashCache;
     private final Map<NodeIndex, Integer> exceptCache;
     ArrayList<OptionalNode> nodes;
 
-    public CipherSuite getSuite()
+    public MlsCipherSuite getSuite()
     {
         return suite;
     }
@@ -76,7 +76,7 @@ public class TreeKEMPublicKey
         tree.setHashAll();
         return tree;
     }
-    public TreeKEMPublicKey(CipherSuite suite) throws IOException
+    public TreeKEMPublicKey(MlsCipherSuite suite) throws IOException
     {
         this.suite = suite;
         hashes = new HashMap<>();
@@ -126,7 +126,7 @@ public class TreeKEMPublicKey
         stream.writeList(nodes.subList(0, (int)(new NodeIndex(cut)).value() + 1));
     }
 
-    public void setSuite(CipherSuite suite)
+    public void setSuite(MlsCipherSuite suite)
     {
         this.suite = suite;
     }

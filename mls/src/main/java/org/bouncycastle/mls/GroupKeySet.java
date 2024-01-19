@@ -3,7 +3,7 @@ package org.bouncycastle.mls;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.codec.ContentType;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class GroupKeySet {
-    final CipherSuite suite;
+    final MlsCipherSuite suite;
     final int secretSize;
     // We store a commitment to the encryption secret that was used to create this structure, so that we can compare
     // for  purposes of equivalence checking without violating forward secrecy.
@@ -25,7 +25,7 @@ public class GroupKeySet {
     Map<LeafIndex, HashRatchet> applicationRatchets;
 
 
-    public GroupKeySet(CipherSuite suite, TreeSize treeSize, Secret encryptionSecret) throws IOException, IllegalAccessException {
+    public GroupKeySet(MlsCipherSuite suite, TreeSize treeSize, Secret encryptionSecret) throws IOException, IllegalAccessException {
         this.suite = suite;
         this.secretSize = suite.getKDF().getHashLength();
         this.encryptionSecretCommit = encryptionSecret.deriveSecret(suite, "commitment");

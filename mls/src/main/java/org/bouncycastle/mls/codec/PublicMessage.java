@@ -1,6 +1,6 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.Arrays;
 
@@ -72,7 +72,7 @@ public class PublicMessage
         }
     }
 
-    static public PublicMessage protect(AuthenticatedContent authContent, CipherSuite suite,
+    static public PublicMessage protect(AuthenticatedContent authContent, MlsCipherSuite suite,
                                         byte[] membershipKeyBytes, byte[] groupContextBytes) throws IOException
     {
         PublicMessage pt = new PublicMessage(authContent.content, authContent.auth, null);
@@ -85,14 +85,11 @@ public class PublicMessage
         }
         return pt;
     }
-    public AuthenticatedContent unprotect(CipherSuite suite, Secret membership_key, GroupContext context) throws IOException
+    public AuthenticatedContent unprotect(MlsCipherSuite suite, Secret membership_key, GroupContext context) throws IOException
     {
         if (content.sender.senderType == SenderType.MEMBER)
         {
             byte[] membershipTag = membershipMac(suite, membership_key, context);
-//            System.out.println("context: " + Hex.toHexString(MLSOutputStream.encode(context)));
-//            System.out.println("mtag: " + Hex.toHexString(membershipTag));
-//            System.out.println("mtag: " + Hex.toHexString(membership_tag));
             if (!Arrays.areEqual(membershipTag, membership_tag))
             {
                 // throw tagMisMatch error!
@@ -102,7 +99,7 @@ public class PublicMessage
         return new AuthenticatedContent(WireFormat.mls_public_message, content, auth);
     }
 
-    public byte[] membershipMac(CipherSuite suite, Secret membershipKey, GroupContext context) throws IOException
+    public byte[] membershipMac(MlsCipherSuite suite, Secret membershipKey, GroupContext context) throws IOException
     {
         // MAC(membership_key, AuthenticatedContentTBM)
         FramedContentTBS tbs = new FramedContentTBS(

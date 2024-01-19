@@ -2,6 +2,7 @@ package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -144,7 +145,7 @@ public class Proposal
         return new Proposal(ProposalType.PSK,null, null, null,
                 new PreSharedKey(pskID), null, null, null);
     }
-    public static Proposal reInit(byte[] group_id, ProtocolVersion version, short cipherSuite, List<Extension> extensions)
+    public static Proposal reInit(byte[] group_id, ProtocolVersion version, MlsCipherSuite cipherSuite, List<Extension> extensions)
     {
         return new Proposal(ProposalType.REINIT,null, null, null, null,
                 new ReInit(group_id, version, cipherSuite, extensions), null, null);
@@ -290,18 +291,24 @@ public class Proposal
             implements MLSInputStream.Readable, MLSOutputStream.Writable
     {
         byte[] group_id;
-        public ProtocolVersion version;
-        public short cipherSuite;
+        ProtocolVersion version;
+        short cipherSuite;
+        MlsCipherSuite suite;
         List<Extension> extensions;
 
-        public byte[] getGroup_id()
+        public ProtocolVersion getVersion()
+        {
+            return version;
+        }
+
+        public byte[] getGroupID()
         {
             return group_id;
         }
 
-        public short getCipherSuite()
+        public MlsCipherSuite getSuite()
         {
-            return cipherSuite;
+            return suite;
         }
 
         public List<Extension> getExtensions()
@@ -309,20 +316,21 @@ public class Proposal
             return extensions;
         }
 
-        public ReInit(byte[] group_id, ProtocolVersion version, short cipherSuite, List<Extension> extensions)
+        public ReInit(byte[] group_id, ProtocolVersion version, MlsCipherSuite cipherSuite, List<Extension> extensions)
         {
             this.group_id = group_id;
             this.version = version;
-            this.cipherSuite = cipherSuite;
+            this.suite = cipherSuite;
+            this.cipherSuite = suite.getSuiteID();
             this.extensions = extensions;
         }
         @SuppressWarnings("unused")
-        ReInit(MLSInputStream stream) throws IOException
+        ReInit(MLSInputStream stream) throws Exception
         {
-            //TODO: ciphersuite
             group_id = stream.readOpaque();
             version = ProtocolVersion.values()[(short) stream.read(short.class)];
             cipherSuite = (short) stream.read(short.class);
+            suite = MlsCipherSuite.getSuite(cipherSuite);
             extensions = new ArrayList<>();
             stream.readList(extensions, Extension.class);
         }

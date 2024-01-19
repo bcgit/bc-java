@@ -1,7 +1,8 @@
 package org.bouncycastle.mls.codec;
 
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Pack;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class MLSMessage
         this.wireFormat = wireFormat;
     }
 
-    static public MLSMessage externalProposal(CipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk) throws Exception
+    static public MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk) throws Exception
     {
         //TODO check new byte[0] or null
         switch (proposal.getProposalType())
@@ -140,7 +141,7 @@ public class MLSMessage
         }
         return null;
     }
-    public short getCipherSuite()
+    public MlsCipherSuite getCipherSuite()
     {
         switch (wireFormat)
         {
@@ -149,11 +150,11 @@ public class MLSMessage
             case mls_group_info:
                 break;
             case mls_welcome:
-                return welcome.cipher_suite;
+                return welcome.suite;
             case mls_key_package:
-                return keyPackage.cipher_suite;
+                return keyPackage.suite;
         }
-        return -1;
+        return null;
     }
     public long getEpoch()
     {

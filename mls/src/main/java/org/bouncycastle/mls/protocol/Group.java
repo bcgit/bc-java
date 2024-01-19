@@ -40,7 +40,7 @@ import org.bouncycastle.mls.codec.SenderType;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.codec.Welcome;
 import org.bouncycastle.mls.codec.WireFormat;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
@@ -83,9 +83,9 @@ public class Group
             return epochAuthenticator;
         }
 
-        public short getCipherSuiteID()
+        public MlsCipherSuite getSuite()
         {
-            return reinit.cipherSuite;
+            return reinit.getSuite();
         }
 
         public Tombstone(Group group, Proposal.ReInit reinit)
@@ -101,8 +101,8 @@ public class Group
         {
             // Create new empty group with the appropriate PSK
             Group newGroup = new Group(
-                    reinit.getGroup_id(),
-                    new CipherSuite(reinit.getCipherSuite()),
+                    reinit.getGroupID(),
+                    reinit.getSuite(),
                     encSk,
                     sigSk,
                     leafNode,
@@ -140,7 +140,7 @@ public class Group
             Map<EpochRef, byte[]> resumptionPsks = new HashMap<>();
             resumptionPsks.put(new EpochRef(priorGroupID, priorEpoch), resumptionPsk);
 
-            CipherSuite suite = new CipherSuite(welcome.getCipherSuite()); // TODO DONT SERIALIZE KEYS
+            MlsCipherSuite suite = welcome.getCipherSuite(); // TODO DONT SERIALIZE KEYS
             Group newGroup = new Group(
                     suite.getHPKE().serializePrivateKey(initSk.getPrivate()),
                     encSk,
@@ -152,7 +152,7 @@ public class Group
                     resumptionPsks
             );
 
-            if (newGroup.suite.getSuiteId() != reinit.cipherSuite)
+            if (newGroup.suite.getSuiteID() != reinit.getSuite().getSuiteID())
             {
                 throw new Exception("Attempt to reinit with the wrong ciphersuite");
             }
@@ -361,7 +361,7 @@ public class Group
     private TreeKEMPublicKey tree;
     private TreeKEMPrivateKey treePriv;
     private GroupKeySet keys;
-    private CipherSuite suite;
+    private MlsCipherSuite suite;
     private LeafIndex index;
     private byte[] identitySk; // TODO: maybe make this AsymmetricCipherKeyPair
 //    private ArrayList<CachedProposal> proposalQueue;
@@ -374,7 +374,7 @@ public class Group
         externalPSKs.put(pskID, pskSecret);
     }
 
-    public CipherSuite getSuite()
+    public MlsCipherSuite getSuite()
     {
         return suite;
     }
@@ -411,7 +411,7 @@ public class Group
     {
         GroupInfo groupInfo = new GroupInfo(
                 new GroupContext(
-                        suite.getSuiteId(),
+                        suite,
                         groupID,
                         epoch,
                         tree.getRootHash(),
@@ -445,7 +445,7 @@ public class Group
 
     public Group(AsymmetricCipherKeyPair sigSk, GroupInfo groupInfo, TreeKEMPublicKey tree) throws Exception
     {
-        this.suite = new CipherSuite(groupInfo.getCipherSuiteID());
+        this.suite = groupInfo.getSuite();
         this.groupID = groupInfo.getGroupID().clone();
         this.epoch = groupInfo.getEpoch();
         this.tree = TreeKEMPublicKey.clone(importTree(groupInfo.getGroupContext().getTreeHash(), tree, groupInfo.getExtensions()));
@@ -464,7 +464,7 @@ public class Group
     // Create a new group
     public Group(
             byte[] groupID,
-            CipherSuite suite,
+            MlsCipherSuite suite,
             AsymmetricCipherKeyPair encSk,
             byte[] sigSk,
             LeafNode leafNode,
@@ -527,7 +527,7 @@ public class Group
             throws Exception
     {
         pendingProposals = new ArrayList<>();
-        suite = new CipherSuite(welcome.getCipherSuiteID());
+        suite = welcome.getSuite();
         epoch = 0;
         identitySk = sigSk;
         externalPSKs = new HashMap<>();
@@ -541,7 +541,7 @@ public class Group
             throw new Exception("Welcome not intended for key package");
         }
 
-        if (keyPackage.getCipherSuiteID() != welcome.getCipherSuiteID())
+        if (keyPackage.getSuite().getSuiteID() != welcome.getSuite().getSuiteID())
         {
             throw new Exception("Ciphersuite mismatch");
         }
@@ -552,7 +552,7 @@ public class Group
 
         // Decrypting GroupInfo
         GroupInfo groupInfo = welcome.decrypt(secrets.joiner_secret, psks);
-        if (groupInfo.getCipherSuiteID() != suite.getSuiteId())
+        if (groupInfo.getSuite().getSuiteID() != suite.getSuiteID())
         {
             throw new Exception("GroupInfo and Welcome ciphersuites disagree");
         }
@@ -771,7 +771,7 @@ public class Group
             next.tree.merge(senderLocation, path);
 
             byte[] ctx = MLSOutputStream.encode(new GroupContext(
-                    next.suite.getSuiteId(),
+                    next.suite,
                     next.groupID,
                     next.epoch + 1,
                     next.tree.getRootHash(),
@@ -896,7 +896,7 @@ public class Group
                 resumptionPsks
         );
 
-        if (branchGroup.suite.getSuiteId() != suite.getSuiteId())
+        if (branchGroup.suite.getSuiteID() != suite.getSuiteID())
         {
             throw new Exception("Attempt to branch with a different ciphersuite");
         }
@@ -944,7 +944,7 @@ public class Group
     {
         // Create a preliminary group
         Group initialGroup = new Group(sigSk, groupInfo, tree);
-        CipherSuite suite = new CipherSuite(keyPackage.getCipherSuiteID());
+        MlsCipherSuite suite = keyPackage.getSuite();
 
         // Look up the external public key for the group
         byte[] extPub = null;
@@ -1062,7 +1062,7 @@ public class Group
             }
             TreeKEMPrivateKey newPriv = next.tree.update(next.index, leafSecret, next.groupID, identitySk, leafNodeOptions);
             GroupContext ctx = new GroupContext(
-                    next.suite.getSuiteId(),
+                    next.suite,
                     next.groupID,
                     next.epoch + 1,
                     next.tree.getRootHash(),
@@ -1099,7 +1099,7 @@ public class Group
         next.tree.setHashAll();
         GroupInfo groupInfo = new GroupInfo(
                 new GroupContext(
-                        next.suite.getSuiteId(),
+                        next.suite,
                         next.groupID,
                         next.epoch,
                         next.tree.getRootHash(),
@@ -1158,7 +1158,7 @@ public class Group
 
     static public MLSMessage newMemberAdd(byte[] groupID, long epoch, KeyPackage newMember, AsymmetricCipherKeyPair sigSk) throws Exception
     {
-        CipherSuite suite = new CipherSuite(newMember.getCipherSuiteID());
+        MlsCipherSuite suite = newMember.getSuite();
         Proposal proposal = Proposal.add(newMember);
         FramedContent content = FramedContent.proposal(
                 groupID,
@@ -1356,10 +1356,10 @@ public class Group
     }
 
 
-    public MLSMessage reinit(byte[] groupID, ProtocolVersion version, CipherSuite suite, List<Extension> extList, MessageOptions msgOptions) throws Exception
+    public MLSMessage reinit(byte[] groupID, ProtocolVersion version, MlsCipherSuite suite, List<Extension> extList, MessageOptions msgOptions) throws Exception
     {
         // reinitProposal
-        Proposal reinit = Proposal.reInit(groupID, version, suite.getSuiteId(), extList);
+        Proposal reinit = Proposal.reInit(groupID, version, suite, extList);
 
         AuthenticatedContent contentAuth = sign(
                 Sender.forMember(index),
@@ -1521,7 +1521,7 @@ public class Group
     private void updateEpochSecrets(byte[] commitSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] forceInitSecret) throws Exception
     {
         byte[] ctx = MLSOutputStream.encode(new GroupContext(
-                suite.getSuiteId(),
+                suite,
                 groupID,
                 epoch,
                 tree.getRootHash(),
@@ -1806,7 +1806,7 @@ public class Group
     private boolean validateReinit(Proposal.ReInit reInit)
     {
         // Check that the version and CipherSuite are ones we support
-        boolean supportedVersion = (reInit.version == ProtocolVersion.mls10);
+        boolean supportedVersion = (reInit.getVersion() == ProtocolVersion.mls10);
         boolean supportedSuite = true; //TODO: make a list of supported cipher suites
 
         return supportedSuite && supportedVersion;
@@ -1859,7 +1859,7 @@ public class Group
     {
         // Verify that the ciphersuite and protocol version of the KeyPackage match
         // those in the GroupContext.
-        boolean correct_ciphersuite = (keyPackage.getCipherSuiteID() == suite.getSuiteId());
+        boolean correct_ciphersuite = (keyPackage.getSuite().getSuiteID() == suite.getSuiteID());
 
         // Verify that the signature on the KeyPackage is valid using the public key
         // in leaf_node.credential.
@@ -2275,7 +2275,7 @@ public class Group
 
     private GroupContext  getGroupContext() throws Exception
     {
-        return new GroupContext(suite.getSuiteId(), groupID, epoch, tree.getRootHash(), transcriptHash.getConfirmed(), extensions);
+        return new GroupContext(suite, groupID, epoch, tree.getRootHash(), transcriptHash.getConfirmed(), extensions);
     }
 
     private TreeKEMPublicKey importTree(byte[] treeHash, TreeKEMPublicKey external, List<Extension> extensions) throws Exception

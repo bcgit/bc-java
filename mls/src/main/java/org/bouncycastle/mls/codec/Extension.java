@@ -88,15 +88,15 @@ public class Extension
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        if (Grease.isGrease(extensionType.value) == -1)
-        {
+//        if (Grease.isGrease(extensionType.value) == -1)
+//        {
             stream.write(extensionType);
             stream.writeOpaque(extension_data);
-        }
-        else
-        {
-            //TODO: check should we write grease?
-        }
+//        }
+//        else
+//        {
+//            //TODO: check should we write grease?
+//        }
 
     }
 }

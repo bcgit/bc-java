@@ -9,6 +9,7 @@ import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.Commit;
@@ -21,7 +22,6 @@ import org.bouncycastle.mls.codec.PathSecret;
 import org.bouncycastle.mls.codec.Proposal;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.codec.WireFormat;
-import org.bouncycastle.mls.crypto.CipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.codec.MLSMessage;
 import org.bouncycastle.mls.codec.PreSharedKeyID;
@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519;
 
 public class VectorTest
         extends TestCase
@@ -189,7 +191,7 @@ public class VectorTest
                     byte[] encryptWithLabel_kemOutput = Hex.decode(buf.get("encryptWithLabel_kemOutput"));
                     byte[] encryptWithLabel_ciphertext = Hex.decode(buf.get("encryptWithLabel_ciphertext"));
 
-                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
 
                     // ref_hash: out == RefHash(label, value)
                     byte[] refOut = suite.refHash( refHash_value, refHash_label);
@@ -304,7 +306,7 @@ public class VectorTest
                     byte[] ciphertext = Hex.decode(buf.get("ciphertext"));
                     byte[] key = Hex.decode(buf.get("key"));
                     byte[] nonce = Hex.decode(buf.get("nonce"));
-                    CipherSuite suite = new CipherSuite(cipher_suite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
 
                     // sender_data:
                     //      key == sender_data_key(sender_data_secret, ciphertext)
@@ -467,10 +469,10 @@ public class VectorTest
                             short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                             byte[] group_id = Hex.decode(buf.get("group_id"));
                             byte[] initial_init_secret = Hex.decode(buf.get("initial_init_secret"));
-                            CipherSuite suite = new CipherSuite(cipher_suite);
+                            MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
 
                             GroupContext groupContext = new GroupContext(
-                                    cipher_suite,
+                                    suite,
                                     group_id,
                                     epochCount,
                                     tree_hash,
@@ -563,7 +565,7 @@ public class VectorTest
                     System.out.println("test case: " + count);
                     short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] psk_secret = Hex.decode(buf.get("psk_secret"));
-                    CipherSuite suite = new CipherSuite(cipher_suite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
 
                     List<KeyScheduleEpoch.PSKWithSecret> pskList = new ArrayList<>();
                     for (PSK psk : psks)
@@ -642,7 +644,7 @@ public class VectorTest
                     byte[] confirmed_transcript_hash_after = Hex.decode(buf.get("confirmed_transcript_hash_after"));
                     byte[] interim_transcript_hash_after = Hex.decode(buf.get("interim_transcript_hash_after"));
 
-                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
                     TranscriptHash transcript = new TranscriptHash(suite);
                     transcript.setInterim(interim_transcript_hash_before);
 
@@ -687,7 +689,7 @@ public class VectorTest
                     byte[] signer_pub = Hex.decode(buf.get("signer_pub"));
                     byte[] welcome = Hex.decode(buf.get("welcome"));
 
-                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
 
                     MLSMessage welcomeMessage = (MLSMessage) MLSInputStream.decode(welcome, MLSMessage.class);
 
@@ -703,8 +705,8 @@ public class VectorTest
                     byte[] kpBytes = MLSOutputStream.encode(kpMessage);
                     assertTrue(Arrays.areEqual(kpBytes, key_package));
 
-                    assertEquals(kpMessage.getCipherSuite(), cipherSuite);
-                    assertEquals(kpMessage.getCipherSuite(), cipherSuite);
+                    assertEquals(kpMessage.getCipherSuite().getSuiteID(), cipherSuite);
+                    assertEquals(kpMessage.getCipherSuite().getSuiteID(), cipherSuite);
 
                     int kpi = welcomeMessage.welcome.find(kpMessage.keyPackage);
                     assertTrue(kpi != -1);
@@ -736,7 +738,7 @@ public class VectorTest
         }
     }
 
-    public void testTreeOperations() throws IOException
+    public void testTreeOperations() throws Exception
     {
         InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "tree-operations.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
@@ -758,7 +760,7 @@ public class VectorTest
                     int proposal_sender = Integer.parseInt(buf.get("proposal_sender"));
                     byte[] tree_after = Hex.decode(buf.get("tree_after"));
 
-                    CipherSuite suite = new CipherSuite(CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519);
 
                     TreeKEMPublicKey beforeTree = (TreeKEMPublicKey) MLSInputStream.decode(tree_before, TreeKEMPublicKey.class);
                     TreeKEMPublicKey afterTree = (TreeKEMPublicKey) MLSInputStream.decode(tree_after, TreeKEMPublicKey.class);
@@ -828,7 +830,7 @@ public class VectorTest
                     byte[] treeBytes = Hex.decode(buf.get("tree"));
                     byte[] group_id = Hex.decode(buf.get("group_id"));
 
-                    CipherSuite suite = new CipherSuite(cipherSuite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
                     TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(treeBytes, TreeKEMPublicKey.class);
                     tree.setSuite(suite);
                     tree.setHashAll();
@@ -1016,7 +1018,7 @@ public class VectorTest
                     byte[] group_id = Hex.decode(buf.get("group_id"));
                     byte[] ratchet_tree = Hex.decode(buf.get("ratchet_tree"));
 
-                    CipherSuite suite = new CipherSuite(cipher_suite);
+                    MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
                     TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(ratchet_tree, TreeKEMPublicKey.class);
                     tree.setSuite(suite);
                     tree.setHashAll();
@@ -1070,7 +1072,7 @@ public class VectorTest
                         assertTrue(Arrays.areEqual(treeAfter.getRootHash(), info.treeHashAfter));
 
                         GroupContext groupContext = new GroupContext(
-                                cipher_suite,
+                                suite,
                                 group_id,
                                 epoch,
                                 treeAfter.getRootHash(),

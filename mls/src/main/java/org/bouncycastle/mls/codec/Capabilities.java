@@ -1,6 +1,6 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ public class Capabilities
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     static private final Short[] DEFAULT_SUPPORTED_VERSIONS = { ProtocolVersion.mls10.value };
-    static private final short[] DEFAULT_SUPPORTED_CIPHERSUITES = CipherSuite.ALL_SUPPORTED_SUITES;
+    static private final short[] DEFAULT_SUPPORTED_CIPHERSUITES = MlsCipherSuite.ALL_SUPPORTED_SUITES;
     static private final Short[] DEFAULT_SUPPORTED_CREDENTIALS = { CredentialType.basic.value, CredentialType.x509.value};
     List<Short> versions;
     List<Short> cipherSuites;
@@ -55,23 +55,10 @@ public class Capabilities
     @Override
     public void writeTo(MLSOutputStream stream) throws IOException
     {
-        stream.writeList(removeGREASE(versions));
-        stream.writeList(removeGREASE(cipherSuites));
-        stream.writeList(removeGREASE(extensions));
-        stream.writeList(removeGREASE(proposals));
-        stream.writeList(removeGREASE(credentials));
-    }
-
-    private List<Short> removeGREASE(List<Short> target)
-    {
-        List<Short> out = new ArrayList<>(target);
-        for (int i = 0; i < target.size(); i++)
-        {
-            if (Grease.isGrease(target.get(i))!= -1)
-            {
-                out.remove(target.get(i));
-            }
-        }
-        return out;
+        stream.writeList(versions);
+        stream.writeList(cipherSuites);
+        stream.writeList(extensions);
+        stream.writeList(proposals);
+        stream.writeList(credentials);
     }
 }

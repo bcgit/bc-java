@@ -1,5 +1,6 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Credential;
@@ -7,7 +8,6 @@ import org.bouncycastle.mls.codec.CredentialType;
 import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
-import org.bouncycastle.mls.crypto.CipherSuite;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import java.util.List;
 public class LeafNode
         implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    CipherSuite suite;
+    MlsCipherSuite suite;
     byte[] encryption_key;
     byte[] signature_key;
     Credential credential;
@@ -42,7 +42,7 @@ public class LeafNode
         return credential.getCredentialType();
     }
 
-    public CipherSuite getSuite()
+    public MlsCipherSuite getSuite()
     {
         return suite;
     }
@@ -68,7 +68,7 @@ public class LeafNode
     }
 
     public LeafNode(
-            CipherSuite suite,
+            MlsCipherSuite suite,
             byte[] encryption_key,
             byte[] signature_key,
             Credential credential,
@@ -201,7 +201,7 @@ public class LeafNode
         return lifeTime.verify();
     }
 
-    public boolean verify(CipherSuite suite, byte[] tbs) throws IOException
+    public boolean verify(MlsCipherSuite suite, byte[] tbs) throws IOException
     {
         if (getCredentialType() == CredentialType.x509)
         {
@@ -211,7 +211,7 @@ public class LeafNode
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
     }
 
-    public LeafNode forCommit(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
+    public LeafNode forCommit(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
     {
         LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.COMMIT;
@@ -221,7 +221,7 @@ public class LeafNode
 
         return clone;
     }
-    public LeafNode forUpdate(CipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
+    public LeafNode forUpdate(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
     {
         LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.UPDATE;
@@ -231,7 +231,7 @@ public class LeafNode
         return clone;
     }
 
-    private void sign(CipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
+    private void sign(MlsCipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
     {
         byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
         if (!Arrays.equals(sigPub, signature_key))

@@ -3,7 +3,7 @@ package org.bouncycastle.mls.codec;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 
 import java.io.IOException;
@@ -16,7 +16,7 @@ public class Welcome
 {
     short cipher_suite;
 
-    CipherSuite suite;
+    MlsCipherSuite suite;
     List<EncryptedGroupSecrets> secrets;
     byte[] encrypted_group_info;
 
@@ -24,14 +24,14 @@ public class Welcome
     private Secret joinerSecret;
     private List<PreSharedKeyID> psks;
 
-    public short getCipherSuiteID()
+    public MlsCipherSuite getSuite()
     {
-        return cipher_suite;
+        return suite;
     }
 
-    public Welcome(CipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo) throws IOException, InvalidCipherTextException
+    public Welcome(MlsCipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo) throws IOException, InvalidCipherTextException
     {
-        this.cipher_suite = suite.getSuiteId();
+        this.cipher_suite = suite.getSuiteID();
         this.suite = suite;
         this.joinerSecret = new Secret(joinerSecret);
         // Cache the list of PSK IDs
@@ -76,8 +76,7 @@ public class Welcome
             gs.path_secret = new PathSecret(pathSecret.value());
         }
         byte[] gsBytes = MLSOutputStream.encode(gs);
-        //todo: get rid of new suite
-        CipherSuite suite = new CipherSuite(kp.cipher_suite);
+        MlsCipherSuite suite = kp.suite;
         byte[][] ctAndEnc = suite.encryptWithLabel(kp.init_key, "Welcome", encrypted_group_info, gsBytes);
         secrets.add(
                 new EncryptedGroupSecrets(
@@ -114,10 +113,10 @@ public class Welcome
     }
 
     @SuppressWarnings("unused")
-    Welcome(MLSInputStream stream) throws IOException
+    Welcome(MLSInputStream stream) throws Exception
     {
         cipher_suite = (short) stream.read(short.class);
-        suite = new CipherSuite(cipher_suite);
+        suite = MlsCipherSuite.getSuite(cipher_suite);
         secrets = new ArrayList<>();
         stream.readList(secrets, EncryptedGroupSecrets.class);
         encrypted_group_info = stream.readOpaque();

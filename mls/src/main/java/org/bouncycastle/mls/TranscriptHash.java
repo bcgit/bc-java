@@ -2,7 +2,7 @@ package org.bouncycastle.mls;
 
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.MLSOutputStream;
-import org.bouncycastle.mls.crypto.CipherSuite;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.io.IOException;
 public class TranscriptHash
 {
 
-    private CipherSuite suite;
+    private MlsCipherSuite suite;
     byte[] confirmed;
     byte[] interim;
 
@@ -29,20 +29,20 @@ public class TranscriptHash
         this.interim = interim;
     }
 
-    public TranscriptHash(CipherSuite suite)
+    public TranscriptHash(MlsCipherSuite suite)
     {
         this.suite = suite;
         confirmed = new byte[0];
     }
 
-    public TranscriptHash(CipherSuite suite, byte[] confirmed, byte[] interim)
+    public TranscriptHash(MlsCipherSuite suite, byte[] confirmed, byte[] interim)
     {
         this.suite = suite;
         this.confirmed = confirmed;
         this.interim = interim;
     }
 
-    static public TranscriptHash fromConfirmationTag(CipherSuite suite, byte[] confirmed, byte[] confirmationTag) throws IOException
+    static public TranscriptHash fromConfirmationTag(MlsCipherSuite suite, byte[] confirmed, byte[] confirmationTag) throws IOException
     {
         TranscriptHash out = new TranscriptHash(suite, confirmed.clone(), new byte[0]);
         out.updateInterim(confirmationTag);
