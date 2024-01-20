@@ -193,7 +193,7 @@ public class ASN1RelativeOID
         boolean subIDStart = true;
         for (int i = 0; i < contents.length; ++i)
         {
-            if (subIDStart && contents[i] == 0x80)
+            if (subIDStart && (contents[i] & 0xff) == 0x80)
                 return false;
 
             subIDStart = (contents[i] & 0x80) == 0;
