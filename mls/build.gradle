@@ -1,11 +1,9 @@
 buildscript {
     repositories {
         mavenCentral()
-    }
-    dependencies {
-        // ASSUMES GRADLE 2.12 OR HIGHER. Use plugin version 0.7.5 with earlier
-        // gradle versions
-//        classpath 'com.google.protobuf:protobuf-gradle-plugin:2.6.1'
+        flatDir {
+            dirs 'test/libs'
+        }
     }
 }
 
@@ -71,10 +69,7 @@ sourceSets {
 
 startScripts.enabled = false
 
-// Creates start scripts for a class name and adds it to the distribution. The
-// base class name is used to name the task and scripts. For example, passed
-// the class io.grpc.examples.helloworld.HelloWorldClient, it creates the task
-// helloWorldClient with script name hello-world-client.
+// Creates start scripts for a class name and adds it to the distribution.
 def createStartScripts(String mainClassName) {
     String bareName = mainClassName.substring(mainClassName.lastIndexOf('.') + 1);
     String taskName = bareName.uncapitalize();
@@ -93,5 +88,3 @@ def createStartScripts(String mainClassName) {
 }
 
 createStartScripts('org.bouncycastle.mls.client.impl.MLSClient')
-createStartScripts('io.grpc.examples.helloworld.HelloWorldClient')
-createStartScripts('io.grpc.examples.helloworld.HelloWorldServer')
