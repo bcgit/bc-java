@@ -115,13 +115,13 @@ public class NodeIndex {
 
         if (d.isEmpty())
         {
-            return new ArrayList<>();
+            return new ArrayList<NodeIndex>();
         }
 
         d.add(0, this);
         d.remove(d.size() - 1);
 
-        List<NodeIndex> cp = new ArrayList<>();
+        List<NodeIndex> cp = new ArrayList<NodeIndex>();
         for (NodeIndex n: d)
         {
             cp.add(n.sibling());
@@ -137,7 +137,7 @@ public class NodeIndex {
             throw new Exception("!!!Request for dirpath outside of tree!!!");
         }
 
-        List<NodeIndex> d = new Vector<>();
+        List<NodeIndex> d = new Vector<NodeIndex>();
         NodeIndex r = NodeIndex.root(size);
         if (this.equals(r))
         {

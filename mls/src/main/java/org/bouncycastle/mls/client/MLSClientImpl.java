@@ -75,7 +75,7 @@ public class MLSClientImpl
         public CachedJoin(KeyPackageWithSecrets kpSecrets)
         {
             this.kpSecrets = kpSecrets;
-            this.externalPsks = new HashMap<>();
+            this.externalPsks = new HashMap<Secret, byte[]>();
         }
     }
     class CachedReinit {
@@ -90,10 +90,10 @@ public class MLSClientImpl
             this.encryptHandshake = encryptHandshake;
         }
     }
-    Map<Integer, CachedGroup> groupCache = new HashMap<>();
-    Map<Integer, CachedJoin> joinCache = new HashMap<>();
-    Map<Integer, CachedReinit> reinitCache = new HashMap<>();
-    Map<Integer, byte[]> signerCache = new HashMap<>();
+    Map<Integer, CachedGroup> groupCache = new HashMap<Integer, CachedGroup>();
+    Map<Integer, CachedJoin> joinCache = new HashMap<Integer, CachedJoin>();
+    Map<Integer, CachedReinit> reinitCache = new HashMap<Integer, CachedReinit>();
+    Map<Integer, byte[]> signerCache = new HashMap<Integer, byte[]>();
 
 
     @FunctionalInterface
@@ -253,7 +253,7 @@ public class MLSClientImpl
                 cred,
                 new Capabilities(),
                 new LifeTime(),
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
@@ -261,7 +261,7 @@ public class MLSClientImpl
                 suite,
                 suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
                 leafNode,
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
         return new KeyPackageWithSecrets(initKeyPair, encryptionKeyPair, sigKeyPair, kp);
@@ -318,7 +318,7 @@ public class MLSClientImpl
 
             case "groupContextExtensions":
             case "reinit":
-                List<Extension> extList = new ArrayList<>();
+                List<Extension> extList = new ArrayList<Extension>();
                 for (int i = 0; i < desc.getExtensionsCount(); i++)
                 {
                     Extension ext = new Extension(desc.getExtensions(i).getExtensionType(), desc.getExtensions(i).getExtensionData().toByteArray());
@@ -427,7 +427,7 @@ public class MLSClientImpl
                 cred,
                 new Capabilities(),
                 new LifeTime(),
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
         Group group = new Group(
@@ -436,7 +436,7 @@ public class MLSClientImpl
                 leafKeyPair,
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate()),
                 leafNode.copy(leafNode.getEncryptionKey()),
-                new ArrayList<>()
+                new ArrayList<Extension>()
         );
 
         int stateId = storeGroup(group, request.getEncryptHandshake());
@@ -517,7 +517,7 @@ public class MLSClientImpl
                 welcome,
                 ratchetTree,
                 join.externalPsks,
-                new HashMap<>()
+                new HashMap<Group.EpochRef, byte[]>()
         );
         byte[] epochAuthenticator = group.getEpochAuthenticator();
         int stateID = storeGroup(group, request.getEncryptHandshake());
@@ -560,7 +560,7 @@ public class MLSClientImpl
                 cred,
                 new Capabilities(),
                 new LifeTime(),
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
@@ -568,7 +568,7 @@ public class MLSClientImpl
                 suite,
                 suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
                 leafNode,
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
@@ -626,7 +626,7 @@ public class MLSClientImpl
             }
         }
         // Install PSKs
-        Map<Secret, byte[]> externalPSKs = new HashMap<>();
+        Map<Secret, byte[]> externalPSKs = new HashMap<Secret, byte[]>();
         for (int i = 0; i < request.getPsksCount(); i++)
         {
             MlsClient.PreSharedKey psk = request.getPsks(i);
@@ -955,7 +955,7 @@ public class MLSClientImpl
      */
     private void groupContextExtensionsProposalImpl(CachedGroup entry, MlsClient.GroupContextExtensionsProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
     {
-        List<Extension> extList = new ArrayList<>();
+        List<Extension> extList = new ArrayList<Extension>();
         for (int i = 0; i < request.getExtensionsCount(); i++)
         {
             Extension ext = new Extension(request.getExtensions(i).getExtensionType(), request.getExtensions(i).getExtensionData().toByteArray());
@@ -995,7 +995,7 @@ public class MLSClientImpl
         }
 
         // create by value proposals
-        List<Proposal> byValue = new ArrayList<>();
+        List<Proposal> byValue = new ArrayList<Proposal>();
         for (int i = 0; i < request.getByValueCount(); i++)
         {
             MlsClient.ProposalDescription desc = request.getByValue(i);
@@ -1154,7 +1154,7 @@ public class MLSClientImpl
         ProtocolVersion version = ProtocolVersion.mls10;
         MlsCipherSuite suite = MlsCipherSuite.getSuite((short) request.getCipherSuite());
 
-        List<Extension> extList = new ArrayList<>();
+        List<Extension> extList = new ArrayList<Extension>();
         for (int i = 0; i < request.getExtensionsCount(); i++)
         {
             Extension ext = new Extension(request.getExtensions(i).getExtensionType(), request.getExtensions(i).getExtensionData().toByteArray());
@@ -1199,7 +1199,7 @@ public class MLSClientImpl
         SecureRandom random = new SecureRandom();
         byte[] leafSecret = new byte[entry.group.getSuite().getKDF().getHashLength()];
         random.nextBytes(leafSecret);
-        Group.CommitOptions commitOptions = new Group.CommitOptions(new ArrayList<>(), inlineTree, forcePath, null);
+        Group.CommitOptions commitOptions = new Group.CommitOptions(new ArrayList<Proposal>(), inlineTree, forcePath, null);
         Group.TombstoneWithMessage twm = entry.group.reinitCommit(leafSecret, commitOptions, entry.messageOptions);
 
         // cache the reinit
@@ -1316,7 +1316,7 @@ public class MLSClientImpl
         }
 
         // Import the KeyPackages
-        List<KeyPackage> keyPackages = new ArrayList<>();
+        List<KeyPackage> keyPackages = new ArrayList<KeyPackage>();
         for (int i = 0; i < request.getKeyPackageCount(); i++)
         {
             MLSMessage message = (MLSMessage) MLSInputStream.decode(request.getKeyPackage(i).toByteArray(), MLSMessage.class);
@@ -1421,7 +1421,7 @@ public class MLSClientImpl
     private void createBranchImpl(CachedGroup entry, MlsClient.CreateBranchRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver) throws Exception
     {
         // Import KeyPackages
-        List<KeyPackage> keyPackages = new ArrayList<>();
+        List<KeyPackage> keyPackages = new ArrayList<KeyPackage>();
         for (int i = 0; i < request.getKeyPackagesCount(); i++)
         {
             MLSMessage message = (MLSMessage) MLSInputStream.decode(request.getKeyPackages(i).toByteArray(), MLSMessage.class);
@@ -1429,7 +1429,7 @@ public class MLSClientImpl
         }
 
         // Import extensions
-        List<Extension> extList = new ArrayList<>();
+        List<Extension> extList = new ArrayList<Extension>();
         for (int i = 0; i < request.getExtensionsCount(); i++)
         {
             Extension ext = new Extension(request.getExtensions(i).getExtensionType(), request.getExtensions(i).getExtensionData().toByteArray());
@@ -1609,8 +1609,8 @@ public class MLSClientImpl
     {
         byte[] extSender = request.getExternalSender().toByteArray();
 
-        List<Extension> extList = new ArrayList<>(entry.group.getExtensions());
-        List<ExternalSender> extSenders = new ArrayList<>();
+        List<Extension> extList = new ArrayList<Extension>(entry.group.getExtensions());
+        List<ExternalSender> extSenders = new ArrayList<ExternalSender>();
         for (Extension ext : extList)
         {
             if (ext.extensionType == ExtensionType.EXTERNAL_SENDERS)
@@ -1618,7 +1618,7 @@ public class MLSClientImpl
                 extSenders = ext.getSenders();
             }
         }
-        extList = new ArrayList<>();
+        extList = new ArrayList<Extension>();
         extSenders.add((ExternalSender) MLSInputStream.decode(extSender, ExternalSender.class));
         extList.add(Extension.externalSender(extSenders));
 
@@ -1663,7 +1663,7 @@ public class MLSClientImpl
         byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
 
         // Look up the signer index of this signer
-        List<ExternalSender> extSenders = new ArrayList<>();
+        List<ExternalSender> extSenders = new ArrayList<ExternalSender>();
         for (Extension ext : groupInfo.getGroupContext().getExtensions())
         {
             if (ext.extensionType == ExtensionType.EXTERNAL_SENDERS)

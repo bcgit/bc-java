@@ -68,7 +68,7 @@ public class Extension
     {
         if (extensionType == ExtensionType.EXTERNAL_SENDERS)
         {
-            List<ExternalSender> senders = new ArrayList<>();
+            List<ExternalSender> senders = new ArrayList<ExternalSender>();
             MLSInputStream stream = new MLSInputStream(extension_data);
             stream.readList(senders, ExternalSender.class);
             return senders;

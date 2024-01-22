@@ -35,7 +35,7 @@ public class Welcome
         this.suite = suite;
         this.joinerSecret = new Secret(joinerSecret);
         // Cache the list of PSK IDs
-        this.psks = new ArrayList<>();
+        this.psks = new ArrayList<PreSharedKeyID>();
         for (KeyScheduleEpoch.PSKWithSecret psk : psks)
         {
             this.psks.add(psk.id);
@@ -50,7 +50,7 @@ public class Welcome
                 groupInfo
         );
 
-        this.secrets = new ArrayList<>();
+        this.secrets = new ArrayList<EncryptedGroupSecrets>();
     }
 
     public int find(KeyPackage kp) throws IOException
@@ -117,7 +117,7 @@ public class Welcome
     {
         cipher_suite = (short) stream.read(short.class);
         suite = MlsCipherSuite.getSuite(cipher_suite);
-        secrets = new ArrayList<>();
+        secrets = new ArrayList<EncryptedGroupSecrets>();
         stream.readList(secrets, EncryptedGroupSecrets.class);
         encrypted_group_info = stream.readOpaque();
     }

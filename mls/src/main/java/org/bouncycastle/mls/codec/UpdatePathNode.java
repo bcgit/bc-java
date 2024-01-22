@@ -30,7 +30,7 @@ public class UpdatePathNode
     UpdatePathNode(MLSInputStream stream) throws IOException
     {
         encryption_key = stream.readOpaque();
-        encrypted_path_secret = new ArrayList<>();
+        encrypted_path_secret = new ArrayList<HPKECiphertext>();
         stream.readList(encrypted_path_secret, HPKECiphertext.class);
     }
 

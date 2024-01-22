@@ -71,12 +71,12 @@ public class ClientVectorTest
         InputStream src = TestResourceFinder.findTestResource("mls/passiveClient/", filename);
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        HashMap<String, String> buf = new HashMap<>();
-        Stack<String> readingStack = new Stack<>();
+        HashMap<String, String> buf = new HashMap<String, String>();
+        Stack<String> readingStack = new Stack<String>();
         int count = 0;
 
-        ArrayList<PreSharedKeyID> externalPSKs = new ArrayList<>();
-        List<byte[]> proposals = new ArrayList<>();
+        ArrayList<PreSharedKeyID> externalPSKs = new ArrayList<PreSharedKeyID>();
+        List<byte[]> proposals = new ArrayList<byte[]>();
         class Epoch
         {
             List<byte[]> proposals;
@@ -85,12 +85,12 @@ public class ClientVectorTest
 
             public Epoch(List<byte[]> proposals, byte[] commit, byte[] epoch_authenticator)
             {
-                this.proposals = new ArrayList<>(proposals);
+                this.proposals = new ArrayList<byte[]>(proposals);
                 this.commit = commit;
                 this.epoch_authenticator = epoch_authenticator;
             }
         }
-        List<Epoch> epochs = new ArrayList<>();
+        List<Epoch> epochs = new ArrayList<Epoch>();
 
 
         while((line = bin.readLine())!= null)
@@ -134,7 +134,7 @@ public class ClientVectorTest
 
                         MlsCipherSuite suite = MlsCipherSuite.getSuite(cipherSuite);
                         AsymmetricCipherKeyPair leafKeyPair = suite.getHPKE().deserializePrivateKey(encryption_priv, null);
-                        Map<Secret, byte[]> externalPsks = new HashMap<>();
+                        Map<Secret, byte[]> externalPsks = new HashMap<Secret, byte[]>();
                         for (PreSharedKeyID ext : externalPSKs)
                         {
                             externalPsks.put(ext.external.externalPSKID, ext.pskNonce);
@@ -167,7 +167,7 @@ public class ClientVectorTest
                                 welcomeMsg.welcome,
                                 tree,
                                 externalPsks,
-                                new HashMap<>()
+                                new HashMap<Group.EpochRef, byte[]>()
                         );
 
                         assertTrue(Arrays.areEqual(group.getEpochAuthenticator(), initial_epoch_authenticator));

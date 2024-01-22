@@ -67,7 +67,7 @@ public class LeafIndex
     }
 
     public List<NodeIndex> directPath(TreeSize size) {
-        List<NodeIndex> d = new Vector<>();
+        List<NodeIndex> d = new Vector<NodeIndex>();
 
         NodeIndex n = new NodeIndex(this);
         NodeIndex r = NodeIndex.root(size);

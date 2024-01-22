@@ -41,7 +41,7 @@ public class GroupContext
         this.epoch = epoch;
         this.treeHash = treeHash;
         this.confirmedTranscriptHash = confirmedTranscriptHash;
-        this.extensions = new ArrayList<>(extensions);
+        this.extensions = new ArrayList<Extension>(extensions);
     }
     @SuppressWarnings("unused")
     public GroupContext(MLSInputStream stream) throws Exception
@@ -53,7 +53,7 @@ public class GroupContext
         this.epoch = (long) stream.read(long.class);
         this.treeHash = stream.readOpaque();
         this.confirmedTranscriptHash = stream.readOpaque();
-        this.extensions = new ArrayList<>();
+        this.extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
     }
 

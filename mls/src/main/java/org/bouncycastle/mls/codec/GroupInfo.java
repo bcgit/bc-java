@@ -55,7 +55,7 @@ public class GroupInfo
     public GroupInfo(GroupContext groupContext, List<Extension> extensions, byte[] confirmationTag)
     {
         this.groupContext = groupContext;
-        this.extensions = new ArrayList<>(extensions);
+        this.extensions = new ArrayList<Extension>(extensions);
         this.confirmationTag = confirmationTag;
     }
 
@@ -86,7 +86,7 @@ public class GroupInfo
     GroupInfo(MLSInputStream stream) throws IOException
     {
         groupContext = (GroupContext) stream.read(GroupContext.class);
-        extensions = new ArrayList<>();
+        extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
         confirmationTag = stream.readOpaque();
         signer = new LeafIndex((int) stream.read(int.class));

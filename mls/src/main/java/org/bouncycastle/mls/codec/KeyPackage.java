@@ -77,7 +77,7 @@ public class KeyPackage
         this.suite = suite;
         this.init_key = init_key.clone();
         this.leaf_node = leaf_node.copy(leaf_node.getEncryptionKey());
-        this.extensions = new ArrayList<>(extensions);
+        this.extensions = new ArrayList<Extension>(extensions);
 
         //sign(sigSk)
         this.signature = suite.signWithLabel(sigSk, "KeyPackageTBS", toBeSigned());
@@ -90,7 +90,7 @@ public class KeyPackage
         suite = MlsCipherSuite.getSuite(cipher_suite);
         init_key = stream.readOpaque();
         leaf_node = (LeafNode) stream.read(LeafNode.class);
-        extensions = new ArrayList<>();
+        extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
         signature = stream.readOpaque();
     }

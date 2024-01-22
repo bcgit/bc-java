@@ -18,14 +18,14 @@ public class ParentNode
     {
         this.encryptionKey = encryptionKey.clone();
         this.parentHash = parentHash.clone();
-        this.unmerged_leaves = new ArrayList<>(unmerged_leaves);
+        this.unmerged_leaves = new ArrayList<LeafIndex>(unmerged_leaves);
     }
     @SuppressWarnings("unused")
     public ParentNode(MLSInputStream stream) throws IOException
     {
         encryptionKey = stream.readOpaque();
         parentHash = stream.readOpaque();
-        unmerged_leaves = new ArrayList<>();
+        unmerged_leaves = new ArrayList<LeafIndex>();
         stream.readList(unmerged_leaves, LeafIndex.class);
     }
 

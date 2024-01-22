@@ -276,7 +276,7 @@ psk_secret (or 0) --> KDF.Extract
         JoinSecrets joinerSecret = JoinSecrets.forMember(suite, new Secret(initSecret), Secret.zero(suite), new Secret(new byte[0]), groupContext);
 //        TreeSize size = TreeSize.forLeaves(1);
 //        return joinerSecret.complete(size, groupContext);
-        return KeyScheduleEpoch.joiner(suite, joinerSecret.joinerSecret.value(), new ArrayList<>(), groupContext);
+        return KeyScheduleEpoch.joiner(suite, joinerSecret.joinerSecret.value(), new ArrayList<PSKWithSecret>(), groupContext);
     }
     public static KeyScheduleEpoch forCreator(MlsCipherSuite suite) throws IOException, IllegalAccessException {
         SecureRandom rng = new SecureRandom();
