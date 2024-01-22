@@ -1,13 +1,3 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        flatDir {
-            dirs 'test/libs'
-        }
-    }
-}
-
-
 plugins {
 //     Provide convenience executables for trying out the examples.
     id 'application'
@@ -19,23 +9,43 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
 
-def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
-def protocVersion = '3.22.3'
-
 dependencies {
     implementation project(':core')
     implementation project(':util')
     implementation project(':pkix')
     implementation project(':prov')
 
-    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
-    implementation "io.grpc:grpc-services:${grpcVersion}"
-    implementation "io.grpc:grpc-stub:${grpcVersion}"
-    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
-    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    //Provided
+    implementation(files("../test/libs/annotations-api-6.0.53.jar"))
+//    implementation(files("../test/libs/protobuf-java-util-3.22.3.jar"))
+    implementation(files("../test/libs/guava-32.0.1-android.jar"))
+    implementation(files("../test/libs/grpc-stub-1.58.0.jar"))
+    implementation(files("../test/libs/protobuf-java-3.22.3.jar"))
+    implementation(files("../test/libs/grpc-api-1.58.0.jar"))
+    implementation(files("../test/libs/grpc-protobuf-lite-1.58.0.jar"))
+    implementation(files("../test/libs/failureaccess-1.0.1.jar"))
+    implementation(files("../test/libs/grpc-protobuf-1.58.0.jar"))
 
-    implementation "com.google.protobuf:protobuf-java-util:${protocVersion}"
+    //Compile
+    compileOnly(files("../test/libs/grpc-services-1.58.0.jar"))
+
+    //Runtime
+    runtimeOnly(files("../test/libs/grpc-netty-shaded-1.58.0.jar"))
+    runtimeOnly(files("../test/libs/grpc-core-1.58.0.jar"))
+    runtimeOnly(files("../test/libs/perfmark-api-0.26.0.jar"))
+
+    //Download jars online
+//    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+//    implementation "io.grpc:grpc-services:${grpcVersion}"
+//    implementation "io.grpc:grpc-stub:${grpcVersion}"
+//    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+//    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+//    implementation "com.google.protobuf:protobuf-java-util:${protocVersion}"
 }
+
+def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
+def protocVersion = '3.22.3'
+
 
 compileJava {
     options.errorprone.disableWarningsInGeneratedCode = true
