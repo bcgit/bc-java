@@ -30,8 +30,8 @@ public class GroupKeySet {
         this.secretSize = suite.getKDF().getHashLength();
         this.encryptionSecretCommit = encryptionSecret.deriveSecret(suite, "commitment");
         this.secretTree = new SecretTree(treeSize, encryptionSecret);
-        this.handshakeRatchets = new HashMap<>();
-        this.applicationRatchets = new HashMap<>();
+        this.handshakeRatchets = new HashMap<LeafIndex, HashRatchet>();
+        this.applicationRatchets = new HashMap<LeafIndex, HashRatchet>();
     }
 
     @Override
@@ -147,7 +147,7 @@ public class GroupKeySet {
         public SecretTree(TreeSize treeSizeIn, Secret encryptionSecret)
         {
             treeSize = treeSizeIn;
-            secrets = new HashMap<>();
+            secrets = new HashMap<NodeIndex, Secret>();
             secrets.put(NodeIndex.root(treeSize), encryptionSecret);
         }
 
@@ -221,7 +221,7 @@ public class GroupKeySet {
             nonceSize = suite.getAEAD().getNonceSize();
             nextGeneration = 0;
             nextSecret = baseSecret;
-            cache = new HashMap<>();
+            cache = new HashMap<Integer, KeyGeneration>();
         }
 
         public KeyGeneration next() throws IOException, IllegalAccessException {

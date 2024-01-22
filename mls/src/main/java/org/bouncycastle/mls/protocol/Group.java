@@ -111,7 +111,7 @@ public class Group
             newGroup.resumptionPSKs.put(new EpochRef(priorGroupID, priorEpoch), resumptionPsk);
 
             // Create Add proposals
-            List<Proposal> proposals = new ArrayList<>();
+            List<Proposal> proposals = new ArrayList<Proposal>();
             for (KeyPackage kp : keyPackages)
             {
                 proposals.add(newGroup.addProposal(kp));
@@ -137,7 +137,7 @@ public class Group
         }
         public Group handleWelcome(AsymmetricCipherKeyPair initSk, AsymmetricCipherKeyPair encSk, AsymmetricCipherKeyPair sigSk, KeyPackage keyPackage, MLSMessage welcome, TreeKEMPublicKey tree) throws Exception
         {
-            Map<EpochRef, byte[]> resumptionPsks = new HashMap<>();
+            Map<EpochRef, byte[]> resumptionPsks = new HashMap<EpochRef, byte[]>();
             resumptionPsks.put(new EpochRef(priorGroupID, priorEpoch), resumptionPsk);
 
             MlsCipherSuite suite = welcome.getCipherSuite(); // TODO DONT SERIALIZE KEYS
@@ -148,7 +148,7 @@ public class Group
                     keyPackage,
                     welcome.welcome,
                     tree,
-                    new HashMap<>(),
+                    new HashMap<Secret, byte[]>(),
                     resumptionPsks
             );
 
@@ -280,7 +280,7 @@ public class Group
 
         public CommitOptions()
         {
-            this.extraProposals = new ArrayList<>();
+            this.extraProposals = new ArrayList<Proposal>();
             this.leafNodeOptions = new LeafNodeOptions();
 
         }
@@ -310,7 +310,7 @@ public class Group
             this.joiners = joiners;
         }
     }
-    class EpochRef
+    public class EpochRef
     {
         byte[] id;
         long epoch;
@@ -418,7 +418,7 @@ public class Group
                         transcriptHash.getConfirmed(),
                         extensions
                 ),
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 keySchedule.confirmationTag(transcriptHash.getConfirmed())
         );
 
@@ -451,13 +451,13 @@ public class Group
         this.tree = TreeKEMPublicKey.clone(importTree(groupInfo.getGroupContext().getTreeHash(), tree, groupInfo.getExtensions()));
         this.treePriv = new TreeKEMPrivateKey(suite, new LeafIndex(0));// check this should be null
         this.transcriptHash = TranscriptHash.fromConfirmationTag(this.suite, groupInfo.getGroupContext().getConfirmedTranscriptHash(), groupInfo.getConfirmationTag());
-        this.extensions = new ArrayList<>(groupInfo.getGroupContext().getExtensions());
+        this.extensions = new ArrayList<Extension>(groupInfo.getGroupContext().getExtensions());
         this.keySchedule = new KeyScheduleEpoch(this.suite);
         this.index = new LeafIndex(0);
         this.identitySk = suite.serializeSignaturePrivateKey(sigSk.getPrivate());
-        this.pendingProposals = new ArrayList<>();
-        this.resumptionPSKs = new HashMap<>();
-        this.externalPSKs = new HashMap<>();
+        this.pendingProposals = new ArrayList<CachedProposal>();
+        this.resumptionPSKs = new HashMap<EpochRef, byte[]>();
+        this.externalPSKs = new HashMap<Secret, byte[]>();
         this.keys = null;
 
     }
@@ -476,14 +476,14 @@ public class Group
         this.epoch = 0;
         tree = new TreeKEMPublicKey(suite);
         this.transcriptHash = new TranscriptHash(suite);
-        this.extensions = new ArrayList<>();
+        this.extensions = new ArrayList<Extension>();
         this.extensions.addAll(extensions);
         this.index = new LeafIndex(0);
         this.identitySk = sigSk.clone();
 
-        this.pendingProposals = new ArrayList<>();
-        this.externalPSKs = new HashMap<>();
-        this.resumptionPSKs = new HashMap<>();
+        this.pendingProposals = new ArrayList<CachedProposal>();
+        this.externalPSKs = new HashMap<Secret, byte[]>();
+        this.resumptionPSKs = new HashMap<EpochRef, byte[]>();
 
         index = tree.addLeaf(leafNode);
         tree.setHashAll();
@@ -526,13 +526,13 @@ public class Group
     )
             throws Exception
     {
-        pendingProposals = new ArrayList<>();
+        pendingProposals = new ArrayList<CachedProposal>();
         suite = welcome.getSuite();
         epoch = 0;
         identitySk = sigSk;
-        externalPSKs = new HashMap<>();
+        externalPSKs = new HashMap<Secret, byte[]>();
         externalPSKs.putAll(externalPsks);
-        this.resumptionPSKs = new HashMap<>();
+        this.resumptionPSKs = new HashMap<EpochRef, byte[]>();
         this.resumptionPSKs.putAll(resumptionPsks);
 
         int kpi = welcome.find(keyPackage);
@@ -573,7 +573,7 @@ public class Group
         transcriptHash = new TranscriptHash(suite, groupInfo.getGroupContext().getConfirmedTranscriptHash().clone(), null);
         transcriptHash.updateInterim(groupInfo.getConfirmationTag());
 
-        extensions = new ArrayList<>(); // TODO: Check to clone?
+        extensions = new ArrayList<Extension>(); // TODO: Check to clone?
         extensions.addAll(groupInfo.getGroupContext().getExtensions());
 
         // Create the TreeKEMPrivateKey
@@ -856,7 +856,7 @@ public class Group
         newGroup.resumptionPSKs.put(new EpochRef(this.groupID, this.epoch), this.keySchedule.resumptionPSK.value().clone());
 
         // Create Add proposals
-        List<Proposal> proposals = new ArrayList<>();
+        List<Proposal> proposals = new ArrayList<Proposal>();
         for (KeyPackage kp : keyPackages)
         {
             proposals.add(newGroup.addProposal(kp));
@@ -882,7 +882,7 @@ public class Group
 
     public Group handleBranch(AsymmetricCipherKeyPair initSk, AsymmetricCipherKeyPair encSk, AsymmetricCipherKeyPair sigSk, KeyPackage keyPackage, MLSMessage welcome, TreeKEMPublicKey tree) throws Exception
     {
-        Map<EpochRef, byte[]> resumptionPsks = new HashMap<>();
+        Map<EpochRef, byte[]> resumptionPsks = new HashMap<EpochRef, byte[]>();
         resumptionPsks.put(new EpochRef(this.groupID, this.epoch), this.keySchedule.resumptionPSK.value().clone());
 
         Group branchGroup = new Group(
@@ -892,7 +892,7 @@ public class Group
                 keyPackage,
                 welcome.welcome,
                 tree,
-                new HashMap<>(),
+                new HashMap<Secret, byte[]>(),
                 resumptionPsks
         );
 
@@ -991,7 +991,7 @@ public class Group
     public GroupWithMessage commit(Secret leafSecret, CommitOptions commitOptions, MessageOptions msgOptions, CommitParameters params) throws Exception
     {
         Commit commit = new Commit();
-        List<KeyPackage> joiners = new ArrayList<>();
+        List<KeyPackage> joiners = new ArrayList<KeyPackage>();
         for (CachedProposal cached : pendingProposals)
         {
             if (cached.proposal.getProposalType() == ProposalType.ADD)
@@ -1047,7 +1047,7 @@ public class Group
 
         // KEM new entropy to the group and the new joiners
         Secret commitSecret = Secret.zero(suite);
-        List<Secret> pathSecrets = new ArrayList<>();
+        List<Secret> pathSecrets = new ArrayList<Secret>();
         for (int i = 0; i < joinersWithpsks.joiners.size(); i++)
         {
             pathSecrets.add(null);
@@ -1106,7 +1106,7 @@ public class Group
                         next.transcriptHash.getConfirmed(),
                         next.extensions
                 ),
-                new ArrayList<>(),
+                new ArrayList<Extension>(),
                 confirmationTag
         );
         if (commitOptions != null && commitOptions.inlineTree)
@@ -1625,12 +1625,12 @@ public class Group
             {
                 throw new Exception("Unsupported extensions in GroupContextExtensions");
             }
-            extensions = new ArrayList<>(cached.proposal.getGroupContextExtensions().extensions);
+            extensions = new ArrayList<Extension>(cached.proposal.getGroupContextExtensions().extensions);
         }
     }
     private List<KeyScheduleEpoch.PSKWithSecret> applyPSK(List<CachedProposal> proposals) throws Exception
     {
-        List<PreSharedKeyID> pskIDs = new ArrayList<>();
+        List<PreSharedKeyID> pskIDs = new ArrayList<PreSharedKeyID>();
         for (CachedProposal cached: proposals)
         {
             if (cached.proposal.getProposalType() != ProposalType.PSK)
@@ -1644,7 +1644,7 @@ public class Group
     }
     private List<LeafIndex> applyAdd(List<CachedProposal> proposals)
     {
-        List<LeafIndex> locations = new ArrayList<>();
+        List<LeafIndex> locations = new ArrayList<LeafIndex>();
         for (CachedProposal cached: proposals)
         {
             if (cached.proposal.getProposalType() != ProposalType.ADD)
@@ -1677,13 +1677,13 @@ public class Group
     {
         Group next = new Group();
         //TODO: check which needs to be deep copied
-        next.externalPSKs = new HashMap<>(externalPSKs);
-        next.resumptionPSKs = new HashMap<>();
+        next.externalPSKs = new HashMap<Secret, byte[]>(externalPSKs);
+        next.resumptionPSKs = new HashMap<EpochRef, byte[]>();
         next.resumptionPSKs.putAll(resumptionPSKs);
         next.epoch = epoch;
         next.groupID = groupID.clone();
         next.transcriptHash = transcriptHash.copy();
-        next.extensions = new ArrayList<>();
+        next.extensions = new ArrayList<Extension>();
         next.extensions.addAll(extensions);
         next.keySchedule = keySchedule; // check
         next.tree = TreeKEMPublicKey.clone(tree);
@@ -1692,7 +1692,7 @@ public class Group
         next.suite = suite;
         next.index = index;
         next.identitySk = identitySk.clone();
-        next.pendingProposals = new ArrayList<>();
+        next.pendingProposals = new ArrayList<CachedProposal>();
         next.cachedUpdate = cachedUpdate;
 
         next.resumptionPSKs.put(new EpochRef(groupID, epoch), keySchedule.resumptionPSK.value().clone());
@@ -2054,7 +2054,7 @@ public class Group
         // leaf. If the committer has received multiple such proposals they SHOULD
         // prefer any Remove received, or the most recent Update if there are no
         // Removes.
-        Set<LeafIndex> updatedOrRemoved = new HashSet<>();
+        Set<LeafIndex> updatedOrRemoved = new HashSet<LeafIndex>();
         boolean has_dup_update_remove = false;
         for (CachedProposal cached : proposals)
         {
@@ -2082,7 +2082,7 @@ public class Group
         // It contains multiple Add proposals that contain KeyPackages that represent
         // the same client according to the application (for example, identical
         // signature keys).
-        List<byte[]> signatureKeys = new ArrayList<>();
+        List<byte[]> signatureKeys = new ArrayList<byte[]>();
         boolean has_dup_signature_key = false;
         for (CachedProposal cached : proposals)
         {
@@ -2118,7 +2118,7 @@ public class Group
         // It contains multiple PreSharedKey proposals that reference the same
         // PreSharedKeyID.
         //TODO: how to compare PSK id
-        List<PreSharedKeyID> pskids = new ArrayList<>();
+        List<PreSharedKeyID> pskids = new ArrayList<PreSharedKeyID>();
         boolean has_dup_psk_id = false;
         for (CachedProposal cached : proposals)
         {
@@ -2178,7 +2178,7 @@ public class Group
         // uniqueness of encryption keys across the Adds and Updates in this list of
         // proposals.  The keys have already been checked to be distinct from any keys
         // already in the tree.
-        List<byte[]> encKeys = new ArrayList<>();
+        List<byte[]> encKeys = new ArrayList<byte[]>();
         boolean has_dup_enc_key = false;
         for (CachedProposal cached : proposals)
         {
@@ -2250,7 +2250,7 @@ public class Group
 
     private List<CachedProposal> mustResolve(List<ProposalOrRef> proposals, LeafIndex sender)
     {
-        List<CachedProposal> out = new ArrayList<>();
+        List<CachedProposal> out = new ArrayList<CachedProposal>();
         for (ProposalOrRef id : proposals)
         {
             switch (id.getType())
@@ -2317,7 +2317,7 @@ public class Group
 
     private List<KeyScheduleEpoch.PSKWithSecret> resolve(List<PreSharedKeyID> psks) throws Exception
     {
-        List<KeyScheduleEpoch.PSKWithSecret> out = new ArrayList<>();
+        List<KeyScheduleEpoch.PSKWithSecret> out = new ArrayList<KeyScheduleEpoch.PSKWithSecret>();
         for (PreSharedKeyID psk : psks)
         {
             switch (psk.pskType)

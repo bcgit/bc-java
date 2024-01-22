@@ -30,13 +30,13 @@ public class UpdatePath
     {
 //        this.leaf_node = leaf_node;
         this.leaf_node = leaf_node.copy(leaf_node.getEncryptionKey());
-        this.nodes = new ArrayList<>(nodes);
+        this.nodes = new ArrayList<UpdatePathNode>(nodes);
     }
     @SuppressWarnings("unused")
     UpdatePath(MLSInputStream stream) throws IOException
     {
         leaf_node = (LeafNode) stream.read(LeafNode.class);
-        nodes = new ArrayList<>();
+        nodes = new ArrayList<UpdatePathNode>();
         stream.readList(nodes, UpdatePathNode.class);
     }
 

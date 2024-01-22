@@ -331,7 +331,7 @@ public class Proposal
             version = ProtocolVersion.values()[(short) stream.read(short.class)];
             cipherSuite = (short) stream.read(short.class);
             suite = MlsCipherSuite.getSuite(cipherSuite);
-            extensions = new ArrayList<>();
+            extensions = new ArrayList<Extension>();
             stream.readList(extensions, Extension.class);
         }
 
@@ -372,7 +372,7 @@ public class Proposal
     {
         public GroupContextExtensions(List<Extension> extensions)
         {
-            this.extensions = new ArrayList<>();
+            this.extensions = new ArrayList<Extension>();
             this.extensions.addAll(extensions);
         }
 
@@ -380,7 +380,7 @@ public class Proposal
         @SuppressWarnings("unused")
         GroupContextExtensions(MLSInputStream stream) throws IOException
         {
-            extensions = new ArrayList<>();
+            extensions = new ArrayList<Extension>();
             stream.readList(extensions, Extension.class);
         }
 

@@ -8,6 +8,7 @@ import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.ContentType;
+import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.FramedContent;
 import org.bouncycastle.mls.codec.GroupContext;
 import org.bouncycastle.mls.codec.MLSInputStream;
@@ -193,7 +194,7 @@ public class MessageProtectionTest
                             epoch,
                             tree_hash,
                             confirmed_transcript_hash,
-                            new ArrayList<>()
+                            new ArrayList<Extension>()
                     );
                     groupContextBytes = MLSOutputStream.encode(groupContext);
 

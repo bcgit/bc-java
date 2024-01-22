@@ -23,7 +23,7 @@ public class Credential
 
     static public Credential forBasic(byte[] identity)
     {
-        return new Credential(CredentialType.basic, identity, new ArrayList<>());
+        return new Credential(CredentialType.basic, identity, new ArrayList<Certificate>());
     }
 
     public Credential(CredentialType credentialType, byte[] identity, List<Certificate> certificates)
@@ -50,7 +50,7 @@ public class Credential
                 identity = stream.readOpaque();
                 break;
             case x509:
-                certificates = new ArrayList<>();
+                certificates = new ArrayList<Certificate>();
                 stream.readList(certificates, Certificate.class);
                 break;
         }

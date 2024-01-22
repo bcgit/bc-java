@@ -9,6 +9,7 @@ import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.NodeIndex;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPrivateKey;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.mls.codec.AuthenticatedContent;
@@ -477,7 +478,7 @@ public class VectorTest
                                     epochCount,
                                     tree_hash,
                                     confirmed_transcript_hash,
-                                    new ArrayList<>()
+                                    new ArrayList<Extension>()
                             );
                             // Verify that group context matches the provided group_context value
                             byte[] groupContextBytes = MLSOutputStream.encode(groupContext);
@@ -567,7 +568,7 @@ public class VectorTest
                     byte[] psk_secret = Hex.decode(buf.get("psk_secret"));
                     MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
 
-                    List<KeyScheduleEpoch.PSKWithSecret> pskList = new ArrayList<>();
+                    List<KeyScheduleEpoch.PSKWithSecret> pskList = new ArrayList<KeyScheduleEpoch.PSKWithSecret>();
                     for (PSK psk : psks)
                     {
                         PreSharedKeyID external = PreSharedKeyID.external(psk.psk_id, psk.psk_nonce);
@@ -711,7 +712,7 @@ public class VectorTest
                     int kpi = welcomeMessage.welcome.find(kpMessage.keyPackage);
                     assertTrue(kpi != -1);
                     GroupSecrets groupSecrets = welcomeMessage.welcome.decryptSecrets(kpi, init_priv);
-                    GroupInfo groupInfo = welcomeMessage.welcome.decrypt(groupSecrets.joiner_secret, new ArrayList<>());
+                    GroupInfo groupInfo = welcomeMessage.welcome.decrypt(groupSecrets.joiner_secret, new ArrayList<KeyScheduleEpoch.PSKWithSecret>());
 
                     boolean verified = groupInfo.verify(suite, signer_pub);
                     assertTrue(verified);
@@ -720,7 +721,7 @@ public class VectorTest
                     KeyScheduleEpoch keySchedule = KeyScheduleEpoch.joiner(
                             suite,
                             groupSecrets.joiner_secret,
-                            new ArrayList<>(),
+                            new ArrayList<KeyScheduleEpoch.PSKWithSecret>(),
                             MLSOutputStream.encode(groupContext));
 
 
@@ -812,10 +813,10 @@ public class VectorTest
         InputStream src = TestResourceFinder.findTestResource("mls/testVectors/", "tree-validation.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        HashMap<String, String> buf = new HashMap<>();
-        ArrayList<byte[]> hashes = new ArrayList<>();
-        ArrayList<ArrayList<NodeIndex>> resolution = new ArrayList<>();
-        ArrayList<NodeIndex> temp = new ArrayList<>();
+        HashMap<String, String> buf = new HashMap<String, String>();
+        ArrayList<byte[]> hashes = new ArrayList<byte[]>();
+        ArrayList<ArrayList<NodeIndex>> resolution = new ArrayList<ArrayList<NodeIndex>>();
+        ArrayList<NodeIndex> temp = new ArrayList<NodeIndex>();
         int count = 0;
 
         while((line = bin.readLine())!= null)
@@ -982,12 +983,12 @@ public class VectorTest
         HashMap<String, String> buf = new HashMap<String, String>();
 
         HashMap<String, String> bufleaf = new HashMap<String, String>();
-        ArrayList<LeafPrivateInfo> privateLeaves = new ArrayList<>();
-        ArrayList<PathSecretInfo> plPathSecrets = new ArrayList<>();
+        ArrayList<LeafPrivateInfo> privateLeaves = new ArrayList<LeafPrivateInfo>();
+        ArrayList<PathSecretInfo> plPathSecrets = new ArrayList<PathSecretInfo>();
 
         HashMap<String, String> bufPaths = new HashMap<String, String>();
-        ArrayList<UpdatePathInfo> updatePaths = new ArrayList<>();
-        ArrayList<PathSecret> upPathSecrets = new ArrayList<>();
+        ArrayList<UpdatePathInfo> updatePaths = new ArrayList<UpdatePathInfo>();
+        ArrayList<PathSecret> upPathSecrets = new ArrayList<PathSecret>();
 
 
         int count = 0;
@@ -1039,8 +1040,8 @@ public class VectorTest
                     }
 
                     // Import private keys
-                    Map<LeafIndex, TreeKEMPrivateKey> treePrivs = new HashMap<>();
-                    Map<LeafIndex, byte[]> sigPrivs = new HashMap<>();
+                    Map<LeafIndex, TreeKEMPrivateKey> treePrivs = new HashMap<LeafIndex, TreeKEMPrivateKey>();
+                    Map<LeafIndex, byte[]> sigPrivs = new HashMap<LeafIndex, byte[]>();
 
                     for (LeafPrivateInfo info : privateLeaves)
                     {
@@ -1077,7 +1078,7 @@ public class VectorTest
                                 epoch,
                                 treeAfter.getRootHash(),
                                 confirmed_transcript_hash,
-                                new ArrayList<>()
+                                new ArrayList<Extension>()
                         );
 
                         byte[] ctx = MLSOutputStream.encode(groupContext);
@@ -1089,7 +1090,7 @@ public class VectorTest
                                 continue;
                             }
                             TreeKEMPrivateKey priv = treePrivs.get(to).copy();
-                            priv.decap(from, treeAfter, ctx, path, new ArrayList<>());
+                            priv.decap(from, treeAfter, ctx, path, new ArrayList<LeafIndex>());
 
                             assertTrue(Arrays.areEqual(priv.getUpdateSecret().value(), info.commitSecret));
 
@@ -1106,7 +1107,7 @@ public class VectorTest
                         byte[] sigPriv = sigPrivs.get(from);
                         TreeKEMPrivateKey newSenderPriv = encapTree.update(from, new Secret(leafSecret), group_id, sigPriv, new Group.LeafNodeOptions());
 
-                        UpdatePath newPath = encapTree.encap(newSenderPriv, ctx, new ArrayList<>());
+                        UpdatePath newPath = encapTree.encap(newSenderPriv, ctx, new ArrayList<LeafIndex>());
                         assertTrue(tree.verifyParentHash(from, path));
 
                         for (int i = 0; i < encapTree.getSize().leafCount(); i++)
@@ -1118,7 +1119,7 @@ public class VectorTest
                             }
 
                             TreeKEMPrivateKey priv = treePrivs.get(to).copy();
-                            priv.decap(from, encapTree, ctx, newPath, new ArrayList<>());
+                            priv.decap(from, encapTree, ctx, newPath, new ArrayList<LeafIndex>());
 
                             assertTrue(Arrays.areEqual(priv.getUpdateSecret().value(), newSenderPriv.getUpdateSecret().value()));
                         }

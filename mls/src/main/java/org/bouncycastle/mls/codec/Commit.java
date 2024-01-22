@@ -64,13 +64,13 @@ public class Commit
 
     public Commit()
     {
-        this.proposals = new ArrayList<>();
+        this.proposals = new ArrayList<ProposalOrRef>();
     }
 
     @SuppressWarnings("unused")
     Commit(MLSInputStream stream) throws IOException
     {
-        proposals = new ArrayList<>();
+        proposals = new ArrayList<ProposalOrRef>();
         stream.readList(proposals ,ProposalOrRef.class);
 
         updatePath = (UpdatePath) stream.readOptional(UpdatePath.class);

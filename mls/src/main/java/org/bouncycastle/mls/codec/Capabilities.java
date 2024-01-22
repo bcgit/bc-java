@@ -28,23 +28,23 @@ public class Capabilities
     {
         //TODO: make default to support all
         versions = Arrays.asList(DEFAULT_SUPPORTED_VERSIONS);
-        cipherSuites = new ArrayList<>();
+        cipherSuites = new ArrayList<Short>();
         for (short suite : DEFAULT_SUPPORTED_CIPHERSUITES)
         {
             cipherSuites.add(suite);
         }
-        extensions = new ArrayList<>();
-        proposals = new ArrayList<>();
+        extensions = new ArrayList<Short>();
+        proposals = new ArrayList<Short>();
         credentials = Arrays.asList(DEFAULT_SUPPORTED_CREDENTIALS);
     }
     @SuppressWarnings("unused")
     Capabilities(MLSInputStream stream) throws IOException
     {
-        versions = new ArrayList<>();
-        cipherSuites = new ArrayList<>();
-        extensions = new ArrayList<>();
-        proposals = new ArrayList<>();
-        credentials = new ArrayList<>();
+        versions = new ArrayList<Short>();
+        cipherSuites = new ArrayList<Short>();
+        extensions = new ArrayList<Short>();
+        proposals = new ArrayList<Short>();
+        credentials = new ArrayList<Short>();
         stream.readList(versions, short.class);
         stream.readList(cipherSuites, short.class);
         stream.readList(extensions, short.class);

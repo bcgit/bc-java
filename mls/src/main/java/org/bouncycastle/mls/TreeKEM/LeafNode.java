@@ -83,7 +83,7 @@ public class LeafNode
         this.credential = credential;
         this.capabilities = capabilities; //TODO: grease
         this.lifeTime = lifeTime;
-        this.extensions = new ArrayList<>(extensions); //TODO: grease
+        this.extensions = new ArrayList<Extension>(extensions); //TODO: grease
         this.leaf_node_source = LeafNodeSource.KEY_PACKAGE; //TODO: check
 
         sign(suite, sigSk, toBeSigned(null, -1));
@@ -111,7 +111,7 @@ public class LeafNode
                 parent_hash = stream.readOpaque();
                 break;
         }
-        extensions = new ArrayList<>();
+        extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
         signature = stream.readOpaque();
     }
@@ -285,7 +285,7 @@ public class LeafNode
                 clone.parent_hash = this.parent_hash.clone();
                 break;
         }
-        clone.extensions = new ArrayList<>(this.extensions);
+        clone.extensions = new ArrayList<Extension>(this.extensions);
         clone.signature = this.signature.clone();
         return clone;
     }

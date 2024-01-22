@@ -16,14 +16,14 @@ public class GroupSecrets
     {
         this.joiner_secret = joiner_secret;
         this.path_secret = path_secret;
-        this.psks = new ArrayList<>(psks);
+        this.psks = new ArrayList<PreSharedKeyID>(psks);
     }
     @SuppressWarnings("unused")
     GroupSecrets(MLSInputStream stream) throws IOException
     {
         joiner_secret = stream.readOpaque();
         path_secret = (PathSecret) stream.readOptional(PathSecret.class);
-        psks = new ArrayList<>();
+        psks = new ArrayList<PreSharedKeyID>();
         stream.readList(psks, PreSharedKeyID.class);
     }
 

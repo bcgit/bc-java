@@ -44,8 +44,8 @@ public class TreeKEMPrivateKey
     {
         this.suite = suite;
         this.index = index;
-        pathSecrets = new HashMap<>();
-        privateKeyCache = new HashMap<>();
+        pathSecrets = new HashMap<NodeIndex, Secret>();
+        privateKeyCache = new HashMap<NodeIndex, AsymmetricCipherKeyPair>();
     }
 
     public TreeKEMPrivateKey copy()
@@ -118,7 +118,7 @@ public class TreeKEMPrivateKey
     public void truncate(TreeSize size)
     {
         NodeIndex ni = new NodeIndex(new LeafIndex((int) (size.leafCount() - 1)));
-        List<NodeIndex> toRemove = new ArrayList<>();
+        List<NodeIndex> toRemove = new ArrayList<NodeIndex>();
         for (NodeIndex n : pathSecrets.keySet())
         {
             if (n.value() > ni.value())
@@ -155,7 +155,7 @@ public class TreeKEMPrivateKey
 
         int dpi = 0;
         NodeIndex overlapNode = null;
-        ArrayList<NodeIndex> res = new ArrayList<>();
+        ArrayList<NodeIndex> res = new ArrayList<NodeIndex>();
         for (dpi = 0; dpi < dp.parents.size(); dpi++)
         {
             if (ni.isBelow(dp.parents.get(dpi)))
