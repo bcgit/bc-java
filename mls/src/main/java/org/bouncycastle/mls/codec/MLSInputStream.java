@@ -164,7 +164,9 @@ public class MLSInputStream {
         try{
             Constructor<?> constructor = targetClass.getDeclaredConstructor(MLSInputStream.class);
             return constructor.newInstance(this);
-        } catch (NoSuchMethodException | IllegalAccessException e) {
+        } catch (NoSuchMethodException e) {
+            throw new IOException("Readable class does not have a public MLSInputStream constructor");
+        } catch (IllegalAccessException e) {
             throw new IOException("Readable class does not have a public MLSInputStream constructor");
         } catch (InvocationTargetException e) {
             throw new IOException("InvocationTargetException: " + e.getCause().getMessage());

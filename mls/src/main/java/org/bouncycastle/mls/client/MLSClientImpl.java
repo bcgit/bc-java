@@ -369,7 +369,14 @@ public class MLSClientImpl
     @Override
     public void name(MlsClient.NameRequest request, StreamObserver<MlsClient.NameResponse> responseObserver)
     {
-        catchWrap(() -> nameImpl(request, responseObserver), responseObserver);
+        catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                nameImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -397,7 +404,14 @@ public class MLSClientImpl
 @Override
     public void supportedCiphersuites(MlsClient.SupportedCiphersuitesRequest request, StreamObserver<MlsClient.SupportedCiphersuitesResponse> responseObserver)
     {
-        catchWrap(() -> supportedCiphersuitesImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                supportedCiphersuitesImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -451,7 +465,14 @@ public class MLSClientImpl
 @Override
     public void createGroup(MlsClient.CreateGroupRequest request, StreamObserver<MlsClient.CreateGroupResponse> responseObserver)
     {
-        catchWrap(() -> createGroupImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                createGroupImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -481,7 +502,14 @@ public class MLSClientImpl
 @Override
     public void createKeyPackage(MlsClient.CreateKeyPackageRequest request, StreamObserver<MlsClient.CreateKeyPackageResponse> responseObserver)
     {
-        catchWrap(() -> createKeyPackageImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                createKeyPackageImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -533,7 +561,14 @@ public class MLSClientImpl
 @Override
     public void joinGroup(MlsClient.JoinGroupRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
     {
-        catchWrap(() -> joinGroupImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                joinGroupImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -663,7 +698,14 @@ public class MLSClientImpl
 @Override
     public void externalJoin(MlsClient.ExternalJoinRequest request, StreamObserver<MlsClient.ExternalJoinResponse> responseObserver)
     {
-        catchWrap(() -> externalJoinImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                externalJoinImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -692,7 +734,13 @@ public class MLSClientImpl
 @Override
     public void groupInfo(MlsClient.GroupInfoRequest request, StreamObserver<MlsClient.GroupInfoResponse> responseObserver)
     {
-        stateWrap(group -> groupInfoImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                groupInfoImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
+
     }
 
     /**
@@ -711,7 +759,12 @@ public class MLSClientImpl
 @Override
     public void stateAuth(MlsClient.StateAuthRequest request, StreamObserver<MlsClient.StateAuthResponse> responseObserver)
     {
-        stateWrap(group -> stateAuthImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                stateAuthImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -734,7 +787,12 @@ public class MLSClientImpl
 @Override
     public void export(MlsClient.ExportRequest request, StreamObserver<MlsClient.ExportResponse> responseObserver)
     {
-        stateWrap(group -> exportImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                exportImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -758,7 +816,12 @@ public class MLSClientImpl
 @Override
     public void protect(MlsClient.ProtectRequest request, StreamObserver<MlsClient.ProtectResponse> responseObserver)
     {
-        stateWrap(group -> protectImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                protectImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -799,7 +862,12 @@ public class MLSClientImpl
 @Override
     public void unprotect(MlsClient.UnprotectRequest request, StreamObserver<MlsClient.UnprotectResponse> responseObserver)
     {
-        stateWrap(group -> unprotectImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                unprotectImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -836,7 +904,14 @@ public class MLSClientImpl
 @Override
     public void storePSK(MlsClient.StorePSKRequest request, StreamObserver<MlsClient.StorePSKResponse> responseObserver)
     {
-        catchWrap(() -> storePSKImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                storePSKImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -858,7 +933,12 @@ public class MLSClientImpl
 @Override
     public void addProposal(MlsClient.AddProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> addProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                addProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -881,7 +961,12 @@ public class MLSClientImpl
 @Override
     public void updateProposal(MlsClient.UpdateProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> updateProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                updateProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -903,7 +988,12 @@ public class MLSClientImpl
 @Override
     public void removeProposal(MlsClient.RemoveProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> removeProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                removeProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -925,7 +1015,12 @@ public class MLSClientImpl
 @Override
     public void externalPSKProposal(MlsClient.ExternalPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> externalPSKProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                externalPSKProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -946,7 +1041,12 @@ public class MLSClientImpl
 @Override
     public void resumptionPSKProposal(MlsClient.ResumptionPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> resumptionPSKProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                resumptionPSKProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -974,7 +1074,12 @@ public class MLSClientImpl
 @Override
     public void groupContextExtensionsProposal(MlsClient.GroupContextExtensionsProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> groupContextExtensionsProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                groupContextExtensionsProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1045,7 +1150,12 @@ public class MLSClientImpl
 @Override
     public void commit(MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
     {
-        stateWrap(group -> commitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                commitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1104,7 +1214,12 @@ public class MLSClientImpl
 @Override
     public void handleCommit(MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
     {
-        stateWrap(group -> handleCommitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                handleCommitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1137,7 +1252,12 @@ public class MLSClientImpl
 @Override
     public void handlePendingCommit(MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
     {
-        stateWrap(group -> handlePendingCommitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                handlePendingCommitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1172,7 +1292,12 @@ public class MLSClientImpl
 @Override
     public void reInitProposal(MlsClient.ReInitProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> reInitProposalImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                reInitProposalImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1222,7 +1347,12 @@ public class MLSClientImpl
 @Override
     public void reInitCommit(MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
     {
-        stateWrap(group -> reInitCommitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                reInitCommitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1256,7 +1386,12 @@ public class MLSClientImpl
 @Override
     public void handlePendingReInitCommit(MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
     {
-        stateWrap(group -> handlePendingReInitCommitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                handlePendingReInitCommitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1299,7 +1434,12 @@ public class MLSClientImpl
 @Override
     public void handleReInitCommit(MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
     {
-        stateWrap(group -> handleReInitCommitImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                handleReInitCommitImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1357,7 +1497,14 @@ public class MLSClientImpl
 @Override
     public void reInitWelcome(MlsClient.ReInitWelcomeRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
     {
-        catchWrap(() -> reInitWelcomeImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                reInitWelcomeImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -1407,7 +1554,14 @@ public class MLSClientImpl
 @Override
     public void handleReInitWelcome(MlsClient.HandleReInitWelcomeRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
     {
-        catchWrap(() -> handleReInitWelcomeImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                handleReInitWelcomeImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -1478,7 +1632,12 @@ public class MLSClientImpl
 @Override
     public void createBranch(MlsClient.CreateBranchRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
     {
-        stateWrap(group -> createBranchImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                createBranchImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1524,7 +1683,12 @@ public class MLSClientImpl
 @Override
     public void handleBranch(MlsClient.HandleBranchRequest request, StreamObserver<MlsClient.HandleBranchResponse> responseObserver)
     {
-        stateWrap(group -> handleBranchImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                handleBranchImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1570,7 +1734,14 @@ public class MLSClientImpl
 @Override
     public void newMemberAddProposal(MlsClient.NewMemberAddProposalRequest request, StreamObserver<MlsClient.NewMemberAddProposalResponse> responseObserver)
     {
-        catchWrap(() -> newMemberAddProposalImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                newMemberAddProposalImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -1598,7 +1769,14 @@ public class MLSClientImpl
 @Override
     public void createExternalSigner(MlsClient.CreateExternalSignerRequest request, StreamObserver<MlsClient.CreateExternalSignerResponse> responseObserver)
     {
-        catchWrap(() -> createExternalSignerImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                createExternalSignerImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -1633,7 +1811,12 @@ public class MLSClientImpl
 @Override
     public void addExternalSigner(MlsClient.AddExternalSignerRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(group -> addExternalSignerImpl(group, request, responseObserver), request, responseObserver);
+        stateWrap(new FunctionWithState() {
+            @Override
+            public void run(CachedGroup group) throws Exception {
+                addExternalSignerImpl(group, request, responseObserver);
+            }
+        }, request, responseObserver);
     }
 
     /**
@@ -1698,7 +1881,14 @@ public class MLSClientImpl
 @Override
     public void externalSignerProposal(MlsClient.ExternalSignerProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        catchWrap(() -> externalSignerProposalImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                externalSignerProposalImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 
     /**
@@ -1725,6 +1915,13 @@ public class MLSClientImpl
 @Override
     public void free(MlsClient.FreeRequest request, StreamObserver<MlsClient.FreeResponse> responseObserver)
     {
-        catchWrap(() -> freeImpl(request, responseObserver), responseObserver);
+         catchWrap(new Function()
+        {
+            @Override
+            public void run() throws Exception
+            {
+                freeImpl(request, responseObserver);
+            }
+        }, responseObserver);
     }
 }

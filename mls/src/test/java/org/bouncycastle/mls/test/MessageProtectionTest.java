@@ -3,6 +3,10 @@ package org.bouncycastle.mls.test;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeSize;
@@ -19,7 +23,11 @@ import org.bouncycastle.mls.codec.PublicMessage;
 import org.bouncycastle.mls.codec.Sender;
 import org.bouncycastle.mls.codec.WireFormat;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
+import org.bouncycastle.mls.crypto.MlsSigner;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.mls.crypto.bc.BcMlsAead;
+import org.bouncycastle.mls.crypto.bc.BcMlsKdf;
+import org.bouncycastle.mls.crypto.bc.BcMlsSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -29,6 +37,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.*;
 
 public class MessageProtectionTest
         extends TestCase
@@ -140,6 +150,35 @@ public class MessageProtectionTest
         return new GroupKeySet(suite, treeSize, encryptedSecret);
     }
 
+    private MlsCipherSuite createNewSuite(short id)
+    {
+        switch (id)
+        {
+            case MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519:
+                return new MlsCipherSuite(MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519, new BcMlsSigner(MlsSigner.ed25519), new BcMlsKdf(new SHA256Digest()), new BcMlsAead(HPKE.aead_AES_GCM128), new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128));
+
+            case MLS_128_DHKEMP256_AES128GCM_SHA256_P256:
+                return new MlsCipherSuite(MLS_128_DHKEMP256_AES128GCM_SHA256_P256, new BcMlsSigner(MlsSigner.ecdsa_secp256r1_sha256), new BcMlsKdf(new SHA256Digest()), new BcMlsAead(HPKE.aead_AES_GCM128), new HPKE(HPKE.mode_base, HPKE.kem_P256_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_AES_GCM128));
+
+            case MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519:
+                return new MlsCipherSuite(MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519, new BcMlsSigner(MlsSigner.ed25519), new BcMlsKdf(new SHA256Digest()), new BcMlsAead(HPKE.aead_CHACHA20_POLY1305), new HPKE(HPKE.mode_base, HPKE.kem_X25519_SHA256, HPKE.kdf_HKDF_SHA256, HPKE.aead_CHACHA20_POLY1305));
+
+            case MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448:
+                return new MlsCipherSuite(MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448, new BcMlsSigner(MlsSigner.ed448), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256));
+
+            case MLS_256_DHKEMP521_AES256GCM_SHA512_P521:
+                return new MlsCipherSuite(MLS_256_DHKEMP521_AES256GCM_SHA512_P521, new BcMlsSigner(MlsSigner.ecdsa_secp521r1_sha512), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P521_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_AES_GCM256));
+
+            case MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448:
+                return new MlsCipherSuite(MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448, new BcMlsSigner(MlsSigner.ed448), new BcMlsKdf(new SHA512Digest()), new BcMlsAead(HPKE.aead_CHACHA20_POLY1305), new HPKE(HPKE.mode_base, HPKE.kem_X448_SHA512, HPKE.kdf_HKDF_SHA512, HPKE.aead_CHACHA20_POLY1305));
+
+            case MLS_256_DHKEMP384_AES256GCM_SHA384_P384:
+                return new MlsCipherSuite(MLS_256_DHKEMP384_AES256GCM_SHA384_P384, new BcMlsSigner(MlsSigner.ecdsa_secp384r1_sha384), new BcMlsKdf(new SHA384Digest()), new BcMlsAead(HPKE.aead_AES_GCM256), new HPKE(HPKE.mode_base, HPKE.kem_P384_SHA348, HPKE.kdf_HKDF_SHA384, HPKE.aead_AES_GCM256));
+
+        }
+        return null;
+    }
+
 
 
     public void testMessageProtection()
@@ -178,7 +217,7 @@ public class MessageProtectionTest
                     application = Hex.decode(buf.get("application"));
                     application_priv = Hex.decode(buf.get("application_priv"));
 
-                    suite = MlsCipherSuite.getSuite(cipher_suite);
+                    suite = createNewSuite(cipher_suite);
 
                     AsymmetricCipherKeyPair sigKeyPair = suite.deserializeSignaturePrivateKey(signature_priv);
                     byte[] sigPubBytes = suite.serializeSignaturePublicKey(sigKeyPair.getPublic());
@@ -243,6 +282,7 @@ public class MessageProtectionTest
                     FramedContent commitPubProtectedUnprotected = unprotect(commitPub);
                     assertTrue(Arrays.areEqual(commitPubProtectedUnprotected.getContentBytes(), commit));
 
+                    suite = createNewSuite(cipher_suite); // reset AEAD
                     protect(commit, commitPriv); // commitPriv = commitPrivProtected
                     FramedContent commitPrivProtectedUnprotected = unprotect(commitPriv);
                     assertTrue(Arrays.areEqual(commitPrivProtectedUnprotected.getContentBytes(), commit));
