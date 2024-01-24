@@ -81,8 +81,8 @@ public class VectorTest
                         NodeIndex n = new NodeIndex(i);
 
                         // ignoring null value checks
-                        assertEquals(left.get(i) == -1 ? i : left.get(i), n.left().value());
-                        assertEquals(right.get(i) == -1 ? i : right.get(i), n.right().value());
+                        assertEquals((long)(left.get(i) == -1 ? i : left.get(i)), n.left().value());
+                        assertEquals((long)(right.get(i) == -1 ? i : right.get(i)), n.right().value());
                         assertEquals(parent.get(i) == -1 ? n.parent().value() : parent.get(i), n.parent().value());
                         assertEquals(sibling.get(i) == -1 ? n.sibling().value() : sibling.get(i), n.sibling().value());
                     }
