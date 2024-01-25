@@ -1,11 +1,11 @@
 package org.bouncycastle.mls;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.codec.AuthenticatedContent;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
 
 public class TranscriptHash
 {
@@ -42,35 +42,43 @@ public class TranscriptHash
         this.interim = interim;
     }
 
-    static public TranscriptHash fromConfirmationTag(MlsCipherSuite suite, byte[] confirmed, byte[] confirmationTag) throws IOException
+    static public TranscriptHash fromConfirmationTag(MlsCipherSuite suite, byte[] confirmed, byte[] confirmationTag)
+        throws IOException
     {
         TranscriptHash out = new TranscriptHash(suite, confirmed.clone(), new byte[0]);
         out.updateInterim(confirmationTag);
         return out;
     }
+
     public TranscriptHash copy()
     {
         return new TranscriptHash(suite, confirmed, interim);
     }
 
-    public void update(AuthenticatedContent auth) throws IOException
+    public void update(AuthenticatedContent auth)
+        throws IOException
     {
         updateConfirmed(auth);
         updateInterim(auth);
     }
 
-    public void updateConfirmed(AuthenticatedContent auth) throws IOException
+    public void updateConfirmed(AuthenticatedContent auth)
+        throws IOException
     {
         byte[] transcript = Arrays.concatenate(interim, auth.getConfirmedTranscriptHashInput());
         confirmed = suite.hash(transcript);
     }
-    public void updateInterim(AuthenticatedContent auth) throws IOException
+
+    public void updateInterim(AuthenticatedContent auth)
+        throws IOException
     {
         byte[] transcript = Arrays.concatenate(confirmed, auth.getInterimTranscriptHashInput());
         interim = suite.hash(transcript);
 
     }
-    public void updateInterim(byte[] confirmationTag) throws IOException
+
+    public void updateInterim(byte[] confirmationTag)
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.writeOpaque(confirmationTag);

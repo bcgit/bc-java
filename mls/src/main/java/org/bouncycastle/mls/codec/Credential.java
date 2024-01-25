@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Credential
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 
 {
     CredentialType credentialType;
@@ -16,6 +16,7 @@ public class Credential
     {
         return credentialType;
     }
+
     public byte[] getIdentity()
     {
         return identity;
@@ -32,10 +33,12 @@ public class Credential
         this.identity = identity;
         this.certificates = certificates;
     }
+
     @SuppressWarnings("unused")
-    Credential(MLSInputStream stream) throws IOException
+    Credential(MLSInputStream stream)
+        throws IOException
     {
-        short credType = (short) stream.read(short.class);
+        short credType = (short)stream.read(short.class);
         if (Grease.isGrease(credType) == -1)
         {
             this.credentialType = CredentialType.values()[credType];
@@ -46,18 +49,19 @@ public class Credential
         }
         switch (credentialType)
         {
-            case basic:
-                identity = stream.readOpaque();
-                break;
-            case x509:
-                certificates = new ArrayList<Certificate>();
-                stream.readList(certificates, Certificate.class);
-                break;
+        case basic:
+            identity = stream.readOpaque();
+            break;
+        case x509:
+            certificates = new ArrayList<Certificate>();
+            stream.readList(certificates, Certificate.class);
+            break;
         }
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         if (Grease.isGrease(credentialType.value) == -1)
         {
@@ -69,12 +73,12 @@ public class Credential
         }
         switch (credentialType)
         {
-            case basic:
-                stream.writeOpaque(identity);
-                break;
-            case x509:
-                stream.writeList(certificates);
-                break;
+        case basic:
+            stream.writeOpaque(identity);
+            break;
+        case x509:
+            stream.writeList(certificates);
+            break;
         }
     }
 }

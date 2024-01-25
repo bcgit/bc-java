@@ -23,37 +23,39 @@ public class BcMlsAead
 
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-            case HPKE.aead_AES_GCM256:
-                cipher = new GCMBlockCipher(new AESEngine());
-                break;
-            case HPKE.aead_CHACHA20_POLY1305:
-                cipher = new ChaCha20Poly1305();
-                break;
-            case HPKE.aead_EXPORT_ONLY:
-                break;
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+            cipher = new GCMBlockCipher(new AESEngine());
+            break;
+        case HPKE.aead_CHACHA20_POLY1305:
+            cipher = new ChaCha20Poly1305();
+            break;
+        case HPKE.aead_EXPORT_ONLY:
+            break;
         }
     }
+
     public int getKeySize()
     {
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-                return 16;
-            case HPKE.aead_AES_GCM256:
-            case HPKE.aead_CHACHA20_POLY1305:
-                return 32;
+        case HPKE.aead_AES_GCM128:
+            return 16;
+        case HPKE.aead_AES_GCM256:
+        case HPKE.aead_CHACHA20_POLY1305:
+            return 32;
         }
         return -1;
     }
+
     private int getTagSize()
     {
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-            case HPKE.aead_AES_GCM256:
-            case HPKE.aead_CHACHA20_POLY1305:
-                return 16;
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+        case HPKE.aead_CHACHA20_POLY1305:
+            return 16;
         }
         return -1;
     }
@@ -62,19 +64,20 @@ public class BcMlsAead
     {
         switch (aeadId)
         {
-            case HPKE.aead_AES_GCM128:
-            case HPKE.aead_AES_GCM256:
-            case HPKE.aead_CHACHA20_POLY1305:
-                return 12;
+        case HPKE.aead_AES_GCM128:
+        case HPKE.aead_AES_GCM256:
+        case HPKE.aead_CHACHA20_POLY1305:
+            return 12;
         }
         return -1;
     }
 
-    public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct) throws InvalidCipherTextException
+    public byte[] open(byte[] key, byte[] nonce, byte[] aad, byte[] ct)
+        throws InvalidCipherTextException
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
         cipher.init(false, params);
-        if(aad != null)
+        if (aad != null)
         {
             cipher.processAADBytes(aad, 0, aad.length);
         }
@@ -85,7 +88,9 @@ public class BcMlsAead
         len += cipher.doFinal(pt, len);
         return pt;
     }
-    public byte[] seal(byte[] key, byte[] nonce, byte[] aad, byte[] pt) throws InvalidCipherTextException
+
+    public byte[] seal(byte[] key, byte[] nonce, byte[] aad, byte[] pt)
+        throws InvalidCipherTextException
     {
         CipherParameters params = new ParametersWithIV(new KeyParameter(key), nonce);
         cipher.init(true, params);

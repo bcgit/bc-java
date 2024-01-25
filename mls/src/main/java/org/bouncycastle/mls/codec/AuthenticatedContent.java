@@ -1,11 +1,11 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-
 import java.io.IOException;
 
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+
 public class AuthenticatedContent
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     WireFormat wireFormat;
 
@@ -31,11 +31,15 @@ public class AuthenticatedContent
     {
         return auth.confirmation_tag;
     }
-    public byte[] getConfirmedTranscriptHashInput() throws IOException
+
+    public byte[] getConfirmedTranscriptHashInput()
+        throws IOException
     {
         return MLSOutputStream.encode(new ConfirmedTranscriptHashInput(wireFormat, content, auth.signature));
     }
-    public byte[] getInterimTranscriptHashInput() throws IOException
+
+    public byte[] getInterimTranscriptHashInput()
+        throws IOException
     {
         return MLSOutputStream.encode(new InterimTranscriptHashInput(auth.confirmation_tag));
     }
@@ -66,7 +70,8 @@ public class AuthenticatedContent
         }
     }
 
-    public static AuthenticatedContent sign(WireFormat wireFormat, FramedContent content, MlsCipherSuite suite, byte[] sigPriv, byte[] groupContext) throws Exception
+    public static AuthenticatedContent sign(WireFormat wireFormat, FramedContent content, MlsCipherSuite suite, byte[] sigPriv, byte[] groupContext)
+        throws Exception
     {
         if (wireFormat == WireFormat.mls_public_message &&
             content.contentType == ContentType.APPLICATION)
@@ -79,10 +84,11 @@ public class AuthenticatedContent
         return new AuthenticatedContent(wireFormat, content, auth);
     }
 
-    public boolean verify(MlsCipherSuite suite, byte[] sigPub, byte[] context) throws IOException
+    public boolean verify(MlsCipherSuite suite, byte[] sigPub, byte[] context)
+        throws IOException
     {
         if (wireFormat == WireFormat.mls_public_message &&
-                content.contentType == ContentType.APPLICATION)
+            content.contentType == ContentType.APPLICATION)
         {
             return false;
         }
@@ -92,21 +98,24 @@ public class AuthenticatedContent
     }
 
     @SuppressWarnings("unused")
-    public AuthenticatedContent(MLSInputStream stream) throws IOException
+    public AuthenticatedContent(MLSInputStream stream)
+        throws IOException
     {
-        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
-        content = (FramedContent) stream.read(FramedContent.class);
+        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        content = (FramedContent)stream.read(FramedContent.class);
         auth = new FramedContentAuthData(stream, content.contentType);
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(wireFormat);
         stream.write(content);
         stream.write(auth);
     }
 }
+
 class ConfirmedTranscriptHashInput
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -120,16 +129,19 @@ class ConfirmedTranscriptHashInput
         this.content = content;
         this.signature = signature;
     }
+
     @SuppressWarnings("unused")
-    public ConfirmedTranscriptHashInput(MLSInputStream stream) throws IOException
+    public ConfirmedTranscriptHashInput(MLSInputStream stream)
+        throws IOException
     {
-        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
-        content = (FramedContent) stream.read(FramedContent.class);
+        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        content = (FramedContent)stream.read(FramedContent.class);
         signature = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(wireFormat);
         stream.write(content);
@@ -148,13 +160,15 @@ class InterimTranscriptHashInput
     }
 
     @SuppressWarnings("unused")
-    public InterimTranscriptHashInput(MLSInputStream stream) throws IOException
+    public InterimTranscriptHashInput(MLSInputStream stream)
+        throws IOException
     {
         confirmation_tag = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(confirmation_tag);
     }

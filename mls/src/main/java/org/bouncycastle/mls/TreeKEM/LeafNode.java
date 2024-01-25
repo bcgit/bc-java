@@ -1,21 +1,21 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-import org.bouncycastle.mls.protocol.Group;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bouncycastle.mls.codec.Capabilities;
 import org.bouncycastle.mls.codec.Credential;
 import org.bouncycastle.mls.codec.CredentialType;
 import org.bouncycastle.mls.codec.Extension;
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+import org.bouncycastle.mls.protocol.Group;
 
 public class LeafNode
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     MlsCipherSuite suite;
     byte[] encryption_key;
@@ -68,14 +68,15 @@ public class LeafNode
     }
 
     public LeafNode(
-            MlsCipherSuite suite,
-            byte[] encryption_key,
-            byte[] signature_key,
-            Credential credential,
-            Capabilities capabilities,
-            LifeTime lifeTime,
-            List<Extension> extensions,
-            byte[] sigSk) throws Exception
+        MlsCipherSuite suite,
+        byte[] encryption_key,
+        byte[] signature_key,
+        Credential credential,
+        Capabilities capabilities,
+        LifeTime lifeTime,
+        List<Extension> extensions,
+        byte[] sigSk)
+        throws Exception
     {
         this.suite = suite;
         this.encryption_key = encryption_key;
@@ -93,23 +94,24 @@ public class LeafNode
     {
     }
 
-    public LeafNode(MLSInputStream stream) throws IOException
+    public LeafNode(MLSInputStream stream)
+        throws IOException
     {
         encryption_key = stream.readOpaque();
         signature_key = stream.readOpaque();
-        credential = (Credential) stream.read(Credential.class);
-        capabilities = (Capabilities) stream.read(Capabilities.class);
-        leaf_node_source = LeafNodeSource.values()[(byte) stream.read(byte.class)];
+        credential = (Credential)stream.read(Credential.class);
+        capabilities = (Capabilities)stream.read(Capabilities.class);
+        leaf_node_source = LeafNodeSource.values()[(byte)stream.read(byte.class)];
         switch (leaf_node_source)
         {
-            case KEY_PACKAGE:
-                lifeTime = (LifeTime) stream.read(LifeTime.class);
-                break;
-            case UPDATE:
-                break;
-            case COMMIT:
-                parent_hash = stream.readOpaque();
-                break;
+        case KEY_PACKAGE:
+            lifeTime = (LifeTime)stream.read(LifeTime.class);
+            break;
+        case UPDATE:
+            break;
+        case COMMIT:
+            parent_hash = stream.readOpaque();
+            break;
         }
         extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
@@ -117,7 +119,8 @@ public class LeafNode
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(encryption_key);
         stream.writeOpaque(signature_key);
@@ -126,14 +129,14 @@ public class LeafNode
         stream.write(leaf_node_source);
         switch (leaf_node_source)
         {
-            case KEY_PACKAGE:
-                stream.write(lifeTime);
-                break;
-            case UPDATE:
-                break;
-            case COMMIT:
-                stream.writeOpaque(parent_hash);
-                break;
+        case KEY_PACKAGE:
+            stream.write(lifeTime);
+            break;
+        case UPDATE:
+            break;
+        case COMMIT:
+            stream.writeOpaque(parent_hash);
+            break;
         }
         stream.writeList(extensions);
         stream.writeOpaque(signature);
@@ -148,7 +151,9 @@ public class LeafNode
     {
         return credential;
     }
-    public byte[] toBeSigned(byte[] groupId, int leafIndex) throws IOException
+
+    public byte[] toBeSigned(byte[] groupId, int leafIndex)
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.writeOpaque(encryption_key);
@@ -158,25 +163,25 @@ public class LeafNode
         stream.write(leaf_node_source);
         switch (leaf_node_source)
         {
-            case KEY_PACKAGE:
-                stream.write(lifeTime);
-                break;
-            case UPDATE:
-                break;
-            case COMMIT:
-                stream.writeOpaque(parent_hash);
-                break;
+        case KEY_PACKAGE:
+            stream.write(lifeTime);
+            break;
+        case UPDATE:
+            break;
+        case COMMIT:
+            stream.writeOpaque(parent_hash);
+            break;
         }
         stream.writeList(extensions);
         switch (leaf_node_source)
         {
-            case KEY_PACKAGE:
-                break;
-            case UPDATE:
-            case COMMIT:
-                stream.writeOpaque(groupId);
-                stream.write(leafIndex);
-                break;
+        case KEY_PACKAGE:
+            break;
+        case UPDATE:
+        case COMMIT:
+            stream.writeOpaque(groupId);
+            stream.write(leafIndex);
+            break;
         }
         return stream.toByteArray();
     }
@@ -201,7 +206,8 @@ public class LeafNode
         return lifeTime.verify();
     }
 
-    public boolean verify(MlsCipherSuite suite, byte[] tbs) throws IOException
+    public boolean verify(MlsCipherSuite suite, byte[] tbs)
+        throws IOException
     {
         if (getCredentialType() == CredentialType.x509)
         {
@@ -211,7 +217,8 @@ public class LeafNode
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
     }
 
-    public LeafNode forCommit(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
+    public LeafNode forCommit(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv)
+        throws Exception
     {
         LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.COMMIT;
@@ -221,7 +228,9 @@ public class LeafNode
 
         return clone;
     }
-    public LeafNode forUpdate(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, Group.LeafNodeOptions options, byte[] sigPriv) throws Exception
+
+    public LeafNode forUpdate(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, Group.LeafNodeOptions options, byte[] sigPriv)
+        throws Exception
     {
         LeafNode clone = copyWithOptions(encKeyIn, options);
         clone.leaf_node_source = LeafNodeSource.UPDATE;
@@ -231,7 +240,8 @@ public class LeafNode
         return clone;
     }
 
-    private void sign(MlsCipherSuite suite, byte[] sigPriv, byte[] tbs) throws Exception
+    private void sign(MlsCipherSuite suite, byte[] sigPriv, byte[] tbs)
+        throws Exception
     {
         byte[] sigPub = suite.serializeSignaturePublicKey(suite.deserializeSignaturePrivateKey(sigPriv).getPublic());
         if (!Arrays.equals(sigPub, signature_key))
@@ -266,6 +276,7 @@ public class LeafNode
 
         return clone;
     }
+
     public LeafNode copy(byte[] encKeyIn)
     {
         LeafNode clone = new LeafNode();
@@ -273,17 +284,17 @@ public class LeafNode
         clone.signature_key = this.signature_key.clone();
         clone.credential = this.credential;
         clone.capabilities = this.capabilities;
-        clone.leaf_node_source =  this.leaf_node_source;
+        clone.leaf_node_source = this.leaf_node_source;
         switch (clone.leaf_node_source)
         {
-            case KEY_PACKAGE:
-                clone.lifeTime = this.lifeTime;
-                break;
-            case UPDATE:
-                break;
-            case COMMIT:
-                clone.parent_hash = this.parent_hash.clone();
-                break;
+        case KEY_PACKAGE:
+            clone.lifeTime = this.lifeTime;
+            break;
+        case UPDATE:
+            break;
+        case COMMIT:
+            clone.parent_hash = this.parent_hash.clone();
+            break;
         }
         clone.extensions = new ArrayList<Extension>(this.extensions);
         clone.signature = this.signature.clone();
@@ -302,7 +313,7 @@ public class LeafNode
             return false;
         }
 
-        LeafNode leafNode = (LeafNode) o;
+        LeafNode leafNode = (LeafNode)o;
 
         //TODO: check other variables?
 

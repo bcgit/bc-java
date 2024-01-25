@@ -3,7 +3,7 @@ package org.bouncycastle.mls.codec;
 import java.io.IOException;
 
 public class HPKECiphertext
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] kem_output;
     byte[] ciphertext;
@@ -23,15 +23,18 @@ public class HPKECiphertext
         this.kem_output = kem_output;
         this.ciphertext = ciphertext;
     }
+
     @SuppressWarnings("unused")
-    HPKECiphertext(MLSInputStream stream) throws IOException
+    HPKECiphertext(MLSInputStream stream)
+        throws IOException
     {
         kem_output = stream.readOpaque();
         ciphertext = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(kem_output);
         stream.writeOpaque(ciphertext);

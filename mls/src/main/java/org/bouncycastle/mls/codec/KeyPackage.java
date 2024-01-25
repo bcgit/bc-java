@@ -1,16 +1,16 @@
 package org.bouncycastle.mls.codec;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.LeafNodeSource;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class KeyPackage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ProtocolVersion version;
 
@@ -31,11 +31,14 @@ public class KeyPackage
     {
         return init_key;
     }
+
     public MlsCipherSuite getSuite()
     {
         return suite;
     }
-    public boolean verify() throws IOException
+
+    public boolean verify()
+        throws IOException
     {
         // Verify the inner leaf node
         if (!leaf_node.verify(suite, leaf_node.toBeSigned(new byte[0], -1)))
@@ -59,7 +62,8 @@ public class KeyPackage
         return suite.verifyWithLabel(leaf_node.getSignatureKey(), "KeyPackageTBS", toBeSigned(), signature);
     }
 
-    private byte[] toBeSigned() throws IOException
+    private byte[] toBeSigned()
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.write(version);
@@ -70,7 +74,8 @@ public class KeyPackage
         return stream.toByteArray();
     }
 
-    public KeyPackage(MlsCipherSuite suite, byte[] init_key, LeafNode leaf_node, List<Extension> extensions, byte[] sigSk) throws IOException, CryptoException
+    public KeyPackage(MlsCipherSuite suite, byte[] init_key, LeafNode leaf_node, List<Extension> extensions, byte[] sigSk)
+        throws IOException, CryptoException
     {
         this.version = ProtocolVersion.mls10;
         this.cipher_suite = suite.getSuiteID();
@@ -82,21 +87,24 @@ public class KeyPackage
         //sign(sigSk)
         this.signature = suite.signWithLabel(sigSk, "KeyPackageTBS", toBeSigned());
     }
+
     @SuppressWarnings("unused")
-    KeyPackage(MLSInputStream stream) throws Exception
+    KeyPackage(MLSInputStream stream)
+        throws Exception
     {
-        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
-        cipher_suite = (short) stream.read(short.class);
+        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        cipher_suite = (short)stream.read(short.class);
         suite = MlsCipherSuite.getSuite(cipher_suite);
         init_key = stream.readOpaque();
-        leaf_node = (LeafNode) stream.read(LeafNode.class);
+        leaf_node = (LeafNode)stream.read(LeafNode.class);
         extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
         signature = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(version);
         stream.write(cipher_suite);

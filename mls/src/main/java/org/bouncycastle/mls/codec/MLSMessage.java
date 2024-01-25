@@ -1,14 +1,13 @@
 package org.bouncycastle.mls.codec;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Pack;
 
-import java.io.IOException;
-
 public class MLSMessage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     public ProtocolVersion version;
     public WireFormat wireFormat;
@@ -24,36 +23,37 @@ public class MLSMessage
         this.wireFormat = wireFormat;
     }
 
-    static public MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk) throws Exception
+    static public MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk)
+        throws Exception
     {
         //TODO check new byte[0] or null
         switch (proposal.getProposalType())
         {
-            case ADD:
-            case REMOVE:
-            case PSK:
-            case REINIT:
-            case GROUP_CONTEXT_EXTENSIONS:
-                break;
-            case EXTERNAL_INIT:
-            case UPDATE:
-            default:
-                throw new Exception("External proposal has invalid type");
+        case ADD:
+        case REMOVE:
+        case PSK:
+        case REINIT:
+        case GROUP_CONTEXT_EXTENSIONS:
+            break;
+        case EXTERNAL_INIT:
+        case UPDATE:
+        default:
+            throw new Exception("External proposal has invalid type");
         }
 
         FramedContent content = FramedContent.proposal(
-                groupID,
-                epoch,
-                Sender.forExternal(signerIndex),
-                new byte[0],
-                MLSOutputStream.encode(proposal)
+            groupID,
+            epoch,
+            Sender.forExternal(signerIndex),
+            new byte[0],
+            MLSOutputStream.encode(proposal)
         );
         AuthenticatedContent auth = AuthenticatedContent.sign(
-                WireFormat.mls_public_message,
-                content,
-                suite,
-                sigSk,
-                new byte[0]
+            WireFormat.mls_public_message,
+            content,
+            suite,
+            sigSk,
+            new byte[0]
         );
         MLSMessage message = new MLSMessage(WireFormat.mls_public_message);
         message.publicMessage = PublicMessage.protect(auth, suite, new byte[0], new byte[0]);
@@ -68,59 +68,62 @@ public class MLSMessage
         message.keyPackage = keyPackage;
         return message;
     }
+
     @SuppressWarnings("unused")
-    public MLSMessage(MLSInputStream stream) throws IOException
+    public MLSMessage(MLSInputStream stream)
+        throws IOException
     {
-        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
-        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
+        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
 
         switch (wireFormat)
         {
-            case RESERVED:
-                break;
-            case mls_public_message:
-                this.publicMessage = (PublicMessage) stream.read(PublicMessage.class);
-                break;
-            case mls_private_message:
-                this.privateMessage = (PrivateMessage) stream.read(PrivateMessage.class);
-                break;
-            case mls_welcome:
-                this.welcome = (Welcome) stream.read(Welcome.class);
-                break;
-            case mls_group_info:
-                this.groupInfo = (GroupInfo) stream.read(GroupInfo.class);
-                break;
-            case mls_key_package:
-                this.keyPackage = (KeyPackage) stream.read(KeyPackage.class);
-                break;
+        case RESERVED:
+            break;
+        case mls_public_message:
+            this.publicMessage = (PublicMessage)stream.read(PublicMessage.class);
+            break;
+        case mls_private_message:
+            this.privateMessage = (PrivateMessage)stream.read(PrivateMessage.class);
+            break;
+        case mls_welcome:
+            this.welcome = (Welcome)stream.read(Welcome.class);
+            break;
+        case mls_group_info:
+            this.groupInfo = (GroupInfo)stream.read(GroupInfo.class);
+            break;
+        case mls_key_package:
+            this.keyPackage = (KeyPackage)stream.read(KeyPackage.class);
+            break;
         }
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(version);
         stream.write(wireFormat);
         switch (wireFormat)
         {
 
-            case RESERVED:
-                break;
-            case mls_public_message:
-                stream.write(publicMessage);
-                break;
-            case mls_private_message:
-                stream.write(privateMessage);
-                break;
-            case mls_welcome:
-                stream.write(welcome);
-                break;
-            case mls_group_info:
-                stream.write(groupInfo);
-                break;
-            case mls_key_package:
-                stream.write(keyPackage);
-                break;
+        case RESERVED:
+            break;
+        case mls_public_message:
+            stream.write(publicMessage);
+            break;
+        case mls_private_message:
+            stream.write(privateMessage);
+            break;
+        case mls_welcome:
+            stream.write(welcome);
+            break;
+        case mls_group_info:
+            stream.write(groupInfo);
+            break;
+        case mls_key_package:
+            stream.write(keyPackage);
+            break;
         }
     }
 
@@ -128,55 +131,57 @@ public class MLSMessage
     {
         switch (wireFormat)
         {
-            case mls_public_message:
-                return publicMessage.content.getContentType();
-            case mls_private_message:
-                return privateMessage.content_type;
-            case mls_welcome:
-                break;
-            case mls_group_info:
-                break;
-            case mls_key_package:
-                break;
+        case mls_public_message:
+            return publicMessage.content.getContentType();
+        case mls_private_message:
+            return privateMessage.content_type;
+        case mls_welcome:
+            break;
+        case mls_group_info:
+            break;
+        case mls_key_package:
+            break;
         }
         return null;
     }
+
     public MlsCipherSuite getCipherSuite()
     {
         switch (wireFormat)
         {
-            case mls_public_message:
-            case mls_private_message:
-            case mls_group_info:
-                break;
-            case mls_welcome:
-                return welcome.suite;
-            case mls_key_package:
-                return keyPackage.suite;
+        case mls_public_message:
+        case mls_private_message:
+        case mls_group_info:
+            break;
+        case mls_welcome:
+            return welcome.suite;
+        case mls_key_package:
+            return keyPackage.suite;
         }
         return null;
     }
+
     public long getEpoch()
     {
         switch (wireFormat)
         {
 
-            case mls_public_message:
-                return publicMessage.content.epoch;
-            case mls_private_message:
-                return privateMessage.epoch;
-            case mls_welcome:
-            case mls_group_info:
-            case mls_key_package:
-            default:
-                //TODO: change and throw
-                return -1;
+        case mls_public_message:
+            return publicMessage.content.epoch;
+        case mls_private_message:
+            return privateMessage.epoch;
+        case mls_welcome:
+        case mls_group_info:
+        case mls_key_package:
+        default:
+            //TODO: change and throw
+            return -1;
         }
     }
 }
 
 class AuthenticatedContentTBM
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     FramedContentTBS contentTBS;
     FramedContentAuthData auth;
@@ -186,14 +191,18 @@ class AuthenticatedContentTBM
         this.contentTBS = contentTBS;
         this.auth = auth;
     }
+
     @SuppressWarnings("unused")
-    public AuthenticatedContentTBM(MLSInputStream stream) throws IOException
+    public AuthenticatedContentTBM(MLSInputStream stream)
+        throws IOException
     {
-        contentTBS = (FramedContentTBS) stream.read(FramedContentTBS.class);
-        auth = (FramedContentAuthData) stream.read(FramedContentAuthData.class);
+        contentTBS = (FramedContentTBS)stream.read(FramedContentTBS.class);
+        auth = (FramedContentAuthData)stream.read(FramedContentAuthData.class);
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(contentTBS);
         stream.write(auth);
@@ -215,19 +224,20 @@ class FramedContentAuthData
         switch (contentType)
         {
 
-            case RESERVED:
-            case APPLICATION:
-            case PROPOSAL:
-                break;
-            case COMMIT:
-                //TODO
-                this.confirmation_tag = confirmation_tag;
-                // MAYBE MAKE THIS A FUNCTION IN FRAMED CONTENT
-                break;
+        case RESERVED:
+        case APPLICATION:
+        case PROPOSAL:
+            break;
+        case COMMIT:
+            //TODO
+            this.confirmation_tag = confirmation_tag;
+            // MAYBE MAKE THIS A FUNCTION IN FRAMED CONTENT
+            break;
         }
     }
 
-    public FramedContentAuthData(MLSInputStream stream, ContentType contentType) throws IOException
+    public FramedContentAuthData(MLSInputStream stream, ContentType contentType)
+        throws IOException
     {
         this.contentType = contentType;
         signature = stream.readOpaque();
@@ -237,11 +247,13 @@ class FramedContentAuthData
             confirmation_tag = stream.readOpaque();
         }
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(signature);
-        if(contentType == ContentType.COMMIT)
+        if (contentType == ContentType.COMMIT)
         {
             stream.writeOpaque(confirmation_tag);
         }
@@ -262,57 +274,63 @@ class FramedContentTBS
         this.content = content;
         switch (content.sender.senderType)
         {
-            case MEMBER:
-            case NEW_MEMBER_COMMIT:
-                this.context = context;
-                break;
+        case MEMBER:
+        case NEW_MEMBER_COMMIT:
+            this.context = context;
+            break;
         }
     }
-    public FramedContentTBS(WireFormat wireFormat, FramedContent content, byte[] context) throws IOException
+
+    public FramedContentTBS(WireFormat wireFormat, FramedContent content, byte[] context)
+        throws IOException
     {
         this.wireFormat = wireFormat;
         this.content = content;
         switch (content.sender.senderType)
         {
-            case MEMBER:
-            case NEW_MEMBER_COMMIT:
-                this.context = (GroupContext) MLSInputStream.decode(context, GroupContext.class);
-                break;
-            default:
-                break;
+        case MEMBER:
+        case NEW_MEMBER_COMMIT:
+            this.context = (GroupContext)MLSInputStream.decode(context, GroupContext.class);
+            break;
+        default:
+            break;
         }
     }
+
     @SuppressWarnings("unused")
-    public FramedContentTBS(MLSInputStream stream) throws IOException
+    public FramedContentTBS(MLSInputStream stream)
+        throws IOException
     {
-        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
-        this.wireFormat = WireFormat.values()[(short) stream.read(short.class)];
-        this.content = (FramedContent) stream.read(FramedContent.class);
+        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        this.content = (FramedContent)stream.read(FramedContent.class);
         switch (content.sender.senderType)
         {
-            case MEMBER:
-            case NEW_MEMBER_COMMIT:
-                this.context = (GroupContext) stream.read(GroupContext.class);
-                break;
-            case EXTERNAL:
-            case NEW_MEMBER_PROPOSAL:
-                break;
+        case MEMBER:
+        case NEW_MEMBER_COMMIT:
+            this.context = (GroupContext)stream.read(GroupContext.class);
+            break;
+        case EXTERNAL:
+        case NEW_MEMBER_PROPOSAL:
+            break;
         }
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(version);
         stream.write(wireFormat);
         stream.write(content);
         switch (content.sender.senderType)
         {
-            case MEMBER:
-            case NEW_MEMBER_COMMIT:
-                stream.write(context);
-                break;
-            default:
-                break;
+        case MEMBER:
+        case NEW_MEMBER_COMMIT:
+            stream.write(context);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -332,22 +350,26 @@ class SenderData
         this.generation = generation;
         this.reuseGuard = reuseGuard;
     }
+
     @SuppressWarnings("unused")
-    SenderData(MLSInputStream stream) throws IOException
+    SenderData(MLSInputStream stream)
+        throws IOException
     {
-        sender = (LeafIndex) stream.read(LeafIndex.class);
-        generation = (int) stream.read(int.class);
+        sender = (LeafIndex)stream.read(LeafIndex.class);
+        generation = (int)stream.read(int.class);
         reuseGuard = Pack.intToBigEndian((int)stream.read(int.class));
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(sender);
         stream.write(generation);
         stream.write(Pack.bigEndianToInt(reuseGuard, 0));
     }
 }
+
 class SenderDataAAD
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -361,17 +383,20 @@ class SenderDataAAD
         this.epoch = epoch;
         this.contentType = contentType;
     }
+
     @SuppressWarnings("unused")
-    SenderDataAAD(MLSInputStream stream) throws IOException
+    SenderDataAAD(MLSInputStream stream)
+        throws IOException
     {
         group_id = stream.readOpaque();
-        epoch = (long) stream.read(long.class);
-        this.contentType = ContentType.values()[(byte) stream.read(byte.class)];
+        epoch = (long)stream.read(long.class);
+        this.contentType = ContentType.values()[(byte)stream.read(byte.class)];
     }
 
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(group_id);
         stream.write(epoch);
@@ -391,45 +416,48 @@ class PrivateMessageContent
     FramedContentAuthData auth;
     byte[] padding;
 
-    PrivateMessageContent(MLSInputStream stream, ContentType contentType) throws IOException
+    PrivateMessageContent(MLSInputStream stream, ContentType contentType)
+        throws IOException
     {
         switch (contentType)
         {
-            case APPLICATION:
-                application_data = stream.readOpaque();
-                break;
-            case PROPOSAL:
-                proposal = (Proposal) stream.read(Proposal.class);
-                break;
-            case COMMIT:
-                commit = (Commit) stream.read(Commit.class);
-                break;
+        case APPLICATION:
+            application_data = stream.readOpaque();
+            break;
+        case PROPOSAL:
+            proposal = (Proposal)stream.read(Proposal.class);
+            break;
+        case COMMIT:
+            commit = (Commit)stream.read(Commit.class);
+            break;
         }
-        auth = (FramedContentAuthData) stream.read(FramedContentAuthData.class);
+        auth = (FramedContentAuthData)stream.read(FramedContentAuthData.class);
         padding = stream.readOpaque();
     }
 
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         switch (contentType)
         {
 
-            case APPLICATION:
-                stream.writeOpaque(application_data);
-                break;
-            case PROPOSAL:
-                stream.write(proposal);
-                break;
-            case COMMIT:
-                stream.write(commit);
-                break;
+        case APPLICATION:
+            stream.writeOpaque(application_data);
+            break;
+        case PROPOSAL:
+            stream.write(proposal);
+            break;
+        case COMMIT:
+            stream.write(commit);
+            break;
         }
         stream.write(auth);
         stream.writeOpaque(padding);
     }
 }
+
 class PrivateContentAAD
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
@@ -445,16 +473,20 @@ class PrivateContentAAD
         this.content_type = content_type;
         this.authenticated_data = authenticated_data.clone();
     }
+
     @SuppressWarnings("unused")
-    PrivateContentAAD(MLSInputStream stream) throws IOException
+    PrivateContentAAD(MLSInputStream stream)
+        throws IOException
     {
         group_id = stream.readOpaque();
-        epoch = (long) stream.read(long.class);
-        content_type = ContentType.values()[(byte) stream.read(byte.class)];
+        epoch = (long)stream.read(long.class);
+        content_type = ContentType.values()[(byte)stream.read(byte.class)];
         authenticated_data = stream.readOpaque();
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(group_id);
         stream.write(epoch);
@@ -476,14 +508,18 @@ class EncryptedGroupSecrets
         this.new_member = new_member;
         this.encrypted_group_secrets = encrypted_group_secrets;
     }
+
     @SuppressWarnings("unused")
-    EncryptedGroupSecrets(MLSInputStream stream) throws IOException
+    EncryptedGroupSecrets(MLSInputStream stream)
+        throws IOException
     {
         new_member = stream.readOpaque();
-        encrypted_group_secrets = (HPKECiphertext) stream.read(HPKECiphertext.class);
+        encrypted_group_secrets = (HPKECiphertext)stream.read(HPKECiphertext.class);
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(new_member);
         stream.write(encrypted_group_secrets);
