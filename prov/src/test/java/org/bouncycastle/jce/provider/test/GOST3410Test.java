@@ -486,6 +486,33 @@ public class GOST3410Test
 
         checkKeyPairAlgId(kp, expectedAlgId);
 
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetB"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetC"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetD"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+        
         kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"));
 
         kp = kpGen.generateKeyPair();
