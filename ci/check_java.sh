@@ -10,7 +10,7 @@ cd /workspace/bc-java
 source ci/common.sh
 
 
-export JAVA_HOME=`openjdk_8`
+export JAVA_HOME=`openjdk_17`
 export PATH=$JAVA_HOME/bin:$PATH
 export PATH=$PATH:`gradle-bin-6`
 
