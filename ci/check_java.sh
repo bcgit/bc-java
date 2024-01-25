@@ -12,9 +12,8 @@ source ci/common.sh
 
 export JAVA_HOME=`openjdk_17`
 export PATH=$JAVA_HOME/bin:$PATH
-export PATH=$PATH:`gradle-bin-6`
 
-gradle check -x test;
+./gradlew check -x test;
 
 
 
