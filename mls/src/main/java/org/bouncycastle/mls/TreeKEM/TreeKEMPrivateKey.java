@@ -1,5 +1,12 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeSize;
 import org.bouncycastle.mls.codec.HPKECiphertext;
@@ -7,13 +14,6 @@ import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
 
@@ -63,14 +63,18 @@ public class TreeKEMPrivateKey
         priv.privateKeyCache.put(new NodeIndex(index), leafPriv);
         return priv;
     }
-    public static TreeKEMPrivateKey create(TreeKEMPublicKey pub, LeafIndex from, Secret leafSecret) throws Exception
+
+    public static TreeKEMPrivateKey create(TreeKEMPublicKey pub, LeafIndex from, Secret leafSecret)
+        throws Exception
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, from);
         priv.implant(pub, new NodeIndex(from), leafSecret);//todo check
         return priv;
     }
+
     public static TreeKEMPrivateKey joiner(TreeKEMPublicKey pub, LeafIndex index, AsymmetricCipherKeyPair leafPriv,
-                                           NodeIndex intersect, Secret pathSecret) throws Exception
+                                           NodeIndex intersect, Secret pathSecret)
+        throws Exception
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, index);
 
@@ -83,17 +87,21 @@ public class TreeKEMPrivateKey
         return priv;
     }
 
-    public void dump() throws IOException
+    public void dump()
+        throws IOException
     {
         for (NodeIndex node :
-                pathSecrets.keySet())
+            pathSecrets.keySet())
         {
             setPrivateKey(node, true);
         }
 
+        // -DM System.out.println
         System.out.println("Tree (priv)");
+        // -DM System.out.println
         System.out.println("  Index: " + (new NodeIndex(index)).value());
 
+        // -DM System.out.println
         System.out.println("  Secrets: ");
         for (NodeIndex n : pathSecrets.keySet())
         {
@@ -101,23 +109,28 @@ public class TreeKEMPrivateKey
             Secret nodeSecret = pathSecret.deriveSecret(suite, "node");
             AsymmetricCipherKeyPair sk = suite.getHPKE().deriveKeyPair(nodeSecret.value());
 
-
+            // -DM System.out.println
+            // -DM Hex.toHexString
+            // -DM Hex.toHexString
             System.out.println("    " + n.value()
-                    + " => " + Hex.toHexString(pathSecret.value(), 0, 4)
-                    + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
+                + " => " + Hex.toHexString(pathSecret.value(), 0, 4)
+                + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
         }
 
+        // -DM System.out.println
         System.out.println("  Cached key pairs: ");
-        for (NodeIndex n: privateKeyCache.keySet())
+        for (NodeIndex n : privateKeyCache.keySet())
         {
             AsymmetricCipherKeyPair sk = privateKeyCache.get(n);
+            // -DM System.out.println
+            // -DM Hex.toHexString
             System.out.println("    " + n.value() + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
         }
     }
 
     public void truncate(TreeSize size)
     {
-        NodeIndex ni = new NodeIndex(new LeafIndex((int) (size.leafCount() - 1)));
+        NodeIndex ni = new NodeIndex(new LeafIndex((int)(size.leafCount() - 1)));
         List<NodeIndex> toRemove = new ArrayList<NodeIndex>();
         for (NodeIndex n : pathSecrets.keySet())
         {
@@ -143,7 +156,8 @@ public class TreeKEMPrivateKey
         privateKeyCache.put(n, leafSk);
     }
 
-    public void decap(LeafIndex from, TreeKEMPublicKey pub, byte[] context, UpdatePath path, List<LeafIndex> except) throws Exception
+    public void decap(LeafIndex from, TreeKEMPublicKey pub, byte[] context, UpdatePath path, List<LeafIndex> except)
+        throws Exception
     {
         // find decap target
         NodeIndex ni = new NodeIndex(index);
@@ -197,16 +211,16 @@ public class TreeKEMPrivateKey
         HPKECiphertext ct = path.getNodes().get(dpi).getEncryptedPathSecret().get(resi);
 
         Secret pathSecret = new Secret(suite.decryptWithLabel(
-                suite.getHPKE().serializePrivateKey(priv.getPrivate()),
-                "UpdatePathNode",
-                context,
-                ct.getKemOutput(),
-                ct.getCiphertext())
+            suite.getHPKE().serializePrivateKey(priv.getPrivate()),
+            "UpdatePathNode",
+            context,
+            ct.getKemOutput(),
+            ct.getCiphertext())
         );
 
         implant(pub, overlapNode, pathSecret);
 
-        if(!consistent(pub))
+        if (!consistent(pub))
         {
             throw new Exception("TreeKEMPublicKey inconsistant with TreeKEMPrivateKey");
         }
@@ -217,7 +231,8 @@ public class TreeKEMPrivateKey
         return pathSecrets.containsKey(n) || privateKeyCache.containsKey(n);
     }
 
-    public final boolean consistent(TreeKEMPublicKey other) throws IOException
+    public final boolean consistent(TreeKEMPublicKey other)
+        throws IOException
     {
         if (suite.getSuiteID() != other.suite.getSuiteID())
         {
@@ -247,7 +262,8 @@ public class TreeKEMPrivateKey
         return true;
     }
 
-    protected AsymmetricCipherKeyPair setPrivateKey(NodeIndex n, boolean isConst) throws IOException
+    protected AsymmetricCipherKeyPair setPrivateKey(NodeIndex n, boolean isConst)
+        throws IOException
     {
         AsymmetricCipherKeyPair priv = getPrivateKey(n);
         if (priv != null && !isConst)
@@ -256,7 +272,9 @@ public class TreeKEMPrivateKey
         }
         return priv;
     }
-    private AsymmetricCipherKeyPair getPrivateKey(NodeIndex n) throws IOException
+
+    private AsymmetricCipherKeyPair getPrivateKey(NodeIndex n)
+        throws IOException
     {
         if (privateKeyCache.containsKey(n))
         {
@@ -271,7 +289,8 @@ public class TreeKEMPrivateKey
         return suite.getHPKE().deriveKeyPair(nodeSecret.value());
     }
 
-    private void implant(TreeKEMPublicKey pub, NodeIndex start, Secret pathSecret) throws Exception
+    private void implant(TreeKEMPublicKey pub, NodeIndex start, Secret pathSecret)
+        throws Exception
     {
         FilteredDirectPath fdp = pub.getFilteredDirectPath(start);
         Secret secret = new Secret(pathSecret.value());

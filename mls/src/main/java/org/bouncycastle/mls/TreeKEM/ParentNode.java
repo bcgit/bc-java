@@ -1,14 +1,14 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.mls.codec.MLSInputStream;
-import org.bouncycastle.mls.codec.MLSOutputStream;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSOutputStream;
+
 public class ParentNode
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     protected byte[] encryptionKey;
     byte[] parentHash;
@@ -20,8 +20,10 @@ public class ParentNode
         this.parentHash = parentHash.clone();
         this.unmerged_leaves = new ArrayList<LeafIndex>(unmerged_leaves);
     }
+
     @SuppressWarnings("unused")
-    public ParentNode(MLSInputStream stream) throws IOException
+    public ParentNode(MLSInputStream stream)
+        throws IOException
     {
         encryptionKey = stream.readOpaque();
         parentHash = stream.readOpaque();
@@ -30,7 +32,8 @@ public class ParentNode
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(encryptionKey);
         stream.writeOpaque(parentHash);

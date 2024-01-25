@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UpdatePathNode
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] encryption_key;
 
@@ -26,8 +26,10 @@ public class UpdatePathNode
         this.encryption_key = encryption_key;
         this.encrypted_path_secret = encrypted_path_secret;
     }
+
     @SuppressWarnings("unused")
-    UpdatePathNode(MLSInputStream stream) throws IOException
+    UpdatePathNode(MLSInputStream stream)
+        throws IOException
     {
         encryption_key = stream.readOpaque();
         encrypted_path_secret = new ArrayList<HPKECiphertext>();
@@ -35,7 +37,8 @@ public class UpdatePathNode
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(encryption_key);
         stream.writeList(encrypted_path_secret);

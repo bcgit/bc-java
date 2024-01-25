@@ -1,10 +1,10 @@
 package org.bouncycastle.mls.crypto;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-
-import java.io.IOException;
 
 public interface MlsSigner
 {
@@ -15,10 +15,17 @@ public interface MlsSigner
     int ed448 = 8;
 
     AsymmetricCipherKeyPair generateSignatureKeyPair();
+
     byte[] serializePublicKey(AsymmetricKeyParameter key);
+
     byte[] serializePrivateKey(AsymmetricKeyParameter key);
-    byte[] signWithLabel(byte[] priv, String label, byte[] content) throws IOException, CryptoException;
-    boolean verifyWithLabel(byte[] pub, String label, byte[] content, byte[] signature) throws IOException;
+
+    byte[] signWithLabel(byte[] priv, String label, byte[] content)
+        throws IOException, CryptoException;
+
+    boolean verifyWithLabel(byte[] pub, String label, byte[] content, byte[] signature)
+        throws IOException;
+
     AsymmetricCipherKeyPair deserializePrivateKey(byte[] priv);
 
     AsymmetricKeyParameter deserializePublicKey(byte[] pub);

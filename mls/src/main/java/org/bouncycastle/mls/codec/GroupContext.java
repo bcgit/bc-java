@@ -1,12 +1,12 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+
 public class GroupContext
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
 
     ProtocolVersion version = ProtocolVersion.mls10;
@@ -43,14 +43,16 @@ public class GroupContext
         this.confirmedTranscriptHash = confirmedTranscriptHash;
         this.extensions = new ArrayList<Extension>(extensions);
     }
+
     @SuppressWarnings("unused")
-    public GroupContext(MLSInputStream stream) throws Exception
+    public GroupContext(MLSInputStream stream)
+        throws Exception
     {
-        this.version = ProtocolVersion.values()[(short) stream.read(short.class)];
-        this.ciphersuite = (short) stream.read(short.class);
+        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        this.ciphersuite = (short)stream.read(short.class);
         this.suite = MlsCipherSuite.getSuite(ciphersuite);
         this.groupID = stream.readOpaque();
-        this.epoch = (long) stream.read(long.class);
+        this.epoch = (long)stream.read(long.class);
         this.treeHash = stream.readOpaque();
         this.confirmedTranscriptHash = stream.readOpaque();
         this.extensions = new ArrayList<Extension>();
@@ -59,7 +61,8 @@ public class GroupContext
 
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(version);
         stream.write(ciphersuite);

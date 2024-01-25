@@ -1,18 +1,18 @@
 package org.bouncycastle.mls.codec;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.KeyGeneration;
 import org.bouncycastle.mls.KeyScheduleEpoch;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class Welcome
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     short cipher_suite;
 
@@ -29,7 +29,8 @@ public class Welcome
         return suite;
     }
 
-    public Welcome(MlsCipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo) throws IOException, InvalidCipherTextException
+    public Welcome(MlsCipherSuite suite, byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks, byte[] groupInfo)
+        throws IOException, InvalidCipherTextException
     {
         this.cipher_suite = suite.getSuiteID();
         this.suite = suite;
@@ -44,22 +45,23 @@ public class Welcome
         // Pre-encrypt the GroupInfo
         KeyGeneration keyGen = getGroupInfoKeyNonce(joinerSecret, psks);
         this.encrypted_group_info = suite.getAEAD().seal(
-                keyGen.key,
-                keyGen.nonce,
-                new byte[0],
-                groupInfo
+            keyGen.key,
+            keyGen.nonce,
+            new byte[0],
+            groupInfo
         );
 
         this.secrets = new ArrayList<EncryptedGroupSecrets>();
     }
 
-    public int find(KeyPackage kp) throws IOException
+    public int find(KeyPackage kp)
+        throws IOException
     {
 
-        byte[] ref = suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference");
+        byte[] ref = suite.refHash(MLSOutputStream.encode(kp), "MLS 1.0 KeyPackage Reference");
         for (int i = 0; i < secrets.size(); i++)
         {
-            if(Arrays.equals(ref, secrets.get(i).new_member))
+            if (Arrays.equals(ref, secrets.get(i).new_member))
             {
                 return i;
             }
@@ -67,7 +69,8 @@ public class Welcome
         return -1;
     }
 
-    public void encrypt(KeyPackage kp, Secret pathSecret) throws IOException, InvalidCipherTextException
+    public void encrypt(KeyPackage kp, Secret pathSecret)
+        throws IOException, InvalidCipherTextException
     {
 
         GroupSecrets gs = new GroupSecrets(joinerSecret.value(), null, psks);
@@ -79,25 +82,27 @@ public class Welcome
         MlsCipherSuite suite = kp.suite;
         byte[][] ctAndEnc = suite.encryptWithLabel(kp.init_key, "Welcome", encrypted_group_info, gsBytes);
         secrets.add(
-                new EncryptedGroupSecrets(
-                    suite.refHash(MLSOutputStream.encode(kp),"MLS 1.0 KeyPackage Reference"),
-                    new HPKECiphertext(ctAndEnc[1], ctAndEnc[0])
-                )
+            new EncryptedGroupSecrets(
+                suite.refHash(MLSOutputStream.encode(kp), "MLS 1.0 KeyPackage Reference"),
+                new HPKECiphertext(ctAndEnc[1], ctAndEnc[0])
+            )
         );
     }
 
-    public GroupInfo decrypt(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException, InvalidCipherTextException
+    public GroupInfo decrypt(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks)
+        throws IOException, InvalidCipherTextException
     {
         KeyGeneration keyAndNonce = getGroupInfoKeyNonce(joinerSecret, psks);
         byte[] groupInfoData = suite.getAEAD().open(
-                keyAndNonce.key,
-                keyAndNonce.nonce,
-                new byte[0],
-                encrypted_group_info);
-        return (GroupInfo) MLSInputStream.decode(groupInfoData, GroupInfo.class);
+            keyAndNonce.key,
+            keyAndNonce.nonce,
+            new byte[0],
+            encrypted_group_info);
+        return (GroupInfo)MLSInputStream.decode(groupInfoData, GroupInfo.class);
     }
 
-    private KeyGeneration getGroupInfoKeyNonce(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks) throws IOException
+    private KeyGeneration getGroupInfoKeyNonce(byte[] joinerSecret, List<KeyScheduleEpoch.PSKWithSecret> psks)
+        throws IOException
     {
         Secret welcomeSecret = KeyScheduleEpoch.welcomeSecret(suite, joinerSecret, psks);
         Secret key = welcomeSecret.expandWithLabel(suite, "key", new byte[0], suite.getAEAD().getKeySize());
@@ -105,17 +110,19 @@ public class Welcome
         return new KeyGeneration(-1, key, nonce);
     }
 
-    public GroupSecrets decryptSecrets(int kpIndex, byte[] initPrivKey) throws InvalidCipherTextException, IOException
+    public GroupSecrets decryptSecrets(int kpIndex, byte[] initPrivKey)
+        throws InvalidCipherTextException, IOException
     {
         HPKECiphertext ct = secrets.get(kpIndex).encrypted_group_secrets;
         byte[] secretsData = suite.decryptWithLabel(initPrivKey, "Welcome", encrypted_group_info, ct.kem_output, ct.ciphertext);
-        return (GroupSecrets) MLSInputStream.decode(secretsData, GroupSecrets.class);
+        return (GroupSecrets)MLSInputStream.decode(secretsData, GroupSecrets.class);
     }
 
     @SuppressWarnings("unused")
-    Welcome(MLSInputStream stream) throws Exception
+    Welcome(MLSInputStream stream)
+        throws Exception
     {
-        cipher_suite = (short) stream.read(short.class);
+        cipher_suite = (short)stream.read(short.class);
         suite = MlsCipherSuite.getSuite(cipher_suite);
         secrets = new ArrayList<EncryptedGroupSecrets>();
         stream.readList(secrets, EncryptedGroupSecrets.class);
@@ -123,7 +130,8 @@ public class Welcome
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(cipher_suite);
         stream.writeList(secrets);
