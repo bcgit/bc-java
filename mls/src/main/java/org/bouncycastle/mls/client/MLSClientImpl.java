@@ -124,27 +124,18 @@ public class MLSClientImpl
 
     private static <T> void catchWrap(Function f, StreamObserver<T> observer)
     {
-//        System.out.println("Executing function: " + getCallerMethodName());
         try
         {
             f.run();
         }
         catch (Exception e)
         {
-//            System.out.println(e.getMessage());
-//            for (StackTraceElement elm : e.getStackTrace())
-//            {
-//                System.out.println(elm);
-//            }
-//            System.exit(0);
             observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
         }
     }
 
     private <T> void stateWrap(FunctionWithState f, MessageOrBuilder request, StreamObserver<T> observer)
     {
-//        System.out.println("Executing function: " + getCallerMethodName());
-
         int stateID = (int)request.getField(request.getDescriptorForType().findFieldByName("state_id"));
         CachedGroup group = loadGroup(stateID);
         if (group == null)
@@ -157,11 +148,6 @@ public class MLSClientImpl
         }
         catch (Exception e)
         {
-//            System.out.println(e.getMessage());
-//            for (StackTraceElement elm : e.getStackTrace())
-//            {
-//                System.out.println(elm);
-//            }
             observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
         }
     }
@@ -281,8 +267,6 @@ public class MLSClientImpl
             suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
         return new KeyPackageWithSecrets(initKeyPair, encryptionKeyPair, sigKeyPair, kp);
-        //TODO: cache transactions?
-        // return key package as byte string/array?
     }
 
     private LeafIndex findMember(TreeKEMPublicKey tree, byte[] id)
@@ -661,7 +645,6 @@ public class MLSClientImpl
             }
             if (ratchetTree != null)
             {
-                //TODO: check if it should be a deep copy
                 outTree = TreeKEMPublicKey.clone(ratchetTree);
             }
             else if (outTree == null)
@@ -1219,7 +1202,6 @@ public class MLSClientImpl
         gwm.message.wireFormat = WireFormat.mls_welcome;
         byte[] welcomeBytes = MLSOutputStream.encode(gwm.message);
 
-        //TODO: check if entry.group should/shouldn't be replaced by commit()
         int nextID = storeGroup(gwm.group, entry.encryptHandshake);
 
         entry.pendingCommit = commitBytes;

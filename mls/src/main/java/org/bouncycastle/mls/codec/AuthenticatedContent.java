@@ -44,28 +44,26 @@ public class AuthenticatedContent
         return MLSOutputStream.encode(new InterimTranscriptHashInput(auth.confirmation_tag));
     }
 
-    public AuthenticatedContent(WireFormat wireFormat, FramedContent content, FramedContentAuthData auth)
+    public AuthenticatedContent(WireFormat wireFormat, FramedContent content, FramedContentAuthData auth) throws Exception
     {
         this.wireFormat = wireFormat;
         this.content = content;
         this.auth = auth;
 
-        //TODO move elsewhere?
         if (auth.contentType == ContentType.COMMIT && auth.confirmation_tag == null)
         {
-            //TODO
-//            throw new MissingConfirmationTag()
+            throw new Exception("missing confirmation tag");
         }
 
         if (auth.contentType == ContentType.APPLICATION)
         {
             if (wireFormat != WireFormat.mls_private_message)
             {
-//                throw new UnencryptedApplicationMessage()
+                throw new Exception("Unencrypted application message");
             }
             else if (content.sender.senderType != SenderType.MEMBER)
             {
-//                throw new Exception("sender must be a member")
+                throw new Exception("sender must be a member");
             }
         }
     }

@@ -8,7 +8,7 @@ public class ProposalOrRef
     ProposalOrRefType type;
     Proposal proposal;
 
-    byte[] reference; // TODO ProposalRef
+    byte[] reference;
 
     public ProposalOrRefType getType()
     {

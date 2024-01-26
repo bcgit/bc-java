@@ -19,6 +19,7 @@ import org.bouncycastle.mls.codec.UpdatePathNode;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.Group;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
@@ -139,80 +140,68 @@ public class TreeKEMPublicKey
         this.suite = suite;
     }
 
-    public void dumpHashes()
+    public String dumpHashes()
     {
+        StringBuilder sb = new StringBuilder();
         for (NodeIndex n : hashes.keySet())
         {
-            // -DM System.out.println
-            System.out.print(n.value() + " : ");
-            // -DM System.out.println
+            sb.append(n.value()).append(" : ");
             // -DM Hex.toHexString
-            System.out.println(Hex.toHexString(hashes.get(n)));
+            sb.append(Hex.toHexString(hashes.get(n))).append(Strings.lineSeparator());
         }
+        return sb.toString();
     }
 
-    public void dump()
+    public String dump()
     {
-        // -DM System.out.println
-        System.out.println("Tree:");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tree:").append(Strings.lineSeparator());
         for (int i = 0; i < size.width(); i++)
         {
             NodeIndex index = new NodeIndex(i);
-            // -DM System.out.println
-            System.out.printf("  %03d : ", i);
+            sb.append(String.format("  %03d : ", i));
             if (!nodeAt(index).isBlank())
             {
                 byte[] pkRm = nodeAt(index).node.getPublicKey();
-                // -DM System.out.println
                 // -DM Hex.toHexString
-                System.out.print(Hex.toHexString(pkRm, 0, 4));
+                sb.append(Hex.toHexString(pkRm, 0, 4));
             }
             else
             {
-                // -DM System.out.println
-                System.out.print("        ");
+                sb.append("        ");
             }
 
-            // -DM System.out.println
-            System.out.print("  | ");
+            sb.append("  | ");
             for (int j = 0; j < index.level(); j++)
             {
-                // -DM System.out.println
-                System.out.print("  ");
+                sb.append("  ");
             }
 
             if (!nodeAt(index).isBlank())
             {
-                // -DM System.out.println
-                System.out.print("X");
+                sb.append("X");
 
                 if (!index.isLeaf())
                 {
                     ParentNode parent = nodeAt(index).getParentNode();
-                    // -DM System.out.println
-                    System.out.print(" [");
+                    sb.append(" [");
                     for (LeafIndex u : parent.unmerged_leaves)
                     {
-                        // -DM System.out.println
-                        System.out.print(u.value + ", ");
+                        sb.append(u.value).append( ", ");
                     }
-                    // -DM System.out.println
-                    System.out.print("]");
+                    sb.append("]");
                 }
             }
             else
             {
-                // -DM System.out.println
-                System.out.print("_");
+                sb.append("_");
             }
-            // -DM System.out.println
-            System.out.println();
+            sb.append(Strings.lineSeparator());
         }
-        // -DM System.out.println
-        System.out.println("nodeCount: " + nodes.size());
+        sb.append("nodeCount: ").append(nodes.size()).append(Strings.lineSeparator());
+        return sb.toString();
     }
 
-    //TODO: include leaf node options
     public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv, Group.LeafNodeOptions options)
         throws Exception
     {
@@ -608,7 +597,6 @@ public class TreeKEMPublicKey
         // Remove the right subtree until the tree is of minimal size
         while (size.leafCount() / 2 > index.value)
         {
-            //TODO: better way of clearing from index to end
             nodes.subList(nodes.size() / 2, nodes.size()).clear();
             size = TreeSize.forLeaves(size.leafCount() / 2);
         }
@@ -744,7 +732,6 @@ public class TreeKEMPublicKey
         throws IOException
     {
         List<LeafIndex> except = new ArrayList<LeafIndex>();
-        //TODO: check adding sequence
         for (LeafIndex i : parentExcept)
         {
             NodeIndex n = new NodeIndex(i);
@@ -796,22 +783,8 @@ public class TreeKEMPublicKey
             {
                 parentHashInput.parentNode = nodeAt(index).getParentNode();
 
-                //TODO: check which one runs faster (assuming the latter)
                 List<LeafIndex> unmergedOriginal = new ArrayList<LeafIndex>(parentHashInput.parentNode.unmerged_leaves);
                 parentHashInput.parentNode.unmerged_leaves.removeAll(except);
-//                int end = parentHashInput.parentNode.unmerged_leaves.size();
-//                for (LeafIndex leaf: parentHashInput.parentNode.unmerged_leaves)
-//                {
-//                    if (except.contains(leaf))
-//                    {
-//                        end--;
-//                    }
-//                    else
-//                    {
-//                        break;
-//                    }
-//                }
-//                parentHashInput.parentNode.unmerged_leaves = parentHashInput.parentNode.unmerged_leaves.subList(0, end);
 
                 hash = suite.hash(MLSOutputStream.encode(TreeHashInput.forParentNode(parentHashInput)));
 
