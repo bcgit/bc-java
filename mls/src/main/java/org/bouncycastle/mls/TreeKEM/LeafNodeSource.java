@@ -1,17 +1,17 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 
-import java.io.IOException;
-
 public enum LeafNodeSource
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    RESERVED((byte) 0),
-    KEY_PACKAGE((byte) 1),
-    UPDATE((byte) 2),
-    COMMIT((byte) 3);
+    RESERVED((byte)0),
+    KEY_PACKAGE((byte)1),
+    UPDATE((byte)2),
+    COMMIT((byte)3);
 
     final byte value;
 
@@ -21,7 +21,8 @@ public enum LeafNodeSource
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(value);
     }

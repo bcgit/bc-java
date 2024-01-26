@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GroupSecrets
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
 
     public byte[] joiner_secret;
@@ -18,17 +18,20 @@ public class GroupSecrets
         this.path_secret = path_secret;
         this.psks = new ArrayList<PreSharedKeyID>(psks);
     }
+
     @SuppressWarnings("unused")
-    GroupSecrets(MLSInputStream stream) throws IOException
+    GroupSecrets(MLSInputStream stream)
+        throws IOException
     {
         joiner_secret = stream.readOpaque();
-        path_secret = (PathSecret) stream.readOptional(PathSecret.class);
+        path_secret = (PathSecret)stream.readOptional(PathSecret.class);
         psks = new ArrayList<PreSharedKeyID>();
         stream.readList(psks, PreSharedKeyID.class);
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(joiner_secret);
         stream.writeOptional(path_secret);

@@ -1,17 +1,5 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.mls.TreeSize;
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-import org.bouncycastle.mls.protocol.Group;
-import org.bouncycastle.mls.codec.HPKECiphertext;
-import org.bouncycastle.mls.codec.MLSInputStream;
-import org.bouncycastle.mls.codec.MLSOutputStream;
-import org.bouncycastle.mls.codec.UpdatePath;
-import org.bouncycastle.mls.codec.UpdatePathNode;
-import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -20,6 +8,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.mls.TreeSize;
+import org.bouncycastle.mls.codec.HPKECiphertext;
+import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSOutputStream;
+import org.bouncycastle.mls.codec.UpdatePath;
+import org.bouncycastle.mls.codec.UpdatePathNode;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.mls.protocol.Group;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
 
@@ -31,8 +31,8 @@ class FilteredDirectPath
     public FilteredDirectPath clone()
     {
         FilteredDirectPath fdp = new FilteredDirectPath();
-        fdp.parents = (ArrayList<NodeIndex>) parents.clone();
-        fdp.resolutions = (ArrayList<ArrayList<NodeIndex>>) resolutions.clone();
+        fdp.parents = (ArrayList<NodeIndex>)parents.clone();
+        fdp.resolutions = (ArrayList<ArrayList<NodeIndex>>)resolutions.clone();
         return fdp;
     }
 
@@ -41,6 +41,7 @@ class FilteredDirectPath
         this.parents = new ArrayList<NodeIndex>();
         this.resolutions = new ArrayList<ArrayList<NodeIndex>>();
     }
+
     public void reverse()
     {
         Collections.reverse(parents);
@@ -50,7 +51,7 @@ class FilteredDirectPath
 }
 
 public class TreeKEMPublicKey
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     MlsCipherSuite suite;
     TreeSize size;
@@ -69,14 +70,17 @@ public class TreeKEMPublicKey
         return size;
     }
 
-    public static TreeKEMPublicKey clone(TreeKEMPublicKey other) throws IOException
+    public static TreeKEMPublicKey clone(TreeKEMPublicKey other)
+        throws IOException
     {
-        TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(MLSOutputStream.encode(other), TreeKEMPublicKey.class);
+        TreeKEMPublicKey tree = (TreeKEMPublicKey)MLSInputStream.decode(MLSOutputStream.encode(other), TreeKEMPublicKey.class);
         tree.setSuite(other.suite);
         tree.setHashAll();
         return tree;
     }
-    public TreeKEMPublicKey(MlsCipherSuite suite) throws IOException
+
+    public TreeKEMPublicKey(MlsCipherSuite suite)
+        throws IOException
     {
         this.suite = suite;
         hashes = new HashMap<NodeIndex, byte[]>();
@@ -85,7 +89,7 @@ public class TreeKEMPublicKey
         exceptCache = new HashMap<NodeIndex, Integer>();
 
         size = TreeSize.forLeaves(0);
-        while(size.width() < nodes.size())
+        while (size.width() < nodes.size())
         {
             size = TreeSize.forLeaves(size.leafCount() * 2);
         }
@@ -95,8 +99,10 @@ public class TreeKEMPublicKey
             nodes.add(OptionalNode.blankNode());
         }
     }
+
     @SuppressWarnings("unused")
-    public TreeKEMPublicKey(MLSInputStream stream) throws IOException
+    public TreeKEMPublicKey(MLSInputStream stream)
+        throws IOException
     {
         hashes = new HashMap<NodeIndex, byte[]>();
         nodes = new ArrayList<OptionalNode>();
@@ -105,7 +111,7 @@ public class TreeKEMPublicKey
         stream.readList(nodes, OptionalNode.class);
 
         size = TreeSize.forLeaves(1);
-        while(size.width() < nodes.size())
+        while (size.width() < nodes.size())
         {
             size = TreeSize.forLeaves(size.leafCount() * 2);
         }
@@ -115,8 +121,10 @@ public class TreeKEMPublicKey
             nodes.add(OptionalNode.blankNode());
         }
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         LeafIndex cut = new LeafIndex((int)size.leafCount() - 1);
         while (cut.value > 0 && nodeAt(cut).isBlank())
@@ -135,59 +143,78 @@ public class TreeKEMPublicKey
     {
         for (NodeIndex n : hashes.keySet())
         {
+            // -DM System.out.println
             System.out.print(n.value() + " : ");
+            // -DM System.out.println
+            // -DM Hex.toHexString
             System.out.println(Hex.toHexString(hashes.get(n)));
         }
     }
+
     public void dump()
     {
+        // -DM System.out.println
         System.out.println("Tree:");
         for (int i = 0; i < size.width(); i++)
         {
             NodeIndex index = new NodeIndex(i);
+            // -DM System.out.println
             System.out.printf("  %03d : ", i);
             if (!nodeAt(index).isBlank())
             {
                 byte[] pkRm = nodeAt(index).node.getPublicKey();
+                // -DM System.out.println
+                // -DM Hex.toHexString
                 System.out.print(Hex.toHexString(pkRm, 0, 4));
             }
             else
             {
+                // -DM System.out.println
                 System.out.print("        ");
             }
 
+            // -DM System.out.println
             System.out.print("  | ");
             for (int j = 0; j < index.level(); j++)
             {
+                // -DM System.out.println
                 System.out.print("  ");
             }
 
             if (!nodeAt(index).isBlank())
             {
+                // -DM System.out.println
                 System.out.print("X");
 
                 if (!index.isLeaf())
                 {
                     ParentNode parent = nodeAt(index).getParentNode();
+                    // -DM System.out.println
                     System.out.print(" [");
                     for (LeafIndex u : parent.unmerged_leaves)
                     {
+                        // -DM System.out.println
                         System.out.print(u.value + ", ");
                     }
+                    // -DM System.out.println
                     System.out.print("]");
                 }
             }
             else
             {
+                // -DM System.out.println
                 System.out.print("_");
             }
+            // -DM System.out.println
             System.out.println();
         }
+        // -DM System.out.println
         System.out.println("nodeCount: " + nodes.size());
     }
 
     //TODO: include leaf node options
-    public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv, Group.LeafNodeOptions options) throws Exception
+    public TreeKEMPrivateKey update(LeafIndex from, Secret leafSecret, byte[] groupId, byte[] sigPriv, Group.LeafNodeOptions options)
+        throws Exception
     {
         // Grab information about the sender
         OptionalNode leafNode = nodeAt(from);
@@ -203,7 +230,7 @@ public class TreeKEMPublicKey
         // Encrypt path secrets to the copath, forming a stub UpdatePath with no
         // encryptions
         ArrayList<UpdatePathNode> pathNodes = new ArrayList<UpdatePathNode>();
-        for (NodeIndex n: dp.parents)
+        for (NodeIndex n : dp.parents)
         {
             Secret pathSecret = priv.pathSecrets.get(n);
             AsymmetricCipherKeyPair nodePriv = priv.setPrivateKey(n, false);
@@ -228,21 +255,22 @@ public class TreeKEMPublicKey
         return priv;
     }
 
-    public UpdatePath encap(TreeKEMPrivateKey priv, byte[] context, List<LeafIndex> except) throws Exception
+    public UpdatePath encap(TreeKEMPrivateKey priv, byte[] context, List<LeafIndex> except)
+        throws Exception
     {
         FilteredDirectPath dp = getFilteredDirectPath(new NodeIndex(priv.index));
         List<UpdatePathNode> pathNodes = new ArrayList<UpdatePathNode>();
         for (int i = 0; i < dp.parents.size(); i++)
         {
             NodeIndex n = dp.parents.get(i);
-            List<NodeIndex> res = (List<NodeIndex>) dp.resolutions.get(i).clone();
+            List<NodeIndex> res = (List<NodeIndex>)dp.resolutions.get(i).clone();
             removeLeaves(res, except);
 
             Secret pathSecret = priv.pathSecrets.get(n);
             AsymmetricCipherKeyPair nodePriv = priv.setPrivateKey(n, false);
 
             List<HPKECiphertext> cts = new ArrayList<HPKECiphertext>();
-            for (NodeIndex nr: res)
+            for (NodeIndex nr : res)
             {
                 byte[] nodePub = nodeAt(nr).node.getPublicKey();
                 byte[][] ctAndEnc = suite.encryptWithLabel(nodePub, "UpdatePathNode", context, pathSecret.value());
@@ -255,7 +283,8 @@ public class TreeKEMPublicKey
         return new UpdatePath(newLeaf, pathNodes);
     }
 
-    public byte[] getRootHash() throws Exception
+    public byte[] getRootHash()
+        throws Exception
     {
         NodeIndex r = NodeIndex.root(size);
         if (!hashes.containsKey(r))
@@ -266,7 +295,8 @@ public class TreeKEMPublicKey
         return hashes.get(r);
     }
 
-    public void merge(LeafIndex from, UpdatePath path) throws Exception
+    public void merge(LeafIndex from, UpdatePath path)
+        throws Exception
     {
         nodeAt(from).node = new Node(path.getLeafNode());
 
@@ -314,7 +344,8 @@ public class TreeKEMPublicKey
         return !nodeAt(index).isBlank();
     }
 
-    protected FilteredDirectPath getFilteredCommonDirectPath(LeafIndex leaf1, LeafIndex leaf2) throws Exception
+    protected FilteredDirectPath getFilteredCommonDirectPath(LeafIndex leaf1, LeafIndex leaf2)
+        throws Exception
     {
         FilteredDirectPath xPath = getFilteredDirectPath(new NodeIndex(leaf1));
         FilteredDirectPath yPath = getFilteredDirectPath(new NodeIndex(leaf2));
@@ -338,7 +369,8 @@ public class TreeKEMPublicKey
         return commonPath;
     }
 
-    protected FilteredDirectPath getFilteredDirectPath(NodeIndex index) throws Exception
+    protected FilteredDirectPath getFilteredDirectPath(NodeIndex index)
+        throws Exception
     {
         FilteredDirectPath fdp = new FilteredDirectPath();
         List<NodeIndex> cp = index.copath(size);
@@ -362,7 +394,7 @@ public class TreeKEMPublicKey
     public LeafNode getLeafNode(LeafIndex index)
     {
         OptionalNode node = nodeAt(index);
-        if(!node.isLeaf())
+        if (!node.isLeaf())
         {
             return null;
         }
@@ -377,7 +409,7 @@ public class TreeKEMPublicKey
         {
             ArrayList<NodeIndex> out = new ArrayList<NodeIndex>();
             out.add(index);
-            if(index.isLeaf())
+            if (index.isLeaf())
             {
                 return out;
             }
@@ -392,7 +424,7 @@ public class TreeKEMPublicKey
             return out;
         }
 
-        if(atLeaf)
+        if (atLeaf)
         {
             return new ArrayList<NodeIndex>();
         }
@@ -426,6 +458,7 @@ public class TreeKEMPublicKey
         }
         return index;
     }
+
     public LeafIndex addLeaf(LeafNode leaf)
     {
         LeafIndex index = new LeafIndex(0);
@@ -519,7 +552,7 @@ public class TreeKEMPublicKey
         NodeIndex ni = new NodeIndex(index);
         nodeAt(ni).node = null;
         for (NodeIndex n :
-                index.directPath(size))
+            index.directPath(size))
         {
             nodeAt(n).node = null;
         }
@@ -543,7 +576,7 @@ public class TreeKEMPublicKey
         {
             return OptionalNode.blankNode();
         }
-        return nodes.get((int) n.value());
+        return nodes.get((int)n.value());
     }
 
     public void truncate()
@@ -558,7 +591,7 @@ public class TreeKEMPublicKey
         LeafIndex index = new LeafIndex((int)size.leafCount() - 1);
         while (index.value > 0)
         {
-            if(!nodeAt(index).isBlank())
+            if (!nodeAt(index).isBlank())
             {
                 break;
             }
@@ -566,7 +599,7 @@ public class TreeKEMPublicKey
             index.value--;
         }
 
-        if(nodeAt(index).isBlank())
+        if (nodeAt(index).isBlank())
         {
             nodes.clear();
             return;
@@ -580,20 +613,23 @@ public class TreeKEMPublicKey
             size = TreeSize.forLeaves(size.leafCount() / 2);
         }
     }
-    public void setHashAll() throws IOException
+
+    public void setHashAll()
+        throws IOException
     {
         NodeIndex r = NodeIndex.root(size);
         getHash(r);
     }
 
-    private byte[][] parentHashes(LeafIndex from, FilteredDirectPath fdp, List<UpdatePathNode> nodes) throws Exception
+    private byte[][] parentHashes(LeafIndex from, FilteredDirectPath fdp, List<UpdatePathNode> nodes)
+        throws Exception
     {
         NodeIndex fromNode = new NodeIndex(from);
         FilteredDirectPath dp = fdp.clone();
 
         // removing root from fdp
-        dp.parents.remove(dp.parents.size()-1);
-        dp.resolutions.remove(dp.resolutions.size()-1);
+        dp.parents.remove(dp.parents.size() - 1);
+        dp.resolutions.remove(dp.resolutions.size() - 1);
 
         // special case of one-leaf tree
         if (!fromNode.equals(NodeIndex.root(size)))
@@ -626,7 +662,9 @@ public class TreeKEMPublicKey
 
         return ph;
     }
-    private byte[] getParentHash(ParentNode parent, NodeIndex cpChild) throws Exception
+
+    private byte[] getParentHash(ParentNode parent, NodeIndex cpChild)
+        throws Exception
     {
         if (!hashes.containsKey(cpChild))
         {
@@ -634,14 +672,16 @@ public class TreeKEMPublicKey
         }
 
         ParentHashInput hashInput = new ParentHashInput(
-                parent.encryptionKey,
-                parent.parentHash,
-                hashes.get(cpChild)
+            parent.encryptionKey,
+            parent.parentHash,
+            hashes.get(cpChild)
         );
 
         return suite.hash(MLSOutputStream.encode(hashInput));
     }
-    public boolean verifyParentHash(LeafIndex from, UpdatePath path) throws Exception
+
+    public boolean verifyParentHash(LeafIndex from, UpdatePath path)
+        throws Exception
     {
         FilteredDirectPath fdp = getFilteredDirectPath(new NodeIndex(from));
         byte[][] hashChain = parentHashes(from, fdp, path.getNodes());
@@ -651,15 +691,17 @@ public class TreeKEMPublicKey
         }
         return Arrays.equals(path.getLeafNode().parent_hash, hashChain[0]);
     }
-    public boolean verifyParentHash() throws IOException
+
+    public boolean verifyParentHash()
+        throws IOException
     {
         long width = size.width();
         long height = NodeIndex.root(size).level();
 
-        for (int level = 1; level <= height ; level++)
+        for (int level = 1; level <= height; level++)
         {
             long stride = 2L << level;
-            int start = (int) ((stride >>> 1)-1);
+            int start = (int)((stride >>> 1) - 1);
 
             for (int p = start; p < width; p += stride)
             {
@@ -688,7 +730,7 @@ public class TreeKEMPublicKey
     private boolean hasParentHash(NodeIndex child, byte[] targetParentHash)
     {
         ArrayList<NodeIndex> res = resolve(child);
-        for (NodeIndex n: res)
+        for (NodeIndex n : res)
         {
             if (Arrays.equals(nodeAt(n).node.getParentHash(), targetParentHash))
             {
@@ -698,11 +740,12 @@ public class TreeKEMPublicKey
         return false;
     }
 
-    private byte[] originalTreeHash(NodeIndex index, List<LeafIndex> parentExcept) throws IOException
+    private byte[] originalTreeHash(NodeIndex index, List<LeafIndex> parentExcept)
+        throws IOException
     {
         List<LeafIndex> except = new ArrayList<LeafIndex>();
         //TODO: check adding sequence
-        for (LeafIndex i: parentExcept)
+        for (LeafIndex i : parentExcept)
         {
             NodeIndex n = new NodeIndex(i);
             if (n.isBelow(index))
@@ -710,7 +753,7 @@ public class TreeKEMPublicKey
                 except.add(i);
             }
         }
-        boolean haveLocalChanges = ! except.isEmpty();
+        boolean haveLocalChanges = !except.isEmpty();
 
         // If there are no local changes, then we can use the cached tree hash
         if (!haveLocalChanges)
@@ -744,9 +787,9 @@ public class TreeKEMPublicKey
             // specified `except` list, removing the `except` list from
             // `unmerged_leaves`.
             ParentNodeHashInput parentHashInput = new ParentNodeHashInput(
-                    null,
-                    originalTreeHash(index.left(), except),
-                    originalTreeHash(index.right(), except)
+                null,
+                originalTreeHash(index.left(), except),
+                originalTreeHash(index.right(), except)
             );
 
             if (!nodeAt(index).isBlank())
@@ -781,25 +824,27 @@ public class TreeKEMPublicKey
             }
 
 
-
         }
 
         treeHashCache.put(index, hash);
         exceptCache.put(index, except.size());
         return hash;
     }
-    private byte[] originalParentHash(NodeIndex parent, NodeIndex sibling) throws IOException
+
+    private byte[] originalParentHash(NodeIndex parent, NodeIndex sibling)
+        throws IOException
     {
         ParentNode parentNode = nodeAt(parent).getParentNode();
-        byte[] siblingHash =  originalTreeHash(sibling, parentNode.unmerged_leaves);
+        byte[] siblingHash = originalTreeHash(sibling, parentNode.unmerged_leaves);
         return suite.hash(MLSOutputStream.encode(new ParentHashInput(
-                parentNode.encryptionKey,
-                parentNode.parentHash,
-                siblingHash
+            parentNode.encryptionKey,
+            parentNode.parentHash,
+            siblingHash
         )));
     }
 
-    public byte[] getHash(NodeIndex index) throws IOException
+    public byte[] getHash(NodeIndex index)
+        throws IOException
     {
         if (hashes.containsKey(index))
         {
@@ -820,11 +865,11 @@ public class TreeKEMPublicKey
         else
         {
             ParentNodeHashInput input = new ParentNodeHashInput(
-                    null,
-                    getHash(index.left()),
-                    getHash(index.right())
+                null,
+                getHash(index.left()),
+                getHash(index.right())
             );
-            if(!node.isBlank())
+            if (!node.isBlank())
             {
                 input.parentNode = node.getParentNode();
             }

@@ -1,13 +1,13 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.NodeType;
 
-import java.io.IOException;
-
 public class Node
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     NodeType nodeType;
     LeafNode leafNode;
@@ -17,21 +17,22 @@ public class Node
     {
         switch (nodeType)
         {
-            case leaf:
-                return leafNode.parent_hash;
-            case parent:
-                return parentNode.parentHash;
+        case leaf:
+            return leafNode.parent_hash;
+        case parent:
+            return parentNode.parentHash;
         }
         return null;
     }
+
     public byte[] getPublicKey()
     {
         switch (nodeType)
         {
-            case leaf:
-                return leafNode.encryption_key;
-            case parent:
-                return parentNode.encryptionKey;
+        case leaf:
+            return leafNode.encryption_key;
+        case parent:
+            return parentNode.encryptionKey;
         }
         return null;
     }
@@ -41,6 +42,7 @@ public class Node
         nodeType = NodeType.leaf;
         this.leafNode = leafNode;
     }
+
     public Node(ParentNode parentNode)
     {
         nodeType = NodeType.parent;
@@ -48,32 +50,34 @@ public class Node
     }
 
     @SuppressWarnings("unused")
-    public Node(MLSInputStream stream) throws IOException
+    public Node(MLSInputStream stream)
+        throws IOException
     {
-        this.nodeType = NodeType.values()[(byte) stream.read(byte.class)];
+        this.nodeType = NodeType.values()[(byte)stream.read(byte.class)];
         switch (nodeType)
         {
-            case leaf:
-                leafNode = (LeafNode) stream.read(LeafNode.class);
-                break;
-            case parent:
-                parentNode = (ParentNode) stream.read(ParentNode.class);
-                break;
+        case leaf:
+            leafNode = (LeafNode)stream.read(LeafNode.class);
+            break;
+        case parent:
+            parentNode = (ParentNode)stream.read(ParentNode.class);
+            break;
         }
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(nodeType);
         switch (nodeType)
         {
-            case leaf:
-                stream.write(leafNode);
-                break;
-            case parent:
-                stream.write(parentNode);
-                break;
+        case leaf:
+            stream.write(leafNode);
+            break;
+        case parent:
+            stream.write(parentNode);
+            break;
         }
     }
 }

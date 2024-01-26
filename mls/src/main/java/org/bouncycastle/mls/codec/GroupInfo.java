@@ -1,18 +1,18 @@
 package org.bouncycastle.mls.codec;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.TreeKEM.LeafNode;
 import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class GroupInfo
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     GroupContext groupContext;
     List<Extension> extensions;
@@ -44,14 +44,17 @@ public class GroupInfo
     {
         return groupContext.groupID;
     }
+
     public long getEpoch()
     {
         return groupContext.epoch;
     }
+
     public MlsCipherSuite getSuite()
     {
         return groupContext.suite;
     }
+
     public GroupInfo(GroupContext groupContext, List<Extension> extensions, byte[] confirmationTag)
     {
         this.groupContext = groupContext;
@@ -59,7 +62,8 @@ public class GroupInfo
         this.confirmationTag = confirmationTag;
     }
 
-    private byte[] toBeSigned() throws IOException
+    private byte[] toBeSigned()
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.write(groupContext);
@@ -69,7 +73,8 @@ public class GroupInfo
         return stream.toByteArray();
     }
 
-    public boolean verify(MlsCipherSuite suite, TreeKEMPublicKey tree) throws Exception
+    public boolean verify(MlsCipherSuite suite, TreeKEMPublicKey tree)
+        throws Exception
     {
         LeafNode leaf = tree.getLeafNode(signer);
         if (leaf == null)
@@ -78,23 +83,28 @@ public class GroupInfo
         }
         return verify(suite, leaf.getSignatureKey());
     }
-    public boolean verify(MlsCipherSuite suite, byte[] pub) throws IOException
+
+    public boolean verify(MlsCipherSuite suite, byte[] pub)
+        throws IOException
     {
         return suite.verifyWithLabel(pub, "GroupInfoTBS", toBeSigned(), signature);
     }
+
     @SuppressWarnings("unused")
-    GroupInfo(MLSInputStream stream) throws IOException
+    GroupInfo(MLSInputStream stream)
+        throws IOException
     {
-        groupContext = (GroupContext) stream.read(GroupContext.class);
+        groupContext = (GroupContext)stream.read(GroupContext.class);
         extensions = new ArrayList<Extension>();
         stream.readList(extensions, Extension.class);
         confirmationTag = stream.readOpaque();
-        signer = new LeafIndex((int) stream.read(int.class));
+        signer = new LeafIndex((int)stream.read(int.class));
         signature = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(groupContext);
         stream.writeList(extensions);
@@ -103,7 +113,8 @@ public class GroupInfo
         stream.writeOpaque(signature);
     }
 
-    public void sign(TreeKEMPublicKey tree, LeafIndex signerIndex, AsymmetricCipherKeyPair sk) throws Exception
+    public void sign(TreeKEMPublicKey tree, LeafIndex signerIndex, AsymmetricCipherKeyPair sk)
+        throws Exception
     {
         LeafNode leaf = tree.getLeafNode(signerIndex);
         if (leaf == null)

@@ -1,12 +1,12 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 
-import java.io.IOException;
-
 public class ParentNodeHashInput
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     ParentNode parentNode;
     byte[] leftHash;
@@ -20,15 +20,17 @@ public class ParentNodeHashInput
     }
 
     @SuppressWarnings("unused")
-    public ParentNodeHashInput(MLSInputStream stream) throws IOException
+    public ParentNodeHashInput(MLSInputStream stream)
+        throws IOException
     {
-        parentNode = (ParentNode) stream.readOptional(ParentNode.class);
+        parentNode = (ParentNode)stream.readOptional(ParentNode.class);
         leftHash = stream.readOpaque();
         rightHash = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOptional(parentNode);
         stream.writeOpaque(leftHash);

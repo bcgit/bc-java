@@ -51,9 +51,14 @@ def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
 def protocVersion = '3.22.3'
 
 
+checkstyleMain {
+    source = fileTree('src/main/java')
+}
+
 compileJava {
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgs = [ "-Xep:IgnoredPureGetter:OFF"]
+    options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/build/generated/.*")
 }
 
 protobuf {

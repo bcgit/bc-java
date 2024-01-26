@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Commit
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     List<ProposalOrRef> proposals;
     UpdatePath updatePath;
@@ -34,7 +34,7 @@ public class Commit
 
         // The Commit MUST NOT include any proposals by reference, since an external
         // joiner cannot determine the validity of proposals sent within the group
-        for (ProposalOrRef p: proposals)
+        for (ProposalOrRef p : proposals)
         {
             if (p.type == ProposalOrRefType.REFERENCE)
             {
@@ -68,16 +68,18 @@ public class Commit
     }
 
     @SuppressWarnings("unused")
-    Commit(MLSInputStream stream) throws IOException
+    Commit(MLSInputStream stream)
+        throws IOException
     {
         proposals = new ArrayList<ProposalOrRef>();
-        stream.readList(proposals ,ProposalOrRef.class);
+        stream.readList(proposals, ProposalOrRef.class);
 
-        updatePath = (UpdatePath) stream.readOptional(UpdatePath.class);
+        updatePath = (UpdatePath)stream.readOptional(UpdatePath.class);
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeList(proposals);
         stream.writeOptional(updatePath);

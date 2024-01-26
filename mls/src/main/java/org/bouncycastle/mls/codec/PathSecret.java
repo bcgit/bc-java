@@ -3,7 +3,7 @@ package org.bouncycastle.mls.codec;
 import java.io.IOException;
 
 public class PathSecret
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] path_secret;
 
@@ -16,14 +16,17 @@ public class PathSecret
     {
         this.path_secret = path_secret;
     }
+
     @SuppressWarnings("unused")
-    PathSecret(MLSInputStream stream) throws IOException
+    PathSecret(MLSInputStream stream)
+        throws IOException
     {
         path_secret = stream.readOpaque();
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(path_secret);
     }

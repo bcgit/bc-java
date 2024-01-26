@@ -1,13 +1,13 @@
 package org.bouncycastle.mls.TreeKEM;
 
+import java.io.IOException;
+
 import org.bouncycastle.mls.codec.MLSInputStream;
 import org.bouncycastle.mls.codec.MLSOutputStream;
 import org.bouncycastle.mls.codec.NodeType;
 
-import java.io.IOException;
-
 public class OptionalNode
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     public static OptionalNode blankNode()
     {
@@ -45,13 +45,17 @@ public class OptionalNode
     {
         return node.parentNode;
     }
+
     @SuppressWarnings("unused")
-    public OptionalNode(MLSInputStream stream) throws IOException
+    public OptionalNode(MLSInputStream stream)
+        throws IOException
     {
-        node = (Node) stream.readOptional(Node.class);
+        node = (Node)stream.readOptional(Node.class);
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOptional(node);
     }
