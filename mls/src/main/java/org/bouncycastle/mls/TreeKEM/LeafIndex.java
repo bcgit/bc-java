@@ -13,10 +13,6 @@ public class LeafIndex
     implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     protected int value;
-
-
-    //TODO: make a setter for value
-    //TODO: make this an int not a long?
     public int value()
     {
         return value;

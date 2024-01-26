@@ -26,7 +26,6 @@ public class MLSMessage
     static public MLSMessage externalProposal(MlsCipherSuite suite, byte[] groupID, long epoch, Proposal proposal, int signerIndex, byte[] sigSk)
         throws Exception
     {
-        //TODO check new byte[0] or null
         switch (proposal.getProposalType())
         {
         case ADD:
@@ -229,9 +228,7 @@ class FramedContentAuthData
         case PROPOSAL:
             break;
         case COMMIT:
-            //TODO
             this.confirmation_tag = confirmation_tag;
-            // MAYBE MAKE THIS A FUNCTION IN FRAMED CONTENT
             break;
         }
     }
@@ -241,7 +238,6 @@ class FramedContentAuthData
     {
         this.contentType = contentType;
         signature = stream.readOpaque();
-        //TODO CHECK ITS NOT OPAQUE
         if (contentType == ContentType.COMMIT)
         {
             confirmation_tag = stream.readOpaque();

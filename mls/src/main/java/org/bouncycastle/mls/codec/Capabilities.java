@@ -26,7 +26,6 @@ public class Capabilities
 
     public Capabilities()
     {
-        //TODO: make default to support all
         versions = Arrays.asList(DEFAULT_SUPPORTED_VERSIONS);
         cipherSuites = new ArrayList<Short>();
         for (short suite : DEFAULT_SUPPORTED_CIPHERSUITES)

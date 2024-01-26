@@ -122,7 +122,7 @@ public class MessageProtectionTest
 
 
     }
-    private FramedContent unprotect(MLSMessage message) throws IOException, IllegalAccessException, InvalidCipherTextException
+    private FramedContent unprotect(MLSMessage message) throws Exception
     {
         AuthenticatedContent auth;
         switch (message.wireFormat)

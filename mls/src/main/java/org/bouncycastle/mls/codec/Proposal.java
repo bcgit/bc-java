@@ -122,8 +122,6 @@ public class Proposal
         }
     }
 
-    //TODO: this looks so bad, make this cleaner
-    // maybe inheritance?
     public static Proposal add(KeyPackage newMember)
         throws IOException
     {
@@ -206,8 +204,7 @@ public class Proposal
         public Add(KeyPackage keyPackage)
             throws IOException
         {
-//            this.keyPackage = keyPackage;
-            this.keyPackage = (KeyPackage)MLSInputStream.decode(MLSOutputStream.encode(keyPackage), KeyPackage.class); // TODO CHANGE
+            this.keyPackage = (KeyPackage)MLSInputStream.decode(MLSOutputStream.encode(keyPackage), KeyPackage.class);
         }
 
         @SuppressWarnings("unused")
