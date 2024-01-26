@@ -1,5 +1,7 @@
 package org.bouncycastle.mls.codec;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.mls.GroupKeySet;
 import org.bouncycastle.mls.KeyGeneration;
@@ -8,11 +10,8 @@ import org.bouncycastle.mls.TreeKEM.LeafIndex;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.util.Arrays;
 
-import java.io.IOException;
-import java.security.SecureRandom;
-
 public class PrivateMessage
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] group_id;
     long epoch;
@@ -30,19 +29,21 @@ public class PrivateMessage
         this.encrypted_sender_data = encrypted_sender_data;
         this.ciphertext = ciphertext;
     }
+
     @SuppressWarnings("unused")
-    PrivateMessage(MLSInputStream stream) throws IOException
+    PrivateMessage(MLSInputStream stream)
+        throws IOException
     {
         group_id = stream.readOpaque();
-        epoch = (long) stream.read(long.class);
-        content_type = ContentType.values()[(byte) stream.read(byte.class)];
+        epoch = (long)stream.read(long.class);
+        content_type = ContentType.values()[(byte)stream.read(byte.class)];
         authenticated_data = stream.readOpaque();
         encrypted_sender_data = stream.readOpaque();
         ciphertext = stream.readOpaque();
     }
 
     static public PrivateMessage protect(AuthenticatedContent auth, MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes, int paddingSize)
-            throws IOException, IllegalAccessException, InvalidCipherTextException
+        throws IOException, IllegalAccessException, InvalidCipherTextException
     {
         // Get KeyGeneration from the secret tree
         LeafIndex index = auth.content.sender.sender;
@@ -59,51 +60,53 @@ public class PrivateMessage
 //        System.out.println("serialized_private_content: " + Hex.toHexString(contentPt));
 
         PrivateContentAAD contentAAD = new PrivateContentAAD(
-                auth.content.group_id,
-                auth.content.epoch,
-                auth.content.contentType,
-                auth.content.authenticated_data
+            auth.content.group_id,
+            auth.content.epoch,
+            auth.content.contentType,
+            auth.content.authenticated_data
         );
 
         byte[] contentCt = suite.getAEAD().seal(
-                keyGen.key,
-                keyGen.nonce,
-                MLSOutputStream.encode(contentAAD),
-                contentPt
+            keyGen.key,
+            keyGen.nonce,
+            MLSOutputStream.encode(contentAAD),
+            contentPt
         );
 
         // Encrypt the sender data
         LeafIndex senderIndex = auth.content.sender.sender;
         SenderData senderDataPt = new SenderData(
-                senderIndex,
-                keyGen.generation,
-                reuseGuard
+            senderIndex,
+            keyGen.generation,
+            reuseGuard
         );
         SenderDataAAD senderDataAAD = new SenderDataAAD(
-                auth.content.group_id,
-                auth.content.epoch,
-                auth.content.contentType
+            auth.content.group_id,
+            auth.content.epoch,
+            auth.content.contentType
         );
 
         KeyGeneration senderDataKeys = KeyScheduleEpoch.senderDataKeys(suite, senderDataSecretBytes.clone(), contentCt);
         byte[] senderDataCt = suite.getAEAD().seal(
-                senderDataKeys.key,
-                senderDataKeys.nonce,
-                MLSOutputStream.encode(senderDataAAD),
-                MLSOutputStream.encode(senderDataPt)
+            senderDataKeys.key,
+            senderDataKeys.nonce,
+            MLSOutputStream.encode(senderDataAAD),
+            MLSOutputStream.encode(senderDataPt)
         );
 
         return new PrivateMessage(
-                auth.content.group_id,
-                auth.content.epoch,
-                auth.content.contentType,
-                auth.content.authenticated_data,
-                senderDataCt.clone(),
-                contentCt.clone()
+            auth.content.group_id,
+            auth.content.epoch,
+            auth.content.contentType,
+            auth.content.authenticated_data,
+            senderDataCt.clone(),
+            contentCt.clone()
         );
     }
+
     //TODO: change senderDataSecretBytes to Secret class?
-    public AuthenticatedContent unprotect(MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes) throws IOException, InvalidCipherTextException, IllegalAccessException
+    public AuthenticatedContent unprotect(MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes)
+        throws IOException, InvalidCipherTextException, IllegalAccessException
     {
         // Decrypt and parse the sender data
 
@@ -112,13 +115,13 @@ public class PrivateMessage
         SenderDataAAD senderDataAAD = new SenderDataAAD(group_id, epoch, content_type);
 
         byte[] senderDataPt = suite.getAEAD().open(
-                senderKeys.key,
-                senderKeys.nonce,
-                MLSOutputStream.encode(senderDataAAD),
-                encrypted_sender_data
+            senderKeys.key,
+            senderKeys.nonce,
+            MLSOutputStream.encode(senderDataAAD),
+            encrypted_sender_data
         );
 
-        SenderData senderData = (SenderData) MLSInputStream.decode(senderDataPt, SenderData.class);
+        SenderData senderData = (SenderData)MLSInputStream.decode(senderDataPt, SenderData.class);
 
         //Cannot Process Message from self!
         if (!keys.hasLeaf(senderData.sender))
@@ -131,10 +134,10 @@ public class PrivateMessage
 
         PrivateContentAAD contentAAD = new PrivateContentAAD(group_id, epoch, content_type, authenticated_data);
         byte[] contentPtBytes = suite.getAEAD().open(
-                contentKeys.key,
-                contentKeys.nonce,
-                MLSOutputStream.encode(contentAAD),
-                ciphertext
+            contentKeys.key,
+            contentKeys.nonce,
+            MLSOutputStream.encode(contentAAD),
+            ciphertext
         );
 
         //TODO: check if erase is working properly also check when to erase
@@ -142,32 +145,33 @@ public class PrivateMessage
 
         // Parse Content
         FramedContent content = new FramedContent(
-                group_id,
-                epoch,
-                Sender.forMember(senderData.sender),
-                authenticated_data,
-                null,
-                content_type,
-                null,
-                null
+            group_id,
+            epoch,
+            Sender.forMember(senderData.sender),
+            authenticated_data,
+            null,
+            content_type,
+            null,
+            null
         );
 
         FramedContentAuthData auth = new FramedContentAuthData(
-                content_type,
-                null,
-                null
+            content_type,
+            null,
+            null
         );
         deserializeContentPt(contentPtBytes, content, auth);
 
         return new AuthenticatedContent(
-                WireFormat.mls_private_message,
-                content,
-                auth
+            WireFormat.mls_private_message,
+            content,
+            auth
         );
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(group_id);
         stream.write(epoch);
@@ -177,57 +181,60 @@ public class PrivateMessage
         stream.writeOpaque(ciphertext);
     }
 
-    private void deserializeContentPt(byte[] contentPt, FramedContent content, FramedContentAuthData auth) throws IOException
+    private void deserializeContentPt(byte[] contentPt, FramedContent content, FramedContentAuthData auth)
+        throws IOException
     {
         MLSInputStream stream = new MLSInputStream(contentPt);
         switch (content_type)
         {
-            case APPLICATION:
-                content.application_data = stream.readOpaque();
-                break;
-            case PROPOSAL:
-                content.proposal = (Proposal) stream.read(Proposal.class);
-                break;
-            case COMMIT:
-                content.commit = (Commit) stream.read(Commit.class);
-                break;
+        case APPLICATION:
+            content.application_data = stream.readOpaque();
+            break;
+        case PROPOSAL:
+            content.proposal = (Proposal)stream.read(Proposal.class);
+            break;
+        case COMMIT:
+            content.commit = (Commit)stream.read(Commit.class);
+            break;
         }
         auth.signature = stream.readOpaque();
         switch (content_type)
         {
-            case APPLICATION:
-            case PROPOSAL:
-                break;
-            case COMMIT:
-                auth.confirmation_tag = stream.readOpaque();
-                break;
+        case APPLICATION:
+        case PROPOSAL:
+            break;
+        case COMMIT:
+            auth.confirmation_tag = stream.readOpaque();
+            break;
         }
         //TODO: read padding?
     }
-    static private byte[] serializeContentPt(FramedContent content, FramedContentAuthData auth, int paddingSize) throws IOException
+
+    static private byte[] serializeContentPt(FramedContent content, FramedContentAuthData auth, int paddingSize)
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         switch (content.contentType)
         {
-            case APPLICATION:
-                stream.writeOpaque(content.application_data);
-                break;
-            case PROPOSAL:
-                stream.write(content.proposal);
-                break;
-            case COMMIT:
-                stream.write(content.commit);
-                break;
+        case APPLICATION:
+            stream.writeOpaque(content.application_data);
+            break;
+        case PROPOSAL:
+            stream.write(content.proposal);
+            break;
+        case COMMIT:
+            stream.write(content.commit);
+            break;
         }
         stream.writeOpaque(auth.signature);
         switch (content.contentType)
         {
-            case APPLICATION:
-            case PROPOSAL:
-                break;
-            case COMMIT:
-                stream.writeOpaque(auth.confirmation_tag);
-                break;
+        case APPLICATION:
+        case PROPOSAL:
+            break;
+        case COMMIT:
+            stream.writeOpaque(auth.confirmation_tag);
+            break;
         }
         //TODO: write padding;
         return Arrays.concatenate(stream.toByteArray(), new byte[paddingSize]);

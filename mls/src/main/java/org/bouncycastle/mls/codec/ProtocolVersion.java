@@ -3,10 +3,10 @@ package org.bouncycastle.mls.codec;
 import java.io.IOException;
 
 public enum ProtocolVersion
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    RESERVED((short) 0),
-    mls10((short) 1);
+    RESERVED((short)0),
+    mls10((short)1);
     final short value;
 
     ProtocolVersion(short value)
@@ -15,7 +15,8 @@ public enum ProtocolVersion
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(value);
     }

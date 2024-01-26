@@ -1,18 +1,18 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+
 public class Capabilities
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    static private final Short[] DEFAULT_SUPPORTED_VERSIONS = { ProtocolVersion.mls10.value };
+    static private final Short[] DEFAULT_SUPPORTED_VERSIONS = {ProtocolVersion.mls10.value};
     static private final short[] DEFAULT_SUPPORTED_CIPHERSUITES = MlsCipherSuite.ALL_SUPPORTED_SUITES;
-    static private final Short[] DEFAULT_SUPPORTED_CREDENTIALS = { CredentialType.basic.value, CredentialType.x509.value};
+    static private final Short[] DEFAULT_SUPPORTED_CREDENTIALS = {CredentialType.basic.value, CredentialType.x509.value};
     List<Short> versions;
     List<Short> cipherSuites;
     List<Short> extensions;
@@ -37,8 +37,10 @@ public class Capabilities
         proposals = new ArrayList<Short>();
         credentials = Arrays.asList(DEFAULT_SUPPORTED_CREDENTIALS);
     }
+
     @SuppressWarnings("unused")
-    Capabilities(MLSInputStream stream) throws IOException
+    Capabilities(MLSInputStream stream)
+        throws IOException
     {
         versions = new ArrayList<Short>();
         cipherSuites = new ArrayList<Short>();
@@ -53,7 +55,8 @@ public class Capabilities
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeList(versions);
         stream.writeList(cipherSuites);

@@ -1,5 +1,13 @@
 package org.bouncycastle.mls.client;
 
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageOrBuilder;
 import io.grpc.Status;
@@ -33,21 +41,14 @@ import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.protocol.Group;
 import org.bouncycastle.util.Pack;
 
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static org.bouncycastle.mls.crypto.MlsCipherSuite.ALL_SUPPORTED_SUITES;
 import static org.bouncycastle.mls.protocol.Group.NORMAL_COMMIT_PARAMS;
 
 public class MLSClientImpl
     extends MLSClientGrpc.MLSClientImplBase
 {
-    class CachedGroup {
+    class CachedGroup
+    {
         Group group;
         boolean encryptHandshake;
         Group.MessageOptions messageOptions;
@@ -59,7 +60,7 @@ public class MLSClientImpl
         {
             this.group = group;
             this.encryptHandshake = encryptHandshake;
-            this.messageOptions = new Group.MessageOptions(encryptHandshake, new byte [0], 0);
+            this.messageOptions = new Group.MessageOptions(encryptHandshake, new byte[0], 0);
         }
 
         public void resetPending()
@@ -68,7 +69,9 @@ public class MLSClientImpl
             pendingGroupID = -1;
         }
     }
-    class CachedJoin {
+
+    class CachedJoin
+    {
         KeyPackageWithSecrets kpSecrets;
         Map<Secret, byte[]> externalPsks;
 
@@ -78,7 +81,9 @@ public class MLSClientImpl
             this.externalPsks = new HashMap<Secret, byte[]>();
         }
     }
-    class CachedReinit {
+
+    class CachedReinit
+    {
         KeyPackageWithSecrets kpSk;
         Group.Tombstone tombstone;
         boolean encryptHandshake;
@@ -90,6 +95,7 @@ public class MLSClientImpl
             this.encryptHandshake = encryptHandshake;
         }
     }
+
     Map<Integer, CachedGroup> groupCache = new HashMap<Integer, CachedGroup>();
     Map<Integer, CachedJoin> joinCache = new HashMap<Integer, CachedJoin>();
     Map<Integer, CachedReinit> reinitCache = new HashMap<Integer, CachedReinit>();
@@ -97,15 +103,21 @@ public class MLSClientImpl
 
 
     @FunctionalInterface
-    public interface Function{
-        void run() throws Exception;
-    }
-    @FunctionalInterface
-    public interface FunctionWithState{
-        void run(CachedGroup g) throws Exception;
+    public interface Function
+    {
+        void run()
+            throws Exception;
     }
 
-    private static String getCallerMethodName() {
+    @FunctionalInterface
+    public interface FunctionWithState
+    {
+        void run(CachedGroup g)
+            throws Exception;
+    }
+
+    private static String getCallerMethodName()
+    {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         return stackTrace[3].getMethodName();
     }
@@ -119,20 +131,21 @@ public class MLSClientImpl
         }
         catch (Exception e)
         {
-            System.out.println(e.getMessage());
-            for (StackTraceElement elm: e.getStackTrace())
-            {
-                System.out.println(elm);
-            }
+//            System.out.println(e.getMessage());
+//            for (StackTraceElement elm : e.getStackTrace())
+//            {
+//                System.out.println(elm);
+//            }
 //            System.exit(0);
             observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
         }
     }
+
     private <T> void stateWrap(FunctionWithState f, MessageOrBuilder request, StreamObserver<T> observer)
     {
 //        System.out.println("Executing function: " + getCallerMethodName());
 
-        int stateID = (int) request.getField(request.getDescriptorForType().findFieldByName("state_id"));
+        int stateID = (int)request.getField(request.getDescriptorForType().findFieldByName("state_id"));
         CachedGroup group = loadGroup(stateID);
         if (group == null)
         {
@@ -144,11 +157,11 @@ public class MLSClientImpl
         }
         catch (Exception e)
         {
-            System.out.println(e.getMessage());
-            for (StackTraceElement elm: e.getStackTrace())
-            {
-                System.out.println(elm);
-            }
+//            System.out.println(e.getMessage());
+//            for (StackTraceElement elm : e.getStackTrace())
+//            {
+//                System.out.println(elm);
+//            }
             observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
         }
     }
@@ -173,7 +186,8 @@ public class MLSClientImpl
         return groupCache.get(stateID);
     }
 
-    private int storeJoin(KeyPackageWithSecrets kpSecrets) throws IOException
+    private int storeJoin(KeyPackageWithSecrets kpSecrets)
+        throws IOException
     {
         MlsCipherSuite suite = kpSecrets.keyPackage.getSuite();
         int joinID = 0x07FFFFFF & Pack.littleEndianToInt(suite.refHash(MLSOutputStream.encode(kpSecrets.keyPackage), "MLS 1.0 KeyPackage Reference"), 0);
@@ -207,7 +221,8 @@ public class MLSClientImpl
         return signerCache.get(signerID); // returns private signature key
     }
 
-    private int storeReinit(KeyPackageWithSecrets kpSk, Group.Tombstone tombstone, boolean encryptHandshake) throws IOException
+    private int storeReinit(KeyPackageWithSecrets kpSk, Group.Tombstone tombstone, boolean encryptHandshake)
+        throws IOException
     {
         MlsCipherSuite suite = kpSk.keyPackage.getSuite();
         int reinitID = 0x07FFFFFF & Pack.littleEndianToInt(suite.refHash(MLSOutputStream.encode(kpSk.keyPackage), "MLS 1.0 KeyPackage Reference"), 0);
@@ -239,7 +254,8 @@ public class MLSClientImpl
         return result;
     }
 
-    private KeyPackageWithSecrets newKeyPackage(MlsCipherSuite suite, byte[] identity) throws Exception
+    private KeyPackageWithSecrets newKeyPackage(MlsCipherSuite suite, byte[] identity)
+        throws Exception
     {
         AsymmetricCipherKeyPair initKeyPair = suite.getHPKE().generatePrivateKey();
         AsymmetricCipherKeyPair encryptionKeyPair = suite.getHPKE().generatePrivateKey();
@@ -247,34 +263,35 @@ public class MLSClientImpl
         Credential cred = Credential.forBasic(identity);
 
         LeafNode leafNode = new LeafNode(
-                suite,
-                suite.getHPKE().serializePublicKey(encryptionKeyPair.getPublic()),
-                suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
-                cred,
-                new Capabilities(),
-                new LifeTime(),
-                new ArrayList<Extension>(),
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
+            suite,
+            suite.getHPKE().serializePublicKey(encryptionKeyPair.getPublic()),
+            suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
+            cred,
+            new Capabilities(),
+            new LifeTime(),
+            new ArrayList<Extension>(),
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
         KeyPackage kp = new KeyPackage(
-                suite,
-                suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
-                leafNode,
-                new ArrayList<Extension>(),
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
+            suite,
+            suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
+            leafNode,
+            new ArrayList<Extension>(),
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
         return new KeyPackageWithSecrets(initKeyPair, encryptionKeyPair, sigKeyPair, kp);
         //TODO: cache transactions?
         // return key package as byte string/array?
     }
 
-    private LeafIndex findMember(TreeKEMPublicKey tree, byte[] id) throws Exception
+    private LeafIndex findMember(TreeKEMPublicKey tree, byte[] id)
+        throws Exception
     {
         //find member
         LeafNode leaf;
         LeafIndex index;
-        for (int i = 0; i < tree.getSize().leafCount() ; i++)
+        for (int i = 0; i < tree.getSize().leafCount(); i++)
         {
             index = new LeafIndex(i);
             leaf = tree.getLeafNode(index);
@@ -290,55 +307,56 @@ public class MLSClientImpl
         throw new Exception("Unknown member identity");
     }
 
-    private Proposal proposalFromDescription(MlsCipherSuite suite, byte[] groupID, TreeKEMPublicKey tree, MlsClient.ProposalDescription desc) throws Exception
+    private Proposal proposalFromDescription(MlsCipherSuite suite, byte[] groupID, TreeKEMPublicKey tree, MlsClient.ProposalDescription desc)
+        throws Exception
     {
         SecureRandom random = new SecureRandom();
         switch (desc.getProposalType().toStringUtf8())
         {
-            case "add":
-                MLSMessage kp = (MLSMessage) MLSInputStream.decode(desc.getKeyPackage().toByteArray(), MLSMessage.class);
-                return Proposal.add(kp.keyPackage);
+        case "add":
+            MLSMessage kp = (MLSMessage)MLSInputStream.decode(desc.getKeyPackage().toByteArray(), MLSMessage.class);
+            return Proposal.add(kp.keyPackage);
 
-            case "remove":
-                LeafIndex removedIndex = findMember(tree, desc.getRemovedId().toByteArray());
-                return Proposal.remove(removedIndex);
+        case "remove":
+            LeafIndex removedIndex = findMember(tree, desc.getRemovedId().toByteArray());
+            return Proposal.remove(removedIndex);
 
-            case "externalPSK":
-                byte[] externalPskID = desc.getPskId().toByteArray();
-                byte[] extNonce = new byte[suite.getKDF().getHashLength()];
-                random.nextBytes(extNonce);
-                PreSharedKeyID extPskID = PreSharedKeyID.external(externalPskID, extNonce);
-                return Proposal.preSharedKey(extPskID);
+        case "externalPSK":
+            byte[] externalPskID = desc.getPskId().toByteArray();
+            byte[] extNonce = new byte[suite.getKDF().getHashLength()];
+            random.nextBytes(extNonce);
+            PreSharedKeyID extPskID = PreSharedKeyID.external(externalPskID, extNonce);
+            return Proposal.preSharedKey(extPskID);
 
-            case "resumptionPSK":
-                long epoch = desc.getEpochId();
-                byte[] resNonce = new byte[suite.getKDF().getHashLength()];
-                PreSharedKeyID resPskID = PreSharedKeyID.resumption(ResumptionPSKUsage.APPLICATION, groupID, epoch, resNonce);
-                return Proposal.preSharedKey(resPskID);
+        case "resumptionPSK":
+            long epoch = desc.getEpochId();
+            byte[] resNonce = new byte[suite.getKDF().getHashLength()];
+            PreSharedKeyID resPskID = PreSharedKeyID.resumption(ResumptionPSKUsage.APPLICATION, groupID, epoch, resNonce);
+            return Proposal.preSharedKey(resPskID);
 
-            case "groupContextExtensions":
-            case "reinit":
-                List<Extension> extList = new ArrayList<Extension>();
-                for (int i = 0; i < desc.getExtensionsCount(); i++)
-                {
-                    Extension ext = new Extension(desc.getExtensions(i).getExtensionType(), desc.getExtensions(i).getExtensionData().toByteArray());
-                    extList.add(ext);
-                }
+        case "groupContextExtensions":
+        case "reinit":
+            List<Extension> extList = new ArrayList<Extension>();
+            for (int i = 0; i < desc.getExtensionsCount(); i++)
+            {
+                Extension ext = new Extension(desc.getExtensions(i).getExtensionType(), desc.getExtensions(i).getExtensionData().toByteArray());
+                extList.add(ext);
+            }
 
-                if (desc.getProposalType().toStringUtf8().equals("reinit"))
-                {
-                    return Proposal.reInit(
-                            desc.getGroupId().toByteArray(),
-                            ProtocolVersion.mls10,
-                            MlsCipherSuite.getSuite((short) desc.getCipherSuite()),
-                            extList
-                    );
-                }
-                // groupContextExtensions
-                return Proposal.groupContextExtensions(extList);
+            if (desc.getProposalType().toStringUtf8().equals("reinit"))
+            {
+                return Proposal.reInit(
+                    desc.getGroupId().toByteArray(),
+                    ProtocolVersion.mls10,
+                    MlsCipherSuite.getSuite((short)desc.getCipherSuite()),
+                    extList
+                );
+            }
+            // groupContextExtensions
+            return Proposal.groupContextExtensions(extList);
 
-            default:
-                throw new IllegalStateException("Unknown proposal-by-value type: " + desc.getProposalType().toString());
+        default:
+            throw new IllegalStateException("Unknown proposal-by-value type: " + desc.getProposalType().toString());
         }
     }
 
@@ -356,15 +374,15 @@ public class MLSClientImpl
      * @param responseObserver
      */
     private void nameImpl(MlsClient.NameRequest request, StreamObserver<MlsClient.NameResponse> responseObserver)
-	{
+    {
 
         MlsClient.NameResponse response = MlsClient.NameResponse.newBuilder()
-                .setName("BouncyCastle")
-                .build();
+            .setName("BouncyCastle")
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
+    }
 
     @Override
     public void name(MlsClient.NameRequest request, StreamObserver<MlsClient.NameResponse> responseObserver)
@@ -372,7 +390,8 @@ public class MLSClientImpl
         catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 nameImpl(request, responseObserver);
             }
@@ -388,9 +407,9 @@ public class MLSClientImpl
      * @param responseObserver
      */
     private void supportedCiphersuitesImpl(MlsClient.SupportedCiphersuitesRequest request, StreamObserver<MlsClient.SupportedCiphersuitesResponse> responseObserver)
-	{
+    {
         MlsClient.SupportedCiphersuitesResponse.Builder builder = MlsClient.SupportedCiphersuitesResponse.newBuilder()
-                .clearCiphersuites();
+            .clearCiphersuites();
 
         for (short id : ALL_SUPPORTED_SUITES)
         {
@@ -400,14 +419,16 @@ public class MLSClientImpl
         MlsClient.SupportedCiphersuitesResponse response = builder.build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void supportedCiphersuites(MlsClient.SupportedCiphersuitesRequest request, StreamObserver<MlsClient.SupportedCiphersuitesResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 supportedCiphersuitesImpl(request, responseObserver);
             }
@@ -424,7 +445,7 @@ public class MLSClientImpl
      */
 
     public void createGroupImpl(MlsClient.CreateGroupRequest request, StreamObserver<MlsClient.CreateGroupResponse> responseObserver)
-            throws Exception
+        throws Exception
     {
         byte[] groupID = request.getGroupId().toByteArray();
         MlsCipherSuite suite = MlsCipherSuite.getSuite((short)request.getCipherSuite());
@@ -435,40 +456,42 @@ public class MLSClientImpl
         Credential cred = Credential.forBasic(identity);
 
         LeafNode leafNode = new LeafNode(
-                suite,
-                suite.getHPKE().serializePublicKey(leafKeyPair.getPublic()),
-                suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
-                cred,
-                new Capabilities(),
-                new LifeTime(),
-                new ArrayList<Extension>(),
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
+            suite,
+            suite.getHPKE().serializePublicKey(leafKeyPair.getPublic()),
+            suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
+            cred,
+            new Capabilities(),
+            new LifeTime(),
+            new ArrayList<Extension>(),
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
         Group group = new Group(
-                groupID,
-                suite,
-                leafKeyPair,
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate()),
-                leafNode.copy(leafNode.getEncryptionKey()),
-                new ArrayList<Extension>()
+            groupID,
+            suite,
+            leafKeyPair,
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate()),
+            leafNode.copy(leafNode.getEncryptionKey()),
+            new ArrayList<Extension>()
         );
 
         int stateId = storeGroup(group, request.getEncryptHandshake());
 
         MlsClient.CreateGroupResponse response = MlsClient.CreateGroupResponse.newBuilder()
-                .setStateId(stateId)
-                .build();
+            .setStateId(stateId)
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
-@Override
+
+    @Override
     public void createGroup(MlsClient.CreateGroupRequest request, StreamObserver<MlsClient.CreateGroupResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 createGroupImpl(request, responseObserver);
             }
@@ -479,9 +502,10 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void createKeyPackageImpl(MlsClient.CreateKeyPackageRequest request, StreamObserver<MlsClient.CreateKeyPackageResponse> responseObserver) throws Exception
+    private void createKeyPackageImpl(MlsClient.CreateKeyPackageRequest request, StreamObserver<MlsClient.CreateKeyPackageResponse> responseObserver)
+        throws Exception
     {
-        MlsCipherSuite suite =  MlsCipherSuite.getSuite((short)request.getCipherSuite());
+        MlsCipherSuite suite = MlsCipherSuite.getSuite((short)request.getCipherSuite());
         byte[] identity = request.getIdentity().toByteArray();
 
         KeyPackageWithSecrets kpSecrets = newKeyPackage(suite, identity);
@@ -489,23 +513,25 @@ public class MLSClientImpl
         int joinID = storeJoin(kpSecrets);
 
         MlsClient.CreateKeyPackageResponse response = MlsClient.CreateKeyPackageResponse.newBuilder()
-                .setInitPriv(ByteString.copyFrom(suite.getHPKE().serializePrivateKey(kpSecrets.initKeyPair.getPrivate())))
-                .setEncryptionPriv(ByteString.copyFrom(suite.getHPKE().serializePrivateKey(kpSecrets.encryptionKeyPair.getPrivate())))
-                .setSignaturePriv(ByteString.copyFrom(suite.serializeSignaturePrivateKey(kpSecrets.signatureKeyPair.getPrivate())))
-                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(kpSecrets.keyPackage))))
-                .setTransactionId(joinID)
-                .build();
+            .setInitPriv(ByteString.copyFrom(suite.getHPKE().serializePrivateKey(kpSecrets.initKeyPair.getPrivate())))
+            .setEncryptionPriv(ByteString.copyFrom(suite.getHPKE().serializePrivateKey(kpSecrets.encryptionKeyPair.getPrivate())))
+            .setSignaturePriv(ByteString.copyFrom(suite.serializeSignaturePrivateKey(kpSecrets.signatureKeyPair.getPrivate())))
+            .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(kpSecrets.keyPackage))))
+            .setTransactionId(joinID)
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void createKeyPackage(MlsClient.CreateKeyPackageRequest request, StreamObserver<MlsClient.CreateKeyPackageResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 createKeyPackageImpl(request, responseObserver);
             }
@@ -516,7 +542,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void joinGroupImpl(MlsClient.JoinGroupRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver) throws Exception
+    private void joinGroupImpl(MlsClient.JoinGroupRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
+        throws Exception
     {
         CachedJoin join = loadJoin(request.getTransactionId());
         if (join == null)
@@ -524,47 +551,49 @@ public class MLSClientImpl
             throw new Exception("Unknown transaction ID");
         }
 
-        MLSMessage welcomeMsg = (MLSMessage) MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
+        MLSMessage welcomeMsg = (MLSMessage)MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
         Welcome welcome = welcomeMsg.welcome;
 
         byte[] ratchetTreeBytes = request.getRatchetTree().toByteArray();
 
         TreeKEMPublicKey ratchetTree = null;
-        if(ratchetTreeBytes.length > 0)
+        if (ratchetTreeBytes.length > 0)
         {
-            ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree = (TreeKEMPublicKey)MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
             ratchetTree.setSuite(welcomeMsg.getCipherSuite());
         }
 
         MlsCipherSuite suite = welcome.getSuite();
         Group group = new Group(
-                suite.getHPKE().serializePrivateKey(join.kpSecrets.initKeyPair.getPrivate()),
-                join.kpSecrets.encryptionKeyPair,
-                suite.serializeSignaturePrivateKey(join.kpSecrets.signatureKeyPair.getPrivate()),
-                join.kpSecrets.keyPackage,
-                welcome,
-                ratchetTree,
-                join.externalPsks,
-                new HashMap<Group.EpochRef, byte[]>()
+            suite.getHPKE().serializePrivateKey(join.kpSecrets.initKeyPair.getPrivate()),
+            join.kpSecrets.encryptionKeyPair,
+            suite.serializeSignaturePrivateKey(join.kpSecrets.signatureKeyPair.getPrivate()),
+            join.kpSecrets.keyPackage,
+            welcome,
+            ratchetTree,
+            join.externalPsks,
+            new HashMap<Group.EpochRef, byte[]>()
         );
         byte[] epochAuthenticator = group.getEpochAuthenticator();
         int stateID = storeGroup(group, request.getEncryptHandshake());
 
         MlsClient.JoinGroupResponse response = MlsClient.JoinGroupResponse.newBuilder()
-                .setStateId(stateID)
-                .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
-                .build();
+            .setStateId(stateID)
+            .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void joinGroup(MlsClient.JoinGroupRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 joinGroupImpl(request, responseObserver);
             }
@@ -575,10 +604,11 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void externalJoinImpl(MlsClient.ExternalJoinRequest request, StreamObserver<MlsClient.ExternalJoinResponse> responseObserver) throws Exception
+    private void externalJoinImpl(MlsClient.ExternalJoinRequest request, StreamObserver<MlsClient.ExternalJoinResponse> responseObserver)
+        throws Exception
     {
 
-        MLSMessage groupInfoMsg = (MLSMessage) MLSInputStream.decode(request.getGroupInfo().toByteArray(), MLSMessage.class);
+        MLSMessage groupInfoMsg = (MLSMessage)MLSInputStream.decode(request.getGroupInfo().toByteArray(), MLSMessage.class);
         GroupInfo groupInfo = groupInfoMsg.groupInfo;
         MlsCipherSuite suite = groupInfo.getSuite();
 
@@ -589,29 +619,29 @@ public class MLSClientImpl
         Credential cred = Credential.forBasic(identity);
 
         LeafNode leafNode = new LeafNode(
-                suite,
-                suite.getHPKE().serializePublicKey(leafKeyPair.getPublic()),
-                suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
-                cred,
-                new Capabilities(),
-                new LifeTime(),
-                new ArrayList<Extension>(),
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
+            suite,
+            suite.getHPKE().serializePublicKey(leafKeyPair.getPublic()),
+            suite.serializeSignaturePublicKey(sigKeyPair.getPublic()),
+            cred,
+            new Capabilities(),
+            new LifeTime(),
+            new ArrayList<Extension>(),
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
         KeyPackage kp = new KeyPackage(
-                suite,
-                suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
-                leafNode,
-                new ArrayList<Extension>(),
-                suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
+            suite,
+            suite.getHPKE().serializePublicKey(initKeyPair.getPublic()),
+            leafNode,
+            new ArrayList<Extension>(),
+            suite.serializeSignaturePrivateKey(sigKeyPair.getPrivate())
         );
 
         byte[] ratchetTreeBytes = request.getRatchetTree().toByteArray();
         TreeKEMPublicKey ratchetTree = null;
         if (ratchetTreeBytes.length > 0)
         {
-            ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree = (TreeKEMPublicKey)MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
             ratchetTree.setSuite(suite);
         }
 
@@ -675,33 +705,35 @@ public class MLSClientImpl
         random.nextBytes(leafSecret);
 
         Group.GroupWithMessage gwm = Group.externalJoin(
-                new Secret(leafSecret),
-                sigKeyPair,
-                kp,
-                groupInfo,
-                ratchetTree,
-                new Group.MessageOptions(false, new byte[0], 0),// encrypt should be false for external join!
-                removeIndex,
-                externalPSKs
+            new Secret(leafSecret),
+            sigKeyPair,
+            kp,
+            groupInfo,
+            ratchetTree,
+            new Group.MessageOptions(false, new byte[0], 0),// encrypt should be false for external join!
+            removeIndex,
+            externalPSKs
         );
 
         int stateID = storeGroup(gwm.group, false);
         MlsClient.ExternalJoinResponse response = MlsClient.ExternalJoinResponse.newBuilder()
-                .setStateId(stateID)
-                .setCommit(ByteString.copyFrom(MLSOutputStream.encode(gwm.message)))
-                .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()))
-                .build();
+            .setStateId(stateID)
+            .setCommit(ByteString.copyFrom(MLSOutputStream.encode(gwm.message)))
+            .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void externalJoin(MlsClient.ExternalJoinRequest request, StreamObserver<MlsClient.ExternalJoinResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 externalJoinImpl(request, responseObserver);
             }
@@ -716,12 +748,13 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void groupInfoImpl(CachedGroup entry, MlsClient.GroupInfoRequest request, StreamObserver<MlsClient.GroupInfoResponse> responseObserver) throws Exception
+    private void groupInfoImpl(CachedGroup entry, MlsClient.GroupInfoRequest request, StreamObserver<MlsClient.GroupInfoResponse> responseObserver)
+        throws Exception
     {
         boolean inlineTree = !request.getExternalTree();
         MLSMessage groupInfo = entry.group.getGroupInfo(inlineTree);
         MlsClient.GroupInfoResponse.Builder builder = MlsClient.GroupInfoResponse.newBuilder()
-                .setGroupInfo(ByteString.copyFrom(MLSOutputStream.encode(groupInfo)));
+            .setGroupInfo(ByteString.copyFrom(MLSOutputStream.encode(groupInfo)));
         if (!inlineTree)
         {
             builder.setRatchetTree(ByteString.copyFrom(MLSOutputStream.encode(entry.group.getTree())));
@@ -730,13 +763,17 @@ public class MLSClientImpl
         MlsClient.GroupInfoResponse response = builder.build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void groupInfo(MlsClient.GroupInfoRequest request, StreamObserver<MlsClient.GroupInfoResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 groupInfoImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -748,20 +785,24 @@ public class MLSClientImpl
      * @param responseObserver
      */
     private void stateAuthImpl(CachedGroup entry, MlsClient.StateAuthRequest request, StreamObserver<MlsClient.StateAuthResponse> responseObserver)
-	{
+    {
         MlsClient.StateAuthResponse response = MlsClient.StateAuthResponse.newBuilder()
-                .setStateAuthSecret(ByteString.copyFrom(entry.group.getEpochAuthenticator()))
-                .build();
+            .setStateAuthSecret(ByteString.copyFrom(entry.group.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void stateAuth(MlsClient.StateAuthRequest request, StreamObserver<MlsClient.StateAuthResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 stateAuthImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -771,25 +812,30 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void exportImpl(CachedGroup entry, MlsClient.ExportRequest request, StreamObserver<MlsClient.ExportResponse> responseObserver) throws IOException
+    private void exportImpl(CachedGroup entry, MlsClient.ExportRequest request, StreamObserver<MlsClient.ExportResponse> responseObserver)
+        throws IOException
     {
         String label = request.getLabel();
         byte[] context = request.getContext().toByteArray();
         int size = request.getKeyLength();
         byte[] secret = entry.group.getKeySchedule().MLSExporter(label, context, size);
         MlsClient.ExportResponse response = MlsClient.ExportResponse.newBuilder()
-                .setExportedSecret(ByteString.copyFrom(secret))
-                .build();
+            .setExportedSecret(ByteString.copyFrom(secret))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void export(MlsClient.ExportRequest request, StreamObserver<MlsClient.ExportResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 exportImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -799,26 +845,31 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void protectImpl(CachedGroup entry, MlsClient.ProtectRequest request, StreamObserver<MlsClient.ProtectResponse> responseObserver) throws Exception
+    private void protectImpl(CachedGroup entry, MlsClient.ProtectRequest request, StreamObserver<MlsClient.ProtectResponse> responseObserver)
+        throws Exception
     {
         MLSMessage ct = entry.group.protect(
-                request.getAuthenticatedData().toByteArray(),
-                request.getPlaintext().toByteArray(),
-                0
+            request.getAuthenticatedData().toByteArray(),
+            request.getPlaintext().toByteArray(),
+            0
         );
         MlsClient.ProtectResponse response = MlsClient.ProtectResponse.newBuilder()
-                .setCiphertext(ByteString.copyFrom(MLSOutputStream.encode(ct)))
-                .build();
+            .setCiphertext(ByteString.copyFrom(MLSOutputStream.encode(ct)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void protect(MlsClient.ProtectRequest request, StreamObserver<MlsClient.ProtectResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 protectImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -828,9 +879,10 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void unprotectImpl(CachedGroup entry, MlsClient.UnprotectRequest request, StreamObserver<MlsClient.UnprotectResponse> responseObserver) throws Exception
+    private void unprotectImpl(CachedGroup entry, MlsClient.UnprotectRequest request, StreamObserver<MlsClient.UnprotectResponse> responseObserver)
+        throws Exception
     {
-        MLSMessage ct = (MLSMessage) MLSInputStream.decode(request.getCiphertext().toByteArray(), MLSMessage.class);
+        MLSMessage ct = (MLSMessage)MLSInputStream.decode(request.getCiphertext().toByteArray(), MLSMessage.class);
 
         // Locate the right epoch to decrypt with
         byte[] groupID = entry.group.getGroupID();
@@ -852,19 +904,23 @@ public class MLSClientImpl
         byte[] pt = authAndPt[1];
 
         MlsClient.UnprotectResponse response = MlsClient.UnprotectResponse.newBuilder()
-                .setAuthenticatedData(ByteString.copyFrom(aad))
-                .setPlaintext(ByteString.copyFrom(pt))
-                .build();
+            .setAuthenticatedData(ByteString.copyFrom(aad))
+            .setPlaintext(ByteString.copyFrom(pt))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void unprotect(MlsClient.UnprotectRequest request, StreamObserver<MlsClient.UnprotectResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 unprotectImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -874,7 +930,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void storePSKImpl(MlsClient.StorePSKRequest request, StreamObserver<MlsClient.StorePSKResponse> responseObserver) throws StatusException
+    private void storePSKImpl(MlsClient.StorePSKRequest request, StreamObserver<MlsClient.StorePSKResponse> responseObserver)
+        throws StatusException
     {
         MlsClient.StorePSKResponse response = MlsClient.StorePSKResponse.newBuilder().build();
         int id = request.getStateOrTransactionId();
@@ -900,14 +957,16 @@ public class MLSClientImpl
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void storePSK(MlsClient.StorePSKRequest request, StreamObserver<MlsClient.StorePSKResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 storePSKImpl(request, responseObserver);
             }
@@ -918,24 +977,29 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void addProposalImpl(CachedGroup entry, MlsClient.AddProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void addProposalImpl(CachedGroup entry, MlsClient.AddProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
-        MLSMessage keyPackage = (MLSMessage) MLSInputStream.decode(request.getKeyPackage().toByteArray(), MLSMessage.class);
+        MLSMessage keyPackage = (MLSMessage)MLSInputStream.decode(request.getKeyPackage().toByteArray(), MLSMessage.class);
         MLSMessage message = entry.group.add(keyPackage.keyPackage, entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void addProposal(MlsClient.AddProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 addProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -945,25 +1009,30 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void updateProposalImpl(CachedGroup entry, MlsClient.UpdateProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void updateProposalImpl(CachedGroup entry, MlsClient.UpdateProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         AsymmetricCipherKeyPair leafSk = entry.group.getSuite().getHPKE().generatePrivateKey();
         Proposal update = entry.group.updateProposal(leafSk, new Group.LeafNodeOptions());
         MLSMessage message = entry.group.update(update, entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void updateProposal(MlsClient.UpdateProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 updateProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -973,24 +1042,29 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void removeProposalImpl(CachedGroup entry, MlsClient.RemoveProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void removeProposalImpl(CachedGroup entry, MlsClient.RemoveProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         LeafIndex removedIndex = findMember(entry.group.getTree(), request.getRemovedId().toByteArray());
         MLSMessage message = entry.group.remove(removedIndex, entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void removeProposal(MlsClient.RemoveProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 removeProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1000,24 +1074,29 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void externalPSKProposalImpl(CachedGroup entry, MlsClient.ExternalPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void externalPSKProposalImpl(CachedGroup entry, MlsClient.ExternalPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         byte[] pskID = request.getPskId().toByteArray();
         MLSMessage message = entry.group.preSharedKey(pskID, entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void externalPSKProposal(MlsClient.ExternalPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 externalPSKProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1027,23 +1106,28 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void resumptionPSKProposalImpl(CachedGroup entry, MlsClient.ResumptionPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void resumptionPSKProposalImpl(CachedGroup entry, MlsClient.ResumptionPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         MLSMessage message = entry.group.preSharedKey(entry.group.getGroupID(), request.getEpochId(), entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void resumptionPSKProposal(MlsClient.ResumptionPSKProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 resumptionPSKProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1053,7 +1137,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void groupContextExtensionsProposalImpl(CachedGroup entry, MlsClient.GroupContextExtensionsProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void groupContextExtensionsProposalImpl(CachedGroup entry, MlsClient.GroupContextExtensionsProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         List<Extension> extList = new ArrayList<Extension>();
         for (int i = 0; i < request.getExtensionsCount(); i++)
@@ -1065,18 +1150,22 @@ public class MLSClientImpl
         MLSMessage message = entry.group.groupContextExtensions(extList, entry.messageOptions);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void groupContextExtensionsProposal(MlsClient.GroupContextExtensionsProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 groupContextExtensionsProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1086,7 +1175,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void commitImpl(CachedGroup entry, MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver) throws Exception
+    private void commitImpl(CachedGroup entry, MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
+        throws Exception
     {
         int byRefSize = request.getByReferenceCount();
         for (int i = 0; i < byRefSize; i++)
@@ -1105,10 +1195,10 @@ public class MLSClientImpl
         {
             MlsClient.ProposalDescription desc = request.getByValue(i);
             Proposal proposal = proposalFromDescription(
-                    entry.group.getSuite(),
-                    entry.group.getGroupID(),
-                    entry.group.getTree(),
-                    desc
+                entry.group.getSuite(),
+                entry.group.getGroupID(),
+                entry.group.getTree(),
+                desc
             );
             byValue.add(proposal);
         }
@@ -1120,10 +1210,10 @@ public class MLSClientImpl
         byte[] leafSecret = new byte[entry.group.getSuite().getKDF().getHashLength()];
         random.nextBytes(leafSecret);
         Group.GroupWithMessage gwm = entry.group.commit(
-                new Secret(leafSecret),
-                new Group.CommitOptions(byValue, inlineTree, forcePath, null),
-                entry.messageOptions,
-                new Group.CommitParameters(NORMAL_COMMIT_PARAMS)
+            new Secret(leafSecret),
+            new Group.CommitOptions(byValue, inlineTree, forcePath, null),
+            entry.messageOptions,
+            new Group.CommitParameters(NORMAL_COMMIT_PARAMS)
         );
         byte[] commitBytes = MLSOutputStream.encode(gwm.message);
         gwm.message.wireFormat = WireFormat.mls_welcome;
@@ -1136,8 +1226,8 @@ public class MLSClientImpl
         entry.pendingGroupID = nextID;
 
         MlsClient.CommitResponse.Builder builder = MlsClient.CommitResponse.newBuilder()
-                .setCommit(ByteString.copyFrom(commitBytes))
-                .setWelcome(ByteString.copyFrom(welcomeBytes));
+            .setCommit(ByteString.copyFrom(commitBytes))
+            .setWelcome(ByteString.copyFrom(welcomeBytes));
 
         if (!inlineTree)
         {
@@ -1146,13 +1236,17 @@ public class MLSClientImpl
 
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void commit(MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 commitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1162,15 +1256,16 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handleCommitImpl(CachedGroup entry, MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver) throws Exception
+    private void handleCommitImpl(CachedGroup entry, MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
+        throws Exception
     {
         // Handle our own commits with caching
         byte[] commitBytes = request.getCommit().toByteArray();
         if (entry.pendingCommit != null && Arrays.equals(commitBytes, entry.pendingCommit))
         {
             MlsClient.HandleCommitResponse response = MlsClient.HandleCommitResponse.newBuilder()
-                    .setStateId(entry.pendingGroupID)
-                    .build();
+                .setStateId(entry.pendingGroupID)
+                .build();
             entry.resetPending();
 
             responseObserver.onNext(response);
@@ -1204,19 +1299,23 @@ public class MLSClientImpl
         int nextID = storeGroup(next, entry.encryptHandshake);
 
         MlsClient.HandleCommitResponse response = MlsClient.HandleCommitResponse.newBuilder()
-                .setStateId(nextID)
-                .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
-                .build();
+            .setStateId(nextID)
+            .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handleCommit(MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 handleCommitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1226,7 +1325,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handlePendingCommitImpl(CachedGroup entry, MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver) throws Exception
+    private void handlePendingCommitImpl(CachedGroup entry, MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
+        throws Exception
     {
         if (entry.pendingCommit == null || entry.pendingGroupID == -1)
         {
@@ -1242,19 +1342,23 @@ public class MLSClientImpl
 
         byte[] epochAuthenticator = next.group.getEpochAuthenticator();
         MlsClient.HandleCommitResponse response = MlsClient.HandleCommitResponse.newBuilder()
-                .setStateId(nextID)
-                .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
-                .build();
+            .setStateId(nextID)
+            .setEpochAuthenticator(ByteString.copyFrom(epochAuthenticator))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handlePendingCommit(MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleCommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 handlePendingCommitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1268,11 +1372,12 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void reInitProposalImpl(CachedGroup entry, MlsClient.ReInitProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void reInitProposalImpl(CachedGroup entry, MlsClient.ReInitProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         byte[] groupID = request.getGroupId().toByteArray();
         ProtocolVersion version = ProtocolVersion.mls10;
-        MlsCipherSuite suite = MlsCipherSuite.getSuite((short) request.getCipherSuite());
+        MlsCipherSuite suite = MlsCipherSuite.getSuite((short)request.getCipherSuite());
 
         List<Extension> extList = new ArrayList<Extension>();
         for (int i = 0; i < request.getExtensionsCount(); i++)
@@ -1283,18 +1388,22 @@ public class MLSClientImpl
 
         MLSMessage message = entry.group.reinit(groupID, version, suite, extList, entry.messageOptions);
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(message)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void reInitProposal(MlsClient.ReInitProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 reInitProposalImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1304,7 +1413,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void reInitCommitImpl(CachedGroup entry, MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver) throws Exception
+    private void reInitCommitImpl(CachedGroup entry, MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
+        throws Exception
     {
         boolean inlineTree = !request.getExternalTree();
         boolean forcePath = request.getForcePath();
@@ -1330,26 +1440,31 @@ public class MLSClientImpl
         // cache the reinit
         LeafNode leaf = entry.group.getTree().getLeafNode(entry.group.getIndex());
         byte[] identity = leaf.getCredential().getIdentity();
-        KeyPackageWithSecrets kpSk = newKeyPackage(twm.getSuite(), identity);;
+        KeyPackageWithSecrets kpSk = newKeyPackage(twm.getSuite(), identity);
+        ;
         int reinitID = storeReinit(kpSk, twm, entry.encryptHandshake);
         byte[] commitBytes = MLSOutputStream.encode(twm.getMessage());
 
         MlsClient.CommitResponse response = MlsClient.CommitResponse.newBuilder()
-                .setCommit(ByteString.copyFrom(commitBytes))
-                .build();
+            .setCommit(ByteString.copyFrom(commitBytes))
+            .build();
 
         entry.pendingCommit = commitBytes;
         entry.pendingGroupID = reinitID;
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void reInitCommit(MlsClient.CommitRequest request, StreamObserver<MlsClient.CommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 reInitCommitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1359,7 +1474,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handlePendingReInitCommitImpl(CachedGroup entry, MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver) throws Exception
+    private void handlePendingReInitCommitImpl(CachedGroup entry, MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
+        throws Exception
     {
         if (entry.pendingCommit == null || entry.pendingGroupID == -1)
         {
@@ -1375,20 +1491,24 @@ public class MLSClientImpl
         }
 
         MlsClient.HandleReInitCommitResponse response = MlsClient.HandleReInitCommitResponse.newBuilder()
-                .setReinitId(reinitID)
-                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(reinit.kpSk.keyPackage))))
-                .setEpochAuthenticator(ByteString.copyFrom(reinit.tombstone.getEpochAuthenticator()))
-                .build();
+            .setReinitId(reinitID)
+            .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(reinit.kpSk.keyPackage))))
+            .setEpochAuthenticator(ByteString.copyFrom(reinit.tombstone.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handlePendingReInitCommit(MlsClient.HandlePendingCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 handlePendingReInitCommitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1398,7 +1518,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handleReInitCommitImpl(CachedGroup entry, MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver) throws Exception
+    private void handleReInitCommitImpl(CachedGroup entry, MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
+        throws Exception
     {
         //TODO: Reinit proposal must be provided by reference for now
         if (request.getProposalCount() != 1)
@@ -1412,7 +1533,7 @@ public class MLSClientImpl
             throw new Exception("Commit included among proposals");
         }
 
-        MLSMessage commit = (MLSMessage) MLSInputStream.decode(request.getCommit().toByteArray(), MLSMessage.class);
+        MLSMessage commit = (MLSMessage)MLSInputStream.decode(request.getCommit().toByteArray(), MLSMessage.class);
         Group.Tombstone tombstone = entry.group.handleReinitCommit(commit);
 
         // Cache the reinit
@@ -1423,20 +1544,24 @@ public class MLSClientImpl
         int reinitID = storeReinit(kpSk, tombstone, entry.encryptHandshake);
 
         MlsClient.HandleReInitCommitResponse response = MlsClient.HandleReInitCommitResponse.newBuilder()
-                .setReinitId(reinitID)
-                .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(kpSk.keyPackage))))
-                .setEpochAuthenticator(ByteString.copyFrom(tombstone.getEpochAuthenticator()))
-                .build();
+            .setReinitId(reinitID)
+            .setKeyPackage(ByteString.copyFrom(MLSOutputStream.encode(MLSMessage.keyPackage(kpSk.keyPackage))))
+            .setEpochAuthenticator(ByteString.copyFrom(tombstone.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handleReInitCommit(MlsClient.HandleCommitRequest request, StreamObserver<MlsClient.HandleReInitCommitResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 handleReInitCommitImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1446,7 +1571,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void reInitWelcomeImpl(MlsClient.ReInitWelcomeRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver) throws Exception
+    private void reInitWelcomeImpl(MlsClient.ReInitWelcomeRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
+        throws Exception
     {
         // Load the reinit
         CachedReinit reinit = loadReinit(request.getReinitId());
@@ -1459,7 +1585,7 @@ public class MLSClientImpl
         List<KeyPackage> keyPackages = new ArrayList<KeyPackage>();
         for (int i = 0; i < request.getKeyPackageCount(); i++)
         {
-            MLSMessage message = (MLSMessage) MLSInputStream.decode(request.getKeyPackage(i).toByteArray(), MLSMessage.class);
+            MLSMessage message = (MLSMessage)MLSInputStream.decode(request.getKeyPackage(i).toByteArray(), MLSMessage.class);
             keyPackages.add(message.keyPackage);
         }
 
@@ -1470,21 +1596,21 @@ public class MLSClientImpl
         byte[] leafSecret = new byte[suite.getKDF().getHashLength()];
 
         Group.GroupWithMessage gwm = reinit.tombstone.createWelcome(
-                reinit.kpSk.encryptionKeyPair,
-                suite.serializeSignaturePrivateKey(reinit.kpSk.signatureKeyPair.getPrivate()),
-                reinit.kpSk.keyPackage.getLeafNode(),
-                keyPackages,
-                leafSecret,
-                new Group.CommitOptions(null, inlineTree, forcePath, null)
+            reinit.kpSk.encryptionKeyPair,
+            suite.serializeSignaturePrivateKey(reinit.kpSk.signatureKeyPair.getPrivate()),
+            reinit.kpSk.keyPackage.getLeafNode(),
+            keyPackages,
+            leafSecret,
+            new Group.CommitOptions(null, inlineTree, forcePath, null)
         );
         byte[] welcomeData = MLSOutputStream.encode(gwm.message);
 
         // Store the resulting state
         int stateID = storeGroup(gwm.group, reinit.encryptHandshake);
         MlsClient.CreateSubgroupResponse.Builder builder = MlsClient.CreateSubgroupResponse.newBuilder()
-                .setStateId(stateID)
-                .setWelcome(ByteString.copyFrom(welcomeData))
-                .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()));
+            .setStateId(stateID)
+            .setWelcome(ByteString.copyFrom(welcomeData))
+            .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()));
 
         if (!inlineTree)
         {
@@ -1493,14 +1619,16 @@ public class MLSClientImpl
 
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void reInitWelcome(MlsClient.ReInitWelcomeRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 reInitWelcomeImpl(request, responseObserver);
             }
@@ -1511,7 +1639,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handleReInitWelcomeImpl(MlsClient.HandleReInitWelcomeRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver) throws Exception
+    private void handleReInitWelcomeImpl(MlsClient.HandleReInitWelcomeRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
+        throws Exception
     {
         // Load the reinit
         CachedReinit reinit = loadReinit(request.getReinitId());
@@ -1521,43 +1650,45 @@ public class MLSClientImpl
         }
 
         // Process the welcome
-        MLSMessage welcome = (MLSMessage) MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
+        MLSMessage welcome = (MLSMessage)MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
 
         byte[] ratchetTreeBytes = request.getRatchetTree().toByteArray();
         TreeKEMPublicKey ratchetTree = null;
         if (ratchetTreeBytes.length > 0)
         {
-            ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree = (TreeKEMPublicKey)MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
             ratchetTree.setSuite(welcome.getCipherSuite());
         }
 
         Group group = reinit.tombstone.handleWelcome(
-                reinit.kpSk.initKeyPair,
-                reinit.kpSk.encryptionKeyPair,
-                reinit.kpSk.signatureKeyPair,
-                reinit.kpSk.keyPackage,
-                welcome,
-                ratchetTree
+            reinit.kpSk.initKeyPair,
+            reinit.kpSk.encryptionKeyPair,
+            reinit.kpSk.signatureKeyPair,
+            reinit.kpSk.keyPackage,
+            welcome,
+            ratchetTree
         );
 
         // Store the resulting group
         int stateID = storeGroup(group, reinit.encryptHandshake);
 
         MlsClient.JoinGroupResponse response = MlsClient.JoinGroupResponse.newBuilder()
-                .setStateId(stateID)
-                .setEpochAuthenticator(ByteString.copyFrom(group.getEpochAuthenticator()))
-                .build();
+            .setStateId(stateID)
+            .setEpochAuthenticator(ByteString.copyFrom(group.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handleReInitWelcome(MlsClient.HandleReInitWelcomeRequest request, StreamObserver<MlsClient.JoinGroupResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 handleReInitWelcomeImpl(request, responseObserver);
             }
@@ -1572,13 +1703,14 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void createBranchImpl(CachedGroup entry, MlsClient.CreateBranchRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver) throws Exception
+    private void createBranchImpl(CachedGroup entry, MlsClient.CreateBranchRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
+        throws Exception
     {
         // Import KeyPackages
         List<KeyPackage> keyPackages = new ArrayList<KeyPackage>();
         for (int i = 0; i < request.getKeyPackagesCount(); i++)
         {
-            MLSMessage message = (MLSMessage) MLSInputStream.decode(request.getKeyPackages(i).toByteArray(), MLSMessage.class);
+            MLSMessage message = (MLSMessage)MLSInputStream.decode(request.getKeyPackages(i).toByteArray(), MLSMessage.class);
             keyPackages.add(message.keyPackage);
         }
 
@@ -1604,22 +1736,22 @@ public class MLSClientImpl
         random.nextBytes(leafSecret);
 
         Group.GroupWithMessage gwm = entry.group.createBranch(
-                groupID,
-                kpSK.encryptionKeyPair,
-                kpSK.signatureKeyPair,
-                kpSK.keyPackage.getLeafNode(),
-                extList,
-                keyPackages,
-                leafSecret,
-                new Group.CommitOptions(null, inlineTree, forcePath, null)
+            groupID,
+            kpSK.encryptionKeyPair,
+            kpSK.signatureKeyPair,
+            kpSK.keyPackage.getLeafNode(),
+            extList,
+            keyPackages,
+            leafSecret,
+            new Group.CommitOptions(null, inlineTree, forcePath, null)
         );
 
         int nextID = storeGroup(gwm.group, entry.encryptHandshake);
 
         MlsClient.CreateSubgroupResponse.Builder builder = MlsClient.CreateSubgroupResponse.newBuilder()
-                .setStateId(nextID)
-                .setWelcome(ByteString.copyFrom(MLSOutputStream.encode(gwm.message)))
-                .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()));
+            .setStateId(nextID)
+            .setWelcome(ByteString.copyFrom(MLSOutputStream.encode(gwm.message)))
+            .setEpochAuthenticator(ByteString.copyFrom(gwm.group.getEpochAuthenticator()));
 
         if (!inlineTree)
         {
@@ -1628,13 +1760,17 @@ public class MLSClientImpl
 
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void createBranch(MlsClient.CreateBranchRequest request, StreamObserver<MlsClient.CreateSubgroupResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 createBranchImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1644,7 +1780,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void handleBranchImpl(CachedGroup entry, MlsClient.HandleBranchRequest request, StreamObserver<MlsClient.HandleBranchResponse> responseObserver) throws Exception
+    private void handleBranchImpl(CachedGroup entry, MlsClient.HandleBranchRequest request, StreamObserver<MlsClient.HandleBranchResponse> responseObserver)
+        throws Exception
     {
         CachedJoin join = loadJoin(request.getTransactionId());
         if (join == null)
@@ -1652,40 +1789,44 @@ public class MLSClientImpl
             throw Status.INVALID_ARGUMENT.withDescription("Unknown transaction ID").asException();
         }
 
-        MLSMessage welcome = (MLSMessage) MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
+        MLSMessage welcome = (MLSMessage)MLSInputStream.decode(request.getWelcome().toByteArray(), MLSMessage.class);
         byte[] ratchetTreeBytes = request.getRatchetTree().toByteArray();
         TreeKEMPublicKey ratchetTree = null;
         if (ratchetTreeBytes.length > 0)
         {
-            ratchetTree = (TreeKEMPublicKey) MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
+            ratchetTree = (TreeKEMPublicKey)MLSInputStream.decode(ratchetTreeBytes, TreeKEMPublicKey.class);
             ratchetTree.setSuite(welcome.getCipherSuite());
         }
 
         Group group = entry.group.handleBranch(
-                join.kpSecrets.initKeyPair,
-                join.kpSecrets.encryptionKeyPair,
-                join.kpSecrets.signatureKeyPair,
-                join.kpSecrets.keyPackage,
-                welcome,
-                ratchetTree
+            join.kpSecrets.initKeyPair,
+            join.kpSecrets.encryptionKeyPair,
+            join.kpSecrets.signatureKeyPair,
+            join.kpSecrets.keyPackage,
+            welcome,
+            ratchetTree
         );
 
         int stateID = storeGroup(group, entry.encryptHandshake);
 
         MlsClient.HandleBranchResponse response = MlsClient.HandleBranchResponse.newBuilder()
-                .setStateId(stateID)
-                .setEpochAuthenticator(ByteString.copyFrom(group.getEpochAuthenticator()))
-                .build();
+            .setStateId(stateID)
+            .setEpochAuthenticator(ByteString.copyFrom(group.getEpochAuthenticator()))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void handleBranch(MlsClient.HandleBranchRequest request, StreamObserver<MlsClient.HandleBranchResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 handleBranchImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1699,45 +1840,48 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void newMemberAddProposalImpl(MlsClient.NewMemberAddProposalRequest request, StreamObserver<MlsClient.NewMemberAddProposalResponse> responseObserver) throws Exception
+    private void newMemberAddProposalImpl(MlsClient.NewMemberAddProposalRequest request, StreamObserver<MlsClient.NewMemberAddProposalResponse> responseObserver)
+        throws Exception
     {
-        MLSMessage groupInfoMsg = (MLSMessage) MLSInputStream.decode(request.getGroupInfo().toByteArray(), MLSMessage.class);
+        MLSMessage groupInfoMsg = (MLSMessage)MLSInputStream.decode(request.getGroupInfo().toByteArray(), MLSMessage.class);
         GroupInfo groupInfo = groupInfoMsg.groupInfo;
         MlsCipherSuite suite = groupInfo.getSuite();
 
         KeyPackageWithSecrets kpSk = newKeyPackage(suite, request.getIdentity().toByteArray());
 
-        byte[] initSk =  suite.getHPKE().serializePrivateKey(kpSk.initKeyPair.getPrivate());
+        byte[] initSk = suite.getHPKE().serializePrivateKey(kpSk.initKeyPair.getPrivate());
         byte[] encryptionSk = suite.getHPKE().serializePrivateKey(kpSk.encryptionKeyPair.getPrivate());
         byte[] signatureSk = suite.serializeSignaturePrivateKey(kpSk.signatureKeyPair.getPrivate());
 
         MLSMessage proposal = Group.newMemberAdd(
-                groupInfo.getGroupID(),
-                groupInfo.getEpoch(),
-                kpSk.keyPackage,
-                kpSk.signatureKeyPair
+            groupInfo.getGroupID(),
+            groupInfo.getEpoch(),
+            kpSk.keyPackage,
+            kpSk.signatureKeyPair
         );
 
         int joinID = storeJoin(kpSk);
 
         MlsClient.NewMemberAddProposalResponse response = MlsClient.NewMemberAddProposalResponse.newBuilder()
-                .setInitPriv(ByteString.copyFrom(initSk))
-                .setEncryptionPriv(ByteString.copyFrom(encryptionSk))
-                .setSignaturePriv(ByteString.copyFrom(signatureSk))
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(proposal)))
-                .setTransactionId(joinID)
-                .build();
+            .setInitPriv(ByteString.copyFrom(initSk))
+            .setEncryptionPriv(ByteString.copyFrom(encryptionSk))
+            .setSignaturePriv(ByteString.copyFrom(signatureSk))
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(proposal)))
+            .setTransactionId(joinID)
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void newMemberAddProposal(MlsClient.NewMemberAddProposalRequest request, StreamObserver<MlsClient.NewMemberAddProposalResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 newMemberAddProposalImpl(request, responseObserver);
             }
@@ -1748,7 +1892,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void createExternalSignerImpl(MlsClient.CreateExternalSignerRequest request, StreamObserver<MlsClient.CreateExternalSignerResponse> responseObserver) throws Exception
+    private void createExternalSignerImpl(MlsClient.CreateExternalSignerRequest request, StreamObserver<MlsClient.CreateExternalSignerResponse> responseObserver)
+        throws Exception
     {
         MlsCipherSuite suite = MlsCipherSuite.getSuite((short)request.getCipherSuite());
         AsymmetricCipherKeyPair sigSk = suite.generateSignatureKeyPair();
@@ -1759,20 +1904,22 @@ public class MLSClientImpl
         int signerID = storeSigner(suite.serializeSignaturePrivateKey(sigSk.getPrivate()));
 
         MlsClient.CreateExternalSignerResponse response = MlsClient.CreateExternalSignerResponse.newBuilder()
-                .setExternalSender(ByteString.copyFrom(MLSOutputStream.encode(extSender)))
-                .setSignerId(signerID)
-                .build();
+            .setExternalSender(ByteString.copyFrom(MLSOutputStream.encode(extSender)))
+            .setSignerId(signerID)
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void createExternalSigner(MlsClient.CreateExternalSignerRequest request, StreamObserver<MlsClient.CreateExternalSignerResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 createExternalSignerImpl(request, responseObserver);
             }
@@ -1783,7 +1930,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void addExternalSignerImpl(CachedGroup entry, MlsClient.AddExternalSignerRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void addExternalSignerImpl(CachedGroup entry, MlsClient.AddExternalSignerRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         byte[] extSender = request.getExternalSender().toByteArray();
 
@@ -1797,23 +1945,27 @@ public class MLSClientImpl
             }
         }
         extList = new ArrayList<Extension>();
-        extSenders.add((ExternalSender) MLSInputStream.decode(extSender, ExternalSender.class));
+        extSenders.add((ExternalSender)MLSInputStream.decode(extSender, ExternalSender.class));
         extList.add(Extension.externalSender(extSenders));
 
         MLSMessage proposal = entry.group.groupContextExtensions(extList, entry.messageOptions);
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(proposal)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(proposal)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void addExternalSigner(MlsClient.AddExternalSignerRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-        stateWrap(new FunctionWithState() {
+        stateWrap(new FunctionWithState()
+        {
             @Override
-            public void run(CachedGroup group) throws Exception {
+            public void run(CachedGroup group)
+                throws Exception
+            {
                 addExternalSignerImpl(group, request, responseObserver);
             }
         }, request, responseObserver);
@@ -1823,10 +1975,11 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void externalSignerProposalImpl(MlsClient.ExternalSignerProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver) throws Exception
+    private void externalSignerProposalImpl(MlsClient.ExternalSignerProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
+        throws Exception
     {
         byte[] groupMsgData = request.getGroupInfo().toByteArray();
-        MLSMessage groupMsg = (MLSMessage) MLSInputStream.decode(groupMsgData, MLSMessage.class);
+        MLSMessage groupMsg = (MLSMessage)MLSInputStream.decode(groupMsgData, MLSMessage.class);
         GroupInfo groupInfo = groupMsg.groupInfo;
 
         MlsCipherSuite suite = groupInfo.getSuite();
@@ -1834,7 +1987,7 @@ public class MLSClientImpl
         long epoch = groupInfo.getEpoch();
 
         byte[] treeData = request.getRatchetTree().toByteArray();
-        TreeKEMPublicKey tree = (TreeKEMPublicKey) MLSInputStream.decode(treeData, TreeKEMPublicKey.class);
+        TreeKEMPublicKey tree = (TreeKEMPublicKey)MLSInputStream.decode(treeData, TreeKEMPublicKey.class);
 
         // Look up the signer
         byte[] sigPriv = loadSigner(request.getSignerId());
@@ -1872,19 +2025,21 @@ public class MLSClientImpl
         MLSMessage signedProposal = MLSMessage.externalProposal(suite, groupID, epoch, proposal, sigIndex, sigPriv);
 
         MlsClient.ProposalResponse response = MlsClient.ProposalResponse.newBuilder()
-                .setProposal(ByteString.copyFrom(MLSOutputStream.encode(signedProposal)))
-                .build();
+            .setProposal(ByteString.copyFrom(MLSOutputStream.encode(signedProposal)))
+            .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void externalSignerProposal(MlsClient.ExternalSignerProposalRequest request, StreamObserver<MlsClient.ProposalResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 externalSignerProposalImpl(request, responseObserver);
             }
@@ -1899,7 +2054,8 @@ public class MLSClientImpl
      * @param request
      * @param responseObserver
      */
-    private void freeImpl(MlsClient.FreeRequest request, StreamObserver<MlsClient.FreeResponse> responseObserver) throws StatusException
+    private void freeImpl(MlsClient.FreeRequest request, StreamObserver<MlsClient.FreeResponse> responseObserver)
+        throws StatusException
     {
         int stateID = request.getStateId();
         if (!groupCache.containsKey(stateID))
@@ -1911,14 +2067,16 @@ public class MLSClientImpl
         MlsClient.FreeResponse response = MlsClient.FreeResponse.newBuilder().build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-	}
-@Override
+    }
+
+    @Override
     public void free(MlsClient.FreeRequest request, StreamObserver<MlsClient.FreeResponse> responseObserver)
     {
-         catchWrap(new Function()
+        catchWrap(new Function()
         {
             @Override
-            public void run() throws Exception
+            public void run()
+                throws Exception
             {
                 freeImpl(request, responseObserver);
             }

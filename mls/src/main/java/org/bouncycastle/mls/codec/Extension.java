@@ -1,13 +1,13 @@
 package org.bouncycastle.mls.codec;
 
-import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+
 public class Extension
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     public ExtensionType extensionType;
     public byte[] extension_data;
@@ -17,9 +17,10 @@ public class Extension
         this.extensionType = extensionType;
         this.extension_data = extension_data;
     }
+
     public Extension(int extensionType, byte[] extension_data)
     {
-        short extType = (short) extensionType;
+        short extType = (short)extensionType;
         if (Grease.isGrease(extType) == -1)
         {
             this.extensionType = ExtensionType.values()[extType];
@@ -31,14 +32,16 @@ public class Extension
         this.extension_data = extension_data;
     }
 
-    static public Extension externalSender(List<ExternalSender> list) throws IOException
+    static public Extension externalSender(List<ExternalSender> list)
+        throws IOException
     {
         MLSOutputStream stream = new MLSOutputStream();
         stream.writeList(list);
         return new Extension(ExtensionType.EXTERNAL_SENDERS, stream.toByteArray());
     }
 
-    public byte[] getExternalPub() throws IOException
+    public byte[] getExternalPub()
+        throws IOException
     {
         if (extensionType == ExtensionType.EXTERNAL_PUB)
         {
@@ -50,9 +53,10 @@ public class Extension
     }
 
     @SuppressWarnings("unused")
-    Extension(MLSInputStream stream) throws IOException
+    Extension(MLSInputStream stream)
+        throws IOException
     {
-        short extType = (short) stream.read(short.class);
+        short extType = (short)stream.read(short.class);
         if (Grease.isGrease(extType) == -1)
         {
             this.extensionType = ExtensionType.values()[extType];
@@ -64,7 +68,8 @@ public class Extension
         this.extension_data = stream.readOpaque();
     }
 
-    public List<ExternalSender> getSenders() throws IOException
+    public List<ExternalSender> getSenders()
+        throws IOException
     {
         if (extensionType == ExtensionType.EXTERNAL_SENDERS)
         {
@@ -75,23 +80,26 @@ public class Extension
         }
         return null;
     }
-    public TreeKEMPublicKey getRatchetTree() throws IOException
+
+    public TreeKEMPublicKey getRatchetTree()
+        throws IOException
     {
         if (extensionType == ExtensionType.RATCHET_TREE)
         {
-            return (TreeKEMPublicKey) MLSInputStream.decode(extension_data, TreeKEMPublicKey.class);
+            return (TreeKEMPublicKey)MLSInputStream.decode(extension_data, TreeKEMPublicKey.class);
         }
         return null;
     }
 
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
 //        if (Grease.isGrease(extensionType.value) == -1)
 //        {
-            stream.write(extensionType);
-            stream.writeOpaque(extension_data);
+        stream.write(extensionType);
+        stream.writeOpaque(extension_data);
 //        }
 //        else
 //        {

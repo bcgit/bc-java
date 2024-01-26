@@ -3,11 +3,11 @@ package org.bouncycastle.mls.codec;
 import java.io.IOException;
 
 public enum NodeType
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
-    RESERVED((byte) 0),
-    leaf((byte) 1),
-    parent((byte) 2);
+    RESERVED((byte)0),
+    leaf((byte)1),
+    parent((byte)2);
 
     final byte value;
 
@@ -17,13 +17,15 @@ public enum NodeType
     }
 
     @SuppressWarnings("unused")
-    NodeType(MLSInputStream stream) throws IOException
+    NodeType(MLSInputStream stream)
+        throws IOException
     {
-        this.value = (byte) stream.read(byte.class);
+        this.value = (byte)stream.read(byte.class);
     }
 
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.write(value);
     }

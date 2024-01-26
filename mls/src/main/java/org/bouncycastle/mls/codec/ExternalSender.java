@@ -3,7 +3,7 @@ package org.bouncycastle.mls.codec;
 import java.io.IOException;
 
 public class ExternalSender
-        implements MLSInputStream.Readable, MLSOutputStream.Writable
+    implements MLSInputStream.Readable, MLSOutputStream.Writable
 {
     byte[] signatureKey;
     Credential credential;
@@ -19,13 +19,16 @@ public class ExternalSender
         this.credential = credential;
     }
 
-    public ExternalSender(MLSInputStream stream) throws IOException
+    public ExternalSender(MLSInputStream stream)
+        throws IOException
     {
         signatureKey = stream.readOpaque();
-        credential = (Credential) stream.read(Credential.class);
+        credential = (Credential)stream.read(Credential.class);
     }
+
     @Override
-    public void writeTo(MLSOutputStream stream) throws IOException
+    public void writeTo(MLSOutputStream stream)
+        throws IOException
     {
         stream.writeOpaque(signatureKey);
         stream.write(credential);

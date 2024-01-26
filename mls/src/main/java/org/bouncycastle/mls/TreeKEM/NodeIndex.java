@@ -1,72 +1,87 @@
 package org.bouncycastle.mls.TreeKEM;
 
-import org.bouncycastle.mls.TreeSize;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
 
-public class NodeIndex {
+import org.bouncycastle.mls.TreeSize;
+
+public class NodeIndex
+{
     private final long value;
 
-    public long value() {
+    public long value()
+    {
         return value;
     }
 
-    public NodeIndex(long valueIn) {
+    public NodeIndex(long valueIn)
+    {
         value = valueIn;
     }
 
-    public NodeIndex(LeafIndex leaf) {
+    public NodeIndex(LeafIndex leaf)
+    {
         value = 2 * leaf.value();
     }
 
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
             return true;
         }
 
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass())
+        {
             return false;
         }
 
-        NodeIndex nodeIndex = (NodeIndex) o;
+        NodeIndex nodeIndex = (NodeIndex)o;
         return value == nodeIndex.value;
     }
 
-    public static NodeIndex root(TreeSize size) {
+    public static NodeIndex root(TreeSize size)
+    {
         return new NodeIndex((1L << size.depth()) - 1);
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return Objects.hash(value);
     }
 
-    public long level() {
+    public long level()
+    {
         return Long.numberOfTrailingZeros(~value);
     }
 
-    public boolean isLeaf() {
+    public boolean isLeaf()
+    {
         return value % 2 == 0;
     }
 
-    public boolean isBelow(NodeIndex other) {
+    public boolean isBelow(NodeIndex other)
+    {
         long lx = level();
         long ly = other.level();
-        return (lx <= ly) && (value >> (ly+1)) == (other.value >> (ly+1));
+        return (lx <= ly) && (value >> (ly + 1)) == (other.value >> (ly + 1));
     }
 
-    public NodeIndex parent() {
+    public NodeIndex parent()
+    {
         long k = level();
-        return new NodeIndex((value | (1L << k)) & ~(1L << (k+1)));
+        return new NodeIndex((value | (1L << k)) & ~(1L << (k + 1)));
     }
 
-    public NodeIndex left() {
-        if (isLeaf()) {
+    public NodeIndex left()
+    {
+        if (isLeaf())
+        {
             return this;
         }
 
@@ -74,8 +89,10 @@ public class NodeIndex {
         return new NodeIndex(value ^ (0x01L << (k - 1)));
     }
 
-    public NodeIndex right() {
-        if (isLeaf()) {
+    public NodeIndex right()
+    {
+        if (isLeaf())
+        {
             return this;
         }
 
@@ -97,6 +114,7 @@ public class NodeIndex {
     {
         return sibling(parent());
     }
+
     public NodeIndex sibling(NodeIndex ancestor)
     {
         NodeIndex l = ancestor.left();
@@ -109,7 +127,8 @@ public class NodeIndex {
         return l;
     }
 
-    public List<NodeIndex> copath(TreeSize size) throws Exception
+    public List<NodeIndex> copath(TreeSize size)
+        throws Exception
     {
         List<NodeIndex> d = directPath(size);
 
@@ -122,7 +141,7 @@ public class NodeIndex {
         d.remove(d.size() - 1);
 
         List<NodeIndex> cp = new ArrayList<NodeIndex>();
-        for (NodeIndex n: d)
+        for (NodeIndex n : d)
         {
             cp.add(n.sibling());
         }
@@ -130,7 +149,8 @@ public class NodeIndex {
         return cp;
     }
 
-    private  List<NodeIndex> directPath(TreeSize size) throws Exception
+    private List<NodeIndex> directPath(TreeSize size)
+        throws Exception
     {
         if (value >= size.width())
         {
