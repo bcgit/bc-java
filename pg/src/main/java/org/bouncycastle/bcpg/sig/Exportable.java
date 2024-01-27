@@ -4,7 +4,7 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving signature creation time.
+ * Signature subpacket indicating, whether the carrying signature is intended to be exportable.
  */
 public class Exportable 
     extends SignatureSubpacket
