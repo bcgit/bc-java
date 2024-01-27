@@ -4,7 +4,7 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving whether or not is revocable.
+ * Signature subpacket indicating, whether the carrying signature can be revoked.
  */
 public class Revocable 
     extends SignatureSubpacket
