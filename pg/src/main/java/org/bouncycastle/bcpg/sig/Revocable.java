@@ -2,29 +2,14 @@ package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.util.Booleans;
 
 /**
  * Signature subpacket indicating, whether the carrying signature can be revoked.
  */
 public class Revocable 
     extends SignatureSubpacket
-{    
-    private static byte[] booleanToByteArray(
-        boolean    value)
-    {
-        byte[]    data = new byte[1];
-        
-        if (value)
-        {
-            data[0] = 1;
-            return data;
-        }
-        else
-        {
-            return data;
-        }
-    }
-    
+{
     public Revocable(
         boolean    critical,
         boolean    isLongLength,
@@ -37,11 +22,11 @@ public class Revocable
         boolean    critical,
         boolean    isRevocable)
     {
-        super(SignatureSubpacketTags.REVOCABLE, critical, false, booleanToByteArray(isRevocable));
+        super(SignatureSubpacketTags.REVOCABLE, critical, false, Booleans.toByteArray(isRevocable));
     }
     
     public boolean isRevocable()
     {
-        return data[0] != 0;
+        return Booleans.fromByteArray(data);
     }
 }
