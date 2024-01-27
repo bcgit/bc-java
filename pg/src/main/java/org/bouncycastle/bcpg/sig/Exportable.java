@@ -2,29 +2,14 @@ package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.util.Booleans;
 
 /**
  * Signature subpacket indicating, whether the carrying signature is intended to be exportable.
  */
 public class Exportable 
     extends SignatureSubpacket
-{    
-    private static byte[] booleanToByteArray(
-        boolean    value)
-    {
-        byte[]    data = new byte[1];
-        
-        if (value)
-        {
-            data[0] = 1;
-            return data;
-        }
-        else
-        {
-            return data;
-        }
-    }
-    
+{
     public Exportable(
         boolean    critical,
         boolean    isLongLength,
@@ -37,11 +22,11 @@ public class Exportable
         boolean    critical,
         boolean    isExportable)
     {
-        super(SignatureSubpacketTags.EXPORTABLE, critical, false,  booleanToByteArray(isExportable));
+        super(SignatureSubpacketTags.EXPORTABLE, critical, false, Booleans.toByteArray(isExportable));
     }
     
     public boolean isExportable()
     {
-        return data[0] != 0;
+        return Booleans.fromByteArray(data);
     }
 }
