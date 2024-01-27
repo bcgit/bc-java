@@ -4,7 +4,7 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving whether or not the signature is signed using the primary user ID for the key.
+ * Signature Subpacket indicating, whether the signed User-ID is marked as the primary user ID for the key.
  */
 public class PrimaryUserID 
     extends SignatureSubpacket
