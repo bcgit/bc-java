@@ -197,7 +197,6 @@ public class LeafNode
 
     public boolean verifyLifetime()
     {
-        //TODO: check
         if (leaf_node_source != LeafNodeSource.KEY_PACKAGE)
         {
             return true;

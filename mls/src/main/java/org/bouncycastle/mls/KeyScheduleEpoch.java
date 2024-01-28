@@ -134,13 +134,6 @@ public class KeyScheduleEpoch
                     joiner_secret
 
         */
-//        public static JoinSecrets forMember(CipherSuite suite, Secret initSecret, Secret commitSecret, List<PSKWithSecret> psks, byte[] context) throws IOException
-//        {
-//            Secret preJoinerSecret = Secret.extract(suite, initSecret, commitSecret);
-//            Secret joinerSecret = preJoinerSecret.expandWithLabel(suite, "joiner", context, suite.getKDF().getHashLength());
-//            return new JoinSecrets(suite, joinerSecret, psks);
-//        }
-        // todo change to
         public static JoinSecrets forMember(MlsCipherSuite suite, Secret initSecret, Secret commitSecret, Secret pskSecret, byte[] context)
             throws IOException
         {
@@ -329,13 +322,13 @@ psk_secret (or 0) --> KDF.Extract
     public static KeyScheduleEpoch forExternalJoiner(MlsCipherSuite suite, TreeSize treeSize, ExternalInitParams externalInitParams, Secret commitSecret, List<PSKWithSecret> psks, byte[] context)
         throws IOException, IllegalAccessException
     {
-        return JoinSecrets.forMember(suite, externalInitParams.initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context).complete(treeSize, context); //TODO external: pskSecret OR new byte [0]
+        return JoinSecrets.forMember(suite, externalInitParams.initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context).complete(treeSize, context);
     }
 
     public JoinSecrets startCommit(Secret commitSecret, List<PSKWithSecret> psks, byte[] context)
         throws IOException
     {
-        return JoinSecrets.forMember(suite, initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context);//TODO: pskSecret OR new byte [0]
+        return JoinSecrets.forMember(suite, initSecret, commitSecret, JoinSecrets.pskSecret(suite, psks), context);
     }
 
     /*
