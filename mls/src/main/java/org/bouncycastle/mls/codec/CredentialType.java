@@ -42,7 +42,6 @@ public enum CredentialType
     public void writeTo(MLSOutputStream stream)
         throws IOException
     {
-        //TODO write grease?
         stream.write(value);
     }
 }
