@@ -96,15 +96,7 @@ public class Extension
     public void writeTo(MLSOutputStream stream)
         throws IOException
     {
-//        if (Grease.isGrease(extensionType.value) == -1)
-//        {
         stream.write(extensionType);
         stream.writeOpaque(extension_data);
-//        }
-//        else
-//        {
-//            //TODO: check should we write grease?
-//        }
-
     }
 }
