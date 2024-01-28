@@ -53,11 +53,6 @@ public class PrivateMessage
 
         // Encrypt the content
         byte[] contentPt = serializeContentPt(auth.content, auth.auth, paddingSize);
-//        if (contentPt.length < 512)
-//        {
-//            contentPt = Arrays.concatenate(contentPt, new byte[512 - contentPt.length]);//TODO CHECK
-//        }
-//        System.out.println("serialized_private_content: " + Hex.toHexString(contentPt));
 
         PrivateContentAAD contentAAD = new PrivateContentAAD(
             auth.content.group_id,
@@ -104,9 +99,8 @@ public class PrivateMessage
         );
     }
 
-    //TODO: change senderDataSecretBytes to Secret class?
     public AuthenticatedContent unprotect(MlsCipherSuite suite, GroupKeySet keys, byte[] senderDataSecretBytes)
-        throws IOException, InvalidCipherTextException, IllegalAccessException
+            throws Exception
     {
         // Decrypt and parse the sender data
 
@@ -140,7 +134,6 @@ public class PrivateMessage
             ciphertext
         );
 
-        //TODO: check if erase is working properly also check when to erase
         keys.erase(content_type, senderData.sender, senderData.generation);
 
         // Parse Content
@@ -236,7 +229,6 @@ public class PrivateMessage
             stream.writeOpaque(auth.confirmation_tag);
             break;
         }
-        //TODO: write padding;
         return Arrays.concatenate(stream.toByteArray(), new byte[paddingSize]);
     }
 }

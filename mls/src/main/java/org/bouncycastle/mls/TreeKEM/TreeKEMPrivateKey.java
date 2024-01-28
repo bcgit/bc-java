@@ -13,6 +13,7 @@ import org.bouncycastle.mls.codec.HPKECiphertext;
 import org.bouncycastle.mls.codec.UpdatePath;
 import org.bouncycastle.mls.crypto.MlsCipherSuite;
 import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 import static org.bouncycastle.mls.TreeKEM.Utils.removeLeaves;
@@ -68,7 +69,7 @@ public class TreeKEMPrivateKey
         throws Exception
     {
         TreeKEMPrivateKey priv = new TreeKEMPrivateKey(pub.suite, from);
-        priv.implant(pub, new NodeIndex(from), leafSecret);//todo check
+        priv.implant(pub, new NodeIndex(from), leafSecret);
         return priv;
     }
 
@@ -87,45 +88,44 @@ public class TreeKEMPrivateKey
         return priv;
     }
 
-    public void dump()
+    public String dump()
         throws IOException
     {
+        StringBuilder sb = new StringBuilder();
         for (NodeIndex node :
             pathSecrets.keySet())
         {
             setPrivateKey(node, true);
         }
 
-        // -DM System.out.println
-        System.out.println("Tree (priv)");
-        // -DM System.out.println
-        System.out.println("  Index: " + (new NodeIndex(index)).value());
+        sb.append("Tree (priv)").append(Strings.lineSeparator());
+        sb.append("  Index: ").append((new NodeIndex(index)).value()).append(Strings.lineSeparator());
 
-        // -DM System.out.println
-        System.out.println("  Secrets: ");
+        sb.append("  Secrets: ").append(Strings.lineSeparator());
         for (NodeIndex n : pathSecrets.keySet())
         {
             Secret pathSecret = pathSecrets.get(n);
             Secret nodeSecret = pathSecret.deriveSecret(suite, "node");
             AsymmetricCipherKeyPair sk = suite.getHPKE().deriveKeyPair(nodeSecret.value());
 
-            // -DM System.out.println
             // -DM Hex.toHexString
             // -DM Hex.toHexString
-            System.out.println("    " + n.value()
-                + " => " + Hex.toHexString(pathSecret.value(), 0, 4)
-                + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
+            sb.append("    ").append(n.value())
+                    .append(" => ").append(Hex.toHexString(pathSecret.value(), 0, 4))
+                    .append(" => ").append(Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4))
+                    .append(Strings.lineSeparator());
         }
 
-        // -DM System.out.println
-        System.out.println("  Cached key pairs: ");
+        sb.append("  Cached key pairs: ").append(Strings.lineSeparator());
         for (NodeIndex n : privateKeyCache.keySet())
         {
             AsymmetricCipherKeyPair sk = privateKeyCache.get(n);
-            // -DM System.out.println
             // -DM Hex.toHexString
-            System.out.println("    " + n.value() + " => " + Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4));
+            sb.append("    ").append(n.value()).append(" => ")
+                    .append(Hex.toHexString(suite.getHPKE().serializePublicKey(sk.getPublic()), 0, 4))
+                    .append(Strings.lineSeparator());
         }
+        return sb.toString();
     }
 
     public void truncate(TreeSize size)
@@ -253,7 +253,6 @@ public class TreeKEMPrivateKey
             }
             byte[] pub = optNode.getPublicKey();
             AsymmetricCipherKeyPair priv = privateKeyCache.get(key);
-            // todo maybe i have to initilize the public keys for testing
             if (!Arrays.equals(pub, suite.getHPKE().serializePublicKey(priv.getPublic())))
             {
                 return false;
@@ -310,7 +309,6 @@ public class TreeKEMPrivateKey
 
     public Secret getSharedPathSecret(LeafIndex to)
     {
-        //TODO: make a triplet class
         NodeIndex n = index.commonAncestor(to);
         if (!pathSecrets.containsKey(n))
         {

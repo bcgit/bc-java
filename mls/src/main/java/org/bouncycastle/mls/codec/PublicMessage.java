@@ -81,7 +81,6 @@ public class PublicMessage
         PublicMessage pt = new PublicMessage(authContent.content, authContent.auth, null);
         if (pt.content.sender.senderType == SenderType.MEMBER)
         {
-//            System.out.println("groupcontextbytes: " + Hex.toHexString(groupContextBytes));
             GroupContext context = (GroupContext)MLSInputStream.decode(groupContextBytes, GroupContext.class);
             Secret membershipKey = new Secret(membershipKeyBytes);
             pt.membership_tag = pt.membershipMac(suite, membershipKey, context);
@@ -90,7 +89,7 @@ public class PublicMessage
     }
 
     public AuthenticatedContent unprotect(MlsCipherSuite suite, Secret membership_key, GroupContext context)
-        throws IOException
+            throws Exception
     {
         if (content.sender.senderType == SenderType.MEMBER)
         {

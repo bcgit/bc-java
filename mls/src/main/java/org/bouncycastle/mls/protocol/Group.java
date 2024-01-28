@@ -144,7 +144,7 @@ public class Group
             Map<EpochRef, byte[]> resumptionPsks = new HashMap<EpochRef, byte[]>();
             resumptionPsks.put(new EpochRef(priorGroupID, priorEpoch), resumptionPsk);
 
-            MlsCipherSuite suite = welcome.getCipherSuite(); // TODO DONT SERIALIZE KEYS
+            MlsCipherSuite suite = welcome.getCipherSuite();
             Group newGroup = new Group(
                 suite.getHPKE().serializePrivateKey(initSk.getPrivate()),
                 encSk,
@@ -378,8 +378,7 @@ public class Group
     private GroupKeySet keys;
     private MlsCipherSuite suite;
     private LeafIndex index;
-    private byte[] identitySk; // TODO: maybe make this AsymmetricCipherKeyPair
-    //    private ArrayList<CachedProposal> proposalQueue;
+    private byte[] identitySk;
     private ArrayList<CachedProposal> pendingProposals;
     private CachedUpdate cachedUpdate;
 
@@ -594,7 +593,7 @@ public class Group
         transcriptHash = new TranscriptHash(suite, groupInfo.getGroupContext().getConfirmedTranscriptHash().clone(), null);
         transcriptHash.updateInterim(groupInfo.getConfirmationTag());
 
-        extensions = new ArrayList<Extension>(); // TODO: Check to clone?
+        extensions = new ArrayList<Extension>();
         extensions.addAll(groupInfo.getGroupContext().getExtensions());
 
         // Create the TreeKEMPrivateKey
@@ -641,7 +640,7 @@ public class Group
         throws Exception
     {
         MLSMessage msg = (MLSMessage)MLSInputStream.decode(mlsMessageBytes, MLSMessage.class);
-        if (msg.version != ProtocolVersion.mls10) //TODO: do check in MLSMessage?
+        if (msg.version != ProtocolVersion.mls10)
         {
             throw new Exception("Unsupported version");
         }
@@ -651,7 +650,7 @@ public class Group
         {
         case mls_public_message:
             auth = msg.publicMessage.unprotect(suite, keySchedule.membershipKey, getGroupContext());
-            if (auth == null)//TODO: remove this?
+            if (auth == null)
             {
                 throw new Exception("Membership tag failed to verify");
             }
@@ -1146,7 +1145,6 @@ public class Group
         }
         groupInfo.sign(next.tree, next.index, suite.deserializeSignaturePrivateKey(next.identitySk));
 
-        //TODO: should have a way to retrieve joiner secret from key schedule
         Welcome welcome = new Welcome(suite,
             next.keySchedule.getJoinerSecret().value(),
             joinersWithpsks.psks,
@@ -1157,8 +1155,6 @@ public class Group
             welcome.encrypt(joiners.get(i), pathSecrets.get(i));
         }
 
-//        this.replace(next); //TODO: return instead of replace
-        //TODO: separate welcome and commit message
         commitMessage.welcome = welcome;
         return new GroupWithMessage(next, commitMessage);
     }
@@ -1358,7 +1354,6 @@ public class Group
             msgOptions.authenticatedData,
             msgOptions.encrypt
         );
-//        System.out.println(Hex.toHexString(MLSOutputStream.encode(contentAuth)));
         return protect(contentAuth, msgOptions.paddingSize);
     }
 
@@ -1514,7 +1509,7 @@ public class Group
     private MLSMessage protect(AuthenticatedContent contentAuth, int paddingSize)
         throws Exception
     {
-        MLSMessage message = new MLSMessage(contentAuth.getWireFormat()); //TODO: change pretect to return MLSMessage instead
+        MLSMessage message = new MLSMessage(contentAuth.getWireFormat());
         switch (contentAuth.getWireFormat())
         {
         case mls_public_message:
@@ -1528,7 +1523,6 @@ public class Group
         }
     }
 
-    //TODO: check if innerContent should be mlsMessage or commit
     private AuthenticatedContent sign(Sender sender, Commit innerContent, byte[] authenticatedData, boolean encrypt)
         throws Exception
     {
@@ -1749,7 +1743,6 @@ public class Group
         throws IOException
     {
         Group next = new Group();
-        //TODO: check which needs to be deep copied
         next.externalPSKs = new HashMap<Secret, byte[]>(externalPSKs);
         next.resumptionPSKs = new HashMap<EpochRef, byte[]>();
         next.resumptionPSKs.putAll(resumptionPSKs);
@@ -1758,10 +1751,10 @@ public class Group
         next.transcriptHash = transcriptHash.copy();
         next.extensions = new ArrayList<Extension>();
         next.extensions.addAll(extensions);
-        next.keySchedule = keySchedule; // check
+        next.keySchedule = keySchedule;
         next.tree = TreeKEMPublicKey.clone(tree);
         next.treePriv = treePriv.copy();
-        next.keys = keys; // check
+        next.keys = keys;
         next.suite = suite;
         next.index = index;
         next.identitySk = identitySk.clone();
@@ -1826,7 +1819,6 @@ public class Group
         {
             throw new Exception("Invalid proposal");
         }
-        //TODO: check if ref should be recalculated
         pendingProposals.add(new CachedProposal(ref, proposal, senderLocation));
     }
 
@@ -1927,7 +1919,6 @@ public class Group
         // We mark self-removes invalid here even though a resync Commit will
         // sometimes cause them.  This is OK because this method is only called from
         // the normal proposal list validation method, not the external commit one.
-        //TODO: check if tree size leafCount or tree size Width
         boolean in_tree = (remove.removed.value() < tree.getSize().leafCount()) && tree.hasLeaf(remove.removed);
         boolean not_me = remove.removed.value() != index.value();
         return in_tree && not_me;
@@ -1942,7 +1933,6 @@ public class Group
 
         // Verify that the signature on the KeyPackage is valid using the public key
         // in leaf_node.credential.
-        //TODO: check why these are false: valid_signature and leaf_node_valid
         boolean valid_signature = keyPackage.verify();
 
         // Verify that the leaf_node of the KeyPackage is valid for a KeyPackage
@@ -2003,7 +1993,7 @@ public class Group
 //                = leafNode.verifyExtensionSupport(extensions);
 
         // Verify the lifetime
-        boolean isLifetimeValid = leafNode.verifyLifetime(); // TODO: check if needed (RECOMMENDED)
+        boolean isLifetimeValid = leafNode.verifyLifetime();
 
 
         //TODO:
@@ -2118,7 +2108,6 @@ public class Group
     private boolean validateNormalCachedProposals(List<CachedProposal> proposals, LeafIndex commitSender)
         throws IOException
     {
-        //TODO: use Java 8 streams?
         // It contains an individual proposal that is invalid as specified in Section
         // 12.1.
         boolean has_invalid_proposal = false;
@@ -2203,7 +2192,6 @@ public class Group
 
         // It contains multiple PreSharedKey proposals that reference the same
         // PreSharedKeyID.
-        //TODO: how to compare PSK id
         List<PreSharedKeyID> pskids = new ArrayList<PreSharedKeyID>();
         boolean has_dup_psk_id = false;
         for (CachedProposal cached : proposals)
@@ -2381,7 +2369,6 @@ public class Group
         }
         if (external != null)
         {
-            //TODO: check if it should be a deep copy
             outTree = external;
         }
         else if (outTree == null)
