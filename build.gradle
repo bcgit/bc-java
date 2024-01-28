@@ -4,6 +4,7 @@ buildscript {
       url "https://plugins.gradle.org/m2/"
     }
   }
+
 }
 
 plugins {
@@ -13,6 +14,15 @@ plugins {
   id "net.ltgt.errorprone" version "2.0.2"
 }
 
+println("Environment setup:")
+["BC_JDK8", "BC_JDK11", "BC_JDK15", "BC_JDK17"].each({ it ->
+  println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
+  if (System.getenv(it) == null) {
+    throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
+  }
+})
+
+
 if (JavaVersion.current().isJava8Compatible())
 {
   allprojects {
@@ -21,6 +31,7 @@ if (JavaVersion.current().isJava8Compatible())
     }
   }
 }
+
 
 // this needs to go here, otherwise it can't find config
 apply plugin: 'io.spring.nohttp'
@@ -180,9 +191,69 @@ subprojects {
   }
 
   test {
+    forkEvery = 1;
+    maxParallelForks = 1;
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(8)
+    }
+
+    jvmArgs=['-Dtest.java.version.prefix=1.8']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+      includeTestsMatching "AllTest*"
+      if (project.hasProperty('excludeTests')) {
+        excludeTestsMatching "${excludeTests}"
+      }
+    }
+  }
+
+
+  task test11(type:Test) {
+    forkEvery = 1;
+    maxParallelForks = 1;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(11)
+    }
+
+    jvmArgs=['-Dtest.java.version.prefix=11.']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+      includeTestsMatching "AllTest*"
+      if (project.hasProperty('excludeTests')) {
+        excludeTestsMatching "${excludeTests}"
+      }
+    }
+  }
+
+  task test17(type:Test) {
+    forkEvery = 1;
+    maxParallelForks = 1;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(17)
+    }
+
+    jvmArgs=['-Dtest.java.version.prefix=17.']
+
 
     finalizedBy jacocoTestReport
 
@@ -198,7 +269,7 @@ subprojects {
   dependencies {
     checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
     checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
-    errorprone "com.google.errorprone:error_prone_core:2.15.0"
+    errorprone "com.google.errorprone:error_prone_core:2.24.1"
   }
 
   checkstyle {

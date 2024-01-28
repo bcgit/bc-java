@@ -24,3 +24,7 @@ artifacts {
     archives sourcesJar
 }
 
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
+}
