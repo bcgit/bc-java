@@ -43,8 +43,7 @@ public class BcTlsRSAPSSSigner
         int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
-        PSSSigner signer = PSSSigner.createRawSigner(new RSABlindedEngine(), digest, digest, digest.getDigestSize(),
-            PSSSigner.TRAILER_IMPLICIT);
+        PSSSigner signer = PSSSigner.createRawSigner(new RSABlindedEngine(), digest);
         signer.init(true, new ParametersWithRandom(privateKey, crypto.getSecureRandom()));
         signer.update(hash, 0, hash.length);
         try
