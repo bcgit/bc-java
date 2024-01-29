@@ -1,8 +1,14 @@
 package org.bouncycastle.mls.test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -28,21 +34,20 @@ import org.bouncycastle.mls.crypto.Secret;
 import org.bouncycastle.mls.crypto.bc.BcMlsAead;
 import org.bouncycastle.mls.crypto.bc.BcMlsKdf;
 import org.bouncycastle.mls.crypto.bc.BcMlsSigner;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import static org.bouncycastle.mls.crypto.MlsCipherSuite.*;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448;
+import static org.bouncycastle.mls.crypto.MlsCipherSuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448;
 
 public class MessageProtectionTest
         extends TestCase
-
 {
     short cipher_suite;
     byte[] group_id;

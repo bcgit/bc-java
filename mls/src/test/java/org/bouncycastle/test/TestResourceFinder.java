@@ -1,4 +1,4 @@
-package org.bouncycastle.mls.test;
+package org.bouncycastle.test;
 
 import java.io.File;
 import java.io.FileInputStream;

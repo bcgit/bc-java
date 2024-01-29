@@ -1,17 +1,5 @@
 package org.bouncycastle.mls.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
-import org.bouncycastle.mls.crypto.MlsCipherSuite;
-import org.bouncycastle.mls.protocol.Group;
-import org.bouncycastle.mls.codec.MLSInputStream;
-import org.bouncycastle.mls.codec.MLSMessage;
-import org.bouncycastle.mls.codec.PreSharedKeyID;
-import org.bouncycastle.mls.crypto.Secret;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -20,6 +8,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+
+import junit.framework.TestCase;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.mls.TreeKEM.TreeKEMPublicKey;
+import org.bouncycastle.mls.codec.MLSInputStream;
+import org.bouncycastle.mls.codec.MLSMessage;
+import org.bouncycastle.mls.codec.PreSharedKeyID;
+import org.bouncycastle.mls.crypto.MlsCipherSuite;
+import org.bouncycastle.mls.crypto.Secret;
+import org.bouncycastle.mls.protocol.Group;
+import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 public class ClientVectorTest
         extends TestCase
