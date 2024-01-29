@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.eac;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -20,13 +19,13 @@ import org.bouncycastle.asn1.DERSequence;
  *  CertificateBody ::= SEQUENCE {
  *      // version of the certificate format. Must be 0 (version 1)
  *      CertificateProfileIdentifer         ASN1TaggedObject,
- *      //uniquely identifies the issuinng CA's signature key pair
+ *      // uniquely identifies the issuing CA's signature key pair
  *      // contains the iso3166-1 alpha2 encoded country code, the
  *      // name of issuer and the sequence number of the key pair.
  *      CertificationAuthorityReference        ASN1TaggedObject,
  *      // stores the encoded public key
  *      PublicKey                            Iso7816PublicKey,
- *      //associates the public key contained in the certificate with a unique name
+ *      // associates the public key contained in the certificate with a unique name
  *      // contains the iso3166-1 alpha2 encoded country code, the
  *      // name of the holder and the sequence number of the key pair.
  *      certificateHolderReference            ASN1TaggedObject,
@@ -35,7 +34,7 @@ import org.bouncycastle.asn1.DERSequence;
  *      certificateHolderAuthorization        Iso7816CertificateHolderAuthorization,
  *      // the date of the certificate generation
  *      CertificateEffectiveDate            ASN1TaggedObject,
- *      // the date after wich the certificate expires
+ *      // the date after which the certificate expires
  *      certificateExpirationDate            ASN1TaggedObject
  *  }
  * </pre>
@@ -45,12 +44,12 @@ public class CertificateBody
 {
     ASN1InputStream seq;
     private ASN1TaggedObject certificateProfileIdentifier;// version of the certificate format. Must be 0 (version 1)
-    private ASN1TaggedObject certificationAuthorityReference;//uniquely identifies the issuinng CA's signature key pair
+    private ASN1TaggedObject certificationAuthorityReference;//uniquely identifies the issuing CA's signature key pair
     private PublicKeyDataObject publicKey;// stores the encoded public key
     private ASN1TaggedObject certificateHolderReference;//associates the public key contained in the certificate with a unique name
     private CertificateHolderAuthorization certificateHolderAuthorization;// Encodes the role of the holder (i.e. CVCA, DV, IS) and assigns read/write access rights to data groups storing sensitive data
     private ASN1TaggedObject certificateEffectiveDate;// the date of the certificate generation
-    private ASN1TaggedObject certificateExpirationDate;// the date after wich the certificate expires
+    private ASN1TaggedObject certificateExpirationDate;// the date after which the certificate expires
     private int certificateType = 0;// bit field of initialized data. This will tell us if the data are valid.
     private static final int CPI = 0x01;//certificate Profile Identifier
     private static final int CAR = 0x02;//certification Authority Reference
@@ -60,8 +59,15 @@ public class CertificateBody
     private static final int CEfD = 0x20;//certificate Effective Date
     private static final int CExD = 0x40;//certificate Expiration Date
 
+    /** @deprecated */
     public static final int profileType = 0x7f;//Profile type Certificate
+    private static final int profileType_m = 0x7f;//Profile type Certificate MUST
+    private static final int profileType_r = 0x00;//Profile type Certificate SHOULD
+
+    /** @deprecated */
     public static final int requestType = 0x0D;// Request type Certificate
+    private static final int requestType_m = 0x0D;// Request type Certificate MUST
+    private static final int requestType_r = 0x02;// Request type Certificate SHOULD
 
     private void setIso7816CertificateBody(ASN1TaggedObject appSpe)
         throws IOException
@@ -76,10 +82,9 @@ public class CertificateBody
             throw new IOException("Bad tag : not an iso7816 CERTIFICATE_CONTENT_TEMPLATE");
         }
 
-        Enumeration objs = content.getObjects();
-        while (objs.hasMoreElements())
+        for (int i = 0, count = content.size(); i < count; ++i)
         {
-            ASN1TaggedObject aSpe = ASN1TaggedObject.getInstance(objs.nextElement(), BERTags.APPLICATION);
+            ASN1TaggedObject aSpe = ASN1TaggedObject.getInstance(content.getObjectAt(i), BERTags.APPLICATION);
 
             switch (aSpe.getTagNo())
             {
@@ -249,6 +254,10 @@ public class CertificateBody
         ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(certificateProfileIdentifier);
+        if (certificationAuthorityReference != null)
+        {
+            v.add(certificationAuthorityReference);
+        }
         v.add(EACTagged.create(EACTags.CARDHOLDER_PUBLIC_KEY_TEMPLATE, publicKey));
         v.add(certificateHolderReference);
         return EACTagged.create(EACTags.CERTIFICATE_CONTENT_TEMPLATE, new DERSequence(v));
@@ -263,18 +272,17 @@ public class CertificateBody
     {
         try
         {
-            if (certificateType == profileType)
+            if ((certificateType & ~profileType_r) == profileType_m)
             {
                 return profileToASN1Object();
             }
-            if (certificateType == requestType)
+            if ((certificateType & ~requestType_r) == requestType_m)
             {
                 return requestToASN1Object();
             }
         }
         catch (IOException e)
         {
-            return null;
         }
         return null;
     }
@@ -346,7 +354,7 @@ public class CertificateBody
     }
 
     /**
-     * @return the date after wich the certificate expires
+     * @return the date after which the certificate expires
      */
     public PackedDate getCertificateExpirationDate()
         throws IOException
@@ -361,9 +369,9 @@ public class CertificateBody
     }
 
     /**
-     * set the date after wich the certificate expires
+     * set the date after which the certificate expires
      *
-     * @param ced ASN1TaggedObject containing the date after wich the certificate expires
+     * @param ced ASN1TaggedObject containing the date after which the certificate expires
      * @throws IllegalArgumentException if the tag is not Iso7816Tags.APPLICATION_EXPIRATION_DATE
      */
     private void setCertificateExpirationDate(ASN1TaggedObject ced)
@@ -434,7 +442,7 @@ public class CertificateBody
 
     /**
      * get the certificationAuthorityReference
-     * certificationAuthorityReference : uniquely identifies the issuinng CA's signature key pair
+     * certificationAuthorityReference : uniquely identifies the issuing CA's signature key pair
      *
      * @return the certificationAuthorityReference
      */
