@@ -50,11 +50,6 @@ public class AuthenticatedContent
         this.content = content;
         this.auth = auth;
 
-        if (auth.contentType == ContentType.COMMIT && auth.confirmation_tag == null)
-        {
-            throw new Exception("missing confirmation tag");
-        }
-
         if (auth.contentType == ContentType.APPLICATION)
         {
             if (wireFormat != WireFormat.mls_private_message)
