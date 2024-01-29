@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.digests.Prehash;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSABlindingParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
@@ -27,16 +27,22 @@ public class PSSSigner
 {
     public static final byte TRAILER_IMPLICIT = (byte)0xBC;
 
+    public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest digest)
+    {
+        return new PSSSigner(cipher, Prehash.forDigest(digest), digest, digest, digest.getDigestSize(),
+            TRAILER_IMPLICIT);
+    }
+
     public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
         int sLen, byte trailer)
     {
-        return new PSSSigner(cipher, new NullDigest(), contentDigest, mgfDigest, sLen, trailer);
+        return new PSSSigner(cipher, Prehash.forDigest(contentDigest), contentDigest, mgfDigest, sLen, trailer);
     }
 
     public static PSSSigner createRawSigner(AsymmetricBlockCipher cipher, Digest contentDigest, Digest mgfDigest,
         byte[] salt, byte trailer)
     {
-        return new PSSSigner(cipher, new NullDigest(), contentDigest, mgfDigest, salt, trailer);
+        return new PSSSigner(cipher, Prehash.forDigest(contentDigest), contentDigest, mgfDigest, salt, trailer);
     }
 
     private Digest                      contentDigest1;
