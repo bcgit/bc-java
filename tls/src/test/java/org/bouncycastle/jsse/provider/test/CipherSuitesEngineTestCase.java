@@ -115,8 +115,8 @@ public class CipherSuitesEngineTestCase extends TestCase
             serverResult = serverEngine.wrap(serverOut, serverToClient);
             runDelegatedTasks(serverEngine, serverResult);
 
-            clientToServer.flip();
-            serverToClient.flip();
+            ((java.nio.Buffer)clientToServer).flip();
+            ((java.nio.Buffer)serverToClient).flip();
 
             clientResult = clientEngine.unwrap(serverToClient, clientIn);
             runDelegatedTasks(clientEngine, clientResult);
@@ -152,15 +152,15 @@ public class CipherSuitesEngineTestCase extends TestCase
 
     private static void checkData(ByteBuffer a, ByteBuffer b) throws Exception
     {
-        a.flip();
-        b.flip();
+        ((java.nio.Buffer)a).flip();
+        ((java.nio.Buffer)b).flip();
 
         assertEquals(a, b);
 
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
+        ((java.nio.Buffer)a).position(a.limit());
+        ((java.nio.Buffer)b).position(b.limit());
+        ((java.nio.Buffer)a).limit(a.capacity());
+        ((java.nio.Buffer)b).limit(b.capacity());
     }
 
     private SSLContext createSSLContextClient() throws GeneralSecurityException
