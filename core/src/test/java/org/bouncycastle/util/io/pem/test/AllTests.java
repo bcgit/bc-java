@@ -12,6 +12,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.pem.PemHeader;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -20,6 +21,26 @@ import org.bouncycastle.util.io.pem.PemWriter;
 public class AllTests
     extends TestCase
 {
+    private static final String blob1 =
+        "-----BEGIN BLOB-----\r\n"
+        + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\r\n"
+        + "-----END BLOB-----\r\n";
+
+    private static final String blob2 =
+        "-----BEGIN BLOB-----   \r\n"
+        + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\r\n"
+        + "-----END BLOB-----    \r\n";
+
+    private static final String blob3 =
+        "    -----BEGIN BLOB-----\r\n"
+        + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\r\n"
+        + "-----END BLOB-----\r\n";
+
+    private static final String blob4 =
+        "-----BEGIN BLOB-----\r\n"
+        + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\r\n"
+        + "    -----END BLOB-----\r\n";
+
     public void testPemLength()
         throws IOException
     {
@@ -52,6 +73,53 @@ public class AllTests
         PemReader rd = new PemReader(new StringReader("-----BEGIN \n"));
 
         assertNull(rd.readPemObject());
+    }
+
+    public void testRegularBlob()
+        throws IOException
+    {
+        PemReader rd = new PemReader(new StringReader(blob1));
+
+        PemObject obj = rd.readPemObject();
+
+        assertEquals("BLOB", obj.getType());
+        assertTrue(Arrays.areEqual(new byte[64], obj.getContent()));
+    }
+
+    public void testRegularBlobTrailing()
+        throws IOException
+    {
+        PemReader rd = new PemReader(new StringReader(blob2));
+
+        PemObject obj = rd.readPemObject();
+
+        assertEquals("BLOB", obj.getType());
+        assertTrue(Arrays.areEqual(new byte[64], obj.getContent()));
+    }
+
+    public void testRegularBlobBeginFault()
+        throws IOException
+    {
+        PemReader rd = new PemReader(new StringReader(blob3));
+
+        PemObject obj = rd.readPemObject();
+
+        assertNull(rd.readPemObject());
+    }
+
+    public void testRegularBlobEndFault()
+        throws IOException
+    {
+        PemReader rd = new PemReader(new StringReader(blob4));
+
+        try
+        {
+            PemObject obj = rd.readPemObject();
+        }
+        catch (IOException e)
+        {
+            assertEquals("-----END BLOB----- not found", e.getMessage());
+        }
     }
 
     private void lengthTest(String type, List headers, byte[] data)

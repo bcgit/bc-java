@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
@@ -46,8 +45,8 @@ public class X500NameTest
        "C=0,O=1,OU=2,T=3,CN=4,SERIALNUMBER=5,STREET=6,SERIALNUMBER=7,L=8,ST=9,SURNAME=10,GIVENNAME=11,INITIALS=12," +
            "GENERATION=13,UniqueIdentifier=14,BusinessCategory=15,PostalCode=16,DN=17,Pseudonym=18,PlaceOfBirth=19," +
            "Gender=20,CountryOfCitizenship=21,CountryOfResidence=22,NameAtBirth=23,PostalAddress=24,2.5.4.54=25," +
-           "TelephoneNumber=26,Name=27,E=28,unstructuredName=29,unstructuredAddress=30,E=31,DC=32,UID=33"
-
+           "TelephoneNumber=26,Name=27,E=28,unstructuredName=29,unstructuredAddress=30,E=31,DC=32,UID=33",
+        "C=DE,L=Berlin,O=Wohnungsbaugenossenschaft \\\"Humboldt-Universität\\\" eG,CN=transfer.wbg-hub.de"
     };
 
     String[] hexSubjects =
@@ -348,7 +347,7 @@ public class X500NameTest
             name = fromBytes(name.getEncoded());
             if (!name.toString().equals(hexSubjects[i + 1]))
             {
-                fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
+                fail("failed hex regeneration test " + i + " got: " + name.toString() + " expected " + hexSubjects[i + 1]);
             }
         }
 
@@ -777,7 +776,6 @@ public class X500NameTest
             fail("hashCodeTest test failed for " + name1 + " : " + name2);
         }
     }
-
 
     public static void main(
         String[]    args)

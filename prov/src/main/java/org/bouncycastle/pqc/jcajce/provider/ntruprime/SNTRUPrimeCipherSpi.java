@@ -24,8 +24,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMGenerator;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
@@ -37,7 +36,7 @@ class SNTRUPrimeCipherSpi
 {
     private final String algorithmName;
     private SNTRUPrimeKEMGenerator kemGen;
-    private KEMParameterSpec kemParameterSpec;
+    private KTSParameterSpec kemParameterSpec;
     private BCSNTRUPrimePublicKey wrapKey;
     private BCSNTRUPrimePrivateKey unwrapKey;
     private AlgorithmParameters engineParams;
@@ -128,16 +127,16 @@ class SNTRUPrimeCipherSpi
         if (paramSpec == null)
         {
             // TODO: default should probably use shake.
-            kemParameterSpec = new KEMParameterSpec("AES-KWP");
+            kemParameterSpec = new KTSParameterSpec.Builder("AES-KWP", 256).build();
         }
         else
         {
-            if (!(paramSpec instanceof KEMParameterSpec))
+            if (!(paramSpec instanceof KTSParameterSpec))
             {
                 throw new InvalidAlgorithmParameterException(algorithmName + " can only accept KTSParameterSpec");
             }
 
-            kemParameterSpec = (KEMParameterSpec)paramSpec;
+            kemParameterSpec = (KTSParameterSpec)paramSpec;
         }
 
         if (opmode == Cipher.WRAP_MODE)
@@ -179,7 +178,7 @@ class SNTRUPrimeCipherSpi
         {
             try
             {
-                paramSpec = algorithmParameters.getParameterSpec(KEMParameterSpec.class);
+                paramSpec = algorithmParameters.getParameterSpec(KTSParameterSpec.class);
             }
             catch (Exception e)
             {
@@ -233,7 +232,7 @@ class SNTRUPrimeCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
+            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret(), 0, (kemParameterSpec.getKeySize() + 7) / 8);
 
             kWrap.init(true, keyParameter);
 
@@ -278,7 +277,7 @@ class SNTRUPrimeCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secret);
+            KeyParameter keyParameter = new KeyParameter(secret, 0, (kemParameterSpec.getKeySize() + 7) / 8);
 
             Arrays.clear(secret);
 

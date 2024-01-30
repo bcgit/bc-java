@@ -20,7 +20,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class CipherStreamTest2
-    extends SimpleTest
+        extends SimpleTest
 {
     private int streamSize;
 
@@ -30,7 +30,7 @@ public class CipherStreamTest2
     }
 
     private void testModes(String algo, String[] transforms, boolean authenticated)
-        throws Exception
+            throws Exception
     {
         Key key = generateKey(algo);
         for (int i = 0; i != transforms.length; i++)
@@ -59,7 +59,6 @@ public class CipherStreamTest2
                 testWriteReadEmpty(cipherName, key, authenticated, false, false);
                 testWriteReadEmpty(cipherName, key, authenticated, false, true);
             }
-
 
 
             if (authenticated)
@@ -91,20 +90,20 @@ public class CipherStreamTest2
     {
         ByteArrayInputStream bytes = new ByteArrayInputStream(data);
         // cast required for earlier JDK
-        return useBc ? (InputStream)new CipherInputStream(bytes, cipher) : (InputStream)new javax.crypto.CipherInputStream(bytes, cipher);
+        return useBc ? (InputStream) new CipherInputStream(bytes, cipher) : (InputStream) new javax.crypto.CipherInputStream(bytes, cipher);
     }
 
     private OutputStream createOutputStream(ByteArrayOutputStream bytes, Cipher cipher, boolean useBc)
     {
         // cast required for earlier JDK
-        return useBc ? (OutputStream)new CipherOutputStream(bytes, cipher) : (OutputStream)new javax.crypto.CipherOutputStream(bytes, cipher);
+        return useBc ? (OutputStream) new CipherOutputStream(bytes, cipher) : (OutputStream) new javax.crypto.CipherOutputStream(bytes, cipher);
     }
 
     /**
      * Test tampering of ciphertext followed by read from decrypting CipherInputStream
      */
     private void testTamperedRead(String name, Key key, boolean authenticated, boolean useBc)
-        throws Exception
+            throws Exception
     {
         Cipher encrypt = Cipher.getInstance(name, "BC");
         Cipher decrypt = Cipher.getInstance(name, "BC");
@@ -154,7 +153,7 @@ public class CipherStreamTest2
      * decrypting CipherInputStream
      */
     private void testTruncatedRead(String name, Key key, boolean authenticated, boolean useBc)
-        throws Exception
+            throws Exception
     {
         Cipher encrypt = Cipher.getInstance(name, "BC");
         Cipher decrypt = Cipher.getInstance(name, "BC");
@@ -220,7 +219,7 @@ public class CipherStreamTest2
      * Test tampering of ciphertext followed by write to decrypting CipherOutputStream
      */
     private void testTamperedWrite(String name, Key key, boolean authenticated, boolean useBc)
-        throws Exception
+            throws Exception
     {
         Cipher encrypt = Cipher.getInstance(name, "BC");
         Cipher decrypt = Cipher.getInstance(name, "BC");
@@ -261,12 +260,12 @@ public class CipherStreamTest2
      * Test CipherOutputStream in ENCRYPT_MODE, CipherInputStream in DECRYPT_MODE
      */
     private void testWriteRead(String name, Key key, boolean authenticated, boolean useBc, boolean blocks)
-        throws Exception
+            throws Exception
     {
         byte[] data = new byte[streamSize];
         for (int i = 0; i < data.length; i++)
         {
-            data[i] = (byte)(i % 255);
+            data[i] = (byte) (i % 255);
         }
 
         testWriteRead(name, key, authenticated, useBc, blocks, data);
@@ -276,7 +275,7 @@ public class CipherStreamTest2
      * Test CipherOutputStream in ENCRYPT_MODE, CipherInputStream in DECRYPT_MODE
      */
     private void testWriteReadEmpty(String name, Key key, boolean authenticated, boolean useBc, boolean blocks)
-        throws Exception
+            throws Exception
     {
         byte[] data = new byte[0];
 
@@ -389,7 +388,7 @@ public class CipherStreamTest2
      * Test CipherInputStream in ENCRYPT_MODE, CipherOutputStream in DECRYPT_MODE
      */
     private void testReadWrite(String name, Key key, boolean authenticated, boolean useBc, boolean blocks)
-        throws Exception
+            throws Exception
     {
         String lCode = "ABCDEFGHIJKLMNOPQRSTU";
 
@@ -449,7 +448,7 @@ public class CipherStreamTest2
     }
 
     private static Key generateKey(String name)
-        throws Exception
+            throws Exception
     {
         KeyGenerator kGen;
 
@@ -465,7 +464,7 @@ public class CipherStreamTest2
     }
 
     public void performTest()
-        throws Exception
+            throws Exception
     {
         int[] testSizes = new int[]{0, 1, 7, 8, 9, 15, 16, 17, 1023, 1024, 1025, 2047, 2048, 2049, 4095, 4096, 4097};
         for (int i = 0; i < testSizes.length; i++)
@@ -476,43 +475,43 @@ public class CipherStreamTest2
     }
 
     private void performTests()
-        throws Exception
+            throws Exception
     {
         final String[] blockCiphers64 = new String[]{"BLOWFISH", "DES", "DESEDE", "TEA", "CAST5", "RC2", "XTEA"};
 
         for (int i = 0; i != blockCiphers64.length; i++)
         {
             testModes(blockCiphers64[i], new String[]{
-                "/ECB/PKCS5Padding",
-                "/CBC/PKCS5Padding",
-                "/OFB/NoPadding",
-                "/CFB/NoPadding",
-                "/CTS/NoPadding",}, false);
+                    "/ECB/PKCS5Padding",
+                    "/CBC/PKCS5Padding",
+                    "/OFB/NoPadding",
+                    "/CFB/NoPadding",
+                    "/CTS/NoPadding",}, false);
             testModes(blockCiphers64[i], new String[]{"/EAX/NoPadding"}, true);
         }
 
         final String[] blockCiphers128 = new String[]{
-            "AES",
-            "NOEKEON",
-            "Twofish",
-            "CAST6",
-            "SEED",
-            "Serpent",
-            "RC6",
-            "CAMELLIA"};
+                "AES",
+                "NOEKEON",
+                "Twofish",
+                "CAST6",
+                "SEED",
+                "Serpent",
+                "RC6",
+                "CAMELLIA"};
 
         for (int i = 0; i != blockCiphers128.length; i++)
         {
             testModes(blockCiphers128[i], new String[]{
-                "/ECB/PKCS5Padding",
-                "/CBC/PKCS5Padding",
-                "/OFB/NoPadding",
-                "/CFB/NoPadding",
-                "/CTS/NoPadding",
-                "/CTR/NoPadding",
-                "/SIC/NoPadding"}, false);
+                    "/ECB/PKCS5Padding",
+                    "/CBC/PKCS5Padding",
+                    "/OFB/NoPadding",
+                    "/CFB/NoPadding",
+                    "/CTS/NoPadding",
+                    "/CTR/NoPadding",
+                    "/SIC/NoPadding"}, false);
             String jvm = System.getProperty("java.version");
-            if (jvm.charAt(2) == '5' || jvm.charAt(2) == '6')   // can't use GCM due to JVM bug in this case.
+            if (jvm.length() > 2 && (jvm.charAt(2) == '5' || jvm.charAt(2) == '6'))   // can't use GCM due to JVM bug in this case.
             {
                 testModes(blockCiphers128[i], new String[]{"/CCM/NoPadding", "/EAX/NoPadding", "/OCB/NoPadding"}, true);
             }
@@ -523,15 +522,15 @@ public class CipherStreamTest2
         }
 
         final String[] streamCiphers = new String[]{
-            "ARC4",
-            "SALSA20",
-            "XSalsa20",
-            "ChaCha",
-            "ChaCha7539",
-            "Grainv1",
-            "Grain128",
-            "HC128",
-            "HC256"};
+                "ARC4",
+                "SALSA20",
+                "XSalsa20",
+                "ChaCha",
+                "ChaCha7539",
+                "Grainv1",
+                "Grain128",
+                "HC128",
+                "HC256"};
 
         for (int i = 0; i != streamCiphers.length; i++)
         {

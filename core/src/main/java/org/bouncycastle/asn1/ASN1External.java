@@ -258,13 +258,9 @@ public abstract class ASN1External
 
     private static ASN1Primitive getExternalContent(ASN1TaggedObject encoding)
     {
-        int tagClass = encoding.getTagClass(), tagNo = encoding.getTagNo();
-        if (BERTags.CONTEXT_SPECIFIC != tagClass)
-        {
-            throw new IllegalArgumentException("invalid tag: " + ASN1Util.getTagText(tagClass, tagNo));
-        }
+        ASN1Util.checkContextTagClass(encoding);
 
-        switch (tagNo)
+        switch (encoding.getTagNo())
         {
         case 0:
             return encoding.getExplicitBaseObject().toASN1Primitive();
@@ -273,7 +269,7 @@ public abstract class ASN1External
         case 2:
             return ASN1BitString.getInstance(encoding, false);
         default:
-            throw new IllegalArgumentException("invalid tag: " + ASN1Util.getTagText(tagClass, tagNo));
+            throw new IllegalArgumentException("invalid tag: " + ASN1Util.getTagText(encoding));
         }
     }
 

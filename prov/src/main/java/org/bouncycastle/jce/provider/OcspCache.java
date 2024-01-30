@@ -38,7 +38,6 @@ import org.bouncycastle.asn1.ocsp.TBSRequest;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.io.Streams;
 
 class OcspCache
@@ -142,8 +141,16 @@ class OcspCache
         }
 
         // TODO: configure originator
-        TBSRequest tbsReq = new TBSRequest(null, new DERSequence(requests),
-            Extensions.getInstance(new DERSequence(requestExtensions)));
+        TBSRequest tbsReq;
+        if (requestExtensions.size() != 0)
+        {
+            tbsReq = new TBSRequest(null, new DERSequence(requests),
+                Extensions.getInstance(new DERSequence(requestExtensions)));
+        }
+        else
+        {
+            tbsReq = new TBSRequest(null, new DERSequence(requests), (Extensions)null);
+        }
 
         org.bouncycastle.asn1.ocsp.Signature signature = null;
 

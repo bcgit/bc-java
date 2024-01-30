@@ -286,7 +286,7 @@ public class LMSPrivateKeyParameters
 
     public long getUsagesRemaining()
     {
-        return maxQ - q;
+        return maxQ - getIndex();
     }
 
     public LMSPublicKeyParameters getPublicKey()
@@ -409,15 +409,6 @@ public class LMSPrivateKeyParameters
             return false;
         }
 
-        //
-        // Only compare public keys if they both exist.
-        // Otherwise we would trigger the creation of one or both of them
-        //
-        if (publicKey != null && that.publicKey != null)
-        {
-            return publicKey.equals(that.publicKey);
-        }
-
         return true;
     }
 
@@ -430,7 +421,6 @@ public class LMSPrivateKeyParameters
         result = 31 * result + (otsParameters != null ? otsParameters.hashCode() : 0);
         result = 31 * result + maxQ;
         result = 31 * result + Arrays.hashCode(masterSecret);
-        result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
         return result;
     }
 

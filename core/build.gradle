@@ -7,3 +7,8 @@ dependencies {
 application {
     mainClass.set("org.bouncycastle.crypto.fpe.SP80038GMicroBenchmark")
 }
+
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
+}

@@ -330,16 +330,13 @@ public class CipherSpi
             throw new InvalidAlgorithmParameterException("unknown parameter type: " + params.getClass().getName());
         }
 
-        if (!(cipher instanceof RSABlindedEngine))
+        if (random != null)
         {
-            if (random != null)
-            {
-                param = new ParametersWithRandom(param, random);
-            }
-            else
-            {
-                param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
-            }
+            param = new ParametersWithRandom(param, random);
+        }
+        else
+        {
+            param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
         }
 
         bOut.reset();

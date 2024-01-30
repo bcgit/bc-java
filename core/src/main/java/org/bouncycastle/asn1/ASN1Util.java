@@ -4,6 +4,26 @@ import java.io.IOException;
 
 public abstract class ASN1Util
 {
+    static ASN1TaggedObject checkContextTag(ASN1TaggedObject taggedObject, int tagNo)
+    {
+        return checkTag(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    static ASN1TaggedObjectParser checkContextTag(ASN1TaggedObjectParser taggedObjectParser, int tagNo)
+    {
+        return checkTag(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    static ASN1TaggedObject checkContextTagClass(ASN1TaggedObject taggedObject)
+    {
+        return checkTagClass(taggedObject, BERTags.CONTEXT_SPECIFIC);
+    }
+
+    static ASN1TaggedObjectParser checkContextTagClass(ASN1TaggedObjectParser taggedObjectParser)
+    {
+        return checkTagClass(taggedObjectParser, BERTags.CONTEXT_SPECIFIC);
+    }
+
     static ASN1TaggedObject checkTag(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
     {
         if (!taggedObject.hasTag(tagClass, tagNo))
@@ -26,10 +46,62 @@ public abstract class ASN1Util
         return taggedObjectParser;
     }
 
+    static ASN1TaggedObject checkTagClass(ASN1TaggedObject taggedObject, int tagClass)
+    {
+        if (!taggedObject.hasTagClass(tagClass))
+        {
+            String expected = getTagClassText(tagClass);
+            String found = getTagClassText(taggedObject);
+            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+        }
+        return taggedObject;
+    }
+
+    static ASN1TaggedObjectParser checkTagClass(ASN1TaggedObjectParser taggedObjectParser, int tagClass)
+    {
+        if (!taggedObjectParser.hasTagClass(tagClass))
+        {
+            String expected = getTagClassText(tagClass);
+            String found = getTagClassText(taggedObjectParser);
+            throw new IllegalStateException("Expected " + expected + " tag but found " + found);
+        }
+        return taggedObjectParser;
+    }
+
 
     /*
      * Tag text methods
      */
+
+    static String getTagClassText(ASN1Tag tag)
+    {
+        return getTagClassText(tag.getTagClass());
+    }
+
+    public static String getTagClassText(ASN1TaggedObject taggedObject)
+    {
+        return getTagClassText(taggedObject.getTagClass());
+    }
+
+    public static String getTagClassText(ASN1TaggedObjectParser taggedObjectParser)
+    {
+        return getTagClassText(taggedObjectParser.getTagClass());
+    }
+
+    public static String getTagClassText(int tagClass)
+    {
+        switch (tagClass)
+        {
+        case BERTags.APPLICATION:
+            return "APPLICATION";
+        case BERTags.CONTEXT_SPECIFIC:
+            return "CONTEXT";
+        case BERTags.PRIVATE:
+            return "PRIVATE";
+        default:
+            return "UNIVERSAL";
+        }
+    }
 
     static String getTagText(ASN1Tag tag)
     {
@@ -96,14 +168,34 @@ public abstract class ASN1Util
      * Wrappers for ASN1TaggedObject#getExplicitBaseTagged
      */
 
+    public static ASN1TaggedObject getExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass)
+    {
+        return checkTagClass(taggedObject, tagClass).getExplicitBaseTagged();
+    }
+
     public static ASN1TaggedObject getExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
     {
         return checkTag(taggedObject, tagClass, tagNo).getExplicitBaseTagged();
     }
 
+    public static ASN1TaggedObject getExplicitContextBaseTagged(ASN1TaggedObject taggedObject)
+    {
+        return getExplicitBaseTagged(taggedObject, BERTags.CONTEXT_SPECIFIC);
+    }
+
     public static ASN1TaggedObject getExplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo)
     {
         return getExplicitBaseTagged(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    public static ASN1TaggedObject tryGetExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass)
+    {
+        if (!taggedObject.hasTagClass(tagClass))
+        {
+            return null;
+        }
+
+        return taggedObject.getExplicitBaseTagged();
     }
 
     public static ASN1TaggedObject tryGetExplicitBaseTagged(ASN1TaggedObject taggedObject, int tagClass, int tagNo)
@@ -114,6 +206,11 @@ public abstract class ASN1Util
         }
 
         return taggedObject.getExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObject tryGetExplicitContextBaseTagged(ASN1TaggedObject taggedObject)
+    {
+        return tryGetExplicitBaseTagged(taggedObject, BERTags.CONTEXT_SPECIFIC);
     }
 
     public static ASN1TaggedObject tryGetExplicitContextBaseTagged(ASN1TaggedObject taggedObject, int tagNo)
@@ -195,15 +292,38 @@ public abstract class ASN1Util
      */
 
     public static ASN1TaggedObjectParser parseExplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
+        int tagClass) throws IOException
+    {
+        return checkTagClass(taggedObjectParser, tagClass).parseExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObjectParser parseExplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
         int tagClass, int tagNo) throws IOException
     {
         return checkTag(taggedObjectParser, tagClass, tagNo).parseExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObjectParser parseExplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser)
+        throws IOException
+    {
+        return parseExplicitBaseTagged(taggedObjectParser, BERTags.CONTEXT_SPECIFIC);
     }
 
     public static ASN1TaggedObjectParser parseExplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
         int tagNo) throws IOException
     {
         return parseExplicitBaseTagged(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    public static ASN1TaggedObjectParser tryParseExplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
+        int tagClass) throws IOException
+    {
+        if (!taggedObjectParser.hasTagClass(tagClass))
+        {
+            return null;
+        }
+
+        return taggedObjectParser.parseExplicitBaseTagged();
     }
 
     public static ASN1TaggedObjectParser tryParseExplicitBaseTagged(ASN1TaggedObjectParser taggedObjectParser,
@@ -215,6 +335,12 @@ public abstract class ASN1Util
         }
 
         return taggedObjectParser.parseExplicitBaseTagged();
+    }
+
+    public static ASN1TaggedObjectParser tryParseExplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser)
+        throws IOException
+    {
+        return tryParseExplicitBaseTagged(taggedObjectParser, BERTags.CONTEXT_SPECIFIC);
     }
 
     public static ASN1TaggedObjectParser tryParseExplicitContextBaseTagged(ASN1TaggedObjectParser taggedObjectParser,

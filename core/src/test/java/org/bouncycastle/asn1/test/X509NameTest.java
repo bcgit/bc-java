@@ -323,10 +323,10 @@ public class X509NameTest
         for (int i = 0; i != subjects.length; i++)
         {
             X509Name name = new X509Name(subjects[i]);
-            name = X509Name.getInstance(ASN1Primitive.fromByteArray(name.getEncoded()));
+            name = fromBytes(name.getEncoded());
             if (!name.toString().equals(subjects[i]))
             {
-                fail("failed regeneration test " + i + " got " + name.toString());
+                fail("failed regeneration test " + i + " got: " + name.toString() + " expected " + subjects[i]);
             }
         }
 

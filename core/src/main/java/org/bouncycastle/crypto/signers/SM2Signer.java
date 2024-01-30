@@ -29,10 +29,18 @@ import org.bouncycastle.util.encoders.Hex;
 public class SM2Signer
     implements Signer, ECConstants
 {
+    private static final class State
+    {
+        static final int UNINITIALIZED  = 0;
+        static final int INIT           = 1;
+        static final int DATA           = 2;
+    }
+
     private final DSAKCalculator kCalculator = new RandomDSAKCalculator();
     private final Digest digest;
     private final DSAEncoding encoding;
 
+    private int state = State.UNINITIALIZED;
     private ECDomainParameters ecParams;
     private ECPoint pubPoint;
     private ECKeyParameters ecKey;
@@ -117,23 +125,29 @@ public class SM2Signer
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECNR", ecKey, forSigning));
 
+        digest.reset();
         z = getZ(userID);
-        
-        digest.update(z, 0, z.length);
+        this.state = State.INIT;
     }
 
     public void update(byte b)
     {
+        checkData();
+
         digest.update(b);
     }
 
     public void update(byte[] in, int off, int len)
     {
+        checkData();
+
         digest.update(in, off, len);
     }
 
     public boolean verifySignature(byte[] signature)
     {
+        checkData();
+
         try
         {
             BigInteger[] rs = encoding.decode(ecParams.getN(), signature);
@@ -143,23 +157,35 @@ public class SM2Signer
         catch (Exception e)
         {
         }
+        finally
+        {
+            reset();
+        }
 
         return false;
     }
 
     public void reset()
     {
-        digest.reset();
-
-        if (z != null)
+        switch (state)
         {
-            digest.update(z, 0, z.length);
+        case State.INIT:
+            return;
+        case State.DATA:
+            break;
+        default:
+            throw new IllegalStateException("SM2Signer needs to be initialized");
         }
+
+        digest.reset();
+        this.state = State.INIT;
     }
 
     public byte[] generateSignature()
         throws CryptoException
     {
+        checkData();
+        
         byte[] eHash = digestDoFinal();
 
         BigInteger n = ecParams.getN();
@@ -203,6 +229,10 @@ public class SM2Signer
         catch (Exception ex)
         {
             throw new CryptoException("unable to encode signature: " + ex.getMessage(), ex);
+        }
+        finally
+        {
+            reset();
         }
     }
 
@@ -250,20 +280,31 @@ public class SM2Signer
         return expectedR.equals(r);
     }
 
+    private void checkData()
+    {
+        switch (state)
+        {
+        case State.INIT:
+            break;
+        case State.DATA:
+            return;
+        default:
+            throw new IllegalStateException("SM2Signer needs to be initialized");
+        }
+
+        digest.update(z, 0, z.length);
+        this.state = State.DATA;
+    }
+
     private byte[] digestDoFinal()
     {
         byte[] result = new byte[digest.getDigestSize()];
         digest.doFinal(result, 0);
-
-        reset();
-        
         return result;
     }
 
     private byte[] getZ(byte[] userID)
     {
-        digest.reset();
-
         addUserID(digest, userID);
 
         addFieldElement(digest, ecParams.getCurve().getA());
@@ -273,18 +314,14 @@ public class SM2Signer
         addFieldElement(digest, pubPoint.getAffineXCoord());
         addFieldElement(digest, pubPoint.getAffineYCoord());
 
-        byte[] result = new byte[digest.getDigestSize()];
-
-        digest.doFinal(result, 0);
-
-        return result;
+        return digestDoFinal();
     }
 
     private void addUserID(Digest digest, byte[] userID)
     {
         int len = userID.length * 8;
-        digest.update((byte)(len >> 8 & 0xFF));
-        digest.update((byte)(len & 0xFF));
+        digest.update((byte)(len >>> 8));
+        digest.update((byte)len);
         digest.update(userID, 0, userID.length);
     }
 

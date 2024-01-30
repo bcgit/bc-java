@@ -88,7 +88,7 @@ public class DERPrivateTest
 
         ASN1TaggedObject privateSpec = (ASN1TaggedObject)ASN1Primitive.fromByteArray(sampleData);
 
-        if (BERTags.PRIVATE != privateSpec.getTagClass() || 1 != privateSpec.getTagNo())
+        if (!privateSpec.hasTag(BERTags.PRIVATE, 1))
         {
             fail("wrong tag detected");
         }
@@ -111,7 +111,7 @@ public class DERPrivateTest
 
         ASN1TaggedObject certObj = (ASN1TaggedObject)ASN1Primitive.fromByteArray(certData);
 
-        if (certObj.isExplicit() || BERTags.PRIVATE != certObj.getTagClass() || 33 != certObj.getTagNo())
+        if (certObj.isExplicit() || !certObj.hasTag(BERTags.PRIVATE, 33))
         {
             fail("parsing of certificate data failed");
         }

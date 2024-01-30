@@ -21,8 +21,7 @@ class LMOtsPublicKey
     private final int q;
     private final byte[] K;
 
-
-    public LMOtsPublicKey(LMOtsParameters parameter, byte[] i, int q, byte[] k)
+    LMOtsPublicKey(LMOtsParameters parameter, byte[] i, int q, byte[] k)
     {
         this.parameter = parameter;
         this.I = i;
@@ -112,9 +111,9 @@ class LMOtsPublicKey
 
     public int hashCode()
     {
-        int result = Objects.hashCode(parameter);
+        int result = q;
+        result = 31 * result + Objects.hashCode(parameter);
         result = 31 * result + Arrays.hashCode(I);
-        result = 31 * result + q;
         result = 31 * result + Arrays.hashCode(K);
         return result;
     }

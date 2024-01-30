@@ -40,7 +40,7 @@ public class PemReader
 
         if (line != null)
         {
-            line = line.substring(BEGIN.length());
+            line = line.substring(BEGIN.length()).trim();
             int index = line.indexOf('-');
 
             if (index > 0 && line.endsWith("-----") && (line.length() - index) == 5)
@@ -58,7 +58,7 @@ public class PemReader
         throws IOException
     {
         String          line;
-        String          endMarker = END + type;
+        String          endMarker = END + type + "-----";
         StringBuffer    buf = new StringBuffer();
         List            headers = new ArrayList();
 
@@ -75,7 +75,7 @@ public class PemReader
                 continue;
             }
 
-            if (line.indexOf(endMarker) != -1)
+            if (line.indexOf(endMarker) == 0)
             {
                 break;
             }

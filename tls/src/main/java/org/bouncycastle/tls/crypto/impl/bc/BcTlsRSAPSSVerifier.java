@@ -41,8 +41,7 @@ public class BcTlsRSAPSSVerifier
         int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
         Digest digest = crypto.createDigest(cryptoHashAlgorithm);
 
-        PSSSigner verifier = PSSSigner.createRawSigner(new RSAEngine(), digest, digest, digest.getDigestSize(),
-            PSSSigner.TRAILER_IMPLICIT);
+        PSSSigner verifier = PSSSigner.createRawSigner(new RSAEngine(), digest);
         verifier.init(false, publicKey);
         verifier.update(hash, 0, hash.length);
         return verifier.verifySignature(digitallySigned.getSignature());

@@ -328,8 +328,8 @@ public class GeneralKeyTest
         
         priv = keyFact.generatePrivate(new RSAPrivateKeySpec(((RSAPrivateKey)priv).getModulus(), ((RSAPrivateKey)priv).getPrivateExponent()));
 
-        assertEquals(priv, priv);
-        assertFalse(priv.equals(pub));
+        assertTrue(priv.equals(priv));
+        assertFalse(priv.equals(pub));//  priv.equals(pub));
 
         doSerialisationCheck(priv);
 
@@ -365,8 +365,8 @@ public class GeneralKeyTest
         assertEquals(algorithm, pub.getAlgorithm());
         assertEquals(algorithm, priv.getAlgorithm());
 
-        assertEquals(pub, pub);
-        assertEquals(priv, priv);
+        assertTrue(pub.equals(pub));
+        assertTrue(priv.equals(priv));
 
         assertFalse(pub.equals(priv));
         assertFalse(priv.equals(pub));
