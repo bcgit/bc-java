@@ -21,8 +21,8 @@ to valid JAVA_HOMEs for each JVM version:
 ```
 export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
-export BC_JDK15=/path/to/java15
 export BC_JDK17=/path/to/java17
+export BC_JDK21=/path/to/java21
 ```
 
 
