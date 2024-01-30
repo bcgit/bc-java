@@ -9,12 +9,16 @@ set -e
 cd /workspace/bc-java
 source ci/common.sh
 
+export BC_JDK8=`openjdk_8`
+export BC_JDK11=`openjdk_11`
+export BC_JDK17=`openjdk_17`
+export BC_JDK21=`openjdk_21`
 
-export JAVA_HOME=`openjdk_11`
+
+export JAVA_HOME=`openjdk_17`
 export PATH=$JAVA_HOME/bin:$PATH
-export PATH=$PATH:`gradle-bin-6`
 
-gradle -stacktrace clean build
+./gradlew -stacktrace clean build test11 -x test
 
 
 

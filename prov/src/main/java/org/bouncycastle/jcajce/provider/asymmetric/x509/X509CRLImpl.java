@@ -353,20 +353,22 @@ abstract class X509CRLImpl
         }
     }
 
-    private void checkSignature(PublicKey key, Signature sig, ASN1Encodable sigAlgParams, byte[] encSig)
-        throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CRLException
+    private void checkSignature(PublicKey key, Signature signature, ASN1Encodable sigAlgParams, byte[] sigBytes)
+        throws CRLException, InvalidKeyException, NoSuchAlgorithmException, SignatureException
     {
-        if (sigAlgParams != null)
+        if (!X509SignatureUtil.areEquivalentAlgorithms(c.getSignatureAlgorithm(), c.getTBSCertList().getSignature()))
         {
-            // needs to be called before initVerify().
-            X509SignatureUtil.setSignatureParameters(sig, sigAlgParams);
+            throw new CRLException("Signature algorithm on CertificateList does not match TbsCertList.");
         }
 
-        sig.initVerify(key);
+        // needs to be called before initVerify().
+        X509SignatureUtil.setSignatureParameters(signature, sigAlgParams);
+
+        signature.initVerify(key);
 
         try
         {
-            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(sig), 512);
+            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(signature), 512);
 
             c.getTBSCertList().encodeTo(sigOut, ASN1Encoding.DER);
 
@@ -377,7 +379,7 @@ abstract class X509CRLImpl
             throw new CRLException(e.toString());
         }
 
-        if (!sig.verify(encSig))
+        if (!signature.verify(sigBytes))
         {
             throw new SignatureException("CRL does not verify with supplied public key.");
         }

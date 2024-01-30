@@ -169,6 +169,46 @@ public class X509v2CRLBuilder
      * @param date  date of next CRL update.
      * @return the current builder.
      */
+    public X509v2CRLBuilder setThisUpdate(
+        Date    date)
+    {
+        return this.setThisUpdate(new Time(date));
+    }
+
+    /**
+     * Set the date by which the next CRL will become available.
+     *
+     * @param date  date of next CRL update.
+     * @param dateLocale locale to be used for date interpretation.
+     * @return the current builder.
+     */
+    public X509v2CRLBuilder setThisUpdate(
+        Date    date,
+        Locale  dateLocale)
+    {
+        return this.setThisUpdate(new Time(date, dateLocale));
+    }
+
+    /**
+     * Set the date by which the next CRL will become available.
+     *
+     * @param date  date of next CRL update.
+     * @return the current builder.
+     */
+    public X509v2CRLBuilder setThisUpdate(
+        Time    date)
+    {
+        tbsGen.setThisUpdate(date);
+
+        return this;
+    }
+
+    /**
+     * Set the date by which the next CRL will become available.
+     *
+     * @param date  date of next CRL update.
+     * @return the current builder.
+     */
     public X509v2CRLBuilder setNextUpdate(
         Date    date)
     {

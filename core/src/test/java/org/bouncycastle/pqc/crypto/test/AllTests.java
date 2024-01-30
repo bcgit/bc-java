@@ -45,6 +45,7 @@ public class AllTests
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(RainbowVectorTest.class);
         suite.addTestSuite(GeMSSTest.class);
+        suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
 
         return new BCTestSetup(suite);

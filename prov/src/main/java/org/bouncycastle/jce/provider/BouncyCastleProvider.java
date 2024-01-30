@@ -253,8 +253,6 @@ public final class BouncyCastleProvider extends Provider
         put("CertStore.LDAP", "org.bouncycastle.jce.provider.X509LDAPCertStoreSpi");
         put("CertStore.Multi", "org.bouncycastle.jce.provider.MultiCertStoreSpi");
         put("Alg.Alias.CertStore.X509LDAP", "LDAP");
-
-        getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
     }
 
     public final Service getService(final String type, final String algorithm)

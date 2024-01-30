@@ -734,7 +734,7 @@ class ProvSSLEngine
 
         int position = src.position();
         src.get(recordHeader);
-        src.position(position);
+        ((java.nio.Buffer)src).position(position);
 
         return protocol.previewInputRecord(recordHeader);
     }

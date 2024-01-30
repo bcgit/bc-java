@@ -81,10 +81,10 @@ class KeyBoxByteBuffer
         }
 
         int p = buffer.position();
-        buffer.position(start);
+        ((java.nio.Buffer)buffer).position(start);
         byte[] data = new byte[end - start];
         buffer.get(data);
-        buffer.position(p);
+        ((java.nio.Buffer)buffer).position(p);
         return data;
     }
 
@@ -105,7 +105,7 @@ class KeyBoxByteBuffer
 
     public void position(int p)
     {
-        buffer.position(p);
+        ((java.nio.Buffer)buffer).position(p);
     }
 
     public int u16()

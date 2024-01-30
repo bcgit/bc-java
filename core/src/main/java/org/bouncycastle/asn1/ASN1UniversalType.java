@@ -41,12 +41,7 @@ abstract class ASN1UniversalType
 
     final ASN1Primitive getContextInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
     {
-        if (BERTags.CONTEXT_SPECIFIC != taggedObject.getTagClass())
-        {
-            throw new IllegalStateException("this method only valid for CONTEXT_SPECIFIC tags");
-        }
-
-        return checkedCast(taggedObject.getBaseUniversal(declaredExplicit, this));
+        return checkedCast(ASN1Util.checkContextTagClass(taggedObject).getBaseUniversal(declaredExplicit, this));
     }
 
     final ASN1Tag getTag()
