@@ -11,13 +11,13 @@ jar.archiveBaseName = "bcmail-$vmrange"
 
 task sourcesJar(type: Jar) {
   archiveBaseName = jar.archiveBaseName
-  classifier = 'sources'
+  archiveClassifier = 'sources'
   from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   archiveBaseName = jar.archiveBaseName
-  classifier = 'javadoc'
+  archiveClassifier = 'javadoc'
   from javadoc.destinationDir
 }
 

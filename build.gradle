@@ -8,14 +8,14 @@ buildscript {
 }
 
 plugins {
-  id "io.spring.nohttp" version "0.0.8"
+  id "io.spring.nohttp" version "0.0.11"
   id "checkstyle"
   id "jacoco"
-  id "net.ltgt.errorprone" version "2.0.2"
+  id "net.ltgt.errorprone" version "3.1.0"
 }
 
 println("Environment setup:")
-["BC_JDK8", "BC_JDK11", "BC_JDK15", "BC_JDK17"].each({ it ->
+["BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21"].each({ it ->
   println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
   if (System.getenv(it) == null) {
     throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
@@ -265,6 +265,30 @@ subprojects {
     }
   }
 
+  task test21(type:Test) {
+    forkEvery = 1;
+    maxParallelForks = 1;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    jvmArgs=['-Dtest.java.version.prefix=21']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+      includeTestsMatching "AllTest*"
+      if (project.hasProperty('excludeTests')) {
+        excludeTestsMatching "${excludeTests}"
+      }
+    }
+  }
 
   dependencies {
     checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
