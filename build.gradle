@@ -15,7 +15,7 @@ plugins {
 }
 
 println("Environment setup:")
-["BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21"].each({ it ->
+["BC_JDK8", "BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21"].each({ it ->
   println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
   if (System.getenv(it) == null) {
     throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
@@ -47,8 +47,22 @@ allprojects {
     mavenCentral()
   }
 
+
+  sourceSets {
+    test11 {
+      java {
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+        srcDir(file("src/test/jdk1.11"))
+      }
+    }
+  }
+
   dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test11Implementation(":prov:jar");
+
   }
 
   tasks.withType(JavaCompile).configureEach {   
@@ -175,7 +189,9 @@ subprojects {
     targetCompatibility = 1.8
   }
 
- task testFull(type:Test) {
+
+
+  task testFull(type:Test) {
     systemProperties = [
             'bc.test.data.home': bcTestDataHome,
             'test.full':'true'
@@ -215,7 +231,16 @@ subprojects {
   }
 
 
+
+
+
   task test11(type:Test) {
+
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test11.output.classesDirs
+    classpath = sourceSets.test11.runtimeClasspath
+
     forkEvery = 1;
     maxParallelForks = 1;
 
