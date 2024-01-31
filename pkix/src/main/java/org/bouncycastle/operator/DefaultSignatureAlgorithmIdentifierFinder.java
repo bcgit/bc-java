@@ -30,7 +30,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.Composite
 import org.bouncycastle.util.Strings;
 
 public class DefaultSignatureAlgorithmIdentifierFinder
-    implements SignatureAlgorithmIdentifierFinder
+        implements SignatureAlgorithmIdentifierFinder
 {
     private static Map algorithms = new HashMap();
     private static Set noParams = new HashSet();
@@ -236,7 +236,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
 
         //Load composite signatures
-        for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers) {
+        for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers)
+        {
             algorithms.put(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(oid).toUpperCase(), oid);
             algorithms.put(oid.toString(), oid);
         }
@@ -526,7 +527,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, NISTObjectIdentifiers.id_sha256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256s, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f, NISTObjectIdentifiers.id_shake256);
-        
+
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha224, NISTObjectIdentifiers.id_sha224);
@@ -544,16 +545,16 @@ public class DefaultSignatureAlgorithmIdentifierFinder
     private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
     {
         return new RSASSAPSSparams(
-            hashAlgId,
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
-            new ASN1Integer(1));
+                hashAlgId,
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
+                new ASN1Integer(saltSize),
+                new ASN1Integer(1));
     }
 
     public AlgorithmIdentifier find(String sigAlgName)
     {
         String algorithmName = Strings.toUpperCase(sigAlgName);
-        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier)algorithms.get(algorithmName);
+        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier) algorithms.get(algorithmName);
         if (sigOID == null)
         {
             throw new IllegalArgumentException("Unknown signature type requested: " + sigAlgName);
@@ -566,7 +567,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         }
         else if (params.containsKey(algorithmName))
         {
-            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable)params.get(algorithmName));
+            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable) params.get(algorithmName));
         }
         else
         {

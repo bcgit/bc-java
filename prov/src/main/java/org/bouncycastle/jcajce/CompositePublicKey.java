@@ -86,7 +86,8 @@ public class CompositePublicKey implements PublicKey
             {
                 throw new IllegalStateException("Unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -141,7 +142,8 @@ public class CompositePublicKey implements PublicKey
             {
                 //Legacy, component is the whole SubjectPublicKeyInfo
                 v.add(SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded()));
-            } else
+            }
+            else
             {
                 //component is the value of subjectPublicKey from SubjectPublicKeyInfo
                 SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(keys.get(i).getEncoded());
@@ -151,7 +153,8 @@ public class CompositePublicKey implements PublicKey
         try
         {
             return new SubjectPublicKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new IllegalStateException("unable to encode composite public key: " + e.getMessage());
         }

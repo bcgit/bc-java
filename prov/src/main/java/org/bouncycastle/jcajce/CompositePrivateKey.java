@@ -85,7 +85,8 @@ public class CompositePrivateKey implements PrivateKey
             {
                 throw new IllegalStateException("Unable to create CompositePrivateKey from PrivateKeyInfo");
             }
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -123,6 +124,7 @@ public class CompositePrivateKey implements PrivateKey
      * Returns the encoding of the composite private key.
      * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-compositesignatureprivateke
      * as each component is encoded as a PrivateKeyInfo (older name for OneAsymmetricKey).
+     *
      * @return
      */
     public byte[] getEncoded()
@@ -137,7 +139,8 @@ public class CompositePrivateKey implements PrivateKey
         try
         {
             return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new IllegalStateException("Unable to encode composite private key: " + e.getMessage());
         }
