@@ -29,6 +29,3 @@ test {
     maxParallelForks = 8;
 }
 
-compileTest11Java {
-    dependsOn(":pkix:jar")
-}
