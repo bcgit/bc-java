@@ -104,7 +104,8 @@ public class SignatureSpi extends java.security.SignatureSpi
                 default:
                     throw new RuntimeException("Unknown composite algorithm.");
             }
-        } catch (NoSuchAlgorithmException | NoSuchProviderException e)
+        }
+        catch (NoSuchAlgorithmException | NoSuchProviderException e)
         {
             throw new RuntimeException(e);
         }
@@ -193,7 +194,8 @@ public class SignatureSpi extends java.security.SignatureSpi
             }
 
             return new DERSequence(signatureSequence).getEncoded(ASN1Encoding.DER);
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new SignatureException(e.getMessage());
         }

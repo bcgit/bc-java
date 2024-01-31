@@ -61,11 +61,13 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
             if (key instanceof PrivateKey)
             {
                 return generatePrivate(PrivateKeyInfo.getInstance(key.getEncoded()));
-            } else if (key instanceof PublicKey)
+            }
+            else if (key instanceof PublicKey)
             {
                 return generatePublic(SubjectPublicKeyInfo.getInstance(key.getEncoded()));
             }
-        } catch (IOException e)
+        }
+        catch (IOException e)
         {
             throw new InvalidKeyException("Key could not be parsed: " + e.getMessage());
         }
@@ -99,7 +101,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
                 privateKeys[i] = factories.get(i).generatePrivate(keySpec);
             }
             return new CompositePrivateKey(keyIdentifier, privateKeys);
-        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
+        }
+        catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
         {
             throw new RuntimeException(e);
         }
@@ -132,7 +135,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
                 if (seq.getObjectAt(i) instanceof DEROctetString)
                 {
                     componentBitStrings[i] = new DERBitString(((DEROctetString) seq.getObjectAt(i)).getOctets());
-                } else
+                }
+                else
                 {
                     componentBitStrings[i] = (DERBitString) seq.getObjectAt(i);
                 }
@@ -147,7 +151,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
             }
 
             return new CompositePublicKey(keyIdentifier, publicKeys);
-        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
+        }
+        catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
         {
             throw new RuntimeException(e);
         }

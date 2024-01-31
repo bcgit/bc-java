@@ -22,7 +22,7 @@ public class CompositeSignatures
     }
 
     public static class Mappings
-        extends AsymmetricAlgorithmProvider
+            extends AsymmetricAlgorithmProvider
     {
         public Mappings()
         {
@@ -30,7 +30,8 @@ public class CompositeSignatures
 
         public void configure(ConfigurableProvider provider)
         {
-            for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers) {
+            for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers)
+            {
                 String algName = CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(oid);
                 provider.addAlgorithm("KeyFactory." + algName, PREFIX + "KeyFactorySpi"); //Key factory is the same for all composite signatures.
                 provider.addAlgorithm("Alg.Alias.KeyFactory", oid, algName);

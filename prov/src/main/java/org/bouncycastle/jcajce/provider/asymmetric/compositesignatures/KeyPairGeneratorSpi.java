@@ -150,7 +150,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
                 default:
                     throw new IllegalStateException("Generators not correctly initialized. Unsupported composite algorithm.");
             }
-        } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e)
+        }
+        catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e)
         {
             throw new RuntimeException(e);
         }

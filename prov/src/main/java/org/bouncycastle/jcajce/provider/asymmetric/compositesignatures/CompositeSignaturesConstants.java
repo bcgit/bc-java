@@ -99,7 +99,8 @@ public abstract class CompositeSignaturesConstants
             if (parts.length < 4)
             { //no 2nd "param", e.g., in the case of Ed25519, 3rd hash function is ignored
                 algName = parts[0] + "and" + parts[1]; // e.g., MLDSA44_Ed25519_SHA512 => MLDSA44andEd25519
-            } else
+            }
+            else
             {
                 algName = parts[0] + "and" + parts[1] + parts[2]; // e.g., MLDSA44_RSA2048_PSS_SHA256 => MLDSA44andRSA2048PSS
             }
