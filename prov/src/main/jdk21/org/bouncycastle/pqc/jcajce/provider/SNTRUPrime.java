@@ -8,7 +8,7 @@ import org.bouncycastle.pqc.jcajce.provider.ntruprime.SNTRUPrimeKeyFactorySpi;
 
 public class SNTRUPrime
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".sntru.";
+    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".ntruprime.";
 
     public static class Mappings
             extends AsymmetricAlgorithmProvider
