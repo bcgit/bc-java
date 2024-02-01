@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
 
 
-public class AllTests
+public class All15Tests
         extends TestCase
 {
     public static void main(String[] args)
@@ -17,8 +17,8 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("JDK11 Provider Tests");
-        suite.addTestSuite(XDHKeyTest.class);
+        TestSuite suite = new TestSuite("JDK15 Provider Tests");
+        suite.addTestSuite(EdDSA15Test.class);
         return suite;
     }
 
