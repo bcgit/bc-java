@@ -41,12 +41,25 @@ dependencies {
         builtBy compileJava
     }
 
-    java11Implementation files([sourceSets.main.output.classesDirs, sourceSets.java9.output.classesDirs]) {
+    java11Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs]) {
         builtBy compileJava9Java
     }
 
-    java15Implementation files([sourceSets.main.output.classesDirs, sourceSets.java9.output.classesDirs, sourceSets.java11.output.classesDirs]) {
+    java15Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs,
+            sourceSets.java11.output.classesDirs]) {
         builtBy compileJava11Java
+    }
+
+    java21Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs,
+            sourceSets.java11.output.classesDirs,
+            sourceSets.java15.output.classesDirs]) {
+        builtBy compileJava15Java
     }
 }
 
@@ -73,7 +86,7 @@ compileJava11Java {
     }
     sourceCompatibility = 11
     targetCompatibility = 11
-    options.sourcepath = files(['../core/src/main/java', 'src/main/java', 'src/main/jdk1.11'])
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.11'])
 }
 
 compileJava15Java {
@@ -82,7 +95,7 @@ compileJava15Java {
     }
     sourceCompatibility = 15
     targetCompatibility = 15
-    options.sourcepath = files(['../core/src/main/java', 'src/main/java', 'src/main/jdk1.15'])
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.15'])
 }
 
 compileJava21Java {
@@ -91,11 +104,8 @@ compileJava21Java {
     }
     sourceCompatibility = 21
     targetCompatibility = 21
-    options.sourcepath = files(['../core/src/main/java', 'src/main/java', 'src/main/jdk21'])
+    options.sourcepath = files(['src/main/java', 'src/main/jdk21'])
 }
-
-
-
 
 
 task sourcesJar(type: Jar) {
@@ -138,11 +148,10 @@ jar {
 }
 
 
-
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  archiveBaseName = jar.archiveBaseName
-  archiveClassifier = 'javadoc'
-  from javadoc.destinationDir
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
 }
 
 artifacts {
@@ -161,25 +170,49 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(file("src/test/jdk1.11"))
+            srcDir(files("src/test/jdk1.11", "src/test/java"))
+        }
+    }
+
+    test17 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += test.output
+            srcDir(files("src/test/jdk1.15", "src/test/java"))
+        }
+    }
+
+    test21 {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += test.output
+            srcDir(files("src/test/jdk21", "src/test/java"))
         }
     }
 }
 
 dependencies {
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test11Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test17Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test21Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test11Implementation(project(":core"))
+    test17Implementation(project(":core"))
+    test21Implementation(project(":core"))
 }
 
 
-task test11(type:Test) {
+task test11(type: Test) {
 
-    dependsOn jar
+    dependsOn(jar)
 
     testClassesDirs = sourceSets.test11.output.classesDirs
     classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
 
     forkEvery = 1;
-    maxParallelForks = 1;
+    maxParallelForks = 8;
 
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
@@ -189,7 +222,75 @@ task test11(type:Test) {
         languageVersion = JavaLanguageVersion.of(11)
     }
 
-    jvmArgs=['-Dtest.java.version.prefix=11.']
+    jvmArgs = ['-Dtest.java.version.prefix=11.']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        includeTestsMatching "All11Test*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
+task test17(type: Test) {
+
+    // This is testing the 1.15 code base
+
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test17.output.classesDirs
+    classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=17.']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        includeTestsMatching "All15Test*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
+task test21(type: Test) {
+
+    // This is testing the 21 code base
+
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test21.output.classesDirs
+    classpath = sourceSets.test21.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = true
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=21']
 
 
     finalizedBy jacocoTestReport
