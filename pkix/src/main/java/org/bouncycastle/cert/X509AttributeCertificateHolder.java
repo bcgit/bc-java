@@ -3,6 +3,7 @@ package org.bouncycastle.cert;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -19,6 +21,7 @@ import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.AttributeCertificateInfo;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
 
@@ -31,7 +34,7 @@ public class X509AttributeCertificateHolder
     private static final long serialVersionUID = 20170722001L;
 
     private static Attribute[] EMPTY_ARRAY = new Attribute[0];
-
+    
     private transient AttributeCertificate attrCert;
     private transient Extensions extensions;
 
@@ -173,8 +176,8 @@ public class X509AttributeCertificateHolder
      */
     public Attribute[] getAttributes(ASN1ObjectIdentifier type)
     {
-        ASN1Sequence seq = attrCert.getAcinfo().getAttributes();
-        List list = new ArrayList();
+        ASN1Sequence    seq = attrCert.getAcinfo().getAttributes();
+        List            list = new ArrayList();
 
         for (int i = 0; i != seq.size(); i++)
         {
@@ -207,6 +210,7 @@ public class X509AttributeCertificateHolder
      * Look up the extension associated with the passed in OID.
      *
      * @param oid the OID of the extension of interest.
+     *
      * @return the extension if present, null otherwise.
      */
     public Extension getExtension(ASN1ObjectIdentifier oid)
@@ -322,7 +326,27 @@ public class X509AttributeCertificateHolder
     {
         AttributeCertificateInfo acinfo = attrCert.getAcinfo();
 
-        return CertUtils.isSignatureValid(verifierProvider,acinfo.getSignature(),attrCert.getSignatureAlgorithm(),acinfo,attrCert.getSignatureValue());
+        if (!CertUtils.isAlgIdEqual(acinfo.getSignature(), attrCert.getSignatureAlgorithm()))
+        {
+            throw new CertException("signature invalid - algorithm identifier mismatch");
+        }
+
+        ContentVerifier verifier;
+
+        try
+        {
+            verifier = verifierProvider.get((acinfo.getSignature()));
+
+            OutputStream sOut = verifier.getOutputStream();
+            acinfo.encodeTo(sOut, ASN1Encoding.DER);
+            sOut.close();
+        }
+        catch (Exception e)
+        {
+            throw new CertException("unable to process signature: " + e.getMessage(), e);
+        }
+
+        return verifier.verify(this.getSignature());
     }
 
     public boolean equals(

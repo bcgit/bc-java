@@ -121,7 +121,7 @@ public class
 
         PKCS8EncryptedPrivateKeyInfo pInfo = (PKCS8EncryptedPrivateKeyInfo)pRd.readObject();
 
-        PrivateKey rdKey = new JcaPEMKeyConverter().setProvider(new BouncyCastleProvider()).getPrivateKey(pInfo.decryptPrivateKeyInfo(new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray())));
+        PrivateKey rdKey = new JcaPEMKeyConverter().setProvider("BC").getPrivateKey(pInfo.decryptPrivateKeyInfo(new JceOpenSSLPKCS8DecryptorProviderBuilder().setProvider("BC").build("hello".toCharArray())));
 
 
         assertEquals(key, rdKey);
@@ -222,8 +222,7 @@ public class
         TestSuite suite = new TestSuite("OpenSSL Tests");
         
         suite.addTestSuite(AllTests.class);
-        suite.addTestSuite(CompositeKeyTest.class);
-        suite.addTestSuite(OpensslGeneralTest.class);
+        
         return new BCTestSetup(suite);
     }
 

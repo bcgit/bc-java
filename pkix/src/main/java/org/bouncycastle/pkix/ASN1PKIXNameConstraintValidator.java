@@ -1005,7 +1005,12 @@ class ASN1PKIXNameConstraintValidator
 
     private boolean otherNameIsConstrained(OtherName name, OtherName constraint)
     {
-        return constraint.equals(name);
+        if (constraint.equals(name))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private boolean emailIsConstrained(String email, String constraint)
@@ -1018,18 +1023,25 @@ class ASN1PKIXNameConstraintValidator
             {
                 return true;
             }
-            return sub.equalsIgnoreCase(constraint.substring(1));
+            if (sub.equalsIgnoreCase(constraint.substring(1)))
+            {
+                return true;
+            }
         }
         // on particular host
         else if (!(constraint.charAt(0) == '.'))
         {
-            return sub.equalsIgnoreCase(constraint);
+            if (sub.equalsIgnoreCase(constraint))
+            {
+                return true;
+            }
         }
         // address in sub domain
-        else
+        else if (withinDomain(sub, constraint))
         {
-            return withinDomain(sub, constraint);
+            return true;
         }
+        return false;
     }
 
     private boolean withinDomain(String testDomain, String domain)
@@ -1780,14 +1792,19 @@ class ASN1PKIXNameConstraintValidator
         // a host
         if (!constraint.startsWith("."))
         {
-            return host.equalsIgnoreCase(constraint);
+            if (host.equalsIgnoreCase(constraint))
+            {
+                return true;
+            }
         }
 
         // in sub domain or domain
-        else
+        else if (withinDomain(host, constraint))
         {
-            return withinDomain(host, constraint);
+            return true;
         }
+
+        return false;
     }
 
     private static String extractHostFromURL(String url)

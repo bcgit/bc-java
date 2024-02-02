@@ -118,11 +118,11 @@ public class BcSignedDataTest
     
     private static boolean _initialised = false;
 
-    static byte[] disorderedMessage = Base64.decode(
+    private byte[] disorderedMessage = Base64.decode(
             "SU9fc3RkaW5fdXNlZABfX2xpYmNfc3RhcnRfbWFpbgBnZXRob3N0aWQAX19n"
           + "bW9uX3M=");
 
-    static byte[] disorderedSet = Base64.decode(
+    private byte[] disorderedSet = Base64.decode(
             "MIIYXQYJKoZIhvcNAQcCoIIYTjCCGEoCAQExCzAJBgUrDgMCGgUAMAsGCSqG"
           + "SIb3DQEHAaCCFqswggJUMIIBwKADAgECAgMMg6wwCgYGKyQDAwECBQAwbzEL"
           + "MAkGA1UEBhMCREUxPTA7BgNVBAoUNFJlZ3VsaWVydW5nc2JlaMhvcmRlIGbI"

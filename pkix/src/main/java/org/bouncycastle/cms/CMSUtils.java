@@ -14,26 +14,17 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSet;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.cms.EncryptedContentInfo;
-import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
-import org.bouncycastle.asn1.cms.RecipientIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
@@ -46,12 +37,8 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.operator.AsymmetricKeyWrapper;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
-import org.bouncycastle.operator.GenericKey;
-import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
@@ -419,90 +406,5 @@ class CMSUtils
         return s1 == null ? getSafeOutputStream(s2)
             : s2 == null ? getSafeOutputStream(s1) : new TeeOutputStream(
             s1, s2);
-    }
-
-    static byte[] getEncryptedKeyBytes(AsymmetricKeyWrapper wrapper, GenericKey contentEncryptionKey)
-        throws CMSException
-    {
-        try
-        {
-            return wrapper.generateWrappedKey(contentEncryptionKey);
-        }
-        catch (OperatorException e)
-        {
-            throw new CMSException("exception wrapping content key: " + e.getMessage(), e);
-        }
-    }
-
-    static RecipientIdentifier getRecipientIdentifier(IssuerAndSerialNumber issuerAndSerial, byte[] subjectKeyIdentifier)
-    {
-        if (issuerAndSerial != null)
-        {
-            return new RecipientIdentifier(issuerAndSerial);
-        }
-        else
-        {
-            return new RecipientIdentifier(new DEROctetString(subjectKeyIdentifier));
-        }
-    }
-
-    static AttributeTable getAtrributeTable(ASN1SetParser set)
-        throws IOException
-    {
-        if (set != null)
-        {
-            ASN1EncodableVector v = new ASN1EncodableVector();
-            ASN1Encodable o;
-
-            while ((o = set.readObject()) != null)
-            {
-                ASN1SequenceParser seq = (ASN1SequenceParser)o;
-
-                v.add(seq.toASN1Primitive());
-            }
-
-            return new AttributeTable(new DERSet(v));
-        }
-
-        return null;
-    }
-
-    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor, ASN1EncodableVector recipientInfos, byte[] encryptedContent, List recipientInfoGenerators)
-        throws CMSException
-    {
-        AlgorithmIdentifier encAlgId = contentEncryptor.getAlgorithmIdentifier();
-
-        ASN1OctetString encContent = new BEROctetString(encryptedContent);
-
-        GenericKey encKey = contentEncryptor.getKey();
-
-        for (Iterator it = recipientInfoGenerators.iterator(); it.hasNext(); )
-        {
-            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
-
-            recipientInfos.add(recipient.generate(encKey));
-        }
-
-        return new EncryptedContentInfo(
-            content.getContentType(),
-            encAlgId,
-            encContent);
-    }
-
-    static ASN1Set getASN1Set(Store certificates, Store attrCerts)
-        throws CMSException
-    {
-        List certs = new ArrayList();
-
-        if (certificates != null)
-        {
-            certs.addAll(getCertificatesFromStore(certificates));
-        }
-        if (attrCerts != null)
-        {
-            certs.addAll(getAttributeCertificatesFromStore(attrCerts));
-        }
-
-        return createBerSetFromList(certs);
     }
 }

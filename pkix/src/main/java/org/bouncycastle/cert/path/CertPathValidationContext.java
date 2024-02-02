@@ -51,11 +51,11 @@ public class CertPathValidationContext
 
     public Memoable copy()
     {
-        return null;  //TODO change body of implemented methods use File | Settings | File Templates.
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void reset(Memoable other)
     {
-        //TODO change body of implemented methods use File | Settings | File Templates.
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

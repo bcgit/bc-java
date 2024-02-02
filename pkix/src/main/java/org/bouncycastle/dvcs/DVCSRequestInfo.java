@@ -219,7 +219,10 @@ public class DVCSRequestInfo
             {
                 return false;
             }
-            return Arrays.areEqual(clientNonce, Arrays.copyOfRange(serverNonce, 0, clientNonce.length));
+            if (!Arrays.areEqual(clientNonce, Arrays.copyOfRange(serverNonce, 0, clientNonce.length)))
+            {
+                return false;
+            }
         }
 
         return true;

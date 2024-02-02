@@ -38,7 +38,7 @@ public class JceCMSContentEncryptorBuilder
     private static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
 
     private final ASN1ObjectIdentifier encryptionOID;
-    private final int keySize;
+    private final int                  keySize;
 
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     private SecureRandom random;
@@ -148,7 +148,15 @@ public class JceCMSContentEncryptorBuilder
     public OutputEncryptor build()
         throws CMSException
     {
-        if (algorithmParameters == null && algorithmIdentifier != null)
+        if (algorithmParameters != null)
+        {
+            if (helper.isAuthEnveloped(encryptionOID))
+            {
+                return new CMSAuthOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
+            }
+            return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
+        }
+        if (algorithmIdentifier != null)
         {
             ASN1Encodable params = algorithmIdentifier.getParameters();
             if (params != null && !params.equals(DERNull.INSTANCE))
@@ -173,14 +181,14 @@ public class JceCMSContentEncryptorBuilder
         return new CMSOutputEncryptor(encryptionOID, keySize, algorithmParameters, random);
     }
 
-    private abstract class GeneralOutputEncryptor
+    private class CMSOutputEncryptor
         implements OutputEncryptor
     {
-        protected SecretKey encKey;
-        protected AlgorithmIdentifier algorithmIdentifier;
-        protected Cipher cipher;
+        private SecretKey encKey;
+        private AlgorithmIdentifier algorithmIdentifier;
+        private Cipher              cipher;
 
-        GeneralOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
+        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
             KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
@@ -230,39 +238,73 @@ public class JceCMSContentEncryptorBuilder
             return algorithmIdentifier;
         }
 
+        public OutputStream getOutputStream(OutputStream dOut)
+        {
+            return new CipherOutputStream(dOut, cipher);
+        }
+
         public GenericKey getKey()
         {
             return new JceGenericKey(algorithmIdentifier, encKey);
         }
     }
 
-    private class CMSOutputEncryptor
-        extends GeneralOutputEncryptor
-        implements OutputEncryptor
-    {
-        CMSOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
-            throws CMSException
-        {
-            super(encryptionOID, keySize, params, random);
-        }
-
-        public OutputStream getOutputStream(OutputStream dOut)
-        {
-            return new CipherOutputStream(dOut, cipher);
-        }
-
-    }
-
     private class CMSAuthOutputEncryptor
-        extends GeneralOutputEncryptor
         implements OutputAEADEncryptor
     {
-        private MacCaptureStream macOut;
+        private SecretKey encKey;
+        private AlgorithmIdentifier algorithmIdentifier;
+        private Cipher              cipher;
+        private MacCaptureStream    macOut;
 
         CMSAuthOutputEncryptor(ASN1ObjectIdentifier encryptionOID, int keySize, AlgorithmParameters params, SecureRandom random)
             throws CMSException
         {
-            super(encryptionOID, keySize, params, random);
+            KeyGenerator keyGen = helper.createKeyGenerator(encryptionOID);
+
+            random = CryptoServicesRegistrar.getSecureRandom(random);
+
+            if (keySize < 0)
+            {
+                keyGen.init(random);
+            }
+            else
+            {
+                keyGen.init(keySize, random);
+            }
+
+            cipher = helper.createCipher(encryptionOID);
+            encKey = keyGen.generateKey();
+
+            if (params == null)
+            {
+                params = helper.generateParameters(encryptionOID, encKey, random);
+            }
+
+            try
+            {
+                cipher.init(Cipher.ENCRYPT_MODE, encKey, params, random);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new CMSException("unable to initialize cipher: " + e.getMessage(), e);
+            }
+
+            //
+            // If params are null we try and second guess on them as some providers don't provide
+            // algorithm parameter generation explicitly but instead generate them under the hood.
+            //
+            if (params == null)
+            {
+                params = cipher.getParameters();
+            }
+
+            algorithmIdentifier = helper.getAlgorithmIdentifier(encryptionOID, params);
+        }
+
+        public AlgorithmIdentifier getAlgorithmIdentifier()
+        {
+            return algorithmIdentifier;
         }
 
         public OutputStream getOutputStream(OutputStream dOut)
@@ -272,6 +314,11 @@ public class JceCMSContentEncryptorBuilder
 
             macOut = new MacCaptureStream(dOut, p.getIcvLen());
             return new CipherOutputStream(macOut, cipher);
+        }
+
+        public GenericKey getKey()
+        {
+            return new JceGenericKey(algorithmIdentifier, encKey);
         }
 
         public OutputStream getAADStream()

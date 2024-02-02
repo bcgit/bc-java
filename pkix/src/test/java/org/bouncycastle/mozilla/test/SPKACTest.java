@@ -17,7 +17,7 @@ import org.bouncycastle.util.test.SimpleTest;
 public class SPKACTest
     extends SimpleTest
 {
-    static byte[] spkac = Base64.decode(
+    byte[] spkac = Base64.decode(
         "MIIBOjCBpDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEApne7ti0ibPhV8Iht" +
             "7Pws5iRckM7x4mtZYxEpeX5/IO8tDsBFdY86ewuY2f2KCca0oMWr43kdkZbPyzf4" +
             "CSV+0fZm9MJyNMywygZjoOCC+rS8kr0Ef31iHChhYsyejJnjw116Jnn96syhdHY6" +

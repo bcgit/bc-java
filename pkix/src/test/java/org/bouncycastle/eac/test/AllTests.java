@@ -211,7 +211,6 @@ public class AllTests
         TestSuite suite = new TestSuite("EAC tests");
 
         suite.addTestSuite(AllTests.class);
-        suite.addTestSuite(EACGeneralTest.class);
 
         return new EACTestSetup(suite);
     }

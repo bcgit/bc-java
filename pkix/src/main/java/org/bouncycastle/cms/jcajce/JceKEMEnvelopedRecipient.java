@@ -1,11 +1,16 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.InputStream;
 import java.security.Key;
 import java.security.PrivateKey;
+
+import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.RecipientOperator;
+import org.bouncycastle.jcajce.io.CipherInputStream;
+import org.bouncycastle.operator.InputDecryptor;
 
 public class JceKEMEnvelopedRecipient
     extends JceKEMRecipient
@@ -19,6 +24,20 @@ public class JceKEMEnvelopedRecipient
         throws CMSException
     {
         Key secretKey = extractSecretKey(keyEncryptionAlgorithm, contentEncryptionAlgorithm, encryptedContentEncryptionKey);
-        return CMSUtils.getRecipientOperator(contentEncryptionAlgorithm, secretKey, contentHelper);
+
+        final Cipher dataCipher = contentHelper.createContentCipher(secretKey, contentEncryptionAlgorithm);
+
+        return new RecipientOperator(new InputDecryptor()
+        {
+            public AlgorithmIdentifier getAlgorithmIdentifier()
+            {
+                return contentEncryptionAlgorithm;
+            }
+
+            public InputStream getInputStream(InputStream dataIn)
+            {
+                return new CipherInputStream(dataIn, dataCipher);
+            }
+        });
     }
 }

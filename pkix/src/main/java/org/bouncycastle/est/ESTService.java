@@ -704,8 +704,10 @@ public class ESTService
 
                 break;
             case 204:
+                response = null;
+                break;
             case 404:
-                // response = null;
+                response = null;
                 break;
             default:
                 throw new ESTException(

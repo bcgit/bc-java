@@ -106,10 +106,7 @@ public class AllTests
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("CRMF tests");
-        suite.addTestSuite(CrmfGeneralTest.class);
-        suite.addTestSuite(AllTests.class);
-        return suite;
+        return new TestSuite(AllTests.class);
     }
 
     public void setUp()

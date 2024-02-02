@@ -8,16 +8,18 @@ import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.ResponseData;
+import org.bouncycastle.asn1.ocsp.SingleResponse;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
-
 
 /**
  * OCSP RFC 2560, RFC 6960
@@ -87,7 +89,15 @@ public class BasicOCSPResp
 
     public SingleResp[] getResponses()
     {
-        return OCSPUtils.getResponses(data);
+        ASN1Sequence    s = data.getResponses();
+        SingleResp[]    rs = new SingleResp[s.size()];
+
+        for (int i = 0; i != rs.length; i++)
+        {
+            rs[i] = new SingleResp(SingleResponse.getInstance(s.getObjectAt(i)));
+        }
+
+        return rs;
     }
 
     public boolean hasExtensions()
@@ -138,12 +148,27 @@ public class BasicOCSPResp
         //
         if (resp.getCerts() != null)
         {
-            return OCSPUtils.getX509CertificateHolders(resp.getCerts());
+            ASN1Sequence s = resp.getCerts();
+
+            if (s != null)
+            {
+                X509CertificateHolder[] certs = new X509CertificateHolder[s.size()];
+
+                for (int i = 0; i != certs.length; i++)
+                {
+                    certs[i] = new X509CertificateHolder(Certificate.getInstance(s.getObjectAt(i)));
+                }
+
+                return certs;
+            }
+
+            return OCSPUtils.EMPTY_CERTS;
         }
-        return OCSPUtils.EMPTY_CERTS;
+        else
+        {
+            return OCSPUtils.EMPTY_CERTS;
+        }
     }
-
-
 
     /**
      * verify the signature against the tbsResponseData object we contain.

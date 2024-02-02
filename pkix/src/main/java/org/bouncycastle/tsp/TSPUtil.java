@@ -6,11 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -90,12 +87,12 @@ public class TSPUtil
         digestNames.put(GMObjectIdentifiers.sm3.getId(), "SM3");
     }
 
-    /**
+     /**
      * Fetches the signature time-stamp attributes from a SignerInformation object.
      * Checks that the MessageImprint for each time-stamp matches the signature field.
      * (see RFC 3161 Appendix A).
      *
-     * @param signerInfo      a SignerInformation to search for time-stamps
+     * @param signerInfo a SignerInformation to search for time-stamps
      * @param digCalcProvider provider for digest calculators
      * @return a collection of TimeStampToken objects
      * @throws TSPValidationException
@@ -181,7 +178,7 @@ public class TSPUtil
             throw new TSPValidationException("Certificate must have an ExtendedKeyUsage extension marked as critical.");
         }
 
-        ExtendedKeyUsage extKey = ExtendedKeyUsage.getInstance(ext.getParsedValue());
+        ExtendedKeyUsage    extKey = ExtendedKeyUsage.getInstance(ext.getParsedValue());
 
         if (!extKey.hasKeyPurposeId(KeyPurposeId.id_kp_timeStamping) || extKey.size() != 1)
         {
@@ -224,31 +221,5 @@ public class TSPUtil
         {
             throw new TSPIOException("cannot encode extension: " + e.getMessage(), e);
         }
-    }
-
-    static Set convert(Set orig)
-    {
-        if (orig == null)
-        {
-            return orig;
-        }
-
-        Set con = new HashSet(orig.size());
-
-        for (Iterator it = orig.iterator(); it.hasNext(); )
-        {
-            Object o = it.next();
-
-            if (o instanceof String)
-            {
-                con.add(new ASN1ObjectIdentifier((String)o));
-            }
-            else
-            {
-                con.add(o);
-            }
-        }
-
-        return con;
     }
 }

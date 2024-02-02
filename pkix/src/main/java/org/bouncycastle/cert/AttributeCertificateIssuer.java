@@ -1,5 +1,8 @@
 package org.bouncycastle.cert;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
@@ -46,7 +49,37 @@ public class AttributeCertificateIssuer
 
         GeneralName[] names = name.getNames();
 
-        return CertUtils.getPrincipals(names);
+        List l = new ArrayList(names.length);
+
+        for (int i = 0; i != names.length; i++)
+        {
+            if (names[i].getTagNo() == GeneralName.directoryName)
+            {
+                l.add(X500Name.getInstance(names[i].getName()));
+            }
+        }
+
+        return (X500Name[])l.toArray(new X500Name[l.size()]);
+    }
+
+    private boolean matchesDN(X500Name subject, GeneralNames targets)
+    {
+        GeneralName[] names = targets.getNames();
+
+        for (int i = 0; i != names.length; i++)
+        {
+            GeneralName gn = names[i];
+
+            if (gn.getTagNo() == GeneralName.directoryName)
+            {
+                if (X500Name.getInstance(gn.getName()).equals(subject))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public Object clone()
@@ -84,22 +117,31 @@ public class AttributeCertificateIssuer
         }
 
         X509CertificateHolder x509Cert = (X509CertificateHolder)obj;
-        GeneralNames name;
+
         if (form instanceof V2Form)
         {
             V2Form issuer = (V2Form)form;
             if (issuer.getBaseCertificateID() != null)
             {
                 return issuer.getBaseCertificateID().getSerial().hasValue(x509Cert.getSerialNumber())
-                    && CertUtils.matchesDN(x509Cert.getIssuer(), issuer.getBaseCertificateID().getIssuer());
+                    && matchesDN(x509Cert.getIssuer(), issuer.getBaseCertificateID().getIssuer());
             }
 
-             name = issuer.getIssuerName();
+            GeneralNames name = issuer.getIssuerName();
+            if (matchesDN(x509Cert.getSubject(), name))
+            {
+                return true;
+            }
         }
         else
         {
-             name = (GeneralNames)form;
+            GeneralNames name = (GeneralNames)form;
+            if (matchesDN(x509Cert.getSubject(), name))
+            {
+                return true;
+            }
         }
-        return CertUtils.matchesDN(x509Cert.getSubject(), name);
+
+        return false;
     }
 }

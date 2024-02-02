@@ -1,22 +1,20 @@
 package org.bouncycastle.its.jcajce;
 
 import java.math.BigInteger;
-import java.security.KeyFactory;
-import java.security.PublicKey;
 import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
-import java.security.spec.ECPublicKeySpec;
 import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.field.FiniteField;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.math.field.Polynomial;
+import org.bouncycastle.math.field.PolynomialExtensionField;
+import org.bouncycastle.util.Arrays;
 
 class ECUtil
 {
@@ -53,37 +51,16 @@ class ECUtil
 
     public static ECField convertField(FiniteField field)
     {
-        return EC5Util.convertField(field);
-    }
-
-    static PublicKey getPublicKey(X9ECParameters params, ECCurve curve, EccCurvePoint itsPoint, JcaJceHelper helper)
-    {
-        byte[] key;
-
-        if (itsPoint instanceof EccP256CurvePoint)
+        if (ECAlgorithms.isFpField(field))
         {
-            key = itsPoint.getEncodedPoint();
+            return new ECFieldFp(field.getCharacteristic());
         }
-        else if (itsPoint instanceof EccP384CurvePoint)
+        else //if (ECAlgorithms.isF2mField(curveField))
         {
-            key = itsPoint.getEncodedPoint();
-        }
-        else
-        {
-            throw new IllegalStateException("unknown key type");
-        }
-
-        org.bouncycastle.math.ec.ECPoint point = curve.decodePoint(key).normalize();
-        try
-        {
-            KeyFactory keyFactory = helper.createKeyFactory("EC");
-            ECParameterSpec spec = convertToSpec(params);
-            ECPoint jPoint = convertPoint(point);
-            return keyFactory.generatePublic(new ECPublicKeySpec(jPoint, spec));
-        }
-        catch (Exception e)
-        {
-            throw new IllegalStateException(e.getMessage(), e);
+            Polynomial poly = ((PolynomialExtensionField)field).getMinimalPolynomial();
+            int[] exponents = poly.getExponentsPresent();
+            int[] ks = Arrays.reverseInPlace(Arrays.copyOfRange(exponents, 1, exponents.length - 1));
+            return new ECFieldF2m(poly.getDegree(), ks);
         }
     }
 }

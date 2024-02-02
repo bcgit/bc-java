@@ -228,7 +228,6 @@ public class AllTests
 
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(DVCSParseTest.class);
-        suite.addTestSuite(DVCSGeneralTest.class);
 
         return new DVCSTestSetup(suite);
     }

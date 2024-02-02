@@ -13,107 +13,24 @@ import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
 import org.bouncycastle.oer.its.ieee1609dot2.IssuerIdentifier;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Arrays;
 
 public class ITSImplicitCertificateBuilder
     extends ITSCertificateBuilder
 {
-    private IssuerIdentifier issuerIdentifier;
-    private final DigestCalculatorProvider digestCalculatorProvider;
+    private final IssuerIdentifier issuerIdentifier;
 
     public ITSImplicitCertificateBuilder(ITSCertificate issuer, DigestCalculatorProvider digestCalculatorProvider, ToBeSignedCertificate.Builder tbsCertificate)
     {
         super(issuer, tbsCertificate);
-        this.digestCalculatorProvider = digestCalculatorProvider;
-    }
-
-    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
-    {
-        return build(certificateId, x, y, null);
-    }
-
-    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
-    {
-        EccCurvePoint reconstructionValue;
-        AlgorithmIdentifier digestAlgId;
-        if (tbsCertificateBuilder.createToBeSignedCertificate().getVerifyKeyIndicator() != null)
-        {
-            try
-            {
-                EccCurvePoint eccCurvePoint = (EccCurvePoint)tbsCertificateBuilder.createToBeSignedCertificate().getVerifyKeyIndicator().getVerificationKeyIndicator();
-                if (eccCurvePoint instanceof EccP256CurvePoint)
-                {
-                    reconstructionValue = EccP256CurvePoint.uncompressedP256(x, y);
-                    digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-                }
-                else if (eccCurvePoint instanceof EccP384CurvePoint)
-                {
-                    reconstructionValue = EccP384CurvePoint.uncompressedP384(x,y);
-                    digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
-                }
-                else
-                {
-                    throw new IllegalStateException("unable to build as the parameter setting in VerifyKeyIndicator is not correct");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("unable to build as the parameter setting in VerifyKeyIndicator is not correct");
-            }
-        }
-        else
-        {
-            // Default setting when there is no settings for VerifyKeyIndicator
-            reconstructionValue = EccP256CurvePoint.uncompressedP256(x, y);
-            digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-        }
-
-        return getItsCertificate(certificateId, publicEncryptionKey, reconstructionValue, digestAlgId);
-    }
-
-    public ITSCertificate build(CertificateId certificateId, PublicEncryptionKey publicEncryptionKey)
-    {
-        EccCurvePoint reconstructionValue;
-        AlgorithmIdentifier digestAlgId;
-        if (tbsCertificateBuilder.createToBeSignedCertificate().getVerifyKeyIndicator() != null)
-        {
-            try
-            {
-                reconstructionValue = (EccCurvePoint)tbsCertificateBuilder.createToBeSignedCertificate().getVerifyKeyIndicator().getVerificationKeyIndicator();
-                if (reconstructionValue instanceof EccP256CurvePoint)
-                {
-                    digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-                }
-                else if (reconstructionValue instanceof EccP384CurvePoint)
-                {
-                    digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384);
-                }
-                else
-                {
-                    throw new IllegalStateException("unable to build as the parameter setting in VerifyKeyIndicator is not correct");
-                }
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("unable to build as the parameter setting in VerifyKeyIndicator is not correct");
-            }
-        }
-        else
-        {
-            throw new IllegalStateException("unable to build as the parameter setting in VerifyKeyIndicator is not correct");
-        }
-
-        return getItsCertificate(certificateId, publicEncryptionKey, reconstructionValue, digestAlgId);
-    }
-
-    private ITSCertificate getItsCertificate(CertificateId certificateId, PublicEncryptionKey publicEncryptionKey, EccCurvePoint reconstructionValue, AlgorithmIdentifier digestAlgId)
-    {
+        // TODO is this always true?
+        AlgorithmIdentifier digestAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
         ASN1ObjectIdentifier digestAlg = digestAlgId.getAlgorithm();
         DigestCalculator calculator;
         try
@@ -124,6 +41,7 @@ public class ITSImplicitCertificateBuilder
         {
             throw new IllegalStateException(e.getMessage(), e);
         }
+
         try
         {
             OutputStream os = calculator.getOutputStream();
@@ -134,8 +52,37 @@ public class ITSImplicitCertificateBuilder
         {
             throw new IllegalStateException(ioex.getMessage(), ioex);
         }
+
         byte[] parentDigest = calculator.getDigest();
-        issuerIdentifier = ITSUtil.getIssuerIdentifier(digestAlg, parentDigest);
+
+
+        HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
+
+
+        if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
+        {
+            issuerIdentifier = IssuerIdentifier.sha256AndDigest(hashedID);
+        }
+        else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
+        {
+            issuerIdentifier = IssuerIdentifier.sha384AndDigest(hashedID);
+        }
+        else
+        {
+            throw new IllegalStateException("unknown digest");
+        }
+
+    }
+
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y)
+    {
+        return build(certificateId, x, y, null);
+    }
+
+    public ITSCertificate build(CertificateId certificateId, BigInteger x, BigInteger y, PublicEncryptionKey publicEncryptionKey)
+    {
+        EccP256CurvePoint reconstructionValue = EccP256CurvePoint.uncompressedP256(x, y);
+
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
 
         tbsBldr.setId(certificateId);

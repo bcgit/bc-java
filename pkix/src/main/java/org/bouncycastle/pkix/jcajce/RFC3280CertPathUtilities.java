@@ -178,6 +178,11 @@ class RFC3280CertPathUtilities
                             }
                         }
                     }
+                    if (!matches)
+                    {
+                        throw new AnnotatedException(
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                    }
                 }
                 // verify that one of the names in
                 // the IDP matches one of the names in the cRLIssuer field of
@@ -198,11 +203,11 @@ class RFC3280CertPathUtilities
                             break;
                         }
                     }
-                }
-                if (!matches)
-                {
-                    throw new AnnotatedException(
-                        "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                    if (!matches)
+                    {
+                        throw new AnnotatedException(
+                            "No match for certificate CRL issuing distribution point name to cRLIssuer CRL distribution point.");
+                    }
                 }
             }
             BasicConstraints bc = null;
@@ -825,7 +830,7 @@ class RFC3280CertPathUtilities
      * @param dp                 The distribution point to consider.
      * @param paramsPKIX         PKIX parameters.
      * @param cert               Certificate to check if it is revoked.
-     * @param validityDate       The date when the certificate revocation status should be
+     * @param validDate          The date when the certificate revocation status should be
      *                           checked.
      * @param defaultCRLSignCert The issuer certificate of the certificate <code>cert</code>.
      * @param defaultCRLSignKey  The public key of the issuer certificate

@@ -2,6 +2,7 @@ package org.bouncycastle.operator.bc;
 
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.util.Map;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CryptoException;

@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KEKRecipient;
+import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 
 public abstract class JceKEKRecipient
@@ -84,7 +85,6 @@ public abstract class JceKEKRecipient
      * This setting will not have any affect if the encryption algorithm in the recipient does not specify a particular key size, or
      * if the unwrapper is a HSM and the byte encoding of the unwrapped secret key is not available.
      * </p>
-     *
      * @param doValidate true if unwrapped key's should be validated against the content encryption algorithm, false otherwise.
      * @return this recipient.
      */
@@ -100,6 +100,20 @@ public abstract class JceKEKRecipient
     {
         SymmetricKeyUnwrapper unwrapper = helper.createSymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey);
 
-        return CMSUtils.getKey(helper, encryptedKeyAlgorithm, encryptedContentEncryptionKey, unwrapper, validateKeySize);
+        try
+        {
+            Key key =  helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedContentEncryptionKey));
+
+            if (validateKeySize)
+            {
+                helper.keySizeCheck(encryptedKeyAlgorithm, key);
+            }
+
+            return key;
+        }
+        catch (OperatorException e)
+        {
+            throw new CMSException("exception unwrapping key: " + e.getMessage(), e);
+        }
     }
 }

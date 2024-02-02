@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -37,11 +38,11 @@ public class TimeStampRequest
 
     /**
      * Create a TimeStampRequest from the past in byte array.
-     *
+     * 
      * @param req byte array containing the request.
      * @throws IOException if the request is malformed.
      */
-    public TimeStampRequest(byte[] req)
+    public TimeStampRequest(byte[] req) 
         throws IOException
     {
         this(new ByteArrayInputStream(req));
@@ -49,11 +50,11 @@ public class TimeStampRequest
 
     /**
      * Create a TimeStampRequest from the past in input stream.
-     *
+     * 
      * @param in input stream containing the request.
      * @throws IOException if the request is malformed.
      */
-    public TimeStampRequest(InputStream in)
+    public TimeStampRequest(InputStream in) 
         throws IOException
     {
         this(loadRequest(in));
@@ -137,14 +138,14 @@ public class TimeStampRequest
      * accepted type and whether it is of the correct length for the algorithm specified.
      *
      * @param algorithms a set of OIDs giving accepted algorithms.
-     * @param policies   if non-null a set of policies OIDs we are willing to sign under.
+     * @param policies if non-null a set of policies OIDs we are willing to sign under.
      * @param extensions if non-null a set of extensions OIDs we are willing to accept.
      * @throws TSPException if the request is invalid, or processing fails.
      */
     public void validate(
-        Set algorithms,
-        Set policies,
-        Set extensions)
+        Set    algorithms,
+        Set    policies,
+        Set    extensions)
         throws TSPException
     {
         algorithms = convert(algorithms);
@@ -164,9 +165,9 @@ public class TimeStampRequest
         if (this.getExtensions() != null && extensions != null)
         {
             Enumeration en = this.getExtensions().oids();
-            while (en.hasMoreElements())
+            while(en.hasMoreElements())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)en.nextElement();
+                ASN1ObjectIdentifier  oid = (ASN1ObjectIdentifier)en.nextElement();
                 if (!extensions.contains(oid))
                 {
                     throw new TSPValidationException("request contains unknown extension", PKIFailureInfo.unacceptedExtension);
@@ -182,13 +183,11 @@ public class TimeStampRequest
         }
     }
 
-    /**
-     * return the ASN.1 encoded representation of this object.
-     *
-     * @return the default ASN,1 byte encoding for the object.
-     */
-    public byte[] getEncoded()
-        throws IOException
+   /**
+    * return the ASN.1 encoded representation of this object.
+    * @return the default ASN,1 byte encoding for the object.
+    */
+    public byte[] getEncoded() throws IOException
     {
         return req.getEncoded();
     }
@@ -220,7 +219,6 @@ public class TimeStampRequest
 
     /**
      * Returns a set of ASN1ObjectIdentifiers giving the non-critical extensions.
-     *
      * @return a set of ASN1ObjectIdentifiers.
      */
     public Set getNonCriticalExtensionOIDs()
@@ -235,7 +233,6 @@ public class TimeStampRequest
 
     /**
      * Returns a set of ASN1ObjectIdentifiers giving the critical extensions.
-     *
      * @return a set of ASN1ObjectIdentifiers.
      */
     public Set getCriticalExtensionOIDs()
@@ -250,6 +247,27 @@ public class TimeStampRequest
 
     private Set convert(Set orig)
     {
-        return TSPUtil.convert(orig);
+        if (orig == null)
+        {
+            return orig;
+        }
+
+        Set con = new HashSet(orig.size());
+
+        for (Iterator it = orig.iterator(); it.hasNext();)
+        {
+            Object o = it.next();
+
+            if (o instanceof String)
+            {
+                con.add(new ASN1ObjectIdentifier((String)o));
+            }
+            else
+            {
+                con.add(o);
+            }
+        }
+
+        return con;
     }
 }

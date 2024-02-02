@@ -68,7 +68,7 @@ public class ITSJcaJceBasicTest
         }
     }
 
-    static ITSCertificate loadCertificate(byte[] data)
+    private static ITSCertificate loadCertificate(byte[] data)
         throws Exception
     {
         ByteArrayInputStream fin = new ByteArrayInputStream(data);

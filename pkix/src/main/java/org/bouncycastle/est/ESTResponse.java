@@ -323,7 +323,8 @@ public class ESTResponse
         public int read()
             throws IOException
         {
-            return src.read();
+            int i = src.read();
+            return i;
         }
 
         public int available()

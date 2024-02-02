@@ -132,20 +132,15 @@ public class TimeStampRequestGenerator
         ASN1ObjectIdentifier digestAlgOID = new ASN1ObjectIdentifier(digestAlgorithmOID);
 
         AlgorithmIdentifier algID = dgstAlgFinder.find(digestAlgOID);
-        return getTimeStampRequest(digest, nonce, algID);
-    }
-
-    private TimeStampRequest getTimeStampRequest(byte[] digest, BigInteger nonce, AlgorithmIdentifier algID)
-    {
         MessageImprint messageImprint = new MessageImprint(algID, digest);
 
-        Extensions ext = null;
-
+        Extensions  ext = null;
+        
         if (!extGenerator.isEmpty())
         {
             ext = extGenerator.generate();
         }
-
+        
         if (nonce != null)
         {
             return new TimeStampRequest(new TimeStampReq(messageImprint,
@@ -185,6 +180,24 @@ public class TimeStampRequestGenerator
             throw new IllegalArgumentException("digest algorithm not specified");
         }
 
-        return getTimeStampRequest(digest, nonce, digestAlgorithmID);
+        MessageImprint messageImprint = new MessageImprint(digestAlgorithmID, digest);
+
+        Extensions  ext = null;
+
+        if (!extGenerator.isEmpty())
+        {
+            ext = extGenerator.generate();
+        }
+
+        if (nonce != null)
+        {
+            return new TimeStampRequest(new TimeStampReq(messageImprint,
+                    reqPolicy, new ASN1Integer(nonce), certReq, ext));
+        }
+        else
+        {
+            return new TimeStampRequest(new TimeStampReq(messageImprint,
+                    reqPolicy, null, certReq, ext));
+        }
     }
 }

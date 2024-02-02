@@ -18,7 +18,6 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
@@ -78,7 +77,7 @@ public class JcaContentSignerBuilder
 
             this.sigAlgSpec = pssSpec;
             this.sigAlgId = new AlgorithmIdentifier(
-                PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams(pssSpec));
+                                    PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams(pssSpec));
         }
         else if (sigParamSpec instanceof CompositeAlgorithmSpec)
         {
@@ -86,12 +85,12 @@ public class JcaContentSignerBuilder
 
             this.sigAlgSpec = compSpec;
             this.sigAlgId = new AlgorithmIdentifier(
-                MiscObjectIdentifiers.id_alg_composite, createCompParams(compSpec));
+                                    MiscObjectIdentifiers.id_alg_composite, createCompParams(compSpec));
         }
         else
         {
             throw new IllegalArgumentException("unknown sigParamSpec: "
-                + ((sigParamSpec == null) ? "null" : sigParamSpec.getClass().getName()));
+                            + ((sigParamSpec == null) ? "null" : sigParamSpec.getClass().getName()));
         }
     }
 
@@ -123,7 +122,7 @@ public class JcaContentSignerBuilder
         {
             return buildComposite((CompositePrivateKey)privateKey);
         }
-
+        
         try
         {
             if (sigAlgSpec == null)
@@ -131,12 +130,13 @@ public class JcaContentSignerBuilder
                 if (isAlgIdFromPrivate.contains(Strings.toUpperCase(signatureAlgorithm)))
                 {
                     sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+                    this.sigAlgSpec = null;
                 }
                 else
                 {
                     this.sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find(signatureAlgorithm);
+                    this.sigAlgSpec = null;
                 }
-                this.sigAlgSpec = null;
             }
             final AlgorithmIdentifier signatureAlgId = sigAlgId;
             final Signature sig = helper.createSignature(sigAlgId);
@@ -283,42 +283,27 @@ public class JcaContentSignerBuilder
     {
         SignatureAlgorithmIdentifierFinder algFinder = new DefaultSignatureAlgorithmIdentifierFinder();
         ASN1EncodableVector v = new ASN1EncodableVector();
-        Set<ASN1ObjectIdentifier> set = new HashSet<ASN1ObjectIdentifier>();
+
         List<String> algorithmNames = compSpec.getAlgorithmNames();
         List<AlgorithmParameterSpec> algorithmSpecs = compSpec.getParameterSpecs();
-        AlgorithmIdentifier identifier;
+
         for (int i = 0; i != algorithmNames.size(); i++)
         {
             AlgorithmParameterSpec sigSpec = algorithmSpecs.get(i);
             if (sigSpec == null)
             {
-                identifier = algFinder.find(algorithmNames.get(i));
-                if (set.contains(identifier.getAlgorithm()))
-                {
-                    throw new IllegalStateException("cannot build with the same algorithm name added");
-                }
-                v.add(identifier);
-                set.add(identifier.getAlgorithm());
+                v.add(algFinder.find(algorithmNames.get(i)));
             }
             else if (sigSpec instanceof PSSParameterSpec)
             {
-                if (set.contains(PKCSObjectIdentifiers.id_RSASSA_PSS))
-                {
-                    throw new IllegalStateException("cannot build with the same algorithm name added");
-                }
-                if (!(algorithmNames.get(i).equals("RSAPSS") || algorithmNames.get(i).equals("RSASSA-PSS")))
-                {
-                    throw new IllegalStateException("The algorithm name does not match the parameter specification");
-                }
-                v.add(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams((PSSParameterSpec)sigSpec)));
-                set.add(PKCSObjectIdentifiers.id_RSASSA_PSS);
+                v.add(createPSSParams((PSSParameterSpec)sigSpec));
             }
             else
             {
                 throw new IllegalArgumentException("unrecognized parameterSpec");
             }
         }
-        set.clear();
+
         return new DERSequence(v);
     }
 }
