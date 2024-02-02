@@ -37,13 +37,13 @@ class SNTRUPrimeDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
         byte[] secret = kemExt.extractSecret(encapsulation);
-        return new SecretKeySpec(secret, from, to - from, algorithm);
+        return new SecretKeySpec(secret, 0, secret.length, algorithm);
     }
 
     @Override
     public int engineSecretSize()
     {
-        return privateKey.getKeyParams().getParameters().getSessionKeySize();
+        return privateKey.getKeyParams().getParameters().getSessionKeySize() / 8;
     }
 
     @Override

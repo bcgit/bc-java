@@ -36,28 +36,17 @@ class SNTRUPrimeEncapsulatorSpi
         Objects.checkFromToIndex(from, to, engineEncapsulationSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        try
-        {
-            SNTRUPrimeKeyPairGeneratorSpi kpGen = new SNTRUPrimeKeyPairGeneratorSpi();
-            kpGen.initialize(parameterSpec, random);
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
-            KeyPair kp = kpGen.generateKeyPair();
-            BCNTRULPRimePublicKey pk = (BCNTRULPRimePublicKey) kp.getPublic();
-
-            SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pk.getKeyParams());
-
-            return new KEM.Encapsulated(new SecretKeySpec(secEnc.getSecret(), from, to - from, algorithm), secEnc.getEncapsulation(), pk.getKeyParams().getEncoded());
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            throw new RuntimeException(e);
-        }
+        // TODO: parameters...
+        byte[] secret = secEnc.getSecret();
+        return new KEM.Encapsulated(new SecretKeySpec(secret, 0, secret.length, algorithm), secEnc.getEncapsulation(), null);
     }
 
     @Override
     public int engineSecretSize()
     {
-        return publicKey.getKeyParams().getParameters().getSessionKeySize();
+        return publicKey.getKeyParams().getParameters().getSessionKeySize() / 8;
     }
 
     @Override
