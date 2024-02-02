@@ -676,7 +676,18 @@ public class CMSSignedData
 
         if (certificates != null || attrCerts != null)
         {
-            ASN1Set set = CMSUtils.getASN1Set(certificates, attrCerts);
+            List certs = new ArrayList();
+
+            if (certificates != null)
+            {
+                certs.addAll(CMSUtils.getCertificatesFromStore(certificates));
+            }
+            if (attrCerts != null)
+            {
+                certs.addAll(CMSUtils.getAttributeCertificatesFromStore(attrCerts));
+            }
+
+            ASN1Set set = CMSUtils.createBerSetFromList(certs);
 
             if (set.size() != 0)
             {

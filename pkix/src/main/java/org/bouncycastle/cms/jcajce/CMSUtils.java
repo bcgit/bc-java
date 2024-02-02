@@ -1,8 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -13,12 +11,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import javax.crypto.Cipher;
-import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -31,26 +27,16 @@ import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.RecipientOperator;
-import org.bouncycastle.jcajce.io.CipherInputStream;
-import org.bouncycastle.jcajce.io.MacOutputStream;
 import org.bouncycastle.jcajce.util.AlgorithmParametersUtils;
 import org.bouncycastle.jcajce.util.AnnotatedPrivateKey;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.operator.GenericKey;
-import org.bouncycastle.operator.InputDecryptor;
-import org.bouncycastle.operator.KeyUnwrapper;
-import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
-import org.bouncycastle.operator.jcajce.JceGenericKey;
 
 class CMSUtils
 {
@@ -293,90 +279,6 @@ class CMSUtils
         else
         {
             throw new IllegalArgumentException("unknown wrap algorithm");
-        }
-    }
-
-
-    static RecipientOperator getRecipientOperator(final AlgorithmIdentifier contentEncryptionAlgorithm,
-                                                  Key secretKey, EnvelopedDataHelper contentHelper)
-        throws CMSException
-    {
-        final Cipher dataCipher = contentHelper.createContentCipher(secretKey, contentEncryptionAlgorithm);
-
-        return new RecipientOperator(new InputDecryptor()
-        {
-            public AlgorithmIdentifier getAlgorithmIdentifier()
-            {
-                return contentEncryptionAlgorithm;
-            }
-
-            public InputStream getInputStream(InputStream dataIn)
-            {
-                return new CipherInputStream(dataIn, dataCipher);
-            }
-        });
-    }
-
-    static RecipientOperator getRecipientOperatorMac(final AlgorithmIdentifier contentMacAlgorithm, EnvelopedDataHelper contentHelper, final Key secretKey)
-        throws CMSException
-    {
-
-        final Mac dataMac = contentHelper.createContentMac(secretKey, contentMacAlgorithm);
-
-        return new RecipientOperator(new MacCalculator()
-        {
-            public AlgorithmIdentifier getAlgorithmIdentifier()
-            {
-                return contentMacAlgorithm;
-            }
-
-            public GenericKey getKey()
-            {
-                return new JceGenericKey(contentMacAlgorithm, secretKey);
-            }
-
-            public OutputStream getOutputStream()
-            {
-                return new MacOutputStream(dataMac);
-            }
-
-            public byte[] getMac()
-            {
-                return dataMac.doFinal();
-            }
-        });
-    }
-
-    static Key getKey(EnvelopedDataHelper helper, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedContentEncryptionKey, KeyUnwrapper unwrapper, boolean validateKeySize)
-        throws CMSException
-    {
-        try
-        {
-            Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedContentEncryptionKey));
-
-            if (validateKeySize)
-            {
-                helper.keySizeCheck(encryptedKeyAlgorithm, key);
-            }
-
-            return key;
-        }
-        catch (OperatorException e)
-        {
-            throw new CMSException("exception unwrapping key: " + e.getMessage(), e);
-        }
-    }
-
-    static void extractAlgorithmMaopings(JceAsymmetricKeyUnwrapper unwrapper, Map extraMappings)
-    {
-        if (!extraMappings.isEmpty())
-        {
-            for (Iterator it = extraMappings.keySet().iterator(); it.hasNext(); )
-            {
-                ASN1ObjectIdentifier algorithm = (ASN1ObjectIdentifier)it.next();
-
-                unwrapper.setAlgorithmMapping(algorithm, (String)extraMappings.get(algorithm));
-            }
         }
     }
 }

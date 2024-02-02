@@ -11,7 +11,6 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
-import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -73,10 +72,7 @@ import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.test.TestResourceFinder;
-import org.bouncycastle.tsp.test.ParseTest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -99,37 +95,12 @@ public class AllTests
 
     public static void main(String args[])
     {
-        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
+       junit.textui.TestRunner.run(AllTests.class);
     }
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("CMS tests");
-        suite.addTestSuite(CMPGeneralTest.class);
-        suite.addTestSuite(PQCTest.class);
-        suite.addTestSuite(ElgamalDSATest.class);
-        return new BCTestSetup(suite);
-        //return new TestSuite(AllTests.class);
-    }
-
-    static class BCTestSetup
-        extends TestSetup
-    {
-        public BCTestSetup(Test test)
-        {
-            super(test);
-        }
-
-        protected void setUp()
-        {
-            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-            Security.addProvider(new BouncyCastlePQCProvider());
-        }
-
-        protected void tearDown()
-        {
-            Security.removeProvider("BC");
-        }
+        return new TestSuite(AllTests.class);
     }
 
     public void setUp()

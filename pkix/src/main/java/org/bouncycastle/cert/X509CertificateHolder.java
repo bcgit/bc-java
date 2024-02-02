@@ -280,7 +280,27 @@ public class X509CertificateHolder
     {
         TBSCertificate tbsCert = x509Certificate.getTBSCertificate();
 
-        return CertUtils.isSignatureValid(verifierProvider,tbsCert.getSignature(),x509Certificate.getSignatureAlgorithm(),tbsCert,x509Certificate.getSignature());
+        if (!CertUtils.isAlgIdEqual(tbsCert.getSignature(), x509Certificate.getSignatureAlgorithm()))
+        {
+            throw new CertException("signature invalid - algorithm identifier mismatch");
+        }
+
+        ContentVerifier verifier;
+
+        try
+        {
+            verifier = verifierProvider.get((tbsCert.getSignature()));
+
+            OutputStream sOut = verifier.getOutputStream();
+            tbsCert.encodeTo(sOut, ASN1Encoding.DER);
+            sOut.close();
+        }
+        catch (Exception e)
+        {
+            throw new CertException("unable to process signature: " + e.getMessage(), e);
+        }
+
+        return verifier.verify(this.getSignature());
     }
 
     /**

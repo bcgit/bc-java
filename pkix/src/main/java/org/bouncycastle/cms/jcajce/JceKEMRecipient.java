@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KEMRecipient;
+import org.bouncycastle.operator.OperatorException;
 
 public abstract class JceKEMRecipient
     implements KEMRecipient
@@ -156,6 +157,20 @@ public abstract class JceKEMRecipient
             }
         }
 
-        return CMSUtils.getKey(helper, encryptedKeyAlgorithm, encryptedEncryptionKey, unwrapper, validateKeySize);
+        try
+        {
+            Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
+
+            if (validateKeySize)
+            {
+                helper.keySizeCheck(encryptedKeyAlgorithm, key);
+            }
+
+            return key;
+        }
+        catch (OperatorException e)
+        {
+            throw new CMSException("exception unwrapping key: " + e.getMessage(), e);
+        }
     }
 }

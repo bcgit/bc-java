@@ -7,9 +7,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 
 /**
@@ -47,16 +45,7 @@ public class VerificationKeyIndicator
             verificationKeyIndicator = PublicVerificationKey.getInstance(ato.getExplicitBaseObject());
             break;
         case reconstructionValue:
-            ASN1Encodable value;
-            try
-            {
-                value = EccP256CurvePoint.getInstance(ato.getExplicitBaseObject());
-            }
-            catch (Exception e)
-            {
-                value = EccP384CurvePoint.getInstance(ato.getExplicitBaseObject());
-            }
-            verificationKeyIndicator = value;
+            verificationKeyIndicator = EccP256CurvePoint.getInstance(ato.getExplicitBaseObject());
             break;
 
         default:
@@ -71,7 +60,7 @@ public class VerificationKeyIndicator
         return new VerificationKeyIndicator(verificationKey, value);
     }
 
-    public static VerificationKeyIndicator reconstructionValue(EccCurvePoint value)
+    public static VerificationKeyIndicator reconstructionValue(EccP256CurvePoint value)
     {
         return new VerificationKeyIndicator(reconstructionValue, value);
     }
@@ -91,6 +80,7 @@ public class VerificationKeyIndicator
         return null;
 
     }
+
 
     public int getChoice()
     {

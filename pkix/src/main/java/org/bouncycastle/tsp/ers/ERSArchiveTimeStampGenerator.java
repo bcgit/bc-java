@@ -87,24 +87,6 @@ public class ERSArchiveTimeStampGenerator
             throw new ERSException("multiple reduced hash trees found");
         }
 
-        validateTimeStampToken(tspResponse, reducedHashTree);
-
-        if (reducedHashTree[0].getValueCount() == 1)
-        {
-            // just include the TimeStamp
-            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null,
-                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
-        }
-        else
-        {
-            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree,
-                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
-        }
-    }
-
-    private void validateTimeStampToken(TimeStampResponse tspResponse, IndexedPartialHashtree[] reducedHashTree)
-        throws TSPException, ERSException
-    {
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
         if (tspResponse.getStatus() != 0)
@@ -123,6 +105,18 @@ public class ERSArchiveTimeStampGenerator
         {
             throw new ERSException("time stamp imprint for wrong root hash");
         }
+
+        if (reducedHashTree[0].getValueCount() == 1)
+        {
+            // just include the TimeStamp
+            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(null, null,
+                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
+        }
+        else
+        {
+            return new ERSArchiveTimeStamp(new ArchiveTimeStamp(digCalc.getAlgorithmIdentifier(), reducedHashTree,
+                tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure()), digCalc);
+        }
     }
 
     public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
@@ -130,7 +124,24 @@ public class ERSArchiveTimeStampGenerator
     {
         IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
 
-        validateTimeStampToken(tspResponse, reducedHashTree);
+        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
+
+        if (tspResponse.getStatus() != 0)
+        {
+            throw new TSPException("TSP response error status: " + tspResponse.getStatusString());
+        }
+
+        TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
+
+        if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
+        {
+            throw new ERSException("time stamp imprint for wrong algorithm");
+        }
+
+        if (!Arrays.areEqual(tstInfo.getMessageImprint().getHashedMessage(), rootHash))
+        {
+            throw new ERSException("time stamp imprint for wrong root hash");
+        }
 
         ContentInfo timeStamp = tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure();
         List<ERSArchiveTimeStamp> atss = new ArrayList<ERSArchiveTimeStamp>();

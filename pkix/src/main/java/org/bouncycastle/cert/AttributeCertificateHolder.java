@@ -2,6 +2,8 @@ package org.bouncycastle.cert;
 
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -188,6 +190,41 @@ public class AttributeCertificateHolder
         return new GeneralNames(new GeneralName(principal));
     }
 
+    private boolean matchesDN(X500Name subject, GeneralNames targets)
+    {
+        GeneralName[] names = targets.getNames();
+
+        for (int i = 0; i != names.length; i++)
+        {
+            GeneralName gn = names[i];
+
+            if (gn.getTagNo() == GeneralName.directoryName)
+            {
+                if (X500Name.getInstance(gn.getName()).equals(subject))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private X500Name[] getPrincipals(GeneralName[] names)
+    {
+        List l = new ArrayList(names.length);
+
+        for (int i = 0; i != names.length; i++)
+        {
+            if (names[i].getTagNo() == GeneralName.directoryName)
+            {
+                l.add(X500Name.getInstance(names[i].getName()));
+            }
+        }
+
+        return (X500Name[])l.toArray(new X500Name[l.size()]);
+    }
+
     /**
      * Return any principal objects inside the attribute certificate holder
      * entity names field.
@@ -199,7 +236,7 @@ public class AttributeCertificateHolder
     {
         if (holder.getEntityName() != null)
         {
-            return CertUtils.getPrincipals(holder.getEntityName().getNames());
+            return getPrincipals(holder.getEntityName().getNames());
         }
 
         return null;
@@ -214,7 +251,7 @@ public class AttributeCertificateHolder
     {
         if (holder.getBaseCertificateID() != null)
         {
-            return CertUtils.getPrincipals(holder.getBaseCertificateID().getIssuer().getNames());
+            return getPrincipals(holder.getBaseCertificateID().getIssuer().getNames());
         }
 
         return null;
@@ -254,12 +291,12 @@ public class AttributeCertificateHolder
         if (holder.getBaseCertificateID() != null)
         {
             return holder.getBaseCertificateID().getSerial().hasValue(x509Cert.getSerialNumber())
-                && CertUtils.matchesDN(x509Cert.getIssuer(), holder.getBaseCertificateID().getIssuer());
+                && matchesDN(x509Cert.getIssuer(), holder.getBaseCertificateID().getIssuer());
         }
 
         if (holder.getEntityName() != null)
         {
-            if (CertUtils.matchesDN(x509Cert.getSubject(),
+            if (matchesDN(x509Cert.getSubject(),
                 holder.getEntityName()))
             {
                 return true;

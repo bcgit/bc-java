@@ -173,18 +173,18 @@ public abstract class JceKeyAgreeRecipient
 
             if (CMSUtils.isEC(keyEncAlg.getAlgorithm()))
             {
-                byte[] ukmKeyingMaterial;
                 if (userKeyingMaterial != null)
                 {
-                    ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
+                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
 
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
                 else
                 {
-                    ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
+                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
 
+                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
-                userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
             }
             else if (CMSUtils.isRFC2631(keyEncAlg.getAlgorithm()))
             {

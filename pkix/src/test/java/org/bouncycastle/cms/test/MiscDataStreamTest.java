@@ -43,14 +43,14 @@ public class MiscDataStreamTest
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
 
-    static byte[] data = Base64.decode(
+    private static byte[] data = Base64.decode(
         "TUlNRS1WZXJzaW9uOiAxLjAKQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9v" +
         "Y3RldC1zdHJlYW0KQ29udGVudC1UcmFuc2Zlci1FbmNvZGluZzogYmluYXJ5" +
         "CkNvbnRlbnQtRGlzcG9zaXRpb246IGF0dGFjaG1lbnQ7IGZpbGVuYW1lPWRv" +
         "Yy5iaW4KClRoaXMgaXMgYSB2ZXJ5IGh1Z2Ugc2VjcmV0LCBtYWRlIHdpdGgg" +
         "b3BlbnNzbAoKCgo=");
 
-    static byte[] digestedData = Base64.decode(
+    private static byte[] digestedData = Base64.decode(
         "MIIBGAYJKoZIhvcNAQcFoIIBCTCCAQUCAQAwCwYJYIZIAWUDBAIBMIHQBgkq"
       + "hkiG9w0BBwGggcIEgb9NSU1FLVZlcnNpb246IDEuMApDb250ZW50LVR5cGU6"
       + "IGFwcGxpY2F0aW9uL29jdGV0LXN0cmVhbQpDb250ZW50LVRyYW5zZmVyLUVu"
@@ -59,7 +59,7 @@ public class MiscDataStreamTest
       + "ZXQsIG1hZGUgd2l0aCBvcGVuc3NsCgoKCgQgHLG72tSYW0LgcxOA474iwdCv"
       + "KyhnaV4RloWTAvkq+do=");
 
-    static final String TEST_MESSAGE = "Hello World!";
+    private static final String TEST_MESSAGE = "Hello World!";
     private static String          _signDN;
     private static KeyPair         _signKP;
     private static X509Certificate _signCert;

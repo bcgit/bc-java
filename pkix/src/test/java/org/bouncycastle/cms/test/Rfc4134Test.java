@@ -61,8 +61,8 @@ public class Rfc4134Test
     extends TestCase
 {
     private static final String BC = BouncyCastleProvider.PROVIDER_NAME;
-    static byte[] exContent = getRfc4134Data("ExContent.bin");
-    static byte[] sha1 = Hex.decode("406aec085279ba6e16022d9e0629c0229687dd48");
+    private static byte[] exContent = getRfc4134Data("ExContent.bin");
+    private static byte[] sha1 = Hex.decode("406aec085279ba6e16022d9e0629c0229687dd48");
 
     private static final JcaX509CertSelectorConverter selectorConverter = new JcaX509CertSelectorConverter();
     private static final DigestCalculatorProvider digCalcProv;
@@ -304,7 +304,7 @@ public class Rfc4134Test
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", BC);
         X509Certificate cert = (X509Certificate)certFact.generateCertificate(new ByteArrayInputStream(certificate));
 
-        assertTrue(csi.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).build(cert)));
+        assertTrue(csi.verify(new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(cert)));
     }
 
     private void verifyContentHint(SignerInformation signInfo)

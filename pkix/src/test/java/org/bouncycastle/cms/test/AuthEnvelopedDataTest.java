@@ -65,7 +65,7 @@ public class AuthEnvelopedDataTest
 
     public boolean DEBUG = true;
 
-    static final byte[] Sample1 = Base64.decode(
+    private static final byte[] Sample1 = Base64.decode(
         "MIAGCyqGSIb3DQEJEAEXoIAwgAIBADGBmzCBmAIBAoABATANBgkqhkiG9w0BAQEF" +
             "AASBgG9yJPC3zFmIbPTtSrrTD+71lluua3F1/V/XzzDOczjdymy4tI4sle5HSxJ" +
             "N8yrw+m2JdWKb4s/u4frvmNqE6fcqfFtLpLEMXJneoEWWXZFKbndoqQNRMgfKGC" +
@@ -73,7 +73,7 @@ public class AuthEnvelopedDataTest
             "QEHATAfBglghkgBZQMEAQYwEgQQLO0PwnuhYXRk8pLLhgik0aCABBMKvxIkbmBK" +
             "T73Oz4xtf0DNNGmdAAAAAAQMn+tzPcOldJUQWCEnAAAAAAAA");
 
-    static final byte[] Sample1Key = Base64.decode("MIICdAIBADANBgkqhkiG9w0BAQEFAASCAl4wggJaAgEAAoGBAMtFuFyzl4jgeuPL\n" +
+    private static final byte[] Sample1Key = Base64.decode("MIICdAIBADANBgkqhkiG9w0BAQEFAASCAl4wggJaAgEAAoGBAMtFuFyzl4jgeuPL\n" +
         "uGp8Niqf11QGWVDTpZvE7VabLoPanzuVgjTYC8oJOq4PvVYW5V56KeGzXhsnhsDt\n" +
         "IBaRESTFuXM50uiH4mRPGsqCFJvbmokvxfhb24TPg3gQ5E2SEvmXFN425J/jvcqq\n" +
         "XpX7wQGtr9DWLIXsqPeLKhoy/qdhAgMBAAECf3xBB80spVPEggTXW2aoebwXt1pw\n" +

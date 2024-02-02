@@ -1,5 +1,7 @@
 package org.bouncycastle.pkcs;
 
+
+import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.pkcs.MacData;

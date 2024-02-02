@@ -83,12 +83,11 @@ class JceCMSKEMKeyWrapper
      * the standard lookup table won't work. Use this method to establish a specific mapping from an
      * algorithm identifier to a specific algorithm.
      * <p>
-     * For example:
+     *     For example:
      * <pre>
      *     unwrapper.setAlgorithmMapping(PKCSObjectIdentifiers.rsaEncryption, "RSA");
      * </pre>
-     *
-     * @param algorithm     OID of algorithm in recipient.
+     * @param algorithm  OID of algorithm in recipient.
      * @param algorithmName JCE algorithm name to use.
      * @return the current Wrapper.
      */
@@ -126,28 +125,52 @@ class JceCMSKEMKeyWrapper
         {
             byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength).getEncoded();
 
-            Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, getAlgorithmIdentifier().getAlgorithm(), new HashMap());
-
-            KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm()), kekLength * 8, oriInfoEnc).withKdfAlgorithm(kdfAlgorithm).build();
-
-            keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, ktsSpec, random);
-
-            byte[] encWithKey = keyEncryptionCipher.wrap(CMSUtils.getJceKey(encryptionKey));
-
-            int length;
-
             if (publicKey instanceof RSAPublicKey)
             {
-                length = (((RSAPublicKey)publicKey).getModulus().bitLength() + 7) / 8;
+                Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, getAlgorithmIdentifier().getAlgorithm(), new HashMap());
+                      
+                try
+                {
+                    KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm()), kekLength * 8, oriInfoEnc).withKdfAlgorithm(kdfAlgorithm).build();
+
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, ktsSpec, random);
+
+                    byte[] encWithKey = keyEncryptionCipher.wrap(CMSUtils.getJceKey(encryptionKey));
+
+                    int modLength = (((RSAPublicKey)publicKey).getModulus().bitLength() + 7) / 8;
+
+                    encapsulation = Arrays.copyOfRange(encWithKey, 0, modLength);
+
+                    return Arrays.copyOfRange(encWithKey, modLength, encWithKey.length);
+                }
+                catch (Exception e)
+                {
+                    throw new OperatorException("Unable to wrap contents key: " + e.getMessage(), e);
+                }
             }
             else
             {
-                length = getKemEncLength(publicKey);
+                Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, getAlgorithmIdentifier().getAlgorithm(), new HashMap());
+
+                try
+                {
+                    KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm()), kekLength * 8, oriInfoEnc).withKdfAlgorithm(kdfAlgorithm).build();
+
+                    keyEncryptionCipher.init(Cipher.WRAP_MODE, publicKey, ktsSpec, random);
+
+                    byte[] encWithKey = keyEncryptionCipher.wrap(CMSUtils.getJceKey(encryptionKey));
+
+                    int encLength = getKemEncLength(publicKey);
+
+                    encapsulation = Arrays.copyOfRange(encWithKey, 0, encLength);
+
+                    return Arrays.copyOfRange(encWithKey, encLength, encWithKey.length);
+                }
+                catch (Exception e)
+                {
+                    throw new OperatorException("Unable to wrap contents key: " + e.getMessage(), e);
+                }
             }
-
-            encapsulation = Arrays.copyOfRange(encWithKey, 0, length);
-
-            return Arrays.copyOfRange(encWithKey, length, encWithKey.length);
         }
         catch (Exception e)
         {

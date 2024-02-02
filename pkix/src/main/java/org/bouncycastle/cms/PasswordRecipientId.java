@@ -19,7 +19,12 @@ public class PasswordRecipientId
     public boolean equals(
         Object o)
     {
-        return o instanceof PasswordRecipientId;
+        if (!(o instanceof PasswordRecipientId))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public Object clone()
@@ -29,6 +34,11 @@ public class PasswordRecipientId
 
     public boolean match(Object obj)
     {
-        return obj instanceof PasswordRecipientInformation;
+        if (obj instanceof PasswordRecipientInformation)
+        {
+            return true;
+        }
+        
+        return false;
     }
 }

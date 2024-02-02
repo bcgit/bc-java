@@ -38,10 +38,6 @@ public class AllTests
         suite.addTest(BcEnvelopedDataTest.suite());
         suite.addTest(BcSignedDataTest.suite());
 
-        suite.addTestSuite(AnnotatedKeyTest.class);
-        suite.addTest(PQCSignedDataTest.suite());
-        suite.addTestSuite(CMSGeneralTest.class);
-
         try
         {
             Cipher.getInstance("RSA", "SunJCE");

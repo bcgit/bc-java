@@ -3,6 +3,7 @@ package org.bouncycastle.cms.jcajce;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,12 +96,40 @@ class JceCMSKEMKeyUnwrapper
         try
         {
             byte[] oriInfoEnc = new CMSORIforKEMOtherInfo(symWrapAlgorithm, kekLength, kemInfo.getUkm()).getEncoded();
-            Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, kemInfo.getKem().getAlgorithm(), new HashMap());
-            String wrapAlgorithmName = CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm());
-            KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(wrapAlgorithmName, kekLength * 8, oriInfoEnc).withKdfAlgorithm(kemInfo.getKdf()).build();
-            keyEncryptionCipher.init(Cipher.UNWRAP_MODE, privateKey, ktsSpec);
-            Key wrapKey = keyEncryptionCipher.unwrap(Arrays.concatenate(kemInfo.getKemct().getOctets(), kemInfo.getEncryptedKey().getOctets()), wrapAlgorithmName, Cipher.SECRET_KEY);
-            return new JceGenericKey(encryptionKeyAlgorithm, wrapKey);
+
+            if (privateKey instanceof RSAPrivateKey)
+            {
+                Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, kemInfo.getKem().getAlgorithm(), new HashMap());
+
+                try
+                {
+                    String wrapAlgorithmName = CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm());
+                    KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(wrapAlgorithmName, kekLength * 8, oriInfoEnc).withKdfAlgorithm(kemInfo.getKdf()).build();
+
+                    keyEncryptionCipher.init(Cipher.UNWRAP_MODE, privateKey, ktsSpec);
+
+                    Key wrapKey = keyEncryptionCipher.unwrap(Arrays.concatenate(kemInfo.getKemct().getOctets(), kemInfo.getEncryptedKey().getOctets()), wrapAlgorithmName, Cipher.SECRET_KEY);
+
+                    return new JceGenericKey(encryptionKeyAlgorithm, wrapKey);
+                }
+                catch (Exception e)
+                {
+                    throw new OperatorException("Unable to wrap contents key: " + e.getMessage(), e);
+                }
+            }
+            else
+            {
+                Cipher keyEncryptionCipher = CMSUtils.createAsymmetricWrapper(helper, kemInfo.getKem().getAlgorithm(), new HashMap());
+                
+                String wrapAlgorithmName = CMSUtils.getWrapAlgorithmName(symWrapAlgorithm.getAlgorithm());
+                KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder(wrapAlgorithmName, kekLength * 8, oriInfoEnc).withKdfAlgorithm(kemInfo.getKdf()).build();
+
+                keyEncryptionCipher.init(Cipher.UNWRAP_MODE, privateKey, ktsSpec);
+
+                Key wrapKey = keyEncryptionCipher.unwrap(Arrays.concatenate(kemInfo.getKemct().getOctets(), kemInfo.getEncryptedKey().getOctets()), wrapAlgorithmName, Cipher.SECRET_KEY);
+
+                return new JceGenericKey(encryptionKeyAlgorithm, wrapKey);
+            }
         }
         catch (Exception e)
         {

@@ -22,7 +22,7 @@ public class ESTResponseTest
     extends TestCase
 {
 
-    static Source<SSLSession> getMockSource(final InputStream data)
+    private static Source<SSLSession> getMockSource(final InputStream data)
     {
         return new Source<SSLSession>()
         {
@@ -55,7 +55,7 @@ public class ESTResponseTest
         };
     }
 
-    static InputStream buildHttp11Response(String statusLine, Map<String, String> httpHeader, boolean chunked, String messageBody)
+    private static InputStream buildHttp11Response(String statusLine, Map<String, String> httpHeader, boolean chunked, String messageBody)
     {
         final ByteArrayOutputStream responseData = new ByteArrayOutputStream();
         PrintWriter pw = new PrintWriter(responseData);
@@ -93,7 +93,7 @@ public class ESTResponseTest
         return new ByteArrayInputStream(responseData.toByteArray());
     }
 
-    public static void assertESTResponseMessageEquals(String expected, ESTResponse response)
+    public void assertESTResponseMessageEquals(String expected, ESTResponse response)
     {
         try
         {

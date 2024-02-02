@@ -5,12 +5,14 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.BERTags;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedDataParser;
 import org.bouncycastle.asn1.cms.CMSAttributes;
@@ -51,12 +53,12 @@ import org.bouncycastle.util.Arrays;
  *          }
  *      }
  *  </pre>
- * Note: this class does not introduce buffering - if you are processing large files you should create
- * the parser with:
- * <pre>
+ *  Note: this class does not introduce buffering - if you are processing large files you should create
+ *  the parser with:
+ *  <pre>
  *          CMSAuthenticatedDataParser     ep = new CMSAuthenticatedDataParser(new BufferedInputStream(inputStream, bufSize));
  *  </pre>
- * where bufSize is a suitably large buffer size.
+ *  where bufSize is a suitably large buffer size.
  */
 public class CMSAuthenticatedDataParser
     extends CMSContentInfoParser
@@ -271,8 +273,7 @@ public class CMSAuthenticatedDataParser
     /**
      * return a table of the unauthenticated attributes indexed by
      * the OID of the attribute.
-     *
-     * @throws java.io.IOException
+     * @exception java.io.IOException
      */
     public AttributeTable getAuthAttrs()
         throws IOException
@@ -293,8 +294,7 @@ public class CMSAuthenticatedDataParser
     /**
      * return a table of the unauthenticated attributes indexed by
      * the OID of the attribute.
-     *
-     * @throws java.io.IOException
+     * @exception java.io.IOException
      */
     public AttributeTable getUnauthAttrs()
         throws IOException
@@ -305,7 +305,20 @@ public class CMSAuthenticatedDataParser
 
             unauthAttrNotRead = false;
 
-            unauthAttrs = CMSUtils.getAtrributeTable(set);
+            if (set != null)
+            {
+                ASN1EncodableVector v = new ASN1EncodableVector();
+                ASN1Encodable o;
+
+                while ((o = set.readObject()) != null)
+                {
+                    ASN1SequenceParser seq = (ASN1SequenceParser)o;
+
+                    v.add(seq.toASN1Primitive());
+                }
+
+                unauthAttrs = new AttributeTable(new DERSet(v));
+            }
         }
 
         return unauthAttrs;
