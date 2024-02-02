@@ -107,7 +107,7 @@ public class McElieceKobaraImaiCipherTest
 
             for (int k = 1; k <= numPassesEncDec; k++)
             {
-                System.out.println("############### test: " + k);
+                // System.out.println("############### test: " + k);
                 // initialize for encryption
                 mcElieceKobaraImaiDigestCipher.init(true, param);
 
@@ -141,8 +141,8 @@ public class McElieceKobaraImaiCipherTest
                 }
                 else
                 {
-                    System.out.println("test okay");
-                    System.out.println();
+                    // System.out.println("test okay");
+                    // System.out.println();
                 }
 
             }

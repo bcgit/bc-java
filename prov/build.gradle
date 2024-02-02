@@ -178,7 +178,7 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk1.15", "src/test/java"))
+            srcDir(files("src/test/jdk1.11","src/test/jdk1.15", "src/test/java"))
         }
     }
 
@@ -186,7 +186,7 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk21", "src/test/java"))
+            srcDir(files("src/test/jdk1.11","src/test/jdk1.15","src/test/jdk21", "src/test/java"))
         }
     }
 }
@@ -229,7 +229,6 @@ task test11(type: Test) {
 
     filter {
         includeTestsMatching "AllTest*"
-        includeTestsMatching "All11Test*"
         if (project.hasProperty('excludeTests')) {
             excludeTestsMatching "${excludeTests}"
         }
@@ -263,11 +262,37 @@ task test17(type: Test) {
 
     filter {
         includeTestsMatching "AllTest*"
-        includeTestsMatching "All15Test*"
         if (project.hasProperty('excludeTests')) {
             excludeTestsMatching "${excludeTests}"
         }
     }
+}
+
+compileTest11Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 11
+    targetCompatibility = 11
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
+}
+
+compileTest17Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 17
+    targetCompatibility = 17
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
+}
+
+compileTest21Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    sourceCompatibility = 21
+    targetCompatibility = 21
+    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
 task test21(type: Test) {

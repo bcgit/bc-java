@@ -56,9 +56,9 @@ public class HQCTest
         TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
         {
-            System.out.println("Working Directory = " + System.getProperty("user.dir"));
+            // System.out.println("Working Directory = " + System.getProperty("user.dir"));
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/hqc", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -83,7 +83,7 @@ public class HQCTest
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -135,7 +135,7 @@ public class HQCTest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("Testing successful!");
+            // System.out.println("Testing successful!");
         }
     }
 }

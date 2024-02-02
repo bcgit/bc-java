@@ -54,7 +54,7 @@ public class NTRUPrime
             registerOid(provider, BCObjectIdentifiers.sntrup1013, "SNTRUPRIME", keyFact);
             registerOid(provider, BCObjectIdentifiers.sntrup1277, "SNTRUPRIME", keyFact);
 
-            provider.addAlgorithm("Kem.SNTRUPRIME", PREFIX + "NTRUCipherSpi$Base");
+            provider.addAlgorithm("Kem.SNTRUPRIME", PREFIX + "SNTRUPrimeKEMSpi");
             provider.addAlgorithm("Alg.Alias.Kem." + BCObjectIdentifiers.pqc_kem_sntruprime, "SNTRUPRIME");
 
             //These two not needed? KEMSpi returns a Decapsulator/Encapsulator

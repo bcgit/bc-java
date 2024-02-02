@@ -82,7 +82,7 @@ public class BIKETest
                             continue;
                         }
 
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for bike secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
                         byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
@@ -134,7 +134,7 @@ public class BIKETest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("Testing successful!");
+            // System.out.println("Testing successful!");
         }
     }
 }

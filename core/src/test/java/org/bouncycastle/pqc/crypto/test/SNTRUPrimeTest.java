@@ -40,7 +40,7 @@ public class SNTRUPrimeTest
         for (int i = 0; i != paramList.length; i++)
         {
             SNTRUPrimeParameters paramSpec = paramList[i];
-            System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
+            // System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
             InputStream resource = TestResourceFinder.findTestResource(resourcePath, paramSpec.getName().toLowerCase() + ".rsp");
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
@@ -67,7 +67,7 @@ public class SNTRUPrimeTest
                 {
                     continue;
                 }
-                System.out.println("Running Test-" + count + " ...");
+                // System.out.println("Running Test-" + count + " ...");
 
                 NISTSecureRandom random = new NISTSecureRandom(seed, null);
                 SNTRUPrimeKeyPairGenerator keyPairGenerator = new SNTRUPrimeKeyPairGenerator();
@@ -75,24 +75,24 @@ public class SNTRUPrimeTest
 
                 AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
                 assertTrue(Arrays.areEqual(pk, ((SNTRUPrimePublicKeyParameters)keyPair.getPublic()).getEncoded()));
-                System.out.println("- Public Key matched ...");
+                // System.out.println("- Public Key matched ...");
                 assertTrue(Arrays.areEqual(sk, ((SNTRUPrimePrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
-                System.out.println("- Private Key matched ...");
+                // System.out.println("- Private Key matched ...");
 
                 SNTRUPrimeKEMGenerator kemGenerator = new SNTRUPrimeKEMGenerator(random);
                 SecretWithEncapsulation secretEncapsulation = kemGenerator.generateEncapsulated(keyPair.getPublic());
 
                 assertTrue(Arrays.areEqual(ct, secretEncapsulation.getEncapsulation()));
-                System.out.println("- Encapsulation Cipher Text matched ...");
+                // System.out.println("- Encapsulation Cipher Text matched ...");
                 byte[] secret = secretEncapsulation.getSecret();
                 assertTrue(Arrays.areEqual(ss, 0, secret.length, secret, 0, secret.length));
-                System.out.println("- Encapsulation Shared Secret matched ...");
+                // System.out.println("- Encapsulation Shared Secret matched ...");
 
                 SNTRUPrimeKEMExtractor kemExtractor = new SNTRUPrimeKEMExtractor((SNTRUPrimePrivateKeyParameters)keyPair.getPrivate());
                 byte[] decryptedSecret = kemExtractor.extractSecret(ct);
 
                 assertTrue(Arrays.areEqual(ss, 0, decryptedSecret.length, decryptedSecret, 0, decryptedSecret.length));
-                System.out.println("- Decapsulation Shared Secret matched ...");
+                // System.out.println("- Decapsulation Shared Secret matched ...");
             }
 
             resource.close();
