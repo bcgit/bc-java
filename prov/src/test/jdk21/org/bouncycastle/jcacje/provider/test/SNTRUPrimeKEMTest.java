@@ -1,18 +1,18 @@
 package org.bouncycastle.jcacje.provider.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastleKEMProvider;
-import org.bouncycastle.pqc.jcajce.provider.ntruprime.SNTRUPrimeKEMSpi;
-import org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec;
-import org.bouncycastle.util.Arrays;
-
-import javax.crypto.KEM;
-import javax.crypto.SecretKey;
 import java.security.AlgorithmParameters;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
 import java.security.Security;
+
+import javax.crypto.KEM;
+import javax.crypto.SecretKey;
+
+import junit.framework.TestCase;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec;
+import org.bouncycastle.util.Arrays;
 
 import static org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec.sntrup653;
 
@@ -23,7 +23,7 @@ public class SNTRUPrimeKEMTest
     public void testKEM()
             throws Exception
     {
-        if (Security.getProvider(BouncyCastleKEMProvider.PROVIDER_NAME) == null)
+        if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
