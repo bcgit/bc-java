@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.test;
 
 import junit.framework.TestCase;
-import org.junit.Test;
-
 
 /**
  * "java.version" must start with the value of "test.java.version.prefix" it acts as
@@ -11,7 +9,6 @@ import org.junit.Test;
  */
 public class JVMAssertionTest extends TestCase
 {
-    @Test
     public void testVersion() {
         if (!System.getProperty("java.version").startsWith(System.getProperty("test.java.version.prefix"))) {
             System.out.println(System.getProperty("java.version"));
