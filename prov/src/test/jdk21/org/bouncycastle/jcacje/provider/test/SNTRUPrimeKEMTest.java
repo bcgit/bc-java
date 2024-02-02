@@ -20,13 +20,12 @@ import static org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec.sntrup653
 public class SNTRUPrimeKEMTest
     extends TestCase
 {
-
     public void testKEM()
             throws Exception
     {
         if (Security.getProvider(BouncyCastleKEMProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastleKEMProvider());
+            Security.addProvider(new BouncyCastlePQCProvider());
         }
 
         // Receiver side
