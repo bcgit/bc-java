@@ -4,12 +4,14 @@ import java.security.AlgorithmParameters;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 
 import javax.crypto.KEM;
 import javax.crypto.SecretKey;
 
 import junit.framework.TestCase;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -30,13 +32,16 @@ public class SNTRUPrimeKEMTest
 
         // Receiver side
         KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime");
+
+        g.initialize(SNTRUPrimeParameterSpec.sntrup653, new SecureRandom());
+
         KeyPair kp = g.generateKeyPair();
         PublicKey pkR = kp.getPublic();
 
         // Sender side
         KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
-        SNTRUPrimeParameterSpec specS = sntrup653;
-        KEM.Encapsulator e = kemS.newEncapsulator(pkR, specS, null);
+        KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder("Camellia", 256).build());
+        KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
@@ -44,13 +49,14 @@ public class SNTRUPrimeKEMTest
 
         // Receiver side
         KEM kemR = KEM.getInstance("SNTRUPrime");
-        AlgorithmParameters algParams = AlgorithmParameters.getInstance("SNTRUPrime");
-        algParams.init(params);
-        SNTRUPrimeParameterSpec specR = algParams.getParameterSpec(SNTRUPrimeParameterSpec.class);
-        KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), specR);
+//        AlgorithmParameters algParams = AlgorithmParameters.getInstance("SNTRUPrime");
+//        algParams.init(params);
+//        SNTRUPrimeParameterSpec specR = algParams.getParameterSpec(SNTRUPrimeParameterSpec.class);
+        KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsSpec);
         SecretKey secR = d.decapsulate(em);
 
         // secS and secR will be identical
+        assertEquals(secS.getAlgorithm(), secR.getAlgorithm());
         assertTrue(Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
     }
 
