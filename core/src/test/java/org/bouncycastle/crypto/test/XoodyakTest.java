@@ -78,7 +78,7 @@ public class XoodyakTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("Xoodyak Hash pass");
+//        System.out.println("Xoodyak Hash pass");
     }
 
     private void testVectors()
@@ -140,7 +140,7 @@ public class XoodyakTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("Xoodyak AEAD pass");
+//        System.out.println("Xoodyak AEAD pass");
     }
 
     private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
@@ -413,7 +413,7 @@ public class XoodyakTest
         {
             fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
         }
-        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
+//        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testParameters(XoodyakEngine isap, int keySize, int ivSize, int macSize)
@@ -430,7 +430,7 @@ public class XoodyakTest
         {
             fail(isap.getAlgorithmName() + ": mac bytes of " + isap.getAlgorithmName() + " is not correct");
         }
-        System.out.println(isap.getAlgorithmName() + " test Parameters pass");
+//        System.out.println(isap.getAlgorithmName() + " test Parameters pass");
     }
 
 
@@ -459,7 +459,7 @@ public class XoodyakTest
         {
             //expected
         }
-        System.out.println(digest.getAlgorithmName() + " test Exceptions pass");
+//        System.out.println(digest.getAlgorithmName() + " test Exceptions pass");
     }
 
 
