@@ -9,7 +9,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Objects;
 
-public class SNTRUPrimeDecapsulatorSpi
+class SNTRUPrimeDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
     BCSNTRUPrimePrivateKey privateKey;
