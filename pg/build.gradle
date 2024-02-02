@@ -6,13 +6,7 @@ sourceSets {
         }
     }
 
-    test11 {
-        java {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += test.output
-            srcDir(files("src/test/java"))
-        }
-    }
+
 }
 
 
@@ -29,11 +23,6 @@ dependencies {
         builtBy compileJava
     }
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
-
-    test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test11Implementation files("$bc_prov")
-    test11Implementation project(path: ':core')
 }
 
 compileJava {
@@ -103,95 +92,3 @@ test {
     maxParallelForks = 8;
 }
 
-task test11(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=11.']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}
-
-task test17(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=17.']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}
-
-task test21(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=21']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}

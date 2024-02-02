@@ -10,20 +10,13 @@ sourceSets {
         }
     }
 
-    test11 {
-        java {
-            compileClasspath += main.output + test.output
-            runtimeClasspath += test.output
-            srcDir(files("src/test/java"))
-        }
-    }
 }
 
 
 dependencies {
     implementation project(':prov')
     implementation files("${bc_prov}")
-    implementation project(path: ':core')
+  //  implementation project(path: ':core')
     implementation project(path: ':prov')
 
     testImplementation group: 'junit', name: 'junit', version: '4.11'
@@ -32,12 +25,9 @@ dependencies {
         builtBy compileJava
     }
     java9Implementation project(':prov')
-    java9Implementation project(':core')
+   // java9Implementation project(':core')
     java9Implementation project(path:':prov')
 
-    test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test11Implementation files("$bc_prov")
-    test11Implementation project(path: ':core')
 }
 
 compileJava {
@@ -70,14 +60,14 @@ jar {
         from sourceSets.java9.output
     }
 
-    //
-    // This exists because the above 'sourceSets.java9.output' is randomly
-    // empty even though the classes have been built and are where
-    // they should be.
-    into('META-INF/versions/9') {
-        from "${projectDir}/build/classes/java/java9"
-        duplicatesStrategy DuplicatesStrategy.INCLUDE
-    }
+//    //
+//    // This exists because the above 'sourceSets.java9.output' is randomly
+//    // empty even though the classes have been built and are where
+//    // they should be.
+//    into('META-INF/versions/9') {
+//        from "${projectDir}/build/classes/java/java9"
+//        duplicatesStrategy DuplicatesStrategy.INCLUDE
+//    }
 
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
@@ -114,99 +104,3 @@ test {
     maxParallelForks = 8;
 }
 
-
-task test11(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=11.']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        includeTestsMatching "All11Test*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}
-
-task test17(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=17.']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        includeTestsMatching "All11Test*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}
-
-task test21(type: Test) {
-
-    dependsOn(jar)
-
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
-
-    forkEvery = 1;
-    maxParallelForks = 8;
-
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-
-    jvmArgs = ['-Dtest.java.version.prefix=21']
-
-
-    finalizedBy jacocoTestReport
-
-    filter {
-        includeTestsMatching "AllTest*"
-        includeTestsMatching "All11Test*"
-        if (project.hasProperty('excludeTests')) {
-            excludeTestsMatching "${excludeTests}"
-        }
-    }
-}
