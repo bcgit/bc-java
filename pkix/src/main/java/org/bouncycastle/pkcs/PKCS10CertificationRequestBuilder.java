@@ -192,20 +192,7 @@ public class PKCS10CertificationRequestBuilder
             info = new CertificationRequestInfo(subject, publicKeyInfo, new DERSet(v));
         }
 
-        try
-        {
-            OutputStream sOut = signer.getOutputStream();
-
-            sOut.write(info.getEncoded(ASN1Encoding.DER));
-
-            sOut.close();
-
-            return new PKCS10CertificationRequest(new CertificationRequest(info, signer.getAlgorithmIdentifier(), new DERBitString(signer.getSignature())));
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("cannot produce certification request signature");
-        }
+        return getPkcs10CertificationRequest(signer, info);
     }
 
     /**
@@ -256,6 +243,11 @@ public class PKCS10CertificationRequestBuilder
         }
 
         // create final request
+        return getPkcs10CertificationRequest(signer, info);
+    }
+
+    private PKCS10CertificationRequest getPkcs10CertificationRequest(ContentSigner signer, CertificationRequestInfo info)
+    {
         try
         {
             OutputStream sOut = signer.getOutputStream();

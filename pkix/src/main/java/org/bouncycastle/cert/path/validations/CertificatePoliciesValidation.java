@@ -14,9 +14,9 @@ import org.bouncycastle.util.Memoable;
 public class CertificatePoliciesValidation
     implements CertPathValidation
 {
-    private int              explicitPolicy;
-    private int              policyMapping;
-    private int              inhibitAnyPolicy;
+    private int explicitPolicy;
+    private int policyMapping;
+    private int inhibitAnyPolicy;
 
     CertificatePoliciesValidation(int pathLength)
     {
@@ -73,7 +73,7 @@ public class CertificatePoliciesValidation
         {
             if (!ValidationUtils.isSelfIssued(certificate))
             {
-                 //
+                //
                 // H (1), (2), (3)
                 //
                 explicitPolicy = countDown(explicitPolicy);
@@ -136,11 +136,20 @@ public class CertificatePoliciesValidation
 
     public Memoable copy()
     {
-        return new CertificatePoliciesValidation(0);    // TODO:
+        // TODO:
+        CertificatePoliciesValidation v = new CertificatePoliciesValidation(0);
+        v.explicitPolicy = this.explicitPolicy;
+        v.policyMapping = this.policyMapping;
+        v.inhibitAnyPolicy = this.inhibitAnyPolicy;
+        return v;
     }
 
     public void reset(Memoable other)
     {
-        CertificatePoliciesValidation v = (CertificatePoliciesValidation)other;      // TODO:
+        // TODO:
+        CertificatePoliciesValidation v = (CertificatePoliciesValidation)other;
+        this.explicitPolicy = v.explicitPolicy;
+        this.policyMapping = v.policyMapping;
+        this.inhibitAnyPolicy = v.inhibitAnyPolicy;
     }
 }

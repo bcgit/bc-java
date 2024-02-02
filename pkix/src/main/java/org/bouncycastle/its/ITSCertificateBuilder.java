@@ -1,6 +1,5 @@
 package org.bouncycastle.its;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
 
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId3;

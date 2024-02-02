@@ -38,6 +38,8 @@ public class AllTests
         suite.addTestSuite(HostNameAuthorizerMatchTest.class);
         suite.addTestSuite(TestHostNameAuthorizer.class);
         suite.addTestSuite(ESTResponseTest.class);
+        suite.addTestSuite(TestChunkedInputStream.class);
+        suite.addTestSuite(ESTGeneralTest.class);
 
         return new ESTTestSetup(suite);
     }

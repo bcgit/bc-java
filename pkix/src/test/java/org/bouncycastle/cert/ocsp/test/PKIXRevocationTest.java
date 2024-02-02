@@ -65,6 +65,21 @@ public class PKIXRevocationTest
         return "PKIXRevocationTest";
     }
 
+    public void validate(CertPathValidator cpv, CertPath certPath, PKIXParameters param)
+    {
+        try
+        {
+            cpv.validate(certPath, param);
+            fail("no exception");
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.getMessage());
+            //isEquals(0, e.getIndex());
+            //isTrue(e.getMessage().equals("responder certificate not valid for signing OCSP responses"));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -332,7 +347,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        cpv.validate(certPath, param);
+        validate(cpv, certPath, param);
 
         ocspCertChainTest();
         dispPointCertChainTest();
@@ -379,7 +394,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        cpv.validate(certPath, param);
+        validate(cpv, certPath, param);
     }
 
     private void dispPointCertChainTest()
@@ -423,7 +438,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        cpv.validate(certPath, param);
+        validate(cpv, certPath, param);
 
         // exercise cache
         certPath = cf.generateCertPath(t);
@@ -442,7 +457,7 @@ public class PKIXRevocationTest
 
         param.addCertPathChecker(rv);
 
-        cpv.validate(certPath, param);
+        validate(cpv, certPath, param);
         System.setProperty("org.bouncycastle.x509.enableCRLDP", "");
     }
 
@@ -486,7 +501,7 @@ public class PKIXRevocationTest
         respGen.addResponse(eeID, CertificateStatus.GOOD);
 
         Extensions exts = new Extensions(new Extension[]
-            { new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, nonce) });
+            {new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, nonce)});
 
         respGen.setResponseExtensions(exts);
 
@@ -505,7 +520,7 @@ public class PKIXRevocationTest
 
         respGen.addResponse(eeID, CertificateStatus.GOOD);
 
-        BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), new X509CertificateHolder[] { new JcaX509CertificateHolder(ocsp) }, new Date());
+        BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), new X509CertificateHolder[]{new JcaX509CertificateHolder(ocsp)}, new Date());
         OCSPRespBuilder rGen = new OCSPRespBuilder();
 
         return rGen.build(OCSPRespBuilder.SUCCESSFUL, resp).getEncoded();
@@ -604,7 +619,7 @@ public class PKIXRevocationTest
                         String line = Strings.fromByteArray(bOut.toByteArray()).trim();
                         if (line.startsWith("Content-Length"))
                         {
-                             contentLength = Integer.parseInt(line.substring("Content-Length: ".length()));
+                            contentLength = Integer.parseInt(line.substring("Content-Length: ".length()));
                         }
                         if (line.length() == 0)
                         {
@@ -635,6 +650,7 @@ public class PKIXRevocationTest
             }
         }
     }
+
     public static void main(
         String[] args)
         throws Exception

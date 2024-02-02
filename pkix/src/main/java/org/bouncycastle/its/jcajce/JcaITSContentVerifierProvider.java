@@ -109,8 +109,6 @@ public class JcaITSContentVerifierProvider
         switch (pvi.getChoice())
         {
         case PublicVerificationKey.ecdsaNistP256:
-            digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-            break;
         case PublicVerificationKey.ecdsaBrainpoolP256r1:
             digestAlgo = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
             break;

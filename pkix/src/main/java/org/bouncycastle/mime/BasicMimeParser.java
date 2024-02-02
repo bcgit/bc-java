@@ -73,22 +73,7 @@ public class BasicMimeParser
             LineReader rd = new LineReader(src);
             while ((s = rd.readLine()) != null && !"--".equals(s))
             {
-                if (startFound)
-                {
-                    InputStream inputStream = new BoundaryLimitedInputStream(src, boundary);
-                    Headers headers = new Headers(inputStream, defaultContentTransferEncoding);
-
-                    MimeContext partContext = mContext.createContext(partNo++);
-                    inputStream = partContext.applyContext(headers, inputStream);
-
-                    listener.object(parserContext, headers, processStream(headers, inputStream));
-
-                    if (inputStream.read() >= 0)
-                    {
-                        throw new IOException("MIME object not fully processed");
-                    }
-                }
-                else if (startBoundary.equals(s))
+                if (startFound || startBoundary.equals(s))
                 {
                     startFound = true;
                     InputStream inputStream = new BoundaryLimitedInputStream(src, boundary);

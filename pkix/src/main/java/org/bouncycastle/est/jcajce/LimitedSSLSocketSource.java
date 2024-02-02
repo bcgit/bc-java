@@ -13,7 +13,7 @@ import org.bouncycastle.est.TLSUniqueProvider;
 
 
 class LimitedSSLSocketSource
-    implements Source<SSLSession>, TLSUniqueProvider, LimitedSource
+    implements Source<SSLSession>, TLSUniqueProvider, LimitedSource<SSLSession>
 {
     protected final SSLSocket socket;
     private final ChannelBindingProvider bindingProvider;

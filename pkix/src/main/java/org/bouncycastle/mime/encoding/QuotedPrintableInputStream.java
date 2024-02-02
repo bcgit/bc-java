@@ -72,13 +72,11 @@ public class QuotedPrintableInputStream
                     j = in.read();
                 }
                 v = j;
-                continue;
             }
             else if (j == '\n')
             {
                 // As above but without preceding CR.
                 v = in.read();
-                continue;
             }
             else
             {

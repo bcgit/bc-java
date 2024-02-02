@@ -1,5 +1,7 @@
 package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
@@ -121,6 +123,11 @@ public class EccP384CurvePoint
     public static EccP384CurvePoint uncompressedP384(Point384 point384)
     {
         return new EccP384CurvePoint(uncompressedP384, point384);
+    }
+
+    public static EccP384CurvePoint uncompressedP384(BigInteger x, BigInteger y)
+    {
+        return new EccP384CurvePoint(uncompressedP384, Point384.builder().setX(x).setY(y).createPoint384());
     }
 
     public int getChoice()

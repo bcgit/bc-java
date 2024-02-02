@@ -16,7 +16,7 @@ public class AllTests
     {   
         Security.addProvider(new BouncyCastleProvider());
         
-        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new OCSPTest() };
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new OCSPTest(), new PKIXRevocationTest() };
         
         for (int i = 0; i != tests.length; i++)
         {
@@ -39,7 +39,8 @@ public class AllTests
         TestSuite suite = new TestSuite("OCSP Tests");
         
         suite.addTestSuite(AllTests.class);
-        
+        suite.addTestSuite(OCSPGeneralTest.class);
+
         return suite;
     }
 }

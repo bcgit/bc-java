@@ -1,7 +1,6 @@
 package org.bouncycastle.operator.bc;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -32,14 +31,7 @@ public abstract class BcAsymmetricKeyUnwrapper
         {
             byte[] key = keyCipher.processBlock(encryptedKey, 0, encryptedKey.length);
 
-            if (encryptedKeyAlgorithm.getAlgorithm().equals(PKCSObjectIdentifiers.des_EDE3_CBC))
-            {
-                return new GenericKey(encryptedKeyAlgorithm, key);
-            }
-            else
-            {
-                return new GenericKey(encryptedKeyAlgorithm, key);
-            }
+            return new GenericKey(encryptedKeyAlgorithm, key);
         }
         catch (InvalidCipherTextException e)
         {

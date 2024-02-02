@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.util.PBKDF2Config;
 import org.bouncycastle.crypto.util.PBKDFConfig;
 import org.bouncycastle.crypto.util.ScryptConfig;
@@ -333,21 +334,7 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private static byte[] PKCS5PasswordToBytes(
         char[] password)
     {
-        if (password != null)
-        {
-            byte[] bytes = new byte[password.length];
-
-            for (int i = 0; i != bytes.length; i++)
-            {
-                bytes[i] = (byte)password[i];
-            }
-
-            return bytes;
-        }
-        else
-        {
-            return new byte[0];
-        }
+        return PBEParametersGenerator.PKCS5PasswordToBytes(password);
     }
 
     /**
@@ -360,22 +347,6 @@ public class JcePKCSPBEOutputEncryptorBuilder
     private static byte[] PKCS12PasswordToBytes(
         char[] password)
     {
-        if (password != null && password.length > 0)
-        {
-            // +1 for extra 2 pad bytes.
-            byte[] bytes = new byte[(password.length + 1) * 2];
-
-            for (int i = 0; i != password.length; i++)
-            {
-                bytes[i * 2] = (byte)(password[i] >>> 8);
-                bytes[i * 2 + 1] = (byte)password[i];
-            }
-
-            return bytes;
-        }
-        else
-        {
-            return new byte[0];
-        }
+        return PBEParametersGenerator.PKCS12PasswordToBytes(password);
     }
 }

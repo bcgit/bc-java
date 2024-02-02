@@ -21,7 +21,7 @@ import org.bouncycastle.util.encoders.Base64;
 public class ESTParsingTest
     extends TestCase
 {
-    private static byte[] cacertsResponse = Base64.decode(
+    static byte[] cacertsResponse = Base64.decode(
         "MIIMOQYJKoZIhvcNAQcCoIIMKjCCDCYCAQExADALBgkqhkiG9w0BBwGgggwMMIIC" +
             "+zCCAeOgAwIBAgIJAJpY3nUZO3qcMA0GCSqGSIb3DQEBBQUAMBsxGTAXBgNVBAMT" +
             "EGVzdEV4YW1wbGVDQSBPd08wHhcNMTMwNTA5MDM1MzMxWhcNMTQwNTA5MDM1MzMx" +
@@ -90,7 +90,7 @@ public class ESTParsingTest
             "jM0MAGNDEW+1oQAxAA=="
     );
 
-    private static byte[] csrattrs1 = Base64.decode(
+    static byte[] csrattrs1 = Base64.decode(
         "MEEGCSqGSIb3DQEJBzASBgcqhkjOPQIBMQcGBSuBBAAiMBYGCSqGSIb3DQEJDjEJ" +
             "BgcrBgEBAQEWBggqhkjOPQQDAw=="
     );

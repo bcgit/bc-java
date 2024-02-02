@@ -36,17 +36,17 @@ import org.bouncycastle.util.Exceptions;
  */
 public class X509v3CertificateBuilder
 {
-    private V3TBSCertificateGenerator   tbsGen;
+    private V3TBSCertificateGenerator tbsGen;
     private ExtensionsGenerator extGenerator;
 
     /**
      * Create a builder for a version 3 certificate.
      *
-     * @param issuer the certificate issuer
-     * @param serial the certificate serial number
-     * @param notBefore the date before which the certificate is not valid
-     * @param notAfter the date after which the certificate is not valid
-     * @param subject the certificate subject
+     * @param issuer        the certificate issuer
+     * @param serial        the certificate serial number
+     * @param notBefore     the date before which the certificate is not valid
+     * @param notAfter      the date after which the certificate is not valid
+     * @param subject       the certificate subject
      * @param publicKeyInfo the info structure for the public key to be associated with this certificate.
      */
     public X509v3CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
@@ -58,12 +58,12 @@ public class X509v3CertificateBuilder
      * Create a builder for a version 3 certificate. You may need to use this constructor if the default locale
      * doesn't use a Gregorian calender so that the Time produced is compatible with other ASN.1 implementations.
      *
-     * @param issuer the certificate issuer
-     * @param serial the certificate serial number
-     * @param notBefore the date before which the certificate is not valid
-     * @param notAfter the date after which the certificate is not valid
-     * @param dateLocale locale to be used for date interpretation.
-     * @param subject the certificate subject
+     * @param issuer        the certificate issuer
+     * @param serial        the certificate serial number
+     * @param notBefore     the date before which the certificate is not valid
+     * @param notAfter      the date after which the certificate is not valid
+     * @param dateLocale    locale to be used for date interpretation.
+     * @param subject       the certificate subject
      * @param publicKeyInfo the info structure for the public key to be associated with this certificate.
      */
     public X509v3CertificateBuilder(X500Name issuer, BigInteger serial, Date notBefore, Date notAfter, Locale dateLocale, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
@@ -74,11 +74,11 @@ public class X509v3CertificateBuilder
     /**
      * Create a builder for a version 3 certificate.
      *
-     * @param issuer the certificate issuer
-     * @param serial the certificate serial number
-     * @param notBefore the Time before which the certificate is not valid
-     * @param notAfter the Time after which the certificate is not valid
-     * @param subject the certificate subject
+     * @param issuer        the certificate issuer
+     * @param serial        the certificate serial number
+     * @param notBefore     the Time before which the certificate is not valid
+     * @param notAfter      the Time after which the certificate is not valid
+     * @param subject       the certificate subject
      * @param publicKeyInfo the info structure for the public key to be associated with this certificate.
      */
     public X509v3CertificateBuilder(X500Name issuer, BigInteger serial, Time notBefore, Time notAfter, X500Name subject, SubjectPublicKeyInfo publicKeyInfo)
@@ -113,7 +113,7 @@ public class X509v3CertificateBuilder
 
         Extensions exts = template.getExtensions();
 
-        for (Enumeration en = exts.oids(); en.hasMoreElements();)
+        for (Enumeration en = exts.oids(); en.hasMoreElements(); )
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)en.nextElement();
             // we remove the altSignatureAlgorithm, altSignatureValue, and subjectAltPublicKeyInfo
@@ -136,7 +136,7 @@ public class X509v3CertificateBuilder
      */
     public boolean hasExtension(ASN1ObjectIdentifier oid)
     {
-         return doGetExtension(oid) != null;
+        return doGetExtension(oid) != null;
     }
 
     /**
@@ -147,7 +147,7 @@ public class X509v3CertificateBuilder
      */
     public Extension getExtension(ASN1ObjectIdentifier oid)
     {
-         return doGetExtension(oid);
+        return doGetExtension(oid);
     }
 
     private Extension doGetExtension(ASN1ObjectIdentifier oid)
@@ -156,7 +156,7 @@ public class X509v3CertificateBuilder
         {
             return null;
         }
-        
+
         Extensions exts = extGenerator.generate();
 
         return exts.getExtension(oid);
@@ -170,7 +170,7 @@ public class X509v3CertificateBuilder
      */
     public X509v3CertificateBuilder setSubjectUniqueID(boolean[] uniqueID)
     {
-        tbsGen.setSubjectUniqueID(booleanToBitString(uniqueID));
+        tbsGen.setSubjectUniqueID(CertUtils.booleanToBitString(uniqueID));
 
         return this;
     }
@@ -183,7 +183,7 @@ public class X509v3CertificateBuilder
      */
     public X509v3CertificateBuilder setIssuerUniqueID(boolean[] uniqueID)
     {
-        tbsGen.setIssuerUniqueID(booleanToBitString(uniqueID));
+        tbsGen.setIssuerUniqueID(CertUtils.booleanToBitString(uniqueID));
 
         return this;
     }
@@ -191,11 +191,11 @@ public class X509v3CertificateBuilder
     /**
      * Add a given extension field for the standard extensions tag (tag 3)
      *
-     * @param oid the OID defining the extension type.
+     * @param oid        the OID defining the extension type.
      * @param isCritical true if the extension is critical, false otherwise.
-     * @param value the ASN.1 structure that forms the extension's value.
+     * @param value      the ASN.1 structure that forms the extension's value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the OID oid has already been used.
      */
     public X509v3CertificateBuilder addExtension(
@@ -221,7 +221,7 @@ public class X509v3CertificateBuilder
      *
      * @param extension the full extension value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the OID oid has already been used.
      */
     public X509v3CertificateBuilder addExtension(
@@ -237,11 +237,11 @@ public class X509v3CertificateBuilder
      * Add a given extension field for the standard extensions tag (tag 3) using a byte encoding of the
      * extension value.
      *
-     * @param oid the OID defining the extension type.
-     * @param isCritical true if the extension is critical, false otherwise.
+     * @param oid          the OID defining the extension type.
+     * @param isCritical   true if the extension is critical, false otherwise.
      * @param encodedValue a byte array representing the encoding of the extension value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the OID oid has already been allocated.
      */
     public X509v3CertificateBuilder addExtension(
@@ -259,11 +259,11 @@ public class X509v3CertificateBuilder
      * Replace the extension field for the passed in extension's extension ID
      * with a new version.
      *
-     * @param oid the OID defining the extension type.
+     * @param oid        the OID defining the extension type.
      * @param isCritical true if the extension is critical, false otherwise.
-     * @param value the ASN.1 structure that forms the extension's value.
+     * @param value      the ASN.1 structure that forms the extension's value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
@@ -290,7 +290,7 @@ public class X509v3CertificateBuilder
      *
      * @param extension the full extension value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
@@ -306,11 +306,11 @@ public class X509v3CertificateBuilder
      * Replace a given extension field for the standard extensions tag (tag 3) with the passed in
      * byte encoded extension value.
      *
-     * @param oid the OID defining the extension type.
-     * @param isCritical true if the extension is critical, false otherwise.
+     * @param oid          the OID defining the extension type.
+     * @param isCritical   true if the extension is critical, false otherwise.
      * @param encodedValue a byte array representing the encoding of the extension value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
+     * @throws CertIOException          if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the extension to be replaced is not present.
      */
     public X509v3CertificateBuilder replaceExtension(
@@ -342,7 +342,7 @@ public class X509v3CertificateBuilder
      * Add a given extension field for the standard extensions tag (tag 3)
      * copying the extension value from another certificate.
      *
-     * @param oid the OID defining the extension type.
+     * @param oid        the OID defining the extension type.
      * @param isCritical true if the copied extension is to be marked as critical, false otherwise.
      * @param certHolder the holder for the certificate that the extension is to be copied from.
      * @return this builder object.
@@ -392,7 +392,7 @@ public class X509v3CertificateBuilder
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage()) ;
+                    throw new IllegalStateException("unable to replace deltaCertificateDescriptor: " + e.getMessage());
                 }
             }
             tbsGen.setExtensions(extGenerator.generate());
@@ -414,7 +414,7 @@ public class X509v3CertificateBuilder
      * using the passed in signer and containing altSignatureAlgorithm and altSignatureValue extensions
      * based on the passed altSigner.
      *
-     * @param signer the content signer to be used to generate the signature validating the certificate.
+     * @param signer    the content signer to be used to generate the signature validating the certificate.
      * @param altSigner the content signer used to create the altSignatureAlgorithm and altSignatureValue extension.
      * @return a holder containing the resulting signed certificate.
      */
@@ -435,7 +435,7 @@ public class X509v3CertificateBuilder
         if (extGenerator.hasExtension(Extension.deltaCertificateDescriptor))
         {
             tbsGen.setSignature(signer.getAlgorithmIdentifier());
-            
+
             Extension deltaExt = extGenerator.getExtension(Extension.deltaCertificateDescriptor);
             DeltaCertificateDescriptor deltaDesc = DeltaCertificateDescriptor.getInstance(deltaExt.getParsedValue());
 
@@ -467,7 +467,7 @@ public class X509v3CertificateBuilder
             tbsGen.setSignature(signer.getAlgorithmIdentifier());
 
             tbsGen.setExtensions(extGenerator.generate());
-            
+
             TBSCertificate tbsCert = tbsGen.generateTBSCertificate();
             return new X509CertificateHolder(generateStructure(tbsCert, signer.getAlgorithmIdentifier(), generateSig(signer, tbsCert)));
         }
@@ -496,26 +496,5 @@ public class X509v3CertificateBuilder
         v.add(new DERBitString(signature));
 
         return Certificate.getInstance(new DERSequence(v));
-    }
-
-    static DERBitString booleanToBitString(boolean[] id)
-    {
-        byte[] bytes = new byte[(id.length + 7) / 8];
-
-        for (int i = 0; i != id.length; i++)
-        {
-            bytes[i / 8] |= (id[i]) ? (1 << ((7 - (i % 8)))) : 0;
-        }
-
-        int pad = id.length % 8;
-
-        if (pad == 0)
-        {
-            return new DERBitString(bytes);
-        }
-        else
-        {
-            return new DERBitString(bytes, 8 - pad);
-        }
     }
 }

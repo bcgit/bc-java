@@ -8,7 +8,9 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.operator.MacCalculator;
 
 class CRMFUtil
 {
@@ -36,5 +38,25 @@ class CRMFUtil
         {
             throw new CertIOException("cannot encode extension: " + e.getMessage(), e);
         }
+    }
+
+     static MacCalculator getMacCalculator(PKMACBuilder builder, char[] password, SubjectPublicKeyInfo keyInfo)
+        throws CRMFException
+    {
+        MacCalculator calculator = builder.build(password);
+
+        OutputStream macOut = calculator.getOutputStream();
+
+        try
+        {
+            macOut.write(keyInfo.getEncoded(ASN1Encoding.DER));
+
+            macOut.close();
+        }
+        catch (IOException e)
+        {
+            throw new CRMFException("exception encoding mac input: " + e.getMessage(), e);
+        }
+        return calculator;
     }
 }

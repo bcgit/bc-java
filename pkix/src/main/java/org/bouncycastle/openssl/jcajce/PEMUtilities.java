@@ -105,7 +105,7 @@ class PEMUtilities
         {
             throw new IllegalStateException("no key size for algorithm: " + algorithm);
         }
-        
+
         return ((Integer)KEYSIZES.get(algorithm)).intValue();
     }
 
@@ -143,7 +143,7 @@ class PEMUtilities
         throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException
     {
         SecretKeyFactory keyGen = helper.createSecretKeyFactory("PBKDF2with8BIT");
-                            
+
         SecretKey sKey = keyGen.generateSecret(new PBEKeySpec(password, salt, iterationCount, PEMUtilities.getKeySize(algorithm)));
 
         return new SecretKeySpec(sKey.getEncoded(), getAlgorithmName(algorithm));

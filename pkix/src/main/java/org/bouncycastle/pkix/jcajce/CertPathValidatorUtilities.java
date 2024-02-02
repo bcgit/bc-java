@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.cert.CRLException;
 import java.security.cert.CertPathValidatorException;
@@ -19,9 +18,6 @@ import java.security.cert.PolicyQualifierInfo;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.DSAParams;
-import java.security.interfaces.DSAPublicKey;
-import java.security.spec.DSAPublicKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -50,6 +46,7 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.PKIXCertStoreSelector;
+import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
@@ -742,45 +739,7 @@ class CertPathValidatorUtilities
     protected static PublicKey getNextWorkingKey(List certs, int index)
         throws CertPathValidatorException
     {
-        Certificate cert = (Certificate)certs.get(index);
-        PublicKey pubKey = cert.getPublicKey();
-        if (!(pubKey instanceof DSAPublicKey))
-        {
-            return pubKey;
-        }
-        DSAPublicKey dsaPubKey = (DSAPublicKey)pubKey;
-        if (dsaPubKey.getParams() != null)
-        {
-            return dsaPubKey;
-        }
-        for (int i = index + 1; i < certs.size(); i++)
-        {
-            X509Certificate parentCert = (X509Certificate)certs.get(i);
-            pubKey = parentCert.getPublicKey();
-            if (!(pubKey instanceof DSAPublicKey))
-            {
-                throw new CertPathValidatorException(
-                    "DSA parameters cannot be inherited from previous certificate.");
-            }
-            DSAPublicKey prevDSAPubKey = (DSAPublicKey)pubKey;
-            if (prevDSAPubKey.getParams() == null)
-            {
-                continue;
-            }
-            DSAParams dsaParams = prevDSAPubKey.getParams();
-            DSAPublicKeySpec dsaPubKeySpec = new DSAPublicKeySpec(
-                dsaPubKey.getY(), dsaParams.getP(), dsaParams.getQ(), dsaParams.getG());
-            try
-            {
-                KeyFactory keyFactory = KeyFactory.getInstance("DSA");
-                return keyFactory.generatePublic(dsaPubKeySpec);
-            }
-            catch (Exception exception)
-            {
-                throw new RuntimeException(exception.getMessage());
-            }
-        }
-        throw new CertPathValidatorException("DSA parameters cannot be inherited from previous certificate.");
+        return RevocationUtilities.getNextWorkingKey(certs, index, new DefaultJcaJceHelper());
     }
 
     protected static void verifyX509Certificate(X509Certificate cert, PublicKey publicKey,

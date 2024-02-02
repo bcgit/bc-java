@@ -15,13 +15,13 @@ public class AllTests
 {
     public void testSimpleTests()
     {
-        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] {
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]{
             new CertPathTest(), new CertPathValidationTest(), new BasicConstraintsTest(),
-                new PKITSBasicConstraintsTest() };
+            new PKITSBasicConstraintsTest()};
 
         for (int i = 0; i != tests.length; i++)
         {
-            SimpleTestResult  result = (SimpleTestResult)tests[i].perform();
+            SimpleTestResult result = (SimpleTestResult)tests[i].perform();
 
             if (!result.isSuccessful())
             {
@@ -34,7 +34,7 @@ public class AllTests
         }
     }
 
-    public static void main (String[] args)
+    public static void main(String[] args)
     {
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
@@ -43,6 +43,7 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("Cert Path Tests");
 
+        suite.addTestSuite(CertPathGeneralTest.class);
         suite.addTestSuite(AllTests.class);
 
         return new BCTestSetup(suite);
