@@ -51,7 +51,7 @@ public class EACCertificateBuilder
         certificateProfileIdentifier = new DERTaggedObject(false, BERTags.APPLICATION,
                 EACTags.INTERCHANGE_PROFILE, new DEROctetString(ZeroArray));
 
-        CertificateBody body = new CertificateBody(
+        return new CertificateBody(
                 certificateProfileIdentifier,
                 certificationAuthorityReference,
                 publicKey,
@@ -59,8 +59,6 @@ public class EACCertificateBuilder
                 certificateHolderAuthorization,
                 certificateEffectiveDate,
                 certificateExpirationDate);
-
-        return body;
     }
 
     public EACCertificateHolder build(EACSigner signer)

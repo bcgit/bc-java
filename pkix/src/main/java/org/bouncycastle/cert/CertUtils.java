@@ -26,17 +26,20 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.AttributeCertificateInfo;
 import org.bouncycastle.asn1.x509.Certificate;
-import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
-import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.ContentVerifier;
+import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Properties;
 
 class CertUtils
@@ -102,17 +105,17 @@ class CertUtils
 
         return AttributeCertificate.getInstance(new DERSequence(v));
     }
-
-    private static CertificateList generateCRLStructure(TBSCertList tbsCertList, AlgorithmIdentifier sigAlgId, byte[] signature)
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        v.add(tbsCertList);
-        v.add(sigAlgId);
-        v.add(new DERBitString(signature));
-
-        return CertificateList.getInstance(new DERSequence(v));
-    }
+//
+//    private static CertificateList generateCRLStructure(TBSCertList tbsCertList, AlgorithmIdentifier sigAlgId, byte[] signature)
+//    {
+//        ASN1EncodableVector v = new ASN1EncodableVector();
+//
+//        v.add(tbsCertList);
+//        v.add(sigAlgId);
+//        v.add(new DERBitString(signature));
+//
+//        return CertificateList.getInstance(new DERSequence(v));
+//    }
 
     static Set getCriticalExtensionOIDs(Extensions extensions)
     {
@@ -334,5 +337,68 @@ class CertUtils
         }
 
         return new DERTaggedObject(true, tagNo, new DERSequence(extV));
+    }
+
+    static boolean matchesDN(X500Name subject, GeneralNames targets)
+    {
+        GeneralName[] names = targets.getNames();
+
+        for (int i = 0; i != names.length; i++)
+        {
+            GeneralName gn = names[i];
+
+            if (gn.getTagNo() == GeneralName.directoryName)
+            {
+                if (X500Name.getInstance(gn.getName()).equals(subject))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    static X500Name[] getPrincipals(GeneralName[] names)
+    {
+        List l = new ArrayList(names.length);
+
+        for (int i = 0; i != names.length; i++)
+        {
+            if (names[i].getTagNo() == GeneralName.directoryName)
+            {
+                l.add(X500Name.getInstance(names[i].getName()));
+            }
+        }
+
+        return (X500Name[])l.toArray(new X500Name[l.size()]);
+    }
+
+    static boolean isSignatureValid(ContentVerifierProvider verifierProvider, AlgorithmIdentifier signature,
+                                    AlgorithmIdentifier signatureAlgorithm, ASN1Object encoder,
+                                    ASN1BitString string)
+        throws CertException
+    {
+        if (!CertUtils.isAlgIdEqual(signature, signatureAlgorithm))
+        {
+            throw new CertException("signature invalid - algorithm identifier mismatch");
+        }
+
+        ContentVerifier verifier;
+
+        try
+        {
+            verifier = verifierProvider.get(signature);
+
+            OutputStream sOut = verifier.getOutputStream();
+            encoder.encodeTo(sOut, ASN1Encoding.DER);
+            sOut.close();
+        }
+        catch (Exception e)
+        {
+            throw new CertException("unable to process signature: " + e.getMessage(), e);
+        }
+
+        return verifier.verify(string.getOctets());
     }
 }

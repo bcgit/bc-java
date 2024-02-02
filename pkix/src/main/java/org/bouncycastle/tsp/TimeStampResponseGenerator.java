@@ -3,14 +3,11 @@ package org.bouncycastle.tsp;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -344,28 +341,7 @@ public class TimeStampResponseGenerator
 
     private Set convert(Set orig)
     {
-        if (orig == null)
-        {
-            return orig;
-        }
-
-        Set con = new HashSet(orig.size());
-
-        for (Iterator it = orig.iterator(); it.hasNext();)
-        {
-            Object o = it.next();
-
-            if (o instanceof String)
-            {
-                con.add(new ASN1ObjectIdentifier((String)o));
-            }
-            else
-            {
-                con.add(o);
-            }
-        }
-
-        return con;
+        return TSPUtil.convert(orig);
     }
 
     static class FailInfo extends DERBitString

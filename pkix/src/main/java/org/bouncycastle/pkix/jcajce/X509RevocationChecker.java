@@ -665,43 +665,7 @@ public class X509RevocationChecker
     static List<PKIXCRLStore> getAdditionalStoresFromCRLDistributionPoint(CRLDistPoint crldp,
         Map<GeneralName, PKIXCRLStore> namedCRLStoreMap) throws AnnotatedException
     {
-        if (crldp == null)
-        {
-            return Collections.emptyList();
-        }
-
-        DistributionPoint dps[];
-        try
-        {
-            dps = crldp.getDistributionPoints();
-        }
-        catch (Exception e)
-        {
-            throw new AnnotatedException("could not read distribution points could not be read", e);
-        }
-
-        List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
-
-        for (int i = 0; i < dps.length; i++)
-        {
-            DistributionPointName dpn = dps[i].getDistributionPoint();
-            // look for URIs in fullName
-            if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
-            {
-                GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
-
-                for (int j = 0; j < genNames.length; j++)
-                {
-                    PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
-                    if (store != null)
-                    {
-                        stores.add(store);
-                    }
-                }
-            }
-        }
-
-        return stores;
+        return RevocationUtilities.getAdditionalStoresFromCRLDistributionPoint(crldp, namedCRLStoreMap);
     }
 
     /**

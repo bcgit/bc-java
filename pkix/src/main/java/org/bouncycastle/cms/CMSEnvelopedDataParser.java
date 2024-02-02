@@ -5,13 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.EncryptedContentInfoParser;
 import org.bouncycastle.asn1.cms.EnvelopedDataParser;
@@ -174,21 +172,8 @@ public class CMSEnvelopedDataParser
             ASN1SetParser             set = envelopedData.getUnprotectedAttrs();
             
             attrNotRead = false;
-            
-            if (set != null)
-            {
-                ASN1EncodableVector v = new ASN1EncodableVector();
-                ASN1Encodable        o;
-                
-                while ((o = set.readObject()) != null)
-                {
-                    ASN1SequenceParser    seq = (ASN1SequenceParser)o;
-                    
-                    v.add(seq.toASN1Primitive());
-                }
-                
-                unprotectedAttributes = new AttributeTable(new DERSet(v));
-            }
+
+            unprotectedAttributes = CMSUtils.getAtrributeTable(set);
         }
 
         return unprotectedAttributes;

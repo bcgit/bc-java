@@ -1,11 +1,8 @@
 package org.bouncycastle.its.jcajce;
 
-import java.security.KeyFactory;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -21,7 +18,6 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
@@ -146,32 +142,7 @@ public class JcaITSPublicVerificationKey
             throw new IllegalStateException("extension to public verification key not supported");
         }
 
-        byte[] key;
-
-        if (itsPoint instanceof EccP256CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else if (itsPoint instanceof EccP384CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else
-        {
-            throw new IllegalStateException("unknown key type");
-        }
-
-        ECPoint point = curve.decodePoint(key).normalize();
-        try
-        {
-            KeyFactory keyFactory = helper.createKeyFactory("EC");
-            ECParameterSpec spec = ECUtil.convertToSpec(params);
-            java.security.spec.ECPoint jPoint = ECUtil.convertPoint(point);
-            return keyFactory.generatePublic(new ECPublicKeySpec(jPoint, spec));
-        }
-        catch (Exception e)
-        {
-            throw new IllegalStateException(e.getMessage(), e);
-        }
+        return ECUtil.getPublicKey(params, curve, itsPoint, helper);
     }
+
 }

@@ -228,7 +228,7 @@ public class NewEnvelopedDataTest
             + "AKAECJwE0hkuKlWhgCBeKNXhojuej3org9Lt7n+wWxOhnky5V50vSpoYRfRR"
             + "yw==");
 
-    private byte[] tooShort3DES = Base64.decode(
+    static byte[] tooShort3DES = Base64.decode(
         "MIAGCSqGSIb3DQEHA6CAMIACAQAxgcQwgcECAQAwKjAlMRYwFAYDVQQKDA1C" +
             "b3VuY3kgQ2FzdGxlMQswCQYDVQQGEwJBVQIBCjANBgkqhkiG9w0BAQEFAASB" +
             "gJIM2QN0o6iv8Ux018pVCJ8js+ROV4t6+KoMwLJ4DzRKLU8XCAb9BS+crP+F" +
@@ -237,7 +237,7 @@ public class NewEnvelopedDataTest
             "SIb3DQEHATAUBggqhkiG9w0DBwQIQq9e4+WB3CqggAQIwU4cOlmkWUcAAAAA" +
             "AAAAAAAA");
 
-    private byte[] tooShort3DESKey = Base64.decode(
+    static byte[] tooShort3DESKey = Base64.decode(
         "MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAODZDCj0nQdV" +
             "f0GGeFsPjjvPx1Vem0V6IkJ4SzazGKfddk0pX58ZDCnG+S+OPiXmPDqValiu" +
             "9FtNy2/r9rrf/6qtcVQJkfSJv9E5Y7HgI98L/Y9lKxZWsfRqu/SlYO5zx0Dc" +

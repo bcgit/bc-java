@@ -14,14 +14,12 @@ import org.bouncycastle.oer.its.ieee1609dot2.CertificateBase;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashAlgorithm;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 import org.bouncycastle.oer.its.ieee1609dot2.IssuerIdentifier;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
 import org.bouncycastle.oer.its.template.ieee1609dot2.IEEE1609dot2;
-import org.bouncycastle.util.Arrays;
 
 public class ITSExplicitCertificateBuilder
     extends ITSCertificateBuilder
@@ -49,7 +47,7 @@ public class ITSExplicitCertificateBuilder
     public ITSCertificate build(CertificateId certificateId, ITSPublicVerificationKey verificationKey, ITSPublicEncryptionKey publicEncryptionKey)
     {
         ToBeSignedCertificate.Builder tbsBldr = new ToBeSignedCertificate.Builder(tbsCertificateBuilder);
-        
+
         tbsBldr.setId(certificateId);
 
         if (publicEncryptionKey != null)
@@ -62,17 +60,17 @@ public class ITSExplicitCertificateBuilder
 
         ToBeSignedCertificate tbsCertificate = tbsBldr.createToBeSignedCertificate();
 
-        ToBeSignedCertificate signerCert = null;
-        VerificationKeyIndicator verificationKeyIndicator;
-        if (signer.isForSelfSigning())
-        {
-            verificationKeyIndicator = tbsCertificate.getVerifyKeyIndicator();
-        }
-        else
-        {
-            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSigned();
-            verificationKeyIndicator = signerCert.getVerifyKeyIndicator();
-        }
+//        ToBeSignedCertificate signerCert = null;
+//        VerificationKeyIndicator verificationKeyIndicator;
+//        if (signer.isForSelfSigning())
+//        {
+//            verificationKeyIndicator = tbsCertificate.getVerifyKeyIndicator();
+//        }
+//        else
+//        {
+//            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSigned();
+//            verificationKeyIndicator = signerCert.getVerifyKeyIndicator();
+//        }
 
         OutputStream sOut = signer.getOutputStream();
 
@@ -87,8 +85,8 @@ public class ITSExplicitCertificateBuilder
             throw new IllegalArgumentException("cannot produce certificate signature");
         }
 
-        Signature sig = null;        // TODO: signature actually optional.
-        switch (verificationKeyIndicator.getChoice())
+        Signature sig;        // TODO: signature actually optional.
+        switch (verificationKey.verificationKey.getChoice())
         {
         case PublicVerificationKey.ecdsaNistP256:
             sig = ECDSAEncoder.toITS(SECObjectIdentifiers.secp256r1, signer.getSignature());
@@ -128,19 +126,7 @@ public class ITSExplicitCertificateBuilder
         else
         {
             byte[] parentDigest = signer.getAssociatedCertificateDigest();
-            HashedId8 hashedID = new HashedId8(Arrays.copyOfRange(parentDigest, parentDigest.length - 8, parentDigest.length));
-            if (digestAlg.equals(NISTObjectIdentifiers.id_sha256))
-            {
-                issuerIdentifier = IssuerIdentifier.sha256AndDigest(hashedID);
-            }
-            else if (digestAlg.equals(NISTObjectIdentifiers.id_sha384))
-            {
-                issuerIdentifier = IssuerIdentifier.sha384AndDigest(hashedID);
-            }
-            else
-            {
-                throw new IllegalStateException("unknown digest");
-            }
+            issuerIdentifier = ITSUtil.getIssuerIdentifier(digestAlg, parentDigest);
         }
 
         baseBldr.setVersion(version);
@@ -149,7 +135,6 @@ public class ITSExplicitCertificateBuilder
 
         baseBldr.setToBeSigned(tbsCertificate);
         baseBldr.setSignature(sig);
-
 
 
         return new ITSCertificate(baseBldr.createCertificateBase());

@@ -8,7 +8,6 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECField;
-import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
@@ -22,13 +21,10 @@ import org.bouncycastle.asn1.eac.ECDSAPublicKey;
 import org.bouncycastle.asn1.eac.PublicKeyDataObject;
 import org.bouncycastle.asn1.eac.RSAPublicKey;
 import org.bouncycastle.eac.EACException;
-import org.bouncycastle.math.ec.ECAlgorithms;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.field.FiniteField;
-import org.bouncycastle.math.field.Polynomial;
-import org.bouncycastle.math.field.PolynomialExtensionField;
-import org.bouncycastle.util.Arrays;
 
 public class JcaPublicKeyConverter
 {
@@ -197,16 +193,6 @@ public class JcaPublicKeyConverter
 
     private static ECField convertField(FiniteField field)
     {
-        if (ECAlgorithms.isFpField(field))
-        {
-            return new ECFieldFp(field.getCharacteristic());
-        }
-        else //if (ECAlgorithms.isF2mField(curveField))
-        {
-            Polynomial poly = ((PolynomialExtensionField)field).getMinimalPolynomial();
-            int[] exponents = poly.getExponentsPresent();
-            int[] ks = Arrays.reverseInPlace(Arrays.copyOfRange(exponents, 1, exponents.length - 1));
-            return new ECFieldF2m(poly.getDegree(), ks);
-        }
+        return EC5Util.convertField(field);
     }
 }

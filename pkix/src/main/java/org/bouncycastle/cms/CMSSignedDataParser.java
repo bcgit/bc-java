@@ -422,18 +422,11 @@ public class CMSSignedDataParser
         OutputStream            out)
         throws CMSException, IOException
     {
-        ASN1StreamParser in = new ASN1StreamParser(original);
-        ContentInfoParser contentInfo = new ContentInfoParser((ASN1SequenceParser)in.readObject());
-        SignedDataParser signedData = SignedDataParser.getInstance(contentInfo.getContent(BERTags.SEQUENCE));
+        SignedDataParser signedData = getSignedDataParser(original);
 
         BERSequenceGenerator sGen = new BERSequenceGenerator(out);
 
-        sGen.addObject(CMSObjectIdentifiers.signedData);
-
-        BERSequenceGenerator sigGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
-
-        // version number
-        sigGen.addObject(signedData.getVersion());
+        BERSequenceGenerator sigGen = getBerSequenceGenerator(signedData, sGen);
 
         // digests
         signedData.getDigestAlgorithms().toASN1Primitive();  // skip old ones
@@ -481,6 +474,27 @@ public class CMSSignedDataParser
         return out;
     }
 
+    private static BERSequenceGenerator getBerSequenceGenerator(SignedDataParser signedData, BERSequenceGenerator sGen)
+        throws IOException
+    {
+        sGen.addObject(CMSObjectIdentifiers.signedData);
+
+        BERSequenceGenerator sigGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
+
+        // version number
+        sigGen.addObject(signedData.getVersion());
+        return sigGen;
+    }
+
+    private static SignedDataParser getSignedDataParser(InputStream original)
+        throws IOException
+    {
+        ASN1StreamParser in = new ASN1StreamParser(original);
+        ContentInfoParser contentInfo = new ContentInfoParser((ASN1SequenceParser)in.readObject());
+        SignedDataParser signedData = SignedDataParser.getInstance(contentInfo.getContent(BERTags.SEQUENCE));
+        return signedData;
+    }
+
     /**
      * Replace the certificate and CRL information associated with this
      * CMSSignedData object with the new one passed in.
@@ -503,18 +517,11 @@ public class CMSSignedDataParser
         OutputStream  out)
         throws CMSException, IOException
     {
-        ASN1StreamParser in = new ASN1StreamParser(original);
-        ContentInfoParser contentInfo = new ContentInfoParser((ASN1SequenceParser)in.readObject());
-        SignedDataParser signedData = SignedDataParser.getInstance(contentInfo.getContent(BERTags.SEQUENCE));
+        SignedDataParser signedData = getSignedDataParser(original);
 
         BERSequenceGenerator sGen = new BERSequenceGenerator(out);
 
-        sGen.addObject(CMSObjectIdentifiers.signedData);
-
-        BERSequenceGenerator sigGen = new BERSequenceGenerator(sGen.getRawOutputStream(), 0, true);
-
-        // version number
-        sigGen.addObject(signedData.getVersion());
+        BERSequenceGenerator sigGen = getBerSequenceGenerator(signedData, sGen);
 
         // digests
         sigGen.getRawOutputStream().write(signedData.getDigestAlgorithms().toASN1Primitive().getEncoded());
@@ -541,18 +548,7 @@ public class CMSSignedDataParser
         //
         if (certs != null || attrCerts != null)
         {
-            List certificates = new ArrayList();
-
-            if (certs != null)
-            {
-                certificates.addAll(CMSUtils.getCertificatesFromStore(certs));
-            }
-            if (attrCerts != null)
-            {
-                certificates.addAll(CMSUtils.getAttributeCertificatesFromStore(attrCerts));
-            }
-
-            ASN1Set asn1Certs = CMSUtils.createBerSetFromList(certificates);
+            ASN1Set asn1Certs =  CMSUtils.getASN1Set(certs, attrCerts);
 
             if (asn1Certs.size() > 0)
             {

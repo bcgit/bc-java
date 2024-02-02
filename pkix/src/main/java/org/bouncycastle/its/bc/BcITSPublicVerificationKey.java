@@ -110,23 +110,6 @@ public class BcITSPublicVerificationKey
             throw new IllegalStateException("extension to public verification key not supported");
         }
 
-        byte[] key;
-
-        if (itsPoint instanceof EccP256CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else if (itsPoint instanceof EccP384CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else
-        {
-            throw new IllegalStateException("unknown key type");
-        }
-
-        ECPoint point = curve.decodePoint(key).normalize();
-        return new ECPublicKeyParameters(point,
-            new ECNamedDomainParameters(curveID, params));
+        return BcITSUtil.getAsymmetricKeyParameter(params, curveID, curve, itsPoint);
     }
 }

@@ -4,7 +4,8 @@ package org.bouncycastle.est;
 /**
  * Interface for a Source which can only produce up to a certain number of bytes.
  */
-public interface LimitedSource
+public interface LimitedSource<T>
+    extends Source<T>
 {
     /**
      * Return the maximum number of bytes available from this source.

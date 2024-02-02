@@ -42,6 +42,8 @@ public class AllTests
         suite.addTestSuite(TestSMIMEEnveloped.class);
         suite.addTestSuite(TestSMIMESigned.class);
         suite.addTestSuite(TestSMIMESignEncrypt.class);
+        suite.addTestSuite(TestJournalingSecureRandomEncrypt.class);
+        suite.addTestSuite(MimeGeneralTest.class);
 
         return new MIMETestSetup(suite);
     }

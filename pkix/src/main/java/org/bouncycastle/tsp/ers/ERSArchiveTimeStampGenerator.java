@@ -87,24 +87,7 @@ public class ERSArchiveTimeStampGenerator
             throw new ERSException("multiple reduced hash trees found");
         }
 
-        byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
-
-        if (tspResponse.getStatus() != 0)
-        {
-            throw new TSPException("TSP response error status: " + tspResponse.getStatusString());
-        }
-
-        TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
-
-        if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
-        {
-            throw new ERSException("time stamp imprint for wrong algorithm");
-        }
-
-        if (!Arrays.areEqual(tstInfo.getMessageImprint().getHashedMessage(), rootHash))
-        {
-            throw new ERSException("time stamp imprint for wrong root hash");
-        }
+        validateTimeStampToken(tspResponse, reducedHashTree);
 
         if (reducedHashTree[0].getValueCount() == 1)
         {
@@ -119,11 +102,9 @@ public class ERSArchiveTimeStampGenerator
         }
     }
 
-    public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
+    private void validateTimeStampToken(TimeStampResponse tspResponse, IndexedPartialHashtree[] reducedHashTree)
         throws TSPException, ERSException
     {
-        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
-
         byte[] rootHash = rootNodeCalculator.computeRootHash(digCalc, reducedHashTree);
 
         if (tspResponse.getStatus() != 0)
@@ -142,6 +123,14 @@ public class ERSArchiveTimeStampGenerator
         {
             throw new ERSException("time stamp imprint for wrong root hash");
         }
+    }
+
+    public List<ERSArchiveTimeStamp> generateArchiveTimeStamps(TimeStampResponse tspResponse)
+        throws TSPException, ERSException
+    {
+        IndexedPartialHashtree[] reducedHashTree = getPartialHashtrees();
+
+        validateTimeStampToken(tspResponse, reducedHashTree);
 
         ContentInfo timeStamp = tspResponse.getTimeStampToken().toCMSSignedData().toASN1Structure();
         List<ERSArchiveTimeStamp> atss = new ArrayList<ERSArchiveTimeStamp>();

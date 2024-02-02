@@ -5,20 +5,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+//import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.PBEParametersGenerator;
-import org.bouncycastle.crypto.digests.SHA1Digest;
+//import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.BlowfishEngine;
 import org.bouncycastle.crypto.engines.DESEngine;
 import org.bouncycastle.crypto.engines.DESedeEngine;
 import org.bouncycastle.crypto.engines.RC2Engine;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+//import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
@@ -65,39 +65,39 @@ class PEMUtilities
         KEYSIZES.put(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, Integers.valueOf(40));
     }
 
-    static int getKeySize(String algorithm)
-    {
-        if (!KEYSIZES.containsKey(algorithm))
-        {
-            throw new IllegalStateException("no key size for algorithm: " + algorithm);
-        }
-        
-        return ((Integer)KEYSIZES.get(algorithm)).intValue();
-    }
+//    static int getKeySize(String algorithm)
+//    {
+//        if (!KEYSIZES.containsKey(algorithm))
+//        {
+//            throw new IllegalStateException("no key size for algorithm: " + algorithm);
+//        }
+//
+//        return ((Integer)KEYSIZES.get(algorithm)).intValue();
+//    }
 
-    static boolean isPKCS5Scheme1(ASN1ObjectIdentifier algOid)
-    {
-        return PKCS5_SCHEME_1.contains(algOid);
-    }
+//    static boolean isPKCS5Scheme1(ASN1ObjectIdentifier algOid)
+//    {
+//        return PKCS5_SCHEME_1.contains(algOid);
+//    }
+//
+//    static boolean isPKCS5Scheme2(ASN1ObjectIdentifier algOid)
+//    {
+//        return PKCS5_SCHEME_2.contains(algOid);
+//    }
 
-    static boolean isPKCS5Scheme2(ASN1ObjectIdentifier algOid)
-    {
-        return PKCS5_SCHEME_2.contains(algOid);
-    }
-
-    public static boolean isPKCS12(ASN1ObjectIdentifier algOid)
-    {
-        return algOid.getId().startsWith(PKCSObjectIdentifiers.pkcs_12PbeIds.getId());
-    }
-
-    public static KeyParameter generateSecretKeyForPKCS5Scheme2(String algorithm, char[] password, byte[] salt, int iterationCount)
-    {
-        PBEParametersGenerator paramsGen = new PKCS5S2ParametersGenerator(new SHA1Digest());
-
-        paramsGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(password), salt, iterationCount);
-
-        return (KeyParameter)paramsGen.generateDerivedParameters(PEMUtilities.getKeySize(algorithm));
-    }
+//    public static boolean isPKCS12(ASN1ObjectIdentifier algOid)
+//    {
+//        return algOid.getId().startsWith(PKCSObjectIdentifiers.pkcs_12PbeIds.getId());
+//    }
+//
+//    public static KeyParameter generateSecretKeyForPKCS5Scheme2(String algorithm, char[] password, byte[] salt, int iterationCount)
+//    {
+//        PBEParametersGenerator paramsGen = new PKCS5S2ParametersGenerator(new SHA1Digest());
+//
+//        paramsGen.init(PBEParametersGenerator.PKCS5PasswordToBytes(password), salt, iterationCount);
+//
+//        return (KeyParameter)paramsGen.generateDerivedParameters(PEMUtilities.getKeySize(algorithm));
+//    }
 
     static byte[] crypt(
         boolean encrypt,
@@ -164,7 +164,7 @@ class PEMUtilities
             {
                 keyBits = 64;
             }
-            sKey = new RC2Parameters(getKey(password, keyBits / 8, iv).getKey(), keyBits);;
+            sKey = new RC2Parameters(getKey(password, keyBits / 8, iv).getKey(), keyBits);
             engine = new RC2Engine();
         }
         else if (dekAlgName.startsWith("AES-"))

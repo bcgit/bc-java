@@ -31,6 +31,7 @@ public class AllTests
         suite.addTestSuite(ITSJcaJceBasicTest.class);
         suite.addTestSuite(ETSIDataSignerTest.class);
         suite.addTestSuite(ETSIEncryptedDataTest.class);
+        suite.addTestSuite(ITSGeneralTest.class);
 
         return new ITSTestSetup(suite);
     }

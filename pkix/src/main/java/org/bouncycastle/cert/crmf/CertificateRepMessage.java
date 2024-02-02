@@ -3,7 +3,6 @@ package org.bouncycastle.cert.crmf;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
 import org.bouncycastle.asn1.cmp.CertRepMessage;
 import org.bouncycastle.asn1.cmp.CertResponse;
@@ -72,34 +71,44 @@ public class CertificateRepMessage
     }
 
     /**
-     * Return true if the message only contains X.509 public key certificates.
+     * Checks if the message only contains X.509 public key certificates
+     * or if the X.509 public key certificates array is null.
      *
-     * @return true if only X.509 PK, false otherwise.
+     * @return true if the message only contains X.509 public key certificates or the array is null, false otherwise.
      */
     public boolean isOnlyX509PKCertificates()
     {
         boolean isOnlyX509 = true;
 
-        for (int i = 0; i != caCerts.length; i++)
+        if (caCerts != null)
         {
-            isOnlyX509 &= caCerts[i].isX509v3PKCert();
+            for (int i = 0; i != caCerts.length; i++)
+            {
+                isOnlyX509 &= caCerts[i].isX509v3PKCert();
+            }
         }
 
         return isOnlyX509;
     }
 
     /**
-     * Return the actual CMP certificates - useful if the array also contains non-X509 PK certificates.
+     * Returns the array of CMP certificates, including non-X509 PK certificates if present.
+     * <p>
+     * Note: If the array contains non-X509 PK certificates, they will be included in the result.
      *
-     * @return CMPCertificate array
+     * @return An array of CMPCertificate objects or null if the array is empty.
      */
     public CMPCertificate[] getCMPCertificates()
     {
-        CMPCertificate[] certs = new CMPCertificate[caCerts.length];
+        if (caCerts != null)
+        {
+            CMPCertificate[] certs = new CMPCertificate[caCerts.length];
 
-        System.arraycopy(caCerts, 0, certs, 0, certs.length);
+            System.arraycopy(caCerts, 0, certs, 0, certs.length);
 
-        return certs;
+            return certs;
+        }
+        return null;
     }
 
     public CertRepMessage toASN1Structure()

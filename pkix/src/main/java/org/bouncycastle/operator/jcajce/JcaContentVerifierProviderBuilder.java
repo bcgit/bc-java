@@ -151,18 +151,7 @@ public class JcaContentVerifierProviderBuilder
                     {
                         try
                         {
-                            Signature sig = createSignature(algorithm, (PublicKey)keys.get(i));
-
-                            Signature rawSig = createRawSig(algorithm, (PublicKey)keys.get(i));
-
-                            if (rawSig != null)
-                            {
-                                return new RawSigVerifier(algorithm, sig, rawSig);
-                            }
-                            else
-                            {
-                                return new SigVerifier(algorithm, sig);
-                            }
+                            return getContentVerifier(algorithm, (PublicKey)keys.get(i));
                         }
                         catch (OperatorCreationException e)
                         {
@@ -174,18 +163,24 @@ public class JcaContentVerifierProviderBuilder
                 }
                 else
                 {
-                    Signature sig = createSignature(algorithm, publicKey);
+                    return getContentVerifier(algorithm, publicKey);
+                }
+            }
 
-                    Signature rawSig = createRawSig(algorithm, publicKey);
+            private ContentVerifier getContentVerifier(AlgorithmIdentifier algorithm, PublicKey publicKey)
+                throws OperatorCreationException
+            {
+                Signature sig = createSignature(algorithm, publicKey);
 
-                    if (rawSig != null)
-                    {
-                        return new RawSigVerifier(algorithm, sig, rawSig);
-                    }
-                    else
-                    {
-                        return new SigVerifier(algorithm, sig);
-                    }
+                Signature rawSig = createRawSig(algorithm, publicKey);
+
+                if (rawSig != null)
+                {
+                    return new RawSigVerifier(algorithm, sig, rawSig);
+                }
+                else
+                {
+                    return new SigVerifier(algorithm, sig);
                 }
             }
         };

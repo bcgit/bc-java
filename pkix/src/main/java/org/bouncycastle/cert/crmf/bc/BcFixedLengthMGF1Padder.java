@@ -98,7 +98,7 @@ public class BcFixedLengthMGF1Padder
 
         int end = 0;
 
-        for (int i = paddedData.length - 1; i != seed.length; i--)
+        for (int i = paddedData.length - 1; i > seed.length; i--)
         {
             if (paddedData[i] == 0)
             {

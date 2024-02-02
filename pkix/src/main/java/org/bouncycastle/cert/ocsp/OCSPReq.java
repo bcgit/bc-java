@@ -1,6 +1,5 @@
 package org.bouncycastle.cert.ocsp;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
@@ -10,11 +9,9 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Exception;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ocsp.OCSPRequest;
 import org.bouncycastle.asn1.ocsp.Request;
-import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -55,8 +52,6 @@ import org.bouncycastle.operator.ContentVerifierProvider;
  */
 public class OCSPReq
 {
-    private static final X509CertificateHolder[] EMPTY_CERTS = new X509CertificateHolder[0];
-
     private OCSPRequest    req;
     private Extensions extensions;
 
@@ -184,26 +179,9 @@ public class OCSPReq
         //
         if (req.getOptionalSignature() != null)
         {
-            ASN1Sequence s = req.getOptionalSignature().getCerts();
-
-            if (s != null)
-            {
-                X509CertificateHolder[] certs = new X509CertificateHolder[s.size()];
-
-                for (int i = 0; i != certs.length; i++)
-                {
-                    certs[i] = new X509CertificateHolder(Certificate.getInstance(s.getObjectAt(i)));
-                }
-
-                return certs;
-            }
-
-            return EMPTY_CERTS;
+            return OCSPUtils.getX509CertificateHolders(req.getOptionalSignature().getCerts());
         }
-        else
-        {
-            return EMPTY_CERTS;
-        }
+        return OCSPUtils.EMPTY_CERTS;
     }
     
     /**

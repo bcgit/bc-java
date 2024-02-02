@@ -28,6 +28,7 @@ public class IssuerIdentifier
     public static final int sha256AndDigest = 0;
     public static final int self = 1;
     public static final int sha384AndDigest = 2;
+    public static final int sm3AndDigest = 3;
 
     private final int choice;
     private final ASN1Encodable issuerIdentifier;
@@ -47,6 +48,11 @@ public class IssuerIdentifier
     public static IssuerIdentifier sha384AndDigest(HashedId8 data)
     {
         return new IssuerIdentifier(sha384AndDigest, data);
+    }
+
+    public static IssuerIdentifier sm3AndDigest(HashedId8 data)
+    {
+        return new IssuerIdentifier(sm3AndDigest, data);
     }
 
     public IssuerIdentifier(int choice, ASN1Encodable value)

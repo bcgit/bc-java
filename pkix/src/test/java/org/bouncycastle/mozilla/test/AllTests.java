@@ -40,6 +40,7 @@ public class AllTests
         TestSuite suite = new TestSuite("Mozilla Tests");
         
         suite.addTestSuite(AllTests.class);
+        suite.addTestSuite(MozillaGeneralTest.class);
         
         return new BCTestSetup(suite);
     }

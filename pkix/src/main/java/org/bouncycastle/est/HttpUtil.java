@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.bouncycastle.util.Arrays;
+
 class HttpUtil
 {
 
@@ -22,7 +24,7 @@ class HttpUtil
         sw.write(prefix);
         sw.write(' ');
         boolean comma = false;
-        for (Iterator it = kv.entrySet().iterator(); it.hasNext();)
+        for (Iterator it = kv.entrySet().iterator(); it.hasNext(); )
         {
             Map.Entry<String, String> ent = (Map.Entry<String, String>)it.next();
 
@@ -218,7 +220,7 @@ class HttpUtil
                 return header;
             }
 
-            for (Iterator it = keySet().iterator(); it.hasNext();)
+            for (Iterator it = keySet().iterator(); it.hasNext(); )
             {
                 String k = (String)it.next();
                 if (header.equalsIgnoreCase(k))
@@ -253,11 +255,11 @@ class HttpUtil
                 set(key, value);
             }
         }
-        
+
         public Object clone()
         {
             Headers n = new Headers();
-            for (Iterator it = entrySet().iterator(); it.hasNext();)
+            for (Iterator it = entrySet().iterator(); it.hasNext(); )
             {
                 Map.Entry v = (Map.Entry)it.next();
 
@@ -271,7 +273,7 @@ class HttpUtil
             String[] rv = new String[vs.length];
 
             System.arraycopy(vs, 0, rv, 0, rv.length);
-            
+
             return rv;
         }
     }
@@ -279,16 +281,7 @@ class HttpUtil
 
     public static String[] append(String[] a, String b)
     {
-        if (a == null)
-        {
-            return new String[]{b};
-        }
-
-        int length = a.length;
-        String[] result = new String[length + 1];
-        System.arraycopy(a, 0, result, 0, length);
-        result[length] = b;
-        return result;
+        return Arrays.append(a, b);
     }
 
 }

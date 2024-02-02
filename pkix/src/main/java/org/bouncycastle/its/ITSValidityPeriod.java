@@ -2,7 +2,6 @@ package org.bouncycastle.its;
 
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Duration;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.UINT16;
@@ -59,7 +58,7 @@ public class ITSValidityPeriod
 
     public ITSValidityPeriod(ValidityPeriod validityPeriod)
     {
-        this.startDate = validityPeriod.getStart().getValue().longValue();
+        this.startDate = validityPeriod.getStart().getValue().longValue() * 1000 + Time32.etsiEpochMillis;
         Duration duration = validityPeriod.getDuration();
         this.duration = duration.getDuration();
         this.timeUnit = Unit.values()[duration.getChoice()];
@@ -80,7 +79,7 @@ public class ITSValidityPeriod
     public ValidityPeriod toASN1Structure()
     {
         return ValidityPeriod.builder()
-            .setStart(new Time32(startDate / 1000))
+            .setStart(new Time32((startDate - Time32.etsiEpochMillis) / 1000))
             .setDuration(new Duration(timeUnit.unitTag, duration)).createValidityPeriod();
     }
 }

@@ -1,9 +1,5 @@
 package org.bouncycastle.cert.crmf;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cmp.PBMParameter;
 import org.bouncycastle.asn1.crmf.PKMACValue;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -23,20 +19,8 @@ class PKMACValueVerifier
         throws CRMFException
     {
         builder.setParameters(PBMParameter.getInstance(value.getAlgId().getParameters()));
-        MacCalculator calculator = builder.build(password);
 
-        OutputStream macOut = calculator.getOutputStream();
-
-        try
-        {
-            macOut.write(keyInfo.getEncoded(ASN1Encoding.DER));
-
-            macOut.close();
-        }
-        catch (IOException e)
-        {
-            throw new CRMFException("exception encoding mac input: " + e.getMessage(), e);
-        }
+        MacCalculator calculator = CRMFUtil.getMacCalculator(builder, password, keyInfo);
 
         return Arrays.constantTimeAreEqual(calculator.getMac(), value.getValue().getOctets());
     }

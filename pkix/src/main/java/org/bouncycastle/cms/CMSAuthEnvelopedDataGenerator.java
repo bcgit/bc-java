@@ -4,13 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSet;
@@ -19,8 +16,6 @@ import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 
 public class CMSAuthEnvelopedDataGenerator
@@ -39,8 +34,6 @@ public class CMSAuthEnvelopedDataGenerator
         throws CMSException
     {
         ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
-        AlgorithmIdentifier encAlgId;
-        ASN1OctetString encContent;
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ASN1Set authenticatedAttrSet = null;
@@ -69,23 +62,7 @@ public class CMSAuthEnvelopedDataGenerator
         byte[] encryptedContent = bOut.toByteArray();
         byte[] mac = contentEncryptor.getMAC();
 
-        encAlgId = contentEncryptor.getAlgorithmIdentifier();
-
-        encContent = new BEROctetString(encryptedContent);
-
-        GenericKey encKey = contentEncryptor.getKey();
-
-        for (Iterator it = recipientInfoGenerators.iterator(); it.hasNext();)
-        {
-            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
-
-            recipientInfos.add(recipient.generate(encKey));
-        }
-
-        EncryptedContentInfo eci = new EncryptedContentInfo(
-                        content.getContentType(),
-                        encAlgId,
-                        encContent);
+        EncryptedContentInfo eci = CMSUtils.getEncryptedContentInfo(content, contentEncryptor, recipientInfos, encryptedContent, recipientInfoGenerators);
 
         ASN1Set unprotectedAttrSet = null;
         if (unauthAttrsGenerator != null)

@@ -62,18 +62,14 @@ public class BoundaryLimitedInputStream
         {
             int ch;
             index = 0;
+            ch = src.read();
             if (i == '\r')
             {
-                ch = src.read();
                 if (ch == '\n')
                 {
                     buf[bufOff++] = '\n';
                     ch = src.read();
                 }
-            }
-            else
-            {
-                ch = src.read();
             }
 
             if (ch == '-')

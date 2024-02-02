@@ -16,7 +16,6 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BasePublicEncryptionKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccCurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP384CurvePoint;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicEncryptionKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SymmAlgorithm;
 
@@ -101,23 +100,7 @@ public class BcITSPublicEncryptionKey
             throw new IllegalStateException("extension to public verification key not supported");
         }
 
-        byte[] key;
-
-        if (itsPoint instanceof EccP256CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else if (itsPoint instanceof EccP384CurvePoint)
-        {
-            key = itsPoint.getEncodedPoint();
-        }
-        else
-        {
-            throw new IllegalStateException("unknown key type");
-        }
-
-        ECPoint point = curve.decodePoint(key).normalize();
-        return new ECPublicKeyParameters(point,
-            new ECNamedDomainParameters(curveID, params));
+        return BcITSUtil.getAsymmetricKeyParameter(params, curveID, curve, itsPoint);
     }
+
 }

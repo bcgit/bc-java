@@ -2,9 +2,7 @@ package org.bouncycastle.cert.ocsp;
 
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ocsp.ResponseData;
-import org.bouncycastle.asn1.ocsp.SingleResponse;
 import org.bouncycastle.asn1.x509.Extensions;
 
 /**
@@ -45,15 +43,7 @@ public class RespData
 
     public SingleResp[] getResponses()
     {
-        ASN1Sequence    s = data.getResponses();
-        SingleResp[]    rs = new SingleResp[s.size()];
-
-        for (int i = 0; i != rs.length; i++)
-        {
-            rs[i] = new SingleResp(SingleResponse.getInstance(s.getObjectAt(i)));
-        }
-
-        return rs;
+        return OCSPUtils.getResponses(data);
     }
 
     public Extensions getResponseExtensions()

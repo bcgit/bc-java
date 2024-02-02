@@ -51,7 +51,7 @@ public class X509v2AttributeCertificateBuilder
 
     /**
      * Base constructor with locale for interpreting dates. You may need to use this constructor if the default locale
-     * doesn't use a Gregorian calender so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
+     * doesn't use a Gregorian calendar so that the GeneralizedTime produced is compatible with other ASN.1 implementations.
      *
      * @param holder holder certificate details
      * @param issuer issuer of this attribute certificate.

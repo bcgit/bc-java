@@ -16,7 +16,7 @@ import org.bouncycastle.util.test.SimpleTest;
 public class DANETest
     extends SimpleTest
 {
-    byte[]  randomCert = Base64.decode(
+    static byte[]  randomCert = Base64.decode(
             "MIIDbDCCAtWgAwIBAgIBADANBgkqhkiG9w0BAQQFADCBtzELMAkGA1UEBhMCQVUx"
                 + "ETAPBgNVBAgTCFZpY3RvcmlhMRgwFgYDVQQHEw9Tb3V0aCBNZWxib3VybmUxGjAY"
                 + "BgNVBAoTEUNvbm5lY3QgNCBQdHkgTHRkMR4wHAYDVQQLExVDZXJ0aWZpY2F0ZSBB"
