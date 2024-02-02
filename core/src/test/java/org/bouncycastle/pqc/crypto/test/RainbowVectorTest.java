@@ -47,7 +47,7 @@ public class RainbowVectorTest
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/rainbow", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -71,7 +71,7 @@ public class RainbowVectorTest
                             continue;
                         }
 
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed"));      // seed for Rainbow secure random
                         int mlen = Integer.parseInt((String)buf.get("mlen"));   // message length
                         byte[] msg = Hex.decode((String)buf.get("msg"));        // message
@@ -108,9 +108,9 @@ public class RainbowVectorTest
                         byte[] sigGenerated = signer.generateSignature(msg);
                         byte[] attachedSig = Arrays.concatenate(msg, sigGenerated);
 
-                        //System.out.println("expected:\t" + Hex.toHexString(sigExpected).toUpperCase().substring(msg.length*2, sigExpected.length*2));
-                        //System.out.println("generated:\t" + Hex.toHexString(sigGenerated).toUpperCase());
-                        //System.out.println("attached:\t" + Hex.toHexString(attachedSig).toUpperCase());
+                        //// System.out.println("expected:\t" + Hex.toHexString(sigExpected).toUpperCase().substring(msg.length*2, sigExpected.length*2));
+                        //// System.out.println("generated:\t" + Hex.toHexString(sigGenerated).toUpperCase());
+                        //// System.out.println("attached:\t" + Hex.toHexString(attachedSig).toUpperCase());
 
                         signer.init(false, kp.getPublic());
 
@@ -128,7 +128,7 @@ public class RainbowVectorTest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 

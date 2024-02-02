@@ -91,7 +91,7 @@ sm = 81FF8025E2D7DFC0F8D47C16041E54A2E124898A711A500D2A743986782155E933A9617C061
         for (int fileindex = 0; fileindex < files.length; fileindex++)
         {
             String name = files[fileindex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/dilithium", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String line = null;
@@ -113,7 +113,7 @@ sm = 81FF8025E2D7DFC0F8D47C16041E54A2E124898A711A500D2A743986782155E933A9617C061
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Dilithium secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -160,50 +160,50 @@ sm = 81FF8025E2D7DFC0F8D47C16041E54A2E124898A711A500D2A743986782155E933A9617C061
 
                         // print results
                             /*
-                            System.out.println("--Keygen");
+                            // System.out.println("--Keygen");
                             boolean kgenpass = true;
                             if (!Arrays.areEqual(respk, pk)) {
-                                System.out.println("  == Keygen: pk do not match");
+                                // System.out.println("  == Keygen: pk do not match");
                                 kgenpass = false;
                             }
                             if (!Arrays.areEqual(ressk, sk)) {
-                                System.out.println("  == Keygen: sk do not match");
+                                // System.out.println("  == Keygen: sk do not match");
                                 kgenpass = false;
                             }
                             if (kgenpass) {
-                                System.out.println("  ++ Keygen pass");
+                                // System.out.println("  ++ Keygen pass");
                             } else {
-                                System.out.println("  == Keygen failed");
+                                // System.out.println("  == Keygen failed");
                                 return;
                             }
 
-                            System.out.println("--Sign");
+                            // System.out.println("--Sign");
                             boolean spass = true;
                             if (!Arrays.areEqual(ressm, sm)) {
-                                System.out.println("  == Sign: signature do not match");
+                                // System.out.println("  == Sign: signature do not match");
                                 spass = false;
                             }
                             if (spass) {
-                                System.out.println("  ++ Sign pass");
+                                // System.out.println("  ++ Sign pass");
                             } else {
-                                System.out.println("  == Sign failed");
+                                // System.out.println("  == Sign failed");
                                 return;
                             }
 
-                            System.out.println("--Verify");
+                            // System.out.println("--Verify");
                             if (vrfyrespass && !vrfyresfail) {
-                                System.out.println("  ++ Verify pass");
+                                // System.out.println("  ++ Verify pass");
                             } else {
-                                System.out.println("  == Verify failed");
+                                // System.out.println("  == Verify failed");
                                 return;
                             }
                              */
                         // AssertTrue
 
                         //sign
-                        // System.out.println("attached Sig = ");
+                        // // System.out.println("attached Sig = ");
                         // Helper.printByteArray(attachedSig);
-                        // System.out.println("sm = ");
+                        // // System.out.println("sm = ");
                         // Helper.printByteArray(sm);
                      
                         assertTrue(name + " " + count + " signature", Arrays.areEqual(attachedSig, sm));
@@ -226,7 +226,7 @@ sm = 81FF8025E2D7DFC0F8D47C16041E54A2E124898A711A500D2A743986782155E933A9617C061
 
 
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 

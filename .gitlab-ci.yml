@@ -21,6 +21,7 @@ check-code:
   
 test-code-8:
   stage: test
+  needs: []
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -38,6 +39,7 @@ test-code-8:
   
 test-code-11:
   stage: test
+  needs: []
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -71,6 +73,7 @@ test-code-17:
       - "tls/build/reports"  
 test-code-21:
   stage: test
+  needs: []
   script:
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"

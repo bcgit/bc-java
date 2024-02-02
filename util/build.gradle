@@ -32,6 +32,8 @@ dependencies {
         builtBy compileJava
     }
     java9Implementation project(':prov')
+    java9Implementation project(':core')
+    java9Implementation project(path:':prov')
 
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test11Implementation files("$bc_prov")
@@ -67,6 +69,16 @@ jar {
     into('META-INF/versions/9') {
         from sourceSets.java9.output
     }
+
+    //
+    // This exists because the above 'sourceSets.java9.output' is randomly
+    // empty even though the classes have been built and are where
+    // they should be.
+    into('META-INF/versions/9') {
+        from "${projectDir}/build/classes/java/java9"
+        duplicatesStrategy DuplicatesStrategy.INCLUDE
+    }
+
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
     manifest.attributes('Export-Package': 'org.bouncycastle.*')

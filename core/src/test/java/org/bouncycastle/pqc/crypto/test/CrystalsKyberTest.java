@@ -79,11 +79,11 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
         keyGen.init(new KyberKeyGenerationParameters(new FixedSecureRandom(coins), KyberParameters.kyber1024));
 
         AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
-        // System.out.print("public key = ");
+        // // System.out.print("public key = ");
         // Helper.printByteArray(((KyberPublicKeyParameters) keyPair.getPublic()).getEncoded());
         assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((KyberPublicKeyParameters)keyPair.getPublic()).getEncoded()));
 
-        // System.out.print("secret Key = ");
+        // // System.out.print("secret Key = ");
         // Helper.printByteArray(((KyberPrivateKeyParameters) keyPair.getPrivate()).getEncoded());
         assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((KyberPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
 
@@ -93,7 +93,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
 
         String expectedSharedSecret = "C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E";
 
-        // System.out.print("Shared secret = ");
+        // // System.out.print("Shared secret = ");
         // Helper.printByteArray(secretEncap.getSecret());
         assertTrue(Arrays.areEqual(Hex.decode(expectedSharedSecret), secretEncap.getSecret()));
 
@@ -149,7 +149,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -172,7 +172,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Kyber secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -219,10 +219,10 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                         // } 
                         // catch (AssertionError e) {
-                        //     System.out.println("Failed assertion error.");
-                        //     System.out.println();
+                        //     // System.out.println("Failed assertion error.");
+                        //     // System.out.println();
 
-                        //     System.out.println();
+                        //     // System.out.println();
                         //     continue;
                         // }
                     }
@@ -237,7 +237,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 
