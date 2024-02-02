@@ -244,7 +244,7 @@ public class PKIXPolicyMappingTest
         X509Certificate     intCert         = null;
         X509Certificate     endCert         = null;
         
-        /**
+        /*
          * valid test_00
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -264,7 +264,7 @@ public class PKIXPolicyMappingTest
         String msg = testPolicies(0, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(0, msg, "");
         
-        /**
+        /*
          * test_01
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -280,7 +280,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(1, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(1, msg, "");
         
-        /**
+        /*
          * test_02
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -296,7 +296,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(2, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(2, msg, "");
    
-        /**
+        /*
          * test_03
          */
         intPolicies = new CertificatePolicies(new PolicyInformation[]
@@ -320,7 +320,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(3, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(3, msg, "");
         
-        /**
+        /*
          * test_04
          */
         intPolicies = new CertificatePolicies(new PolicyInformation[]
@@ -338,7 +338,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(4, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(4, msg, "");
         
-        /**
+        /*
          * test_05
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -354,7 +354,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(5, trustCert, intCert, endCert, requirePolicies, false);
         checkMessage(5, msg, "Path processing failed on policy.");
         
-        /**
+        /*
          * test_06
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -370,7 +370,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(6, trustCert, intCert, endCert, requirePolicies, true);
         checkMessage(6, msg, "");
         
-        /**
+        /*
          * test_07
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
@@ -386,7 +386,7 @@ public class PKIXPolicyMappingTest
         msg = testPolicies(7, trustCert, intCert, endCert, requirePolicies, false);
         checkMessage(7, msg, "Path processing failed on policy.");
         
-        /**
+        /*
          * test_08
          */
         intPolicies = new CertificatePolicies(new PolicyInformation(new ASN1ObjectIdentifier("2.5.29.32.0")));
