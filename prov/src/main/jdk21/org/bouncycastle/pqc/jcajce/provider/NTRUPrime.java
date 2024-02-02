@@ -56,13 +56,6 @@ public class NTRUPrime
 
             provider.addAlgorithm("Kem.SNTRUPRIME", PREFIX + "SNTRUPrimeKEMSpi");
             provider.addAlgorithm("Alg.Alias.Kem." + BCObjectIdentifiers.pqc_kem_sntruprime, "SNTRUPRIME");
-
-            //These two not needed? KEMSpi returns a Decapsulator/Encapsulator
-            provider.addAlgorithm("Decapsulator.SNTRUPRIME", PREFIX + "NTRUCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Decapsulator." + BCObjectIdentifiers.pqc_kem_sntruprime, "SNTRUPRIME");
-
-            provider.addAlgorithm("Encapsulator.SNTRUPRIME", PREFIX + "NTRUCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Encapsulator." + BCObjectIdentifiers.pqc_kem_sntruprime, "SNTRUPRIME");
         }
     }
 }

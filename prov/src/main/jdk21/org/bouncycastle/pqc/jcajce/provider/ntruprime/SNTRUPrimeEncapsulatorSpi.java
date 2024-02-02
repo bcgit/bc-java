@@ -12,7 +12,7 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.Objects;
 
-public class SNTRUPrimeEncapsulatorSpi
+class SNTRUPrimeEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCSNTRUPrimePublicKey publicKey;
