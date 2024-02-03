@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
@@ -134,7 +135,7 @@ public class Argon2Test
                 }
 
 
-                ArrayList<byte[]> permutations = new ArrayList<byte[]>();
+                List<byte[]> permutations = new ArrayList<byte[]>();
                 permute(permutations, buf, 0, buf.length - 1);
 
                 for (int i = 0; i != permutations.size(); i++)
@@ -166,7 +167,7 @@ public class Argon2Test
         buf[j] = b;
     }
 
-    private void permute(ArrayList<byte[]> permutation, byte[] a, int l, int r)
+    private void permute(List<byte[]> permutation, byte[] a, int l, int r)
     {
         if (l == r)
         {

@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
@@ -86,7 +87,7 @@ public class StringTest
         }
 
         byte[] t61Bytes = new byte[] { -1, -2, -3, -4, -5, -6, -7, -8 };
-        String t61String = new String(t61Bytes, "iso-8859-1");
+        String t61String = new String(t61Bytes, Charset.forName("iso-8859-1"));
         ASN1T61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
 
         if (!t61.getString().equals(t61String))

@@ -1122,7 +1122,7 @@ public class GF2nONBElement
      */
     public BigInteger toFlexiBigInt()
     {
-        /** @todo this method does not reverse the bit-order as it should!!! */
+        /* @todo this method does not reverse the bit-order as it should!!! */
 
         return new BigInteger(1, toByteArray());
     }
@@ -1135,7 +1135,7 @@ public class GF2nONBElement
      */
     public byte[] toByteArray()
     {
-        /** @todo this method does not reverse the bit-order as it should!!! */
+        /* @todo this method does not reverse the bit-order as it should!!! */
 
         int k = ((mDegree - 1) >> 3) + 1;
         byte[] result = new byte[k];
