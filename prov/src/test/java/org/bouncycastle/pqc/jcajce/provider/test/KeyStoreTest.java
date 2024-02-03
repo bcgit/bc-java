@@ -50,6 +50,7 @@ public class KeyStoreTest
     private static final long ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
     private static final long TEN_YEARS_IN_MILLIS = 10l * 365 * ONE_DAY_IN_MILLIS;
 
+    private static AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
     private static Map algIds = new HashMap();
 
     static
@@ -201,7 +202,6 @@ public class KeyStoreTest
     {
         V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
         long time = System.currentTimeMillis();
-        AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
         certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
         certGen.setIssuer(dn);
         certGen.setSubject(dn);
@@ -238,7 +238,6 @@ public class KeyStoreTest
         V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
 
         long time = System.currentTimeMillis();
-        AtomicLong serialNumber = new AtomicLong(System.currentTimeMillis());
 
         certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
         certGen.setIssuer(signerName);

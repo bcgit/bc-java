@@ -46,7 +46,7 @@ public class ComputeInField
         {
 
 
-            /** initialize **/
+            // initialize
             // this matrix stores B and b from the equation B*x = b
             // b is stored as the last column.
             // B contains one column more than rows.
@@ -55,7 +55,7 @@ public class ComputeInField
             // stores the solution of the LES
             x = new short[B.length];
 
-            /** copy B into the global matrix A **/
+            // copy B into the global matrix A
             for (int i = 0; i < B.length; i++)
             { // rows
                 for (int j = 0; j < B[0].length; j++)
@@ -64,7 +64,7 @@ public class ComputeInField
                 }
             }
 
-            /** copy the vector b into the global A **/
+            // copy the vector b into the global A
             //the free coefficient, stored in the last column of A( A[i][b.length]
             // is to be subtracted from b
             for (int i = 0; i < b.length; i++)
@@ -72,7 +72,7 @@ public class ComputeInField
                 A[i][b.length] = GF2Field.addElem(b[i], A[i][b.length]);
             }
 
-            /** call the methods for gauss elimination and backward substitution **/
+            // call the methods for gauss elimination and backward substitution
             computeZerosUnder(false);     // obtain zeros under the diagonal
             substitute();
 
@@ -100,7 +100,7 @@ public class ComputeInField
     {
         try
         {
-            /** Initialization: **/
+            // Initialization:
             short factor;
             short[][] inverse;
             A = new short[coef.length][2 * coef.length];
@@ -110,7 +110,7 @@ public class ComputeInField
                     "The matrix is not invertible. Please choose another one!");
             }
 
-            /** prepare: Copy coef and the identity matrix into the global A. **/
+            // prepare: Copy coef and the identity matrix into the global A.
             for (int i = 0; i < coef.length; i++)
             {
                 for (int j = 0; j < coef.length; j++)
@@ -126,7 +126,7 @@ public class ComputeInField
                 A[i][i + A.length] = 1;
             }
 
-            /** Elimination operations to get the identity matrix from the left side of A. **/
+            // Elimination operations to get the identity matrix from the left side of A.
             // modify A to get 0s under the diagonal.
             computeZerosUnder(true);
 
@@ -290,7 +290,7 @@ public class ComputeInField
             throw new IllegalStateException("The equation system is not solvable");
         }
 
-        /** backward substitution **/
+        // backward substitution
         x[A.length - 1] = GF2Field.multElem(A[A.length - 1][A.length], temp);
         for (int i = A.length - 2; i >= 0; i--)
         {
