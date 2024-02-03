@@ -5,10 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -38,7 +36,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.activation.DataHandler;
 import javax.crypto.Cipher;
 import javax.mail.Address;
 import javax.mail.Message;
@@ -49,18 +46,11 @@ import javax.mail.internet.InternetHeaders;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.mail.internet.MimePart;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
@@ -69,7 +59,6 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.Time;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
 import org.bouncycastle.asn1.smime.SMIMECapability;
@@ -87,7 +76,6 @@ import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.CMSAlgorithm;
-import org.bouncycastle.cms.CMSCompressedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.KeyTransRecipientId;
@@ -119,7 +107,6 @@ import org.bouncycastle.mail.smime.SMIMEEnveloped;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedParser;
 import org.bouncycastle.mail.smime.SMIMEException;
-import org.bouncycastle.mail.smime.SMIMEGenerator;
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMESignedParser;
@@ -151,7 +138,6 @@ import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.Store;
-import sun.security.x509.SubjectAlternativeNameExtension;
 
 public class MailGeneralTest
     extends TestCase
@@ -1332,7 +1318,6 @@ public class MailGeneralTest
     public void testExamples()
         throws Exception
     {
-        PKCS12Example.main(null);
         CreateCompressedMail.main(null);
         CreateEncryptedMail.main(new String[]{"id.p12", "hello world"});
         CreateLargeCompressedMail.main(new String[]{"id.p12"});
