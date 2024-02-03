@@ -10,6 +10,7 @@ import java.net.Socket;
 
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.util.Strings;
 
 /**
  * A simple test designed to conduct a TLS handshake with an external TLS server.
@@ -42,7 +43,7 @@ public class TlsClientTest
         System.out.println("Elapsed 2: " + (time3 - time2) + "ms");
 
         OutputStream output = protocol.getOutputStream();
-        output.write("GET / HTTP/1.1\r\n\r\n".getBytes("UTF-8"));
+        output.write(Strings.toUTF8ByteArray("GET / HTTP/1.1\r\n\r\n"));
         output.flush();
 
         InputStream input = protocol.getInputStream();

@@ -1,24 +1,24 @@
 package org.bouncycastle.jce.provider.test;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.test.SimpleTest;
-import org.bouncycastle.x509.X509AttributeCertificate;
-import org.bouncycastle.x509.X509CertificatePair;
-import org.bouncycastle.x509.X509StreamParser;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.Security;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.internal.asn1.cms.CMSObjectIdentifiers;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.x509.X509AttributeCertificate;
+import org.bouncycastle.x509.X509CertificatePair;
+import org.bouncycastle.x509.X509StreamParser;
 
 public class X509StreamParserTest
     extends SimpleTest
@@ -139,7 +139,7 @@ public class X509StreamParserTest
         //
         parser = X509StreamParser.getInstance("Certificate", "BC");
 
-        parser.init(PEMData.CERTIFICATE_1.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.CERTIFICATE_1));
 
         res = parser.readAll();
 
@@ -150,7 +150,7 @@ public class X509StreamParserTest
 
         parser = X509StreamParser.getInstance("Certificate", "BC");
 
-        parser.init(PEMData.CERTIFICATE_2.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.CERTIFICATE_2));
 
         res = parser.readAll();
 
@@ -161,7 +161,7 @@ public class X509StreamParserTest
 
         parser = X509StreamParser.getInstance("CRL", "BC");
 
-        parser.init(PEMData.CRL_1.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.CRL_1));
 
         res = parser.readAll();
 
@@ -172,7 +172,7 @@ public class X509StreamParserTest
 
         parser = X509StreamParser.getInstance("CRL", "BC");
 
-        parser.init(PEMData.CRL_2.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.CRL_2));
 
         res = parser.readAll();
 
@@ -183,7 +183,7 @@ public class X509StreamParserTest
 
         parser = X509StreamParser.getInstance("AttributeCertificate", "BC");
 
-        parser.init(PEMData.ATTRIBUTE_CERTIFICATE_1.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.ATTRIBUTE_CERTIFICATE_1));
 
         res = parser.readAll();
 
@@ -194,7 +194,7 @@ public class X509StreamParserTest
 
         parser = X509StreamParser.getInstance("AttributeCertificate", "BC");
 
-        parser.init(PEMData.ATTRIBUTE_CERTIFICATE_2.getBytes("US-ASCII"));
+        parser.init(Strings.toByteArray(PEMData.ATTRIBUTE_CERTIFICATE_2));
 
         res = parser.readAll();
 

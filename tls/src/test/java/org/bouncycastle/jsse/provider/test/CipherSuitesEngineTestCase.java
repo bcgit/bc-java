@@ -12,9 +12,9 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.bouncycastle.util.Arrays;
-
 import junit.framework.TestCase;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class CipherSuitesEngineTestCase extends TestCase
 {
@@ -100,8 +100,8 @@ public class CipherSuitesEngineTestCase extends TestCase
         ByteBuffer clientToServer = ByteBuffer.allocate(clientNetBufSize);
         ByteBuffer serverToClient = ByteBuffer.allocate(serverNetBufSize);
 
-        ByteBuffer clientOut = ByteBuffer.wrap("Dear Prudence, won't you come out to play?".getBytes("UTF-8"));
-        ByteBuffer serverOut = ByteBuffer.wrap("Impudence! I won't come out to today.".getBytes("UTF-8"));
+        ByteBuffer clientOut = ByteBuffer.wrap(Strings.toUTF8ByteArray("Dear Prudence, won't you come out to play?"));
+        ByteBuffer serverOut = ByteBuffer.wrap(Strings.toUTF8ByteArray("Impudence! I won't come out to today."));
 
         SSLEngineResult clientResult;
         SSLEngineResult serverResult;
