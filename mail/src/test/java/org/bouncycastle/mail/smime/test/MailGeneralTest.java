@@ -1318,6 +1318,7 @@ public class MailGeneralTest
     public void testExamples()
         throws Exception
     {
+        PKCS12FileCreator.main(null);
         CreateCompressedMail.main(null);
         CreateEncryptedMail.main(new String[]{"id.p12", "hello world"});
         CreateLargeCompressedMail.main(new String[]{"id.p12"});
