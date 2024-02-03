@@ -59,7 +59,7 @@ public class PSKTlsClientTest
         System.out.println("Elapsed 2: " + (time3 - time2) + "ms");
 
         OutputStream output = protocol.getOutputStream();
-        output.write("GET / HTTP/1.1\r\n\r\n".getBytes("UTF-8"));
+        output.write(Strings.toUTF8ByteArray("GET / HTTP/1.1\r\n\r\n"));
         output.flush();
 
         InputStream input = protocol.getInputStream();

@@ -485,7 +485,7 @@ public class Argon2BytesGenerator
 
     private void initialize(byte[] tmpBlockBytes, byte[] password, int outputLength)
     {
-        /**
+        /*
          * H0 = H64(p, τ, m, t, v, y, |P|, P, |S|, S, |L|, K, |X|, X)
          * -> 64 byte (ARGON2_PREHASH_DIGEST_LENGTH)
          */

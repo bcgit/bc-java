@@ -12,6 +12,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
 /**
@@ -27,11 +28,8 @@ public class XMSSMTPrivateKeyTest
 
         XMSSParameters params = new XMSSParameters(10, new SHA256Digest());
 
-        byte[] output = Base64.decode(new String(stream).getBytes("UTF-8"));
-
-
+        byte[] output = Base64.decode(Strings.toUTF8ByteArray(stream));
         //Simple Exploit
-
         try
         {
             new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(output).build();

@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
@@ -1387,27 +1386,27 @@ public class CertTest
         {
             fail("PEM cert with extraneous header not read");
         }
-        CRL crl = cf.generateCRL(new ByteArrayInputStream(PEMData.CRL_1.getBytes("US-ASCII")));
+        CRL crl = cf.generateCRL(new ByteArrayInputStream(Strings.toByteArray(PEMData.CRL_1)));
         if (crl == null)
         {
             fail("PEM crl not read");
         }
-        Collection col = cf.generateCertificates(new ByteArrayInputStream(PEMData.CERTIFICATE_2.getBytes("US-ASCII")));
+        Collection col = cf.generateCertificates(new ByteArrayInputStream(Strings.toByteArray(PEMData.CERTIFICATE_2)));
         if (col.size() != 1 || !col.contains(cert))
         {
             fail("PEM cert collection not right");
         }
-        col = cf.generateCertificates(new ByteArrayInputStream((PEMData.CERTIFICATE_2 + "z\n").getBytes("US-ASCII")));
+        col = cf.generateCertificates(new ByteArrayInputStream(Strings.toByteArray((PEMData.CERTIFICATE_2 + "z\n"))));
         if (col.size() != 1 || !col.contains(cert))
         {
             fail("PEM cert collection with extra not right");
         }
-        col = cf.generateCRLs(new ByteArrayInputStream(PEMData.CRL_2.getBytes("US-ASCII")));
+        col = cf.generateCRLs(new ByteArrayInputStream(Strings.toByteArray(PEMData.CRL_2)));
         if (col.size() != 1 || !col.contains(crl))
         {
             fail("PEM crl collection not right");
         }
-        col = cf.generateCRLs(new ByteArrayInputStream((PEMData.CRL_2 + "z\n").getBytes("US-ASCII")));
+        col = cf.generateCRLs(new ByteArrayInputStream(Strings.toByteArray((PEMData.CRL_2 + "z\n"))));
         if (col.size() != 1 || !col.contains(crl))
         {
             fail("PEM crl collection with extra not right");
@@ -1429,9 +1428,9 @@ public class CertTest
     }
 
     private static Certificate readPEMCert(CertificateFactory cf, String pemData)
-        throws CertificateException, UnsupportedEncodingException
+        throws CertificateException
     {
-        return cf.generateCertificate(new ByteArrayInputStream(pemData.getBytes("US-ASCII")));
+        return cf.generateCertificate(new ByteArrayInputStream(Strings.toByteArray(pemData)));
     }
 
     private void pkcs7Test()
@@ -1531,7 +1530,7 @@ public class CertTest
             fail("wrong number of Certs: " + certCol.size());
         }
 
-        in = new ByteArrayInputStream(pemPKCS7.getBytes("US-ASCII"));
+        in = new ByteArrayInputStream(Strings.toByteArray(pemPKCS7));
         certCol = cf.generateCertificates(in);
 
         in.reset();

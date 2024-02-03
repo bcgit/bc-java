@@ -250,4 +250,4 @@ subprojects {
 
 }
 
-test.dependsOn([':core:test', ':prov:test', ':pkix:test', 'pg:test', ':tls:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test17', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])

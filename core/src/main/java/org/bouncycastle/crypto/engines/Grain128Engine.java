@@ -226,7 +226,7 @@ public class Grain128Engine
         workingKey = keyBytes;
         workingIV = ivBytes;
 
-        /**
+        /*
          * Load NFSR and LFSR
          */
         int j = 0;

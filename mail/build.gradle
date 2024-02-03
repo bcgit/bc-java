@@ -7,30 +7,25 @@ sourceSets {
             srcDirs = ['src/main/jdk1.9']
         }
     }
-
-
 }
 
 dependencies {
-  //  implementation project(':prov')
-  //  implementation project(':util')
+    implementation project(':prov')
+    implementation project(':util')
     implementation project(':pkix')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
-//    implementation files("$bc_prov")
-//    implementation files("$bc_util")
-//    implementation files("$bc_pkix")
-//    implementation project(path: ':core')
+    implementation files("$bc_prov")
+    implementation files("$bc_util")
+    implementation files("$bc_pkix")
+    implementation project(path: ':core')
 
-    java9Implementation group: 'javax.mail', name: 'mail', version: '1.4'
-//    java9Implementation files("$bc_prov")
-//    java9Implementation files("$bc_util")
-//    java9Implementation files("$bc_pkix")
+    java9Implementation files(":prov")
+    java9Implementation files(":util")
+    java9Implementation files(":pkix")
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }
-
-
 }
 
 compileJava {
