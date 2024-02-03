@@ -79,25 +79,25 @@ import org.bouncycastle.util.Store;
 public class SMIMESignedGenerator
     extends SMIMEGenerator
 {
-    public static final String  DIGEST_SHA1 = OIWObjectIdentifiers.idSHA1.getId();
-    public static final String  DIGEST_MD5 = PKCSObjectIdentifiers.md5.getId();
-    public static final String  DIGEST_SHA224 = NISTObjectIdentifiers.id_sha224.getId();
-    public static final String  DIGEST_SHA256 = NISTObjectIdentifiers.id_sha256.getId();
-    public static final String  DIGEST_SHA384 = NISTObjectIdentifiers.id_sha384.getId();
-    public static final String  DIGEST_SHA512 = NISTObjectIdentifiers.id_sha512.getId();
-    public static final String  DIGEST_GOST3411 = CryptoProObjectIdentifiers.gostR3411.getId();
-    public static final String  DIGEST_RIPEMD128 = TeleTrusTObjectIdentifiers.ripemd128.getId();
-    public static final String  DIGEST_RIPEMD160 = TeleTrusTObjectIdentifiers.ripemd160.getId();
-    public static final String  DIGEST_RIPEMD256 = TeleTrusTObjectIdentifiers.ripemd256.getId();
+    public static final String DIGEST_SHA1 = OIWObjectIdentifiers.idSHA1.getId();
+    public static final String DIGEST_MD5 = PKCSObjectIdentifiers.md5.getId();
+    public static final String DIGEST_SHA224 = NISTObjectIdentifiers.id_sha224.getId();
+    public static final String DIGEST_SHA256 = NISTObjectIdentifiers.id_sha256.getId();
+    public static final String DIGEST_SHA384 = NISTObjectIdentifiers.id_sha384.getId();
+    public static final String DIGEST_SHA512 = NISTObjectIdentifiers.id_sha512.getId();
+    public static final String DIGEST_GOST3411 = CryptoProObjectIdentifiers.gostR3411.getId();
+    public static final String DIGEST_RIPEMD128 = TeleTrusTObjectIdentifiers.ripemd128.getId();
+    public static final String DIGEST_RIPEMD160 = TeleTrusTObjectIdentifiers.ripemd160.getId();
+    public static final String DIGEST_RIPEMD256 = TeleTrusTObjectIdentifiers.ripemd256.getId();
 
-    public static final String  ENCRYPTION_RSA = PKCSObjectIdentifiers.rsaEncryption.getId();
-    public static final String  ENCRYPTION_DSA = X9ObjectIdentifiers.id_dsa_with_sha1.getId();
-    public static final String  ENCRYPTION_ECDSA = X9ObjectIdentifiers.ecdsa_with_SHA1.getId();
-    public static final String  ENCRYPTION_RSA_PSS = PKCSObjectIdentifiers.id_RSASSA_PSS.getId();
-    public static final String  ENCRYPTION_GOST3410 = CryptoProObjectIdentifiers.gostR3410_94.getId();
-    public static final String  ENCRYPTION_ECGOST3410 = CryptoProObjectIdentifiers.gostR3410_2001.getId();
-    public static final String  ENCRYPTION_ECGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId();
-    public static final String  ENCRYPTION_ECGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId();
+    public static final String ENCRYPTION_RSA = PKCSObjectIdentifiers.rsaEncryption.getId();
+    public static final String ENCRYPTION_DSA = X9ObjectIdentifiers.id_dsa_with_sha1.getId();
+    public static final String ENCRYPTION_ECDSA = X9ObjectIdentifiers.ecdsa_with_SHA1.getId();
+    public static final String ENCRYPTION_RSA_PSS = PKCSObjectIdentifiers.id_RSASSA_PSS.getId();
+    public static final String ENCRYPTION_GOST3410 = CryptoProObjectIdentifiers.gostR3410_94.getId();
+    public static final String ENCRYPTION_ECGOST3410 = CryptoProObjectIdentifiers.gostR3410_2001.getId();
+    public static final String ENCRYPTION_ECGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId();
+    public static final String ENCRYPTION_ECGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId();
 
     private static final String CERTIFICATE_MANAGEMENT_CONTENT = "application/pkcs7-mime; name=smime.p7c; smime-type=certs-only";
     private static final String DETACHED_SIGNATURE_TYPE = "application/pkcs7-signature; name=smime.p7s; smime-type=signed-data";
@@ -156,15 +156,15 @@ public class SMIMESignedGenerator
     }
 
     private final String defaultContentTransferEncoding;
-    private final Map    micAlgs;
+    private final Map micAlgs;
 
-    private List                certStores = new ArrayList();
-    private List                crlStores = new ArrayList();
-    private List                attrCertStores = new ArrayList();
-    private List                signerInfoGens = new ArrayList();
-    private List                _signers = new ArrayList();
-    private List                _oldSigners = new ArrayList();
-    private Map                 _digests = new HashMap();
+    private List certStores = new ArrayList();
+    private List crlStores = new ArrayList();
+    private List attrCertStores = new ArrayList();
+    private List signerInfoGens = new ArrayList();
+    private List _signers = new ArrayList();
+    private List _oldSigners = new ArrayList();
+    private Map _digests = new HashMap();
 
     /**
      * base constructor - default content transfer encoding 7bit
@@ -176,7 +176,7 @@ public class SMIMESignedGenerator
 
     /**
      * base constructor - default content transfer encoding explicitly set
-     * 
+     *
      * @param defaultContentTransferEncoding new default to use.
      */
     public SMIMESignedGenerator(
@@ -200,7 +200,7 @@ public class SMIMESignedGenerator
      * base constructor - default content transfer encoding explicitly set
      *
      * @param defaultContentTransferEncoding new default to use.
-     * @param micAlgs a map of ANS1ObjectIdentifiers to strings hash algorithm names.
+     * @param micAlgs                        a map of ANS1ObjectIdentifiers to strings hash algorithm names.
      */
     public SMIMESignedGenerator(
         String defaultContentTransferEncoding,
@@ -218,7 +218,7 @@ public class SMIMESignedGenerator
     public void addSigners(
         SignerInformationStore signerStore)
     {
-        Iterator    it = signerStore.getSigners().iterator();
+        Iterator it = signerStore.getSigners().iterator();
 
         while (it.hasNext())
         {
@@ -227,7 +227,6 @@ public class SMIMESignedGenerator
     }
 
     /**
-     *
      * @param sigInfoGen
      */
     public void addSignerInfoGenerator(SignerInfoGenerator sigInfoGen)
@@ -255,19 +254,19 @@ public class SMIMESignedGenerator
 
     private void addHashHeader(
         StringBuffer header,
-        List         signers)
+        List signers)
     {
-        int                 count = 0;
-        
+        int count = 0;
+
         //
         // build the hash header
         //
-        Iterator   it = signers.iterator();
-        Set        micAlgSet = new TreeSet();
-        
+        Iterator it = signers.iterator();
+        Set micAlgSet = new TreeSet();
+
         while (it.hasNext())
         {
-            Object              signer = it.next();
+            Object signer = it.next();
             ASN1ObjectIdentifier digestOID;
 
             if (signer instanceof SignerInformation)
@@ -290,12 +289,12 @@ public class SMIMESignedGenerator
                 micAlgSet.add(micAlg);
             }
         }
-        
+
         it = micAlgSet.iterator();
-        
+
         while (it.hasNext())
         {
-            String    alg = (String)it.next();
+            String alg = (String)it.next();
 
             if (count == 0)
             {
@@ -328,8 +327,8 @@ public class SMIMESignedGenerator
     }
 
     private MimeMultipart make(
-        MimeBodyPart    content)
-    throws SMIMEException
+        MimeBodyPart content)
+        throws SMIMEException
     {
         try
         {
@@ -344,8 +343,8 @@ public class SMIMESignedGenerator
             //
             // build the multipart header
             //
-            StringBuffer        header = new StringBuffer(
-                    "signed; protocol=\"application/pkcs7-signature\"");
+            StringBuffer header = new StringBuffer(
+                "signed; protocol=\"application/pkcs7-signature\"");
 
             List allSigners = new ArrayList(_signers);
 
@@ -355,7 +354,7 @@ public class SMIMESignedGenerator
 
             addHashHeader(header, allSigners);
 
-            MimeMultipart   mm = new MimeMultipart(header.toString());
+            MimeMultipart mm = new MimeMultipart(header.toString());
 
             mm.addBodyPart(content);
             mm.addBodyPart(sig);
@@ -372,7 +371,7 @@ public class SMIMESignedGenerator
      * at this point we expect our body part to be well defined - generate with data in the signature
      */
     private MimeBodyPart makeEncapsulated(
-        MimeBodyPart    content)
+        MimeBodyPart content)
         throws SMIMEException
     {
         try
@@ -405,24 +404,17 @@ public class SMIMESignedGenerator
     }
 
     public MimeMultipart generate(
-        MimeBodyPart    content)
+        MimeBodyPart content)
         throws SMIMEException
     {
         return make(makeContentBodyPart(content));
     }
 
     public MimeMultipart generate(
-        MimeMessage    message)
+        MimeMessage message)
         throws SMIMEException
     {
-        try
-        {
-            message.saveChanges();      // make sure we're up to date.
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("unable to save message", e);
-        }
+        SMIMEUtil.messageSaveChanges(message);
 
         return make(makeContentBodyPart(message));
     }
@@ -435,36 +427,29 @@ public class SMIMESignedGenerator
      * message.
      */
     public MimeBodyPart generateEncapsulated(
-        MimeBodyPart    content)
+        MimeBodyPart content)
         throws SMIMEException
     {
         return makeEncapsulated(makeContentBodyPart(content));
     }
 
     public MimeBodyPart generateEncapsulated(
-        MimeMessage    message)
+        MimeMessage message)
         throws SMIMEException
     {
-        try
-        {
-            message.saveChanges();      // make sure we're up to date.
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("unable to save message", e);
-        }
+        SMIMEUtil.messageSaveChanges(message);
 
         return makeEncapsulated(makeContentBodyPart(message));
     }
 
-   /**
+    /**
      * Creates a certificate management message which is like a signed message with no content
      * or signers but that still carries certificates and CRLs.
      *
      * @return a MimeBodyPart containing the certs and CRLs.
      */
     public MimeBodyPart generateCertificateManagement()
-       throws SMIMEException
+        throws SMIMEException
     {
         try
         {
@@ -489,11 +474,11 @@ public class SMIMESignedGenerator
     {
         private final MimeBodyPart content;
         private final boolean encapsulate;
-        private final boolean  noProvider;
+        private final boolean noProvider;
 
         ContentSigner(
             MimeBodyPart content,
-            boolean      encapsulate)
+            boolean encapsulate)
         {
             this.content = content;
             this.encapsulate = encapsulate;
@@ -505,28 +490,28 @@ public class SMIMESignedGenerator
         {
             CMSSignedDataStreamGenerator gen = new CMSSignedDataStreamGenerator();
 
-            for (Iterator it = certStores.iterator(); it.hasNext();)
+            for (Iterator it = certStores.iterator(); it.hasNext(); )
             {
                 gen.addCertificates((Store)it.next());
             }
 
-            for (Iterator it = crlStores.iterator(); it.hasNext();)
+            for (Iterator it = crlStores.iterator(); it.hasNext(); )
             {
                 gen.addCRLs((Store)it.next());
             }
 
-            for (Iterator it = attrCertStores.iterator(); it.hasNext();)
+            for (Iterator it = attrCertStores.iterator(); it.hasNext(); )
             {
                 gen.addAttributeCertificates((Store)it.next());
             }
 
-            for (Iterator it = signerInfoGens.iterator(); it.hasNext();)
+            for (Iterator it = signerInfoGens.iterator(); it.hasNext(); )
             {
                 gen.addSignerInfoGenerator((SignerInfoGenerator)it.next());
             }
 
             gen.addSigners(new SignerInformationStore(_oldSigners));
-            
+
             return gen;
         }
 
@@ -537,31 +522,9 @@ public class SMIMESignedGenerator
         {
             if (SMIMEUtil.isMultipartContent(bodyPart))
             {
-                Object content = bodyPart.getContent();
-                Multipart mp;
-                if (content instanceof Multipart)
-                {
-                    mp = (Multipart)content;
-                }
-                else
-                {
-                    mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
-                }
-
-                ContentType contentType = new ContentType(mp.getContentType());
-                String boundary = "--" + contentType.getParameter("boundary");
-
-                SMIMEUtil.LineOutputStream lOut = new SMIMEUtil.LineOutputStream(out);
-
-                Enumeration headers = bodyPart.getAllHeaderLines();
-                while (headers.hasMoreElements())
-                {
-                    lOut.writeln((String)headers.nextElement());
-                }
-
-                lOut.writeln();      // CRLF separator
-
-                SMIMEUtil.outputPreamble(lOut, bodyPart, boundary);
+                Multipart mp = SMIMEUtil.getMultipart(bodyPart);
+                String boundary = "--" + new ContentType(mp.getContentType()).getParameter("boundary");
+                SMIMEUtil.LineOutputStream lOut = SMIMEUtil.writeMultipartContentBodyPart(out, bodyPart, boundary);
 
                 for (int i = 0; i < mp.getCount(); i++)
                 {
@@ -589,9 +552,9 @@ public class SMIMESignedGenerator
             try
             {
                 CMSSignedDataStreamGenerator gen = getGenerator();
-                
+
                 OutputStream signingStream = gen.open(out, encapsulate);
-                
+
                 if (content != null)
                 {
                     if (!encapsulate)
@@ -610,7 +573,7 @@ public class SMIMESignedGenerator
                         content.writeTo(signingStream);
                     }
                 }
-                
+
                 signingStream.close();
 
                 _digests = gen.getGeneratedDigests();
