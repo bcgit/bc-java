@@ -160,14 +160,7 @@ public class SMIMEEnvelopedGenerator
         OutputEncryptor  encryptor)
         throws SMIMEException
     {
-        try
-        {
-            message.saveChanges();      // make sure we're up to date.
-        }
-        catch (MessagingException e)
-        {
-            throw new SMIMEException("unable to save message", e);
-        }
+        SMIMEUtil.messageSaveChanges(message);
 
         return make(makeContentBodyPart(message), encryptor);
     }
