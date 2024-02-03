@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -314,9 +315,9 @@ public class DiscoverEndomorphisms
         return order(i1, i2);
     }
 
-    private static ArrayList enumToList(Enumeration en)
+    private static List enumToList(Enumeration en)
     {
-        ArrayList rv = new ArrayList();
+        List rv = new ArrayList();
         while (en.hasMoreElements())
         {
             rv.add(en.nextElement());

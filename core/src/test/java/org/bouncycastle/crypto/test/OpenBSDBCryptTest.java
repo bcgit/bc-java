@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.bouncycastle.util.Arrays;
@@ -156,7 +157,7 @@ public class OpenBSDBCryptTest
                 }
 
 
-                ArrayList<byte[]> permutations = new ArrayList<byte[]>();
+                List<byte[]> permutations = new ArrayList<byte[]>();
                 permute(permutations, buf, 0, buf.length - 1);
 
                 for (int i = 0; i != permutations.size(); i++)
@@ -199,7 +200,7 @@ public class OpenBSDBCryptTest
         buf[j] = b;
     }
 
-    private void permute(ArrayList<byte[]> permutation, byte[] a, int l, int r)
+    private void permute(List<byte[]> permutation, byte[] a, int l, int r)
     {
         if (l == r)
         {
