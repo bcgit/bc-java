@@ -84,7 +84,7 @@ public class LocalizedMessageTest extends TestCase
         .replace(":00 Mittlere Greenwich-Zeit", " Uhr GMT").replace(NNBSP, " "));
         
         // test number
-        args = new Object[] { new TrustedInput(new Float(0.2))  };
+        args = new Object[] { new TrustedInput(new Float(0.2f))  };
         msg = new LocalizedMessage(TEST_RESOURCE, "number", args);
         assertEquals("20%", msg.getEntry("text", Locale.ENGLISH, TimeZone.getDefault()));
 
