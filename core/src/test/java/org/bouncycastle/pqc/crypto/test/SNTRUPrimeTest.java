@@ -16,6 +16,7 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SNTRUPrimeTest
@@ -41,7 +42,7 @@ public class SNTRUPrimeTest
         {
             SNTRUPrimeParameters paramSpec = paramList[i];
             // System.out.println("****    Parameter Spec - '" + paramSpec.getName().toUpperCase() + "'    ****");
-            InputStream resource = TestResourceFinder.findTestResource(resourcePath, paramSpec.getName().toLowerCase() + ".rsp");
+            InputStream resource = TestResourceFinder.findTestResource(resourcePath, Strings.toLowerCase(paramSpec.getName()) + ".rsp");
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
             String line;

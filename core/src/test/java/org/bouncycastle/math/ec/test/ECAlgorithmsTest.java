@@ -5,8 +5,12 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
@@ -14,10 +18,6 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 public class ECAlgorithmsTest extends TestCase
 {
@@ -34,7 +34,7 @@ public class ECAlgorithmsTest extends TestCase
     // TODO Ideally, mark this test not to run by default
     public void testSumOfMultipliesComplete()
     {
-        ArrayList x9s = getTestCurves();
+        List x9s = getTestCurves();
         Iterator it = x9s.iterator();
         while (it.hasNext())
         {
@@ -53,7 +53,7 @@ public class ECAlgorithmsTest extends TestCase
     // TODO Ideally, mark this test not to run by default
     public void testSumOfTwoMultipliesComplete()
     {
-        ArrayList x9s = getTestCurves();
+        List x9s = getTestCurves();
         Iterator it = x9s.iterator();
         while (it.hasNext())
         {
@@ -140,9 +140,9 @@ public class ECAlgorithmsTest extends TestCase
         return new BigInteger(x9.getN().bitLength(), RND);
     }
 
-    private ArrayList getTestCurves()
+    private List getTestCurves()
     {
-        ArrayList x9s = new ArrayList();
+        List x9s = new ArrayList();
         Set names = new HashSet(AllTests.enumToList(ECNamedCurveTable.getNames()));
         names.addAll(AllTests.enumToList(CustomNamedCurves.getNames()));
 
@@ -166,7 +166,7 @@ public class ECAlgorithmsTest extends TestCase
         return x9s;
     }
 
-    private void addTestCurves(ArrayList x9s, X9ECParameters x9)
+    private void addTestCurves(List x9s, X9ECParameters x9)
     {
         ECCurve curve = x9.getCurve();
 
