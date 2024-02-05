@@ -513,17 +513,25 @@ class DTLSRecordLayer
     {
         try
         {
-            return transport.receive(buf, off, len, waitMillis);
+            // NOTE: the buffer is sized to support transport.getReceiveLimit().
+            int received = transport.receive(buf, off, len, waitMillis);
+
+            // Check the transport returned a sensible value, otherwise discard the datagram.
+            if (received <= len)
+            {
+                return received;
+            }
         }
         catch (SocketTimeoutException e)
         {
-            return -1;
         }
         catch (InterruptedIOException e)
         {
             e.bytesTransferred = 0;
             throw e;
         }
+
+        return -1;
     }
 
     // TODO Include 'currentTimeMillis' as an argument, use with Timeout, resetHeartbeat
