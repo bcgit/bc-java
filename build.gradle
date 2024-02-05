@@ -210,9 +210,6 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(8)
         }
 
-        jvmArgs = ['-Dtest.java.version.prefix=1.8']
-
-
         finalizedBy jacocoTestReport
 
         filter {

@@ -113,7 +113,7 @@ public class ClientVectorTest
                 {
 //                    try
 //                    {
-                        System.out.print("test case: " + count);
+                       // System.out.print("test case: " + count);
                         short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                         byte[] key_package = Hex.decode(buf.get("key_package"));
                         byte[] signature_priv = Hex.decode(buf.get("signature_priv"));
@@ -189,7 +189,7 @@ public class ClientVectorTest
                         epochs.clear();
                         buf.clear();
                         count++;
-                        System.out.println(" PASSED");
+                //        System.out.println(" PASSED");
 //                    }
 //                    catch (Exception e)
 //                    {
