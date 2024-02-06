@@ -1,3 +1,6 @@
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
 
 dependencies {
     implementation project(':core')
