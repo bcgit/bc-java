@@ -1,8 +1,6 @@
 package org.bouncycastle.test;
 
 import junit.framework.TestCase;
-import org.junit.Test;
-
 
 /**
  * This test asserts the java version running the tests starts with
@@ -17,8 +15,7 @@ public class JVMVersionTest extends TestCase
 {
 
     private static final String expectedVersionPropName = "test.java.version.prefix";
-
-    @Test
+    
     public void testAssertExpectedJVM() {
 
         //
