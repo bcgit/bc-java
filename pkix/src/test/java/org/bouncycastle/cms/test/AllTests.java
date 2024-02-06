@@ -37,6 +37,8 @@ public class AllTests
 
         suite.addTest(BcEnvelopedDataTest.suite());
         suite.addTest(BcSignedDataTest.suite());
+        suite.addTest(CMSAuthEnvelopedDataStreamGeneratorTest.suite());
+        suite.addTest(InputStreamWithMACTest.suite());
 
         try
         {
