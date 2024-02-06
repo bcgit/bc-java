@@ -3,7 +3,6 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -90,7 +89,7 @@ public class CMSEnvelopedData
             EncryptedContentInfo encInfo = envData.getEncryptedContentInfo();
             this.encAlg = encInfo.getContentEncryptionAlgorithm();
             CMSReadable readable = new CMSProcessableByteArray(encInfo.getEncryptedContent().getOctets());
-            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSEnvelopedSecureReadable(
+            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(
                 this.encAlg, encInfo.getContentType(), readable);
 
             //
@@ -109,18 +108,6 @@ public class CMSEnvelopedData
         {
             throw new CMSException("Malformed content.", e);
         }
-    }
-
-    private byte[] encodeObj(
-        ASN1Encodable obj)
-        throws IOException
-    {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive().getEncoded();
-        }
-
-        return null;
     }
 
     /**
@@ -159,7 +146,7 @@ public class CMSEnvelopedData
     {
         try
         {
-            return encodeObj(encAlg.getParameters());
+            return CMSUtils.encodeObj(encAlg.getParameters());
         }
         catch (Exception e)
         {

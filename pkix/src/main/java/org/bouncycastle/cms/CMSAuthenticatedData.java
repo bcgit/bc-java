@@ -3,7 +3,6 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
@@ -145,19 +144,8 @@ public class CMSAuthenticatedData
             try
             {
                 CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(authData.getDigestAlgorithm()), encInfo.getContentType(), readable);
-
-                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable, new AuthAttributesProvider()
-                {
-                    public ASN1Set getAuthAttributes()
-                    {
-                        return authAttrs;
-                    }
-
-                    public boolean isAead()
-                    {
-                        return false;
-                    }
-                });
+                secureReadable.setAuthAttrSet(authAttrs);
+                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
             }
             catch (OperatorCreationException e)
             {
@@ -166,8 +154,7 @@ public class CMSAuthenticatedData
         }
         else
         {
-            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, encInfo.getContentType(), readable);
-
+            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(this.macAlg, encInfo.getContentType(), readable);
             this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
         }
     }
@@ -185,18 +172,6 @@ public class CMSAuthenticatedData
     public byte[] getMac()
     {
         return Arrays.clone(mac);
-    }
-
-    private byte[] encodeObj(
-        ASN1Encodable obj)
-        throws IOException
-    {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive().getEncoded();
-        }
-
-        return null;
     }
 
     /**
@@ -225,7 +200,7 @@ public class CMSAuthenticatedData
     {
         try
         {
-            return encodeObj(macAlg.getParameters());
+            return CMSUtils.encodeObj(macAlg.getParameters());
         }
         catch (Exception e)
         {
