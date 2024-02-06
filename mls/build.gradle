@@ -1,4 +1,7 @@
+
 plugins {
+// OSGI
+    id "biz.aQute.bnd.builder" version "7.0.0"
 //     Provide convenience executables for trying out the examples.
     id 'application'
     id 'com.google.protobuf' version '0.9.4'
@@ -76,6 +79,8 @@ protobuf {
         }
     }
 }
+
+jar.archiveBaseName = "bcmls-$vmrange"
 
 sourceSets {
     main {

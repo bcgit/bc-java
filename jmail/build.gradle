@@ -1,4 +1,8 @@
 
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
+
 jar.archiveBaseName = "bcjmail-$vmrange"
 
 sourceSets {
