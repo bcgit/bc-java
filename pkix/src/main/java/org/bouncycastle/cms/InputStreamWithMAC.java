@@ -68,13 +68,20 @@ public final class InputStreamWithMAC
             throw new IllegalStateException("input stream not fully processed");
         }
         return Arrays.clone(mac);
-
     }
 
     @Override
     public int read(byte[] b, int off, int len)
         throws IOException
     {
+        if (b == null)
+        {
+            throw new NullPointerException("input array is null");
+        }
+        if (off < 0 || b.length < off + len)
+        {
+            throw new IndexOutOfBoundsException("invalid off(" + off + ") and len(" + len + ")");
+        }
         int ch;
         if (!baseFinished)
         {
