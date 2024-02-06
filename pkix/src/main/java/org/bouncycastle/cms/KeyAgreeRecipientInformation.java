@@ -28,7 +28,7 @@ public class KeyAgreeRecipientInformation
     private ASN1OctetString       encryptedKey;
 
     static void readRecipientInfo(List infos, KeyAgreeRecipientInfo info,
-        AlgorithmIdentifier messageAlgorithm, CMSSecureReadable secureReadable, AuthAttributesProvider additionalData)
+        AlgorithmIdentifier messageAlgorithm, CMSSecureReadable secureReadable)
     {
         ASN1Sequence s = info.getRecipientEncryptedKeys();
 
@@ -56,7 +56,7 @@ public class KeyAgreeRecipientInformation
             }
 
             infos.add(new KeyAgreeRecipientInformation(info, rid, id.getEncryptedKey(), messageAlgorithm,
-                secureReadable, additionalData));
+                secureReadable));
         }
     }
 
@@ -65,10 +65,9 @@ public class KeyAgreeRecipientInformation
         RecipientId             rid,
         ASN1OctetString         encryptedKey,
         AlgorithmIdentifier     messageAlgorithm,
-        CMSSecureReadable       secureReadable,
-        AuthAttributesProvider  additionalData)
+        CMSSecureReadable       secureReadable)
     {
-        super(info.getKeyEncryptionAlgorithm(), messageAlgorithm, secureReadable, additionalData);
+        super(info.getKeyEncryptionAlgorithm(), messageAlgorithm, secureReadable);
 
         this.info = info;
         this.rid = rid;

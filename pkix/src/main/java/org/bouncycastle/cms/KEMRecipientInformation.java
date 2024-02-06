@@ -14,10 +14,9 @@ public class KEMRecipientInformation
     KEMRecipientInformation(
         KEMRecipientInfo        info,
         AlgorithmIdentifier     messageAlgorithm,
-        CMSSecureReadable       secureReadable,
-        AuthAttributesProvider  additionalData)
+        CMSSecureReadable       secureReadable)
     {
-        super(info.getKem(), messageAlgorithm, secureReadable, additionalData);
+        super(info.getKem(), messageAlgorithm, secureReadable);
 
         this.info = info;
 
