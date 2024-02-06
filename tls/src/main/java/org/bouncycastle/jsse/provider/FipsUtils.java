@@ -18,7 +18,7 @@ abstract class FipsUtils
     private static final boolean provAllowGCMCiphersIn12 = false;
 
     private static final boolean provAllowRSAKeyExchange = PropertyUtils
-        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", true);
+        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", false);
 
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
     private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
