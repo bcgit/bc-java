@@ -11,7 +11,6 @@ import org.bouncycastle.bcpg.BCPGHeaderObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
@@ -288,15 +287,15 @@ public class PGPEncryptedDataGenerator
             if (dataEncryptor instanceof PGPAEADDataEncryptor)
             {
                 PGPAEADDataEncryptor encryptor = (PGPAEADDataEncryptor)dataEncryptor;
-
+                long ivOrSaltLen;
                 BCPGHeaderObject encOut;
                 // OpenPGP V5 style AEAD
                 if (isV5StyleAEAD)
                 {
                     byte[] iv = encryptor.getIV();
-
                     encOut = new AEADEncDataPacket(
                         dataEncryptorBuilder.getAlgorithm(), encryptor.getAEADAlgorithm(), encryptor.getChunkSize(), iv);
+                    ivOrSaltLen = iv.length;
                 }
                 else // OpenPGP V6 style AEAD
                 {
@@ -305,6 +304,7 @@ public class PGPEncryptedDataGenerator
                         encryptor.getAEADAlgorithm(),
                         encryptor.getChunkSize(),
                         salt);
+                    ivOrSaltLen = salt.length;
                 }
 
                 if (buffer != null)
@@ -315,9 +315,10 @@ public class PGPEncryptedDataGenerator
                 {
                     long chunkLength = 1L << (encryptor.getChunkSize() + 6);
                     long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16 + 16; // data blocks + final tag
-                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + salt.length));
+                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + ivOrSaltLen));
                 }
                 genOut = cOut = dataEncryptor.getOutputStream(pOut);
+                return new WrappedGeneratorStream(genOut, this);
             }
             else
             {
@@ -363,12 +364,10 @@ public class PGPEncryptedDataGenerator
 
                 genOut.write(inLineIv);
 
+                return new WrappedGeneratorStream(genOut, this);
             }
-            return new WrappedGeneratorStream(genOut, this);
         }
-        catch (
-            Exception e)
-
+        catch (Exception e)
         {
             throw new PGPException("Exception creating cipher", e);
         }

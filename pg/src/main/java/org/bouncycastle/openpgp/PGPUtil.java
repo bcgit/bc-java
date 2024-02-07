@@ -97,21 +97,17 @@ public class PGPUtil
         case HashAlgorithmTags.RIPEMD160:
             return "RIPEMD160";
         case HashAlgorithmTags.SHA256:
-            return "SHA256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA224";
         case HashAlgorithmTags.SHA3_256:
         case HashAlgorithmTags.SHA3_256_OLD:
             return "SHA256";
+        case HashAlgorithmTags.SHA384:
         case HashAlgorithmTags.SHA3_384:
             return "SHA384";
+        case HashAlgorithmTags.SHA512:
         case HashAlgorithmTags.SHA3_512:
         case HashAlgorithmTags.SHA3_512_OLD:
             return "SHA512";
+        case HashAlgorithmTags.SHA224:
         case HashAlgorithmTags.SHA3_224:
             return "SHA224";
         case HashAlgorithmTags.TIGER_192:
@@ -213,15 +209,11 @@ public class PGPUtil
         case SymmetricKeyAlgorithmTags.DES:
             return "DES";
         case SymmetricKeyAlgorithmTags.AES_128:
-            return "AES";
         case SymmetricKeyAlgorithmTags.AES_192:
-            return "AES";
         case SymmetricKeyAlgorithmTags.AES_256:
             return "AES";
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            return "Camellia";
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            return "Camellia";
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
             return "Camellia";
         case SymmetricKeyAlgorithmTags.TWOFISH:
@@ -335,46 +327,28 @@ public class PGPUtil
         SecureRandom random)
         throws PGPException
     {
-        int keySize = 0;
+        int keySize;
 
         switch (algorithm)
         {
         case SymmetricKeyAlgorithmTags.TRIPLE_DES:
+        case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             keySize = 192;
             break;
         case SymmetricKeyAlgorithmTags.IDEA:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.CAST5:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.BLOWFISH:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.SAFER:
+        case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             keySize = 128;
             break;
         case SymmetricKeyAlgorithmTags.DES:
             keySize = 64;
             break;
-        case SymmetricKeyAlgorithmTags.AES_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            keySize = 192;
-            break;
         case SymmetricKeyAlgorithmTags.AES_256:
-            keySize = 256;
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            keySize = 192;
-            break;
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            keySize = 256;
-            break;
         case SymmetricKeyAlgorithmTags.TWOFISH:
             keySize = 256;
             break;
@@ -571,6 +545,44 @@ public class PGPUtil
                 throw new IOException(e.getMessage());
             }
         }
+    }
+
+    static byte update(OutputStream sigOut, byte b, byte lastb, int signatureType){
+        try
+        {
+            if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
+            {
+                if (b == '\r')
+                {
+                    sigOut.write((byte)'\r');
+                    sigOut.write((byte)'\n');
+                }
+                else if (b == '\n')
+                {
+                    if (lastb != '\r')
+                    {
+                        sigOut.write((byte)'\r');
+                        sigOut.write((byte)'\n');
+                    }
+                }
+                else
+                {
+                    sigOut.write(b);
+                }
+
+                lastb = b;
+            }
+            else
+            {
+                sigOut.write(b);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
+        }
+
+        return lastb;
     }
 
     static class BufferedInputStreamExt
