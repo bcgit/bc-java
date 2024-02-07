@@ -238,20 +238,21 @@ public class PGPSignatureGenerator
             sOut.write((byte)(data.length >> 8));
             sOut.write((byte)data.length);
             sOut.write(data);
+            byte[]    hData = sOut.toByteArray();
+
+            sOut.write((byte)version);
+            sOut.write((byte)0xff);
+            sOut.write((byte)(hData.length >> 24));
+            sOut.write((byte)(hData.length >> 16));
+            sOut.write((byte)(hData.length >> 8));
+            sOut.write((byte)(hData.length));
         }
         catch (IOException e)
         {
             throw new PGPException("exception encoding hashed data.", e);
         }
         
-        byte[]    hData = sOut.toByteArray();
-        
-        sOut.write((byte)version);
-        sOut.write((byte)0xff);
-        sOut.write((byte)(hData.length >> 24));
-        sOut.write((byte)(hData.length >> 16));
-        sOut.write((byte)(hData.length >> 8));
-        sOut.write((byte)(hData.length));
+
         
         byte[]    trailer = sOut.toByteArray();
 

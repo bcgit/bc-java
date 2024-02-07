@@ -74,8 +74,7 @@ public class SExpression
     public static SExpression parse(InputStream _src, int maxDepth)
         throws IOException
     {
-        SExpression expr = null;
-        return parseExpression(_src, expr, new ByteArrayOutputStream(), maxDepth);
+        return parseExpression(_src, null, new ByteArrayOutputStream(), maxDepth);
     }
 
     private static SExpression parseExpression(InputStream src, SExpression expr, ByteArrayOutputStream accumulator, int maxDepth)

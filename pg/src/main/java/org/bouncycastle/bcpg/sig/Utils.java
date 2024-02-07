@@ -18,4 +18,17 @@ public class Utils
         }
         return data;
     }
+
+    protected static byte[] timeToBytes(
+        long    t)
+    {
+        byte[]    data = new byte[4];
+
+        data[0] = (byte)(t >> 24);
+        data[1] = (byte)(t >> 16);
+        data[2] = (byte)(t >> 8);
+        data[3] = (byte)t;
+
+        return data;
+    }
 }

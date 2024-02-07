@@ -158,10 +158,7 @@ public class PublicKeyPacket
 
         pOut.write(version);
 
-        pOut.write((byte)(time >> 24));
-        pOut.write((byte)(time >> 16));
-        pOut.write((byte)(time >> 8));
-        pOut.write((byte)time);
+        StreamUtil.writeTime(pOut, time);
 
         if (version <= VERSION_3)
         {
