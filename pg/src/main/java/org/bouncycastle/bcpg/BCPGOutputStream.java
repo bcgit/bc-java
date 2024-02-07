@@ -294,7 +294,6 @@ public class BCPGOutputStream
         if (len <= (partialBufferLength - partialOffset))
         {
             System.arraycopy(buf, off, partialBuffer, partialOffset, len);
-            partialOffset += len;
         }
         else
         {
@@ -312,8 +311,8 @@ public class BCPGOutputStream
             }
 
             System.arraycopy(buf, off, partialBuffer, 0, len);
-            partialOffset += len;
         }
+        partialOffset += len;
     }
     
     public void write(
