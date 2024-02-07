@@ -96,19 +96,20 @@ public class PGPSecretKey
         PublicKeyPacket pubPacket = pubKey.publicPk;
 
         // make sure we can actually do what's wanted
-         if (isMasterKey && !(pubKey.isEncryptionKey() && pubPacket.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL))
-         {
-             PGPPublicKey mstKey = new PGPPublicKey(pubKey);
-             mstKey.publicPk = new PublicKeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
-             return mstKey;
-         }
-         else
-         {
-             PGPPublicKey subKey = new PGPPublicKey(pubKey);
-             subKey.publicPk = new PublicSubkeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
-             return subKey;
-         }
+        if (isMasterKey && !(pubKey.isEncryptionKey() && pubPacket.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL))
+        {
+            PGPPublicKey mstKey = new PGPPublicKey(pubKey);
+            mstKey.publicPk = new PublicKeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+            return mstKey;
+        }
+        else
+        {
+            PGPPublicKey subKey = new PGPPublicKey(pubKey);
+            subKey.publicPk = new PublicSubkeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+            return subKey;
+        }
     }
+
     private static SecretKeyPacket buildSecretKeyPacket(boolean isMasterKey, PGPPrivateKey privKey, PGPPublicKey pubKey, PBESecretKeyEncryptor keyEncryptor, PGPDigestCalculator checksumCalculator)
         throws PGPException
     {
@@ -116,14 +117,7 @@ public class PGPSecretKey
 
         if (secKey == null)
         {
-            if (isMasterKey)
-            {
-                return new SecretKeyPacket(pubKey.publicPk, SymmetricKeyAlgorithmTags.NULL, null, null, new byte[0]);
-            }
-            else
-            {
-                return new SecretSubkeyPacket(pubKey.publicPk, SymmetricKeyAlgorithmTags.NULL, null, null, new byte[0]);
-            }
+            return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, SymmetricKeyAlgorithmTags.NULL, new byte[0]);
         }
 
         try
@@ -163,27 +157,12 @@ public class PGPSecretKey
                     s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
                 }
 
-                if (isMasterKey)
-                {
-                    return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                }
-                else
-                {
-                    return new SecretSubkeyPacket(pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
-                }
+                return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
             }
             else
             {
                 pOut.write(checksum(null, keyData, keyData.length));
-
-                if (isMasterKey)
-                {
-                    return new SecretKeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
-                }
-                else
-                {
-                    return new SecretSubkeyPacket(pubKey.publicPk, encAlgorithm, null, null, bOut.toByteArray());
-                }
+                return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, bOut.toByteArray());
             }
         }
         catch (PGPException e)
@@ -193,6 +172,30 @@ public class PGPSecretKey
         catch (Exception e)
         {
             throw new PGPException("Exception encrypting key", e);
+        }
+    }
+
+    private static SecretKeyPacket generateSecretKeyPacket(boolean isMasterKey, PublicKeyPacket pubKey, int encAlgorithm, byte[] secKeyData)
+    {
+        if (isMasterKey)
+        {
+            return new SecretKeyPacket(pubKey, encAlgorithm, null, null, secKeyData);
+        }
+        else
+        {
+            return new SecretSubkeyPacket(pubKey, encAlgorithm, null, null, secKeyData);
+        }
+    }
+
+    private static SecretKeyPacket generateSecretKeyPacket(boolean isMasterKey, PublicKeyPacket pubKey, int encAlgorithm, int s2kusage, S2K s2k, byte[] iv, byte[] secKeyData)
+    {
+        if (isMasterKey)
+        {
+            return new SecretKeyPacket(pubKey, encAlgorithm, s2kusage, s2k, iv, secKeyData);
+        }
+        else
+        {
+            return new SecretSubkeyPacket(pubKey, encAlgorithm, s2kusage, s2k, iv, secKeyData);
         }
     }
 
@@ -516,9 +519,9 @@ public class PGPSecretKey
         {
             try
             {
+                byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
                 if (secret.getPublicKeyPacket().getVersion() == 4)
                 {
-                    byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
 
                     data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
 
@@ -532,7 +535,6 @@ public class PGPSecretKey
                 }
                 else // version 2 or 3, RSA only.
                 {
-                    byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
 
                     data = new byte[encData.length];
 
@@ -815,9 +817,9 @@ public class PGPSecretKey
      * Return a copy of the passed in secret key, encrypted using a new
      * password and the passed in algorithm.
      *
-     * @param key             the PGPSecretKey to be copied.
-     * @param oldKeyDecryptor the current decryptor based on the current password for key.
-     * @param newKeyEncryptor a new encryptor based on a new password for encrypting the secret key material.
+     * @param key                the PGPSecretKey to be copied.
+     * @param oldKeyDecryptor    the current decryptor based on the current password for key.
+     * @param newKeyEncryptor    a new encryptor based on a new password for encrypting the secret key material.
      * @param checksumCalculator digest based checksum calculator for private key data.
      */
     public static PGPSecretKey copyWithNewPassword(
@@ -917,8 +919,6 @@ public class PGPSecretKey
                 keyData[pos] = rawKeyData[pos];
                 keyData[pos + 1] = rawKeyData[pos + 1];
 
-                s2k = newKeyEncryptor.getS2K();
-                newEncAlgorithm = newKeyEncryptor.getAlgorithm();
             }
             else
             {
@@ -934,38 +934,24 @@ public class PGPSecretKey
 
                         byte[] check = checksum(checksumCalculator, rawKeyData, rawKeyData.length);
                         rawKeyData = Arrays.concatenate(rawKeyData, check);
-                        keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
                     }
                     else
                     {
                         s2kUsage = SecretKeyPacket.USAGE_CHECKSUM;
-                        keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
                     }
                 }
-                else
-                {
-                    keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
-                }
+                keyData = newKeyEncryptor.encryptKeyData(rawKeyData, 0, rawKeyData.length);
 
                 iv = newKeyEncryptor.getCipherIV();
 
-                s2k = newKeyEncryptor.getS2K();
-
-                newEncAlgorithm = newKeyEncryptor.getAlgorithm();
             }
+            s2k = newKeyEncryptor.getS2K();
+            newEncAlgorithm = newKeyEncryptor.getAlgorithm();
         }
 
         SecretKeyPacket secret;
-        if (key.secret instanceof SecretSubkeyPacket)
-        {
-            secret = new SecretSubkeyPacket(key.secret.getPublicKeyPacket(),
-                newEncAlgorithm, s2kUsage, s2k, iv, keyData);
-        }
-        else
-        {
-            secret = new SecretKeyPacket(key.secret.getPublicKeyPacket(),
-                newEncAlgorithm, s2kUsage, s2k, iv, keyData);
-        }
+
+        secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, s2kUsage, s2k, iv, keyData);
 
         return new PGPSecretKey(secret, key.pub);
     }

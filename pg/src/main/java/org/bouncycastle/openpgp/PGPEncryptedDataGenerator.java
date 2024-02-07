@@ -318,7 +318,6 @@ public class PGPEncryptedDataGenerator
                     pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + ivOrSaltLen));
                 }
                 genOut = cOut = dataEncryptor.getOutputStream(pOut);
-                return new WrappedGeneratorStream(genOut, this);
             }
             else
             {
@@ -364,8 +363,8 @@ public class PGPEncryptedDataGenerator
 
                 genOut.write(inLineIv);
 
-                return new WrappedGeneratorStream(genOut, this);
             }
+            return new WrappedGeneratorStream(genOut, this);
         }
         catch (Exception e)
         {

@@ -346,25 +346,4 @@ public class PGPSignatureGenerator
 
         return tmp;
     }
-
-    private void updateWithIdData(int header, byte[] idBytes)
-    {
-        this.update((byte)header);
-        this.update((byte)(idBytes.length >> 24));
-        this.update((byte)(idBytes.length >> 16));
-        this.update((byte)(idBytes.length >> 8));
-        this.update((byte)(idBytes.length));
-        this.update(idBytes);
-    }
-
-    private void updateWithPublicKey(PGPPublicKey key)
-        throws PGPException
-    {
-        byte[] keyBytes = getEncodedPublicKey(key);
-
-        this.update((byte)0x99);
-        this.update((byte)(keyBytes.length >> 8));
-        this.update((byte)(keyBytes.length));
-        this.update(keyBytes);
-    }
 }
